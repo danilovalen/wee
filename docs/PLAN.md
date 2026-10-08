@@ -34,8 +34,17 @@ Each one placed in the editor picks its axis and its mode:
 | Real time | slower | on its own clock, whether you move or not |
 | On input | faster, immediate | one step each time the world clock steps (per tile or per slide) |
 
-- **Moving block:** stops a slide like a base block.
-- **Enemy:** touching it kills you, and you go back to the last checkpoint.
+- **Moving block:** stops a slide like a base block. When it moves into you, it **pushes** you one
+  tile; if a block is behind you, it **crushes** you and you go back to the last checkpoint.
+- **Enemy:** touching it kills you, and you go back to the last checkpoint. **Laser kills it**
+  (for now; a stun may come later).
+
+## Puzzle pieces: box, button, door
+
+- **Box:** sliding into it pushes it, and it slides on ahead of you. You both keep going
+  until the box hits a block; you stop on the tile behind it.
+- **Button:** pressed while a box or you stand on it.
+- **Door:** a block while closed. Its button opens it.
 
 ## Powers (his list, his words in brackets where kept)
 
@@ -43,7 +52,7 @@ Each one placed in the editor picks its axis and its mode:
 |---|---|---|
 | Boomerang | Mid-slide, press the reverse arrow to slide back. You stop at the far wall, past where you started. | nothing |
 | Dive | Mid-slide, press the same arrow again to arrive at the stopping tile at once and crash. Skipped tiles still give the world its steps, all at once. The crash will break some blocks and maybe deal damage. | breakable block for the break |
-| Laser | Mid-slide, press the clockwise or counterclockwise arrow to fire a beam perpendicular to you. You keep sliding. | laser targets for puzzles |
+| Laser | Mid-slide, press the clockwise or counterclockwise arrow to fire a beam perpendicular to you. You keep sliding. Kills an enemy it hits. | laser targets for puzzles |
 | Hook | You stop when arriving on Grapple tiles instead of sliding over them. | grapple tile |
 | Light | You emit light in dark levels, only while you are not moving. | a dark-level setting |
 | Swim | You can pass through tiles that would kill you. | hazard tile |
@@ -63,10 +72,11 @@ Each one placed in the editor picks its axis and its mode:
 1. Base block (stops a slide).
 2. Checkpoint (R and death return here).
 3. Moving block and enemy, each horizontal or vertical, each real time or on input.
-4. Hazard (kills you; Swim passes it).
-5. Grapple (Hook stops on it).
-6. Breakable (Dive breaks it).
-7. Laser target, dark level: later.
+4. Box, button, door.
+5. Hazard (kills you; Swim passes it).
+6. Grapple (Hook stops on it).
+7. Breakable (Dive breaks it).
+8. Laser target, dark level: later.
 
 ## Layer-1 rules this build must prove
 
@@ -83,12 +93,14 @@ Each one placed in the editor picks its axis and its mode:
 3. Checkpoint, R to respawn.
 4. Boomerang and Dive (no new blocks needed), the clock toggle.
 5. Moving block and enemy, both modes.
-6. Save and load, then the first gates.
+6. Box, button, door.
+7. Save and load, then the first gates.
 
 ## Open
 
 - Cycle's second effect.
 - What Dive's crash damages, and how much.
 - Room size and tile size.
-- A moving block that reaches you: does it push you, stop against you, or crush you?
-- Can an enemy be killed (Dive, Laser), or only avoided?
+- Button: does the door stay open only while it is pressed, or once pressed, for good?
+- How a button is wired to its door when there are several of each.
+- Can a box be pushed by a moving block, and can it squash an enemy?
