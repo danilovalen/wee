@@ -43,8 +43,10 @@ Each one placed in the editor picks its axis and its mode:
 
 - **Box:** sliding into it pushes it, and it slides on ahead of you. You both keep going
   until the box hits a block; you stop on the tile behind it.
-- **Button:** pressed while a box or you stand on it.
-- **Door:** a block while closed. Its button opens it.
+- **Button:** pressed while a box or you stand on it. Released, its doors close again.
+- **Door:** a block while closed.
+- **Wiring is by colour.** A colour's doors open only while **every** button of that colour is
+  pressed (AND), and one colour's buttons open **all** its doors.
 
 ## Powers (his list, his words in brackets where kept)
 
@@ -65,7 +67,9 @@ Each one placed in the editor picks its axis and its mode:
    data, so a new block type is a new row.
 3. Drag the player start. Place a checkpoint.
 4. Powers panel: one checkbox per power, plus the clock toggle. A change applies at once.
-5. The level and the panel settings save as JSON in the browser, with export and import.
+5. **Save and Open work on a local file, like manga-tools' project file.** Save downloads a
+   `.wee` file (JSON: the room, the pieces, the powers panel, the clock). Open picks a `.wee`
+   file from disk. The file is the level; nothing depends on the browser keeping it.
 
 ## Block palette, in build order
 
@@ -101,6 +105,4 @@ Each one placed in the editor picks its axis and its mode:
 - Cycle's second effect.
 - What Dive's crash damages, and how much.
 - Room size and tile size.
-- Button: does the door stay open only while it is pressed, or once pressed, for good?
-- How a button is wired to its door when there are several of each.
 - Can a box be pushed by a moving block, and can it squash an enemy?
