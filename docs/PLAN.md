@@ -16,6 +16,7 @@ and switch player powers on and off, to feel them out before committing to a set
 - **R** respawns you at the last checkpoint. Dying sends you there too. With no checkpoint
   touched yet, the checkpoint is the player start.
 - Noted for later, not built: side view with gravity after a slide (VVVVVV style).
+- Noted for later, not built: height, the way 2D Zelda fakes 3D (ledges, jumping down a level).
 
 ## World clock (decided: both, a toggle on the panel)
 
@@ -41,8 +42,11 @@ Each one placed in the editor picks its axis and its mode:
 
 ## Puzzle pieces: box, button, door
 
-- **Box:** sliding into it pushes it, and it slides on ahead of you. You both keep going
-  until the box hits a block; you stop on the tile behind it.
+- **Box (light):** sliding into it pushes it, and it slides on ahead of you. You both keep
+  going until the box hits a block; you stop on the tile behind it. Moving blocks and enemies
+  push it too. It cannot squash an enemy.
+- **Heavy box:** a slide does not move it; only a **Dive** crash into it does. A moving heavy box
+  squashes an enemy in its way, and squashes you if it moves against you.
 - **Button:** pressed while a box or you stand on it. Released, its doors close again.
 - **Door:** a block while closed.
 - **Wiring is by colour.** A colour's doors open only while **every** button of that colour is
@@ -53,12 +57,12 @@ Each one placed in the editor picks its axis and its mode:
 | Power | Rule | Needs |
 |---|---|---|
 | Boomerang | Mid-slide, press the reverse arrow to slide back. You stop at the far wall, past where you started. | nothing |
-| Dive | Mid-slide, press the same arrow again to arrive at the stopping tile at once and crash. Skipped tiles still give the world its steps, all at once. The crash will break some blocks and maybe deal damage. | breakable block for the break |
+| Dive | Mid-slide, press the same arrow again to arrive at the stopping tile at once and crash. Skipped tiles still give the world its steps, all at once. The crash moves a heavy box. It damages nothing for now; breaking blocks comes later. | heavy box; breakable block later |
 | Laser | Mid-slide, press the clockwise or counterclockwise arrow to fire a beam perpendicular to you. You keep sliding. Kills an enemy it hits. | laser targets for puzzles |
 | Hook | You stop when arriving on Grapple tiles instead of sliding over them. | grapple tile |
 | Light | You emit light in dark levels, only while you are not moving. | a dark-level setting |
 | Swim | You can pass through tiles that would kill you. | hazard tile |
-| Cycle | Space makes the world take one step while you stay put. A second effect is still open. | moving things to show it |
+| Cycle | Space is a little **jump**: you stay on your tile and the world takes one step. An enemy that moves onto your tile while you are in the air is killed. | movers to show it |
 
 ## The editor
 
@@ -76,7 +80,7 @@ Each one placed in the editor picks its axis and its mode:
 1. Base block (stops a slide).
 2. Checkpoint (R and death return here).
 3. Moving block and enemy, each horizontal or vertical, each real time or on input.
-4. Box, button, door.
+4. Box, heavy box, button, door.
 5. Hazard (kills you; Swim passes it).
 6. Grapple (Hook stops on it).
 7. Breakable (Dive breaks it).
@@ -97,12 +101,9 @@ Each one placed in the editor picks its axis and its mode:
 3. Checkpoint, R to respawn.
 4. Boomerang and Dive (no new blocks needed), the clock toggle.
 5. Moving block and enemy, both modes.
-6. Box, button, door.
+6. Box, heavy box, button, door.
 7. Save and load, then the first gates.
 
 ## Open
 
-- Cycle's second effect.
-- What Dive's crash damages, and how much.
 - Room size and tile size.
-- Can a box be pushed by a moving block, and can it squash an enemy?
