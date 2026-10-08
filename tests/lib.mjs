@@ -6,6 +6,7 @@ import { emptyLevel } from '../src/sim.js';
 //   S  strong enemy, h                  T  laser turret (fires right)
 //   B  box           H  heavy box
 //   o  red button    D  red door         u  blue button  Q  blue door    r  red receiver
+//   > < ^ v  one-way tile (that way)      =  two-way, across      |  two-way, up and down
 //   7 9 1 3  triangle, solid in the corner a numpad key points to (7 = north-west)
 // Movers are 'input' unless opts.mode says 'realtime'.
 export function room(rows, opts = {}) {
@@ -38,6 +39,12 @@ export function room(rows, opts = {}) {
       case '9': l.cells[i] = 'tri:ne'; break;
       case '1': l.cells[i] = 'tri:sw'; break;
       case '3': l.cells[i] = 'tri:se'; break;
+      case '>': l.cells[i] = 'gate:right'; break;
+      case '<': l.cells[i] = 'gate:left'; break;
+      case '^': l.cells[i] = 'gate:up'; break;
+      case 'v': l.cells[i] = 'gate:down'; break;
+      case '=': l.cells[i] = 'gate:right,left'; break;
+      case '|': l.cells[i] = 'gate:up,down'; break;
       case '.': break;
       default: throw new Error('Unknown map character: ' + ch);
     }

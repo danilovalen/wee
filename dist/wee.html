@@ -34,7 +34,7 @@ h2:not(:first-child) { margin-top: 16px; }
 .opt { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 10px; }
 .opt > span:first-child { width: 100%; color: var(--dim); font-size: 12px; }
 .opt button { padding: 4px 8px; font-size: 12px; }
-.opt [data-aim], .opt [data-corner] { width: 32px; padding: 4px 0; font-size: 15px; }
+.opt [data-aim], .opt [data-corner], .opt [data-pass] { width: 32px; padding: 4px 0; font-size: 15px; }
 .opt .note { width: 100%; color: var(--dim); font-size: 12px; }
 #colours { display: flex; gap: 6px; }
 #colours button { width: 26px; height: 26px; padding: 0; border-radius: 50%; border-width: 2px; }
@@ -67,7 +67,7 @@ button { touch-action: manipulation; }
   aside { padding: 10px; }
   .hint { margin-top: 6px; }
   .opt button { min-height: 40px; }
-  .opt [data-aim], .opt [data-corner] { width: 44px; }
+  .opt [data-aim], .opt [data-corner], .opt [data-pass] { width: 44px; }
   #colours button { width: 36px; height: 36px; }
   .power { padding: 10px 0; }
   .radio { padding: 8px 0; }
@@ -111,6 +111,13 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
           <button type="button" data-aim="down" title="Down">&darr;</button>
           <button type="button" data-aim="left" title="Left">&larr;</button>
           <small class="note">Place it on a box, a heavy box or an enemy to mount it there.</small>
+        </div>
+        <div class="opt" data-for="gate">
+          <span>Lets things through going</span>
+          <button type="button" data-pass="up" title="Up">&uarr;</button>
+          <button type="button" data-pass="right" title="Right">&rarr;</button>
+          <button type="button" data-pass="down" title="Down">&darr;</button>
+          <button type="button" data-pass="left" title="Left">&larr;</button>
         </div>
         <div class="opt" data-for="tri">
           <span>Solid corner</span>
@@ -242,6 +249,7 @@ function parseLevel(text) {
 function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
+  if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
   return (kind === 'button' || kind === 'door') && COLOURS.includes(colour);
@@ -288,9 +296,15 @@ function facing(s, x, y, d) {
   return here && !openFaces(here).includes(EXIT_FACE[d]) ? turn(here, d) : d;
 }
 
+// A one-way tile ('gate:right', 'gate:right,left') lets things move onto it and off
+// it only along its listed directions; any other way, it is a wall.
+const gateAt = (s, x, y) => { const c = inb(s, x, y) && cellAt(s, x, y); return c && c.startsWith('gate:') ? c.slice(5).split(',') : null; };
+
 function stepTo(s, x, y, d) {
   d = facing(s, x, y, d);
   const [dx, dy] = DIRS[d], nx = x + dx, ny = y + dy;
+  const from = gateAt(s, x, y), to = gateAt(s, nx, ny);
+  if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;
   if (solidCell(s, nx, ny)) return null;
   const tri = triAt(s, nx, ny);
   if (tri && !openFaces(tri).includes(ENTRY_FACE[d])) return null;
@@ -627,6 +641,19 @@ function drawCell(g, c, x, y, s, scale = 1) {
   } else if (c === 'wall') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+  } else if (c.startsWith('gate:')) {
+    // Rails along the sides it blocks, and a chevron for each way it lets through.
+    const ds = c.slice(5).split(','), across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
+    g.fillStyle = '#1d2230'; g.fillRect(1, 1, T - 2, T - 2);
+    g.fillStyle = INK.wall;
+    if (!upDown) { g.fillRect(1, 1, T - 2, 5); g.fillRect(1, T - 6, T - 2, 5); }
+    if (!across) { g.fillRect(1, 1, 5, T - 2); g.fillRect(T - 6, 1, 5, T - 2); }
+    g.strokeStyle = '#7fe3a0'; g.lineWidth = 2.6; g.lineJoin = 'round';
+    for (const d of ds) {
+      g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
+      g.beginPath(); g.moveTo(2, -6); g.lineTo(8, 0); g.lineTo(2, 6); g.stroke();
+      g.restore();
+    }
   } else if (c.startsWith('receiver:')) {
     // A catcher: a block with a coloured eye that glows while a beam holds it.
     const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
@@ -876,6 +903,7 @@ const TOOLS = [
   { id: 'box', label: 'Box' },
   { id: 'heavy', label: 'Heavy box' },
   { id: 'tri', label: 'Triangle' },
+  { id: 'gate', label: 'One-way' },
   { id: 'button', label: 'Button' },
   { id: 'door', label: 'Door' },
   { id: 'receiver', label: 'Receiver' },
@@ -902,7 +930,7 @@ function starterLevel() {
   return l;
 }
 
-const ui = { tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se' };
+const ui = { tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'] };
 let level = starterLevel();
 let played = null, keylog = [];
 let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
@@ -929,7 +957,7 @@ const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 function holds(x, y, tool) {
   const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
   if (tool === 'wall' || tool === 'checkpoint') return c === tool;
-  if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver') return c.startsWith(tool + ':');
+  if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;
 }
@@ -954,6 +982,7 @@ function describe(x, y) {
     if (kind === 'wall') parts.push('Block');
     else if (kind === 'checkpoint') parts.push('Checkpoint');
     else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
+    else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
     else parts.push(`${COLOUR_NAME[v]} ${kind}`);
   }
   if (level.start.x === x && level.start.y === y) parts.push('Start');
@@ -974,8 +1003,11 @@ function place(x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver'].includes(ui.tool)) setCell('');
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'gate'].includes(ui.tool)) setCell('');
     else removePiece();
+  } else if (t === 'gate') {
+    if (isStart) return;
+    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
   } else if (t === 'tri') {
     if (isStart) return;
     removePiece(); setCell('tri:' + ui.corner);
@@ -1148,8 +1180,8 @@ function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' ? tool : tool === 'tri' ? 'tri:se' : tool + ':red';
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'look') {
     x.strokeStyle = '#c3cad8'; x.lineWidth = 2.5;
@@ -1183,6 +1215,12 @@ function buildPanels() {
   document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { ui.axis = b.dataset.axis; syncPanel(); });
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { ui.mode = b.dataset.mode; syncPanel(); });
   document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { ui.corner = b.dataset.corner; syncPanel(); });
+  document.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => {
+    const d = b.dataset.pass;
+    if (ui.pass.includes(d)) { if (ui.pass.length > 1) ui.pass = ui.pass.filter(p => p !== d); }
+    else ui.pass = [...ui.pass, d];
+    syncPanel();
+  });
   document.querySelectorAll('[data-aim]').forEach(b => b.onclick = () => {
     const d = b.dataset.aim;
     if (ui.aim.includes(d)) { if (ui.aim.length > 1) ui.aim = ui.aim.filter(a => a !== d); }
@@ -1235,6 +1273,11 @@ function syncPanel() {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === ui.mode));
   document.querySelectorAll('[data-colour]').forEach(b => b.classList.toggle('on', b.dataset.colour === ui.colour));
   document.querySelectorAll('[data-corner]').forEach(b => b.classList.toggle('on', b.dataset.corner === ui.corner));
+  document.querySelectorAll('[data-pass]').forEach(b => {
+    const on = ui.pass.includes(b.dataset.pass);
+    b.classList.toggle('on', on);
+    b.disabled = on && ui.pass.length === 1;
+  });
   document.querySelectorAll('[data-aim]').forEach(b => {
     const on = ui.aim.includes(b.dataset.aim);
     b.classList.toggle('on', on);

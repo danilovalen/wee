@@ -347,4 +347,38 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('an unknown triangle is refused', refused === 1);
 }
 
+{ // one-way and two-way tiles: through along their arrows, a wall any other way
+  const s = slide(createGame(room(['########', '#P..>..#', '########'])), 'right');
+  check('a slide passes a one-way tile going its way', at(s.player, 6, 1), JSON.stringify(s.player));
+  const t = slide(createGame(room(['########', '#..>..P#', '########'])), 'left');
+  check('against its arrow it is a wall', at(t.player, 4, 1), JSON.stringify(t.player));
+  const u = slide(createGame(room(['#####', '#...#', '#.>.#', '#...#', '#.P.#', '#####'])), 'up');
+  check('across its arrow it is a wall too', at(u.player, 2, 3), JSON.stringify(u.player));
+  const v = createGame(room(['#####', '#...#', '#.>.#', '#...#', '#####']));
+  v.player.x = 2; v.player.y = 2;
+  slide(v, 'up');
+  check('standing on one, you can only leave its way', at(v.player, 2, 2));
+  slide(v, 'right');
+  check('and leaving its way works', at(v.player, 3, 2));
+  const w = slide(slide(createGame(room(['#######', '#P.=..#', '#######'])), 'right'), 'left');
+  check('a two-way tile lets you through both ways', at(w.player, 1, 1), JSON.stringify(w.player));
+  const b = slide(createGame(room(['########', '#..>B.P#', '########'])), 'left');
+  check('a box cannot be pushed against an arrow', at(b.entities[0], 4, 1) && at(b.player, 5, 1), JSON.stringify(b.entities[0]));
+  const m = createGame(room(['#######', '#M.<..#', '#P....#', '#######']));
+  worldStep(m, 'right'); worldStep(m, 'right');
+  check('a moving block turns back at an arrow against it', at(m.entities[0], 1, 1), JSON.stringify(m.entities[0]));
+  const l = createGame(room(['########', '#T.<..P#', '#......#', '########']));
+  step(l);
+  check('a beam stops at an arrow against it', l.deaths === 0 && l.beams[0].path.at(-1)[0] === 2, JSON.stringify(l.beams[0].path));
+  const k = createGame(room(['########', '#T.>..P#', '#......#', '########']));
+  k.checkpoint = { x: 1, y: 2 };
+  step(k);
+  check('and passes one going its way', k.deaths === 1);
+  let refused = 0;
+  for (const c of ['gate:', 'gate:up,up', 'gate:north']) {
+    try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: [c, ...Array(8).fill('')] })); } catch { refused++; }
+  }
+  check('a one-way tile with bad directions is refused', refused === 3, refused + '/3');
+}
+
 done();

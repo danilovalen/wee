@@ -27,7 +27,7 @@ h2:not(:first-child) { margin-top: 16px; }
 .opt { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 10px; }
 .opt > span:first-child { width: 100%; color: var(--dim); font-size: 12px; }
 .opt button { padding: 4px 8px; font-size: 12px; }
-.opt [data-aim], .opt [data-corner] { width: 32px; padding: 4px 0; font-size: 15px; }
+.opt [data-aim], .opt [data-corner], .opt [data-pass] { width: 32px; padding: 4px 0; font-size: 15px; }
 .opt .note { width: 100%; color: var(--dim); font-size: 12px; }
 #colours { display: flex; gap: 6px; }
 #colours button { width: 26px; height: 26px; padding: 0; border-radius: 50%; border-width: 2px; }
@@ -60,7 +60,7 @@ button { touch-action: manipulation; }
   aside { padding: 10px; }
   .hint { margin-top: 6px; }
   .opt button { min-height: 40px; }
-  .opt [data-aim], .opt [data-corner] { width: 44px; }
+  .opt [data-aim], .opt [data-corner], .opt [data-pass] { width: 44px; }
   #colours button { width: 36px; height: 36px; }
   .power { padding: 10px 0; }
   .radio { padding: 8px 0; }

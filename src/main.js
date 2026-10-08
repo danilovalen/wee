@@ -19,6 +19,7 @@ const TOOLS = [
   { id: 'box', label: 'Box' },
   { id: 'heavy', label: 'Heavy box' },
   { id: 'tri', label: 'Triangle' },
+  { id: 'gate', label: 'One-way' },
   { id: 'button', label: 'Button' },
   { id: 'door', label: 'Door' },
   { id: 'receiver', label: 'Receiver' },
@@ -45,7 +46,7 @@ function starterLevel() {
   return l;
 }
 
-const ui = { tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se' };
+const ui = { tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'] };
 let level = starterLevel();
 let played = null, keylog = [];
 let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
@@ -72,7 +73,7 @@ const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 function holds(x, y, tool) {
   const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
   if (tool === 'wall' || tool === 'checkpoint') return c === tool;
-  if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver') return c.startsWith(tool + ':');
+  if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;
 }
@@ -97,6 +98,7 @@ function describe(x, y) {
     if (kind === 'wall') parts.push('Block');
     else if (kind === 'checkpoint') parts.push('Checkpoint');
     else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
+    else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
     else parts.push(`${COLOUR_NAME[v]} ${kind}`);
   }
   if (level.start.x === x && level.start.y === y) parts.push('Start');
@@ -117,8 +119,11 @@ function place(x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver'].includes(ui.tool)) setCell('');
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'gate'].includes(ui.tool)) setCell('');
     else removePiece();
+  } else if (t === 'gate') {
+    if (isStart) return;
+    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
   } else if (t === 'tri') {
     if (isStart) return;
     removePiece(); setCell('tri:' + ui.corner);
@@ -291,8 +296,8 @@ function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' ? tool : tool === 'tri' ? 'tri:se' : tool + ':red';
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'look') {
     x.strokeStyle = '#c3cad8'; x.lineWidth = 2.5;
@@ -326,6 +331,12 @@ function buildPanels() {
   document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { ui.axis = b.dataset.axis; syncPanel(); });
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { ui.mode = b.dataset.mode; syncPanel(); });
   document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { ui.corner = b.dataset.corner; syncPanel(); });
+  document.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => {
+    const d = b.dataset.pass;
+    if (ui.pass.includes(d)) { if (ui.pass.length > 1) ui.pass = ui.pass.filter(p => p !== d); }
+    else ui.pass = [...ui.pass, d];
+    syncPanel();
+  });
   document.querySelectorAll('[data-aim]').forEach(b => b.onclick = () => {
     const d = b.dataset.aim;
     if (ui.aim.includes(d)) { if (ui.aim.length > 1) ui.aim = ui.aim.filter(a => a !== d); }
@@ -378,6 +389,11 @@ function syncPanel() {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === ui.mode));
   document.querySelectorAll('[data-colour]').forEach(b => b.classList.toggle('on', b.dataset.colour === ui.colour));
   document.querySelectorAll('[data-corner]').forEach(b => b.classList.toggle('on', b.dataset.corner === ui.corner));
+  document.querySelectorAll('[data-pass]').forEach(b => {
+    const on = ui.pass.includes(b.dataset.pass);
+    b.classList.toggle('on', on);
+    b.disabled = on && ui.pass.length === 1;
+  });
   document.querySelectorAll('[data-aim]').forEach(b => {
     const on = ui.aim.includes(b.dataset.aim);
     b.classList.toggle('on', on);

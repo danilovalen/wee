@@ -118,6 +118,12 @@ try {
   lv = (await text()).level;
   check('a follow piece saves its clock', lv.entities.find(e => e.x === 14 && e.y === 3)?.mode === 'follow');
   await page.click('[data-mode=input]');
+  await page.click('[data-tool=gate]');
+  await page.click('[data-pass=left]');
+  q = at(15, 3); await page.mouse.click(q.x, q.y);
+  check('a one-way tile keeps its directions', (await text()).level.cells[3 * 20 + 15] === 'gate:right,left', (await text()).level.cells[3 * 20 + 15]);
+  await page.click('[data-pass=right]');
+  check('the last allowed direction cannot be turned off', await page.locator('[data-pass=left]').isDisabled());
   await page.click('[data-tool=wall]');
   check('enemy options hide for a block', !(await page.locator('[data-axis=h]').isVisible()));
   await page.screenshot({ path: 'shots/edit.png' });

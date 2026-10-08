@@ -85,6 +85,7 @@ export function parseLevel(text) {
 function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
+  if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
   return (kind === 'button' || kind === 'door') && COLOURS.includes(colour);
@@ -131,9 +132,15 @@ function facing(s, x, y, d) {
   return here && !openFaces(here).includes(EXIT_FACE[d]) ? turn(here, d) : d;
 }
 
+// A one-way tile ('gate:right', 'gate:right,left') lets things move onto it and off
+// it only along its listed directions; any other way, it is a wall.
+const gateAt = (s, x, y) => { const c = inb(s, x, y) && cellAt(s, x, y); return c && c.startsWith('gate:') ? c.slice(5).split(',') : null; };
+
 function stepTo(s, x, y, d) {
   d = facing(s, x, y, d);
   const [dx, dy] = DIRS[d], nx = x + dx, ny = y + dy;
+  const from = gateAt(s, x, y), to = gateAt(s, nx, ny);
+  if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;
   if (solidCell(s, nx, ny)) return null;
   const tri = triAt(s, nx, ny);
   if (tri && !openFaces(tri).includes(ENTRY_FACE[d])) return null;

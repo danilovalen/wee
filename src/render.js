@@ -41,6 +41,19 @@ function drawCell(g, c, x, y, s, scale = 1) {
   } else if (c === 'wall') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+  } else if (c.startsWith('gate:')) {
+    // Rails along the sides it blocks, and a chevron for each way it lets through.
+    const ds = c.slice(5).split(','), across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
+    g.fillStyle = '#1d2230'; g.fillRect(1, 1, T - 2, T - 2);
+    g.fillStyle = INK.wall;
+    if (!upDown) { g.fillRect(1, 1, T - 2, 5); g.fillRect(1, T - 6, T - 2, 5); }
+    if (!across) { g.fillRect(1, 1, 5, T - 2); g.fillRect(T - 6, 1, 5, T - 2); }
+    g.strokeStyle = '#7fe3a0'; g.lineWidth = 2.6; g.lineJoin = 'round';
+    for (const d of ds) {
+      g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
+      g.beginPath(); g.moveTo(2, -6); g.lineTo(8, 0); g.lineTo(2, 6); g.stroke();
+      g.restore();
+    }
   } else if (c.startsWith('receiver:')) {
     // A catcher: a block with a coloured eye that glows while a beam holds it.
     const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);

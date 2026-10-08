@@ -53,6 +53,11 @@ const M = [
   ['src/sim.js', "if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));", "if (c.startsWith('receiver:')) return true;", 'sim'],
   ['src/main.js', "  if (ui.tool === 'look') { $('placeHint').textContent = describe(c.x, c.y); return; }\n", "", 'browser'],
   ['src/main.js', "  if (m === 'edit') { ui.tool = 'look'; syncPanel(); }\n", "", 'browser'],
+  ['src/sim.js', "if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;", "if (to && !to.includes(d)) return null;", 'sim'],
+  ['src/sim.js', "if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;", "if (from && !from.includes(d)) return null;", 'sim'],
+  ['src/sim.js', "return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d));", "return true;", 'sim'],
+  ['src/main.js', "removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));", "removePiece(); setCell('gate:right');", 'browser'],
+  ['src/main.js', "b.disabled = on && ui.pass.length === 1;", "b.disabled = false;", 'browser'],
   // page
   ['src/main.js', "if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {", "if (false) {", 'browser'],
   ['src/main.js', "b.disabled = on && ui.aim.length === 1;", "b.disabled = false;", 'browser'],

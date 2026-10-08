@@ -60,6 +60,11 @@ Its solid sides stop things like a wall.
 - The beam kills you (unless you are in the air) and weak enemies. Blocks, boxes, movers and
   strong enemies stop it.
 
+## One-way tile
+
+Lets things move onto it and off it only along its chosen directions (one way, two ways, up to
+four); any other way it is a wall. You, boxes, heavy boxes, movers, enemies and beams all obey it.
+
 ## Receiver
 
 A block with a coloured eye. While a turret beam ends on it, it counts as a pressed button of its
