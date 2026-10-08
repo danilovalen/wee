@@ -488,4 +488,80 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('both held, it opens', on.open.red);
 }
 
+{ // a closing door squashes you, weak enemies and boxes; strong enemies, heavy boxes and blocks hold it
+  const doorRoom = (kind, opts) => {
+    const l = room(['#######', '#D....#', '#.M...#', '#.....#', '#######'], opts);
+    l.cells[2 * 7 + 2] = 'button:red';
+    if (kind) { l.start = { x: 4, y: 3 }; l.entities.push({ kind, x: 1, y: 1, axis: 'h', dir: 1, mode: 'realtime' }); }
+    else l.start = { x: 1, y: 1 };
+    const g = createGame(l);
+    g.checkpoint = { x: 5, y: 3 };
+    worldStep(g, 'right');
+    return g;
+  };
+  const you = doorRoom(null);
+  check('a closing door squashes you', you.deaths === 1 && !you.open.red);
+  const arm = doorRoom(null, { powers: { armored: true } });
+  check('armored, you hold it open', arm.deaths === 0 && arm.open.red);
+  for (const k of ['enemy', 'box']) {
+    const g = doorRoom(k);
+    check(`a closing door destroys a ${k}`, g.entities.find(e => e.kind === k).dead && !g.open.red);
+  }
+  for (const k of ['strong', 'heavy', 'mover']) {
+    const g = doorRoom(k);
+    check(`a ${k} holds the door open`, !g.entities.find(e => e.x === 1 && e.y === 1).dead && g.open.red);
+  }
+}
+{ // armored: weak enemies, blocks and doors cannot crush you; strong enemies, heavy boxes, beams and death blocks still can
+  const A = { powers: { armored: true } };
+  const l = room(['######', '#.PE.#', '######'], A);
+  l.entities[0].dir = -1;
+  const e = createGame(l);
+  worldStep(e);
+  check('a weak enemy walking into you turns back', e.deaths === 0 && at(e.entities[0], 4, 1), JSON.stringify(e.entities[0]));
+  const sl = slide(createGame(room(['#######', '#P..E.#', '#######'], { ...A, mode: 'realtime' })), 'right');
+  check('sliding into a weak enemy stops you in front', sl.deaths === 0 && at(sl.player, 3, 1), JSON.stringify(sl.player));
+  const st = room(['######', '#.PS.#', '#....#', '######'], A);
+  st.entities[0].dir = -1;
+  const sg = createGame(st);
+  sg.checkpoint = { x: 1, y: 2 };
+  worldStep(sg);
+  check('a strong enemy still kills you', sg.deaths === 1);
+  const m = createGame(room(['#####', '#MP##', '#...#', '#####'], A));
+  worldStep(m);
+  check('a block cannot crush you against a wall', m.deaths === 0 && at(m.player, 2, 1) && at(m.entities[0], 1, 1), JSON.stringify(m.entities[0]));
+  const hv = createGame(room(['########', '#..P..H#', '#......#', '########'], A));
+  hv.checkpoint = { x: 1, y: 2 };
+  hv.entities[0].slide = 'left';
+  for (let i = 0; i < 5; i++) step(hv);
+  check('a heavy box still squashes you', hv.deaths === 1);
+  const sw = createGame(room(['#######', '#.....#', '#P..X.#', '#######'], A));
+  slide(sw, 'right');
+  check('a death block still kills you', sw.deaths === 1);
+  const bm = createGame(room(['#######', '#T..P.#', '#.....#', '#######'], A));
+  bm.checkpoint = { x: 5, y: 2 };
+  step(bm);
+  check('a beam still kills you', bm.deaths === 1);
+  const q = room(['#####', '#PE.#', '#...#', '#####'], A);
+  q.entities[0].dir = -1;
+  const hq = createGame(q);
+  step(hq, ['hide']);
+  for (let i = 0; i < 8; i++) step(hq);
+  check('coming back under a weak enemy, you are fine', hq.deaths === 0);
+  const sq = room(['#####', '#PS.#', '#...#', '#####'], A);
+  sq.entities[0].dir = -1;
+  const hs = createGame(sq);
+  hs.checkpoint = { x: 3, y: 2 };
+  step(hs, ['hide']);
+  for (let i = 0; i < 8; i++) step(hs);
+  check('under a strong one, you are squashed', hs.deaths === 1);
+  const pushed = createGame(room(['######', '#MP..#', '######'], A));
+  worldStep(pushed);
+  check('a block still pushes you when it can', at(pushed.player, 3, 1));
+  const ls = createGame(room(['#######', '#P...E#', '#######'], A));
+  ls.entities[0].slide = 'left';
+  for (let i = 0; i < 6; i++) step(ls);
+  check('a launched weak enemy stops at you', ls.deaths === 0 && at(ls.entities[0], 2, 1), JSON.stringify(ls.entities[0]));
+}
+
 done();

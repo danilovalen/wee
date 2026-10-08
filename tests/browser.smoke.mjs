@@ -165,6 +165,15 @@ try {
     return [d[0], d[1], d[2]];
   }, s.player);
   check('the player is painted on its tile', px[1] > 180 && px[2] > 180 && px[0] < 140, px.join(','));
+  await page.locator('#statusList [data-power=armored]').setChecked(true);
+  await page.evaluate(() => window.advanceTime(60));
+  const rim = await page.evaluate(({ x, y }) => {
+    const c = document.getElementById('game'), tile = c.width / window.wee.getLevel().w;
+    const d = c.getContext('2d').getImageData(Math.round((x + 0.5 + 11.5 / 32) * tile), Math.round((y + 0.5) * tile), 1, 1).data;
+    return [d[0], d[1], d[2]];
+  }, s.player);
+  check('armored, the player wears a steel rim', rim[2] > 160 && rim[0] > 110 && rim[0] < rim[2], rim.join(','));
+  await page.locator('#statusList [data-power=armored]').setChecked(false);
 
   await page.keyboard.press('ArrowDown');
   await page.evaluate(() => window.advanceTime(600));

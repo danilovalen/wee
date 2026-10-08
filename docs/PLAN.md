@@ -86,7 +86,16 @@ keeps the beam off. It joins its colour's buttons and receivers: every one must 
 A block with a coloured eye. While a turret beam ends on it, it counts as a pressed button of its
 colour, so it combines with that colour's buttons (all must be held).
 
+## Armored (status, a toggle for now)
+
+Weak enemies, blocks and closing doors cannot crush you: an enemy turns back, a block that cannot
+push you stops, a door stays open. Strong enemies, heavy boxes, beams and death blocks still kill
+you. Drawn as a steel rim with rivets.
+
 ## Puzzle pieces: box, button, door
+
+A closing door squashes you, weak enemies, light boxes and lone turrets. A strong enemy, a heavy
+box or a block in it holds that colour's doors open.
 
 - **Box (light):** sliding into it pushes it, and it slides on ahead of you. You both keep
   going until the box hits a block; you stop on the tile behind it. Moving blocks and enemies

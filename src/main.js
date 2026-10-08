@@ -35,8 +35,9 @@ const POWER_TEXT = {
   hook: 'Stop on grapple tiles.',
   swim: 'Pass through tiles that would kill you.',
   light: 'When standing still, light up dark rooms.',
+  armored: 'Weak enemies, blocks and closing doors cannot crush you. Strong enemies, heavy boxes, beams and death blocks still can.',
 };
-const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', hook: 'Hook', swim: 'Swim', light: 'Light' };
+const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', hook: 'Hook', swim: 'Swim', light: 'Light', armored: 'Armored' };
 
 const touch = matchMedia('(pointer: coarse)').matches;
 const portrait = () => innerHeight > innerWidth;
@@ -363,7 +364,7 @@ function buildPanels() {
     const name = document.createElement('b'); name.textContent = NAMES[p];
     const say = document.createElement('small'); say.textContent = NEEDS[p] ? 'Needs ' + NEEDS[p] + '.' : POWER_TEXT[p];
     row.append(box, name, say);
-    $('powerList').append(row);
+    $(p === 'armored' ? 'statusList' : 'powerList').append(row);
   }
   document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { level.clock = r.value; if (game) pending.push('clock:' + r.value); });
   $('mode').onclick = () => setMode(mode === 'play' ? 'edit' : 'play');

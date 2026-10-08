@@ -42,7 +42,7 @@ function checkTurret(t) {
 }
 
 // A power listed in NEEDS cannot act until its block type exists.
-export const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'hook', 'swim', 'light'];
+export const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'hook', 'swim', 'light', 'armored'];
 export const NEEDS = { hook: 'grapple tiles', swim: 'hazard tiles', light: 'dark levels' };
 
 export function emptyLevel(w = 20, h = 12) {
@@ -51,7 +51,7 @@ export function emptyLevel(w = 20, h = 12) {
     cells: Array(w * h).fill(''),
     start: { x: 1, y: 1 },
     entities: [],
-    powers: { boomerang: true, dive: true, laser: true, cycle: true, hook: false, swim: false, light: false },
+    powers: { boomerang: true, dive: true, laser: true, cycle: true, hook: false, swim: false, light: false, armored: false },
     clock: 'tile',
   };
 }
@@ -169,9 +169,14 @@ function land(s, e, t) {
 const entAt = (s, x, y, not) => s.entities.find(e => !e.dead && e !== not && e.x === x && e.y === y);
 // A hidden player is not on the board: nothing meets it, nothing stops at it.
 const playerAt = (s, x, y) => !s.player.hidden && s.player.x === x && s.player.y === y;
+// Armored, only the heavy things crush you: a strong enemy and a heavy box.
+const crushes = (s, e) => e.kind === 'heavy' || e.kind === 'strong' || !s.powers.armored;
+// A closing door squashes what is in it, unless one of these holds it open.
+const HOLDS_DOOR = ['strong', 'heavy', 'mover'];
 
 // A colour's doors open only while every button, receiver and sensor of that colour
-// is held. A door that is occupied cannot close on what stands in it.
+// is held. A closing door squashes you, weak enemies, boxes and lone turrets, unless a
+// strong enemy, a heavy box or a block stands in it (or you, armored): then it stays open.
 function refreshDoors(s) {
   const pressed = {}, any = {};
   // A receiver or a sensor is a button that a turret beam holds down.
@@ -185,15 +190,23 @@ function refreshDoors(s) {
     any[col] = true;
     pressed[col] = (pressed[col] ?? true) && down;
   });
+  let squashed = false;
   for (const col of COLOURS) {
     const want = !!(any[col] && pressed[col]);
     if (!want && s.open[col]) {
-      const blocked = s.cells.some((c, i) => c === 'door:' + col &&
-        (entAt(s, i % s.w, Math.floor(i / s.w)) || playerAt(s, i % s.w, Math.floor(i / s.w))));
-      if (blocked) continue;
+      const doors = [];
+      s.cells.forEach((c, i) => { if (c === 'door:' + col) doors.push([i % s.w, Math.floor(i / s.w)]); });
+      const inside = ([x, y]) => s.entities.filter(e => !e.dead && e.x === x && e.y === y);
+      const youIn = ([x, y]) => s.player.x === x && s.player.y === y;
+      if (doors.some(d => inside(d).some(e => HOLDS_DOOR.includes(e.kind)) || (youIn(d) && s.powers.armored))) continue;
+      for (const d of doors) {
+        for (const e of inside(d)) kill(s, e, 'door');
+        if (youIn(d) && !s.player.hidden) squashed = true;
+      }
     }
     s.open[col] = want;
   }
+  if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
 }
 
 function respawn(s) {
@@ -221,7 +234,7 @@ function playerStep(s, d, diving) {
   if (e) {
     let b;
     if (e.kind === 'enemy' && diving) kill(s, e, 'dive');
-    else if (ENEMY.includes(e.kind)) { die(s); return 'died'; }
+    else if (ENEMY.includes(e.kind)) { if (!crushes(s, e)) return 'blocked'; die(s); return 'died'; }
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
@@ -362,6 +375,7 @@ function moveMover(s, e, d, turned) {
   }
   if (playerAt(s, t.x, t.y)) {
     if (ENEMY.includes(e.kind)) {
+      if (!crushes(s, e)) { blocked(); return; }
       e.x = t.x; e.y = t.y;
       die(s);
       return;
@@ -369,6 +383,7 @@ function moveMover(s, e, d, turned) {
     const p = s.player;
     if ((b = pushTo(s, t.x, t.y, t.d)) && b.death) die(s);
     else if (b) { p.x = b.x; p.y = b.y; s.events.push({ type: 'pushed' }); }
+    else if (!crushes(s, e)) { blocked(); return; }
     else { e.x = t.x; e.y = t.y; die(s); return; }
   }
   e.x = t.x; e.y = t.y;
@@ -387,7 +402,7 @@ function slidePiece(s, e) {
     if (e.kind === 'heavy' && ENEMY.includes(o.kind)) kill(s, o, 'squash');
     else { e.slide = null; return; }
   }
-  if (playerAt(s, t.x, t.y) && e.kind !== 'heavy' && !ENEMY.includes(e.kind)) { e.slide = null; return; }
+  if (playerAt(s, t.x, t.y) && (!crushes(s, e) || (e.kind !== 'heavy' && !ENEMY.includes(e.kind)))) { e.slide = null; return; }
   e.x = t.x; e.y = t.y; e.slide = t.d;
   if (playerAt(s, t.x, t.y)) die(s);
 }
@@ -420,7 +435,7 @@ function unhide(s) {
   if (++p.hideTicks < HIDE_TICKS || s.entities.some(e => !e.dead && e.rush)) return;
   p.hidden = false;
   s.events.push({ type: 'unhide' });
-  if (entAt(s, p.x, p.y) || solidCell(s, p.x, p.y)) { s.events.push({ type: 'squash', x: p.x, y: p.y }); die(s); }
+  if (s.entities.some(e => !e.dead && e.x === p.x && e.y === p.y && crushes(s, e)) || solidCell(s, p.x, p.y)) { s.events.push({ type: 'squash', x: p.x, y: p.y }); die(s); }
 }
 
 // Besides keys, a run takes settings changed mid-play: 'power:dive:0', 'clock:slide'.
