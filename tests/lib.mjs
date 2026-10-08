@@ -1,0 +1,53 @@
+import { emptyLevel } from '../src/sim.js';
+
+// A room drawn in text. Legend:
+//   #  wall          P  player start     C  checkpoint
+//   M  mover, h      V  mover, v         E  enemy, h     F  enemy, v
+//   B  box           H  heavy box
+//   o  red button    D  red door         u  blue button  Q  blue door
+// Movers are 'input' unless opts.mode says 'realtime'.
+export function room(rows, opts = {}) {
+  const h = rows.length, w = rows[0].length;
+  const l = emptyLevel(w, h);
+  l.clock = opts.clock || 'tile';
+  if (opts.powers) l.powers = { ...l.powers, ...opts.powers };
+  const mode = opts.mode || 'input';
+  rows.forEach((row, y) => [...row].forEach((ch, x) => {
+    const i = y * w + x;
+    const put = (kind, axis) => l.entities.push({ kind, x, y, axis, dir: 1, mode });
+    switch (ch) {
+      case '#': l.cells[i] = 'wall'; break;
+      case 'C': l.cells[i] = 'checkpoint'; break;
+      case 'o': l.cells[i] = 'button:red'; break;
+      case 'D': l.cells[i] = 'door:red'; break;
+      case 'u': l.cells[i] = 'button:blue'; break;
+      case 'Q': l.cells[i] = 'door:blue'; break;
+      case 'P': l.start = { x, y }; break;
+      case 'M': put('mover', 'h'); break;
+      case 'V': put('mover', 'v'); break;
+      case 'E': put('enemy', 'h'); break;
+      case 'F': put('enemy', 'v'); break;
+      case 'B': put('box'); break;
+      case 'H': put('heavy'); break;
+      case '.': break;
+      default: throw new Error('Unknown map character: ' + ch);
+    }
+  }));
+  return l;
+}
+
+// Every gate ends on one "N/N passed" line; the runner treats a missing total as red.
+export function suite(name) {
+  const results = [];
+  const check = (label, cond, detail = '') => {
+    results.push(!!cond);
+    if (!cond) console.log(`FAIL ${name}: ${label}${detail ? ' :: ' + detail : ''}`);
+  };
+  const done = () => {
+    const ok = results.filter(Boolean).length;
+    console.log(`${name}: ${ok}/${results.length} passed`);
+    if (results.length === 0) { console.log('FAIL: checked nothing'); process.exit(1); }
+    process.exit(ok === results.length ? 0 : 1);
+  };
+  return { check, done };
+}

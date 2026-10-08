@@ -1,0 +1,13 @@
+{
+  "name": "wee",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "test": "node tools/run-tests.mjs",
+    "smoke": "node tests/browser.smoke.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.56"
+  }
+}

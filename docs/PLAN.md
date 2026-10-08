@@ -1,6 +1,7 @@
 # wee: ice slider sandbox, plan
 
-Status: planned 2026-10-08, nothing built. First test bed for the `game-skills` layer-1 skills.
+Status: first slice built 2026-10-08 (steps 1 to 7 below). Hook, Swim, Light and the
+blocks they need are not built yet. First test bed for the `game-skills` layer-1 skills.
 
 ## What it is
 
