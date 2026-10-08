@@ -34,7 +34,7 @@ h2:not(:first-child) { margin-top: 16px; }
 .opt { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 10px; }
 .opt > span:first-child { width: 100%; color: var(--dim); font-size: 12px; }
 .opt button { padding: 4px 8px; font-size: 12px; }
-.opt [data-aim], .opt [data-corner], .opt [data-pass] { width: 32px; padding: 4px 0; font-size: 15px; }
+.opt [data-aim], .opt [data-corner], .opt [data-pass], .opt [data-face] { width: 32px; padding: 4px 0; font-size: 15px; }
 .opt .note { width: 100%; color: var(--dim); font-size: 12px; }
 #colours { display: flex; gap: 6px; }
 #colours button { width: 26px; height: 26px; padding: 0; border-radius: 50%; border-width: 2px; }
@@ -67,7 +67,7 @@ button { touch-action: manipulation; }
   aside { padding: 10px; }
   .hint { margin-top: 6px; }
   .opt button { min-height: 40px; }
-  .opt [data-aim], .opt [data-corner], .opt [data-pass] { width: 44px; }
+  .opt [data-aim], .opt [data-corner], .opt [data-pass], .opt [data-face] { width: 44px; }
   #colours button { width: 36px; height: 36px; }
   .power { padding: 10px 0; }
   .radio { padding: 8px 0; }
@@ -111,6 +111,13 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
           <button type="button" data-aim="down" title="Down">&darr;</button>
           <button type="button" data-aim="left" title="Left">&larr;</button>
           <small class="note">Place it on a box, a heavy box or an enemy to mount it there.</small>
+        </div>
+        <div class="opt" data-for="spring">
+          <span>Faces</span>
+          <button type="button" data-face="up" title="Up">&uarr;</button>
+          <button type="button" data-face="right" title="Right">&rarr;</button>
+          <button type="button" data-face="down" title="Down">&darr;</button>
+          <button type="button" data-face="left" title="Left">&larr;</button>
         </div>
         <div class="opt" data-for="gate">
           <span>Lets things through going</span>
@@ -249,6 +256,8 @@ function parseLevel(text) {
 function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
+  if (c === 'death') return true;
+  if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
   if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
@@ -281,7 +290,7 @@ const cellAt = (s, x, y) => s.cells[y * s.w + x];
 function solidCell(s, x, y) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
-  if (c === 'wall' || c.startsWith('receiver:')) return true;
+  if (c === 'wall' || c.startsWith('receiver:') || c.startsWith('spring:')) return true;
   if (c.startsWith('door:')) return !s.open[c.slice(5)];
   return false;
 }
@@ -306,15 +315,24 @@ function stepTo(s, x, y, d) {
   const from = gateAt(s, x, y), to = gateAt(s, nx, ny);
   if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;
   if (solidCell(s, nx, ny)) return null;
+  if (cellAt(s, nx, ny) === 'death') return { x: nx, y: ny, d, death: true };
   const tri = triAt(s, nx, ny);
   if (tri && !openFaces(tri).includes(ENTRY_FACE[d])) return null;
   return { x: nx, y: ny, d };
 }
 
-// Where a piece at (x, y) pushed d would go, if that tile is free.
+// Where a piece at (x, y) pushed d would go, if that tile is free. A death block
+// always takes it.
 function pushTo(s, x, y, d) {
   const t = stepTo(s, x, y, d);
-  return t && !entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y) ? t : null;
+  return t && (t.death || (!entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y))) ? t : null;
+}
+
+// Puts a piece on t, or destroys it when t is a death block.
+function land(s, e, t) {
+  if (t.death) { kill(s, e, 'death'); return false; }
+  e.x = t.x; e.y = t.y;
+  return true;
 }
 
 const entAt = (s, x, y, not) => s.entities.find(e => !e.dead && e !== not && e.x === x && e.y === y);
@@ -365,6 +383,7 @@ function kill(s, e, how) {
 function playerStep(s, d, diving) {
   const p = s.player, t = stepTo(s, p.x, p.y, d);
   if (!t) return 'blocked';
+  if (t.death) { die(s); return 'died'; }
   const nx = t.x, ny = t.y, e = entAt(s, nx, ny);
   if (e) {
     let b;
@@ -373,7 +392,7 @@ function playerStep(s, d, diving) {
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d))) { e.x = b.x; e.y = b.y; }
+    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d))) land(s, e, b);
     else return 'blocked';
   }
   p.x = nx; p.y = ny; p.moved++;
@@ -418,7 +437,7 @@ function trace(s, x, y, d, hit, hitsPlayer) {
   let cx = x, cy = y, cd = d, wall = true, stop = null, player = false;
   for (let i = 0; i < s.w * s.h * 2; i++) {
     const t = stepTo(s, cx, cy, cd);
-    if (!t) { cd = facing(s, cx, cy, cd); stop = [cx + DIRS[cd][0], cy + DIRS[cd][1]]; break; }
+    if (!t || t.death) { cd = facing(s, cx, cy, cd); stop = [cx + DIRS[cd][0], cy + DIRS[cd][1]]; break; }
     path.push([t.x, t.y]);
     if (hitsPlayer && playerAt(s, t.x, t.y) && s.player.air === 0) { wall = false; player = true; break; }
     const o = entAt(s, t.x, t.y);
@@ -482,6 +501,7 @@ function worldStep(s, d) {
   s.worldSteps++;
   for (const e of s.entities) {
     if (e.dead || !MOVES.includes(e.kind)) continue;
+    if (e.slide) continue;
     if (e.mode === 'input' && !e.rush) moveMover(s, e);
     else if (e.mode === 'follow') moveMover(s, e, d);
   }
@@ -499,10 +519,11 @@ function moveMover(s, e, d, turned) {
   // Blocked, a patrol turns and moves the other way in the same step; a follower waits.
   const blocked = () => { if (d) return; e.dir = -e.dir; if (!turned) moveMover(s, e, null, true); };
   if (!t) { blocked(); return; }
+  if (t.death) { kill(s, e, 'death'); return; }
   const o = entAt(s, t.x, t.y, e);
   let b;
   if (o) {
-    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d))) { o.x = b.x; o.y = b.y; }
+    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d))) land(s, o, b);
     else { blocked(); return; }
   }
   if (playerAt(s, t.x, t.y)) {
@@ -512,23 +533,50 @@ function moveMover(s, e, d, turned) {
       return;
     }
     const p = s.player;
-    if ((b = pushTo(s, t.x, t.y, t.d))) { p.x = b.x; p.y = b.y; s.events.push({ type: 'pushed' }); }
+    if ((b = pushTo(s, t.x, t.y, t.d)) && b.death) die(s);
+    else if (b) { p.x = b.x; p.y = b.y; s.events.push({ type: 'pushed' }); }
     else { e.x = t.x; e.y = t.y; die(s); return; }
   }
   e.x = t.x; e.y = t.y;
   if (!d) { e.axis = t.d === 'left' || t.d === 'right' ? 'h' : 'v'; e.dir = t.d === 'right' || t.d === 'down' ? 1 : -1; }
 }
 
-function slideHeavy(s, e) {
+// A piece sliding on its own (a thrown heavy box, anything a spring launched) goes a
+// tile per tick until something stops it. A heavy box squashes enemies and you; an
+// enemy that reaches you kills you; anything else just stops.
+function slidePiece(s, e) {
   const t = stepTo(s, e.x, e.y, e.slide);
   if (!t) { e.slide = null; return; }
+  if (t.death) { kill(s, e, 'death'); return; }
   const o = entAt(s, t.x, t.y, e);
   if (o) {
-    if (ENEMY.includes(o.kind)) kill(s, o, 'squash');
+    if (e.kind === 'heavy' && ENEMY.includes(o.kind)) kill(s, o, 'squash');
     else { e.slide = null; return; }
   }
+  if (playerAt(s, t.x, t.y) && e.kind !== 'heavy' && !ENEMY.includes(e.kind)) { e.slide = null; return; }
   e.x = t.x; e.y = t.y; e.slide = t.d;
   if (playerAt(s, t.x, t.y)) die(s);
+}
+
+// A spring launches whatever stands on the tile its face looks at, when that piece
+// can move on that way. You are out of its reach in the air.
+function fireSprings(s) {
+  s.cells.forEach((c, i) => {
+    if (!c.startsWith('spring:')) return;
+    const d = c.slice(7), x = i % s.w + DIRS[d][0], y = Math.floor(i / s.w) + DIRS[d][1];
+    if (!inb(s, x, y)) return;
+    const p = s.player;
+    if (playerAt(s, x, y) && p.air === 0 && p.dir !== d && stepTo(s, x, y, d)) {
+      if (!p.dir) p.moved = 0;
+      p.dir = d;
+      s.events.push({ type: 'spring', x, y, d });
+    }
+    const e = entAt(s, x, y);
+    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d)) {
+      e.slide = d;
+      s.events.push({ type: 'spring', x, y, d });
+    }
+  });
 }
 
 // Besides keys, a run takes settings changed mid-play: 'power:dive:0', 'clock:slide'.
@@ -556,14 +604,17 @@ function step(s, inputs = []) {
   s.events = [];
   s.player.snap = false;
   for (const k of inputs) input(s, k);
+  // Pieces already sliding move first, so a piece a spring launched gets away
+  // before you reach it.
+  for (const e of s.entities) if (!e.dead && e.slide) slidePiece(s, e);
+  for (const e of s.entities) if (!e.dead && e.rush && !e.slide) rushOnce(s, e);
   if (s.player.dir) slideOnce(s, false);
-  for (const e of s.entities) if (!e.dead && e.kind === 'heavy' && e.slide) slideHeavy(s, e);
-  for (const e of s.entities) if (!e.dead && e.rush) rushOnce(s, e);
   if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
-    for (const e of s.entities) if (!e.dead && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
+    for (const e of s.entities) if (!e.dead && !e.slide && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
     turnTurrets(s, 'realtime');
   }
   if (s.player.air > 0) s.player.air--;
+  fireSprings(s);
   computeBeams(s, true);
   refreshDoors(s);
   s.tick++;
@@ -641,6 +692,24 @@ function drawCell(g, c, x, y, s, scale = 1) {
   } else if (c === 'wall') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+  } else if (c === 'death') {
+    // Spikes on a dark red slab.
+    g.fillStyle = '#3a0d14'; roundRect(g, 1, 1, T - 2, T - 2, 4); g.fill();
+    g.fillStyle = '#e8525c';
+    for (const [cx, cy] of [[9, 9], [23, 9], [16, 16], [9, 23], [23, 23]]) {
+      g.beginPath(); g.moveTo(cx, cy - 5); g.lineTo(cx + 4, cy + 4); g.lineTo(cx - 4, cy + 4); g.closePath(); g.fill();
+    }
+  } else if (c.startsWith('spring:')) {
+    // A block with a coil and a plate on the side it faces.
+    const d = c.slice(7);
+    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
+    g.strokeStyle = '#f2c94c'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(-8, 0);
+    for (let i = 0; i < 4; i++) { g.lineTo(-6 + i * 4, -6); g.lineTo(-4 + i * 4, 6); }
+    g.lineTo(9, 0); g.stroke();
+    g.fillStyle = '#f2c94c'; g.fillRect(10, -10, 4, 20);
+    g.restore();
   } else if (c.startsWith('gate:')) {
     // Rails along the sides it blocks, and a chevron for each way it lets through.
     const ds = c.slice(5).split(','), across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
@@ -904,6 +973,8 @@ const TOOLS = [
   { id: 'heavy', label: 'Heavy box' },
   { id: 'tri', label: 'Triangle' },
   { id: 'gate', label: 'One-way' },
+  { id: 'spring', label: 'Spring' },
+  { id: 'death', label: 'Death block' },
   { id: 'button', label: 'Button' },
   { id: 'door', label: 'Door' },
   { id: 'receiver', label: 'Receiver' },
@@ -930,7 +1001,7 @@ function starterLevel() {
   return l;
 }
 
-const ui = { tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'] };
+const ui = { tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' };
 let level = starterLevel();
 let played = null, keylog = [];
 let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
@@ -956,7 +1027,8 @@ const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 // Does (x, y) already hold the kind of thing this tool places?
 function holds(x, y, tool) {
   const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
-  if (tool === 'wall' || tool === 'checkpoint') return c === tool;
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death') return c === tool;
+  if (tool === 'spring') return c.startsWith('spring:');
   if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;
@@ -982,6 +1054,8 @@ function describe(x, y) {
     if (kind === 'wall') parts.push('Block');
     else if (kind === 'checkpoint') parts.push('Checkpoint');
     else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
+    else if (kind === 'death') parts.push('Death block');
+    else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
     else parts.push(`${COLOUR_NAME[v]} ${kind}`);
   }
@@ -1003,8 +1077,11 @@ function place(x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'gate'].includes(ui.tool)) setCell('');
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'gate', 'spring', 'death'].includes(ui.tool)) setCell('');
     else removePiece();
+  } else if (t === 'spring' || t === 'death') {
+    if (isStart) return;
+    removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
   } else if (t === 'gate') {
     if (isStart) return;
     removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
@@ -1180,8 +1257,8 @@ function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool + ':red';
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'look') {
     x.strokeStyle = '#c3cad8'; x.lineWidth = 2.5;
@@ -1215,6 +1292,7 @@ function buildPanels() {
   document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { ui.axis = b.dataset.axis; syncPanel(); });
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { ui.mode = b.dataset.mode; syncPanel(); });
   document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { ui.corner = b.dataset.corner; syncPanel(); });
+  document.querySelectorAll('[data-face]').forEach(b => b.onclick = () => { ui.face = b.dataset.face; syncPanel(); });
   document.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => {
     const d = b.dataset.pass;
     if (ui.pass.includes(d)) { if (ui.pass.length > 1) ui.pass = ui.pass.filter(p => p !== d); }
@@ -1273,6 +1351,7 @@ function syncPanel() {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === ui.mode));
   document.querySelectorAll('[data-colour]').forEach(b => b.classList.toggle('on', b.dataset.colour === ui.colour));
   document.querySelectorAll('[data-corner]').forEach(b => b.classList.toggle('on', b.dataset.corner === ui.corner));
+  document.querySelectorAll('[data-face]').forEach(b => b.classList.toggle('on', b.dataset.face === ui.face));
   document.querySelectorAll('[data-pass]').forEach(b => {
     const on = ui.pass.includes(b.dataset.pass);
     b.classList.toggle('on', on);

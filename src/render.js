@@ -41,6 +41,24 @@ function drawCell(g, c, x, y, s, scale = 1) {
   } else if (c === 'wall') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+  } else if (c === 'death') {
+    // Spikes on a dark red slab.
+    g.fillStyle = '#3a0d14'; roundRect(g, 1, 1, T - 2, T - 2, 4); g.fill();
+    g.fillStyle = '#e8525c';
+    for (const [cx, cy] of [[9, 9], [23, 9], [16, 16], [9, 23], [23, 23]]) {
+      g.beginPath(); g.moveTo(cx, cy - 5); g.lineTo(cx + 4, cy + 4); g.lineTo(cx - 4, cy + 4); g.closePath(); g.fill();
+    }
+  } else if (c.startsWith('spring:')) {
+    // A block with a coil and a plate on the side it faces.
+    const d = c.slice(7);
+    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
+    g.strokeStyle = '#f2c94c'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(-8, 0);
+    for (let i = 0; i < 4; i++) { g.lineTo(-6 + i * 4, -6); g.lineTo(-4 + i * 4, 6); }
+    g.lineTo(9, 0); g.stroke();
+    g.fillStyle = '#f2c94c'; g.fillRect(10, -10, 4, 20);
+    g.restore();
   } else if (c.startsWith('gate:')) {
     // Rails along the sides it blocks, and a chevron for each way it lets through.
     const ds = c.slice(5).split(','), across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');

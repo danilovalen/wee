@@ -65,6 +65,17 @@ Its solid sides stop things like a wall.
 Lets things move onto it and off it only along its chosen directions (one way, two ways, up to
 four); any other way it is a wall. You, boxes, heavy boxes, movers, enemies and beams all obey it.
 
+## Spring
+
+A solid tile facing one way. Whatever stands or passes on the tile in front of it is launched its
+way and slides until something stops it: you, boxes, heavy boxes, movers, enemies. A beam passes
+it by. It only fires when the way ahead is free, and not at you while airborne.
+
+## Death block
+
+Anything moving into it is destroyed: you, boxes, heavy boxes, movers, weak and strong enemies. A
+beam stops at it.
+
 ## Receiver
 
 A block with a coloured eye. While a turret beam ends on it, it counts as a pressed button of its

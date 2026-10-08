@@ -381,4 +381,55 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a one-way tile with bad directions is refused', refused === 3, refused + '/3');
 }
 
+{ // a spring launches whatever lands in front of it, the way it faces
+  const R = ['#######', '#.....#', '#.....#', '#P....#', '#..8..#', '#######'];
+  const s = slide(createGame(room(R)), 'right');
+  check('a spring turns your slide its way', at(s.player, 3, 1), JSON.stringify(s.player));
+  const b = slide(createGame(room(['#######', '#.....#', '#.....#', '#PB...#', '#..8..#', '#######'])), 'right');
+  for (let i = 0; i < 6; i++) step(b);
+  check('a pushed box gets launched', at(b.entities[0], 3, 1), JSON.stringify(b.entities[0]));
+  check('and you, stepping in front after it, get launched behind it', at(b.player, 3, 2), JSON.stringify(b.player));
+  const e = createGame(room(['#######', '#P....#', '#.....#', '#.E...#', '#..8..#', '#######']));
+  worldStep(e, 'right');
+  for (let i = 0; i < 6; i++) step(e);
+  check('an enemy stepping in front gets launched', at(e.entities[0], 3, 1), JSON.stringify(e.entities[0]));
+  const a = createGame(room(R));
+  a.player.x = 3; a.player.y = 3;
+  step(a, ['jump']);
+  check('a jump keeps you out of its reach', a.player.dir === null && at(a.player, 3, 3));
+  const w = createGame(room(['#####', '#...#', '#.P.#', '#.8.#', '#####']));
+  w.cells[1 * 5 + 2] = 'wall';
+  step(w);
+  check('it does not launch into a wall', w.player.dir === null);
+  const v = slide(createGame(room(['#######', '#P..8.#', '#######'])), 'right');
+  check('a spring is solid from its sides', at(v.player, 3, 1), JSON.stringify(v.player));
+  const l = createGame(room(['########', '#T.....#', '#P.8...#', '########']));
+  step(l);
+  check('a beam crossing it is untouched', l.beams[0].path.at(-1)[0] === 6, JSON.stringify(l.beams[0].path));
+}
+{ // a death block destroys whatever moves into it
+  const s = slide(createGame(room(['#######', '#.....#', '#P..X.#', '#######'])), 'right');
+  check('you die sliding into one', s.deaths === 1);
+  const b = slide(createGame(room(['#######', '#PB.X.#', '#######'])), 'right');
+  check('a pushed box is destroyed, and on ice you follow it in', b.entities[0].dead && b.deaths === 1, JSON.stringify(b.player));
+  const m = createGame(room(['#######', '#M.X..#', '#P....#', '#######']));
+  worldStep(m, 'right'); worldStep(m, 'right');
+  check('a moving block is destroyed', m.entities[0].dead);
+  const g = createGame(room(['#######', '#S.X..#', '#P....#', '#######']));
+  worldStep(g, 'right'); worldStep(g, 'right');
+  check('even a strong enemy is destroyed', g.entities[0].dead);
+  const h = createGame(room(['#########', '#P..H.X.#', '#.......#', '#########']));
+  step(h, ['right']); step(h, ['right']);
+  for (let i = 0; i < 5; i++) step(h);
+  check('a thrown heavy box is destroyed', h.entities[0].dead);
+  const t = createGame(room(['########', '#T..X.P#', '#......#', '########']));
+  step(t);
+  check('a beam stops at it', t.deaths === 0 && t.beams[0].path.at(-1)[0] === 3, JSON.stringify(t.beams[0].path));
+  const r = createGame(room(['#######', '#.....#', '#..M..#', '#..X..#', '#P....#', '#######']));
+  r.entities[0].axis = 'v';
+  r.checkpoint = { x: 1, y: 4 };
+  worldStep(r, 'right');
+  check('a vertical patrol into it is destroyed too', r.entities[0].dead);
+}
+
 done();

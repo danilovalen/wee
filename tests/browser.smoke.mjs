@@ -124,6 +124,13 @@ try {
   check('a one-way tile keeps its directions', (await text()).level.cells[3 * 20 + 15] === 'gate:right,left', (await text()).level.cells[3 * 20 + 15]);
   await page.click('[data-pass=right]');
   check('the last allowed direction cannot be turned off', await page.locator('[data-pass=left]').isDisabled());
+  await page.click('[data-tool=spring]');
+  await page.click('[data-face=left]');
+  q = at(16, 3); await page.mouse.click(q.x, q.y);
+  await page.click('[data-tool=death]');
+  q = at(17, 3); await page.mouse.click(q.x, q.y);
+  lv = (await text()).level;
+  check('a spring keeps the way it faces, and a death block places', lv.cells[3 * 20 + 16] === 'spring:left' && lv.cells[3 * 20 + 17] === 'death', lv.cells[3 * 20 + 16] + ' ' + lv.cells[3 * 20 + 17]);
   await page.click('[data-tool=wall]');
   check('enemy options hide for a block', !(await page.locator('[data-axis=h]').isVisible()));
   await page.screenshot({ path: 'shots/edit.png' });

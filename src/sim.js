@@ -85,6 +85,8 @@ export function parseLevel(text) {
 function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
+  if (c === 'death') return true;
+  if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
   if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
@@ -117,7 +119,7 @@ const cellAt = (s, x, y) => s.cells[y * s.w + x];
 function solidCell(s, x, y) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
-  if (c === 'wall' || c.startsWith('receiver:')) return true;
+  if (c === 'wall' || c.startsWith('receiver:') || c.startsWith('spring:')) return true;
   if (c.startsWith('door:')) return !s.open[c.slice(5)];
   return false;
 }
@@ -142,15 +144,24 @@ function stepTo(s, x, y, d) {
   const from = gateAt(s, x, y), to = gateAt(s, nx, ny);
   if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;
   if (solidCell(s, nx, ny)) return null;
+  if (cellAt(s, nx, ny) === 'death') return { x: nx, y: ny, d, death: true };
   const tri = triAt(s, nx, ny);
   if (tri && !openFaces(tri).includes(ENTRY_FACE[d])) return null;
   return { x: nx, y: ny, d };
 }
 
-// Where a piece at (x, y) pushed d would go, if that tile is free.
+// Where a piece at (x, y) pushed d would go, if that tile is free. A death block
+// always takes it.
 function pushTo(s, x, y, d) {
   const t = stepTo(s, x, y, d);
-  return t && !entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y) ? t : null;
+  return t && (t.death || (!entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y))) ? t : null;
+}
+
+// Puts a piece on t, or destroys it when t is a death block.
+function land(s, e, t) {
+  if (t.death) { kill(s, e, 'death'); return false; }
+  e.x = t.x; e.y = t.y;
+  return true;
 }
 
 const entAt = (s, x, y, not) => s.entities.find(e => !e.dead && e !== not && e.x === x && e.y === y);
@@ -201,6 +212,7 @@ function kill(s, e, how) {
 function playerStep(s, d, diving) {
   const p = s.player, t = stepTo(s, p.x, p.y, d);
   if (!t) return 'blocked';
+  if (t.death) { die(s); return 'died'; }
   const nx = t.x, ny = t.y, e = entAt(s, nx, ny);
   if (e) {
     let b;
@@ -209,7 +221,7 @@ function playerStep(s, d, diving) {
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d))) { e.x = b.x; e.y = b.y; }
+    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d))) land(s, e, b);
     else return 'blocked';
   }
   p.x = nx; p.y = ny; p.moved++;
@@ -254,7 +266,7 @@ function trace(s, x, y, d, hit, hitsPlayer) {
   let cx = x, cy = y, cd = d, wall = true, stop = null, player = false;
   for (let i = 0; i < s.w * s.h * 2; i++) {
     const t = stepTo(s, cx, cy, cd);
-    if (!t) { cd = facing(s, cx, cy, cd); stop = [cx + DIRS[cd][0], cy + DIRS[cd][1]]; break; }
+    if (!t || t.death) { cd = facing(s, cx, cy, cd); stop = [cx + DIRS[cd][0], cy + DIRS[cd][1]]; break; }
     path.push([t.x, t.y]);
     if (hitsPlayer && playerAt(s, t.x, t.y) && s.player.air === 0) { wall = false; player = true; break; }
     const o = entAt(s, t.x, t.y);
@@ -318,6 +330,7 @@ export function worldStep(s, d) {
   s.worldSteps++;
   for (const e of s.entities) {
     if (e.dead || !MOVES.includes(e.kind)) continue;
+    if (e.slide) continue;
     if (e.mode === 'input' && !e.rush) moveMover(s, e);
     else if (e.mode === 'follow') moveMover(s, e, d);
   }
@@ -335,10 +348,11 @@ function moveMover(s, e, d, turned) {
   // Blocked, a patrol turns and moves the other way in the same step; a follower waits.
   const blocked = () => { if (d) return; e.dir = -e.dir; if (!turned) moveMover(s, e, null, true); };
   if (!t) { blocked(); return; }
+  if (t.death) { kill(s, e, 'death'); return; }
   const o = entAt(s, t.x, t.y, e);
   let b;
   if (o) {
-    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d))) { o.x = b.x; o.y = b.y; }
+    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d))) land(s, o, b);
     else { blocked(); return; }
   }
   if (playerAt(s, t.x, t.y)) {
@@ -348,23 +362,50 @@ function moveMover(s, e, d, turned) {
       return;
     }
     const p = s.player;
-    if ((b = pushTo(s, t.x, t.y, t.d))) { p.x = b.x; p.y = b.y; s.events.push({ type: 'pushed' }); }
+    if ((b = pushTo(s, t.x, t.y, t.d)) && b.death) die(s);
+    else if (b) { p.x = b.x; p.y = b.y; s.events.push({ type: 'pushed' }); }
     else { e.x = t.x; e.y = t.y; die(s); return; }
   }
   e.x = t.x; e.y = t.y;
   if (!d) { e.axis = t.d === 'left' || t.d === 'right' ? 'h' : 'v'; e.dir = t.d === 'right' || t.d === 'down' ? 1 : -1; }
 }
 
-function slideHeavy(s, e) {
+// A piece sliding on its own (a thrown heavy box, anything a spring launched) goes a
+// tile per tick until something stops it. A heavy box squashes enemies and you; an
+// enemy that reaches you kills you; anything else just stops.
+function slidePiece(s, e) {
   const t = stepTo(s, e.x, e.y, e.slide);
   if (!t) { e.slide = null; return; }
+  if (t.death) { kill(s, e, 'death'); return; }
   const o = entAt(s, t.x, t.y, e);
   if (o) {
-    if (ENEMY.includes(o.kind)) kill(s, o, 'squash');
+    if (e.kind === 'heavy' && ENEMY.includes(o.kind)) kill(s, o, 'squash');
     else { e.slide = null; return; }
   }
+  if (playerAt(s, t.x, t.y) && e.kind !== 'heavy' && !ENEMY.includes(e.kind)) { e.slide = null; return; }
   e.x = t.x; e.y = t.y; e.slide = t.d;
   if (playerAt(s, t.x, t.y)) die(s);
+}
+
+// A spring launches whatever stands on the tile its face looks at, when that piece
+// can move on that way. You are out of its reach in the air.
+function fireSprings(s) {
+  s.cells.forEach((c, i) => {
+    if (!c.startsWith('spring:')) return;
+    const d = c.slice(7), x = i % s.w + DIRS[d][0], y = Math.floor(i / s.w) + DIRS[d][1];
+    if (!inb(s, x, y)) return;
+    const p = s.player;
+    if (playerAt(s, x, y) && p.air === 0 && p.dir !== d && stepTo(s, x, y, d)) {
+      if (!p.dir) p.moved = 0;
+      p.dir = d;
+      s.events.push({ type: 'spring', x, y, d });
+    }
+    const e = entAt(s, x, y);
+    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d)) {
+      e.slide = d;
+      s.events.push({ type: 'spring', x, y, d });
+    }
+  });
 }
 
 // Besides keys, a run takes settings changed mid-play: 'power:dive:0', 'clock:slide'.
@@ -392,14 +433,17 @@ export function step(s, inputs = []) {
   s.events = [];
   s.player.snap = false;
   for (const k of inputs) input(s, k);
+  // Pieces already sliding move first, so a piece a spring launched gets away
+  // before you reach it.
+  for (const e of s.entities) if (!e.dead && e.slide) slidePiece(s, e);
+  for (const e of s.entities) if (!e.dead && e.rush && !e.slide) rushOnce(s, e);
   if (s.player.dir) slideOnce(s, false);
-  for (const e of s.entities) if (!e.dead && e.kind === 'heavy' && e.slide) slideHeavy(s, e);
-  for (const e of s.entities) if (!e.dead && e.rush) rushOnce(s, e);
   if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
-    for (const e of s.entities) if (!e.dead && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
+    for (const e of s.entities) if (!e.dead && !e.slide && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
     turnTurrets(s, 'realtime');
   }
   if (s.player.air > 0) s.player.air--;
+  fireSprings(s);
   computeBeams(s, true);
   refreshDoors(s);
   s.tick++;
