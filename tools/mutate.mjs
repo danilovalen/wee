@@ -53,6 +53,7 @@ const M = [
   ['src/main.js', "if (ui.mode === 'follow') $('axisOpt').hidden = true;", "", 'browser'],
   ['src/main.js', "painting = ev.button === 2 ? 'erase' : holds(c.x, c.y, ui.tool) && ui.tool !== 'start' ? 'remove' : 'place';", "painting = ev.button === 2 ? 'erase' : 'place';", 'browser'],
   ['src/main.js', "if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }", "if (false) {}", 'browser'],
+  ['src/main.js', "  if (how === 'remove' && !holds(x, y, ui.tool)) return;\n", "", 'browser'],
   ['src/main.js', "removePiece(); setCell('tri:' + ui.corner);", "removePiece(); setCell('tri:se');", 'browser'],
   ['src/main.js', "if (d !== swipe.last) pending.push(d);", "", 'phone'],
   ['src/main.js', "$('jumpBtn').onclick = () => pending.push('jump');", "", 'phone'],

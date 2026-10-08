@@ -65,6 +65,16 @@ try {
   const enemies = lv.entities.filter(e => e.kind === 'enemy' && e.y === 8);
   check('a drag paints a row', enemies.length === 4, String(enemies.length));
   check('placed enemies keep the chosen clock', enemies.every(e => e.mode === 'realtime'));
+  // a drag that starts on an enemy removes the enemies it crosses, and nothing else
+  await page.click('[data-tool=wall]');
+  const w5 = at(5, 9); await page.mouse.click(w5.x, w5.y);
+  await page.click('[data-tool=enemy]');
+  const r0 = at(3, 8), r1 = at(5, 8), r2 = at(5, 9);
+  await page.mouse.move(r0.x, r0.y); await page.mouse.down(); await page.mouse.move(r1.x, r1.y, { steps: 6 }); await page.mouse.move(r2.x, r2.y, { steps: 3 }); await page.mouse.up();
+  lv = (await text()).level;
+  const left = lv.entities.filter(e => e.kind === 'enemy' && e.y === 8).map(e => e.x);
+  check('a drag from an enemy removes the enemies it crosses', left.join() === '6', left.join());
+  check('and leaves other things alone', lv.cells[9 * 20 + 5] === 'wall');
   // a turret aims where you choose and mounts on a box it is placed on
   await page.click('[data-tool=box]');
   p = at(10, 3); await page.mouse.click(p.x, p.y);
