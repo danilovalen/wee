@@ -131,6 +131,12 @@ try {
   q = at(17, 3); await page.mouse.click(q.x, q.y);
   lv = (await text()).level;
   check('a spring keeps the way it faces, and a death block places', lv.cells[3 * 20 + 16] === 'spring:left' && lv.cells[3 * 20 + 17] === 'death', lv.cells[3 * 20 + 16] + ' ' + lv.cells[3 * 20 + 17]);
+  await page.click('[data-tool=sensor]');
+  await page.click('[data-colour=blue]');
+  q = at(18, 3); await page.mouse.click(q.x, q.y);
+  check('a laser sensor places in its colour', (await text()).level.cells[3 * 20 + 18] === 'sensor:blue', (await text()).level.cells[3 * 20 + 18]);
+  await page.mouse.click(q.x, q.y);
+  check('and clicking it again with the sensor tool removes it', (await text()).level.cells[3 * 20 + 18] === '');
   await page.click('[data-tool=wall]');
   check('enemy options hide for a block', !(await page.locator('[data-axis=h]').isVisible()));
   await page.screenshot({ path: 'shots/edit.png' });

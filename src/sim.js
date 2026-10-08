@@ -3,7 +3,8 @@
 
 export const TICK_MS = 60;
 export const RT_PERIOD = 6;
-export const JUMP_TICKS = 6;
+// Hiding lasts at least this long, and until every piece the hide sent sliding has stopped.
+export const HIDE_TICKS = 4;
 export const LASER_TICKS = 5;
 
 export const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -85,6 +86,7 @@ export function parseLevel(text) {
 function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
+  if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
   if (c === 'death') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
   if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
@@ -100,7 +102,7 @@ export function createGame(level) {
     w: l.w, h: l.h, cells: l.cells, powers: l.powers, clock: l.clock,
     start: { ...l.start },
     checkpoint: { ...l.start },
-    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, air: 0, snap: true },
+    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, snap: true },
     entities: l.entities.map(e => ({
       id: ++id, kind: e.kind, x: e.x, y: e.y,
       axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
@@ -165,18 +167,20 @@ function land(s, e, t) {
 }
 
 const entAt = (s, x, y, not) => s.entities.find(e => !e.dead && e !== not && e.x === x && e.y === y);
-const playerAt = (s, x, y) => s.player.x === x && s.player.y === y;
+// A hidden player is not on the board: nothing meets it, nothing stops at it.
+const playerAt = (s, x, y) => !s.player.hidden && s.player.x === x && s.player.y === y;
 
-// A colour's doors open only while every button of that colour is pressed.
-// A door that is occupied cannot close on what stands in it.
+// A colour's doors open only while every button, receiver and sensor of that colour
+// is held. A door that is occupied cannot close on what stands in it.
 function refreshDoors(s) {
   const pressed = {}, any = {};
-  // A receiver is a button that a turret beam holds down.
+  // A receiver or a sensor is a button that a turret beam holds down.
   s.cells.forEach((c, i) => {
     const x = i % s.w, y = (i - x) / s.w;
     let col, down;
-    if (c.startsWith('button:')) { col = c.slice(7); down = (playerAt(s, x, y) && s.player.air === 0) || !!entAt(s, x, y); }
+    if (c.startsWith('button:')) { col = c.slice(7); down = playerAt(s, x, y) || !!entAt(s, x, y); }
     else if (c.startsWith('receiver:')) { col = c.slice(9); down = s.lit.has(i); }
+    else if (c.startsWith('sensor:')) { col = c.slice(7); down = s.lit.has(i); }
     else return;
     any[col] = true;
     pressed[col] = (pressed[col] ?? true) && down;
@@ -193,7 +197,7 @@ function refreshDoors(s) {
 }
 
 function respawn(s) {
-  Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, air: 0, snap: true });
+  Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, snap: true });
   refreshDoors(s);
 }
 
@@ -268,7 +272,7 @@ function trace(s, x, y, d, hit, hitsPlayer) {
     const t = stepTo(s, cx, cy, cd);
     if (!t || t.death) { cd = facing(s, cx, cy, cd); stop = [cx + DIRS[cd][0], cy + DIRS[cd][1]]; break; }
     path.push([t.x, t.y]);
-    if (hitsPlayer && playerAt(s, t.x, t.y) && s.player.air === 0) { wall = false; player = true; break; }
+    if (hitsPlayer && playerAt(s, t.x, t.y)) { wall = false; player = true; break; }
     const o = entAt(s, t.x, t.y);
     if (o && !hit(o)) { wall = false; break; }
     cx = t.x; cy = t.y; cd = t.d;
@@ -295,8 +299,8 @@ function turnTurrets(s, mode) {
 }
 
 // Every turret beam is on all the time, recomputed each tick. With harm, it kills
-// you (unless you are in the air) and weak enemies. A beam that ends on a receiver
-// lights it.
+// you (unless you are hidden) and weak enemies. A beam that ends on a receiver lights
+// it; so does one crossing a sensor nothing stands on.
 function computeBeams(s, harm) {
   s.beams = []; s.lit = new Set();
   let hitYou = false;
@@ -304,15 +308,16 @@ function computeBeams(s, harm) {
     if (e.dead || !e.turret) continue;
     const r = trace(s, e.x, e.y, aimOf(e.turret), o => harm ? laserHit(s, o, 'turret') : o.kind === 'enemy', true);
     if (r.stop && inb(s, ...r.stop) && cellAt(s, ...r.stop).startsWith('receiver:')) s.lit.add(r.stop[1] * s.w + r.stop[0]);
+    for (const [x, y] of r.path) if (cellAt(s, x, y).startsWith('sensor:') && !entAt(s, x, y) && !playerAt(s, x, y)) s.lit.add(y * s.w + x);
     if (r.player) hitYou = true;
     s.beams.push({ id: e.id, d: aimOf(e.turret), ...r });
   }
   if (harm && hitYou) die(s);
 }
 
-// A jump is one cycle with no direction: each on-your-move piece slides along its
+// A hide is one cycle with no direction: each on-your-move piece slides along its
 // patrol until something stops it, a tile per tick (see step), and turns there.
-function jumpCycle(s) {
+function hideCycle(s) {
   s.worldSteps++;
   for (const e of s.entities) if (!e.dead && e.mode === 'input' && MOVES.includes(e.kind)) e.rush = true;
   turnTurrets(s, 'input');
@@ -358,7 +363,7 @@ function moveMover(s, e, d, turned) {
   if (playerAt(s, t.x, t.y)) {
     if (ENEMY.includes(e.kind)) {
       e.x = t.x; e.y = t.y;
-      if (e.kind === 'enemy' && s.player.air > 0) kill(s, e, 'jump'); else die(s);
+      die(s);
       return;
     }
     const p = s.player;
@@ -388,14 +393,14 @@ function slidePiece(s, e) {
 }
 
 // A spring launches whatever stands on the tile its face looks at, when that piece
-// can move on that way. You are out of its reach in the air.
+// can move on that way.
 function fireSprings(s) {
   s.cells.forEach((c, i) => {
     if (!c.startsWith('spring:')) return;
     const d = c.slice(7), x = i % s.w + DIRS[d][0], y = Math.floor(i / s.w) + DIRS[d][1];
     if (!inb(s, x, y)) return;
     const p = s.player;
-    if (playerAt(s, x, y) && p.air === 0 && p.dir !== d && stepTo(s, x, y, d)) {
+    if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d)) {
       if (!p.dir) p.moved = 0;
       p.dir = d;
       s.events.push({ type: 'spring', x, y, d });
@@ -408,21 +413,31 @@ function fireSprings(s) {
   });
 }
 
+// You come back once the hide has lasted HIDE_TICKS and nothing it sent sliding is
+// still going. Whatever is on your tile then squashes you.
+function unhide(s) {
+  const p = s.player;
+  if (++p.hideTicks < HIDE_TICKS || s.entities.some(e => !e.dead && e.rush)) return;
+  p.hidden = false;
+  s.events.push({ type: 'unhide' });
+  if (entAt(s, p.x, p.y) || solidCell(s, p.x, p.y)) { s.events.push({ type: 'squash', x: p.x, y: p.y }); die(s); }
+}
+
 // Besides keys, a run takes settings changed mid-play: 'power:dive:0', 'clock:slide'.
 function input(s, k) {
   const p = s.player;
   if (k.startsWith('power:')) { const [, name, on] = k.split(':'); if (POWERS.includes(name)) s.powers[name] = on === '1'; return; }
   if (k.startsWith('clock:')) { const c = k.slice(6); if (c === 'tile' || c === 'slide') s.clock = c; return; }
   if (k === 'respawn') { respawn(s); s.events.push({ type: 'respawn' }); return; }
-  if (k === 'jump') {
-    if (s.powers.cycle && !p.dir && p.air === 0) {
-      p.air = JUMP_TICKS;
-      s.events.push({ type: 'jump' });
-      jumpCycle(s);
+  if (k === 'hide') {
+    if (s.powers.cycle && !p.dir && !p.hidden) {
+      p.hidden = true; p.hideTicks = 0;
+      s.events.push({ type: 'hide' });
+      hideCycle(s);
     }
     return;
   }
-  if (!DIRS[k] || p.air > 0) return;
+  if (!DIRS[k] || p.hidden) return;
   if (!p.dir) { p.dir = k; p.moved = 0; return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
   else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { p.dir = k; s.events.push({ type: 'boomerang' }); } }
@@ -442,7 +457,7 @@ export function step(s, inputs = []) {
     for (const e of s.entities) if (!e.dead && !e.slide && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
     turnTurrets(s, 'realtime');
   }
-  if (s.player.air > 0) s.player.air--;
+  if (s.player.hidden) unhide(s);
   fireSprings(s);
   computeBeams(s, true);
   refreshDoors(s);
@@ -454,7 +469,7 @@ export function step(s, inputs = []) {
 export function gameText(s, mode = 'play') {
   return JSON.stringify({
     mode, tick: s.tick, clock: s.clock, worldSteps: s.worldSteps, deaths: s.deaths,
-    player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, airborne: s.player.air > 0 },
+    player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden },
     checkpoint: s.checkpoint,
     pieces: s.entities.filter(e => !e.dead).map(e => ({
       kind: e.kind, x: e.x, y: e.y,

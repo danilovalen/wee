@@ -5,7 +5,7 @@ import { emptyLevel } from '../src/sim.js';
 //   M  mover, h      V  mover, v         E  enemy, h     F  enemy, v
 //   S  strong enemy, h                  T  laser turret (fires right)
 //   B  box           H  heavy box
-//   o  red button    D  red door         u  blue button  Q  blue door    r  red receiver
+//   o  red button    D  red door         u  blue button  Q  blue door    r  red receiver  s  red laser sensor
 //   > < ^ v  one-way tile (that way)      =  two-way, across      |  two-way, up and down
 //   X  death block    8 6 2 4  spring facing up, right, down, left (numpad)
 //   7 9 1 3  triangle, solid in the corner a numpad key points to (7 = north-west)
@@ -26,6 +26,7 @@ export function room(rows, opts = {}) {
       case 'D': l.cells[i] = 'door:red'; break;
       case 'u': l.cells[i] = 'button:blue'; break;
       case 'r': l.cells[i] = 'receiver:red'; break;
+      case 's': l.cells[i] = 'sensor:red'; break;
       case 'Q': l.cells[i] = 'door:blue'; break;
       case 'P': l.start = { x, y }; break;
       case 'M': put('mover', 'h'); break;

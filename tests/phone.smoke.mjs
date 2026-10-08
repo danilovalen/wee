@@ -62,7 +62,7 @@ try {
 
   await page.click('#mode');
   await page.evaluate(() => { window.__manualClock = true; });
-  check('the play buttons show in play', await page.locator('#jumpBtn').isVisible());
+  check('the play buttons show in play', await page.locator('#hideBtn').isVisible());
   // a swipe right: the player starts at (1,1) and slides to the wall
   const s0 = at(3, 3), s1 = at(6, 3);
   await page.mouse.move(s0.x, s0.y); await page.mouse.down(); await page.mouse.move(s1.x, s1.y, { steps: 6 }); await page.mouse.up();
@@ -73,9 +73,9 @@ try {
   await page.evaluate(() => window.advanceTime(60));
   s = await text();
   check('the checkpoint button sends you back', s.player.x === 1 && s.player.y === 1, JSON.stringify(s.player));
-  await page.click('#jumpBtn');
+  await page.click('#hideBtn');
   await page.evaluate(() => window.advanceTime(60));
-  check('the jump button jumps', (await text()).player.airborne);
+  check('the hide button hides', (await text()).player.hidden);
   // a report replays to exactly the state the run ended in, including a power turned off mid-run
   await page.locator('[data-power=boomerang]').setChecked(false);
   await page.mouse.move(s0.x, s0.y); await page.mouse.down(); await page.mouse.move(s0.x, s0.y + 80, { steps: 6 }); await page.mouse.up();

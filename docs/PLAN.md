@@ -76,6 +76,11 @@ it by. It only fires when the way ahead is free, and not at you while airborne.
 Anything moving into it is destroyed: you, boxes, heavy boxes, movers, weak and strong enemies. A
 beam stops at it.
 
+## Laser sensor
+
+A coloured floor plate, held down while a turret beam crosses it; the beam goes on. A piece on it
+keeps the beam off. It joins its colour's buttons and receivers: every one must be held.
+
 ## Receiver
 
 A block with a coloured eye. While a turret beam ends on it, it counts as a pressed button of its
@@ -103,7 +108,7 @@ colour, so it combines with that colour's buttons (all must be held).
 | Hook | You stop when arriving on Grapple tiles instead of sliding over them. | grapple tile |
 | Light | You emit light in dark levels, only while you are not moving. | a dark-level setting |
 | Swim | You can pass through tiles that would kill you. | hazard tile |
-| Cycle | Space is a little **jump**: you stay on your tile and the world takes one step. An enemy that moves onto your tile while you are in the air is killed. The jump reads from above: the player scales up on the way up and back down on landing, with its shadow staying on the tile. | movers to show it |
+| Cycle | Space **hides** you: you stay on your tile and the world takes one step, its on-your-move pieces sliding until they stop. Meanwhile nothing meets you and beams pass over. You come back when they have stopped (at least 4 ticks); anything on your tile then, or a door closed on it, squashes you. Hidden, you are a dashed outline. | movers to show it |
 
 ## The editor
 

@@ -1,7 +1,7 @@
 // Draws a level (edit mode) or a running game (play mode) on the canvas.
 // Motion is drawn between the previous tick and this one; nothing here changes state.
 
-import { DIRS, JUMP_TICKS, TICK_MS } from './sim.js';
+import { DIRS, TICK_MS } from './sim.js';
 
 const AIM = { up: -Math.PI / 2, right: 0, down: Math.PI / 2, left: Math.PI };
 
@@ -72,6 +72,13 @@ function drawCell(g, c, x, y, s, scale = 1) {
       g.beginPath(); g.moveTo(2, -6); g.lineTo(8, 0); g.lineTo(2, 6); g.stroke();
       g.restore();
     }
+  } else if (c.startsWith('sensor:')) {
+    // A floor plate a beam lights as it crosses: a coloured diamond that glows while lit.
+    const col = c.slice(7), lit = s && s.lit.has(y * s.w + x);
+    g.translate(16, 16); g.rotate(Math.PI / 4);
+    g.strokeStyle = INK[col]; g.lineWidth = 2.5; g.strokeRect(-8, -8, 16, 16);
+    g.fillStyle = INK[col]; g.globalAlpha = lit ? 1 : 0.25; g.fillRect(-4, -4, 8, 8); g.globalAlpha = 1;
+    if (lit) { g.globalAlpha = 0.3; g.fillRect(-12, -12, 24, 24); g.globalAlpha = 1; }
   } else if (c.startsWith('receiver:')) {
     // A catcher: a block with a coloured eye that glows while a beam holds it.
     const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
@@ -107,7 +114,7 @@ function drawCell(g, c, x, y, s, scale = 1) {
 }
 
 function pressedAt(s, x, y) {
-  return (s.player.x === x && s.player.y === y && s.player.air === 0) ||
+  return (s.player.x === x && s.player.y === y && !s.player.hidden) ||
     s.entities.some(e => !e.dead && e.x === x && e.y === y);
 }
 
@@ -191,15 +198,15 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
   g.restore();
 }
 
-function drawPlayer(g, px, py, lift, scale, alpha = 1) {
-  if (lift > 0) {
-    g.fillStyle = INK.shadow;
-    g.beginPath(); g.ellipse(px + T / 2 + 2, py + T / 2 + 6, 11 * (1 - lift * 0.35), 6.5 * (1 - lift * 0.35), 0, 0, Math.PI * 2); g.fill();
-  }
-  const k = scale * (1 + lift * 0.45);
+// Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
+// on top of you, so you can still be found.
+function drawPlayer(g, px, py, hidden, scale, alpha = 1) {
   g.save(); g.globalAlpha = alpha;
-  g.translate(px + T / 2 - lift * 4, py + T / 2 - lift * 9); g.scale(k, k);
-  g.fillStyle = INK.player; g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill();
+  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale);
+  if (hidden) {
+    g.strokeStyle = INK.player; g.lineWidth = 2; g.setLineDash([3, 3]);
+    g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+  } else { g.fillStyle = INK.player; g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill(); }
   g.fillStyle = '#0b2a2c'; g.beginPath(); g.arc(-3.5, -2, 2.2, 0, Math.PI * 2); g.arc(3.5, -2, 2.2, 0, Math.PI * 2); g.fill();
   g.restore();
 }
@@ -222,7 +229,7 @@ export function drawEdit(g, level, hover, fx, now) {
   };
   level.cells.forEach((c, i) => drawCell(g, c, i % level.w, Math.floor(i / level.w), null, pop(i % level.w, Math.floor(i / level.w))));
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
-  drawPlayer(g, level.start.x * T, level.start.y * T, 0, pop(level.start.x, level.start.y) * 0.9, 0.9);
+  drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9);
   for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {
     const t = (now - f.at) / 160;
     if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);
@@ -287,8 +294,6 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
   const p = s.player, pp = prev.player;
   let px = p.x * T, py = p.y * T;
   if (pp && !p.snap && Math.abs(pp.x - p.x) + Math.abs(pp.y - p.y) <= 1) { px = lerp(pp.x, p.x, a) * T; py = lerp(pp.y, p.y, a) * T; }
-  const airT = p.air > 0 ? (JUMP_TICKS - p.air + alpha) / JUMP_TICKS : 0;
-  const lift = p.air > 0 ? Math.sin(Math.PI * Math.min(1, airT)) : 0;
   const born = fx.find(f => (f.type === 'die' || f.type === 'respawn') && now - f.at < 220);
   const scale = born ? 0.3 + 0.7 * ease((now - born.at) / 220) : 1;
   for (const f of fx) if (f.type === 'die' && now - f.at < 300) {
@@ -296,7 +301,7 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     g.strokeStyle = INK.player; g.globalAlpha = 1 - t; g.lineWidth = 2;
     g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
   }
-  drawPlayer(g, px, py, lift, scale);
+  drawPlayer(g, px, py, p.hidden, scale);
   g.restore();
 }
 

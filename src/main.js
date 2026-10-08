@@ -25,12 +25,13 @@ const TOOLS = [
   { id: 'button', label: 'Button' },
   { id: 'door', label: 'Door' },
   { id: 'receiver', label: 'Receiver' },
+  { id: 'sensor', label: 'Laser sensor' },
 ];
 const POWER_TEXT = {
   boomerang: 'While sliding, press back to slide the other way.',
   dive: 'While sliding, press the same arrow to land at once and crash.',
   laser: 'While sliding, press a side arrow to fire a beam that way.',
-  cycle: 'When standing, press Space to jump. The world takes a step.',
+  cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed.',
   hook: 'Stop on grapple tiles.',
   swim: 'Pass through tiles that would kill you.',
   light: 'When standing still, light up dark rooms.',
@@ -76,7 +77,7 @@ function holds(x, y, tool) {
   const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
   if (tool === 'wall' || tool === 'checkpoint' || tool === 'death') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
-  if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'gate') return c.startsWith(tool + ':');
+  if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;
 }
@@ -104,6 +105,7 @@ function describe(x, y) {
     else if (kind === 'death') parts.push('Death block');
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
+    else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser sensor`);
     else parts.push(`${COLOUR_NAME[v]} ${kind}`);
   }
   if (level.start.x === x && level.start.y === y) parts.push('Start');
@@ -124,7 +126,7 @@ function place(x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'gate', 'spring', 'death'].includes(ui.tool)) setCell('');
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
     if (isStart) return;
@@ -142,7 +144,7 @@ function place(x, y, how) {
   } else if (t === 'wall') {
     if (isStart) return;
     removePiece(); setCell('wall');
-  } else if (t === 'checkpoint' || t === 'button' || t === 'door' || t === 'receiver') {
+  } else if (t === 'checkpoint' || t === 'button' || t === 'door' || t === 'receiver' || t === 'sensor') {
     if ((t === 'door' || t === 'receiver') && isStart) return;
     if (t === 'door' || t === 'receiver') removePiece();
     setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
@@ -233,7 +235,7 @@ function tick() {
 function keysText() {
   return touch
     ? (mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : 'Press Play to try this room.')
-    : (mode === 'play' ? 'Arrows slide. Space jumps. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
+    : (mode === 'play' ? 'Arrows slide. Space hides. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
 }
 
 function setMode(m, keep) {
@@ -249,7 +251,7 @@ function setMode(m, keep) {
   else game = null;
 }
 
-const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', ' ': 'jump', r: 'respawn', R: 'respawn' };
+const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', ' ': 'hide', r: 'respawn', R: 'respawn' };
 window.addEventListener('keydown', ev => {
   if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;
   if (ev.key === 'e' || ev.key === 'E') { setMode(mode === 'play' ? 'edit' : 'play'); ev.preventDefault(); return; }
@@ -304,7 +306,7 @@ function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death') {
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor') {
     const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'look') {
@@ -365,7 +367,7 @@ function buildPanels() {
   }
   document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { level.clock = r.value; if (game) pending.push('clock:' + r.value); });
   $('mode').onclick = () => setMode(mode === 'play' ? 'edit' : 'play');
-  $('jumpBtn').onclick = () => pending.push('jump');
+  $('hideBtn').onclick = () => pending.push('hide');
   $('respawnBtn').onclick = () => pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('placeHint').textContent = touch ? 'Tap to place. Tap one again to remove it. Look changes nothing.' : 'Click to place. Click one again, or right click, to remove it. Look changes nothing.';
