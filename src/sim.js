@@ -286,8 +286,11 @@ function slideHeavy(s, e) {
   if (playerAt(s, tx, ty)) die(s);
 }
 
+// Besides keys, a run takes settings changed mid-play: 'power:dive:0', 'clock:slide'.
 function input(s, k) {
   const p = s.player;
+  if (k.startsWith('power:')) { const [, name, on] = k.split(':'); if (POWERS.includes(name)) s.powers[name] = on === '1'; return; }
+  if (k.startsWith('clock:')) { const c = k.slice(6); if (c === 'tile' || c === 'slide') s.clock = c; return; }
   if (k === 'respawn') { respawn(s); s.events.push({ type: 'respawn' }); return; }
   if (k === 'jump') {
     if (s.powers.cycle && !p.dir && p.air === 0) {

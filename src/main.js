@@ -1,4 +1,4 @@
-import { createGame, step, gameText, emptyLevel, resizeLevel, parseLevel, TICK_MS, COLOURS, POWERS, NEEDS, CLOCKWISE, CARRIES_TURRET } from './sim.js';
+import { createGame, step, gameText, replay, emptyLevel, resizeLevel, parseLevel, TICK_MS, COLOURS, POWERS, NEEDS, CLOCKWISE, CARRIES_TURRET } from './sim.js';
 import { T, INK, drawEdit, drawPlay, drawPiece } from './render.js';
 import { SAMPLE } from './sample.js';
 
@@ -44,6 +44,7 @@ function starterLevel() {
 
 const ui = { tool: 'wall', axis: 'h', mode: 'input', colour: 'red', aim: ['right'] };
 let level = starterLevel();
+let played = null, keylog = [];
 let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
 
 function now() { return performance.now(); }
@@ -152,6 +153,7 @@ function snapshot(s) {
 }
 
 function tick() {
+  for (const k of pending) keylog.push({ t: game.tick, k });
   prev = snapshot(game);
   const before = { x: game.player.x, y: game.player.y };
   step(game, pending);
@@ -163,16 +165,21 @@ function tick() {
   }
 }
 
-function setMode(m) {
+function keysText() {
+  return touch
+    ? (mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : 'Press Play to try this room.')
+    : (mode === 'play' ? 'Arrows slide. Space jumps. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
+}
+
+function setMode(m, keep) {
+  if (keep) { $('keys').textContent = keysText(); return; }
   mode = m;
   document.body.classList.toggle('play', m === 'play');
   $('mode').textContent = m === 'play' ? 'Edit' : 'Play';
-  $('keys').textContent = touch
-    ? (m === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : 'Press Play to try this room.')
-    : (m === 'play' ? 'Arrows slide. Space jumps. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
+  $('keys').textContent = keysText();
   $('pad').hidden = m !== 'play';
   fx = [];
-  if (m === 'play') { game = createGame(level); prev = snapshot(game); pending = []; acc = 0; }
+  if (m === 'play') { played = JSON.parse(JSON.stringify(level)); keylog = []; game = createGame(level); prev = snapshot(game); pending = []; acc = 0; }
   else game = null;
 }
 
@@ -205,6 +212,18 @@ function render() {
   else drawEdit(g, level, hover, fx, t);
 }
 
+// A report is the room as it was when play began, every key with its tick, and the
+// state it ended in, so one run can be replayed exactly with replay().
+function report() {
+  return JSON.stringify({ format: 'wee-report', version: 1, ticks: game.tick, level: played, keys: keylog, end: JSON.parse(gameText(game)) });
+}
+async function copyReport() {
+  const text = report();
+  try { await navigator.clipboard.writeText(text); flash('Report copied. Paste it in the chat.'); }
+  catch { $('reportText').value = text; $('reportBox').showModal(); $('reportText').select(); }
+}
+function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(mode, true), 2500); }
+
 // The text state and a fixed clock, for gates and agents.
 window.renderGameToText = () => mode === 'play' ? gameText(game, 'play') : JSON.stringify({ mode: 'edit', level });
 window.advanceTime = ms => {
@@ -212,7 +231,7 @@ window.advanceTime = ms => {
   for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
   acc = 0; render();
 };
-window.wee = { press: k => pending.push(k), setMode, getLevel: () => level, loadLevel: l => { level = parseLevel(JSON.stringify(l)); syncPanel(); fit(); } };
+window.wee = { report, replay, gameText, press: k => pending.push(k), setMode, getLevel: () => level, loadLevel: l => { level = parseLevel(JSON.stringify(l)); syncPanel(); fit(); } };
 
 // ---------- panels ----------
 function icon(tool) {
@@ -259,16 +278,17 @@ function buildPanels() {
     row.className = 'power' + (NEEDS[p] ? ' off' : '');
     const box = document.createElement('input');
     box.type = 'checkbox'; box.dataset.power = p; box.disabled = !!NEEDS[p];
-    box.onchange = () => { level.powers[p] = box.checked; if (game) game.powers[p] = box.checked; };
+    box.onchange = () => { level.powers[p] = box.checked; if (game) pending.push(`power:${p}:${box.checked ? 1 : 0}`); };
     const name = document.createElement('b'); name.textContent = NAMES[p];
     const say = document.createElement('small'); say.textContent = NEEDS[p] ? 'Needs ' + NEEDS[p] + '.' : POWER_TEXT[p];
     row.append(box, name, say);
     $('powerList').append(row);
   }
-  document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { level.clock = r.value; if (game) game.clock = r.value; });
+  document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { level.clock = r.value; if (game) pending.push('clock:' + r.value); });
   $('mode').onclick = () => setMode(mode === 'play' ? 'edit' : 'play');
   $('jumpBtn').onclick = () => pending.push('jump');
   $('respawnBtn').onclick = () => pending.push('respawn');
+  $('reportBtn').onclick = copyReport;
   $('placeHint').textContent = touch ? 'Tap or drag to place. Pick Erase to remove.' : 'Click to place. Right click to erase.';
   const resize = () => {
     const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));

@@ -59,6 +59,18 @@ try {
   await page.click('#jumpBtn');
   await page.evaluate(() => window.advanceTime(60));
   check('the jump button jumps', (await text()).player.airborne);
+  // a report replays to exactly the state the run ended in, including a power turned off mid-run
+  await page.locator('[data-power=boomerang]').setChecked(false);
+  await page.mouse.move(s0.x, s0.y); await page.mouse.down(); await page.mouse.move(s0.x, s0.y + 80, { steps: 6 }); await page.mouse.up();
+  await page.evaluate(() => window.advanceTime(1500));
+  const same = await page.evaluate(() => {
+    const r = JSON.parse(window.wee.report());
+    const again = JSON.parse(window.wee.gameText(window.wee.replay(r.level, r.keys, r.ticks)));
+    return JSON.stringify(again) === JSON.stringify(r.end) && r.keys.length >= 4 && r.level.powers.boomerang === true && r.keys.some(k => k.k === 'power:boomerang:0');
+  });
+  check('a copied report replays to the same end', same);
+  const cutPad = await page.evaluate(() => [...document.querySelectorAll('#pad button')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent));
+  check('the play buttons fit their labels', cutPad.length === 0, cutPad.join(', '));
   await page.screenshot({ path: 'shots/phone-play.png' });
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) {

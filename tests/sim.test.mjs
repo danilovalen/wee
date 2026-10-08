@@ -270,4 +270,13 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('an unknown clock is refused', refused === 1);
 }
 
+{ // settings changed mid-play are inputs, so a replay sees them at the same tick
+  const l = room(LONG);
+  const log = [{ t: 0, k: 'power:boomerang:0' }, { t: 0, k: 'right' }, { t: 2, k: 'left' }];
+  const s = replay(l, log, 20);
+  check('a power turned off mid-play stays off in the replay', at(s.player, 7, 1) && !s.powers.boomerang, JSON.stringify(s.player));
+  const t = replay(l, [{ t: 0, k: 'clock:slide' }, { t: 0, k: 'right' }], 20);
+  check('a clock changed mid-play is replayed', t.clock === 'slide' && t.worldSteps === 1, t.clock + ' ' + t.worldSteps);
+}
+
 done();

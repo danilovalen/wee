@@ -57,7 +57,13 @@
       <div id="pad" class="pad" hidden>
         <button id="jumpBtn" type="button">Jump</button>
         <button id="respawnBtn" type="button">Back to checkpoint</button>
+        <button id="reportBtn" type="button">Copy report</button>
       </div>
+      <dialog id="reportBox">
+        <p>Copy all of this and paste it in the chat.</p>
+        <textarea id="reportText" rows="8" readonly></textarea>
+        <form method="dialog"><button>Close</button></form>
+      </dialog>
       <p id="keys" class="hint"></p>
     </section>
     <aside id="powers">

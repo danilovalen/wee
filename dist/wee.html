@@ -54,7 +54,8 @@ body.play #tools { opacity: .45; pointer-events: none; }
 button { touch-action: manipulation; }
 .pad { display: flex; gap: 8px; margin-top: 10px; width: 100%; max-width: 480px; }
 .pad[hidden] { display: none; }
-.pad button { flex: 1; min-height: 48px; font-size: 16px; }
+.pad { flex-wrap: wrap; }
+.pad button { flex: 1 1 30%; min-height: 48px; font-size: 16px; }
 @media (max-width: 900px) { main { grid-template-columns: 1fr; } #stage { order: -1; } }
 @media (max-width: 700px) {
   body { font-size: 15px; }
@@ -72,6 +73,9 @@ button { touch-action: manipulation; }
   .radio { padding: 8px 0; }
 }
 button.on:disabled { opacity: 1; }
+dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); width: min(92vw, 520px); }
+dialog textarea { width: 100%; font: 12px monospace; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; }
+dialog::backdrop { background: rgba(0,0,0,.6); }
 </style>
 </head>
 <body>
@@ -125,7 +129,13 @@ button.on:disabled { opacity: 1; }
       <div id="pad" class="pad" hidden>
         <button id="jumpBtn" type="button">Jump</button>
         <button id="respawnBtn" type="button">Back to checkpoint</button>
+        <button id="reportBtn" type="button">Copy report</button>
       </div>
+      <dialog id="reportBox">
+        <p>Copy all of this and paste it in the chat.</p>
+        <textarea id="reportText" rows="8" readonly></textarea>
+        <form method="dialog"><button>Close</button></form>
+      </dialog>
       <p id="keys" class="hint"></p>
     </section>
     <aside id="powers">
@@ -426,8 +436,11 @@ function slideHeavy(s, e) {
   if (playerAt(s, tx, ty)) die(s);
 }
 
+// Besides keys, a run takes settings changed mid-play: 'power:dive:0', 'clock:slide'.
 function input(s, k) {
   const p = s.player;
+  if (k.startsWith('power:')) { const [, name, on] = k.split(':'); if (POWERS.includes(name)) s.powers[name] = on === '1'; return; }
+  if (k.startsWith('clock:')) { const c = k.slice(6); if (c === 'tile' || c === 'slide') s.clock = c; return; }
   if (k === 'respawn') { respawn(s); s.events.push({ type: 'respawn' }); return; }
   if (k === 'jump') {
     if (s.powers.cycle && !p.dir && p.air === 0) {
@@ -772,6 +785,7 @@ function starterLevel() {
 
 const ui = { tool: 'wall', axis: 'h', mode: 'input', colour: 'red', aim: ['right'] };
 let level = starterLevel();
+let played = null, keylog = [];
 let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
 
 function now() { return performance.now(); }
@@ -880,6 +894,7 @@ function snapshot(s) {
 }
 
 function tick() {
+  for (const k of pending) keylog.push({ t: game.tick, k });
   prev = snapshot(game);
   const before = { x: game.player.x, y: game.player.y };
   step(game, pending);
@@ -891,16 +906,21 @@ function tick() {
   }
 }
 
-function setMode(m) {
+function keysText() {
+  return touch
+    ? (mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : 'Press Play to try this room.')
+    : (mode === 'play' ? 'Arrows slide. Space jumps. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
+}
+
+function setMode(m, keep) {
+  if (keep) { $('keys').textContent = keysText(); return; }
   mode = m;
   document.body.classList.toggle('play', m === 'play');
   $('mode').textContent = m === 'play' ? 'Edit' : 'Play';
-  $('keys').textContent = touch
-    ? (m === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : 'Press Play to try this room.')
-    : (m === 'play' ? 'Arrows slide. Space jumps. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
+  $('keys').textContent = keysText();
   $('pad').hidden = m !== 'play';
   fx = [];
-  if (m === 'play') { game = createGame(level); prev = snapshot(game); pending = []; acc = 0; }
+  if (m === 'play') { played = JSON.parse(JSON.stringify(level)); keylog = []; game = createGame(level); prev = snapshot(game); pending = []; acc = 0; }
   else game = null;
 }
 
@@ -933,6 +953,18 @@ function render() {
   else drawEdit(g, level, hover, fx, t);
 }
 
+// A report is the room as it was when play began, every key with its tick, and the
+// state it ended in, so one run can be replayed exactly with replay().
+function report() {
+  return JSON.stringify({ format: 'wee-report', version: 1, ticks: game.tick, level: played, keys: keylog, end: JSON.parse(gameText(game)) });
+}
+async function copyReport() {
+  const text = report();
+  try { await navigator.clipboard.writeText(text); flash('Report copied. Paste it in the chat.'); }
+  catch { $('reportText').value = text; $('reportBox').showModal(); $('reportText').select(); }
+}
+function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(mode, true), 2500); }
+
 // The text state and a fixed clock, for gates and agents.
 window.renderGameToText = () => mode === 'play' ? gameText(game, 'play') : JSON.stringify({ mode: 'edit', level });
 window.advanceTime = ms => {
@@ -940,7 +972,7 @@ window.advanceTime = ms => {
   for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
   acc = 0; render();
 };
-window.wee = { press: k => pending.push(k), setMode, getLevel: () => level, loadLevel: l => { level = parseLevel(JSON.stringify(l)); syncPanel(); fit(); } };
+window.wee = { report, replay, gameText, press: k => pending.push(k), setMode, getLevel: () => level, loadLevel: l => { level = parseLevel(JSON.stringify(l)); syncPanel(); fit(); } };
 
 // ---------- panels ----------
 function icon(tool) {
@@ -987,16 +1019,17 @@ function buildPanels() {
     row.className = 'power' + (NEEDS[p] ? ' off' : '');
     const box = document.createElement('input');
     box.type = 'checkbox'; box.dataset.power = p; box.disabled = !!NEEDS[p];
-    box.onchange = () => { level.powers[p] = box.checked; if (game) game.powers[p] = box.checked; };
+    box.onchange = () => { level.powers[p] = box.checked; if (game) pending.push(`power:${p}:${box.checked ? 1 : 0}`); };
     const name = document.createElement('b'); name.textContent = NAMES[p];
     const say = document.createElement('small'); say.textContent = NEEDS[p] ? 'Needs ' + NEEDS[p] + '.' : POWER_TEXT[p];
     row.append(box, name, say);
     $('powerList').append(row);
   }
-  document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { level.clock = r.value; if (game) game.clock = r.value; });
+  document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { level.clock = r.value; if (game) pending.push('clock:' + r.value); });
   $('mode').onclick = () => setMode(mode === 'play' ? 'edit' : 'play');
   $('jumpBtn').onclick = () => pending.push('jump');
   $('respawnBtn').onclick = () => pending.push('respawn');
+  $('reportBtn').onclick = copyReport;
   $('placeHint').textContent = touch ? 'Tap or drag to place. Pick Erase to remove.' : 'Click to place. Right click to erase.';
   const resize = () => {
     const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));

@@ -45,6 +45,8 @@ const M = [
   ['src/main.js', "$('jumpBtn').onclick = () => pending.push('jump');", "", 'phone'],
   ['src/main.js', "const l = portrait() ? emptyLevel(12, 14) : emptyLevel(20, 12);", "const l = emptyLevel(20, 12);", 'phone'],
   ['src/main.js', "const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));", "const zoom = Math.max(1, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));", 'phone'],
+  ['src/main.js', "  for (const k of pending) keylog.push({ t: game.tick, k });\n", "", 'phone'],
+  ['src/main.js', "played = JSON.parse(JSON.stringify(level)); keylog = [];", "played = level; keylog = [];", 'phone'],
   ['style.css', ".opt[hidden] { display: none; }", "", 'browser'],
   ['style.css', "grid-template-columns: 256px", "grid-template-columns: 200px", 'browser'],
   ['src/main.js', "a.download = 'room.wee';", "a.download = 'room.json';", 'browser'],
