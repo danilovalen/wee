@@ -11,6 +11,7 @@
     <b class="logo">wee</b>
     <button id="mode" type="button" title="E">Play</button>
     <span class="spacer"></span>
+    <button id="sample" type="button">Sample</button>
     <button id="save" type="button">Save</button>
     <button id="open" type="button">Open</button>
     <input id="file" type="file" accept=".wee,.json" hidden>
@@ -49,10 +50,14 @@
         <label>Width <input id="w" type="number" min="5" max="40"></label>
         <label>Height <input id="h" type="number" min="5" max="30"></label>
       </div>
-      <p class="hint">Click to place. Right click to erase.</p>
+      <p id="placeHint" class="hint"></p>
     </aside>
     <section id="stage">
       <canvas id="game"></canvas>
+      <div id="pad" class="pad" hidden>
+        <button id="jumpBtn" type="button">Jump</button>
+        <button id="respawnBtn" type="button">Back to checkpoint</button>
+      </div>
       <p id="keys" class="hint"></p>
     </section>
     <aside id="powers">

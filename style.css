@@ -3,6 +3,7 @@
   --accent: #5ee0e6; --radius: 8px;
 }
 * { box-sizing: border-box; }
+html, body { overscroll-behavior: none; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
 header { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
 .logo { font-size: 18px; letter-spacing: 1px; margin-right: 8px; }
@@ -43,5 +44,24 @@ body.play #tools { opacity: .45; pointer-events: none; }
 .power small { grid-column: 2; color: var(--dim); }
 .power.off { cursor: default; opacity: .45; }
 .radio { display: flex; gap: 8px; align-items: center; padding: 3px 0; cursor: pointer; }
+button { touch-action: manipulation; }
+.pad { display: flex; gap: 8px; margin-top: 10px; width: 100%; max-width: 480px; }
+.pad[hidden] { display: none; }
+.pad button { flex: 1; min-height: 48px; font-size: 16px; }
 @media (max-width: 900px) { main { grid-template-columns: 1fr; } #stage { order: -1; } }
+@media (max-width: 700px) {
+  body { font-size: 15px; }
+  header { padding: 8px 12px; }
+  main { padding: 12px; gap: 12px; }
+  header button { min-height: 40px; }
+  .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .grid button { flex-direction: column; justify-content: center; text-align: center; gap: 2px; padding: 4px 2px; font-size: 11px; line-height: 1.15; }
+  aside { padding: 10px; }
+  .hint { margin-top: 6px; }
+  .opt button { min-height: 40px; }
+  .opt [data-aim] { width: 44px; }
+  #colours button { width: 36px; height: 36px; }
+  .power { padding: 10px 0; }
+  .radio { padding: 8px 0; }
+}
 button.on:disabled { opacity: 1; }

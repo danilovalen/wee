@@ -11,6 +11,7 @@ Plan and decisions: `docs/PLAN.md`. Playtest feedback: `docs/REGISTER.md`.
 | All gates (node + browser) | `npm test` |
 | One gate | `npm test -- --only=sim` |
 | Prove the gates can go red | `node tools/mutate.mjs` |
+| One-file build for phones (`dist/wee.html`) | `node tools/build-single.mjs` |
 
 The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` elsewhere.
 
@@ -22,6 +23,7 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
   where the question is what the player can see.
 - Every gate ends on its own `N/M passed` line; a file without one is red.
 - A new gate gets a mutant in `tools/mutate.mjs`, and the mutant must be caught.
+- `dist/wee.html` is built, never edited; rebuild it after any change to `src/`, `index.html` or `style.css`.
 - Draw rooms in tests with `room([...])` from `tests/lib.mjs`.
 - Player-facing text: condition first, imperative, no em dashes. Flag new copy as a draft.
 - Every playtest report gets a numbered item in `docs/REGISTER.md` and closes with an outcome.

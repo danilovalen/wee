@@ -1,5 +1,6 @@
 import { createGame, step, gameText, emptyLevel, resizeLevel, parseLevel, TICK_MS, COLOURS, POWERS, NEEDS, CLOCKWISE, CARRIES_TURRET } from './sim.js';
 import { T, INK, drawEdit, drawPlay, drawPiece } from './render.js';
+import { SAMPLE } from './sample.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('game'), g = canvas.getContext('2d');
@@ -30,8 +31,12 @@ const POWER_TEXT = {
 };
 const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', hook: 'Hook', swim: 'Swim', light: 'Light' };
 
+const touch = matchMedia('(pointer: coarse)').matches;
+const portrait = () => innerHeight > innerWidth;
+
+// A new room takes the screen's shape: taller than wide on a phone held upright.
 function starterLevel() {
-  const l = emptyLevel(20, 12);
+  const l = portrait() ? emptyLevel(12, 14) : emptyLevel(20, 12);
   for (let x = 0; x < l.w; x++) { l.cells[x] = 'wall'; l.cells[(l.h - 1) * l.w + x] = 'wall'; }
   for (let y = 0; y < l.h; y++) { l.cells[y * l.w] = 'wall'; l.cells[y * l.w + l.w - 1] = 'wall'; }
   return l;
@@ -39,14 +44,15 @@ function starterLevel() {
 
 const ui = { tool: 'wall', axis: 'h', mode: 'input', colour: 'red', aim: ['right'] };
 let level = starterLevel();
-let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0;
+let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
 
 function now() { return performance.now(); }
 
 // ---------- canvas size ----------
 function fit() {
   const stage = $('stage').clientWidth || level.w * T;
-  const zoom = Math.max(1, Math.min(2.5, stage / (level.w * T), (innerHeight - 140) / (level.h * T)));
+  const room = portrait() ? innerHeight * 0.62 : innerHeight - 140;
+  const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));
   const k = (window.devicePixelRatio || 1) * zoom;
   canvas.width = Math.round(level.w * T * k); canvas.height = Math.round(level.h * T * k);
   canvas.style.width = Math.round(level.w * T * zoom) + 'px';
@@ -109,18 +115,33 @@ function cellFromEvent(ev) {
 }
 
 canvas.addEventListener('contextmenu', ev => ev.preventDefault());
+// In play, a swipe is an arrow key: each new direction within one drag sends once.
+const SWIPE_PX = 24;
 canvas.addEventListener('pointerdown', ev => {
-  if (mode !== 'edit') return;
+  if (mode === 'play') {
+    swipe = { x: ev.clientX, y: ev.clientY, last: null };
+    canvas.setPointerCapture(ev.pointerId);
+    return;
+  }
   const c = cellFromEvent(ev); if (!c) return;
   painting = ev.button === 2 ? 2 : 1;
   canvas.setPointerCapture(ev.pointerId);
   place(c.x, c.y, painting === 2);
 });
 canvas.addEventListener('pointermove', ev => {
-  hover = mode === 'edit' ? cellFromEvent(ev) : null;
+  if (mode === 'play' && swipe) {
+    const dx = ev.clientX - swipe.x, dy = ev.clientY - swipe.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_PX) return;
+    const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    if (d !== swipe.last) pending.push(d);
+    Object.assign(swipe, { x: ev.clientX, y: ev.clientY, last: d });
+    return;
+  }
+  hover = mode === 'edit' && !touch ? cellFromEvent(ev) : null;
   if (painting && hover && ui.tool !== 'start') place(hover.x, hover.y, painting === 2);
 });
-canvas.addEventListener('pointerup', () => { painting = 0; });
+canvas.addEventListener('pointerup', () => { painting = 0; swipe = null; });
+canvas.addEventListener('pointercancel', () => { painting = 0; swipe = null; });
 canvas.addEventListener('pointerleave', () => { hover = null; });
 
 // ---------- play ----------
@@ -146,9 +167,10 @@ function setMode(m) {
   mode = m;
   document.body.classList.toggle('play', m === 'play');
   $('mode').textContent = m === 'play' ? 'Edit' : 'Play';
-  $('keys').textContent = m === 'play'
-    ? 'Arrows slide. Space jumps. R returns you to the checkpoint. E goes back to editing.'
-    : 'E plays this room.';
+  $('keys').textContent = touch
+    ? (m === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : 'Press Play to try this room.')
+    : (m === 'play' ? 'Arrows slide. Space jumps. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
+  $('pad').hidden = m !== 'play';
   fx = [];
   if (m === 'play') { game = createGame(level); prev = snapshot(game); pending = []; acc = 0; }
   else game = null;
@@ -245,6 +267,9 @@ function buildPanels() {
   }
   document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { level.clock = r.value; if (game) game.clock = r.value; });
   $('mode').onclick = () => setMode(mode === 'play' ? 'edit' : 'play');
+  $('jumpBtn').onclick = () => pending.push('jump');
+  $('respawnBtn').onclick = () => pending.push('respawn');
+  $('placeHint').textContent = touch ? 'Tap or drag to place. Pick Erase to remove.' : 'Click to place. Right click to erase.';
   const resize = () => {
     const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));
     if (w !== level.w || h !== level.h) { level = resizeLevel(level, w, h); fit(); }
@@ -257,6 +282,7 @@ function buildPanels() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };
+  $('sample').onclick = () => { level = parseLevel(JSON.stringify(SAMPLE)); setMode('edit'); syncPanel(); fit(); };
   $('open').onclick = () => $('file').click();
   $('file').onchange = async () => {
     const f = $('file').files[0]; $('file').value = '';

@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>wee</title>
+  <style>
+:root {
+  --bg: #0d0f15; --panel: #161a24; --line: #262c3b; --text: #e9edf5; --dim: #8e98ad;
+  --accent: #5ee0e6; --radius: 8px;
+}
+* { box-sizing: border-box; }
+html, body { overscroll-behavior: none; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
+header { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.logo { font-size: 18px; letter-spacing: 1px; margin-right: 8px; }
+.spacer { flex: 1; }
+button {
+  font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 6px 12px; cursor: pointer; transition: background .12s, border-color .12s;
+}
+button:hover { border-color: var(--dim); }
+button.on { border-color: var(--accent); background: #183238; }
+button:disabled { opacity: .4; cursor: default; }
+#mode { min-width: 72px; }
+main { display: grid; grid-template-columns: 256px minmax(0, 1fr) 260px; gap: 16px; padding: 16px; align-items: start; }
+aside { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin: 4px 0 8px; }
+h2:not(:first-child) { margin-top: 16px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.grid button { min-width: 0; text-align: left; display: flex; align-items: center; gap: 6px; padding: 5px 6px; font-size: 13px; }
+.grid canvas { width: 20px; height: 20px; flex: none; }
+.opt[hidden] { display: none; }
+.opt { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 10px; }
+.opt > span:first-child { width: 100%; color: var(--dim); font-size: 12px; }
+.opt button { padding: 4px 8px; font-size: 12px; }
+.opt [data-aim] { width: 32px; padding: 4px 0; font-size: 15px; }
+.opt .note { width: 100%; color: var(--dim); font-size: 12px; }
+#colours { display: flex; gap: 6px; }
+#colours button { width: 26px; height: 26px; padding: 0; border-radius: 50%; border-width: 2px; }
+.size { display: flex; gap: 8px; }
+.size label { display: flex; flex-direction: column; gap: 2px; color: var(--dim); font-size: 12px; }
+.size input { width: 64px; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+.hint { color: var(--dim); font-size: 12px; margin: 10px 0 0; }
+#stage { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+#game { display: block; border-radius: var(--radius); border: 1px solid var(--line); image-rendering: auto; touch-action: none; }
+body.play #tools { opacity: .45; pointer-events: none; }
+.power { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; padding: 6px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.power:last-child { border-bottom: 0; }
+.power b { font-weight: 600; }
+.power small { grid-column: 2; color: var(--dim); }
+.power.off { cursor: default; opacity: .45; }
+.radio { display: flex; gap: 8px; align-items: center; padding: 3px 0; cursor: pointer; }
+button { touch-action: manipulation; }
+.pad { display: flex; gap: 8px; margin-top: 10px; width: 100%; max-width: 480px; }
+.pad[hidden] { display: none; }
+.pad button { flex: 1; min-height: 48px; font-size: 16px; }
+@media (max-width: 900px) { main { grid-template-columns: 1fr; } #stage { order: -1; } }
+@media (max-width: 700px) {
+  body { font-size: 15px; }
+  header { padding: 8px 12px; }
+  main { padding: 12px; gap: 12px; }
+  header button { min-height: 40px; }
+  .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .grid button { flex-direction: column; justify-content: center; text-align: center; gap: 2px; padding: 4px 2px; font-size: 11px; line-height: 1.15; }
+  aside { padding: 10px; }
+  .hint { margin-top: 6px; }
+  .opt button { min-height: 40px; }
+  .opt [data-aim] { width: 44px; }
+  #colours button { width: 36px; height: 36px; }
+  .power { padding: 10px 0; }
+  .radio { padding: 8px 0; }
+}
+button.on:disabled { opacity: 1; }
+</style>
+</head>
+<body>
+  <header>
+    <b class="logo">wee</b>
+    <button id="mode" type="button" title="E">Play</button>
+    <span class="spacer"></span>
+    <button id="sample" type="button">Sample</button>
+    <button id="save" type="button">Save</button>
+    <button id="open" type="button">Open</button>
+    <input id="file" type="file" accept=".wee,.json" hidden>
+  </header>
+  <main>
+    <aside id="tools">
+      <h2>Build</h2>
+      <div id="palette" class="grid"></div>
+      <div id="options">
+        <div class="opt" data-for="mover enemy strong" id="axisOpt">
+          <span>Moves</span>
+          <button type="button" data-axis="h">Across</button>
+          <button type="button" data-axis="v">Up and down</button>
+        </div>
+        <div class="opt" data-for="mover enemy strong turret">
+          <span>Clock</span>
+          <button type="button" data-mode="realtime">Real time</button>
+          <button type="button" data-mode="input">On your move</button>
+          <button type="button" data-mode="follow">Same way as you</button>
+        </div>
+        <div class="opt" data-for="turret">
+          <span>Fires, one at a time, clockwise</span>
+          <button type="button" data-aim="up" title="Up">&uarr;</button>
+          <button type="button" data-aim="right" title="Right">&rarr;</button>
+          <button type="button" data-aim="down" title="Down">&darr;</button>
+          <button type="button" data-aim="left" title="Left">&larr;</button>
+          <small class="note">Place it on a box, a heavy box or an enemy to mount it there.</small>
+        </div>
+        <div class="opt" data-for="button door">
+          <span>Colour</span>
+          <span id="colours"></span>
+        </div>
+      </div>
+      <h2>Room</h2>
+      <div class="size">
+        <label>Width <input id="w" type="number" min="5" max="40"></label>
+        <label>Height <input id="h" type="number" min="5" max="30"></label>
+      </div>
+      <p id="placeHint" class="hint"></p>
+    </aside>
+    <section id="stage">
+      <canvas id="game"></canvas>
+      <div id="pad" class="pad" hidden>
+        <button id="jumpBtn" type="button">Jump</button>
+        <button id="respawnBtn" type="button">Back to checkpoint</button>
+      </div>
+      <p id="keys" class="hint"></p>
+    </section>
+    <aside id="powers">
+      <h2>Powers</h2>
+      <div id="powerList"></div>
+      <h2>World moves</h2>
+      <label class="radio"><input type="radio" name="clock" value="tile"> Each tile you slide</label>
+      <label class="radio"><input type="radio" name="clock" value="slide"> Each slide</label>
+    </aside>
+  </main>
+  <script type="module">
+// ---- src/sim.js
+// The rules. Pure and deterministic: no DOM, no clock, no randomness.
+// One call to step() is one tick; the renderer only reads state.
+
+const TICK_MS = 60;
+const RT_PERIOD = 6;
+const JUMP_TICKS = 6;
+const LASER_TICKS = 5;
+
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+const OPPOSITE = { up: 'down', down: 'up', left: 'right', right: 'left' };
+
+const COLOURS = ['red', 'blue', 'yellow', 'green'];
+
+// Clockwise order: a turret fires its chosen directions in this order.
+const CLOCKWISE = ['up', 'right', 'down', 'left'];
+const KINDS = ['mover', 'enemy', 'strong', 'box', 'heavy', 'turret'];
+const MOVES = ['mover', 'enemy', 'strong'];
+const ENEMY = ['enemy', 'strong'];
+// realtime: on its own clock; input: on each world step; follow: on each world step,
+// the same way the player moved.
+const MODES = ['realtime', 'input', 'follow'];
+// A turret can stand alone or ride one of these.
+const CARRIES_TURRET = ['box', 'heavy', 'enemy', 'strong'];
+
+function checkTurret(t) {
+  if (!Array.isArray(t.dirs) || t.dirs.length < 1 || t.dirs.length > 4 || t.dirs.some(d => !CLOCKWISE.includes(d)) || new Set(t.dirs).size !== t.dirs.length)
+    throw new Error('A turret needs one to four different directions.');
+  if (!MODES.includes(t.mode)) throw new Error('Unknown turret clock: ' + t.mode);
+}
+
+// A power listed in NEEDS cannot act until its block type exists.
+const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'hook', 'swim', 'light'];
+const NEEDS = { hook: 'grapple tiles', swim: 'hazard tiles', light: 'dark levels' };
+
+function emptyLevel(w = 20, h = 12) {
+  return {
+    format: 'wee-level', version: 1, w, h,
+    cells: Array(w * h).fill(''),
+    start: { x: 1, y: 1 },
+    entities: [],
+    powers: { boomerang: true, dive: true, laser: true, cycle: true, hook: false, swim: false, light: false },
+    clock: 'tile',
+  };
+}
+
+function resizeLevel(level, w, h) {
+  const cells = Array(w * h).fill('');
+  for (let y = 0; y < Math.min(h, level.h); y++)
+    for (let x = 0; x < Math.min(w, level.w); x++) cells[y * w + x] = level.cells[y * level.w + x];
+  return {
+    ...level, w, h, cells,
+    start: { x: Math.min(level.start.x, w - 1), y: Math.min(level.start.y, h - 1) },
+    entities: level.entities.filter(e => e.x < w && e.y < h),
+  };
+}
+
+// Refuses a file it does not understand instead of half-loading it.
+function parseLevel(text) {
+  const l = JSON.parse(text);
+  if (l.format !== 'wee-level') throw new Error('Not a wee level file.');
+  if (!(l.w > 0 && l.h > 0) || !Array.isArray(l.cells) || l.cells.length !== l.w * l.h)
+    throw new Error('The room size does not match its cells.');
+  for (const c of l.cells) if (!isCell(c)) throw new Error('Unknown tile: ' + c);
+  for (const e of l.entities) {
+    if (!KINDS.includes(e.kind)) throw new Error('Unknown piece: ' + e.kind);
+    if (e.turret) checkTurret(e.turret);
+    if (MOVES.includes(e.kind) && e.mode && !MODES.includes(e.mode)) throw new Error('Unknown clock: ' + e.mode);
+  }
+  if (!['tile', 'slide'].includes(l.clock)) throw new Error('Unknown clock: ' + l.clock);
+  return { ...emptyLevel(l.w, l.h), ...l, powers: { ...emptyLevel().powers, ...l.powers } };
+}
+
+function isCell(c) {
+  if (c === '' || c === 'wall' || c === 'checkpoint') return true;
+  const [kind, colour] = c.split(':');
+  return (kind === 'button' || kind === 'door') && COLOURS.includes(colour);
+}
+
+function createGame(level) {
+  const l = JSON.parse(JSON.stringify(level));
+  let id = 0;
+  const s = {
+    w: l.w, h: l.h, cells: l.cells, powers: l.powers, clock: l.clock,
+    start: { ...l.start },
+    checkpoint: { ...l.start },
+    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, air: 0, snap: true },
+    entities: l.entities.map(e => ({
+      id: ++id, kind: e.kind, x: e.x, y: e.y,
+      axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false,
+      turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, next: 0 } : null,
+    })),
+    open: {}, tick: 0, worldSteps: 0, deaths: 0, events: [],
+  };
+  refreshDoors(s);
+  return s;
+}
+
+const inb = (s, x, y) => x >= 0 && y >= 0 && x < s.w && y < s.h;
+const cellAt = (s, x, y) => s.cells[y * s.w + x];
+
+function solidCell(s, x, y) {
+  if (!inb(s, x, y)) return true;
+  const c = cellAt(s, x, y);
+  if (c === 'wall') return true;
+  if (c.startsWith('door:')) return !s.open[c.slice(5)];
+  return false;
+}
+
+const entAt = (s, x, y, not) => s.entities.find(e => !e.dead && e !== not && e.x === x && e.y === y);
+const playerAt = (s, x, y) => s.player.x === x && s.player.y === y;
+
+function free(s, x, y) {
+  return !solidCell(s, x, y) && !entAt(s, x, y) && !playerAt(s, x, y);
+}
+
+// A colour's doors open only while every button of that colour is pressed.
+// A door that is occupied cannot close on what stands in it.
+function refreshDoors(s) {
+  const pressed = {}, any = {};
+  s.cells.forEach((c, i) => {
+    if (!c.startsWith('button:')) return;
+    const col = c.slice(7), x = i % s.w, y = (i - x) / s.w;
+    const down = (playerAt(s, x, y) && s.player.air === 0) || !!entAt(s, x, y);
+    any[col] = true;
+    pressed[col] = (pressed[col] ?? true) && down;
+  });
+  for (const col of COLOURS) {
+    const want = !!(any[col] && pressed[col]);
+    if (!want && s.open[col]) {
+      const blocked = s.cells.some((c, i) => c === 'door:' + col &&
+        (entAt(s, i % s.w, Math.floor(i / s.w)) || playerAt(s, i % s.w, Math.floor(i / s.w))));
+      if (blocked) continue;
+    }
+    s.open[col] = want;
+  }
+}
+
+function respawn(s) {
+  Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, air: 0, snap: true });
+  refreshDoors(s);
+}
+
+function die(s) {
+  s.events.push({ type: 'die', x: s.player.x, y: s.player.y });
+  s.deaths++;
+  respawn(s);
+}
+
+function kill(s, e, how) {
+  e.dead = true;
+  s.events.push({ type: 'kill', id: e.id, how });
+}
+
+// One player tile. Returns 'moved', 'blocked' or 'died'.
+function playerStep(s, d, diving) {
+  const [dx, dy] = DIRS[d], p = s.player, nx = p.x + dx, ny = p.y + dy;
+  if (solidCell(s, nx, ny)) return 'blocked';
+  const e = entAt(s, nx, ny);
+  if (e) {
+    if (e.kind === 'enemy' && diving) kill(s, e, 'dive');
+    else if (ENEMY.includes(e.kind)) { die(s); return 'died'; }
+    else if (e.kind === 'heavy') {
+      if (diving) { e.slide = d; s.events.push({ type: 'crash', x: nx, y: ny }); }
+      return 'blocked';
+    } else if (e.kind === 'box' && free(s, nx + dx, ny + dy)) { e.x += dx; e.y += dy; }
+    else return 'blocked';
+  }
+  p.x = nx; p.y = ny; p.moved++;
+  if (cellAt(s, nx, ny) === 'checkpoint' && (s.checkpoint.x !== nx || s.checkpoint.y !== ny)) {
+    s.checkpoint = { x: nx, y: ny };
+    s.events.push({ type: 'checkpoint', x: nx, y: ny });
+  }
+  refreshDoors(s);
+  return 'moved';
+}
+
+function endSlide(s) {
+  const moved = s.player.moved, d = s.player.dir;
+  s.player.dir = null; s.player.moved = 0;
+  if (moved > 0 && s.clock === 'slide') worldStep(s, d);
+}
+
+// A slide that moved the player gives the world its step, per the clock.
+function slideOnce(s, diving) {
+  const r = playerStep(s, s.player.dir, diving);
+  if (r === 'moved') { if (s.clock === 'tile') worldStep(s, s.player.dir); return true; }
+  if (r === 'blocked') endSlide(s);
+  return false;
+}
+
+function dive(s) {
+  s.events.push({ type: 'dive', fromX: s.player.x, fromY: s.player.y });
+  for (let i = 0; i < s.w * s.h && s.player.dir; i++) {
+    const before = s.deaths;
+    if (!slideOnce(s, true) || s.deaths !== before) break;
+  }
+  if (s.player.dir) endSlide(s);
+  s.player.snap = true;
+}
+
+function laser(s, d) {
+  const [dx, dy] = DIRS[d];
+  let x = s.player.x + dx, y = s.player.y + dy, len = 0;
+  while (!solidCell(s, x, y)) {
+    const e = entAt(s, x, y);
+    if (e) {
+      if (e.kind === 'enemy') kill(s, e, 'laser');
+      else break;
+    }
+    len++; x += dx; y += dy;
+  }
+  s.events.push({ type: 'laser', x: s.player.x, y: s.player.y, d, len });
+}
+
+// A turret fires its next direction clockwise, or the given one. The beam kills you
+// (unless you are in the air) and weak enemies; anything else solid stops it.
+function fireTurret(s, e, forced) {
+  const t = e.turret;
+  let d = forced;
+  if (!d) { d = t.dirs[t.next % t.dirs.length]; t.next++; }
+  const [dx, dy] = DIRS[d];
+  let x = e.x + dx, y = e.y + dy, len = 0, hit = false;
+  while (!solidCell(s, x, y)) {
+    if (playerAt(s, x, y) && s.player.air === 0) { hit = true; break; }
+    const o = entAt(s, x, y);
+    if (o) {
+      if (o.kind === 'enemy') kill(s, o, 'turret');
+      else break;
+    }
+    len++; x += dx; y += dy;
+  }
+  s.events.push({ type: 'beam', x: e.x, y: e.y, d, len: hit ? len + 1 : len });
+  if (hit) die(s);
+}
+
+function fireTurrets(s, mode) {
+  for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === mode) fireTurret(s, e);
+}
+
+// d is the way the player moved for this step; a jump gives none, so 'follow'
+// pieces and turrets sit it out.
+function worldStep(s, d = null) {
+  s.worldSteps++;
+  for (const e of s.entities) {
+    if (e.dead || !MOVES.includes(e.kind)) continue;
+    if (e.mode === 'input') moveMover(s, e);
+    else if (e.mode === 'follow' && d) moveMover(s, e, d);
+  }
+  fireTurrets(s, 'input');
+  if (d) for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === 'follow' && e.turret.dirs.includes(d)) fireTurret(s, e, d);
+  refreshDoors(s);
+}
+
+// Moves one tile along its patrol, or the given way. Blocked, it stays and turns its patrol.
+function moveMover(s, e, d) {
+  const dx = d ? DIRS[d][0] : e.axis === 'h' ? e.dir : 0, dy = d ? DIRS[d][1] : e.axis === 'v' ? e.dir : 0;
+  const tx = e.x + dx, ty = e.y + dy;
+  if (solidCell(s, tx, ty)) { e.dir = -e.dir; return; }
+  const o = entAt(s, tx, ty, e);
+  if (o) {
+    if (o.kind === 'box' && free(s, tx + dx, ty + dy)) { o.x += dx; o.y += dy; }
+    else { e.dir = -e.dir; return; }
+  }
+  if (playerAt(s, tx, ty)) {
+    if (ENEMY.includes(e.kind)) {
+      e.x = tx; e.y = ty;
+      if (e.kind === 'enemy' && s.player.air > 0) kill(s, e, 'jump'); else die(s);
+      return;
+    }
+    const p = s.player;
+    if (free(s, tx + dx, ty + dy)) { p.x += dx; p.y += dy; s.events.push({ type: 'pushed' }); }
+    else { e.x = tx; e.y = ty; die(s); return; }
+  }
+  e.x = tx; e.y = ty;
+}
+
+function slideHeavy(s, e) {
+  const [dx, dy] = DIRS[e.slide], tx = e.x + dx, ty = e.y + dy;
+  if (solidCell(s, tx, ty)) { e.slide = null; return; }
+  const o = entAt(s, tx, ty, e);
+  if (o) {
+    if (ENEMY.includes(o.kind)) kill(s, o, 'squash');
+    else { e.slide = null; return; }
+  }
+  e.x = tx; e.y = ty;
+  if (playerAt(s, tx, ty)) die(s);
+}
+
+function input(s, k) {
+  const p = s.player;
+  if (k === 'respawn') { respawn(s); s.events.push({ type: 'respawn' }); return; }
+  if (k === 'jump') {
+    if (s.powers.cycle && !p.dir && p.air === 0) {
+      p.air = JUMP_TICKS;
+      s.events.push({ type: 'jump' });
+      worldStep(s);
+    }
+    return;
+  }
+  if (!DIRS[k] || p.air > 0) return;
+  if (!p.dir) { p.dir = k; p.moved = 0; return; }
+  if (k === p.dir) { if (s.powers.dive) dive(s); }
+  else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { p.dir = k; s.events.push({ type: 'boomerang' }); } }
+  else if (s.powers.laser) laser(s, k);
+}
+
+function step(s, inputs = []) {
+  s.events = [];
+  s.player.snap = false;
+  for (const k of inputs) input(s, k);
+  if (s.player.dir) slideOnce(s, false);
+  for (const e of s.entities) if (!e.dead && e.kind === 'heavy' && e.slide) slideHeavy(s, e);
+  if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
+    for (const e of s.entities) if (!e.dead && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
+    fireTurrets(s, 'realtime');
+  }
+  if (s.player.air > 0) s.player.air--;
+  refreshDoors(s);
+  s.tick++;
+  return s;
+}
+
+// The one text reading of the game: tests, the bot and the agent all use it.
+function gameText(s, mode = 'play') {
+  return JSON.stringify({
+    mode, tick: s.tick, clock: s.clock, worldSteps: s.worldSteps, deaths: s.deaths,
+    player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, airborne: s.player.air > 0 },
+    checkpoint: s.checkpoint,
+    pieces: s.entities.filter(e => !e.dead).map(e => ({
+      kind: e.kind, x: e.x, y: e.y,
+      ...(MOVES.includes(e.kind) ? { axis: e.axis, mode: e.mode } : {}),
+      ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, next: e.turret.dirs[e.turret.next % e.turret.dirs.length] } } : {}),
+    })),
+    open: COLOURS.filter(c => s.open[c]),
+    powers: POWERS.filter(p => s.powers[p] && !NEEDS[p]),
+  });
+}
+
+// Replays a key log ({t, k}) from the level; the same log always ends in the same text.
+function replay(level, log, ticks) {
+  const s = createGame(level);
+  for (let t = 0; t < ticks; t++) step(s, log.filter(i => i.t === t).map(i => i.k));
+  return s;
+}
+
+// ---- src/sample.js
+// The sample room, kept in step with rooms/sample.wee by tools/build-single.mjs.
+const SAMPLE = {"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","wall","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"};
+
+// ---- src/render.js
+// Draws a level (edit mode) or a running game (play mode) on the canvas.
+// Motion is drawn between the previous tick and this one; nothing here changes state.
+
+
+const AIM = { up: -Math.PI / 2, right: 0, down: Math.PI / 2, left: Math.PI };
+
+const T = 32;
+
+const INK = {
+  floor: '#14171f', grid: '#1c2130', wall: '#3a4256', wallTop: '#4d5770',
+  player: '#5ee0e6', start: '#5ee0e6', shadow: 'rgba(0,0,0,0.45)',
+  mover: '#8e98ad', moverEdge: '#c3cad8', enemy: '#e8525c', strong: '#7a1626', strongEdge: '#ff8a93', beam: '#ff3b3b', barrel: '#5b6274', box: '#c79552', boxEdge: '#8a6232',
+  heavy: '#5d6474', heavyEdge: '#2b2f39', rivet: '#9aa2b3', flag: '#f2c94c', laser: '#ff6bd6',
+  red: '#e8525c', blue: '#4f8cff', yellow: '#f2c94c', green: '#46c37b',
+};
+
+const ease = t => 1 - Math.pow(1 - t, 3);
+const lerp = (a, b, t) => a + (b - a) * t;
+
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath();
+  g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+
+function drawCell(g, c, x, y, s, scale = 1) {
+  if (!c) return;
+  const px = x * T, py = y * T;
+  g.save();
+  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
+  if (c === 'wall') {
+    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+  } else if (c === 'checkpoint') {
+    const active = s && s.checkpoint.x === x && s.checkpoint.y === y;
+    g.strokeStyle = INK.moverEdge; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(11, 26); g.lineTo(11, 6); g.stroke();
+    g.fillStyle = active ? INK.flag : '#6b6150';
+    g.beginPath(); g.moveTo(12, 6); g.lineTo(25, 10.5); g.lineTo(12, 15); g.fill();
+  } else {
+    const [kind, col] = c.split(':');
+    g.fillStyle = INK[col]; g.strokeStyle = INK[col]; g.lineWidth = 2.5;
+    if (kind === 'button') {
+      const down = s && pressedAt(s, x, y);
+      g.globalAlpha = 0.35; g.beginPath(); g.arc(16, 16, 11, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
+      g.beginPath(); g.arc(16, down ? 17 : 15, down ? 6 : 8, 0, Math.PI * 2); g.fill();
+    } else {
+      const open = s && s.open[col];
+      if (open) { g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]); }
+      else {
+        roundRect(g, 2, 2, T - 4, T - 4, 4); g.fill();
+        g.fillStyle = 'rgba(0,0,0,0.3)';
+        for (const bx of [9, 15, 21]) g.fillRect(bx, 4, 2, T - 8);
+      }
+    }
+  }
+  g.restore();
+}
+
+function pressedAt(s, x, y) {
+  return (s.player.x === x && s.player.y === y && s.player.air === 0) ||
+    s.entities.some(e => !e.dead && e.x === x && e.y === y);
+}
+
+// The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
+function modeBadge(g, mode, bx = 24, by = 8) {
+  g.save(); g.translate(bx, by);
+  g.fillStyle = '#0b0d12'; g.beginPath(); g.arc(0, 0, 5.5, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#e9edf5'; g.fillStyle = '#e9edf5'; g.lineWidth = 1.4;
+  if (mode === 'realtime') {
+    g.beginPath(); g.arc(0, 0, 3.6, 0, Math.PI * 2); g.stroke();
+    g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -2.4); g.moveTo(0, 0); g.lineTo(1.8, 0.8); g.stroke();
+  } else if (mode === 'follow') {
+    g.beginPath(); g.moveTo(-3, -2.5); g.lineTo(-0.5, 0); g.lineTo(-3, 2.5); g.moveTo(0.5, -2.5); g.lineTo(3, 0); g.lineTo(0.5, 2.5); g.stroke();
+  } else {
+    g.beginPath(); g.moveTo(-2.5, 2); g.lineTo(0, -2.5); g.lineTo(2.5, 2); g.closePath(); g.fill();
+  }
+  g.restore();
+}
+
+// A turret head: one barrel per direction it fires; the next to fire is lit.
+function drawTurret(g, t, badge, mounted) {
+  const next = t.dirs[(t.next || 0) % t.dirs.length];
+  g.save();
+  if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
+  for (const d of t.dirs) {
+    g.save(); g.translate(16, 16); g.rotate(AIM[d]);
+    g.fillStyle = d === next ? INK.beam : INK.barrel;
+    roundRect(g, 4, -3, 11, 6, 2); g.fill();
+    g.restore();
+  }
+  g.fillStyle = '#20242f'; g.beginPath(); g.arc(16, 16, 7, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = INK.beam; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = INK.beam; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
+  g.restore();
+  if (badge) modeBadge(g, t.mode, badge[0], badge[1]);
+}
+
+function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
+  g.save();
+  g.globalAlpha = alpha;
+  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
+  if (e.kind === 'mover') {
+    g.fillStyle = INK.mover; roundRect(g, 2, 2, T - 4, T - 4, 6); g.fill();
+    g.strokeStyle = INK.moverEdge; g.lineWidth = 2; g.stroke();
+    g.strokeStyle = '#3b4252'; g.lineWidth = 2.5;
+    g.beginPath();
+    if (e.axis === 'h') { g.moveTo(10, 12); g.lineTo(6, 16); g.lineTo(10, 20); g.moveTo(22, 12); g.lineTo(26, 16); g.lineTo(22, 20); }
+    else { g.moveTo(12, 10); g.lineTo(16, 6); g.lineTo(20, 10); g.moveTo(12, 22); g.lineTo(16, 26); g.lineTo(20, 22); }
+    g.stroke();
+    modeBadge(g, e.mode);
+  } else if (e.kind === 'enemy') {
+    g.fillStyle = INK.enemy;
+    g.beginPath(); g.moveTo(16, 3); g.lineTo(29, 16); g.lineTo(16, 29); g.lineTo(3, 16); g.closePath(); g.fill();
+    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
+    g.fillStyle = '#fff';
+    g.beginPath(); g.arc(12 + lx, 15 + ly, 3, 0, Math.PI * 2); g.arc(20 + lx, 15 + ly, 3, 0, Math.PI * 2); g.fill();
+    modeBadge(g, e.mode);
+  } else if (e.kind === 'strong') {
+    g.fillStyle = INK.strong; roundRect(g, 2, 3, T - 4, T - 5, 7); g.fill();
+    g.strokeStyle = INK.strongEdge; g.lineWidth = 2; g.stroke();
+    g.fillStyle = INK.strongEdge;
+    g.beginPath(); g.moveTo(6, 6); g.lineTo(9, 0); g.lineTo(12, 5); g.moveTo(20, 5); g.lineTo(23, 0); g.lineTo(26, 6); g.fill();
+    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
+    g.fillStyle = '#ffd34d';
+    g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
+    modeBadge(g, e.mode);
+  } else if (e.kind === 'turret') {
+    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+  } else if (e.kind === 'box') {
+    g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
+    g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();
+    g.beginPath(); g.moveTo(7, 7); g.lineTo(25, 25); g.moveTo(25, 7); g.lineTo(7, 25); g.stroke();
+  } else if (e.kind === 'heavy') {
+    g.fillStyle = INK.heavy; roundRect(g, 2, 2, T - 4, T - 4, 3); g.fill();
+    g.strokeStyle = INK.heavyEdge; g.lineWidth = 3; g.stroke();
+    g.fillStyle = INK.rivet;
+    for (const [rx, ry] of [[7, 7], [25, 7], [7, 25], [25, 25]]) { g.beginPath(); g.arc(rx, ry, 2, 0, Math.PI * 2); g.fill(); }
+  }
+  if (e.turret) drawTurret(g, e.turret, e.kind === 'turret' ? [24, 8] : [8, 24], e.kind !== 'turret');
+  g.restore();
+}
+
+function drawPlayer(g, px, py, lift, scale, alpha = 1) {
+  if (lift > 0) {
+    g.fillStyle = INK.shadow;
+    g.beginPath(); g.ellipse(px + T / 2 + 2, py + T / 2 + 6, 11 * (1 - lift * 0.35), 6.5 * (1 - lift * 0.35), 0, 0, Math.PI * 2); g.fill();
+  }
+  const k = scale * (1 + lift * 0.45);
+  g.save(); g.globalAlpha = alpha;
+  g.translate(px + T / 2 - lift * 4, py + T / 2 - lift * 9); g.scale(k, k);
+  g.fillStyle = INK.player; g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#0b2a2c'; g.beginPath(); g.arc(-3.5, -2, 2.2, 0, Math.PI * 2); g.arc(3.5, -2, 2.2, 0, Math.PI * 2); g.fill();
+  g.restore();
+}
+
+function drawFloor(g, w, h) {
+  g.fillStyle = INK.floor; g.fillRect(0, 0, w * T, h * T);
+  g.strokeStyle = INK.grid; g.lineWidth = 1;
+  g.beginPath();
+  for (let x = 1; x < w; x++) { g.moveTo(x * T + 0.5, 0); g.lineTo(x * T + 0.5, h * T); }
+  for (let y = 1; y < h; y++) { g.moveTo(0, y * T + 0.5); g.lineTo(w * T, y * T + 0.5); }
+  g.stroke();
+}
+
+// fx: [{type, at(ms), ...}] effects started by game events or edits.
+function drawEdit(g, level, hover, fx, now) {
+  drawFloor(g, level.w, level.h);
+  const pop = (x, y) => {
+    const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
+    return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
+  };
+  level.cells.forEach((c, i) => drawCell(g, c, i % level.w, Math.floor(i / level.w), null, pop(i % level.w, Math.floor(i / level.w))));
+  for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
+  drawPlayer(g, level.start.x * T, level.start.y * T, 0, pop(level.start.x, level.start.y) * 0.9, 0.9);
+  for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {
+    const t = (now - f.at) / 160;
+    if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);
+    if (f.piece) drawPiece(g, f.piece, f.x * T, f.y * T, 1 - ease(t) * 0.8, 1 - t);
+  }
+  if (hover) {
+    g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2;
+    g.strokeRect(hover.x * T + 1, hover.y * T + 1, T - 2, T - 2);
+  }
+}
+
+// prev: positions before the last tick; alpha: 0..1 progress into the next tick.
+function drawPlay(g, s, prev, alpha, fx, now) {
+  const shake = fx.find(f => f.type === 'crash' && now - f.at < 180);
+  g.save();
+  if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
+  drawFloor(g, s.w, s.h);
+  s.cells.forEach((c, i) => drawCell(g, c, i % s.w, Math.floor(i / s.w), s));
+  const a = ease(alpha);
+  const pos = (id, x, y) => {
+    const p = prev.ents[id];
+    if (!p || Math.abs(p.x - x) + Math.abs(p.y - y) > 1) return [x * T, y * T];
+    return [lerp(p.x, x, a) * T, lerp(p.y, y, a) * T];
+  };
+  for (const e of s.entities) {
+    if (!e.dead) { const [px, py] = pos(e.id, e.x, e.y); drawPiece(g, e, px, py); continue; }
+    const f = fx.find(f => f.type === 'kill' && f.id === e.id);
+    if (f && now - f.at < 260) {
+      const t = (now - f.at) / 260;
+      drawPiece(g, e, e.x * T, e.y * T, 1 + 0.3 * t, 1 - t);
+    }
+  }
+  for (const f of fx) if ((f.type === 'laser' || f.type === 'beam') && now - f.at < LASER_MS) {
+    const [dx, dy] = DIRS[f.d], t = (now - f.at) / LASER_MS;
+    g.strokeStyle = f.type === 'beam' ? INK.beam : INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
+    g.beginPath();
+    g.moveTo(f.x * T + T / 2, f.y * T + T / 2);
+    g.lineTo((f.x + dx * (f.len + 0.5)) * T + T / 2 - dx * T / 2, (f.y + dy * (f.len + 0.5)) * T + T / 2 - dy * T / 2);
+    g.stroke(); g.globalAlpha = 1;
+  }
+  for (const f of fx) if (f.type === 'dive' && now - f.at < 200) {
+    const t = (now - f.at) / 200;
+    g.strokeStyle = INK.player; g.globalAlpha = 0.6 * (1 - t); g.lineWidth = 14 * (1 - t) + 2; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(f.fromX * T + T / 2, f.fromY * T + T / 2); g.lineTo(f.toX * T + T / 2, f.toY * T + T / 2); g.stroke();
+    g.globalAlpha = 1; g.lineCap = 'butt';
+  }
+  const p = s.player, pp = prev.player;
+  let px = p.x * T, py = p.y * T;
+  if (pp && !p.snap && Math.abs(pp.x - p.x) + Math.abs(pp.y - p.y) <= 1) { px = lerp(pp.x, p.x, a) * T; py = lerp(pp.y, p.y, a) * T; }
+  const airT = p.air > 0 ? (JUMP_TICKS - p.air + alpha) / JUMP_TICKS : 0;
+  const lift = p.air > 0 ? Math.sin(Math.PI * Math.min(1, airT)) : 0;
+  const born = fx.find(f => (f.type === 'die' || f.type === 'respawn') && now - f.at < 220);
+  const scale = born ? 0.3 + 0.7 * ease((now - born.at) / 220) : 1;
+  for (const f of fx) if (f.type === 'die' && now - f.at < 300) {
+    const t = (now - f.at) / 300;
+    g.strokeStyle = INK.player; g.globalAlpha = 1 - t; g.lineWidth = 2;
+    g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
+  }
+  drawPlayer(g, px, py, lift, scale);
+  g.restore();
+}
+
+const LASER_MS = 5 * TICK_MS;
+
+// ---- src/main.js
+
+const $ = id => document.getElementById(id);
+const canvas = $('game'), g = canvas.getContext('2d');
+
+// Draft copy: each line is the rule in the order the player meets it.
+const TOOLS = [
+  { id: 'wall', label: 'Block' },
+  { id: 'erase', label: 'Erase' },
+  { id: 'start', label: 'Start' },
+  { id: 'checkpoint', label: 'Checkpoint' },
+  { id: 'mover', label: 'Moving block' },
+  { id: 'enemy', label: 'Weak enemy' },
+  { id: 'strong', label: 'Strong enemy' },
+  { id: 'turret', label: 'Laser turret' },
+  { id: 'box', label: 'Box' },
+  { id: 'heavy', label: 'Heavy box' },
+  { id: 'button', label: 'Button' },
+  { id: 'door', label: 'Door' },
+];
+const POWER_TEXT = {
+  boomerang: 'While sliding, press back to slide the other way.',
+  dive: 'While sliding, press the same arrow to land at once and crash.',
+  laser: 'While sliding, press a side arrow to fire a beam that way.',
+  cycle: 'When standing, press Space to jump. The world takes a step.',
+  hook: 'Stop on grapple tiles.',
+  swim: 'Pass through tiles that would kill you.',
+  light: 'When standing still, light up dark rooms.',
+};
+const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', hook: 'Hook', swim: 'Swim', light: 'Light' };
+
+const touch = matchMedia('(pointer: coarse)').matches;
+const portrait = () => innerHeight > innerWidth;
+
+// A new room takes the screen's shape: taller than wide on a phone held upright.
+function starterLevel() {
+  const l = portrait() ? emptyLevel(12, 14) : emptyLevel(20, 12);
+  for (let x = 0; x < l.w; x++) { l.cells[x] = 'wall'; l.cells[(l.h - 1) * l.w + x] = 'wall'; }
+  for (let y = 0; y < l.h; y++) { l.cells[y * l.w] = 'wall'; l.cells[y * l.w + l.w - 1] = 'wall'; }
+  return l;
+}
+
+const ui = { tool: 'wall', axis: 'h', mode: 'input', colour: 'red', aim: ['right'] };
+let level = starterLevel();
+let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
+
+function now() { return performance.now(); }
+
+// ---------- canvas size ----------
+function fit() {
+  const stage = $('stage').clientWidth || level.w * T;
+  const room = portrait() ? innerHeight * 0.62 : innerHeight - 140;
+  const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));
+  const k = (window.devicePixelRatio || 1) * zoom;
+  canvas.width = Math.round(level.w * T * k); canvas.height = Math.round(level.h * T * k);
+  canvas.style.width = Math.round(level.w * T * zoom) + 'px';
+  g.setTransform(canvas.width / (level.w * T), 0, 0, canvas.height / (level.h * T), 0, 0);
+  $('w').value = level.w; $('h').value = level.h;
+}
+
+// ---------- editing ----------
+const idx = (x, y) => y * level.w + x;
+const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
+
+function place(x, y, erase) {
+  const t = erase ? 'erase' : ui.tool, i = idx(x, y), pi = pieceAt(x, y);
+  const gone = { type: 'erase', x, y, at: now() };
+  const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
+  const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
+  const isStart = level.start.x === x && level.start.y === y;
+  if (t === 'erase') {
+    if (pi >= 0) removePiece(); else setCell('');
+  } else if (t === 'start') {
+    if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
+    removePiece();
+    level.start = { x, y };
+  } else if (t === 'wall') {
+    if (isStart) return;
+    removePiece(); setCell('wall');
+  } else if (t === 'checkpoint' || t === 'button' || t === 'door') {
+    if (t === 'door' && isStart) return;
+    if (t === 'door') removePiece();
+    setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
+  } else if (t === 'turret') {
+    if (isStart) return;
+    const turret = { dirs: CLOCKWISE.filter(d => ui.aim.includes(d)), mode: ui.mode };
+    const host = pi >= 0 ? level.entities[pi] : null;
+    if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
+      if (JSON.stringify(host.turret) === JSON.stringify(turret)) return;
+      host.turret = turret;
+    } else {
+      removePiece();
+      if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
+      level.entities.push({ kind: 'turret', x, y, turret });
+    }
+  } else {
+    if (isStart) return;
+    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: 1, mode: ui.mode } : {}) };
+    if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return;
+    removePiece();
+    if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
+    level.entities.push(want);
+  }
+  if (gone.cell || gone.piece) fx.push(gone);
+  if (t !== 'erase') fx.push({ type: 'place', x, y, at: now() });
+}
+
+function cellFromEvent(ev) {
+  const r = canvas.getBoundingClientRect();
+  const x = Math.floor((ev.clientX - r.left) / r.width * level.w);
+  const y = Math.floor((ev.clientY - r.top) / r.height * level.h);
+  return x >= 0 && y >= 0 && x < level.w && y < level.h ? { x, y } : null;
+}
+
+canvas.addEventListener('contextmenu', ev => ev.preventDefault());
+// In play, a swipe is an arrow key: each new direction within one drag sends once.
+const SWIPE_PX = 24;
+canvas.addEventListener('pointerdown', ev => {
+  if (mode === 'play') {
+    swipe = { x: ev.clientX, y: ev.clientY, last: null };
+    canvas.setPointerCapture(ev.pointerId);
+    return;
+  }
+  const c = cellFromEvent(ev); if (!c) return;
+  painting = ev.button === 2 ? 2 : 1;
+  canvas.setPointerCapture(ev.pointerId);
+  place(c.x, c.y, painting === 2);
+});
+canvas.addEventListener('pointermove', ev => {
+  if (mode === 'play' && swipe) {
+    const dx = ev.clientX - swipe.x, dy = ev.clientY - swipe.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_PX) return;
+    const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    if (d !== swipe.last) pending.push(d);
+    Object.assign(swipe, { x: ev.clientX, y: ev.clientY, last: d });
+    return;
+  }
+  hover = mode === 'edit' && !touch ? cellFromEvent(ev) : null;
+  if (painting && hover && ui.tool !== 'start') place(hover.x, hover.y, painting === 2);
+});
+canvas.addEventListener('pointerup', () => { painting = 0; swipe = null; });
+canvas.addEventListener('pointercancel', () => { painting = 0; swipe = null; });
+canvas.addEventListener('pointerleave', () => { hover = null; });
+
+// ---------- play ----------
+function snapshot(s) {
+  const ents = {};
+  for (const e of s.entities) ents[e.id] = { x: e.x, y: e.y };
+  return { player: { x: s.player.x, y: s.player.y }, ents };
+}
+
+function tick() {
+  prev = snapshot(game);
+  const before = { x: game.player.x, y: game.player.y };
+  step(game, pending);
+  pending = [];
+  const t = now();
+  for (const e of game.events) {
+    if (e.type === 'dive') fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
+    else fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
+  }
+}
+
+function setMode(m) {
+  mode = m;
+  document.body.classList.toggle('play', m === 'play');
+  $('mode').textContent = m === 'play' ? 'Edit' : 'Play';
+  $('keys').textContent = touch
+    ? (m === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : 'Press Play to try this room.')
+    : (m === 'play' ? 'Arrows slide. Space jumps. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
+  $('pad').hidden = m !== 'play';
+  fx = [];
+  if (m === 'play') { game = createGame(level); prev = snapshot(game); pending = []; acc = 0; }
+  else game = null;
+}
+
+const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', ' ': 'jump', r: 'respawn', R: 'respawn' };
+window.addEventListener('keydown', ev => {
+  if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;
+  if (ev.key === 'e' || ev.key === 'E') { setMode(mode === 'play' ? 'edit' : 'play'); ev.preventDefault(); return; }
+  if (mode !== 'play') return;
+  const k = KEYS[ev.key];
+  if (!k) return;
+  ev.preventDefault();
+  if (!ev.repeat) pending.push(k);
+});
+
+// ---------- loop ----------
+function frame(t) {
+  const dt = Math.min(250, t - (last || t)); last = t;
+  if (mode === 'play' && !window.__manualClock) {
+    acc += dt;
+    while (acc >= TICK_MS) { tick(); acc -= TICK_MS; }
+  }
+  render();
+  requestAnimationFrame(frame);
+}
+
+function render() {
+  const t = now();
+  fx = fx.filter(f => t - f.at < 400);
+  if (mode === 'play') drawPlay(g, game, prev, Math.min(1, acc / TICK_MS), fx, t);
+  else drawEdit(g, level, hover, fx, t);
+}
+
+// The text state and a fixed clock, for gates and agents.
+window.renderGameToText = () => mode === 'play' ? gameText(game, 'play') : JSON.stringify({ mode: 'edit', level });
+window.advanceTime = ms => {
+  if (mode !== 'play') return;
+  for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
+  acc = 0; render();
+};
+window.wee = { press: k => pending.push(k), setMode, getLevel: () => level, loadLevel: l => { level = parseLevel(JSON.stringify(l)); syncPanel(); fit(); } };
+
+// ---------- panels ----------
+function icon(tool) {
+  const c = document.createElement('canvas'), k = 20 / T;
+  c.width = 40; c.height = 40;
+  const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' ? tool : tool + ':red';
+    l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
+  } else if (tool === 'erase') {
+    x.strokeStyle = '#8e98ad'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
+  } else if (tool === 'start') {
+    x.fillStyle = INK.player; x.beginPath(); x.arc(16, 16, 10, 0, Math.PI * 2); x.fill();
+  } else if (tool === 'turret') drawPiece(x, { kind: 'turret', turret: { dirs: ['up', 'right'], mode: 'input' } }, 0, 0);
+  else drawPiece(x, { kind: tool, axis: 'h', dir: 1, mode: 'input' }, 0, 0);
+  return c;
+}
+
+function buildPanels() {
+  for (const t of TOOLS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.tool = t.id;
+    b.append(icon(t.id), t.label);
+    b.onclick = () => { ui.tool = t.id; syncPanel(); };
+    $('palette').append(b);
+  }
+  for (const col of COLOURS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.colour = col; b.title = col;
+    b.style.background = INK[col];
+    b.onclick = () => { ui.colour = col; syncPanel(); };
+    $('colours').append(b);
+  }
+  document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { ui.axis = b.dataset.axis; syncPanel(); });
+  document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { ui.mode = b.dataset.mode; syncPanel(); });
+  document.querySelectorAll('[data-aim]').forEach(b => b.onclick = () => {
+    const d = b.dataset.aim;
+    if (ui.aim.includes(d)) { if (ui.aim.length > 1) ui.aim = ui.aim.filter(a => a !== d); }
+    else ui.aim = [...ui.aim, d];
+    syncPanel();
+  });
+  for (const p of POWERS) {
+    const row = document.createElement('label');
+    row.className = 'power' + (NEEDS[p] ? ' off' : '');
+    const box = document.createElement('input');
+    box.type = 'checkbox'; box.dataset.power = p; box.disabled = !!NEEDS[p];
+    box.onchange = () => { level.powers[p] = box.checked; if (game) game.powers[p] = box.checked; };
+    const name = document.createElement('b'); name.textContent = NAMES[p];
+    const say = document.createElement('small'); say.textContent = NEEDS[p] ? 'Needs ' + NEEDS[p] + '.' : POWER_TEXT[p];
+    row.append(box, name, say);
+    $('powerList').append(row);
+  }
+  document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { level.clock = r.value; if (game) game.clock = r.value; });
+  $('mode').onclick = () => setMode(mode === 'play' ? 'edit' : 'play');
+  $('jumpBtn').onclick = () => pending.push('jump');
+  $('respawnBtn').onclick = () => pending.push('respawn');
+  $('placeHint').textContent = touch ? 'Tap or drag to place. Pick Erase to remove.' : 'Click to place. Right click to erase.';
+  const resize = () => {
+    const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));
+    if (w !== level.w || h !== level.h) { level = resizeLevel(level, w, h); fit(); }
+  };
+  $('w').onchange = resize; $('h').onchange = resize;
+  $('save').onclick = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(level, null, 1)], { type: 'application/json' }));
+    a.download = 'room.wee';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  $('sample').onclick = () => { level = parseLevel(JSON.stringify(SAMPLE)); setMode('edit'); syncPanel(); fit(); };
+  $('open').onclick = () => $('file').click();
+  $('file').onchange = async () => {
+    const f = $('file').files[0]; $('file').value = '';
+    if (!f) return;
+    try { level = parseLevel(await f.text()); setMode('edit'); syncPanel(); fit(); }
+    catch (err) { alert('This file cannot be opened. ' + err.message); }
+  };
+}
+
+function syncPanel() {
+  document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === ui.tool));
+  document.querySelectorAll('[data-axis]').forEach(b => b.classList.toggle('on', b.dataset.axis === ui.axis));
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === ui.mode));
+  document.querySelectorAll('[data-colour]').forEach(b => b.classList.toggle('on', b.dataset.colour === ui.colour));
+  document.querySelectorAll('[data-aim]').forEach(b => {
+    const on = ui.aim.includes(b.dataset.aim);
+    b.classList.toggle('on', on);
+    b.disabled = on && ui.aim.length === 1;
+  });
+  document.querySelectorAll('.opt').forEach(o => { o.hidden = !o.dataset.for.split(' ').includes(ui.tool); });
+  if (ui.mode === 'follow') $('axisOpt').hidden = true;
+  document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
+  document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
+}
+
+buildPanels();
+syncPanel();
+addEventListener('resize', fit);
+fit();
+setMode('edit');
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
