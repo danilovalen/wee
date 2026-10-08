@@ -41,6 +41,20 @@ try {
   let p = at(5, 6);
   await page.touchscreen.tap(p.x, p.y);
   check('a tap places a block', (await text()).level.cells[6 * lv.w + 5] === 'wall');
+  // a finger dragged across a row places on every tile, then a drag from one removes them
+  const cdp = await page.context().newCDPSession(page);
+  const finger = async (type, pt) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pt ? [{ x: pt.x, y: pt.y }] : [] });
+  const drag = async (from, to) => {
+    await finger('touchStart', from);
+    for (let i = 1; i <= 8; i++) await finger('touchMove', { x: from.x + (to.x - from.x) * i / 8, y: from.y + (to.y - from.y) * i / 8 });
+    await finger('touchEnd');
+  };
+  await drag(at(2, 9), at(8, 9));
+  let row = (await text()).level.cells.slice(9 * lv.w + 2, 9 * lv.w + 9);
+  check('a finger drag places on every tile it crosses', row.every(c => c === 'wall'), row.join(','));
+  await drag(at(2, 9), at(8, 9));
+  row = (await text()).level.cells.slice(9 * lv.w + 2, 9 * lv.w + 9);
+  check('a finger drag from a block removes them all', row.every(c => c === ''), row.join(','));
   await page.screenshot({ path: 'shots/phone-edit.png' });
 
   await page.click('#mode');

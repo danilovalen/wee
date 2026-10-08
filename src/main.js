@@ -159,8 +159,10 @@ canvas.addEventListener('pointermove', ev => {
     Object.assign(swipe, { x: ev.clientX, y: ev.clientY, last: d });
     return;
   }
-  hover = mode === 'edit' && !touch ? cellFromEvent(ev) : null;
-  if (painting && hover && ui.tool !== 'start') place(hover.x, hover.y, painting);
+  const c = mode === 'edit' ? cellFromEvent(ev) : null;
+  // The outline follows a mouse only; a finger would leave it behind on lift.
+  hover = touch ? null : c;
+  if (painting && c && ui.tool !== 'start') place(c.x, c.y, painting);
 });
 canvas.addEventListener('pointerup', () => { painting = 0; swipe = null; });
 canvas.addEventListener('pointercancel', () => { painting = 0; swipe = null; });

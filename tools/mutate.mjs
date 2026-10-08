@@ -56,6 +56,7 @@ const M = [
   ['src/main.js', "  if (how === 'remove' && !holds(x, y, ui.tool)) return;\n", "", 'browser'],
   ['src/main.js', "removePiece(); setCell('tri:' + ui.corner);", "removePiece(); setCell('tri:se');", 'browser'],
   ['src/main.js', "if (d !== swipe.last) pending.push(d);", "", 'phone'],
+  ['src/main.js', "if (painting && c && ui.tool !== 'start') place(c.x, c.y, painting);", "if (painting && hover && ui.tool !== 'start') place(hover.x, hover.y, painting);", 'phone'],
   ['src/main.js', "$('jumpBtn').onclick = () => pending.push('jump');", "", 'phone'],
   ['src/main.js', "const l = portrait() ? emptyLevel(12, 14) : emptyLevel(20, 12);", "const l = emptyLevel(20, 12);", 'phone'],
   ['src/main.js', "const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));", "const zoom = Math.max(1, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));", 'phone'],
