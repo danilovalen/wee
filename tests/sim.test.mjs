@@ -240,4 +240,34 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a turret with bad directions is refused', refused === 4, refused + '/4');
 }
 
+{ // follow: pieces move the way you moved, one tile per world step, and wait when blocked
+  const F = ['##########', '#M.......#', '#P.......#', '##########'];
+  const s = slide(createGame(room(F, { mode: 'follow' })), 'right');
+  check('a follower slides along with you', at(s.entities[0], 8, 1) && at(s.player, 8, 2), JSON.stringify(s.entities[0]));
+  const w = slide(createGame(room(['##########', '#M..#....#', '#P.......#', '##########'], { mode: 'follow' })), 'right');
+  check('a blocked follower waits while you go on', at(w.entities[0], 3, 1) && at(w.player, 8, 2), JSON.stringify(w.entities[0]));
+  const t = slide(createGame(room(F, { mode: 'follow', clock: 'slide' })), 'right');
+  check('per slide, a follower takes one tile your way', at(t.entities[0], 2, 1), JSON.stringify(t.entities[0]));
+  const u = createGame(room(F, { mode: 'follow' }));
+  step(u, ['jump']);
+  check('a jump has no direction, so followers stay', at(u.entities[0], 1, 1) && u.worldSteps === 1);
+  const v = slide(createGame(room(['#######', '#.....#', '#P....#', '#..V..#', '#######'], { mode: 'follow' })), 'right');
+  check('a follower ignores its patrol axis', at(v.entities[0], 5, 3), JSON.stringify(v.entities[0]));
+}
+{ // a follow turret fires your direction, and only if it has that barrel
+  const l = room(['########', '#..T...#', '#P.....#', '########'], { mode: 'follow' });
+  l.entities[0].turret.dirs = ['up', 'right'];
+  const s = createGame(l);
+  step(s, ['right']);
+  const b = s.events.find(e => e.type === 'beam');
+  check('a follow turret fires the way you slid', b && b.d === 'right', JSON.stringify(b));
+  const t = createGame(l);
+  t.player.x = 6; step(t, ['left']);
+  check('no barrel that way, no beam', !t.events.some(e => e.type === 'beam'));
+  check('a follow turret keeps no clockwise turn', s.entities[0].turret.next === 0);
+  let refused = 0;
+  try { parseLevel(JSON.stringify({ ...l, entities: [{ kind: 'mover', x: 2, y: 2, axis: 'h', mode: 'sideways' }] })); } catch { refused++; }
+  check('an unknown clock is refused', refused === 1);
+}
+
 done();

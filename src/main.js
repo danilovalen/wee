@@ -277,6 +277,7 @@ function syncPanel() {
     b.disabled = on && ui.aim.length === 1;
   });
   document.querySelectorAll('.opt').forEach(o => { o.hidden = !o.dataset.for.split(' ').includes(ui.tool); });
+  if (ui.mode === 'follow') $('axisOpt').hidden = true;
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
 }

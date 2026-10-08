@@ -35,6 +35,7 @@ Each one placed in the editor picks its axis and its mode:
 |---|---|---|
 | Real time | slower | on its own clock, whether you move or not |
 | On input | faster, immediate | one step each time the world clock steps (per tile or per slide) |
+| Same way as you | faster, immediate | one step each world step, **the way you moved**, ignoring its patrol axis. Blocked, it waits. A jump has no direction, so it stays. |
 
 - **Moving block:** stops a slide like a base block. When it moves into you, it **pushes** you one
   tile; if a block is behind you, it **crushes** you and you go back to the last checkpoint.
@@ -47,7 +48,8 @@ Each one placed in the editor picks its axis and its mode:
 
 - Fires one to four chosen directions, **one at a time, clockwise**. Its barrels show the
   directions; the next to fire is lit.
-- **Real time** or **on your move**, like the movers.
+- **Real time**, **on your move**, or **same way as you**: on each world step it fires the way you
+  moved, but only if it has a barrel that way.
 - Stands alone like a block, or **mounts on a box, a heavy box or an enemy** and rides it.
 - Its beam kills you and weak enemies, and stops at blocks, boxes and strong enemies. You are
   safe from it in the air (my call).

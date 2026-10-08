@@ -63,7 +63,7 @@ function pressedAt(s, x, y) {
     s.entities.some(e => !e.dead && e.x === x && e.y === y);
 }
 
-// The mode badge: a clock for real time, a step mark for on input.
+// The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
 function modeBadge(g, mode, bx = 24, by = 8) {
   g.save(); g.translate(bx, by);
   g.fillStyle = '#0b0d12'; g.beginPath(); g.arc(0, 0, 5.5, 0, Math.PI * 2); g.fill();
@@ -71,6 +71,8 @@ function modeBadge(g, mode, bx = 24, by = 8) {
   if (mode === 'realtime') {
     g.beginPath(); g.arc(0, 0, 3.6, 0, Math.PI * 2); g.stroke();
     g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -2.4); g.moveTo(0, 0); g.lineTo(1.8, 0.8); g.stroke();
+  } else if (mode === 'follow') {
+    g.beginPath(); g.moveTo(-3, -2.5); g.lineTo(-0.5, 0); g.lineTo(-3, 2.5); g.moveTo(0.5, -2.5); g.lineTo(3, 0); g.lineTo(0.5, 2.5); g.stroke();
   } else {
     g.beginPath(); g.moveTo(-2.5, 2); g.lineTo(0, -2.5); g.lineTo(2.5, 2); g.closePath(); g.fill();
   }

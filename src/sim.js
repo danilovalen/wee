@@ -16,13 +16,16 @@ export const CLOCKWISE = ['up', 'right', 'down', 'left'];
 export const KINDS = ['mover', 'enemy', 'strong', 'box', 'heavy', 'turret'];
 const MOVES = ['mover', 'enemy', 'strong'];
 const ENEMY = ['enemy', 'strong'];
+// realtime: on its own clock; input: on each world step; follow: on each world step,
+// the same way the player moved.
+export const MODES = ['realtime', 'input', 'follow'];
 // A turret can stand alone or ride one of these.
 export const CARRIES_TURRET = ['box', 'heavy', 'enemy', 'strong'];
 
 function checkTurret(t) {
   if (!Array.isArray(t.dirs) || t.dirs.length < 1 || t.dirs.length > 4 || t.dirs.some(d => !CLOCKWISE.includes(d)) || new Set(t.dirs).size !== t.dirs.length)
     throw new Error('A turret needs one to four different directions.');
-  if (!['realtime', 'input'].includes(t.mode)) throw new Error('Unknown turret clock: ' + t.mode);
+  if (!MODES.includes(t.mode)) throw new Error('Unknown turret clock: ' + t.mode);
 }
 
 // A power listed in NEEDS cannot act until its block type exists.
@@ -61,6 +64,7 @@ export function parseLevel(text) {
   for (const e of l.entities) {
     if (!KINDS.includes(e.kind)) throw new Error('Unknown piece: ' + e.kind);
     if (e.turret) checkTurret(e.turret);
+    if (MOVES.includes(e.kind) && e.mode && !MODES.includes(e.mode)) throw new Error('Unknown clock: ' + e.mode);
   }
   if (!['tile', 'slide'].includes(l.clock)) throw new Error('Unknown clock: ' + l.clock);
   return { ...emptyLevel(l.w, l.h), ...l, powers: { ...emptyLevel().powers, ...l.powers } };
@@ -171,15 +175,15 @@ function playerStep(s, d, diving) {
 }
 
 function endSlide(s) {
-  const moved = s.player.moved;
+  const moved = s.player.moved, d = s.player.dir;
   s.player.dir = null; s.player.moved = 0;
-  if (moved > 0 && s.clock === 'slide') worldStep(s);
+  if (moved > 0 && s.clock === 'slide') worldStep(s, d);
 }
 
 // A slide that moved the player gives the world its step, per the clock.
 function slideOnce(s, diving) {
   const r = playerStep(s, s.player.dir, diving);
-  if (r === 'moved') { if (s.clock === 'tile') worldStep(s); return true; }
+  if (r === 'moved') { if (s.clock === 'tile') worldStep(s, s.player.dir); return true; }
   if (r === 'blocked') endSlide(s);
   return false;
 }
@@ -208,11 +212,12 @@ function laser(s, d) {
   s.events.push({ type: 'laser', x: s.player.x, y: s.player.y, d, len });
 }
 
-// A turret fires its next direction, clockwise. The beam kills you (unless you are
-// in the air) and weak enemies; anything else solid stops it.
-function fireTurret(s, e) {
-  const t = e.turret, d = t.dirs[t.next % t.dirs.length];
-  t.next++;
+// A turret fires its next direction clockwise, or the given one. The beam kills you
+// (unless you are in the air) and weak enemies; anything else solid stops it.
+function fireTurret(s, e, forced) {
+  const t = e.turret;
+  let d = forced;
+  if (!d) { d = t.dirs[t.next % t.dirs.length]; t.next++; }
   const [dx, dy] = DIRS[d];
   let x = e.x + dx, y = e.y + dy, len = 0, hit = false;
   while (!solidCell(s, x, y)) {
@@ -232,15 +237,23 @@ function fireTurrets(s, mode) {
   for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === mode) fireTurret(s, e);
 }
 
-export function worldStep(s) {
+// d is the way the player moved for this step; a jump gives none, so 'follow'
+// pieces and turrets sit it out.
+export function worldStep(s, d = null) {
   s.worldSteps++;
-  for (const e of s.entities) if (!e.dead && e.mode === 'input' && MOVES.includes(e.kind)) moveMover(s, e);
+  for (const e of s.entities) {
+    if (e.dead || !MOVES.includes(e.kind)) continue;
+    if (e.mode === 'input') moveMover(s, e);
+    else if (e.mode === 'follow' && d) moveMover(s, e, d);
+  }
   fireTurrets(s, 'input');
+  if (d) for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === 'follow' && e.turret.dirs.includes(d)) fireTurret(s, e, d);
   refreshDoors(s);
 }
 
-function moveMover(s, e) {
-  const dx = e.axis === 'h' ? e.dir : 0, dy = e.axis === 'v' ? e.dir : 0;
+// Moves one tile along its patrol, or the given way. Blocked, it stays and turns its patrol.
+function moveMover(s, e, d) {
+  const dx = d ? DIRS[d][0] : e.axis === 'h' ? e.dir : 0, dy = d ? DIRS[d][1] : e.axis === 'v' ? e.dir : 0;
   const tx = e.x + dx, ty = e.y + dy;
   if (solidCell(s, tx, ty)) { e.dir = -e.dir; return; }
   const o = entAt(s, tx, ty, e);

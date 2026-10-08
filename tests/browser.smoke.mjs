@@ -69,6 +69,13 @@ try {
   const alone = lv.entities.find(e => e.x === 12 && e.y === 3);
   check('a turret on a box mounts on it', mounted?.kind === 'box' && mounted.turret?.dirs.join() === 'down,left', JSON.stringify(mounted));
   check('a turret on floor stands alone', alone?.kind === 'turret', JSON.stringify(alone));
+  await page.click('[data-tool=mover]');
+  await page.click('[data-mode=follow]');
+  check('a follower has no patrol axis to pick', !(await page.locator('[data-axis=h]').isVisible()));
+  p = at(14, 3); await page.mouse.click(p.x, p.y);
+  lv = (await text()).level;
+  check('a follow piece saves its clock', lv.entities.find(e => e.x === 14 && e.y === 3)?.mode === 'follow');
+  await page.click('[data-mode=input]');
   await page.click('[data-tool=wall]');
   check('enemy options hide for a block', !(await page.locator('[data-axis=h]').isVisible()));
   await page.screenshot({ path: 'shots/edit.png' });
