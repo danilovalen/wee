@@ -39,7 +39,13 @@ try {
   check('no control spills out of its panel', cut.length === 0, cut.join(', '));
 
   // edit by clicking: a block, a right-click erase, then a dragged row of enemies
-  let p = at(5, 5), q; await page.mouse.click(p.x, p.y);
+  // Look is the starting tool: a click with it changes nothing and says what is there
+  const before = JSON.stringify((await text()).level);
+  let p = at(0, 0), q; await page.mouse.click(p.x, p.y);
+  check('Look is the starting tool and a click changes nothing', JSON.stringify((await text()).level) === before);
+  check('Look says what is under it', (await page.textContent('#placeHint')) === 'Block', await page.textContent('#placeHint'));
+  await page.click('[data-tool=wall]');
+  p = at(5, 5); await page.mouse.click(p.x, p.y);
   let lv = (await text()).level;
   check('a click places a block', lv.cells[5 * 20 + 5] === 'wall');
   await page.mouse.click(p.x, p.y, { button: 'right' });
@@ -149,6 +155,7 @@ try {
   check('R returns to the start before any checkpoint', s.player.x === 1 && s.player.y === 1, JSON.stringify(s.player));
   await page.keyboard.press('e');
   check('E goes back to editing', (await text()).mode === 'edit');
+  check('going back to editing selects Look', await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')));
   check('playing did not change the room', (await text()).level.entities[0].x === 4);
 
   // save writes a .wee file; open reads it back

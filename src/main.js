@@ -7,6 +7,7 @@ const canvas = $('game'), g = canvas.getContext('2d');
 
 // Draft copy: each line is the rule in the order the player meets it.
 const TOOLS = [
+  { id: 'look', label: 'Look' },
   { id: 'wall', label: 'Block' },
   { id: 'erase', label: 'Erase' },
   { id: 'start', label: 'Start' },
@@ -20,6 +21,7 @@ const TOOLS = [
   { id: 'tri', label: 'Triangle' },
   { id: 'button', label: 'Button' },
   { id: 'door', label: 'Door' },
+  { id: 'receiver', label: 'Receiver' },
 ];
 const POWER_TEXT = {
   boomerang: 'While sliding, press back to slide the other way.',
@@ -43,7 +45,7 @@ function starterLevel() {
   return l;
 }
 
-const ui = { tool: 'wall', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se' };
+const ui = { tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se' };
 let level = starterLevel();
 let played = null, keylog = [];
 let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
@@ -70,9 +72,35 @@ const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 function holds(x, y, tool) {
   const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
   if (tool === 'wall' || tool === 'checkpoint') return c === tool;
-  if (tool === 'button' || tool === 'door' || tool === 'tri') return c.startsWith(tool + ':');
+  if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;
+}
+
+const COLOUR_NAME = { red: 'Red', blue: 'Blue', yellow: 'Yellow', green: 'Green' };
+const CLOCK_NAME = { realtime: 'real time', input: 'on your move', follow: 'same way as you' };
+const ARROW = { up: '\u2191', right: '\u2192', down: '\u2193', left: '\u2190' };
+const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'bottom right' };
+
+// The Look tool's one line about a tile: what is on it and how it is set.
+function describe(x, y) {
+  const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)], parts = [];
+  if (pc) {
+    const name = TOOLS.find(t => t.id === pc.kind)?.label || pc.kind;
+    parts.push(['mover', 'enemy', 'strong'].includes(pc.kind)
+      ? `${name} \u00b7 ${pc.mode === 'follow' ? '' : (pc.axis === 'h' ? 'across \u00b7 ' : 'up and down \u00b7 ')}${CLOCK_NAME[pc.mode]}` : name);
+    if (pc.turret && pc.kind !== 'turret') parts.push('carries a turret');
+    if (pc.turret) parts.push(`fires ${pc.turret.dirs.map(d => ARROW[d]).join(' ')} \u00b7 ${CLOCK_NAME[pc.turret.mode]}`);
+  }
+  if (c) {
+    const [kind, v] = c.split(':');
+    if (kind === 'wall') parts.push('Block');
+    else if (kind === 'checkpoint') parts.push('Checkpoint');
+    else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
+    else parts.push(`${COLOUR_NAME[v]} ${kind}`);
+  }
+  if (level.start.x === x && level.start.y === y) parts.push('Start');
+  return parts.length ? parts.join(' \u00b7 ') : 'Empty floor';
 }
 
 // how: 'place', 'remove' (only what this tool places) or 'erase' (anything).
@@ -89,7 +117,7 @@ function place(x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'tri'].includes(ui.tool)) setCell('');
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'tri') {
     if (isStart) return;
@@ -101,9 +129,9 @@ function place(x, y, how) {
   } else if (t === 'wall') {
     if (isStart) return;
     removePiece(); setCell('wall');
-  } else if (t === 'checkpoint' || t === 'button' || t === 'door') {
-    if (t === 'door' && isStart) return;
-    if (t === 'door') removePiece();
+  } else if (t === 'checkpoint' || t === 'button' || t === 'door' || t === 'receiver') {
+    if ((t === 'door' || t === 'receiver') && isStart) return;
+    if (t === 'door' || t === 'receiver') removePiece();
     setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
   } else if (t === 'turret') {
     if (isStart) return;
@@ -146,6 +174,7 @@ canvas.addEventListener('pointerdown', ev => {
     return;
   }
   const c = cellFromEvent(ev); if (!c) return;
+  if (ui.tool === 'look') { $('placeHint').textContent = describe(c.x, c.y); return; }
   painting = ev.button === 2 ? 'erase' : holds(c.x, c.y, ui.tool) && ui.tool !== 'start' ? 'remove' : 'place';
   canvas.setPointerCapture(ev.pointerId);
   place(c.x, c.y, painting);
@@ -202,6 +231,7 @@ function setMode(m, keep) {
   $('keys').textContent = keysText();
   $('pad').hidden = m !== 'play';
   fx = [];
+  if (m === 'edit') { ui.tool = 'look'; syncPanel(); }
   if (m === 'play') { played = JSON.parse(JSON.stringify(level)); keylog = []; game = createGame(level); prev = snapshot(game); pending = []; acc = 0; }
   else game = null;
 }
@@ -264,6 +294,11 @@ function icon(tool) {
   if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri') {
     const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' ? tool : tool === 'tri' ? 'tri:se' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
+  } else if (tool === 'look') {
+    x.strokeStyle = '#c3cad8'; x.lineWidth = 2.5;
+    x.beginPath(); x.arc(14, 14, 7, 0, Math.PI * 2); x.moveTo(19, 19); x.lineTo(26, 26); x.stroke();
+  } else if (tool === 'receiver') {
+    const l = emptyLevel(1, 1); l.cells[0] = 'receiver:red'; l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'erase') {
     x.strokeStyle = '#8e98ad'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
   } else if (tool === 'start') {
@@ -313,7 +348,7 @@ function buildPanels() {
   $('jumpBtn').onclick = () => pending.push('jump');
   $('respawnBtn').onclick = () => pending.push('respawn');
   $('reportBtn').onclick = copyReport;
-  $('placeHint').textContent = touch ? 'Tap to place. Tap one again to remove it.' : 'Click to place. Click one again, or right click, to remove it.';
+  $('placeHint').textContent = touch ? 'Tap to place. Tap one again to remove it. Look changes nothing.' : 'Click to place. Click one again, or right click, to remove it. Look changes nothing.';
   const resize = () => {
     const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));
     if (w !== level.w || h !== level.h) { level = resizeLevel(level, w, h); fit(); }
@@ -337,6 +372,7 @@ function buildPanels() {
 }
 
 function syncPanel() {
+  canvas.style.touchAction = mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === ui.tool));
   document.querySelectorAll('[data-axis]').forEach(b => b.classList.toggle('on', b.dataset.axis === ui.axis));
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === ui.mode));

@@ -21,8 +21,7 @@ const OPP = { n: 's', s: 'n', e: 'w', w: 'e' };
 const openFaces = corner => [OPP[corner[0]], OPP[corner[1]]];
 const turn = (corner, d) => OUT[openFaces(corner).find(f => f !== ENTRY_FACE[d])];
 
-// Two laser hits this many player tiles apart kill a strong enemy.
-export const HURT_TILES = 4;
+
 
 // Clockwise order: a turret fires its chosen directions in this order.
 export const CLOCKWISE = ['up', 'right', 'down', 'left'];
@@ -85,6 +84,7 @@ export function parseLevel(text) {
 
 function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
+  if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
   return (kind === 'button' || kind === 'door') && COLOURS.includes(colour);
@@ -100,11 +100,12 @@ export function createGame(level) {
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, air: 0, snap: true },
     entities: l.entities.map(e => ({
       id: ++id, kind: e.kind, x: e.x, y: e.y,
-      axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false, hurt: 0,
-      turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, next: 0 } : null,
+      axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
+      turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: 0 } : null,
     })),
-    open: {}, tick: 0, worldSteps: 0, deaths: 0, events: [],
+    open: {}, lit: new Set(), beams: [], tick: 0, worldSteps: 0, deaths: 0, events: [],
   };
+  computeBeams(s, false);
   refreshDoors(s);
   return s;
 }
@@ -115,7 +116,7 @@ const cellAt = (s, x, y) => s.cells[y * s.w + x];
 function solidCell(s, x, y) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
-  if (c === 'wall') return true;
+  if (c === 'wall' || c.startsWith('receiver:')) return true;
   if (c.startsWith('door:')) return !s.open[c.slice(5)];
   return false;
 }
@@ -125,9 +126,13 @@ const triAt = (s, x, y) => { const c = inb(s, x, y) && cellAt(s, x, y); return c
 // One step from (x, y) going d: where it lands and the way it went, or null when a
 // wall, a closed door or a triangle's solid side is in the way. The turn happens on
 // the way out: inside a triangle, heading into its solid side sends you along the slope.
-function stepTo(s, x, y, d) {
+function facing(s, x, y, d) {
   const here = triAt(s, x, y);
-  if (here && !openFaces(here).includes(EXIT_FACE[d])) d = turn(here, d);
+  return here && !openFaces(here).includes(EXIT_FACE[d]) ? turn(here, d) : d;
+}
+
+function stepTo(s, x, y, d) {
+  d = facing(s, x, y, d);
   const [dx, dy] = DIRS[d], nx = x + dx, ny = y + dy;
   if (solidCell(s, nx, ny)) return null;
   const tri = triAt(s, nx, ny);
@@ -148,10 +153,13 @@ const playerAt = (s, x, y) => s.player.x === x && s.player.y === y;
 // A door that is occupied cannot close on what stands in it.
 function refreshDoors(s) {
   const pressed = {}, any = {};
+  // A receiver is a button that a turret beam holds down.
   s.cells.forEach((c, i) => {
-    if (!c.startsWith('button:')) return;
-    const col = c.slice(7), x = i % s.w, y = (i - x) / s.w;
-    const down = (playerAt(s, x, y) && s.player.air === 0) || !!entAt(s, x, y);
+    const x = i % s.w, y = (i - x) / s.w;
+    let col, down;
+    if (c.startsWith('button:')) { col = c.slice(7); down = (playerAt(s, x, y) && s.player.air === 0) || !!entAt(s, x, y); }
+    else if (c.startsWith('receiver:')) { col = c.slice(9); down = s.lit.has(i); }
+    else return;
     any[col] = true;
     pressed[col] = (pressed[col] ?? true) && down;
   });
@@ -199,7 +207,6 @@ function playerStep(s, d, diving) {
   }
   p.x = nx; p.y = ny; p.moved++;
   if (p.dir) p.dir = t.d;
-  for (const o of s.entities) if (o.hurt > 0) o.hurt--;
   if (cellAt(s, nx, ny) === 'checkpoint' && (s.checkpoint.x !== nx || s.checkpoint.y !== ny)) {
     s.checkpoint = { x: nx, y: ny };
     s.events.push({ type: 'checkpoint', x: nx, y: ny });
@@ -233,30 +240,27 @@ function dive(s) {
 }
 
 // A beam from (x, y) heading d, turned by triangles. hit(piece) says whether it
-// passes on. Returns the cells it crossed and whether a wall stopped it.
+// passes on. Returns the cells it crossed, whether geometry stopped it (and the
+// cell that did), and whether it reached you.
 function trace(s, x, y, d, hit, hitsPlayer) {
   const path = [[x, y]];
-  let cx = x, cy = y, cd = d, wall = true;
+  let cx = x, cy = y, cd = d, wall = true, stop = null, player = false;
   for (let i = 0; i < s.w * s.h * 2; i++) {
     const t = stepTo(s, cx, cy, cd);
-    if (!t) break;
+    if (!t) { cd = facing(s, cx, cy, cd); stop = [cx + DIRS[cd][0], cy + DIRS[cd][1]]; break; }
     path.push([t.x, t.y]);
-    if (hitsPlayer && playerAt(s, t.x, t.y) && s.player.air === 0) { wall = false; s.beamHitPlayer = true; break; }
+    if (hitsPlayer && playerAt(s, t.x, t.y) && s.player.air === 0) { wall = false; player = true; break; }
     const o = entAt(s, t.x, t.y);
     if (o && !hit(o)) { wall = false; break; }
     cx = t.x; cy = t.y; cd = t.d;
   }
-  return { path, wall, end: cd };
+  return { path, wall, end: cd, stop, player };
 }
 
-// A laser kills a weak enemy and goes on. A strong enemy stops it, and dies to a
-// second hit within HURT_TILES of your moves. Anything else stops it.
+// Any laser kills a weak enemy and goes on. Everything else stops it, and a strong
+// enemy takes no harm from it.
 function laserHit(s, o, how) {
   if (o.kind === 'enemy') { kill(s, o, how); return true; }
-  if (o.kind === 'strong') {
-    if (o.hurt > 0) kill(s, o, how);
-    else { o.hurt = HURT_TILES; s.events.push({ type: 'hurt', id: o.id }); }
-  }
   return false;
 }
 
@@ -265,20 +269,26 @@ function laser(s, d) {
   s.events.push({ type: 'laser', d, ...r });
 }
 
-// A turret fires its next direction clockwise, or the given one. Its beam also kills
-// you unless you are in the air.
-function fireTurret(s, e, forced) {
-  const t = e.turret;
-  let d = forced;
-  if (!d) { d = t.dirs[t.next % t.dirs.length]; t.next++; }
-  s.beamHitPlayer = false;
-  const r = trace(s, e.x, e.y, d, o => laserHit(s, o, 'turret'), true);
-  s.events.push({ type: 'beam', d, ...r });
-  if (s.beamHitPlayer) die(s);
+const aimOf = t => t.dirs[t.aim % t.dirs.length];
+
+function turnTurrets(s, mode) {
+  for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === mode) e.turret.aim++;
 }
 
-function fireTurrets(s, mode) {
-  for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === mode) fireTurret(s, e);
+// Every turret beam is on all the time, recomputed each tick. With harm, it kills
+// you (unless you are in the air) and weak enemies. A beam that ends on a receiver
+// lights it.
+function computeBeams(s, harm) {
+  s.beams = []; s.lit = new Set();
+  let hitYou = false;
+  for (const e of s.entities) {
+    if (e.dead || !e.turret) continue;
+    const r = trace(s, e.x, e.y, aimOf(e.turret), o => harm ? laserHit(s, o, 'turret') : o.kind === 'enemy', true);
+    if (r.stop && inb(s, ...r.stop) && cellAt(s, ...r.stop).startsWith('receiver:')) s.lit.add(r.stop[1] * s.w + r.stop[0]);
+    if (r.player) hitYou = true;
+    s.beams.push({ id: e.id, d: aimOf(e.turret), ...r });
+  }
+  if (harm && hitYou) die(s);
 }
 
 // A jump is one cycle with no direction: each on-your-move piece slides along its
@@ -286,7 +296,7 @@ function fireTurrets(s, mode) {
 function jumpCycle(s) {
   s.worldSteps++;
   for (const e of s.entities) if (!e.dead && e.mode === 'input' && MOVES.includes(e.kind)) e.rush = true;
-  fireTurrets(s, 'input');
+  turnTurrets(s, 'input');
   refreshDoors(s);
 }
 
@@ -304,8 +314,8 @@ export function worldStep(s, d) {
     if (e.mode === 'input' && !e.rush) moveMover(s, e);
     else if (e.mode === 'follow') moveMover(s, e, d);
   }
-  fireTurrets(s, 'input');
-  for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === 'follow' && e.turret.dirs.includes(d)) fireTurret(s, e, d);
+  turnTurrets(s, 'input');
+  for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === 'follow' && e.turret.dirs.includes(d)) e.turret.aim = e.turret.dirs.indexOf(d);
   refreshDoors(s);
 }
 
@@ -380,9 +390,10 @@ export function step(s, inputs = []) {
   for (const e of s.entities) if (!e.dead && e.rush) rushOnce(s, e);
   if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
     for (const e of s.entities) if (!e.dead && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
-    fireTurrets(s, 'realtime');
+    turnTurrets(s, 'realtime');
   }
   if (s.player.air > 0) s.player.air--;
+  computeBeams(s, true);
   refreshDoors(s);
   s.tick++;
   return s;
@@ -397,10 +408,10 @@ export function gameText(s, mode = 'play') {
     pieces: s.entities.filter(e => !e.dead).map(e => ({
       kind: e.kind, x: e.x, y: e.y,
       ...(MOVES.includes(e.kind) ? { axis: e.axis, mode: e.mode } : {}),
-      ...(e.hurt > 0 ? { hurt: e.hurt } : {}),
-      ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, next: e.turret.dirs[e.turret.next % e.turret.dirs.length] } } : {}),
+      ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, aim: aimOf(e.turret) } } : {}),
     })),
     open: COLOURS.filter(c => s.open[c]),
+    beams: s.beams.map(b => ({ from: b.path[0], to: b.path[b.path.length - 1] })),
     powers: POWERS.filter(p => s.powers[p] && !NEEDS[p]),
   });
 }

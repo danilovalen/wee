@@ -196,42 +196,52 @@ const LONG = ['##########', '#..P....##', '##########'];
   step(v, ['right']); step(v, ['right']); step(v);
   check('a thrown heavy box kills a strong enemy', v.entities.find(e => e.kind === 'strong').dead);
 }
-{ // turret: fires its directions clockwise, one per world step
+{ // turret: one continuous beam that turns clockwise, one direction per world step
   const l = room(['#######', '#.....#', '#..T..#', '#.....#', '#P....#', '#######']);
   l.entities[0].turret.dirs = ['left', 'up', 'down'];
   const s = createGame(l);
-  const order = [];
-  const t = createGame(l);
-  for (let i = 0; i < 4; i++) { t.events = []; worldStep(t); order.push(t.events.find(e => e.type === 'beam')?.d); }
-  check('a turret fires clockwise and loops', order.join() === 'up,down,left,up', order.join());
-  const r = createGame(room(['#######', '#T...P#', '#.....#', '#######'], { mode: 'realtime' }));
-  r.checkpoint = { x: 1, y: 2 };
-  for (let i = 0; i < RT_PERIOD; i++) step(r);
-  check('a real-time turret beam kills you', r.deaths === 1);
-  const q = createGame(room(['#######', '#T...P#', '#.....#', '#######']));
-  for (let i = 0; i < RT_PERIOD * 2; i++) step(q);
-  check('an on-input turret waits for you', q.deaths === 0 && q.entities[0].turret.next === 0);
-  const a = createGame(room(['#######', '#T...P#', '#.....#', '#######']));
-  a.checkpoint = { x: 1, y: 2 };
-  step(a, ['jump']);
-  check('you are safe from a beam in the air', a.deaths === 0 && a.entities[0].turret.next === 1);
-  const kl = room(['########', '#T.E.S.#', '#P.....#', '########'], { mode: 'realtime' });
-  for (const e of kl.entities) if (e.kind !== 'turret') e.mode = 'input';
+  const aims = [s.beams[0].d];
+  for (let i = 0; i < 3; i++) { worldStep(s, 'right'); step(s); aims.push(s.beams[0].d); }
+  check('a turret turns clockwise and loops', aims.join() === 'up,down,left,up', aims.join());
+  const w = createGame(room(['#######', '#T....#', '#.....#', '#..P..#', '#.....#', '#######']));
+  w.checkpoint = { x: 5, y: 4 };
+  slide(w, 'up');
+  check('sliding into a beam kills you', w.deaths === 1, JSON.stringify(w.player));
+  const j = createGame(room(['#######', '#T..P.#', '#.....#', '#######']));
+  j.checkpoint = { x: 5, y: 2 };
+  step(j, ['jump']);
+  check('you are safe in a beam while in the air', j.deaths === 0);
+  for (let i = 0; i < 8; i++) step(j);
+  check('and it is still there when you land', j.deaths === 1);
+  const b = createGame(room(['########', '#T.B..P#', '#......#', '########']));
+  step(b);
+  const end = b.beams[0].path.at(-1);
+  check('a box blocks the beam', b.deaths === 0 && end[0] === 3, JSON.stringify(b.beams[0].path));
+  const kl = room(['########', '#T.E.S.#', '#P.....#', '########']);
   const k = createGame(kl);
-  for (let i = 0; i < RT_PERIOD; i++) step(k);
-  const beam = k.events.find(e => e.type === 'beam');
-  const end = beam && beam.path[beam.path.length - 1];
-  check('a beam kills a weak enemy and stops at a strong one', k.entities.find(e => e.kind === 'enemy').dead && !k.entities.find(e => e.kind === 'strong').dead && end && end[0] === 5, JSON.stringify(beam));
+  step(k);
+  const kend = k.beams[0].path.at(-1);
+  check('a beam kills a weak enemy and stops at a strong one', k.entities.find(e => e.kind === 'enemy').dead && !k.entities.find(e => e.kind === 'strong').dead && kend[0] === 5, JSON.stringify(k.beams[0].path));
+  for (let i = 0; i < 30; i++) step(k);
+  check('a strong enemy takes no harm from a beam', !k.entities.find(e => e.kind === 'strong').dead);
+  const rl = room(['#######', '#.....#', '#..T..#', '#.....#', '#P....#', '#######'], { mode: 'realtime' });
+  rl.entities[0].turret.dirs = ['up', 'right'];
+  const r = createGame(rl);
+  for (let i = 0; i < RT_PERIOD; i++) step(r);
+  check('a real-time turret turns on its own', r.beams[0].d === 'right', r.beams[0].d);
+  const ql = room(['#######', '#.....#', '#..T..#', '#.....#', '#P....#', '#######']);
+  ql.entities[0].turret.dirs = ['up', 'right'];
+  const q = createGame(ql);
+  for (let i = 0; i < RT_PERIOD * 2; i++) step(q);
+  check('an on-input turret waits for you', q.beams[0].d === 'up');
 }
 { // a turret rides its carrier and fires from where the carrier is
   const l = room(['#########', '#PB.....#', '#.......#', '#########']);
   l.entities[0].turret = { dirs: ['down'], mode: 'input' };
   const s = slide(createGame(l), 'right');
-  const box = s.entities[0];
-  check('the turret moves with its box', at(box, 7, 1));
-  s.events = []; worldStep(s);
-  const b = s.events.find(e => e.type === 'beam');
-  check('and fires from the box', b && b.path[0][0] === 7 && b.path[0][1] === 1 && b.d === 'down', JSON.stringify(b));
+  check('the turret moves with its box', at(s.entities[0], 7, 1));
+  const p0 = s.beams[0].path[0];
+  check('and its beam starts at the box', p0[0] === 7 && p0[1] === 1 && s.beams[0].d === 'down', JSON.stringify(s.beams[0]));
   const t = slide(createGame(room(['######', '#P.T.#', '######'])), 'right');
   check('a turret block stops a slide', at(t.player, 2, 1));
   let refused = 0;
@@ -241,7 +251,21 @@ const LONG = ['##########', '#..P....##', '##########'];
   }
   check('a turret with bad directions is refused', refused === 4, refused + '/4');
 }
-
+{ // a receiver is a button that a beam holds down
+  const s = createGame(room(['########', '#T..r..#', '#.oD...#', '#P.....#', '########']));
+  step(s);
+  check('a lit receiver alone is not enough when its colour has a button', !s.open.red);
+  s.player.x = 2; s.player.y = 2; step(s);
+  check('lit receiver plus pressed button opens the door', s.open.red);
+  s.entities.push({ id: 99, kind: 'box', x: 2, y: 1, dead: false, turret: null });
+  step(s);
+  check('blocking the beam closes the door again', !s.open.red && s.lit.size === 0);
+  const t = createGame(room(['#######', '#T..r.#', '#..D..#', '#P....#', '#######']));
+  check('a lone receiver opens its colour from the start', t.open.red);
+  let refused = 0;
+  try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: ['receiver:pink', ...Array(8).fill('')] })); } catch { refused++; }
+  check('a receiver of an unknown colour is refused', refused === 1);
+}
 { // follow: pieces move the way you moved, one tile per world step, and wait when blocked
   const F = ['##########', '#M.......#', '#P.......#', '##########'];
   const s = slide(createGame(room(F, { mode: 'follow' })), 'right');
@@ -256,22 +280,19 @@ const LONG = ['##########', '#..P....##', '##########'];
   const v = slide(createGame(room(['#######', '#.....#', '#P....#', '#..V..#', '#######'], { mode: 'follow' })), 'right');
   check('a follower ignores its patrol axis', at(v.entities[0], 5, 3), JSON.stringify(v.entities[0]));
 }
-{ // a follow turret fires your direction, and only if it has that barrel
+{ // a follow turret points the way you moved, if it has that barrel
   const l = room(['########', '#..T...#', '#P.....#', '########'], { mode: 'follow' });
   l.entities[0].turret.dirs = ['up', 'right'];
   const s = createGame(l);
-  step(s, ['right']);
-  const b = s.events.find(e => e.type === 'beam');
-  check('a follow turret fires the way you slid', b && b.d === 'right', JSON.stringify(b));
-  const t = createGame(l);
-  t.player.x = 6; step(t, ['left']);
-  check('no barrel that way, no beam', !t.events.some(e => e.type === 'beam'));
-  check('a follow turret keeps no clockwise turn', s.entities[0].turret.next === 0);
+  step(s, ['right']); step(s);
+  check('a follow turret points the way you slid', s.beams[0].d === 'right', s.beams[0].d);
+  for (let i = 0; i < 10; i++) step(s);
+  step(s, ['left']); step(s);
+  check('no barrel that way, it keeps its aim', s.beams[0].d === 'right', s.beams[0].d);
   let refused = 0;
   try { parseLevel(JSON.stringify({ ...l, entities: [{ kind: 'mover', x: 2, y: 2, axis: 'h', mode: 'sideways' }] })); } catch { refused++; }
   check('an unknown clock is refused', refused === 1);
 }
-
 { // settings changed mid-play are inputs, so a replay sees them at the same tick
   const l = room(LONG);
   const log = [{ t: 0, k: 'power:boomerang:0' }, { t: 0, k: 'right' }, { t: 2, k: 'left' }];
@@ -302,27 +323,6 @@ const LONG = ['##########', '#..P....##', '##########'];
   const t = createGame(room(['##########', '#E.......#', '#P.......#', '##########']));
   step(t, ['jump']); step(t);
   check('the slide takes a tile per tick, so you see it travel', t.entities[0].x === 3, JSON.stringify(t.entities[0]));
-}
-{ // strong enemy: two laser hits within four of your moves kill it
-  // It sits walled in below the row you slide along, so it cannot wander off.
-  const L = ['###########', '#.P.......#', '#.........#', '#....#S#..#', '###########'];
-  const s = createGame(room(L));
-  const e = s.entities[0];
-  step(s, ['right']); step(s); step(s); step(s);
-  step(s, ['down']);
-  check('a first laser only hurts a strong enemy', !e.dead && e.hurt > 0, JSON.stringify(e));
-  step(s, ['left']);
-  step(s, ['down']);
-  check('a second laser two moves later kills it', e.dead);
-  const t = createGame(room(L));
-  const f = t.entities[0];
-  step(t, ['right']); step(t); step(t); step(t);
-  step(t, ['down']);
-  step(t); step(t); step(t);
-  step(t, ['left']); step(t); step(t);
-  check('the hurt wears off after four of your moves', f.hurt === 0, JSON.stringify(f));
-  step(t, ['down']);
-  check('so a late second laser only hurts it again', !f.dead && f.hurt > 0);
 }
 { // triangles turn whatever enters an open face, and stop what hits a solid side
   const s = slide(createGame(room(['#########', '#.......#', '#.......#', '#.......#', '#P...3..#', '#########'])), 'right');

@@ -41,6 +41,14 @@ function drawCell(g, c, x, y, s, scale = 1) {
   } else if (c === 'wall') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+  } else if (c.startsWith('receiver:')) {
+    // A catcher: a block with a coloured eye that glows while a beam holds it.
+    const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
+    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    g.fillStyle = lit ? INK[col] : '#11141b';
+    g.beginPath(); g.arc(16, 16, 8.5, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = INK[col]; g.lineWidth = 3; g.stroke();
+    if (lit) { g.globalAlpha = 0.35; g.fillStyle = INK[col]; g.beginPath(); g.arc(16, 16, 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
   } else if (c === 'checkpoint') {
     const active = s && s.checkpoint.x === x && s.checkpoint.y === y;
     g.strokeStyle = INK.moverEdge; g.lineWidth = 2;
@@ -90,7 +98,7 @@ function modeBadge(g, mode, bx = 24, by = 8) {
 
 // A turret head: one barrel per direction it fires; the next to fire is lit.
 function drawTurret(g, t, badge, mounted) {
-  const next = t.dirs[(t.next || 0) % t.dirs.length];
+  const next = t.dirs[(t.aim || 0) % t.dirs.length];
   g.save();
   if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
   for (const d of t.dirs) {
@@ -134,13 +142,6 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
     g.fillStyle = '#ffd34d';
     g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
-    if (e.hurt > 0) {
-      // A crack, and one pip per move left before the hurt wears off.
-      g.strokeStyle = '#ffd34d'; g.lineWidth = 1.6;
-      g.beginPath(); g.moveTo(16, 5); g.lineTo(13, 10); g.lineTo(18, 12); g.lineTo(15, 18); g.stroke();
-      g.fillStyle = '#ffd34d';
-      for (let i = 0; i < e.hurt; i++) { g.beginPath(); g.arc(8 + i * 5.3, 25, 1.8, 0, Math.PI * 2); g.fill(); }
-    }
     modeBadge(g, e.mode);
   } else if (e.kind === 'turret') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
@@ -223,14 +224,28 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
       drawPiece(g, e, e.x * T, e.y * T, 1 + 0.3 * t, 1 - t);
     }
   }
-  for (const f of fx) if ((f.type === 'laser' || f.type === 'beam') && now - f.at < LASER_MS) {
+  for (const f of fx) if (f.type === 'laser' && now - f.at < LASER_MS) {
     const t = (now - f.at) / LASER_MS, c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
-    g.strokeStyle = f.type === 'beam' ? INK.beam : INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
+    g.strokeStyle = INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
     g.lineJoin = 'round';
     g.beginPath();
     f.path.forEach((p, i) => { const [x, y] = c(p); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
     if (f.wall) { const [x, y] = c(f.path[f.path.length - 1]), [dx, dy] = DIRS[f.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
     g.stroke(); g.globalAlpha = 1;
+  }
+  // Turret beams are on all the time: a core line with a soft glow and a slow flicker.
+  for (const b of s.beams) {
+    const c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
+    const line = () => {
+      g.beginPath();
+      b.path.forEach((p, i) => { const [x, y] = c(p); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
+      if (b.wall || b.stop) { const [x, y] = c(b.path[b.path.length - 1]), [dx, dy] = DIRS[b.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
+      g.stroke();
+    };
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    g.strokeStyle = INK.beam; g.globalAlpha = 0.25 + 0.08 * Math.sin(now / 90); g.lineWidth = 9; line();
+    g.globalAlpha = 1; g.lineWidth = 2.5; g.strokeStyle = '#ffd0d0'; line();
+    g.lineCap = 'butt';
   }
   for (const f of fx) if (f.type === 'dive' && now - f.at < 200) {
     const t = (now - f.at) / 200;

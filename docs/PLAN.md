@@ -41,7 +41,7 @@ Each one placed in the editor picks its axis and its mode:
   tile; if a block is behind you, it **crushes** you and you go back to the last checkpoint.
 - **Weak enemy:** touching it kills you, and you go back to the last checkpoint. A **laser** or a
   **dive** into it kills it, and so does landing a jump as it steps under you.
-- **Strong enemy:** a **thrown heavy box** kills it, and so do **two lasers within 4 of your moves**. A laser stops on it; diving into it kills
+- **Strong enemy:** only a **thrown heavy box** kills it. It is immune to every laser and stops beams. A laser stops on it; diving into it kills
   you; it steps under a jump and kills you (my call).
 
 ## Triangles
@@ -52,13 +52,18 @@ Its solid sides stop things like a wall.
 
 ## Laser turret
 
-- Fires one to four chosen directions, **one at a time, clockwise**. Its barrels show the
-  directions; the next to fire is lit.
-- **Real time**, **on your move**, or **same way as you**: on each world step it fires the way you
-  moved, but only if it has a barrel that way.
+- Its beam is **on all the time** (like Portal), recomputed every tick, turned by triangles.
+- It points one of its chosen barrels at a time. **Real time**: turns clockwise on its own clock.
+  **On your move**: turns once per world step. **Same way as you**: points the way you moved, if
+  it has that barrel.
 - Stands alone like a block, or **mounts on a box, a heavy box or an enemy** and rides it.
-- Its beam kills you and weak enemies, and stops at blocks, boxes and strong enemies. You are
-  safe from it in the air (my call).
+- The beam kills you (unless you are in the air) and weak enemies. Blocks, boxes, movers and
+  strong enemies stop it.
+
+## Receiver
+
+A block with a coloured eye. While a turret beam ends on it, it counts as a pressed button of its
+colour, so it combines with that colour's buttons (all must be held).
 
 ## Puzzle pieces: box, button, door
 

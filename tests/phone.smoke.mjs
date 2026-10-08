@@ -40,6 +40,9 @@ try {
   const at = (x, y) => ({ x: box.x + (x + 0.5) * box.width / lv.w, y: box.y + (y + 0.5) * box.height / lv.h });
   let p = at(5, 6);
   await page.touchscreen.tap(p.x, p.y);
+  check('with Look, a tap changes nothing', (await text()).level.cells[6 * lv.w + 5] === '');
+  await page.click('[data-tool=wall]');
+  await page.touchscreen.tap(p.x, p.y);
   check('a tap places a block', (await text()).level.cells[6 * lv.w + 5] === 'wall');
   // a finger dragged across a row places on every tile, then a drag from one removes them
   const cdp = await page.context().newCDPSession(page);

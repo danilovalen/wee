@@ -5,7 +5,7 @@ import { emptyLevel } from '../src/sim.js';
 //   M  mover, h      V  mover, v         E  enemy, h     F  enemy, v
 //   S  strong enemy, h                  T  laser turret (fires right)
 //   B  box           H  heavy box
-//   o  red button    D  red door         u  blue button  Q  blue door
+//   o  red button    D  red door         u  blue button  Q  blue door    r  red receiver
 //   7 9 1 3  triangle, solid in the corner a numpad key points to (7 = north-west)
 // Movers are 'input' unless opts.mode says 'realtime'.
 export function room(rows, opts = {}) {
@@ -23,6 +23,7 @@ export function room(rows, opts = {}) {
       case 'o': l.cells[i] = 'button:red'; break;
       case 'D': l.cells[i] = 'door:red'; break;
       case 'u': l.cells[i] = 'button:blue'; break;
+      case 'r': l.cells[i] = 'receiver:red'; break;
       case 'Q': l.cells[i] = 'door:blue'; break;
       case 'P': l.start = { x, y }; break;
       case 'M': put('mover', 'h'); break;
