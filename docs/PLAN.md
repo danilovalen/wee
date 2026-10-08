@@ -62,7 +62,7 @@ Each one placed in the editor picks its axis and its mode:
 | Hook | You stop when arriving on Grapple tiles instead of sliding over them. | grapple tile |
 | Light | You emit light in dark levels, only while you are not moving. | a dark-level setting |
 | Swim | You can pass through tiles that would kill you. | hazard tile |
-| Cycle | Space is a little **jump**: you stay on your tile and the world takes one step. An enemy that moves onto your tile while you are in the air is killed. | movers to show it |
+| Cycle | Space is a little **jump**: you stay on your tile and the world takes one step. An enemy that moves onto your tile while you are in the air is killed. The jump reads from above: the player scales up on the way up and back down on landing, with its shadow staying on the tile. | movers to show it |
 
 ## The editor
 
