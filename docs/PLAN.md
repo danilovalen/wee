@@ -1,6 +1,6 @@
 # wee: ice slider sandbox, plan
 
-Status: first slice built 2026-10-08 (steps 1 to 7 below). Hook, Swim, Light and the
+Status: first slice built 2026-10-08 (steps 1 to 7 below). Swim and water are built too. Hook, Light and the
 blocks they need are not built yet. First test bed for the `game-skills` layer-1 skills.
 
 ## What it is
@@ -76,6 +76,16 @@ it by. It only fires when the way ahead is free, and not at you while airborne.
 Anything moving into it is destroyed: you, boxes, heavy boxes, movers, weak and strong enemies. A
 beam stops at it.
 
+## Water and swimming
+
+Water stops you like a block unless you are swimming, and stops weak enemies, light boxes and lone
+turrets; strong enemies, heavy boxes and blocks go through it. The tap (Space) starts or stops
+swimming with the Swim power, never while in water; with Cycle as well it also hides you, and
+either way the world takes one step. In water you move a tile every other tick. A beam that
+touches water passes on and shocks the whole body of water (cells joined side by side): you die,
+armored or not, unless hidden; weak enemies die; strong enemies, blocks and boxes are untouched.
+No flowing water: it is a top-down tile.
+
 ## Laser sensor
 
 A coloured floor plate, held down while a turret beam crosses it; the beam goes on. A piece on it
@@ -116,7 +126,7 @@ box or a block in it holds that colour's doors open.
 | Laser | Mid-slide, press the clockwise or counterclockwise arrow to fire a beam perpendicular to you. You keep sliding. Kills an enemy it hits. | laser targets for puzzles |
 | Hook | You stop when arriving on Grapple tiles instead of sliding over them. | grapple tile |
 | Light | You emit light in dark levels, only while you are not moving. | a dark-level setting |
-| Swim | You can pass through tiles that would kill you. | hazard tile |
+| Swim | The tap starts or stops swimming; swimming, you can go into water, at half speed. See Water. | water tile (built) |
 | Cycle | Space **hides** you: you stay on your tile and the world takes one step, its on-your-move pieces sliding until they stop. Meanwhile nothing meets you and beams pass over. You come back when they have stopped (at least 4 ticks); anything on your tile then, or a door closed on it, squashes you. Hidden, you are a dashed outline. | movers to show it |
 
 ## The editor
@@ -136,7 +146,7 @@ box or a block in it holds that colour's doors open.
 2. Checkpoint (R and death return here).
 3. Moving block and enemy, each horizontal or vertical, each real time or on input.
 4. Box, heavy box, button, door.
-5. Hazard (kills you; Swim passes it).
+5. Water (Swim passes it, a beam shocks it). Built.
 6. Grapple (Hook stops on it).
 7. Breakable (Dive breaks it).
 8. Laser target, dark level: later.

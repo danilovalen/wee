@@ -137,6 +137,9 @@ try {
   check('a laser sensor places in its colour', (await text()).level.cells[3 * 20 + 18] === 'sensor:blue', (await text()).level.cells[3 * 20 + 18]);
   await page.mouse.click(q.x, q.y);
   check('and clicking it again with the sensor tool removes it', (await text()).level.cells[3 * 20 + 18] === '');
+  await page.click('[data-tool=water]');
+  q = at(18, 4); await page.mouse.click(q.x, q.y);
+  check('water places', (await text()).level.cells[4 * 20 + 18] === 'water', (await text()).level.cells[4 * 20 + 18]);
   await page.click('[data-tool=wall]');
   check('enemy options hide for a block', !(await page.locator('[data-axis=h]').isVisible()));
   await page.screenshot({ path: 'shots/edit.png' });

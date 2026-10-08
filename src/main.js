@@ -26,14 +26,15 @@ const TOOLS = [
   { id: 'door', label: 'Door' },
   { id: 'receiver', label: 'Receiver' },
   { id: 'sensor', label: 'Laser sensor' },
+  { id: 'water', label: 'Water' },
 ];
 const POWER_TEXT = {
   boomerang: 'While sliding, press back to slide the other way.',
   dive: 'While sliding, press the same arrow to land at once and crash.',
   laser: 'While sliding, press a side arrow to fire a beam that way.',
-  cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed.',
+  cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed. With Swim too, the same press does both.',
   hook: 'Stop on grapple tiles.',
-  swim: 'Pass through tiles that would kill you.',
+  swim: 'When standing on land, press Space to start or stop swimming. The world takes a step. While swimming, you can go into water, at half speed.',
   light: 'When standing still, light up dark rooms.',
   armored: 'Weak enemies, blocks and closing doors cannot crush you. Strong enemies, heavy boxes, beams and death blocks still can.',
 };
@@ -76,7 +77,7 @@ const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 // Does (x, y) already hold the kind of thing this tool places?
 function holds(x, y, tool) {
   const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death') return c === tool;
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
   if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
@@ -104,6 +105,7 @@ function describe(x, y) {
     else if (kind === 'checkpoint') parts.push('Checkpoint');
     else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
     else if (kind === 'death') parts.push('Death block');
+    else if (kind === 'water') parts.push('Water');
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
     else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser sensor`);
@@ -127,11 +129,14 @@ function place(x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death'].includes(ui.tool)) setCell('');
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
     if (isStart) return;
     removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
+  } else if (t === 'water') {
+    if (isStart) return;
+    setCell('water');
   } else if (t === 'gate') {
     if (isStart) return;
     removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
@@ -236,7 +241,7 @@ function tick() {
 function keysText() {
   return touch
     ? (mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : 'Press Play to try this room.')
-    : (mode === 'play' ? 'Arrows slide. Space hides. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
+    : (mode === 'play' ? 'Arrows slide. Space hides, or starts and stops swimming. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
 }
 
 function setMode(m, keep) {
@@ -307,8 +312,8 @@ function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'look') {
     x.strokeStyle = '#c3cad8'; x.lineWidth = 2.5;

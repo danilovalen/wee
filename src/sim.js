@@ -43,7 +43,7 @@ function checkTurret(t) {
 
 // A power listed in NEEDS cannot act until its block type exists.
 export const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'hook', 'swim', 'light', 'armored'];
-export const NEEDS = { hook: 'grapple tiles', swim: 'hazard tiles', light: 'dark levels' };
+export const NEEDS = { hook: 'grapple tiles', light: 'dark levels' };
 
 export function emptyLevel(w = 20, h = 12) {
   return {
@@ -87,7 +87,7 @@ function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
   if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
-  if (c === 'death') return true;
+  if (c === 'death' || c === 'water') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
   if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
@@ -102,13 +102,13 @@ export function createGame(level) {
     w: l.w, h: l.h, cells: l.cells, powers: l.powers, clock: l.clock,
     start: { ...l.start },
     checkpoint: { ...l.start },
-    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, snap: true },
+    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, snap: true },
     entities: l.entities.map(e => ({
       id: ++id, kind: e.kind, x: e.x, y: e.y,
       axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
       turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: 0 } : null,
     })),
-    open: {}, lit: new Set(), beams: [], tick: 0, worldSteps: 0, deaths: 0, events: [],
+    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, deaths: 0, events: [],
   };
   computeBeams(s, false);
   refreshDoors(s);
@@ -140,12 +140,14 @@ function facing(s, x, y, d) {
 // it only along its listed directions; any other way, it is a wall.
 const gateAt = (s, x, y) => { const c = inb(s, x, y) && cellAt(s, x, y); return c && c.startsWith('gate:') ? c.slice(5).split(',') : null; };
 
-function stepTo(s, x, y, d) {
+// wet: whether this mover may enter water (beams always may).
+function stepTo(s, x, y, d, wet = true) {
   d = facing(s, x, y, d);
   const [dx, dy] = DIRS[d], nx = x + dx, ny = y + dy;
   const from = gateAt(s, x, y), to = gateAt(s, nx, ny);
   if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;
   if (solidCell(s, nx, ny)) return null;
+  if (!wet && cellAt(s, nx, ny) === 'water') return null;
   if (cellAt(s, nx, ny) === 'death') return { x: nx, y: ny, d, death: true };
   const tri = triAt(s, nx, ny);
   if (tri && !openFaces(tri).includes(ENTRY_FACE[d])) return null;
@@ -154,8 +156,8 @@ function stepTo(s, x, y, d) {
 
 // Where a piece at (x, y) pushed d would go, if that tile is free. A death block
 // always takes it.
-function pushTo(s, x, y, d) {
-  const t = stepTo(s, x, y, d);
+function pushTo(s, x, y, d, wet) {
+  const t = stepTo(s, x, y, d, wet);
   return t && (t.death || (!entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y))) ? t : null;
 }
 
@@ -165,6 +167,12 @@ function land(s, e, t) {
   e.x = t.x; e.y = t.y;
   return true;
 }
+
+// Water stops you unless you are swimming, and stops weak enemies, light boxes and
+// lone turrets. Strong enemies, heavy boxes and blocks go through it.
+const WADES = ['strong', 'heavy', 'mover'];
+const wades = e => WADES.includes(e.kind);
+const inWater = (s, x, y) => inb(s, x, y) && cellAt(s, x, y) === 'water';
 
 const entAt = (s, x, y, not) => s.entities.find(e => !e.dead && e !== not && e.x === x && e.y === y);
 // A hidden player is not on the board: nothing meets it, nothing stops at it.
@@ -227,7 +235,7 @@ function kill(s, e, how) {
 
 // One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
 function playerStep(s, d, diving) {
-  const p = s.player, t = stepTo(s, p.x, p.y, d);
+  const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming);
   if (!t) return 'blocked';
   if (t.death) { die(s); return 'died'; }
   const nx = t.x, ny = t.y, e = entAt(s, nx, ny);
@@ -238,7 +246,7 @@ function playerStep(s, d, diving) {
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d))) land(s, e, b);
+    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d, false))) land(s, e, b);
     else return 'blocked';
   }
   p.x = nx; p.y = ny; p.moved++;
@@ -302,7 +310,28 @@ function laserHit(s, o, how) {
 
 function laser(s, d) {
   const r = trace(s, s.player.x, s.player.y, d, o => laserHit(s, o, 'laser'), false);
-  s.events.push({ type: 'laser', d, ...r });
+  const pools = shockPools(s, r.path);
+  s.events.push({ type: 'laser', d, ...r, shocked: [...pools] });
+  if (shockHarms(s, pools, 'laser')) die(s);
+}
+
+// Every body of water a beam touches: the cells joined to it side by side.
+function shockPools(s, path) {
+  const out = new Set(), todo = path.filter(([x, y]) => inWater(s, x, y)).map(([x, y]) => y * s.w + x);
+  while (todo.length) {
+    const i = todo.pop();
+    if (out.has(i)) continue;
+    out.add(i);
+    const x = i % s.w, y = (i - x) / s.w;
+    for (const [dx, dy] of Object.values(DIRS)) if (inWater(s, x + dx, y + dy)) todo.push((y + dy) * s.w + x + dx);
+  }
+  return out;
+}
+
+// A shocked pool hurts what is in it as a direct hit would. Returns whether it reached you.
+function shockHarms(s, pools, how) {
+  for (const e of s.entities) if (!e.dead && pools.has(e.y * s.w + e.x)) laserHit(s, e, how);
+  return pools.has(s.player.y * s.w + s.player.x) && !s.player.hidden;
 }
 
 const aimOf = t => t.dirs[t.aim % t.dirs.length];
@@ -315,7 +344,7 @@ function turnTurrets(s, mode) {
 // you (unless you are hidden) and weak enemies. A beam that ends on a receiver lights
 // it; so does one crossing a sensor nothing stands on.
 function computeBeams(s, harm) {
-  s.beams = []; s.lit = new Set();
+  s.beams = []; s.lit = new Set(); s.shocked = new Set();
   let hitYou = false;
   for (const e of s.entities) {
     if (e.dead || !e.turret) continue;
@@ -323,8 +352,10 @@ function computeBeams(s, harm) {
     if (r.stop && inb(s, ...r.stop) && cellAt(s, ...r.stop).startsWith('receiver:')) s.lit.add(r.stop[1] * s.w + r.stop[0]);
     for (const [x, y] of r.path) if (cellAt(s, x, y).startsWith('sensor:') && !entAt(s, x, y) && !playerAt(s, x, y)) s.lit.add(y * s.w + x);
     if (r.player) hitYou = true;
+    for (const i of shockPools(s, r.path)) s.shocked.add(i);
     s.beams.push({ id: e.id, d: aimOf(e.turret), ...r });
   }
+  if (harm && shockHarms(s, s.shocked, 'turret')) hitYou = true;
   if (harm && hitYou) die(s);
 }
 
@@ -362,7 +393,7 @@ const patrolDir = e => e.axis === 'h' ? (e.dir > 0 ? 'right' : 'left') : (e.dir 
 // Moves one tile along its patrol, or the given way. Blocked, it stays and turns its
 // patrol. A triangle turns a patrol onto the other axis.
 function moveMover(s, e, d, turned) {
-  const t = stepTo(s, e.x, e.y, d || patrolDir(e));
+  const t = stepTo(s, e.x, e.y, d || patrolDir(e), wades(e));
   // Blocked, a patrol turns and moves the other way in the same step; a follower waits.
   const blocked = () => { if (d) return; e.dir = -e.dir; if (!turned) moveMover(s, e, null, true); };
   if (!t) { blocked(); return; }
@@ -370,7 +401,7 @@ function moveMover(s, e, d, turned) {
   const o = entAt(s, t.x, t.y, e);
   let b;
   if (o) {
-    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d))) land(s, o, b);
+    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d, false))) land(s, o, b);
     else { blocked(); return; }
   }
   if (playerAt(s, t.x, t.y)) {
@@ -381,7 +412,7 @@ function moveMover(s, e, d, turned) {
       return;
     }
     const p = s.player;
-    if ((b = pushTo(s, t.x, t.y, t.d)) && b.death) die(s);
+    if ((b = pushTo(s, t.x, t.y, t.d, p.swimming)) && b.death) die(s);
     else if (b) { p.x = b.x; p.y = b.y; s.events.push({ type: 'pushed' }); }
     else if (!crushes(s, e)) { blocked(); return; }
     else { e.x = t.x; e.y = t.y; die(s); return; }
@@ -394,7 +425,7 @@ function moveMover(s, e, d, turned) {
 // tile per tick until something stops it. A heavy box squashes enemies and you; an
 // enemy that reaches you kills you; anything else just stops.
 function slidePiece(s, e) {
-  const t = stepTo(s, e.x, e.y, e.slide);
+  const t = stepTo(s, e.x, e.y, e.slide, wades(e));
   if (!t) { e.slide = null; return; }
   if (t.death) { kill(s, e, 'death'); return; }
   const o = entAt(s, t.x, t.y, e);
@@ -415,13 +446,13 @@ function fireSprings(s) {
     const d = c.slice(7), x = i % s.w + DIRS[d][0], y = Math.floor(i / s.w) + DIRS[d][1];
     if (!inb(s, x, y)) return;
     const p = s.player;
-    if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d)) {
+    if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d, p.swimming)) {
       if (!p.dir) p.moved = 0;
       p.dir = d;
       s.events.push({ type: 'spring', x, y, d });
     }
     const e = entAt(s, x, y);
-    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d)) {
+    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e))) {
       e.slide = d;
       s.events.push({ type: 'spring', x, y, d });
     }
@@ -444,12 +475,15 @@ function input(s, k) {
   if (k.startsWith('power:')) { const [, name, on] = k.split(':'); if (POWERS.includes(name)) s.powers[name] = on === '1'; return; }
   if (k.startsWith('clock:')) { const c = k.slice(6); if (c === 'tile' || c === 'slide') s.clock = c; return; }
   if (k === 'respawn') { respawn(s); s.events.push({ type: 'respawn' }); return; }
+  // The tap: with Cycle you hide, with Swim you start or stop swimming (never in
+  // water), and either way the world takes one step.
   if (k === 'hide') {
-    if (s.powers.cycle && !p.dir && !p.hidden) {
-      p.hidden = true; p.hideTicks = 0;
-      s.events.push({ type: 'hide' });
-      hideCycle(s);
-    }
+    if (p.dir || p.hidden) return;
+    const swim = s.powers.swim && !inWater(s, p.x, p.y);
+    if (!s.powers.cycle && !swim) return;
+    if (swim) { p.swimming = !p.swimming; s.events.push({ type: 'swim', on: p.swimming }); }
+    if (s.powers.cycle) { p.hidden = true; p.hideTicks = 0; s.events.push({ type: 'hide' }); }
+    hideCycle(s);
     return;
   }
   if (!DIRS[k] || p.hidden) return;
@@ -467,7 +501,11 @@ export function step(s, inputs = []) {
   // before you reach it.
   for (const e of s.entities) if (!e.dead && e.slide) slidePiece(s, e);
   for (const e of s.entities) if (!e.dead && e.rush && !e.slide) rushOnce(s, e);
-  if (s.player.dir) slideOnce(s, false);
+  // In water you move a tile every other tick.
+  if (s.player.dir) {
+    s.player.stroke = inWater(s, s.player.x, s.player.y) ? !s.player.stroke : false;
+    if (!s.player.stroke) slideOnce(s, false);
+  }
   if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
     for (const e of s.entities) if (!e.dead && !e.slide && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
     turnTurrets(s, 'realtime');
@@ -484,7 +522,7 @@ export function step(s, inputs = []) {
 export function gameText(s, mode = 'play') {
   return JSON.stringify({
     mode, tick: s.tick, clock: s.clock, worldSteps: s.worldSteps, deaths: s.deaths,
-    player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden },
+    player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden, swimming: s.player.swimming },
     checkpoint: s.checkpoint,
     pieces: s.entities.filter(e => !e.dead).map(e => ({
       kind: e.kind, x: e.x, y: e.y,

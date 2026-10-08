@@ -8,6 +8,7 @@ const AIM = { up: -Math.PI / 2, right: 0, down: Math.PI / 2, left: Math.PI };
 export const T = 32;
 
 export const INK = {
+  water: '#1c4d7a', waterHi: '#5fa8e0', shock: '#fff1a8',
   armor: '#8fa3bb',
   floor: '#14171f', grid: '#1c2130', wall: '#3a4256', wallTop: '#4d5770',
   player: '#5ee0e6', start: '#5ee0e6', shadow: 'rgba(0,0,0,0.45)',
@@ -18,6 +19,8 @@ export const INK = {
 
 const ease = t => 1 - Math.pow(1 - t, 3);
 const lerp = (a, b, t) => a + (b - a) * t;
+// The time the current frame is drawn at, for tiles that move on their own.
+let clock = 0;
 
 function roundRect(g, x, y, w, h, r) {
   g.beginPath();
@@ -30,7 +33,18 @@ function drawCell(g, c, x, y, s, scale = 1) {
   const px = x * T, py = y * T;
   g.save();
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
-  if (c.startsWith('tri:')) {
+  if (c === 'water') {
+    // A full tile, so a pool reads as one body; two waves drift across it.
+    g.fillStyle = INK.water; g.fillRect(0, 0, T, T);
+    g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
+    const k = (clock / 900 + x * 0.37 + y * 0.53) % 1;
+    for (const wy of [10, 22]) {
+      g.beginPath();
+      for (let wx = 0; wx <= T; wx += 4) g.lineTo(wx, wy + Math.sin((wx / T + k) * Math.PI * 2) * 2);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+  } else if (c.startsWith('tri:')) {
     // The solid half sits in the named corner; the slope is the bright edge.
     const k = c.slice(4), pts = { nw: [[1, 1], [T - 1, 1], [1, T - 1]], ne: [[1, 1], [T - 1, 1], [T - 1, T - 1]], sw: [[1, 1], [1, T - 1], [T - 1, T - 1]], se: [[T - 1, 1], [T - 1, T - 1], [1, T - 1]] }[k];
     g.fillStyle = INK.wall; g.beginPath(); g.moveTo(...pts[0]); g.lineTo(...pts[1]); g.lineTo(...pts[2]); g.closePath(); g.fill();
@@ -200,10 +214,20 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
 }
 
 // Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
-// on top of you, so you can still be found.
-function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false) {
+// on top of you, so you can still be found. Swimming on land you wear a blue drop;
+// under water you waver, tinted, with a ripple.
+function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim = null) {
   g.save(); g.globalAlpha = alpha;
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale);
+  const under = swim === 'under';
+  if (under) {
+    const w = Math.sin(clock / 170);
+    g.strokeStyle = INK.waterHi; g.lineWidth = 1.5;
+    const rp = (clock % 1100) / 1100;
+    g.globalAlpha = alpha * 0.6 * (1 - rp); g.beginPath(); g.arc(0, 0, 11 + 6 * rp, 0, Math.PI * 2); g.stroke();
+    g.globalAlpha = alpha * 0.8;
+    g.translate(w * 1.5, 0); g.scale(1 + 0.07 * w, 1 - 0.07 * w);
+  }
   if (hidden) {
     g.strokeStyle = INK.player; g.lineWidth = 2; g.setLineDash([3, 3]);
     g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
@@ -216,6 +240,13 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false) {
     for (const a of [0.25, 0.75, 1.25, 1.75]) { g.beginPath(); g.arc(Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6, 0, Math.PI * 2); g.fill(); }
   }
   g.fillStyle = '#0b2a2c'; g.beginPath(); g.arc(-3.5, -2, 2.2, 0, Math.PI * 2); g.arc(3.5, -2, 2.2, 0, Math.PI * 2); g.fill();
+  if (under) {
+    g.globalAlpha = alpha * 0.45; g.fillStyle = INK.waterHi;
+    g.beginPath(); g.arc(0, 0, 10.5, 0, Math.PI * 2); g.fill();
+  } else if (swim === 'on') {
+    g.fillStyle = INK.waterHi;
+    g.beginPath(); g.moveTo(9, -16); g.quadraticCurveTo(14, -9, 9, -7); g.quadraticCurveTo(4, -9, 9, -16); g.fill();
+  }
   g.restore();
 }
 
@@ -230,6 +261,7 @@ function drawFloor(g, w, h) {
 
 // fx: [{type, at(ms), ...}] effects started by game events or edits.
 export function drawEdit(g, level, hover, fx, now) {
+  clock = now;
   drawFloor(g, level.w, level.h);
   const pop = (x, y) => {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
@@ -251,11 +283,25 @@ export function drawEdit(g, level, hover, fx, now) {
 
 // prev: positions before the last tick; alpha: 0..1 progress into the next tick.
 export function drawPlay(g, s, prev, alpha, fx, now) {
+  clock = now;
   const shake = fx.find(f => f.type === 'crash' && now - f.at < 180);
   g.save();
   if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
   drawFloor(g, s.w, s.h);
   s.cells.forEach((c, i) => drawCell(g, c, i % s.w, Math.floor(i / s.w), s));
+  // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
+  // as its beam touches, yours for a moment.
+  const crackle = (cells, k) => {
+    g.strokeStyle = INK.shock; g.lineWidth = 1.5;
+    for (const i of cells) {
+      const x = (i % s.w) * T, y = Math.floor(i / s.w) * T, j = Math.floor(now / 70) + i;
+      g.globalAlpha = k * (0.35 + 0.35 * ((j * 7) % 3) / 2);
+      g.beginPath(); g.moveTo(x + 4, y + 8 + (j % 3) * 4); g.lineTo(x + 12, y + 14); g.lineTo(x + 18, y + 9 + (j % 2) * 6); g.lineTo(x + 28, y + 18); g.stroke();
+    }
+    g.globalAlpha = 1;
+  };
+  crackle(s.shocked, 1);
+  for (const f of fx) if (f.type === 'laser' && f.shocked && now - f.at < LASER_MS) crackle(f.shocked, 1 - (now - f.at) / LASER_MS);
   const a = ease(alpha);
   const pos = (id, x, y) => {
     const p = prev.ents[id];
@@ -309,7 +355,8 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     g.strokeStyle = INK.player; g.globalAlpha = 1 - t; g.lineWidth = 2;
     g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
   }
-  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored);
+  const swim = !p.swimming ? null : s.cells[p.y * s.w + p.x] === 'water' ? 'under' : 'on';
+  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim);
   g.restore();
 }
 

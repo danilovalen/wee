@@ -148,7 +148,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
     <section id="stage">
       <canvas id="game"></canvas>
       <div id="pad" class="pad" hidden>
-        <button id="hideBtn" type="button">Hide</button>
+        <button id="hideBtn" type="button">Hide / Swim</button>
         <button id="respawnBtn" type="button">Back to checkpoint</button>
         <button id="reportBtn" type="button">Copy report</button>
       </div>
@@ -216,7 +216,7 @@ function checkTurret(t) {
 
 // A power listed in NEEDS cannot act until its block type exists.
 const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'hook', 'swim', 'light', 'armored'];
-const NEEDS = { hook: 'grapple tiles', swim: 'hazard tiles', light: 'dark levels' };
+const NEEDS = { hook: 'grapple tiles', light: 'dark levels' };
 
 function emptyLevel(w = 20, h = 12) {
   return {
@@ -260,7 +260,7 @@ function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
   if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
-  if (c === 'death') return true;
+  if (c === 'death' || c === 'water') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
   if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
@@ -275,13 +275,13 @@ function createGame(level) {
     w: l.w, h: l.h, cells: l.cells, powers: l.powers, clock: l.clock,
     start: { ...l.start },
     checkpoint: { ...l.start },
-    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, snap: true },
+    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, snap: true },
     entities: l.entities.map(e => ({
       id: ++id, kind: e.kind, x: e.x, y: e.y,
       axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
       turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: 0 } : null,
     })),
-    open: {}, lit: new Set(), beams: [], tick: 0, worldSteps: 0, deaths: 0, events: [],
+    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, deaths: 0, events: [],
   };
   computeBeams(s, false);
   refreshDoors(s);
@@ -313,12 +313,14 @@ function facing(s, x, y, d) {
 // it only along its listed directions; any other way, it is a wall.
 const gateAt = (s, x, y) => { const c = inb(s, x, y) && cellAt(s, x, y); return c && c.startsWith('gate:') ? c.slice(5).split(',') : null; };
 
-function stepTo(s, x, y, d) {
+// wet: whether this mover may enter water (beams always may).
+function stepTo(s, x, y, d, wet = true) {
   d = facing(s, x, y, d);
   const [dx, dy] = DIRS[d], nx = x + dx, ny = y + dy;
   const from = gateAt(s, x, y), to = gateAt(s, nx, ny);
   if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;
   if (solidCell(s, nx, ny)) return null;
+  if (!wet && cellAt(s, nx, ny) === 'water') return null;
   if (cellAt(s, nx, ny) === 'death') return { x: nx, y: ny, d, death: true };
   const tri = triAt(s, nx, ny);
   if (tri && !openFaces(tri).includes(ENTRY_FACE[d])) return null;
@@ -327,8 +329,8 @@ function stepTo(s, x, y, d) {
 
 // Where a piece at (x, y) pushed d would go, if that tile is free. A death block
 // always takes it.
-function pushTo(s, x, y, d) {
-  const t = stepTo(s, x, y, d);
+function pushTo(s, x, y, d, wet) {
+  const t = stepTo(s, x, y, d, wet);
   return t && (t.death || (!entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y))) ? t : null;
 }
 
@@ -338,6 +340,12 @@ function land(s, e, t) {
   e.x = t.x; e.y = t.y;
   return true;
 }
+
+// Water stops you unless you are swimming, and stops weak enemies, light boxes and
+// lone turrets. Strong enemies, heavy boxes and blocks go through it.
+const WADES = ['strong', 'heavy', 'mover'];
+const wades = e => WADES.includes(e.kind);
+const inWater = (s, x, y) => inb(s, x, y) && cellAt(s, x, y) === 'water';
 
 const entAt = (s, x, y, not) => s.entities.find(e => !e.dead && e !== not && e.x === x && e.y === y);
 // A hidden player is not on the board: nothing meets it, nothing stops at it.
@@ -400,7 +408,7 @@ function kill(s, e, how) {
 
 // One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
 function playerStep(s, d, diving) {
-  const p = s.player, t = stepTo(s, p.x, p.y, d);
+  const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming);
   if (!t) return 'blocked';
   if (t.death) { die(s); return 'died'; }
   const nx = t.x, ny = t.y, e = entAt(s, nx, ny);
@@ -411,7 +419,7 @@ function playerStep(s, d, diving) {
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d))) land(s, e, b);
+    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d, false))) land(s, e, b);
     else return 'blocked';
   }
   p.x = nx; p.y = ny; p.moved++;
@@ -475,7 +483,28 @@ function laserHit(s, o, how) {
 
 function laser(s, d) {
   const r = trace(s, s.player.x, s.player.y, d, o => laserHit(s, o, 'laser'), false);
-  s.events.push({ type: 'laser', d, ...r });
+  const pools = shockPools(s, r.path);
+  s.events.push({ type: 'laser', d, ...r, shocked: [...pools] });
+  if (shockHarms(s, pools, 'laser')) die(s);
+}
+
+// Every body of water a beam touches: the cells joined to it side by side.
+function shockPools(s, path) {
+  const out = new Set(), todo = path.filter(([x, y]) => inWater(s, x, y)).map(([x, y]) => y * s.w + x);
+  while (todo.length) {
+    const i = todo.pop();
+    if (out.has(i)) continue;
+    out.add(i);
+    const x = i % s.w, y = (i - x) / s.w;
+    for (const [dx, dy] of Object.values(DIRS)) if (inWater(s, x + dx, y + dy)) todo.push((y + dy) * s.w + x + dx);
+  }
+  return out;
+}
+
+// A shocked pool hurts what is in it as a direct hit would. Returns whether it reached you.
+function shockHarms(s, pools, how) {
+  for (const e of s.entities) if (!e.dead && pools.has(e.y * s.w + e.x)) laserHit(s, e, how);
+  return pools.has(s.player.y * s.w + s.player.x) && !s.player.hidden;
 }
 
 const aimOf = t => t.dirs[t.aim % t.dirs.length];
@@ -488,7 +517,7 @@ function turnTurrets(s, mode) {
 // you (unless you are hidden) and weak enemies. A beam that ends on a receiver lights
 // it; so does one crossing a sensor nothing stands on.
 function computeBeams(s, harm) {
-  s.beams = []; s.lit = new Set();
+  s.beams = []; s.lit = new Set(); s.shocked = new Set();
   let hitYou = false;
   for (const e of s.entities) {
     if (e.dead || !e.turret) continue;
@@ -496,8 +525,10 @@ function computeBeams(s, harm) {
     if (r.stop && inb(s, ...r.stop) && cellAt(s, ...r.stop).startsWith('receiver:')) s.lit.add(r.stop[1] * s.w + r.stop[0]);
     for (const [x, y] of r.path) if (cellAt(s, x, y).startsWith('sensor:') && !entAt(s, x, y) && !playerAt(s, x, y)) s.lit.add(y * s.w + x);
     if (r.player) hitYou = true;
+    for (const i of shockPools(s, r.path)) s.shocked.add(i);
     s.beams.push({ id: e.id, d: aimOf(e.turret), ...r });
   }
+  if (harm && shockHarms(s, s.shocked, 'turret')) hitYou = true;
   if (harm && hitYou) die(s);
 }
 
@@ -535,7 +566,7 @@ const patrolDir = e => e.axis === 'h' ? (e.dir > 0 ? 'right' : 'left') : (e.dir 
 // Moves one tile along its patrol, or the given way. Blocked, it stays and turns its
 // patrol. A triangle turns a patrol onto the other axis.
 function moveMover(s, e, d, turned) {
-  const t = stepTo(s, e.x, e.y, d || patrolDir(e));
+  const t = stepTo(s, e.x, e.y, d || patrolDir(e), wades(e));
   // Blocked, a patrol turns and moves the other way in the same step; a follower waits.
   const blocked = () => { if (d) return; e.dir = -e.dir; if (!turned) moveMover(s, e, null, true); };
   if (!t) { blocked(); return; }
@@ -543,7 +574,7 @@ function moveMover(s, e, d, turned) {
   const o = entAt(s, t.x, t.y, e);
   let b;
   if (o) {
-    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d))) land(s, o, b);
+    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d, false))) land(s, o, b);
     else { blocked(); return; }
   }
   if (playerAt(s, t.x, t.y)) {
@@ -554,7 +585,7 @@ function moveMover(s, e, d, turned) {
       return;
     }
     const p = s.player;
-    if ((b = pushTo(s, t.x, t.y, t.d)) && b.death) die(s);
+    if ((b = pushTo(s, t.x, t.y, t.d, p.swimming)) && b.death) die(s);
     else if (b) { p.x = b.x; p.y = b.y; s.events.push({ type: 'pushed' }); }
     else if (!crushes(s, e)) { blocked(); return; }
     else { e.x = t.x; e.y = t.y; die(s); return; }
@@ -567,7 +598,7 @@ function moveMover(s, e, d, turned) {
 // tile per tick until something stops it. A heavy box squashes enemies and you; an
 // enemy that reaches you kills you; anything else just stops.
 function slidePiece(s, e) {
-  const t = stepTo(s, e.x, e.y, e.slide);
+  const t = stepTo(s, e.x, e.y, e.slide, wades(e));
   if (!t) { e.slide = null; return; }
   if (t.death) { kill(s, e, 'death'); return; }
   const o = entAt(s, t.x, t.y, e);
@@ -588,13 +619,13 @@ function fireSprings(s) {
     const d = c.slice(7), x = i % s.w + DIRS[d][0], y = Math.floor(i / s.w) + DIRS[d][1];
     if (!inb(s, x, y)) return;
     const p = s.player;
-    if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d)) {
+    if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d, p.swimming)) {
       if (!p.dir) p.moved = 0;
       p.dir = d;
       s.events.push({ type: 'spring', x, y, d });
     }
     const e = entAt(s, x, y);
-    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d)) {
+    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e))) {
       e.slide = d;
       s.events.push({ type: 'spring', x, y, d });
     }
@@ -617,12 +648,15 @@ function input(s, k) {
   if (k.startsWith('power:')) { const [, name, on] = k.split(':'); if (POWERS.includes(name)) s.powers[name] = on === '1'; return; }
   if (k.startsWith('clock:')) { const c = k.slice(6); if (c === 'tile' || c === 'slide') s.clock = c; return; }
   if (k === 'respawn') { respawn(s); s.events.push({ type: 'respawn' }); return; }
+  // The tap: with Cycle you hide, with Swim you start or stop swimming (never in
+  // water), and either way the world takes one step.
   if (k === 'hide') {
-    if (s.powers.cycle && !p.dir && !p.hidden) {
-      p.hidden = true; p.hideTicks = 0;
-      s.events.push({ type: 'hide' });
-      hideCycle(s);
-    }
+    if (p.dir || p.hidden) return;
+    const swim = s.powers.swim && !inWater(s, p.x, p.y);
+    if (!s.powers.cycle && !swim) return;
+    if (swim) { p.swimming = !p.swimming; s.events.push({ type: 'swim', on: p.swimming }); }
+    if (s.powers.cycle) { p.hidden = true; p.hideTicks = 0; s.events.push({ type: 'hide' }); }
+    hideCycle(s);
     return;
   }
   if (!DIRS[k] || p.hidden) return;
@@ -640,7 +674,11 @@ function step(s, inputs = []) {
   // before you reach it.
   for (const e of s.entities) if (!e.dead && e.slide) slidePiece(s, e);
   for (const e of s.entities) if (!e.dead && e.rush && !e.slide) rushOnce(s, e);
-  if (s.player.dir) slideOnce(s, false);
+  // In water you move a tile every other tick.
+  if (s.player.dir) {
+    s.player.stroke = inWater(s, s.player.x, s.player.y) ? !s.player.stroke : false;
+    if (!s.player.stroke) slideOnce(s, false);
+  }
   if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
     for (const e of s.entities) if (!e.dead && !e.slide && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
     turnTurrets(s, 'realtime');
@@ -657,7 +695,7 @@ function step(s, inputs = []) {
 function gameText(s, mode = 'play') {
   return JSON.stringify({
     mode, tick: s.tick, clock: s.clock, worldSteps: s.worldSteps, deaths: s.deaths,
-    player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden },
+    player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden, swimming: s.player.swimming },
     checkpoint: s.checkpoint,
     pieces: s.entities.filter(e => !e.dead).map(e => ({
       kind: e.kind, x: e.x, y: e.y,
@@ -691,6 +729,7 @@ const AIM = { up: -Math.PI / 2, right: 0, down: Math.PI / 2, left: Math.PI };
 const T = 32;
 
 const INK = {
+  water: '#1c4d7a', waterHi: '#5fa8e0', shock: '#fff1a8',
   armor: '#8fa3bb',
   floor: '#14171f', grid: '#1c2130', wall: '#3a4256', wallTop: '#4d5770',
   player: '#5ee0e6', start: '#5ee0e6', shadow: 'rgba(0,0,0,0.45)',
@@ -701,6 +740,8 @@ const INK = {
 
 const ease = t => 1 - Math.pow(1 - t, 3);
 const lerp = (a, b, t) => a + (b - a) * t;
+// The time the current frame is drawn at, for tiles that move on their own.
+let clock = 0;
 
 function roundRect(g, x, y, w, h, r) {
   g.beginPath();
@@ -713,7 +754,18 @@ function drawCell(g, c, x, y, s, scale = 1) {
   const px = x * T, py = y * T;
   g.save();
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
-  if (c.startsWith('tri:')) {
+  if (c === 'water') {
+    // A full tile, so a pool reads as one body; two waves drift across it.
+    g.fillStyle = INK.water; g.fillRect(0, 0, T, T);
+    g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
+    const k = (clock / 900 + x * 0.37 + y * 0.53) % 1;
+    for (const wy of [10, 22]) {
+      g.beginPath();
+      for (let wx = 0; wx <= T; wx += 4) g.lineTo(wx, wy + Math.sin((wx / T + k) * Math.PI * 2) * 2);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+  } else if (c.startsWith('tri:')) {
     // The solid half sits in the named corner; the slope is the bright edge.
     const k = c.slice(4), pts = { nw: [[1, 1], [T - 1, 1], [1, T - 1]], ne: [[1, 1], [T - 1, 1], [T - 1, T - 1]], sw: [[1, 1], [1, T - 1], [T - 1, T - 1]], se: [[T - 1, 1], [T - 1, T - 1], [1, T - 1]] }[k];
     g.fillStyle = INK.wall; g.beginPath(); g.moveTo(...pts[0]); g.lineTo(...pts[1]); g.lineTo(...pts[2]); g.closePath(); g.fill();
@@ -883,10 +935,20 @@ function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
 }
 
 // Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
-// on top of you, so you can still be found.
-function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false) {
+// on top of you, so you can still be found. Swimming on land you wear a blue drop;
+// under water you waver, tinted, with a ripple.
+function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim = null) {
   g.save(); g.globalAlpha = alpha;
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale);
+  const under = swim === 'under';
+  if (under) {
+    const w = Math.sin(clock / 170);
+    g.strokeStyle = INK.waterHi; g.lineWidth = 1.5;
+    const rp = (clock % 1100) / 1100;
+    g.globalAlpha = alpha * 0.6 * (1 - rp); g.beginPath(); g.arc(0, 0, 11 + 6 * rp, 0, Math.PI * 2); g.stroke();
+    g.globalAlpha = alpha * 0.8;
+    g.translate(w * 1.5, 0); g.scale(1 + 0.07 * w, 1 - 0.07 * w);
+  }
   if (hidden) {
     g.strokeStyle = INK.player; g.lineWidth = 2; g.setLineDash([3, 3]);
     g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
@@ -899,6 +961,13 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false) {
     for (const a of [0.25, 0.75, 1.25, 1.75]) { g.beginPath(); g.arc(Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6, 0, Math.PI * 2); g.fill(); }
   }
   g.fillStyle = '#0b2a2c'; g.beginPath(); g.arc(-3.5, -2, 2.2, 0, Math.PI * 2); g.arc(3.5, -2, 2.2, 0, Math.PI * 2); g.fill();
+  if (under) {
+    g.globalAlpha = alpha * 0.45; g.fillStyle = INK.waterHi;
+    g.beginPath(); g.arc(0, 0, 10.5, 0, Math.PI * 2); g.fill();
+  } else if (swim === 'on') {
+    g.fillStyle = INK.waterHi;
+    g.beginPath(); g.moveTo(9, -16); g.quadraticCurveTo(14, -9, 9, -7); g.quadraticCurveTo(4, -9, 9, -16); g.fill();
+  }
   g.restore();
 }
 
@@ -913,6 +982,7 @@ function drawFloor(g, w, h) {
 
 // fx: [{type, at(ms), ...}] effects started by game events or edits.
 function drawEdit(g, level, hover, fx, now) {
+  clock = now;
   drawFloor(g, level.w, level.h);
   const pop = (x, y) => {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
@@ -934,11 +1004,25 @@ function drawEdit(g, level, hover, fx, now) {
 
 // prev: positions before the last tick; alpha: 0..1 progress into the next tick.
 function drawPlay(g, s, prev, alpha, fx, now) {
+  clock = now;
   const shake = fx.find(f => f.type === 'crash' && now - f.at < 180);
   g.save();
   if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
   drawFloor(g, s.w, s.h);
   s.cells.forEach((c, i) => drawCell(g, c, i % s.w, Math.floor(i / s.w), s));
+  // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
+  // as its beam touches, yours for a moment.
+  const crackle = (cells, k) => {
+    g.strokeStyle = INK.shock; g.lineWidth = 1.5;
+    for (const i of cells) {
+      const x = (i % s.w) * T, y = Math.floor(i / s.w) * T, j = Math.floor(now / 70) + i;
+      g.globalAlpha = k * (0.35 + 0.35 * ((j * 7) % 3) / 2);
+      g.beginPath(); g.moveTo(x + 4, y + 8 + (j % 3) * 4); g.lineTo(x + 12, y + 14); g.lineTo(x + 18, y + 9 + (j % 2) * 6); g.lineTo(x + 28, y + 18); g.stroke();
+    }
+    g.globalAlpha = 1;
+  };
+  crackle(s.shocked, 1);
+  for (const f of fx) if (f.type === 'laser' && f.shocked && now - f.at < LASER_MS) crackle(f.shocked, 1 - (now - f.at) / LASER_MS);
   const a = ease(alpha);
   const pos = (id, x, y) => {
     const p = prev.ents[id];
@@ -992,7 +1076,8 @@ function drawPlay(g, s, prev, alpha, fx, now) {
     g.strokeStyle = INK.player; g.globalAlpha = 1 - t; g.lineWidth = 2;
     g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
   }
-  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored);
+  const swim = !p.swimming ? null : s.cells[p.y * s.w + p.x] === 'water' ? 'under' : 'on';
+  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim);
   g.restore();
 }
 
@@ -1024,14 +1109,15 @@ const TOOLS = [
   { id: 'door', label: 'Door' },
   { id: 'receiver', label: 'Receiver' },
   { id: 'sensor', label: 'Laser sensor' },
+  { id: 'water', label: 'Water' },
 ];
 const POWER_TEXT = {
   boomerang: 'While sliding, press back to slide the other way.',
   dive: 'While sliding, press the same arrow to land at once and crash.',
   laser: 'While sliding, press a side arrow to fire a beam that way.',
-  cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed.',
+  cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed. With Swim too, the same press does both.',
   hook: 'Stop on grapple tiles.',
-  swim: 'Pass through tiles that would kill you.',
+  swim: 'When standing on land, press Space to start or stop swimming. The world takes a step. While swimming, you can go into water, at half speed.',
   light: 'When standing still, light up dark rooms.',
   armored: 'Weak enemies, blocks and closing doors cannot crush you. Strong enemies, heavy boxes, beams and death blocks still can.',
 };
@@ -1074,7 +1160,7 @@ const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 // Does (x, y) already hold the kind of thing this tool places?
 function holds(x, y, tool) {
   const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death') return c === tool;
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
   if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
@@ -1102,6 +1188,7 @@ function describe(x, y) {
     else if (kind === 'checkpoint') parts.push('Checkpoint');
     else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
     else if (kind === 'death') parts.push('Death block');
+    else if (kind === 'water') parts.push('Water');
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
     else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser sensor`);
@@ -1125,11 +1212,14 @@ function place(x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death'].includes(ui.tool)) setCell('');
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
     if (isStart) return;
     removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
+  } else if (t === 'water') {
+    if (isStart) return;
+    setCell('water');
   } else if (t === 'gate') {
     if (isStart) return;
     removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
@@ -1234,7 +1324,7 @@ function tick() {
 function keysText() {
   return touch
     ? (mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : 'Press Play to try this room.')
-    : (mode === 'play' ? 'Arrows slide. Space hides. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
+    : (mode === 'play' ? 'Arrows slide. Space hides, or starts and stops swimming. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
 }
 
 function setMode(m, keep) {
@@ -1305,8 +1395,8 @@ function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'look') {
     x.strokeStyle = '#c3cad8'; x.lineWidth = 2.5;

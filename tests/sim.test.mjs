@@ -564,4 +564,84 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a launched weak enemy stops at you', ls.deaths === 0 && at(ls.entities[0], 2, 1), JSON.stringify(ls.entities[0]));
 }
 
+{ // water: only swimmers, strong enemies, heavy boxes and blocks go in; a beam shocks the whole pool
+  const SW = { powers: { swim: true } };
+  const dry = slide(createGame(room(['########', '#P..ww.#', '########'], SW)), 'right');
+  check('not swimming, water stops you in front like a block', dry.deaths === 0 && at(dry.player, 3, 1), JSON.stringify(dry.player));
+  const t = createGame(room(['#######', '#P....#', '#######'], { powers: { swim: true, cycle: false } }));
+  step(t, ['hide']);
+  check('with Swim, the tap starts swimming and the world steps', t.player.swimming && !t.player.hidden && t.worldSteps === 1);
+  step(t, ['hide']);
+  check('and the next tap stops it', !t.player.swimming && t.worldSteps === 2);
+  const both = createGame(room(['#######', '#P....#', '#######'], SW));
+  step(both, ['hide']);
+  check('with Cycle too, one tap hides you and starts swimming, one step', both.player.hidden && both.player.swimming && both.worldSteps === 1);
+  const none = createGame(room(['#######', '#P....#', '#######'], { powers: { swim: false, cycle: false } }));
+  step(none, ['hide']);
+  check('with neither, the tap does nothing', none.worldSteps === 0 && !none.player.swimming);
+  const sw = createGame(room(['##########', '#Pwwwwww.#', '##########'], { powers: { swim: true, cycle: false } }));
+  step(sw, ['hide']); step(sw, ['right']);
+  for (let i = 0; i < 6; i++) step(sw);
+  check('swimming, you go in, then a tile every other tick (land would be 7)', sw.player.x === 5 && sw.player.swimming, JSON.stringify(sw.player));
+  step(sw, ['hide']);
+  for (let i = 0; i < 20; i++) step(sw);
+  check('in water the tap cannot stop swimming', sw.player.swimming && at(sw.player, 8, 1), JSON.stringify(sw.player));
+  const wb = createGame(room(['#######', '#.....#', '#P.ww.#', '#######'], SW));
+  wb.player.swimming = true; wb.player.x = 3; wb.player.y = 2;
+  const steps = wb.worldSteps;
+  wb.powers.cycle = false;
+  step(wb, ['hide']);
+  check('Swim alone in water: the tap does nothing', wb.worldSteps === steps && wb.player.swimming);
+  wb.powers.cycle = true;
+  step(wb, ['hide']);
+  check('with Cycle, in water the tap still hides you', wb.player.hidden && wb.player.swimming);
+  for (const [k, ch, goes] of [['enemy', 'E', false], ['box', 'B', false], ['strong', 'S', true], ['mover', 'M', true]]) {
+    const g = createGame(room(['########', `#P${ch}ww..#`, '#......#', '########']));
+    g.player.y = 2; g.player.x = 1;
+    if (k === 'box') g.entities[0].slide = 'right'; else for (let i = 0; i < 3; i++) worldStep(g);
+    for (let i = 0; i < 6; i++) step(g);
+    const e = g.entities[0];
+    check(goes ? `a ${k} goes through water` : `a ${k} stops at water`, goes ? e.x >= 3 : (e.x <= 2 && !e.dead), JSON.stringify(e));
+  }
+  const pb = slide(createGame(room(['#######', '#PB.ww#', '#######'])), 'right');
+  check('a box you push stops at water, and so do you', at(pb.entities[0], 3, 1) && at(pb.player, 2, 1), JSON.stringify(pb.entities[0]));
+  let wbad = 0;
+  try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: ['water', ...Array(8).fill('')] })); } catch { wbad++; }
+  check('a level file keeps water', wbad === 0);
+  const hv = createGame(room(['#########', '#.H.ww..#', '#P......#', '#########']));
+  hv.entities[0].slide = 'right';
+  for (let i = 0; i < 8; i++) step(hv);
+  check('a heavy box slides through water', at(hv.entities[0], 7, 1), JSON.stringify(hv.entities[0]));
+  // the shock
+  const pool = room(['#########', '#T.wwww.#', '#...w...#', '#P..ww..#', '#.......#', '#########']);
+  const pg = createGame(pool);
+  pg.player.swimming = true; pg.player.x = 5; pg.player.y = 3; pg.checkpoint = { x: 1, y: 4 };
+  step(pg);
+  check('a beam over water passes on', pg.beams[0].path.at(-1)[0] === 7, JSON.stringify(pg.beams[0].path));
+  check('and shocks the whole pool: swimming far from the beam, you die', pg.deaths === 1);
+  const apart = room(['#########', '#T.ww...#', '#.......#', '#P..ww..#', '#.......#', '#########']);
+  const ag = createGame(apart);
+  ag.player.swimming = true; ag.player.x = 5; ag.player.y = 3;
+  step(ag);
+  check('a separate pool is not shocked', ag.deaths === 0 && !ag.shocked.has(3 * 9 + 5));
+  const ar = createGame(pool);
+  ar.powers.armored = true; ar.player.swimming = true; ar.player.x = 5; ar.player.y = 3; ar.checkpoint = { x: 1, y: 4 };
+  step(ar);
+  check('armored, the shock still kills you', ar.deaths === 1);
+  const hid = createGame(pool);
+  hid.player.swimming = true; hid.player.x = 5; hid.player.y = 3; hid.player.hidden = true;
+  step(hid);
+  check('hidden, the shock misses you', hid.deaths === 0);
+  const en = createGame(pool);
+  en.entities.push({ id: 98, kind: 'enemy', x: 4, y: 2, axis: 'h', dir: 1, mode: 'input', slide: null, dead: false, rush: false });
+  en.entities.push({ id: 97, kind: 'strong', x: 4, y: 3, axis: 'h', dir: 1, mode: 'input', slide: null, dead: false, rush: false });
+  step(en);
+  check('a weak enemy in the pool dies, a strong one does not', en.entities.find(e => e.id === 98).dead && !en.entities.find(e => e.id === 97).dead);
+  const my = createGame(room(['#########', '#.......#', '#P......#', '#.wwww..#', '#.......#', '#########'], { powers: { swim: true } }));
+  my.player.swimming = true; my.player.x = 5; my.player.y = 3; my.checkpoint = { x: 1, y: 1 };
+  my.player.dir = 'left';
+  step(my, ['up']);
+  check('your own laser into the water you swim in kills you', my.deaths === 1);
+}
+
 done();
