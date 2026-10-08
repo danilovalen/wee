@@ -22,8 +22,20 @@ and switch player powers on and off, to feel them out before committing to a set
 1. **Per tile:** the world takes one step for every tile you slide.
 2. **Per slide:** the world takes one step per slide, however long.
 
-Platforms and enemies only move when the clock steps. Until they exist the toggle does nothing
-visible, and the panel says so.
+This clock drives the **on input** movers below. The **real time** movers ignore it.
+
+## Movers: moving block and enemy
+
+Both patrol in a straight line, **horizontal or vertical, wall to wall**, and turn back at a block.
+Each one placed in the editor picks its axis and its mode:
+
+| Mode | Speed | When it moves |
+|---|---|---|
+| Real time | slower | on its own clock, whether you move or not |
+| On input | faster, immediate | one step each time the world clock steps (per tile or per slide) |
+
+- **Moving block:** stops a slide like a base block.
+- **Enemy:** touching it kills you, and you go back to the last checkpoint.
 
 ## Powers (his list, his words in brackets where kept)
 
@@ -50,10 +62,11 @@ visible, and the panel says so.
 
 1. Base block (stops a slide).
 2. Checkpoint (R and death return here).
-3. Hazard (kills you; Swim passes it).
-4. Grapple (Hook stops on it).
-5. Breakable (Dive breaks it).
-6. Laser target, dark level, moving platform, enemy: later.
+3. Moving block and enemy, each horizontal or vertical, each real time or on input.
+4. Hazard (kills you; Swim passes it).
+5. Grapple (Hook stops on it).
+6. Breakable (Dive breaks it).
+7. Laser target, dark level: later.
 
 ## Layer-1 rules this build must prove
 
@@ -69,10 +82,13 @@ visible, and the panel says so.
 2. Slide until a wall, on a fixed tick, with key input mid-slide.
 3. Checkpoint, R to respawn.
 4. Boomerang and Dive (no new blocks needed), the clock toggle.
-5. Save and load, then the first gates.
+5. Moving block and enemy, both modes.
+6. Save and load, then the first gates.
 
 ## Open
 
 - Cycle's second effect.
 - What Dive's crash damages, and how much.
 - Room size and tile size.
+- A moving block that reaches you: does it push you, stop against you, or crush you?
+- Can an enemy be killed (Dive, Laser), or only avoided?
