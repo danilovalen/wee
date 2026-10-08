@@ -65,16 +65,27 @@ try {
   const enemies = lv.entities.filter(e => e.kind === 'enemy' && e.y === 8);
   check('a drag paints a row', enemies.length === 4, String(enemies.length));
   check('placed enemies keep the chosen clock', enemies.every(e => e.mode === 'realtime'));
-  // a drag that starts on an enemy removes the enemies it crosses, and nothing else
-  await page.click('[data-tool=wall]');
-  const w5 = at(5, 9); await page.mouse.click(w5.x, w5.y);
+  // a drag that starts on the selected type removes that type along the way, and nothing else
   await page.click('[data-tool=enemy]');
-  const r0 = at(3, 8), r1 = at(5, 8), r2 = at(5, 9);
-  await page.mouse.move(r0.x, r0.y); await page.mouse.down(); await page.mouse.move(r1.x, r1.y, { steps: 6 }); await page.mouse.move(r2.x, r2.y, { steps: 3 }); await page.mouse.up();
+  const r0 = at(3, 8), r1 = at(5, 8);
+  await page.mouse.move(r0.x, r0.y); await page.mouse.down(); await page.mouse.move(r1.x, r1.y, { steps: 6 }); await page.mouse.up();
   lv = (await text()).level;
   const left = lv.entities.filter(e => e.kind === 'enemy' && e.y === 8).map(e => e.x);
   check('a drag from an enemy removes the enemies it crosses', left.join() === '6', left.join());
-  check('and leaves other things alone', lv.cells[9 * 20 + 5] === 'wall');
+  await page.click('[data-tool=checkpoint]');
+  const c9 = at(9, 10); await page.mouse.click(c9.x, c9.y);
+  await page.click('[data-tool=wall]');
+  const b0 = at(7, 10), b1 = at(11, 10);
+  await page.mouse.move(b0.x, b0.y); await page.mouse.down(); await page.mouse.move(b1.x, b1.y, { steps: 8 }); await page.mouse.up();
+  lv = (await text()).level;
+  check('a placing drag fills its path, replacing what was there', [7, 8, 9, 10, 11].every(x => lv.cells[10 * 20 + x] === 'wall'));
+  await page.click('[data-tool=checkpoint]');
+  await page.mouse.click(c9.x, c9.y);
+  await page.click('[data-tool=wall]');
+  await page.mouse.move(b0.x, b0.y); await page.mouse.down(); await page.mouse.move(b1.x, b1.y, { steps: 8 }); await page.mouse.up();
+  lv = (await text()).level;
+  check('a drag from a block removes the blocks it crosses', [7, 8, 10, 11].every(x => lv.cells[10 * 20 + x] === ''));
+  check('and leaves the checkpoint in its path alone', lv.cells[10 * 20 + 9] === 'checkpoint', lv.cells[10 * 20 + 9]);
   // a turret aims where you choose and mounts on a box it is placed on
   await page.click('[data-tool=box]');
   p = at(10, 3); await page.mouse.click(p.x, p.y);
