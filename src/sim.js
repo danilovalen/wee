@@ -11,6 +11,20 @@ const OPPOSITE = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
 export const COLOURS = ['red', 'blue', 'yellow', 'green'];
 
+// Clockwise order: a turret fires its chosen directions in this order.
+export const CLOCKWISE = ['up', 'right', 'down', 'left'];
+export const KINDS = ['mover', 'enemy', 'strong', 'box', 'heavy', 'turret'];
+const MOVES = ['mover', 'enemy', 'strong'];
+const ENEMY = ['enemy', 'strong'];
+// A turret can stand alone or ride one of these.
+export const CARRIES_TURRET = ['box', 'heavy', 'enemy', 'strong'];
+
+function checkTurret(t) {
+  if (!Array.isArray(t.dirs) || t.dirs.length < 1 || t.dirs.length > 4 || t.dirs.some(d => !CLOCKWISE.includes(d)) || new Set(t.dirs).size !== t.dirs.length)
+    throw new Error('A turret needs one to four different directions.');
+  if (!['realtime', 'input'].includes(t.mode)) throw new Error('Unknown turret clock: ' + t.mode);
+}
+
 // A power listed in NEEDS cannot act until its block type exists.
 export const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'hook', 'swim', 'light'];
 export const NEEDS = { hook: 'grapple tiles', swim: 'hazard tiles', light: 'dark levels' };
@@ -44,8 +58,10 @@ export function parseLevel(text) {
   if (!(l.w > 0 && l.h > 0) || !Array.isArray(l.cells) || l.cells.length !== l.w * l.h)
     throw new Error('The room size does not match its cells.');
   for (const c of l.cells) if (!isCell(c)) throw new Error('Unknown tile: ' + c);
-  for (const e of l.entities) if (!['mover', 'enemy', 'box', 'heavy'].includes(e.kind))
-    throw new Error('Unknown piece: ' + e.kind);
+  for (const e of l.entities) {
+    if (!KINDS.includes(e.kind)) throw new Error('Unknown piece: ' + e.kind);
+    if (e.turret) checkTurret(e.turret);
+  }
   if (!['tile', 'slide'].includes(l.clock)) throw new Error('Unknown clock: ' + l.clock);
   return { ...emptyLevel(l.w, l.h), ...l, powers: { ...emptyLevel().powers, ...l.powers } };
 }
@@ -67,6 +83,7 @@ export function createGame(level) {
     entities: l.entities.map(e => ({
       id: ++id, kind: e.kind, x: e.x, y: e.y,
       axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false,
+      turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, next: 0 } : null,
     })),
     open: {}, tick: 0, worldSteps: 0, deaths: 0, events: [],
   };
@@ -136,13 +153,13 @@ function playerStep(s, d, diving) {
   if (solidCell(s, nx, ny)) return 'blocked';
   const e = entAt(s, nx, ny);
   if (e) {
-    if (e.kind === 'enemy') { die(s); return 'died'; }
-    if (e.kind === 'heavy') {
+    if (e.kind === 'enemy' && diving) kill(s, e, 'dive');
+    else if (ENEMY.includes(e.kind)) { die(s); return 'died'; }
+    else if (e.kind === 'heavy') {
       if (diving) { e.slide = d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    }
-    if (e.kind !== 'box' || !free(s, nx + dx, ny + dy)) return 'blocked';
-    e.x += dx; e.y += dy;
+    } else if (e.kind === 'box' && free(s, nx + dx, ny + dy)) { e.x += dx; e.y += dy; }
+    else return 'blocked';
   }
   p.x = nx; p.y = ny; p.moved++;
   if (cellAt(s, nx, ny) === 'checkpoint' && (s.checkpoint.x !== nx || s.checkpoint.y !== ny)) {
@@ -191,9 +208,34 @@ function laser(s, d) {
   s.events.push({ type: 'laser', x: s.player.x, y: s.player.y, d, len });
 }
 
+// A turret fires its next direction, clockwise. The beam kills you (unless you are
+// in the air) and weak enemies; anything else solid stops it.
+function fireTurret(s, e) {
+  const t = e.turret, d = t.dirs[t.next % t.dirs.length];
+  t.next++;
+  const [dx, dy] = DIRS[d];
+  let x = e.x + dx, y = e.y + dy, len = 0, hit = false;
+  while (!solidCell(s, x, y)) {
+    if (playerAt(s, x, y) && s.player.air === 0) { hit = true; break; }
+    const o = entAt(s, x, y);
+    if (o) {
+      if (o.kind === 'enemy') kill(s, o, 'turret');
+      else break;
+    }
+    len++; x += dx; y += dy;
+  }
+  s.events.push({ type: 'beam', x: e.x, y: e.y, d, len: hit ? len + 1 : len });
+  if (hit) die(s);
+}
+
+function fireTurrets(s, mode) {
+  for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === mode) fireTurret(s, e);
+}
+
 export function worldStep(s) {
   s.worldSteps++;
-  for (const e of s.entities) if (!e.dead && e.mode === 'input' && (e.kind === 'mover' || e.kind === 'enemy')) moveMover(s, e);
+  for (const e of s.entities) if (!e.dead && e.mode === 'input' && MOVES.includes(e.kind)) moveMover(s, e);
+  fireTurrets(s, 'input');
   refreshDoors(s);
 }
 
@@ -207,9 +249,9 @@ function moveMover(s, e) {
     else { e.dir = -e.dir; return; }
   }
   if (playerAt(s, tx, ty)) {
-    if (e.kind === 'enemy') {
+    if (ENEMY.includes(e.kind)) {
       e.x = tx; e.y = ty;
-      if (s.player.air > 0) kill(s, e, 'jump'); else die(s);
+      if (e.kind === 'enemy' && s.player.air > 0) kill(s, e, 'jump'); else die(s);
       return;
     }
     const p = s.player;
@@ -224,7 +266,7 @@ function slideHeavy(s, e) {
   if (solidCell(s, tx, ty)) { e.slide = null; return; }
   const o = entAt(s, tx, ty, e);
   if (o) {
-    if (o.kind === 'enemy') kill(s, o, 'squash');
+    if (ENEMY.includes(o.kind)) kill(s, o, 'squash');
     else { e.slide = null; return; }
   }
   e.x = tx; e.y = ty;
@@ -255,8 +297,10 @@ export function step(s, inputs = []) {
   for (const k of inputs) input(s, k);
   if (s.player.dir) slideOnce(s, false);
   for (const e of s.entities) if (!e.dead && e.kind === 'heavy' && e.slide) slideHeavy(s, e);
-  if (s.tick % RT_PERIOD === RT_PERIOD - 1)
-    for (const e of s.entities) if (!e.dead && e.mode === 'realtime' && (e.kind === 'mover' || e.kind === 'enemy')) moveMover(s, e);
+  if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
+    for (const e of s.entities) if (!e.dead && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
+    fireTurrets(s, 'realtime');
+  }
   if (s.player.air > 0) s.player.air--;
   refreshDoors(s);
   s.tick++;
@@ -269,7 +313,11 @@ export function gameText(s, mode = 'play') {
     mode, tick: s.tick, clock: s.clock, worldSteps: s.worldSteps, deaths: s.deaths,
     player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, airborne: s.player.air > 0 },
     checkpoint: s.checkpoint,
-    pieces: s.entities.filter(e => !e.dead).map(e => ({ kind: e.kind, x: e.x, y: e.y, ...(e.kind === 'mover' || e.kind === 'enemy' ? { axis: e.axis, mode: e.mode } : {}) })),
+    pieces: s.entities.filter(e => !e.dead).map(e => ({
+      kind: e.kind, x: e.x, y: e.y,
+      ...(MOVES.includes(e.kind) ? { axis: e.axis, mode: e.mode } : {}),
+      ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, next: e.turret.dirs[e.turret.next % e.turret.dirs.length] } } : {}),
+    })),
     open: COLOURS.filter(c => s.open[c]),
     powers: POWERS.filter(p => s.powers[p] && !NEEDS[p]),
   });

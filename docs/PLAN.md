@@ -38,8 +38,19 @@ Each one placed in the editor picks its axis and its mode:
 
 - **Moving block:** stops a slide like a base block. When it moves into you, it **pushes** you one
   tile; if a block is behind you, it **crushes** you and you go back to the last checkpoint.
-- **Enemy:** touching it kills you, and you go back to the last checkpoint. **Laser kills it**
-  (for now; a stun may come later).
+- **Weak enemy:** touching it kills you, and you go back to the last checkpoint. A **laser** or a
+  **dive** into it kills it, and so does landing a jump as it steps under you.
+- **Strong enemy:** only a **thrown heavy box** kills it. A laser stops on it; diving into it kills
+  you; it steps under a jump and kills you (my call).
+
+## Laser turret
+
+- Fires one to four chosen directions, **one at a time, clockwise**. Its barrels show the
+  directions; the next to fire is lit.
+- **Real time** or **on your move**, like the movers.
+- Stands alone like a block, or **mounts on a box, a heavy box or an enemy** and rides it.
+- Its beam kills you and weak enemies, and stops at blocks, boxes and strong enemies. You are
+  safe from it in the air (my call).
 
 ## Puzzle pieces: box, button, door
 

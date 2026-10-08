@@ -3,12 +3,14 @@
 
 import { DIRS, JUMP_TICKS, TICK_MS } from './sim.js';
 
+const AIM = { up: -Math.PI / 2, right: 0, down: Math.PI / 2, left: Math.PI };
+
 export const T = 32;
 
 export const INK = {
   floor: '#14171f', grid: '#1c2130', wall: '#3a4256', wallTop: '#4d5770',
   player: '#5ee0e6', start: '#5ee0e6', shadow: 'rgba(0,0,0,0.45)',
-  mover: '#8e98ad', moverEdge: '#c3cad8', enemy: '#e8525c', box: '#c79552', boxEdge: '#8a6232',
+  mover: '#8e98ad', moverEdge: '#c3cad8', enemy: '#e8525c', strong: '#7a1626', strongEdge: '#ff8a93', beam: '#ff3b3b', barrel: '#5b6274', box: '#c79552', boxEdge: '#8a6232',
   heavy: '#5d6474', heavyEdge: '#2b2f39', rivet: '#9aa2b3', flag: '#f2c94c', laser: '#ff6bd6',
   red: '#e8525c', blue: '#4f8cff', yellow: '#f2c94c', green: '#46c37b',
 };
@@ -62,8 +64,8 @@ function pressedAt(s, x, y) {
 }
 
 // The mode badge: a clock for real time, a step mark for on input.
-function modeBadge(g, mode) {
-  g.save(); g.translate(24, 8);
+function modeBadge(g, mode, bx = 24, by = 8) {
+  g.save(); g.translate(bx, by);
   g.fillStyle = '#0b0d12'; g.beginPath(); g.arc(0, 0, 5.5, 0, Math.PI * 2); g.fill();
   g.strokeStyle = '#e9edf5'; g.fillStyle = '#e9edf5'; g.lineWidth = 1.4;
   if (mode === 'realtime') {
@@ -73,6 +75,24 @@ function modeBadge(g, mode) {
     g.beginPath(); g.moveTo(-2.5, 2); g.lineTo(0, -2.5); g.lineTo(2.5, 2); g.closePath(); g.fill();
   }
   g.restore();
+}
+
+// A turret head: one barrel per direction it fires; the next to fire is lit.
+function drawTurret(g, t, badge, mounted) {
+  const next = t.dirs[(t.next || 0) % t.dirs.length];
+  g.save();
+  if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
+  for (const d of t.dirs) {
+    g.save(); g.translate(16, 16); g.rotate(AIM[d]);
+    g.fillStyle = d === next ? INK.beam : INK.barrel;
+    roundRect(g, 4, -3, 11, 6, 2); g.fill();
+    g.restore();
+  }
+  g.fillStyle = '#20242f'; g.beginPath(); g.arc(16, 16, 7, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = INK.beam; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = INK.beam; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
+  g.restore();
+  if (badge) modeBadge(g, t.mode, badge[0], badge[1]);
 }
 
 export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
@@ -95,6 +115,18 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     g.fillStyle = '#fff';
     g.beginPath(); g.arc(12 + lx, 15 + ly, 3, 0, Math.PI * 2); g.arc(20 + lx, 15 + ly, 3, 0, Math.PI * 2); g.fill();
     modeBadge(g, e.mode);
+  } else if (e.kind === 'strong') {
+    g.fillStyle = INK.strong; roundRect(g, 2, 3, T - 4, T - 5, 7); g.fill();
+    g.strokeStyle = INK.strongEdge; g.lineWidth = 2; g.stroke();
+    g.fillStyle = INK.strongEdge;
+    g.beginPath(); g.moveTo(6, 6); g.lineTo(9, 0); g.lineTo(12, 5); g.moveTo(20, 5); g.lineTo(23, 0); g.lineTo(26, 6); g.fill();
+    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
+    g.fillStyle = '#ffd34d';
+    g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
+    modeBadge(g, e.mode);
+  } else if (e.kind === 'turret') {
+    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
   } else if (e.kind === 'box') {
     g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
     g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();
@@ -105,6 +137,7 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     g.fillStyle = INK.rivet;
     for (const [rx, ry] of [[7, 7], [25, 7], [7, 25], [25, 25]]) { g.beginPath(); g.arc(rx, ry, 2, 0, Math.PI * 2); g.fill(); }
   }
+  if (e.turret) drawTurret(g, e.turret, e.kind === 'turret' ? [24, 8] : [8, 24], e.kind !== 'turret');
   g.restore();
 }
 
@@ -172,9 +205,9 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
       drawPiece(g, e, e.x * T, e.y * T, 1 + 0.3 * t, 1 - t);
     }
   }
-  for (const f of fx) if (f.type === 'laser' && now - f.at < LASER_MS) {
+  for (const f of fx) if ((f.type === 'laser' || f.type === 'beam') && now - f.at < LASER_MS) {
     const [dx, dy] = DIRS[f.d], t = (now - f.at) / LASER_MS;
-    g.strokeStyle = INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
+    g.strokeStyle = f.type === 'beam' ? INK.beam : INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
     g.beginPath();
     g.moveTo(f.x * T + T / 2, f.y * T + T / 2);
     g.lineTo((f.x + dx * (f.len + 0.5)) * T + T / 2 - dx * T / 2, (f.y + dy * (f.len + 0.5)) * T + T / 2 - dy * T / 2);

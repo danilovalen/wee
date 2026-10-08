@@ -3,6 +3,7 @@ import { emptyLevel } from '../src/sim.js';
 // A room drawn in text. Legend:
 //   #  wall          P  player start     C  checkpoint
 //   M  mover, h      V  mover, v         E  enemy, h     F  enemy, v
+//   S  strong enemy, h                  T  laser turret (fires right)
 //   B  box           H  heavy box
 //   o  red button    D  red door         u  blue button  Q  blue door
 // Movers are 'input' unless opts.mode says 'realtime'.
@@ -27,6 +28,8 @@ export function room(rows, opts = {}) {
       case 'V': put('mover', 'v'); break;
       case 'E': put('enemy', 'h'); break;
       case 'F': put('enemy', 'v'); break;
+      case 'S': put('strong', 'h'); break;
+      case 'T': l.entities.push({ kind: 'turret', x, y, turret: { dirs: ['right'], mode } }); break;
       case 'B': put('box'); break;
       case 'H': put('heavy'); break;
       case '.': break;

@@ -166,4 +166,78 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a new level is empty and playable', createGame(emptyLevel()).player.x === 1);
 }
 
+{ // weak enemy: a dive kills it and the dive goes on; a plain slide into it kills you
+  const W = ['##########', '#P...E...#', '#........#', '##########'];
+  const s = createGame(room(W, { mode: 'realtime' }));
+  step(s, ['right']); step(s, ['right']);
+  check('a dive kills a weak enemy', s.entities[0].dead && s.deaths === 0);
+  check('the dive carries on past it', at(s.player, 8, 1), JSON.stringify(s.player));
+  const t = slide(createGame(room(W, { mode: 'realtime' })), 'right');
+  check('sliding into a weak enemy kills you', t.deaths === 1);
+}
+{ // strong enemy: only a moving heavy box kills it
+  const L = ['#########', '#P......#', '#.......#', '#..S....#', '#########'];
+  const s = createGame(room(L, { mode: 'realtime' }));
+  step(s, ['right']); step(s); step(s, ['down']);
+  check('a laser does not kill a strong enemy', !s.entities[0].dead);
+  const D = ['##########', '#P...S...#', '#........#', '##########'];
+  const t = createGame(room(D, { mode: 'realtime' }));
+  t.checkpoint = { x: 1, y: 2 };
+  step(t, ['right']); step(t, ['right']);
+  check('diving into a strong enemy kills you', t.deaths === 1 && !t.entities[0].dead);
+  const l = room(['######', '#.PS.#', '#....#', '######']);
+  l.entities[0].dir = -1;
+  const u = createGame(l);
+  u.checkpoint = { x: 1, y: 2 };
+  step(u, ['jump']);
+  check('a jump does not kill a strong enemy', !u.entities[0].dead && u.deaths === 1);
+  const v = createGame(room(['##########', '#P...H.S.#', '##########'], { mode: 'realtime' }));
+  step(v, ['right']); step(v, ['right']); step(v);
+  check('a thrown heavy box kills a strong enemy', v.entities.find(e => e.kind === 'strong').dead);
+}
+{ // turret: fires its directions clockwise, one per world step
+  const l = room(['#######', '#.....#', '#..T..#', '#.....#', '#P....#', '#######']);
+  l.entities[0].turret.dirs = ['left', 'up', 'down'];
+  const s = createGame(l);
+  const order = [];
+  const t = createGame(l);
+  for (let i = 0; i < 4; i++) { t.events = []; worldStep(t); order.push(t.events.find(e => e.type === 'beam')?.d); }
+  check('a turret fires clockwise and loops', order.join() === 'up,down,left,up', order.join());
+  const r = createGame(room(['#######', '#T...P#', '#.....#', '#######'], { mode: 'realtime' }));
+  r.checkpoint = { x: 1, y: 2 };
+  for (let i = 0; i < RT_PERIOD; i++) step(r);
+  check('a real-time turret beam kills you', r.deaths === 1);
+  const q = createGame(room(['#######', '#T...P#', '#.....#', '#######']));
+  for (let i = 0; i < RT_PERIOD * 2; i++) step(q);
+  check('an on-input turret waits for you', q.deaths === 0 && q.entities[0].turret.next === 0);
+  const a = createGame(room(['#######', '#T...P#', '#.....#', '#######']));
+  a.checkpoint = { x: 1, y: 2 };
+  step(a, ['jump']);
+  check('you are safe from a beam in the air', a.deaths === 0 && a.entities[0].turret.next === 1);
+  const kl = room(['########', '#T.E.S.#', '#P.....#', '########'], { mode: 'realtime' });
+  for (const e of kl.entities) if (e.kind !== 'turret') e.mode = 'input';
+  const k = createGame(kl);
+  for (let i = 0; i < RT_PERIOD; i++) step(k);
+  const beam = k.events.find(e => e.type === 'beam');
+  check('a beam kills a weak enemy and stops at a strong one', k.entities.find(e => e.kind === 'enemy').dead && !k.entities.find(e => e.kind === 'strong').dead && beam.len === 3, JSON.stringify(beam));
+}
+{ // a turret rides its carrier and fires from where the carrier is
+  const l = room(['#########', '#PB.....#', '#.......#', '#########']);
+  l.entities[0].turret = { dirs: ['down'], mode: 'input' };
+  const s = slide(createGame(l), 'right');
+  const box = s.entities[0];
+  check('the turret moves with its box', at(box, 7, 1));
+  s.events = []; worldStep(s);
+  const b = s.events.find(e => e.type === 'beam');
+  check('and fires from the box', b && b.x === 7 && b.y === 1 && b.d === 'down', JSON.stringify(b));
+  const t = slide(createGame(room(['######', '#P.T.#', '######'])), 'right');
+  check('a turret block stops a slide', at(t.player, 2, 1));
+  let refused = 0;
+  for (const dirs of [[], ['up', 'up'], ['north'], ['up', 'right', 'down', 'left', 'up']]) {
+    const bad = room(['####', '#PT#', '####']); bad.entities[0].turret.dirs = dirs;
+    try { parseLevel(JSON.stringify(bad)); } catch { refused++; }
+  }
+  check('a turret with bad directions is refused', refused === 4, refused + '/4');
+}
+
 done();

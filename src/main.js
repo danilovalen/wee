@@ -1,4 +1,4 @@
-import { createGame, step, gameText, emptyLevel, resizeLevel, parseLevel, TICK_MS, COLOURS, POWERS, NEEDS } from './sim.js';
+import { createGame, step, gameText, emptyLevel, resizeLevel, parseLevel, TICK_MS, COLOURS, POWERS, NEEDS, CLOCKWISE, CARRIES_TURRET } from './sim.js';
 import { T, INK, drawEdit, drawPlay, drawPiece } from './render.js';
 
 const $ = id => document.getElementById(id);
@@ -11,7 +11,9 @@ const TOOLS = [
   { id: 'start', label: 'Start' },
   { id: 'checkpoint', label: 'Checkpoint' },
   { id: 'mover', label: 'Moving block' },
-  { id: 'enemy', label: 'Enemy' },
+  { id: 'enemy', label: 'Weak enemy' },
+  { id: 'strong', label: 'Strong enemy' },
+  { id: 'turret', label: 'Laser turret' },
   { id: 'box', label: 'Box' },
   { id: 'heavy', label: 'Heavy box' },
   { id: 'button', label: 'Button' },
@@ -35,7 +37,7 @@ function starterLevel() {
   return l;
 }
 
-const ui = { tool: 'wall', axis: 'h', mode: 'input', colour: 'red' };
+const ui = { tool: 'wall', axis: 'h', mode: 'input', colour: 'red', aim: ['right'] };
 let level = starterLevel();
 let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0;
 
@@ -75,9 +77,21 @@ function place(x, y, erase) {
     if (t === 'door' && isStart) return;
     if (t === 'door') removePiece();
     setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
+  } else if (t === 'turret') {
+    if (isStart) return;
+    const turret = { dirs: CLOCKWISE.filter(d => ui.aim.includes(d)), mode: ui.mode };
+    const host = pi >= 0 ? level.entities[pi] : null;
+    if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
+      if (JSON.stringify(host.turret) === JSON.stringify(turret)) return;
+      host.turret = turret;
+    } else {
+      removePiece();
+      if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
+      level.entities.push({ kind: 'turret', x, y, turret });
+    }
   } else {
     if (isStart) return;
-    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' ? { axis: ui.axis, dir: 1, mode: ui.mode } : {}) };
+    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: 1, mode: ui.mode } : {}) };
     if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return;
     removePiece();
     if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
@@ -190,7 +204,8 @@ function icon(tool) {
     x.strokeStyle = '#8e98ad'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
   } else if (tool === 'start') {
     x.fillStyle = INK.player; x.beginPath(); x.arc(16, 16, 10, 0, Math.PI * 2); x.fill();
-  } else drawPiece(x, { kind: tool, axis: 'h', dir: 1, mode: 'input' }, 0, 0);
+  } else if (tool === 'turret') drawPiece(x, { kind: 'turret', turret: { dirs: ['up', 'right'], mode: 'input' } }, 0, 0);
+  else drawPiece(x, { kind: tool, axis: 'h', dir: 1, mode: 'input' }, 0, 0);
   return c;
 }
 
@@ -211,6 +226,12 @@ function buildPanels() {
   }
   document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { ui.axis = b.dataset.axis; syncPanel(); });
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { ui.mode = b.dataset.mode; syncPanel(); });
+  document.querySelectorAll('[data-aim]').forEach(b => b.onclick = () => {
+    const d = b.dataset.aim;
+    if (ui.aim.includes(d)) { if (ui.aim.length > 1) ui.aim = ui.aim.filter(a => a !== d); }
+    else ui.aim = [...ui.aim, d];
+    syncPanel();
+  });
   for (const p of POWERS) {
     const row = document.createElement('label');
     row.className = 'power' + (NEEDS[p] ? ' off' : '');
@@ -250,6 +271,11 @@ function syncPanel() {
   document.querySelectorAll('[data-axis]').forEach(b => b.classList.toggle('on', b.dataset.axis === ui.axis));
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === ui.mode));
   document.querySelectorAll('[data-colour]').forEach(b => b.classList.toggle('on', b.dataset.colour === ui.colour));
+  document.querySelectorAll('[data-aim]').forEach(b => {
+    const on = ui.aim.includes(b.dataset.aim);
+    b.classList.toggle('on', on);
+    b.disabled = on && ui.aim.length === 1;
+  });
   document.querySelectorAll('.opt').forEach(o => { o.hidden = !o.dataset.for.split(' ').includes(ui.tool); });
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });

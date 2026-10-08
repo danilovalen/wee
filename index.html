@@ -20,15 +20,23 @@
       <h2>Build</h2>
       <div id="palette" class="grid"></div>
       <div id="options">
-        <div class="opt" data-for="mover enemy">
+        <div class="opt" data-for="mover enemy strong">
           <span>Moves</span>
           <button type="button" data-axis="h">Across</button>
           <button type="button" data-axis="v">Up and down</button>
         </div>
-        <div class="opt" data-for="mover enemy">
+        <div class="opt" data-for="mover enemy strong turret">
           <span>Clock</span>
           <button type="button" data-mode="realtime">Real time</button>
           <button type="button" data-mode="input">On your move</button>
+        </div>
+        <div class="opt" data-for="turret">
+          <span>Fires, one at a time, clockwise</span>
+          <button type="button" data-aim="up" title="Up">&uarr;</button>
+          <button type="button" data-aim="right" title="Right">&rarr;</button>
+          <button type="button" data-aim="down" title="Down">&darr;</button>
+          <button type="button" data-aim="left" title="Left">&larr;</button>
+          <small class="note">Place it on a box, a heavy box or an enemy to mount it there.</small>
         </div>
         <div class="opt" data-for="button door">
           <span>Colour</span>

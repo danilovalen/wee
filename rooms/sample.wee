@@ -256,7 +256,13 @@
    "y": 2,
    "axis": "h",
    "dir": 1,
-   "mode": "realtime"
+   "mode": "realtime",
+   "turret": {
+    "dirs": [
+     "down"
+    ],
+    "mode": "realtime"
+   }
   },
   {
    "kind": "box",
@@ -273,10 +279,10 @@
    "mode": "input"
   },
   {
-   "kind": "enemy",
+   "kind": "strong",
    "x": 13,
    "y": 6,
-   "axis": "v",
+   "axis": "h",
    "dir": 1,
    "mode": "input"
   },
@@ -289,11 +295,32 @@
    "mode": "input"
   },
   {
+   "kind": "turret",
+   "x": 1,
+   "y": 10,
+   "turret": {
+    "dirs": [
+     "up",
+     "right"
+    ],
+    "mode": "input"
+   }
+  },
+  {
    "kind": "box",
    "x": 14,
    "y": 10,
    "dir": 1,
-   "mode": "input"
+   "mode": "input",
+   "turret": {
+    "dirs": [
+     "up",
+     "right",
+     "down",
+     "left"
+    ],
+    "mode": "input"
+   }
   }
  ],
  "powers": {

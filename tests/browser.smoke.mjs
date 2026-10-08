@@ -39,7 +39,7 @@ try {
   check('no control spills out of its panel', cut.length === 0, cut.join(', '));
 
   // edit by clicking: a block, a right-click erase, then a dragged row of enemies
-  let p = at(5, 5); await page.mouse.click(p.x, p.y);
+  let p = at(5, 5), q; await page.mouse.click(p.x, p.y);
   let lv = (await text()).level;
   check('a click places a block', lv.cells[5 * 20 + 5] === 'wall');
   await page.mouse.click(p.x, p.y, { button: 'right' });
@@ -54,6 +54,21 @@ try {
   const enemies = lv.entities.filter(e => e.kind === 'enemy' && e.y === 8);
   check('a drag paints a row', enemies.length === 4, String(enemies.length));
   check('placed enemies keep the chosen clock', enemies.every(e => e.mode === 'realtime'));
+  // a turret aims where you choose and mounts on a box it is placed on
+  await page.click('[data-tool=box]');
+  p = at(10, 3); await page.mouse.click(p.x, p.y);
+  await page.click('[data-tool=turret]');
+  await page.click('[data-aim=down]');
+  await page.click('[data-aim=right]');
+  check('the last aimed direction cannot be turned off', await page.locator('[data-aim=down]').isDisabled());
+  await page.click('[data-aim=left]');
+  await page.mouse.click(p.x, p.y);
+  q = at(12, 3); await page.mouse.click(q.x, q.y);
+  lv = (await text()).level;
+  const mounted = lv.entities.find(e => e.x === 10 && e.y === 3);
+  const alone = lv.entities.find(e => e.x === 12 && e.y === 3);
+  check('a turret on a box mounts on it', mounted?.kind === 'box' && mounted.turret?.dirs.join() === 'down,left', JSON.stringify(mounted));
+  check('a turret on floor stands alone', alone?.kind === 'turret', JSON.stringify(alone));
   await page.click('[data-tool=wall]');
   check('enemy options hide for a block', !(await page.locator('[data-axis=h]').isVisible()));
   await page.screenshot({ path: 'shots/edit.png' });
