@@ -1,5 +1,6 @@
 import { createGame, step, worldStep, gameText, replay, parseLevel, emptyLevel, RT_PERIOD } from '../src/sim.js';
 import { room, suite } from './lib.mjs';
+import { readFileSync } from 'node:fs';
 
 const { check, done } = suite('sim');
 
@@ -219,7 +220,8 @@ const LONG = ['##########', '#..P....##', '##########'];
   const k = createGame(kl);
   for (let i = 0; i < RT_PERIOD; i++) step(k);
   const beam = k.events.find(e => e.type === 'beam');
-  check('a beam kills a weak enemy and stops at a strong one', k.entities.find(e => e.kind === 'enemy').dead && !k.entities.find(e => e.kind === 'strong').dead && beam.len === 3, JSON.stringify(beam));
+  const end = beam && beam.path[beam.path.length - 1];
+  check('a beam kills a weak enemy and stops at a strong one', k.entities.find(e => e.kind === 'enemy').dead && !k.entities.find(e => e.kind === 'strong').dead && end && end[0] === 5, JSON.stringify(beam));
 }
 { // a turret rides its carrier and fires from where the carrier is
   const l = room(['#########', '#PB.....#', '#.......#', '#########']);
@@ -229,7 +231,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('the turret moves with its box', at(box, 7, 1));
   s.events = []; worldStep(s);
   const b = s.events.find(e => e.type === 'beam');
-  check('and fires from the box', b && b.x === 7 && b.y === 1 && b.d === 'down', JSON.stringify(b));
+  check('and fires from the box', b && b.path[0][0] === 7 && b.path[0][1] === 1 && b.d === 'down', JSON.stringify(b));
   const t = slide(createGame(room(['######', '#P.T.#', '######'])), 'right');
   check('a turret block stops a slide', at(t.player, 2, 1));
   let refused = 0;
@@ -277,6 +279,72 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a power turned off mid-play stays off in the replay', at(s.player, 7, 1) && !s.powers.boomerang, JSON.stringify(s.player));
   const t = replay(l, [{ t: 0, k: 'clock:slide' }, { t: 0, k: 'right' }], 20);
   check('a clock changed mid-play is replayed', t.clock === 'slide' && t.worldSteps === 1, t.clock + ' ' + t.worldSteps);
+}
+
+{ // register 1: his report. A patrol that turns at a wall still moves that step,
+  // so after his slide right and back the enemy ends level with him again.
+  const r = JSON.parse(readFileSync(new URL('./reports/patrol-turn-loses-a-step.json', import.meta.url)));
+  const s = replay(r.level, r.keys, r.ticks);
+  check('his run: the enemy ends level with him', s.entities[0].x === s.player.x, `enemy ${s.entities[0].x}, player ${s.player.x}`);
+  const t = createGame(room(['#####', '#M..#', '#P..#', '#####']));
+  worldStep(t); worldStep(t); worldStep(t);
+  check('a patrol bounces off a wall without losing a step', at(t.entities[0], 2, 1), JSON.stringify(t.entities[0]));
+  const u = createGame(room(['###', '#M#', '#P#', '###']));
+  worldStep(u);
+  check('a patrol boxed in on both sides stays put', at(u.entities[0], 1, 1));
+}
+{ // a jump sends each on-your-move piece sliding until something stops it
+  const s = createGame(room(['##########', '#E.......#', '#P.......#', '##########']));
+  step(s, ['jump']);
+  for (let i = 0; i < 12; i++) step(s);
+  check('after a jump the enemy slides to the wall', at(s.entities[0], 8, 1), JSON.stringify(s.entities[0]));
+  check('a jump is still one world step', s.worldSteps === 1);
+  const t = createGame(room(['##########', '#E.......#', '#P.......#', '##########']));
+  step(t, ['jump']); step(t);
+  check('the slide takes a tile per tick, so you see it travel', t.entities[0].x === 3, JSON.stringify(t.entities[0]));
+}
+{ // strong enemy: two laser hits within four of your moves kill it
+  // It sits walled in below the row you slide along, so it cannot wander off.
+  const L = ['###########', '#.P.......#', '#.........#', '#....#S#..#', '###########'];
+  const s = createGame(room(L));
+  const e = s.entities[0];
+  step(s, ['right']); step(s); step(s); step(s);
+  step(s, ['down']);
+  check('a first laser only hurts a strong enemy', !e.dead && e.hurt > 0, JSON.stringify(e));
+  step(s, ['left']);
+  step(s, ['down']);
+  check('a second laser two moves later kills it', e.dead);
+  const t = createGame(room(L));
+  const f = t.entities[0];
+  step(t, ['right']); step(t); step(t); step(t);
+  step(t, ['down']);
+  step(t); step(t); step(t);
+  step(t, ['left']); step(t); step(t);
+  check('the hurt wears off after four of your moves', f.hurt === 0, JSON.stringify(f));
+  step(t, ['down']);
+  check('so a late second laser only hurts it again', !f.dead && f.hurt > 0);
+}
+{ // triangles turn whatever enters an open face, and stop what hits a solid side
+  const s = slide(createGame(room(['#########', '#.......#', '#.......#', '#.......#', '#P...3..#', '#########'])), 'right');
+  check('a slide into a triangle turns up and carries on', at(s.player, 5, 1), JSON.stringify(s.player));
+  const t = slide(createGame(room(['#######', '#.....#', '#P..7.#', '#######'])), 'right');
+  check('a solid side stops a slide like a wall', at(t.player, 3, 2), JSON.stringify(t.player));
+  const u = slide(createGame(room(['#######', '#.....#', '#.....#', '#PB..3#', '#######'])), 'right');
+  check('a pushed box turns with the triangle', at(u.entities[0], 5, 1) && at(u.player, 5, 2), JSON.stringify(u.entities[0]) + JSON.stringify(u.player));
+  const v = createGame(room(['#######', '#..E..#', '#.....#', '#..3..#', '#P....#', '#######'], { mode: 'realtime' }));
+  v.player.x = 1; v.player.y = 3; v.player.dir = 'up';
+  step(v, ['right']);
+  check('a laser turns at a triangle', v.entities[0].dead, JSON.stringify(v.events.find(e => e.type === 'laser')));
+  const w = createGame(room(['#######', '#M...9#', '#.....#', '#.....#', '#P....#', '#######']));
+  for (let i = 0; i < 6; i++) worldStep(w);
+  check('a patrol turns onto the other axis at a triangle', w.entities[0].axis === 'v' && at(w.entities[0], 5, 3), JSON.stringify(w.entities[0]));
+  const x = createGame(room(['########', '#P...H9#', '#......#', '#......#', '########']));
+  step(x, ['right']); step(x, ['right']);
+  for (let i = 0; i < 8; i++) step(x);
+  check('a thrown heavy box turns at a triangle', at(x.entities[0], 6, 3), JSON.stringify(x.entities[0]));
+  let refused = 0;
+  try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: Array(9).fill('tri:up') })); } catch { refused++; }
+  check('an unknown triangle is refused', refused === 1);
 }
 
 done();

@@ -6,6 +6,7 @@ import { emptyLevel } from '../src/sim.js';
 //   S  strong enemy, h                  T  laser turret (fires right)
 //   B  box           H  heavy box
 //   o  red button    D  red door         u  blue button  Q  blue door
+//   7 9 1 3  triangle, solid in the corner a numpad key points to (7 = north-west)
 // Movers are 'input' unless opts.mode says 'realtime'.
 export function room(rows, opts = {}) {
   const h = rows.length, w = rows[0].length;
@@ -32,6 +33,10 @@ export function room(rows, opts = {}) {
       case 'T': l.entities.push({ kind: 'turret', x, y, turret: { dirs: ['right'], mode } }); break;
       case 'B': put('box'); break;
       case 'H': put('heavy'); break;
+      case '7': l.cells[i] = 'tri:nw'; break;
+      case '9': l.cells[i] = 'tri:ne'; break;
+      case '1': l.cells[i] = 'tri:sw'; break;
+      case '3': l.cells[i] = 'tri:se'; break;
       case '.': break;
       default: throw new Error('Unknown map character: ' + ch);
     }

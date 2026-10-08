@@ -34,7 +34,7 @@ h2:not(:first-child) { margin-top: 16px; }
 .opt { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 10px; }
 .opt > span:first-child { width: 100%; color: var(--dim); font-size: 12px; }
 .opt button { padding: 4px 8px; font-size: 12px; }
-.opt [data-aim] { width: 32px; padding: 4px 0; font-size: 15px; }
+.opt [data-aim], .opt [data-corner] { width: 32px; padding: 4px 0; font-size: 15px; }
 .opt .note { width: 100%; color: var(--dim); font-size: 12px; }
 #colours { display: flex; gap: 6px; }
 #colours button { width: 26px; height: 26px; padding: 0; border-radius: 50%; border-width: 2px; }
@@ -67,7 +67,7 @@ button { touch-action: manipulation; }
   aside { padding: 10px; }
   .hint { margin-top: 6px; }
   .opt button { min-height: 40px; }
-  .opt [data-aim] { width: 44px; }
+  .opt [data-aim], .opt [data-corner] { width: 44px; }
   #colours button { width: 36px; height: 36px; }
   .power { padding: 10px 0; }
   .radio { padding: 8px 0; }
@@ -111,6 +111,13 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
           <button type="button" data-aim="down" title="Down">&darr;</button>
           <button type="button" data-aim="left" title="Left">&larr;</button>
           <small class="note">Place it on a box, a heavy box or an enemy to mount it there.</small>
+        </div>
+        <div class="opt" data-for="tri">
+          <span>Solid corner</span>
+          <button type="button" data-corner="nw" title="Top left">&#9700;</button>
+          <button type="button" data-corner="ne" title="Top right">&#9701;</button>
+          <button type="button" data-corner="sw" title="Bottom left">&#9699;</button>
+          <button type="button" data-corner="se" title="Bottom right">&#9698;</button>
         </div>
         <div class="opt" data-for="button door">
           <span>Colour</span>
@@ -160,6 +167,19 @@ const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 const OPPOSITE = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
 const COLOURS = ['red', 'blue', 'yellow', 'green'];
+
+// A triangle ('tri:se') is solid in that corner; its other two faces are open. What
+// enters through one open face leaves through the other, turned 90 degrees.
+const CORNERS = ['nw', 'ne', 'sw', 'se'];
+const EXIT_FACE = { up: 'n', down: 's', left: 'w', right: 'e' };
+const ENTRY_FACE = { up: 's', down: 'n', left: 'e', right: 'w' };
+const OUT = { n: 'up', s: 'down', e: 'right', w: 'left' };
+const OPP = { n: 's', s: 'n', e: 'w', w: 'e' };
+const openFaces = corner => [OPP[corner[0]], OPP[corner[1]]];
+const turn = (corner, d) => OUT[openFaces(corner).find(f => f !== ENTRY_FACE[d])];
+
+// Two laser hits this many player tiles apart kill a strong enemy.
+const HURT_TILES = 4;
 
 // Clockwise order: a turret fires its chosen directions in this order.
 const CLOCKWISE = ['up', 'right', 'down', 'left'];
@@ -222,6 +242,7 @@ function parseLevel(text) {
 
 function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
+  if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
   return (kind === 'button' || kind === 'door') && COLOURS.includes(colour);
 }
@@ -236,7 +257,7 @@ function createGame(level) {
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, air: 0, snap: true },
     entities: l.entities.map(e => ({
       id: ++id, kind: e.kind, x: e.x, y: e.y,
-      axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false,
+      axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false, hurt: 0,
       turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, next: 0 } : null,
     })),
     open: {}, tick: 0, worldSteps: 0, deaths: 0, events: [],
@@ -256,12 +277,29 @@ function solidCell(s, x, y) {
   return false;
 }
 
+const triAt = (s, x, y) => { const c = inb(s, x, y) && cellAt(s, x, y); return c && c.startsWith('tri:') ? c.slice(4) : null; };
+
+// One step from (x, y) going d: where it lands and the way it went, or null when a
+// wall, a closed door or a triangle's solid side is in the way. The turn happens on
+// the way out: inside a triangle, heading into its solid side sends you along the slope.
+function stepTo(s, x, y, d) {
+  const here = triAt(s, x, y);
+  if (here && !openFaces(here).includes(EXIT_FACE[d])) d = turn(here, d);
+  const [dx, dy] = DIRS[d], nx = x + dx, ny = y + dy;
+  if (solidCell(s, nx, ny)) return null;
+  const tri = triAt(s, nx, ny);
+  if (tri && !openFaces(tri).includes(ENTRY_FACE[d])) return null;
+  return { x: nx, y: ny, d };
+}
+
+// Where a piece at (x, y) pushed d would go, if that tile is free.
+function pushTo(s, x, y, d) {
+  const t = stepTo(s, x, y, d);
+  return t && !entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y) ? t : null;
+}
+
 const entAt = (s, x, y, not) => s.entities.find(e => !e.dead && e !== not && e.x === x && e.y === y);
 const playerAt = (s, x, y) => s.player.x === x && s.player.y === y;
-
-function free(s, x, y) {
-  return !solidCell(s, x, y) && !entAt(s, x, y) && !playerAt(s, x, y);
-}
 
 // A colour's doors open only while every button of that colour is pressed.
 // A door that is occupied cannot close on what stands in it.
@@ -301,21 +339,24 @@ function kill(s, e, how) {
   s.events.push({ type: 'kill', id: e.id, how });
 }
 
-// One player tile. Returns 'moved', 'blocked' or 'died'.
+// One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
 function playerStep(s, d, diving) {
-  const [dx, dy] = DIRS[d], p = s.player, nx = p.x + dx, ny = p.y + dy;
-  if (solidCell(s, nx, ny)) return 'blocked';
-  const e = entAt(s, nx, ny);
+  const p = s.player, t = stepTo(s, p.x, p.y, d);
+  if (!t) return 'blocked';
+  const nx = t.x, ny = t.y, e = entAt(s, nx, ny);
   if (e) {
+    let b;
     if (e.kind === 'enemy' && diving) kill(s, e, 'dive');
     else if (ENEMY.includes(e.kind)) { die(s); return 'died'; }
     else if (e.kind === 'heavy') {
-      if (diving) { e.slide = d; s.events.push({ type: 'crash', x: nx, y: ny }); }
+      if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (e.kind === 'box' && free(s, nx + dx, ny + dy)) { e.x += dx; e.y += dy; }
+    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d))) { e.x = b.x; e.y = b.y; }
     else return 'blocked';
   }
   p.x = nx; p.y = ny; p.moved++;
+  if (p.dir) p.dir = t.d;
+  for (const o of s.entities) if (o.hurt > 0) o.hurt--;
   if (cellAt(s, nx, ny) === 'checkpoint' && (s.checkpoint.x !== nx || s.checkpoint.y !== ny)) {
     s.checkpoint = { x: nx, y: ny };
     s.events.push({ type: 'checkpoint', x: nx, y: ny });
@@ -332,8 +373,8 @@ function endSlide(s) {
 
 // A slide that moved the player gives the world its step, per the clock.
 function slideOnce(s, diving) {
-  const r = playerStep(s, s.player.dir, diving);
-  if (r === 'moved') { if (s.clock === 'tile') worldStep(s, s.player.dir); return true; }
+  const d = s.player.dir, r = playerStep(s, d, diving);
+  if (r === 'moved') { if (s.clock === 'tile') worldStep(s, d); return true; }
   if (r === 'blocked') endSlide(s);
   return false;
 }
@@ -348,92 +389,122 @@ function dive(s) {
   s.player.snap = true;
 }
 
-function laser(s, d) {
-  const [dx, dy] = DIRS[d];
-  let x = s.player.x + dx, y = s.player.y + dy, len = 0;
-  while (!solidCell(s, x, y)) {
-    const e = entAt(s, x, y);
-    if (e) {
-      if (e.kind === 'enemy') kill(s, e, 'laser');
-      else break;
-    }
-    len++; x += dx; y += dy;
+// A beam from (x, y) heading d, turned by triangles. hit(piece) says whether it
+// passes on. Returns the cells it crossed and whether a wall stopped it.
+function trace(s, x, y, d, hit, hitsPlayer) {
+  const path = [[x, y]];
+  let cx = x, cy = y, cd = d, wall = true;
+  for (let i = 0; i < s.w * s.h * 2; i++) {
+    const t = stepTo(s, cx, cy, cd);
+    if (!t) break;
+    path.push([t.x, t.y]);
+    if (hitsPlayer && playerAt(s, t.x, t.y) && s.player.air === 0) { wall = false; s.beamHitPlayer = true; break; }
+    const o = entAt(s, t.x, t.y);
+    if (o && !hit(o)) { wall = false; break; }
+    cx = t.x; cy = t.y; cd = t.d;
   }
-  s.events.push({ type: 'laser', x: s.player.x, y: s.player.y, d, len });
+  return { path, wall, end: cd };
 }
 
-// A turret fires its next direction clockwise, or the given one. The beam kills you
-// (unless you are in the air) and weak enemies; anything else solid stops it.
+// A laser kills a weak enemy and goes on. A strong enemy stops it, and dies to a
+// second hit within HURT_TILES of your moves. Anything else stops it.
+function laserHit(s, o, how) {
+  if (o.kind === 'enemy') { kill(s, o, how); return true; }
+  if (o.kind === 'strong') {
+    if (o.hurt > 0) kill(s, o, how);
+    else { o.hurt = HURT_TILES; s.events.push({ type: 'hurt', id: o.id }); }
+  }
+  return false;
+}
+
+function laser(s, d) {
+  const r = trace(s, s.player.x, s.player.y, d, o => laserHit(s, o, 'laser'), false);
+  s.events.push({ type: 'laser', d, ...r });
+}
+
+// A turret fires its next direction clockwise, or the given one. Its beam also kills
+// you unless you are in the air.
 function fireTurret(s, e, forced) {
   const t = e.turret;
   let d = forced;
   if (!d) { d = t.dirs[t.next % t.dirs.length]; t.next++; }
-  const [dx, dy] = DIRS[d];
-  let x = e.x + dx, y = e.y + dy, len = 0, hit = false;
-  while (!solidCell(s, x, y)) {
-    if (playerAt(s, x, y) && s.player.air === 0) { hit = true; break; }
-    const o = entAt(s, x, y);
-    if (o) {
-      if (o.kind === 'enemy') kill(s, o, 'turret');
-      else break;
-    }
-    len++; x += dx; y += dy;
-  }
-  s.events.push({ type: 'beam', x: e.x, y: e.y, d, len: hit ? len + 1 : len });
-  if (hit) die(s);
+  s.beamHitPlayer = false;
+  const r = trace(s, e.x, e.y, d, o => laserHit(s, o, 'turret'), true);
+  s.events.push({ type: 'beam', d, ...r });
+  if (s.beamHitPlayer) die(s);
 }
 
 function fireTurrets(s, mode) {
   for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === mode) fireTurret(s, e);
 }
 
-// d is the way the player moved for this step; a jump gives none, so 'follow'
-// pieces and turrets sit it out.
-function worldStep(s, d = null) {
+// A jump is one cycle with no direction: each on-your-move piece slides along its
+// patrol until something stops it, a tile per tick (see step), and turns there.
+function jumpCycle(s) {
   s.worldSteps++;
-  for (const e of s.entities) {
-    if (e.dead || !MOVES.includes(e.kind)) continue;
-    if (e.mode === 'input') moveMover(s, e);
-    else if (e.mode === 'follow' && d) moveMover(s, e, d);
-  }
+  for (const e of s.entities) if (!e.dead && e.mode === 'input' && MOVES.includes(e.kind)) e.rush = true;
   fireTurrets(s, 'input');
-  if (d) for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === 'follow' && e.turret.dirs.includes(d)) fireTurret(s, e, d);
   refreshDoors(s);
 }
 
-// Moves one tile along its patrol, or the given way. Blocked, it stays and turns its patrol.
-function moveMover(s, e, d) {
-  const dx = d ? DIRS[d][0] : e.axis === 'h' ? e.dir : 0, dy = d ? DIRS[d][1] : e.axis === 'v' ? e.dir : 0;
-  const tx = e.x + dx, ty = e.y + dy;
-  if (solidCell(s, tx, ty)) { e.dir = -e.dir; return; }
-  const o = entAt(s, tx, ty, e);
-  if (o) {
-    if (o.kind === 'box' && free(s, tx + dx, ty + dy)) { o.x += dx; o.y += dy; }
-    else { e.dir = -e.dir; return; }
+function rushOnce(s, e) {
+  const x = e.x, y = e.y;
+  moveMover(s, e, null, true);
+  if (e.x === x && e.y === y) e.rush = false;
+}
+
+// d is the way the player moved for this step, which 'follow' pieces and turrets copy.
+function worldStep(s, d) {
+  s.worldSteps++;
+  for (const e of s.entities) {
+    if (e.dead || !MOVES.includes(e.kind)) continue;
+    if (e.mode === 'input' && !e.rush) moveMover(s, e);
+    else if (e.mode === 'follow') moveMover(s, e, d);
   }
-  if (playerAt(s, tx, ty)) {
+  fireTurrets(s, 'input');
+  for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === 'follow' && e.turret.dirs.includes(d)) fireTurret(s, e, d);
+  refreshDoors(s);
+}
+
+const patrolDir = e => e.axis === 'h' ? (e.dir > 0 ? 'right' : 'left') : (e.dir > 0 ? 'down' : 'up');
+
+// Moves one tile along its patrol, or the given way. Blocked, it stays and turns its
+// patrol. A triangle turns a patrol onto the other axis.
+function moveMover(s, e, d, turned) {
+  const t = stepTo(s, e.x, e.y, d || patrolDir(e));
+  // Blocked, a patrol turns and moves the other way in the same step; a follower waits.
+  const blocked = () => { if (d) return; e.dir = -e.dir; if (!turned) moveMover(s, e, null, true); };
+  if (!t) { blocked(); return; }
+  const o = entAt(s, t.x, t.y, e);
+  let b;
+  if (o) {
+    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d))) { o.x = b.x; o.y = b.y; }
+    else { blocked(); return; }
+  }
+  if (playerAt(s, t.x, t.y)) {
     if (ENEMY.includes(e.kind)) {
-      e.x = tx; e.y = ty;
+      e.x = t.x; e.y = t.y;
       if (e.kind === 'enemy' && s.player.air > 0) kill(s, e, 'jump'); else die(s);
       return;
     }
     const p = s.player;
-    if (free(s, tx + dx, ty + dy)) { p.x += dx; p.y += dy; s.events.push({ type: 'pushed' }); }
-    else { e.x = tx; e.y = ty; die(s); return; }
+    if ((b = pushTo(s, t.x, t.y, t.d))) { p.x = b.x; p.y = b.y; s.events.push({ type: 'pushed' }); }
+    else { e.x = t.x; e.y = t.y; die(s); return; }
   }
-  e.x = tx; e.y = ty;
+  e.x = t.x; e.y = t.y;
+  if (!d) { e.axis = t.d === 'left' || t.d === 'right' ? 'h' : 'v'; e.dir = t.d === 'right' || t.d === 'down' ? 1 : -1; }
 }
 
 function slideHeavy(s, e) {
-  const [dx, dy] = DIRS[e.slide], tx = e.x + dx, ty = e.y + dy;
-  if (solidCell(s, tx, ty)) { e.slide = null; return; }
-  const o = entAt(s, tx, ty, e);
+  const t = stepTo(s, e.x, e.y, e.slide);
+  if (!t) { e.slide = null; return; }
+  const o = entAt(s, t.x, t.y, e);
   if (o) {
     if (ENEMY.includes(o.kind)) kill(s, o, 'squash');
     else { e.slide = null; return; }
   }
-  e.x = tx; e.y = ty;
-  if (playerAt(s, tx, ty)) die(s);
+  e.x = t.x; e.y = t.y; e.slide = t.d;
+  if (playerAt(s, t.x, t.y)) die(s);
 }
 
 // Besides keys, a run takes settings changed mid-play: 'power:dive:0', 'clock:slide'.
@@ -446,7 +517,7 @@ function input(s, k) {
     if (s.powers.cycle && !p.dir && p.air === 0) {
       p.air = JUMP_TICKS;
       s.events.push({ type: 'jump' });
-      worldStep(s);
+      jumpCycle(s);
     }
     return;
   }
@@ -463,6 +534,7 @@ function step(s, inputs = []) {
   for (const k of inputs) input(s, k);
   if (s.player.dir) slideOnce(s, false);
   for (const e of s.entities) if (!e.dead && e.kind === 'heavy' && e.slide) slideHeavy(s, e);
+  for (const e of s.entities) if (!e.dead && e.rush) rushOnce(s, e);
   if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
     for (const e of s.entities) if (!e.dead && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
     fireTurrets(s, 'realtime');
@@ -482,6 +554,7 @@ function gameText(s, mode = 'play') {
     pieces: s.entities.filter(e => !e.dead).map(e => ({
       kind: e.kind, x: e.x, y: e.y,
       ...(MOVES.includes(e.kind) ? { axis: e.axis, mode: e.mode } : {}),
+      ...(e.hurt > 0 ? { hurt: e.hurt } : {}),
       ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, next: e.turret.dirs[e.turret.next % e.turret.dirs.length] } } : {}),
     })),
     open: COLOURS.filter(c => s.open[c]),
@@ -498,7 +571,7 @@ function replay(level, log, ticks) {
 
 // ---- src/sample.js
 // The sample room, kept in step with rooms/sample.wee by tools/build-single.mjs.
-const SAMPLE = {"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","wall","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"};
+const SAMPLE = {"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","wall","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"};
 
 // ---- src/render.js
 // Draws a level (edit mode) or a running game (play mode) on the canvas.
@@ -531,7 +604,16 @@ function drawCell(g, c, x, y, s, scale = 1) {
   const px = x * T, py = y * T;
   g.save();
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
-  if (c === 'wall') {
+  if (c.startsWith('tri:')) {
+    // The solid half sits in the named corner; the slope is the bright edge.
+    const k = c.slice(4), pts = { nw: [[1, 1], [T - 1, 1], [1, T - 1]], ne: [[1, 1], [T - 1, 1], [T - 1, T - 1]], sw: [[1, 1], [1, T - 1], [T - 1, T - 1]], se: [[T - 1, 1], [T - 1, T - 1], [1, T - 1]] }[k];
+    g.fillStyle = INK.wall; g.beginPath(); g.moveTo(...pts[0]); g.lineTo(...pts[1]); g.lineTo(...pts[2]); g.closePath(); g.fill();
+    g.strokeStyle = INK.wallTop; g.lineWidth = 3; g.beginPath();
+    if (k === 'nw') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
+    else if (k === 'se') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
+    else { g.moveTo(1, 1); g.lineTo(T - 1, T - 1); }
+    g.stroke();
+  } else if (c === 'wall') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
   } else if (c === 'checkpoint') {
@@ -627,6 +709,13 @@ function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
     g.fillStyle = '#ffd34d';
     g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
+    if (e.hurt > 0) {
+      // A crack, and one pip per move left before the hurt wears off.
+      g.strokeStyle = '#ffd34d'; g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(16, 5); g.lineTo(13, 10); g.lineTo(18, 12); g.lineTo(15, 18); g.stroke();
+      g.fillStyle = '#ffd34d';
+      for (let i = 0; i < e.hurt; i++) { g.beginPath(); g.arc(8 + i * 5.3, 25, 1.8, 0, Math.PI * 2); g.fill(); }
+    }
     modeBadge(g, e.mode);
   } else if (e.kind === 'turret') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
@@ -710,11 +799,12 @@ function drawPlay(g, s, prev, alpha, fx, now) {
     }
   }
   for (const f of fx) if ((f.type === 'laser' || f.type === 'beam') && now - f.at < LASER_MS) {
-    const [dx, dy] = DIRS[f.d], t = (now - f.at) / LASER_MS;
+    const t = (now - f.at) / LASER_MS, c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
     g.strokeStyle = f.type === 'beam' ? INK.beam : INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
+    g.lineJoin = 'round';
     g.beginPath();
-    g.moveTo(f.x * T + T / 2, f.y * T + T / 2);
-    g.lineTo((f.x + dx * (f.len + 0.5)) * T + T / 2 - dx * T / 2, (f.y + dy * (f.len + 0.5)) * T + T / 2 - dy * T / 2);
+    f.path.forEach((p, i) => { const [x, y] = c(p); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
+    if (f.wall) { const [x, y] = c(f.path[f.path.length - 1]), [dx, dy] = DIRS[f.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
     g.stroke(); g.globalAlpha = 1;
   }
   for (const f of fx) if (f.type === 'dive' && now - f.at < 200) {
@@ -758,6 +848,7 @@ const TOOLS = [
   { id: 'turret', label: 'Laser turret' },
   { id: 'box', label: 'Box' },
   { id: 'heavy', label: 'Heavy box' },
+  { id: 'tri', label: 'Triangle' },
   { id: 'button', label: 'Button' },
   { id: 'door', label: 'Door' },
 ];
@@ -783,7 +874,7 @@ function starterLevel() {
   return l;
 }
 
-const ui = { tool: 'wall', axis: 'h', mode: 'input', colour: 'red', aim: ['right'] };
+const ui = { tool: 'wall', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se' };
 let level = starterLevel();
 let played = null, keylog = [];
 let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
@@ -806,14 +897,34 @@ function fit() {
 const idx = (x, y) => y * level.w + x;
 const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 
-function place(x, y, erase) {
-  const t = erase ? 'erase' : ui.tool, i = idx(x, y), pi = pieceAt(x, y);
+// Does (x, y) already hold the kind of thing this tool places?
+function holds(x, y, tool) {
+  const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
+  if (tool === 'wall' || tool === 'checkpoint') return c === tool;
+  if (tool === 'button' || tool === 'door' || tool === 'tri') return c.startsWith(tool + ':');
+  if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
+  return !!pc && pc.kind === tool;
+}
+
+// how: 'place', 'remove' (only what this tool places) or 'erase' (anything).
+function place(x, y, how) {
+  if (how === 'remove' && !holds(x, y, ui.tool)) return;
+  if (how === 'place' && holds(x, y, ui.tool)) return;
+  const t = how === 'erase' ? 'erase' : how === 'remove' ? 'remove' : ui.tool, i = idx(x, y), pi = pieceAt(x, y);
   const gone = { type: 'erase', x, y, at: now() };
   const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
   const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
   const isStart = level.start.x === x && level.start.y === y;
   if (t === 'erase') {
     if (pi >= 0) removePiece(); else setCell('');
+  } else if (t === 'remove') {
+    const host = pi >= 0 ? level.entities[pi] : null;
+    if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri'].includes(ui.tool)) setCell('');
+    else removePiece();
+  } else if (t === 'tri') {
+    if (isStart) return;
+    removePiece(); setCell('tri:' + ui.corner);
   } else if (t === 'start') {
     if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
     removePiece();
@@ -846,7 +957,7 @@ function place(x, y, erase) {
     level.entities.push(want);
   }
   if (gone.cell || gone.piece) fx.push(gone);
-  if (t !== 'erase') fx.push({ type: 'place', x, y, at: now() });
+  if (t !== 'erase' && t !== 'remove') fx.push({ type: 'place', x, y, at: now() });
 }
 
 function cellFromEvent(ev) {
@@ -866,9 +977,9 @@ canvas.addEventListener('pointerdown', ev => {
     return;
   }
   const c = cellFromEvent(ev); if (!c) return;
-  painting = ev.button === 2 ? 2 : 1;
+  painting = ev.button === 2 ? 'erase' : holds(c.x, c.y, ui.tool) && ui.tool !== 'start' ? 'remove' : 'place';
   canvas.setPointerCapture(ev.pointerId);
-  place(c.x, c.y, painting === 2);
+  place(c.x, c.y, painting);
 });
 canvas.addEventListener('pointermove', ev => {
   if (mode === 'play' && swipe) {
@@ -880,7 +991,7 @@ canvas.addEventListener('pointermove', ev => {
     return;
   }
   hover = mode === 'edit' && !touch ? cellFromEvent(ev) : null;
-  if (painting && hover && ui.tool !== 'start') place(hover.x, hover.y, painting === 2);
+  if (painting && hover && ui.tool !== 'start') place(hover.x, hover.y, painting);
 });
 canvas.addEventListener('pointerup', () => { painting = 0; swipe = null; });
 canvas.addEventListener('pointercancel', () => { painting = 0; swipe = null; });
@@ -979,8 +1090,8 @@ function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' ? tool : tool + ':red';
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' ? tool : tool === 'tri' ? 'tri:se' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'erase') {
     x.strokeStyle = '#8e98ad'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
@@ -1008,6 +1119,7 @@ function buildPanels() {
   }
   document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { ui.axis = b.dataset.axis; syncPanel(); });
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { ui.mode = b.dataset.mode; syncPanel(); });
+  document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { ui.corner = b.dataset.corner; syncPanel(); });
   document.querySelectorAll('[data-aim]').forEach(b => b.onclick = () => {
     const d = b.dataset.aim;
     if (ui.aim.includes(d)) { if (ui.aim.length > 1) ui.aim = ui.aim.filter(a => a !== d); }
@@ -1030,7 +1142,7 @@ function buildPanels() {
   $('jumpBtn').onclick = () => pending.push('jump');
   $('respawnBtn').onclick = () => pending.push('respawn');
   $('reportBtn').onclick = copyReport;
-  $('placeHint').textContent = touch ? 'Tap or drag to place. Pick Erase to remove.' : 'Click to place. Right click to erase.';
+  $('placeHint').textContent = touch ? 'Tap to place. Tap one again to remove it.' : 'Click to place. Click one again, or right click, to remove it.';
   const resize = () => {
     const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));
     if (w !== level.w || h !== level.h) { level = resizeLevel(level, w, h); fit(); }
@@ -1058,6 +1170,7 @@ function syncPanel() {
   document.querySelectorAll('[data-axis]').forEach(b => b.classList.toggle('on', b.dataset.axis === ui.axis));
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === ui.mode));
   document.querySelectorAll('[data-colour]').forEach(b => b.classList.toggle('on', b.dataset.colour === ui.colour));
+  document.querySelectorAll('[data-corner]').forEach(b => b.classList.toggle('on', b.dataset.corner === ui.corner));
   document.querySelectorAll('[data-aim]').forEach(b => {
     const on = ui.aim.includes(b.dataset.aim);
     b.classList.toggle('on', on);

@@ -45,6 +45,17 @@ try {
   await page.mouse.click(p.x, p.y, { button: 'right' });
   lv = (await text()).level;
   check('a right click erases it', lv.cells[5 * 20 + 5] === '');
+  await page.mouse.click(p.x, p.y); await page.mouse.click(p.x, p.y);
+  lv = (await text()).level;
+  check('clicking a block with Block selected removes it', lv.cells[5 * 20 + 5] === '');
+  await page.click('[data-tool=tri]');
+  await page.click('[data-corner=ne]');
+  await page.mouse.click(p.x, p.y);
+  lv = (await text()).level;
+  check('a triangle places with its chosen corner', lv.cells[5 * 20 + 5] === 'tri:ne');
+  await page.mouse.click(p.x, p.y);
+  check('and a second click removes it', (await text()).level.cells[5 * 20 + 5] === '');
+  await page.click('[data-tool=wall]');
   await page.click('[data-tool=enemy]');
   check('enemy options show', await page.locator('[data-axis=h]').isVisible());
   await page.click('[data-mode=realtime]');
@@ -69,6 +80,10 @@ try {
   const alone = lv.entities.find(e => e.x === 12 && e.y === 3);
   check('a turret on a box mounts on it', mounted?.kind === 'box' && mounted.turret?.dirs.join() === 'down,left', JSON.stringify(mounted));
   check('a turret on floor stands alone', alone?.kind === 'turret', JSON.stringify(alone));
+  await page.mouse.click(p.x, p.y);
+  lv = (await text()).level;
+  const unmounted = lv.entities.find(e => e.x === 10 && e.y === 3);
+  check('clicking a mounted turret again takes only the turret off', unmounted?.kind === 'box' && !unmounted.turret, JSON.stringify(unmounted));
   await page.click('[data-tool=mover]');
   await page.click('[data-mode=follow]');
   check('a follower has no patrol axis to pick', !(await page.locator('[data-axis=h]').isVisible()));

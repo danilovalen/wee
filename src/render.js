@@ -29,7 +29,16 @@ function drawCell(g, c, x, y, s, scale = 1) {
   const px = x * T, py = y * T;
   g.save();
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
-  if (c === 'wall') {
+  if (c.startsWith('tri:')) {
+    // The solid half sits in the named corner; the slope is the bright edge.
+    const k = c.slice(4), pts = { nw: [[1, 1], [T - 1, 1], [1, T - 1]], ne: [[1, 1], [T - 1, 1], [T - 1, T - 1]], sw: [[1, 1], [1, T - 1], [T - 1, T - 1]], se: [[T - 1, 1], [T - 1, T - 1], [1, T - 1]] }[k];
+    g.fillStyle = INK.wall; g.beginPath(); g.moveTo(...pts[0]); g.lineTo(...pts[1]); g.lineTo(...pts[2]); g.closePath(); g.fill();
+    g.strokeStyle = INK.wallTop; g.lineWidth = 3; g.beginPath();
+    if (k === 'nw') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
+    else if (k === 'se') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
+    else { g.moveTo(1, 1); g.lineTo(T - 1, T - 1); }
+    g.stroke();
+  } else if (c === 'wall') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
   } else if (c === 'checkpoint') {
@@ -125,6 +134,13 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
     g.fillStyle = '#ffd34d';
     g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
+    if (e.hurt > 0) {
+      // A crack, and one pip per move left before the hurt wears off.
+      g.strokeStyle = '#ffd34d'; g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(16, 5); g.lineTo(13, 10); g.lineTo(18, 12); g.lineTo(15, 18); g.stroke();
+      g.fillStyle = '#ffd34d';
+      for (let i = 0; i < e.hurt; i++) { g.beginPath(); g.arc(8 + i * 5.3, 25, 1.8, 0, Math.PI * 2); g.fill(); }
+    }
     modeBadge(g, e.mode);
   } else if (e.kind === 'turret') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
@@ -208,11 +224,12 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     }
   }
   for (const f of fx) if ((f.type === 'laser' || f.type === 'beam') && now - f.at < LASER_MS) {
-    const [dx, dy] = DIRS[f.d], t = (now - f.at) / LASER_MS;
+    const t = (now - f.at) / LASER_MS, c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
     g.strokeStyle = f.type === 'beam' ? INK.beam : INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
+    g.lineJoin = 'round';
     g.beginPath();
-    g.moveTo(f.x * T + T / 2, f.y * T + T / 2);
-    g.lineTo((f.x + dx * (f.len + 0.5)) * T + T / 2 - dx * T / 2, (f.y + dy * (f.len + 0.5)) * T + T / 2 - dy * T / 2);
+    f.path.forEach((p, i) => { const [x, y] = c(p); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
+    if (f.wall) { const [x, y] = c(f.path[f.path.length - 1]), [dx, dy] = DIRS[f.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
     g.stroke(); g.globalAlpha = 1;
   }
   for (const f of fx) if (f.type === 'dive' && now - f.at < 200) {

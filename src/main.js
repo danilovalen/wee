@@ -17,6 +17,7 @@ const TOOLS = [
   { id: 'turret', label: 'Laser turret' },
   { id: 'box', label: 'Box' },
   { id: 'heavy', label: 'Heavy box' },
+  { id: 'tri', label: 'Triangle' },
   { id: 'button', label: 'Button' },
   { id: 'door', label: 'Door' },
 ];
@@ -42,7 +43,7 @@ function starterLevel() {
   return l;
 }
 
-const ui = { tool: 'wall', axis: 'h', mode: 'input', colour: 'red', aim: ['right'] };
+const ui = { tool: 'wall', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se' };
 let level = starterLevel();
 let played = null, keylog = [];
 let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
@@ -65,14 +66,34 @@ function fit() {
 const idx = (x, y) => y * level.w + x;
 const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 
-function place(x, y, erase) {
-  const t = erase ? 'erase' : ui.tool, i = idx(x, y), pi = pieceAt(x, y);
+// Does (x, y) already hold the kind of thing this tool places?
+function holds(x, y, tool) {
+  const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
+  if (tool === 'wall' || tool === 'checkpoint') return c === tool;
+  if (tool === 'button' || tool === 'door' || tool === 'tri') return c.startsWith(tool + ':');
+  if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
+  return !!pc && pc.kind === tool;
+}
+
+// how: 'place', 'remove' (only what this tool places) or 'erase' (anything).
+function place(x, y, how) {
+  if (how === 'remove' && !holds(x, y, ui.tool)) return;
+  if (how === 'place' && holds(x, y, ui.tool)) return;
+  const t = how === 'erase' ? 'erase' : how === 'remove' ? 'remove' : ui.tool, i = idx(x, y), pi = pieceAt(x, y);
   const gone = { type: 'erase', x, y, at: now() };
   const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
   const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
   const isStart = level.start.x === x && level.start.y === y;
   if (t === 'erase') {
     if (pi >= 0) removePiece(); else setCell('');
+  } else if (t === 'remove') {
+    const host = pi >= 0 ? level.entities[pi] : null;
+    if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri'].includes(ui.tool)) setCell('');
+    else removePiece();
+  } else if (t === 'tri') {
+    if (isStart) return;
+    removePiece(); setCell('tri:' + ui.corner);
   } else if (t === 'start') {
     if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
     removePiece();
@@ -105,7 +126,7 @@ function place(x, y, erase) {
     level.entities.push(want);
   }
   if (gone.cell || gone.piece) fx.push(gone);
-  if (t !== 'erase') fx.push({ type: 'place', x, y, at: now() });
+  if (t !== 'erase' && t !== 'remove') fx.push({ type: 'place', x, y, at: now() });
 }
 
 function cellFromEvent(ev) {
@@ -125,9 +146,9 @@ canvas.addEventListener('pointerdown', ev => {
     return;
   }
   const c = cellFromEvent(ev); if (!c) return;
-  painting = ev.button === 2 ? 2 : 1;
+  painting = ev.button === 2 ? 'erase' : holds(c.x, c.y, ui.tool) && ui.tool !== 'start' ? 'remove' : 'place';
   canvas.setPointerCapture(ev.pointerId);
-  place(c.x, c.y, painting === 2);
+  place(c.x, c.y, painting);
 });
 canvas.addEventListener('pointermove', ev => {
   if (mode === 'play' && swipe) {
@@ -139,7 +160,7 @@ canvas.addEventListener('pointermove', ev => {
     return;
   }
   hover = mode === 'edit' && !touch ? cellFromEvent(ev) : null;
-  if (painting && hover && ui.tool !== 'start') place(hover.x, hover.y, painting === 2);
+  if (painting && hover && ui.tool !== 'start') place(hover.x, hover.y, painting);
 });
 canvas.addEventListener('pointerup', () => { painting = 0; swipe = null; });
 canvas.addEventListener('pointercancel', () => { painting = 0; swipe = null; });
@@ -238,8 +259,8 @@ function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' ? tool : tool + ':red';
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' ? tool : tool === 'tri' ? 'tri:se' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'erase') {
     x.strokeStyle = '#8e98ad'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
@@ -267,6 +288,7 @@ function buildPanels() {
   }
   document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { ui.axis = b.dataset.axis; syncPanel(); });
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { ui.mode = b.dataset.mode; syncPanel(); });
+  document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { ui.corner = b.dataset.corner; syncPanel(); });
   document.querySelectorAll('[data-aim]').forEach(b => b.onclick = () => {
     const d = b.dataset.aim;
     if (ui.aim.includes(d)) { if (ui.aim.length > 1) ui.aim = ui.aim.filter(a => a !== d); }
@@ -289,7 +311,7 @@ function buildPanels() {
   $('jumpBtn').onclick = () => pending.push('jump');
   $('respawnBtn').onclick = () => pending.push('respawn');
   $('reportBtn').onclick = copyReport;
-  $('placeHint').textContent = touch ? 'Tap or drag to place. Pick Erase to remove.' : 'Click to place. Right click to erase.';
+  $('placeHint').textContent = touch ? 'Tap to place. Tap one again to remove it.' : 'Click to place. Click one again, or right click, to remove it.';
   const resize = () => {
     const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));
     if (w !== level.w || h !== level.h) { level = resizeLevel(level, w, h); fit(); }
@@ -317,6 +339,7 @@ function syncPanel() {
   document.querySelectorAll('[data-axis]').forEach(b => b.classList.toggle('on', b.dataset.axis === ui.axis));
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === ui.mode));
   document.querySelectorAll('[data-colour]').forEach(b => b.classList.toggle('on', b.dataset.colour === ui.colour));
+  document.querySelectorAll('[data-corner]').forEach(b => b.classList.toggle('on', b.dataset.corner === ui.corner));
   document.querySelectorAll('[data-aim]').forEach(b => {
     const on = ui.aim.includes(b.dataset.aim);
     b.classList.toggle('on', on);

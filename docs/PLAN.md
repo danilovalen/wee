@@ -41,8 +41,14 @@ Each one placed in the editor picks its axis and its mode:
   tile; if a block is behind you, it **crushes** you and you go back to the last checkpoint.
 - **Weak enemy:** touching it kills you, and you go back to the last checkpoint. A **laser** or a
   **dive** into it kills it, and so does landing a jump as it steps under you.
-- **Strong enemy:** only a **thrown heavy box** kills it. A laser stops on it; diving into it kills
+- **Strong enemy:** a **thrown heavy box** kills it, and so do **two lasers within 4 of your moves**. A laser stops on it; diving into it kills
   you; it steps under a jump and kills you (my call).
+
+## Triangles
+
+A triangle tile is solid in one corner. Anything entering through an open face leaves through
+the other, turned 90 degrees: you, boxes, heavy boxes, movers, enemies, lasers, turret beams.
+Its solid sides stop things like a wall.
 
 ## Laser turret
 
