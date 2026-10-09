@@ -40,6 +40,8 @@ Notes (mine):
 
 > allowing boxes enemies and moving platforms to start above buttons somehow
 > ie separating stuff that stays on ground (like puddles) from things with volume
+>
+> water is also a thing that stays on floor
 
 Checked (mine): **the rules and the editor already allow it.** A box, weak or strong enemy,
 moving block or heavy box placed on a button, in either order, keeps both, and the button is
@@ -50,6 +52,9 @@ So the gap is likely how it looks and how it is found, not the rules:
 - Does the piece hide the button when drawn? If so, the fix is drawing tiles that sit on the
   ground (button, puddle, checkpoint, goal) under a piece and still visible around it.
 - His split is the right model: **ground tiles** (button, puddle, checkpoint, goal, water,
-  one-way, sensor) can share a tile with a piece; **solid tiles** (wall, door, spring, catcher,
+  one-way, sensor; water confirmed by him) can share a tile with a piece; **solid tiles** (wall, door, spring, catcher,
   triangle) cannot. The editor already behaves this way in most places; writing the split down
   as one list would make it a rule instead of a coincidence.
+- Water has one question the others do not: a piece that cannot wade (box, weak enemy, lone
+  turret) starting **in** water. The rules only stop such a piece from entering water, so today
+  it could leave but never come back. Allow it, or refuse it in the editor?
