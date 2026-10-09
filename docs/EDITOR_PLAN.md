@@ -151,6 +151,69 @@ file in `rooms/` as a read-only **template** in the Levels panel ("Save as" to m
 Phase 5 swaps its sticky puddle at the bottom right for the Goal tile, as he asked: "the puddle
 would be the goal".
 
+## Daily practice: one room a day, from any device (planned 2026-10-09)
+
+He asked: can he make a level every day, from anywhere, as a puzzle-design exercise, and see
+which mechanisms he has already explored?
+
+### Where it stands today
+
+| Need | Today |
+|---|---|
+| Build a room on a phone | yes: the editor fits 390x844 |
+| Keep it | **no.** The room lives only in the open page; Copy report is the only way out |
+| Open yesterday's room on another device | **no** |
+| Know it is solvable, and its par | **no** (Phase 6) |
+| A goal, so a room is a puzzle and not a sandbox | **no** (Phase 5) |
+| See which mechanisms the rooms use | **no** |
+| Reach it from anywhere | only by sending the HTML file around |
+
+So the editor is good enough to build with, and nothing around it supports a daily habit yet.
+
+### What to build, in order
+
+**D1. A home for it: `dev.wee`, private.** Recommendation: a subdomain on the server that already
+runs `play.manganacarta.com` (nginx and TLS are there), e.g. `wee.manganacarta.com`, behind HTTP
+basic auth. Free, private, one config block. Alternatives: Cloudflare Pages + Cloudflare Access
+(free, login by email code, no server to keep); GitHub Pages cannot be private on a free plan.
+
+**D2. Rooms saved on the server, not in the browser.** A tiny endpoint next to the static page:
+`GET /rooms`, `PUT /rooms/<id>`. Each room is one `.wee` file in a git repo, committed on save, so
+every device sees the same list and nothing is lost. Local storage stays only as an offline
+draft. This replaces Phase 2's export/import as the main path (the `.weepack` stays as a backup).
+
+**D3. Goal tile and solver (Phases 5 and 6, pulled forward).** A puzzle needs an end, and a
+daily exercise needs a fast "is this solvable, in how many slides" answer, or a day's room can
+be broken without anyone knowing.
+
+**D4. A mechanism index, derived, never typed.** Every saved room is read by the rules code and
+gets tags for what it contains and what its solution actually uses:
+- *contains*: tile kinds, piece kinds, powers, clocks, colours with switches, inverted doors;
+- *uses* (from the solver's path): you pushed a box, a spring launched something, a door
+  closed on a piece, you hid, you swam, a pair glued, a beam lit a relay...
+A **Rooms** page lists every room with its date, par and tags, a filter by tag, and a grid of
+mechanism x count showing what has never been used yet, so tomorrow's room can aim there.
+"Uses" matters more than "contains": a spring in a room that the solution never touches is
+decoration.
+
+**D5. A note per room.** One line: what the room is about ("the box must reach the button
+from behind"), plus free tags for ideas the rules cannot see. This is the design journal.
+
+**D6. Share a room** (Phase 12) once the list exists: a link opens a room read-only.
+
+### Size
+
+| Step | What | Rough size |
+|---|---|---|
+| D1 | subdomain + basic auth + deploy script | 1 hour, plus his DNS entry |
+| D2 | rooms endpoint, git-backed, Levels panel | half a day |
+| D3 | goal tile, win, solver, par | a day and a half |
+| D4 | derived tags, Rooms page with filter and coverage grid | half a day |
+| D5 | note and free tags | 1 hour |
+
+D1 and D2 are what make "every day, from anywhere" true; D3 makes the rooms puzzles; D4 answers
+"how much have I explored".
+
 ## Order and size
 
 | Phase | What | Rough size |
