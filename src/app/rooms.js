@@ -1,6 +1,7 @@
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
 import { TEMPLATES } from '../level/templates.js';
+import { encodeRoom, decodeRoom } from '../level/code.js';
 import { splitRoom, joinRoom, stampOf, pack, unpack } from '../level/room.js';
 import { starterLevel } from '../editor/state.js';
 import { newHistory } from '../editor/history.js';
@@ -143,6 +144,24 @@ export function buildRooms(actions) {
     fillCurrent(); syncRoomsButton(); await refresh();
   };
   $('roomDownload').onclick = () => download(($('roomName').value.trim() || 'room').replace(/[^\w-]+/g, '-') + '.wee', joinRoom({ id: S.room?.id || null, name: $('roomName').value, note: $('roomNote').value }, S.level));
+  // A code or link: copied to the clipboard, or left selected in the box when the
+  // browser will not allow that (a page opened from a file).
+  const share = async link => {
+    const code = await encodeRoom(S.level);
+    const text = link ? location.href.replace(/#.*$/, '') + '#room=' + code : code;
+    try { await navigator.clipboard.writeText(text); say(link ? 'Link copied.' : 'Code copied.'); }
+    catch { $('codeIn').value = text; $('codeIn').select(); say('Copy it from the box.'); }
+  };
+  $('copyCode').onclick = () => share(false);
+  $('copyLink').onclick = () => share(true);
+  $('openCode').onclick = async () => {
+    let level;
+    try { level = await decodeRoom($('codeIn').value); } catch (e) { say(e.message); return; }
+    if (!leaveOk()) return;
+    openRoom(level, {}); S.room.saved = null; syncRoomsButton();
+    $('codeIn').value = '';
+    say('Opened from a code. Name it and save to keep it.');
+  };
   $('exportAll').onclick = async () => download('wee-rooms.weepack', pack(await refresh()));
   $('importBtn').onclick = () => $('importFile').click();
   $('importFile').onchange = async () => {
@@ -167,6 +186,16 @@ export function buildRooms(actions) {
 // At start: find the store, and reopen the room you were last on.
 export async function bootRooms() {
   await detect();
+  // A link with #room= opens that room, unsaved, before anything else.
+  if (location.hash.startsWith('#room=')) {
+    try {
+      const level = await decodeRoom(location.hash);
+      await refresh();
+      openRoom(level, {}); S.room.saved = null; syncRoomsButton();
+      history.replaceState(null, '', location.pathname + location.search);
+      return;
+    } catch { /* a bad link falls through to the usual start */ }
+  }
   let last = null;
   try { last = localStorage.getItem(LAST); } catch { /* storage off */ }
   const rooms = await refresh();

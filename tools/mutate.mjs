@@ -180,6 +180,13 @@ const M = [
   ['src', "  p.from = { x: p.x, y: p.y };\n", "", 'sim'],
   ['src', "if (!ev.repeat) { S.demo = null; S.pending.push(aim(k)); }", "if (!ev.repeat) { S.demo = null; S.pending.push(k); }", 'browser'],
   ['src', "const CRUSHABLE = ['enemy', 'strong', 'box'];", "const CRUSHABLE = ['enemy', 'strong'];", 'sim'],
+  ['src', "  code = code.trim().replace(/^.*#room=/, '');", "  code = code.trim();", "code"],
+  ['src', "  if (!code.startsWith('w1')) throw new Error('Not a wee room code.');\n", "", "code"],
+  ['src', "  return parseLevel(text);", "  return JSON.parse(text);", "code"],
+  ['src', "  const { format, version, w, h, cells, start, entities, powers, clock } = level;\n  const text = JSON.stringify({ format, version, w, h, cells, start, entities, powers, clock });", "  const text = JSON.stringify(level);", "code"],
+  ['src', "    catch { $('codeIn').value = text; $('codeIn').select(); say('Copy it from the box.'); }", "    catch { say('Copy it from the box.'); }", "browser"],
+  ['src', "      history.replaceState(null, '', location.pathname + location.search);\n", "", "browser"],
+  ['src', "  if (location.hash.startsWith('#room=')) {", "  if (false) {", "browser"],
   ['src', "        stops.add(t.player.y * t.w + t.player.x);\n", "", "solve"],
   ['src', "  if (unsearchable({ ...level, cells: [...level.cells, 'goal'] })) return { why: 'realtime', stops: [] };\n", "", "solve"],
   ['src', "        if (seen.size >= max) return { stops: [...stops], capped: true };\n", "", "solve"],
@@ -323,7 +330,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }

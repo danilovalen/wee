@@ -267,6 +267,21 @@ try {
   await page.locator('#templateList .roomRow', { hasText: 'First room' }).click();
   check('a template opens as a new, unsaved room', (await text()).level.w === 7 && (await page.textContent('#roomsBtn')).includes('\u2022'));
   await page.click('#roomsBtn');
+  // a share code round-trips through the box, and a #room= link opens the room
+  await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('no')); });
+  await page.click('#copyCode');
+  await page.waitForFunction(() => /box|copied/.test(document.getElementById('roomsSay').textContent));
+  const code = await page.inputValue('#codeIn');
+  check('without the clipboard, Copy code leaves the code in the box', code.startsWith('w1') && (await page.textContent('#roomsSay')).includes('box'));
+  await page.fill('#codeIn', 'nonsense');
+  await page.click('#openCode');
+  check('a bad code says so', (await page.textContent('#roomsSay')).includes('Not a wee room code'));
+  const linkPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await linkPage.goto(`http://localhost:${PORT}/#room=${code}`);
+  await linkPage.waitForFunction(() => window.wee && window.wee.roomsReady);
+  await linkPage.evaluate(() => window.wee.roomsReady);
+  check('a #room= link opens that room, unsaved', (await linkPage.evaluate(() => window.wee.getLevel().w)) === 7 && (await linkPage.textContent('#roomsBtn')).includes('\u2022') && !(await linkPage.evaluate(() => location.hash)));
+  await linkPage.close();
   await page.locator('#importFile').setInputFiles({ name: 'two.weepack', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ format: 'wee-pack', version: 1, rooms: [{ ...room(['#####', '#P..#', '#####']), id: 'ra', name: 'A' }, { ...room(['#####', '#P..#', '#####']), id: 'rb', name: 'B' }] })) });
   await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 3);
   check('Import adds every room in a pack', (await page.textContent('#roomsSay')).includes('Imported 2 rooms'));

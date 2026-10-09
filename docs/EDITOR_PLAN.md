@@ -161,6 +161,8 @@ Each a warning in the Levels panel, with the tile highlighted on tap:
 
 ## Phase 12: share code
 
+**Done 2026-10-09** (`src/level/code.js`, deflate + base64url).
+
 - **Copy code** puts the room on the clipboard as one short text string (compressed, URL-safe).
 - **Paste code** loads one. A link form (`wee.html#room=...`) opens straight into that room.
 

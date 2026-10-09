@@ -137,6 +137,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .sides span { font-size: 0.85em; color: var(--muted, #8e98ad); }
 .sides #border { grid-column: 1 / -1; }
 .roomBox { margin-bottom: 10px; }
+#codeIn { flex: 1; min-width: 0; }
 </style>
 </head>
 <body>
@@ -279,6 +280,15 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
     <ul id="roomList" class="roomList"></ul>
     <h3>Templates</h3>
     <ul id="templateList" class="roomList"></ul>
+    <h3>Share</h3>
+    <div class="row">
+      <button id="copyCode" type="button">Copy code</button>
+      <button id="copyLink" type="button">Copy link</button>
+    </div>
+    <div class="row">
+      <input id="codeIn" type="text" placeholder="Paste a room code or link" autocomplete="off">
+      <button id="openCode" type="button">Open</button>
+    </div>
     <div class="row">
       <button id="roomDownload" type="button">Download this room</button>
       <button id="exportAll" type="button">Export all</button>
@@ -2102,8 +2112,39 @@ const m22 = (() => {
 const TEMPLATES = [{"name":"First room","level":{"format":"wee-level","version":1,"w":7,"h":12,"cells":["wall","","","wall","wall","wall","wall","wall","","","","","","button:red","wall","","","","","","","wall","","","","","","","wall","","","","","","","","door:red","","","","","","wall","wall","","","","","","wall","","","","","","","wall","","","","","","","wall","","","","","","","wall","wall","wall","wall","wall","wall","door:red","wall","wall","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":5,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":7,"dir":1,"mode":"input"}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"}}];
 return { TEMPLATES };
 })();
-// ---- src/level/room.js
+// ---- src/level/code.js
 const m23 = (() => {
+const { parseLevel } = m9;
+// A share code: the level as compressed, URL-safe text, so a room fits in a message or
+// a link (#room=<code>). Uses the platform's own deflate, in the page and in Node.
+
+const b64url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64url = text => Uint8Array.from(atob(text.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+
+async function pipe(bytes, stream) {
+  const out = new Blob([bytes]).stream().pipeThrough(stream);
+  return new Uint8Array(await new Response(out).arrayBuffer());
+}
+
+// Only the level travels: no name, note or solution.
+async function encodeRoom(level) {
+  const { format, version, w, h, cells, start, entities, powers, clock } = level;
+  const text = JSON.stringify({ format, version, w, h, cells, start, entities, powers, clock });
+  return 'w1' + b64url(await pipe(new TextEncoder().encode(text), new CompressionStream('deflate-raw')));
+}
+
+async function decodeRoom(code) {
+  code = code.trim().replace(/^.*#room=/, '');
+  if (!code.startsWith('w1')) throw new Error('Not a wee room code.');
+  let text;
+  try { text = new TextDecoder().decode(await pipe(unb64url(code.slice(2)), new DecompressionStream('deflate-raw'))); }
+  catch { throw new Error('This room code is damaged or incomplete.'); }
+  return parseLevel(text);
+}
+return { encodeRoom, decodeRoom };
+})();
+// ---- src/level/room.js
+const m24 = (() => {
 const { parseLevel } = m9;
 // A room is a level plus what the person wrote about it. These split and join the two.
 
@@ -2135,7 +2176,7 @@ function unpack(text) {
 return { META, splitRoom, joinRoom, stampOf, pack, unpack };
 })();
 // ---- src/app/store.js
-const m24 = (() => {
+const m25 = (() => {
 
 // Where rooms are kept: on the server when the page is served by one, otherwise in this
 // browser's local storage. A room is a level file with id, name, note and updated added.
@@ -2191,7 +2232,7 @@ async function remove(id) {
 return { where, detect, newId, list, put, remove };
 })();
 // ---- src/solve/tags.js
-const m25 = (() => {
+const m26 = (() => {
 const { createGame, step } = m8;
 const { parseMove } = m19;
 // The mechanism index: what a room contains, and what its solution actually does.
@@ -2275,19 +2316,21 @@ function uses(level, moves) {
 return { MECHANISMS, LABEL, contains, uses };
 })();
 // ---- src/app/rooms.js
-const m26 = (() => {
+const m27 = (() => {
 const { TEMPLATES } = m22;
-const { splitRoom, joinRoom, stampOf, pack, unpack } = m23;
+const { encodeRoom, decodeRoom } = m23;
+const { splitRoom, joinRoom, stampOf, pack, unpack } = m24;
 const { starterLevel } = m11;
 const { newHistory } = m10;
 const { S } = m11;
 const { T } = m13;
 const { drawEdit } = m17;
-const { list, put, remove, where, newId, detect } = m24;
-const { contains, uses, MECHANISMS } = m25;
+const { list, put, remove, where, newId, detect } = m25;
+const { contains, uses, MECHANISMS } = m26;
 const { $ } = m12;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
+
 
 
 
@@ -2430,6 +2473,24 @@ function buildRooms(actions) {
     fillCurrent(); syncRoomsButton(); await refresh();
   };
   $('roomDownload').onclick = () => download(($('roomName').value.trim() || 'room').replace(/[^\w-]+/g, '-') + '.wee', joinRoom({ id: S.room?.id || null, name: $('roomName').value, note: $('roomNote').value }, S.level));
+  // A code or link: copied to the clipboard, or left selected in the box when the
+  // browser will not allow that (a page opened from a file).
+  const share = async link => {
+    const code = await encodeRoom(S.level);
+    const text = link ? location.href.replace(/#.*$/, '') + '#room=' + code : code;
+    try { await navigator.clipboard.writeText(text); say(link ? 'Link copied.' : 'Code copied.'); }
+    catch { $('codeIn').value = text; $('codeIn').select(); say('Copy it from the box.'); }
+  };
+  $('copyCode').onclick = () => share(false);
+  $('copyLink').onclick = () => share(true);
+  $('openCode').onclick = async () => {
+    let level;
+    try { level = await decodeRoom($('codeIn').value); } catch (e) { say(e.message); return; }
+    if (!leaveOk()) return;
+    openRoom(level, {}); S.room.saved = null; syncRoomsButton();
+    $('codeIn').value = '';
+    say('Opened from a code. Name it and save to keep it.');
+  };
   $('exportAll').onclick = async () => download('wee-rooms.weepack', pack(await refresh()));
   $('importBtn').onclick = () => $('importFile').click();
   $('importFile').onchange = async () => {
@@ -2454,6 +2515,16 @@ function buildRooms(actions) {
 // At start: find the store, and reopen the room you were last on.
 async function bootRooms() {
   await detect();
+  // A link with #room= opens that room, unsaved, before anything else.
+  if (location.hash.startsWith('#room=')) {
+    try {
+      const level = await decodeRoom(location.hash);
+      await refresh();
+      openRoom(level, {}); S.room.saved = null; syncRoomsButton();
+      history.replaceState(null, '', location.pathname + location.search);
+      return;
+    } catch { /* a bad link falls through to the usual start */ }
+  }
   let last = null;
   try { last = localStorage.getItem(LAST); } catch { /* storage off */ }
   const rooms = await refresh();
@@ -2464,12 +2535,12 @@ async function bootRooms() {
 return { dirty, leaveOk, syncRoomsButton, openRoom, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m27 = (() => {
+const m28 = (() => {
 const { record, undo, redo } = m10;
 const { S } = m11;
 const { $ } = m12;
 const { syncCheck, syncLint } = m21;
-const { syncRoomsButton } = m26;
+const { syncRoomsButton } = m27;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -2507,7 +2578,7 @@ function step(back, after) {
 return { syncUndo, begin, end, change, step };
 })();
 // ---- src/app/panels.js
-const m28 = (() => {
+const m29 = (() => {
 const { COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel, resizeSide, wallBorder } = m9;
 const { T, INK } = m13;
@@ -2516,9 +2587,9 @@ const { drawEdit } = m17;
 const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m18;
 const { S } = m11;
 const { $, canvas, touch } = m12;
-const { change, step: undoStep, syncUndo } = m27;
+const { change, step: undoStep, syncUndo } = m28;
 const { runCheck, syncCheck, syncLint, toggleStops } = m21;
-const { syncRoomsButton } = m26;
+const { syncRoomsButton } = m27;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -2688,7 +2759,7 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/editor/edit.js
-const m29 = (() => {
+const m30 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
 const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m18;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
@@ -2810,14 +2881,14 @@ function place(level, ui, x, y, how) {
 return { holds, describe, place };
 })();
 // ---- src/app/play.js
-const m30 = (() => {
+const m31 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m17;
 const { S } = m11;
 const { $, g, now } = m12;
-const { syncPanel, keysText } = m28;
+const { syncPanel, keysText } = m29;
 const { feedDemo } = m21;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
@@ -2905,14 +2976,14 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m31 = (() => {
-const { describe, holds, place } = m29;
+const m32 = (() => {
+const { describe, holds, place } = m30;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m30;
-const { begin, end, step: undoStep } = m27;
-const { save } = m26;
-const { syncPanel } = m28;
+const { setMode, aim } = m31;
+const { begin, end, step: undoStep } = m28;
+const { save } = m27;
+const { syncPanel } = m29;
 const { fit } = m14;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
@@ -3003,7 +3074,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/app/main.js
-const m32 = (() => {
+const m33 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -3011,10 +3082,10 @@ const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { portrait } = m12;
 const { fit } = m14;
-const { buildPanels, syncPanel } = m28;
-const { bindInput } = m31;
-const { setMode, frame, render, tick, report, copyReport } = m30;
-const { buildRooms, bootRooms } = m26;
+const { buildPanels, syncPanel } = m29;
+const { bindInput } = m32;
+const { setMode, frame, render, tick, report, copyReport } = m31;
+const { buildRooms, bootRooms } = m27;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 
