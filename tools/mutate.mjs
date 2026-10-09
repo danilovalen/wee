@@ -9,8 +9,8 @@ const M = [
   ['src', "if (o.kind === 'enemy') { kill(s, o, how); return true; }", "if (false) { kill(s, o, how); return true; }", 'sim'],
   ['src', "if (o.kind === 'enemy') { kill(s, o, how); return true; }", "if (['enemy', 'strong'].includes(o.kind)) { kill(s, o, how); return true; }", 'sim'],
   ['src', "} else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d, false))) { if (land(s, e, b)) pushed = { id: e.id, d: b.d }; }", "} else if (false) {}", 'sim'],
-  ['src', "if (e.kind === 'heavy' && ENEMY.includes(o.kind)) kill(s, o, 'squash');", "if (false) kill(s, o, 'squash');", 'sim'],
-  ['src', "if (e.kind === 'heavy' && ENEMY.includes(o.kind)) kill(s, o, 'squash');", "if (e.kind === 'heavy' && o.kind === 'enemy') kill(s, o, 'squash');", 'sim'],
+  ['src', "if (e.kind === 'heavy' && CRUSHABLE.includes(o.kind)) kill(s, o, 'squash');", "if (false) kill(s, o, 'squash');", 'sim'],
+  ['src', "if (e.kind === 'heavy' && CRUSHABLE.includes(o.kind)) kill(s, o, 'squash');", "if (e.kind === 'heavy' && ['enemy', 'strong'].includes(o.kind)) kill(s, o, 'squash');", 'sim'],
   ['src', "else { e.x = t.x; e.y = t.y; die(s); return; }", "else { e.dir = -e.dir; return; }", 'sim'],
   ['src', "pressed[col] = (pressed[col] ?? true) && down;", "pressed[col] = (pressed[col] ?? false) || down;", 'sim'],
   ['src', "const playerAt = (s, x, y) => !s.player.hidden && s.player.x === x", "const playerAt = (s, x, y) => s.player.x === x", 'sim'],
@@ -182,6 +182,7 @@ const M = [
   ['src', "const o = from || s.player;", "const o = s.player;", 'sim'],
   ['src', "  p.from = { x: p.x, y: p.y };\n", "", 'sim'],
   ['src', "if (!ev.repeat) S.pending.push(aim(k));", "if (!ev.repeat) S.pending.push(k);", 'browser'],
+  ['src', "const CRUSHABLE = ['enemy', 'strong', 'box'];", "const CRUSHABLE = ['enemy', 'strong'];", 'sim'],
   ['src', "tool === 'receiver' || tool === 'sensor' || tool === 'gate') return", "tool === 'receiver' || tool === 'gate') return", 'browser'],
   ['src', "drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);\n  g.restore();", "g.restore();", 'browser'],
 ];

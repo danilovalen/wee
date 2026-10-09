@@ -827,4 +827,16 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('standing still, no key is aimed back', aimKey(st, 'up', 0.1) === 'up');
 }
 
+{ // a sliding heavy box breaks a light box it runs into, and slides on
+  const g = createGame(room(['#########', '#.H.B...#', '#P......#', '#########']));
+  g.entities[0].slide = 'right';
+  for (let i = 0; i < 8; i++) step(g);
+  check('the light box breaks', g.entities.find(e => e.kind === 'box').dead);
+  check('and the heavy box slides on to the wall', at(g.entities.find(e => e.kind === 'heavy'), 7, 1), JSON.stringify(g.entities[0]));
+  const h = createGame(room(['#########', '#.H.H...#', '#P......#', '#########']));
+  h.entities[0].slide = 'right';
+  for (let i = 0; i < 8; i++) step(h);
+  check('a heavy box only stops at another heavy box', at(h.entities[0], 3, 1) && !h.entities[1].dead, JSON.stringify(h.entities));
+}
+
 done();

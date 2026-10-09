@@ -77,8 +77,11 @@ export function moveMover(s, e, d, turned) {
   if (!d) { e.axis = t.d === 'left' || t.d === 'right' ? 'h' : 'v'; e.dir = t.d === 'right' || t.d === 'down' ? 1 : -1; }
 }
 
+// A sliding heavy box breaks what it runs into: enemies and light boxes.
+const CRUSHABLE = ['enemy', 'strong', 'box'];
+
 // A piece sliding on its own (a thrown heavy box, anything a spring launched) goes a
-// tile per tick until something stops it. A heavy box squashes enemies and you; an
+// tile per tick until something stops it. A heavy box squashes enemies, light boxes and you; an
 // enemy that reaches you kills you; anything else just stops.
 export function slidePiece(s, e) {
   const t = stepTo(s, e.x, e.y, e.slide, wades(e));
@@ -86,7 +89,7 @@ export function slidePiece(s, e) {
   if (t.death) { kill(s, e, 'death'); return; }
   const o = entAt(s, t.x, t.y, e);
   if (o) {
-    if (e.kind === 'heavy' && ENEMY.includes(o.kind)) kill(s, o, 'squash');
+    if (e.kind === 'heavy' && CRUSHABLE.includes(o.kind)) kill(s, o, 'squash');
     else { e.slide = null; return; }
   }
   const p = s.player, ridden = stuckTo(s) === e;
