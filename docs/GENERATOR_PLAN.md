@@ -96,7 +96,7 @@ A new folder, `src/gen/`, allowed to import `rules/`, `level/` and `solve/`, nev
 
 ## Open questions
 
-1. Must-use: is it enough that the solution uses the mechanism, or must the room be unsolvable
-   without it? The second is a truer puzzle and costs one extra solve per mechanism per candidate.
+1. ~~Must-use: used, or needed?~~ **Used** (owner, 2026-10-09): the shortest solution touches it.
+   "Needed" (unsolvable without it) stays a possible later option.
 2. Should a generated room start from a template's shape, or always from an empty frame?
 3. Does the shelf need a name for each generated room, or is the recipe enough?
