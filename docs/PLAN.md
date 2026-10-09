@@ -131,6 +131,9 @@ box or a block in it holds that colour's doors open.
 
 ## The editor
 
+The palette is four tabs (Basics, Pieces, Tiles, Switches), so on a phone the room, one tab and
+the chosen tool's options fit without scrolling.
+
 1. Edit and play on one screen; one key switches, no reload.
 2. Click adds a block, right click or the eraser removes it. Base block first; the palette is
    data, so a new block type is a new row.

@@ -18,6 +18,8 @@ try {
   await page.goto(`http://localhost:${PORT}/`);
   await page.waitForFunction(() => window.wee);
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
+  // A tool sits in one tab of the palette: open its tab, then pick it.
+  const pick = async t => { await page.click(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); await page.click(`[data-tool=${t}]`); };
   const lv = (await text()).level;
   check('a new room is taller than wide', lv.h > lv.w, `${lv.w}x${lv.h}`);
 
@@ -29,8 +31,16 @@ try {
   check('nothing scrolls sideways', layout.scroll <= layout.width, JSON.stringify(layout));
   check('the room fits inside its area', layout.room <= layout.stage + 0.5, JSON.stringify(layout));
   check('a tile is big enough to tap', layout.tile >= 28, layout.tile.toFixed(1));
-  const lastTool = await page.evaluate(() => document.querySelector('#palette button:last-child').getBoundingClientRect().bottom);
-  check('the room and every tool fit on one screen', lastTool <= 844, String(lastTool));
+  // every tool, picked from its tab, fits with its options under the room on one screen
+  const over = [];
+  for (const [t, g] of await page.$$eval('[data-tool]', bs => bs.map(b => [b.dataset.tool, b.dataset.in]))) {
+    await page.click(`[data-group=${g}]`); await page.click(`[data-tool=${t}]`);
+    const bottom = await page.evaluate(() => Math.max(...[...document.querySelectorAll('#tools button, #tools .opt')].filter(e => e.offsetParent).map(e => e.getBoundingClientRect().bottom)));
+    if (bottom > 844) over.push(`${t}:${Math.round(bottom)}`);
+  }
+  check('the room, a tab of tools and its options fit on one screen, for every tool', over.length === 0, over.join(' '));
+  check('a tab shows only its own tools', await page.evaluate(() => [...document.querySelectorAll('#palette button')].filter(b => b.offsetParent).length <= 6));
+  await pick('look');
 
   const small = await page.evaluate(() => [...document.querySelectorAll('header button, #palette button, .opt:not([hidden]) button')]
     .filter(b => b.offsetParent).map(b => [b.textContent.trim() || b.title, b.getBoundingClientRect().height]).filter(([, h]) => h < 40));
@@ -41,7 +51,7 @@ try {
   let p = at(5, 6);
   await page.touchscreen.tap(p.x, p.y);
   check('with Look, a tap changes nothing', (await text()).level.cells[6 * lv.w + 5] === '');
-  await page.click('[data-tool=wall]');
+  await pick('wall');
   await page.touchscreen.tap(p.x, p.y);
   check('a tap places a block', (await text()).level.cells[6 * lv.w + 5] === 'wall');
   // a finger dragged across a row places on every tile, then a drag from one removes them
@@ -76,6 +86,16 @@ try {
   await page.click('#hideBtn');
   await page.evaluate(() => window.advanceTime(60));
   check('the hide button hides', (await text()).player.hidden);
+  // the tap button names only what the tap does with the powers that are on
+  const tapBtn = async () => page.evaluate(() => { const b = document.getElementById('hideBtn'); return b.offsetParent ? b.textContent : null; });
+  check('with Cycle alone it says Hide', await tapBtn() === 'Hide', String(await tapBtn()));
+  await page.locator('[data-power=swim]').setChecked(true);
+  check('with Swim too it says Hide / Swim', await tapBtn() === 'Hide / Swim', String(await tapBtn()));
+  await page.locator('[data-power=cycle]').setChecked(false);
+  check('with Swim alone it says Swim', await tapBtn() === 'Swim', String(await tapBtn()));
+  await page.locator('[data-power=swim]').setChecked(false);
+  check('with neither it is gone', await tapBtn() === null, String(await tapBtn()));
+  await page.locator('[data-power=cycle]').setChecked(true);
   // a report replays to exactly the state the run ended in, including a power turned off mid-run
   await page.locator('[data-power=boomerang]').setChecked(false);
   await page.mouse.move(s0.x, s0.y); await page.mouse.down(); await page.mouse.move(s0.x, s0.y + 80, { steps: 6 }); await page.mouse.up();

@@ -7,26 +7,26 @@ const canvas = $('game'), g = canvas.getContext('2d');
 
 // Draft copy: each line is the rule in the order the player meets it.
 const TOOLS = [
-  { id: 'look', label: 'Look' },
-  { id: 'wall', label: 'Block' },
-  { id: 'erase', label: 'Erase' },
-  { id: 'start', label: 'Start' },
-  { id: 'checkpoint', label: 'Checkpoint' },
-  { id: 'mover', label: 'Moving block' },
-  { id: 'enemy', label: 'Weak enemy' },
-  { id: 'strong', label: 'Strong enemy' },
-  { id: 'turret', label: 'Laser turret' },
-  { id: 'box', label: 'Box' },
-  { id: 'heavy', label: 'Heavy box' },
-  { id: 'tri', label: 'Triangle' },
-  { id: 'gate', label: 'One-way' },
-  { id: 'spring', label: 'Spring' },
-  { id: 'death', label: 'Death block' },
-  { id: 'button', label: 'Button' },
-  { id: 'door', label: 'Door' },
-  { id: 'receiver', label: 'Receiver' },
-  { id: 'sensor', label: 'Laser sensor' },
-  { id: 'water', label: 'Water' },
+  { id: 'look', label: 'Look', group: 'basic' },
+  { id: 'erase', label: 'Erase', group: 'basic' },
+  { id: 'start', label: 'Start', group: 'basic' },
+  { id: 'wall', label: 'Block', group: 'basic' },
+  { id: 'checkpoint', label: 'Checkpoint', group: 'basic' },
+  { id: 'mover', label: 'Moving block', group: 'pieces' },
+  { id: 'enemy', label: 'Weak enemy', group: 'pieces' },
+  { id: 'strong', label: 'Strong enemy', group: 'pieces' },
+  { id: 'turret', label: 'Laser turret', group: 'pieces' },
+  { id: 'box', label: 'Box', group: 'pieces' },
+  { id: 'heavy', label: 'Heavy box', group: 'pieces' },
+  { id: 'tri', label: 'Triangle', group: 'tiles' },
+  { id: 'gate', label: 'One-way', group: 'tiles' },
+  { id: 'spring', label: 'Spring', group: 'tiles' },
+  { id: 'death', label: 'Death block', group: 'tiles' },
+  { id: 'water', label: 'Water', group: 'tiles' },
+  { id: 'button', label: 'Button', group: 'switches' },
+  { id: 'door', label: 'Door', group: 'switches' },
+  { id: 'receiver', label: 'Receiver', group: 'switches' },
+  { id: 'sensor', label: 'Laser sensor', group: 'switches' },
 ];
 const POWER_TEXT = {
   boomerang: 'While sliding, press back to slide the other way.',
@@ -51,7 +51,9 @@ function starterLevel() {
   return l;
 }
 
-const ui = { tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' };
+// The palette shows one group at a time, so it fits a phone without scrolling.
+const GROUPS = [['basic', 'Basics'], ['pieces', 'Pieces'], ['tiles', 'Tiles'], ['switches', 'Switches']];
+const ui = { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' };
 let level = starterLevel();
 let played = null, keylog = [];
 let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
@@ -240,8 +242,13 @@ function tick() {
 
 function keysText() {
   return touch
-    ? (mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : 'Press Play to try this room.')
-    : (mode === 'play' ? 'Arrows slide. Space hides, or starts and stops swimming. R returns you to the checkpoint. E goes back to editing.' : 'E plays this room.');
+    ? (mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : '')
+    : (mode === 'play' ? `Arrows slide. ${tapText()}R returns you to the checkpoint. E goes back to editing.` : 'E plays this room.');
+}
+
+function tapText() {
+  const { cycle, swim } = level.powers;
+  return cycle && swim ? 'Space hides you and starts or stops swimming. ' : cycle ? 'Space hides you. ' : swim ? 'Space starts or stops swimming. ' : '';
 }
 
 function setMode(m, keep) {
@@ -252,7 +259,8 @@ function setMode(m, keep) {
   $('keys').textContent = keysText();
   $('pad').hidden = m !== 'play';
   fx = [];
-  if (m === 'edit') { ui.tool = 'look'; syncPanel(); }
+  if (m === 'edit') { ui.tool = 'look'; ui.group = 'basic'; }
+  syncPanel();
   if (m === 'play') { played = JSON.parse(JSON.stringify(level)); keylog = []; game = createGame(level); prev = snapshot(game); pending = []; acc = 0; }
   else game = null;
 }
@@ -330,9 +338,15 @@ function icon(tool) {
 }
 
 function buildPanels() {
+  for (const [g, name] of GROUPS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.group = g; b.textContent = name;
+    b.onclick = () => { ui.group = g; syncPanel(); };
+    $('groups').append(b);
+  }
   for (const t of TOOLS) {
     const b = document.createElement('button');
-    b.type = 'button'; b.dataset.tool = t.id;
+    b.type = 'button'; b.dataset.tool = t.id; b.dataset.in = t.group;
     b.append(icon(t.id), t.label);
     b.onclick = () => { ui.tool = t.id; syncPanel(); };
     $('palette').append(b);
@@ -365,7 +379,7 @@ function buildPanels() {
     row.className = 'power' + (NEEDS[p] ? ' off' : '');
     const box = document.createElement('input');
     box.type = 'checkbox'; box.dataset.power = p; box.disabled = !!NEEDS[p];
-    box.onchange = () => { level.powers[p] = box.checked; if (game) pending.push(`power:${p}:${box.checked ? 1 : 0}`); };
+    box.onchange = () => { level.powers[p] = box.checked; if (game) pending.push(`power:${p}:${box.checked ? 1 : 0}`); syncPanel(); };
     const name = document.createElement('b'); name.textContent = NAMES[p];
     const say = document.createElement('small'); say.textContent = NEEDS[p] ? 'Needs ' + NEEDS[p] + '.' : POWER_TEXT[p];
     row.append(box, name, say);
@@ -401,7 +415,14 @@ function buildPanels() {
 
 function syncPanel() {
   canvas.style.touchAction = mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
-  document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === ui.tool));
+  document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });
+  // A tab carries a dot when the selected tool sits in it.
+  const holder = TOOLS.find(t => t.id === ui.tool).group;
+  document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
+  // The tap button says only what the tap does with the powers on.
+  const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
+  $('hideBtn').hidden = !tap.length; $('hideBtn').textContent = tap.join(' / ');
+  $('keys').textContent = keysText();
   document.querySelectorAll('[data-axis]').forEach(b => b.classList.toggle('on', b.dataset.axis === ui.axis));
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === ui.mode));
   document.querySelectorAll('[data-colour]').forEach(b => b.classList.toggle('on', b.dataset.colour === ui.colour));

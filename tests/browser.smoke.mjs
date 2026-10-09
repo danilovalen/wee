@@ -18,6 +18,8 @@ try {
   await page.goto(`http://localhost:${PORT}/`);
   await page.waitForFunction(() => window.wee);
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
+  // A tool sits in one tab of the palette: open its tab, then pick it.
+  const pick = async t => { await page.click(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); await page.click(`[data-tool=${t}]`); };
   const box = await page.locator('#game').boundingBox();
   const at = (x, y) => ({ x: box.x + (x + 0.5) * box.width / 20, y: box.y + (y + 0.5) * box.height / 12 });
 
@@ -44,7 +46,7 @@ try {
   let p = at(0, 0), q; await page.mouse.click(p.x, p.y);
   check('Look is the starting tool and a click changes nothing', JSON.stringify((await text()).level) === before);
   check('Look says what is under it', (await page.textContent('#placeHint')) === 'Block', await page.textContent('#placeHint'));
-  await page.click('[data-tool=wall]');
+  await pick('wall');
   p = at(5, 5); await page.mouse.click(p.x, p.y);
   let lv = (await text()).level;
   check('a click places a block', lv.cells[5 * 20 + 5] === 'wall');
@@ -54,15 +56,15 @@ try {
   await page.mouse.click(p.x, p.y); await page.mouse.click(p.x, p.y);
   lv = (await text()).level;
   check('clicking a block with Block selected removes it', lv.cells[5 * 20 + 5] === '');
-  await page.click('[data-tool=tri]');
+  await pick('tri');
   await page.click('[data-corner=ne]');
   await page.mouse.click(p.x, p.y);
   lv = (await text()).level;
   check('a triangle places with its chosen corner', lv.cells[5 * 20 + 5] === 'tri:ne');
   await page.mouse.click(p.x, p.y);
   check('and a second click removes it', (await text()).level.cells[5 * 20 + 5] === '');
-  await page.click('[data-tool=wall]');
-  await page.click('[data-tool=enemy]');
+  await pick('wall');
+  await pick('enemy');
   check('enemy options show', await page.locator('[data-axis=h]').isVisible());
   await page.click('[data-mode=realtime]');
   const a = at(3, 8), b = at(6, 8);
@@ -72,30 +74,30 @@ try {
   check('a drag paints a row', enemies.length === 4, String(enemies.length));
   check('placed enemies keep the chosen clock', enemies.every(e => e.mode === 'realtime'));
   // a drag that starts on the selected type removes that type along the way, and nothing else
-  await page.click('[data-tool=enemy]');
+  await pick('enemy');
   const r0 = at(3, 8), r1 = at(5, 8);
   await page.mouse.move(r0.x, r0.y); await page.mouse.down(); await page.mouse.move(r1.x, r1.y, { steps: 6 }); await page.mouse.up();
   lv = (await text()).level;
   const left = lv.entities.filter(e => e.kind === 'enemy' && e.y === 8).map(e => e.x);
   check('a drag from an enemy removes the enemies it crosses', left.join() === '6', left.join());
-  await page.click('[data-tool=checkpoint]');
+  await pick('checkpoint');
   const c9 = at(9, 10); await page.mouse.click(c9.x, c9.y);
-  await page.click('[data-tool=wall]');
+  await pick('wall');
   const b0 = at(7, 10), b1 = at(11, 10);
   await page.mouse.move(b0.x, b0.y); await page.mouse.down(); await page.mouse.move(b1.x, b1.y, { steps: 8 }); await page.mouse.up();
   lv = (await text()).level;
   check('a placing drag fills its path, replacing what was there', [7, 8, 9, 10, 11].every(x => lv.cells[10 * 20 + x] === 'wall'));
-  await page.click('[data-tool=checkpoint]');
+  await pick('checkpoint');
   await page.mouse.click(c9.x, c9.y);
-  await page.click('[data-tool=wall]');
+  await pick('wall');
   await page.mouse.move(b0.x, b0.y); await page.mouse.down(); await page.mouse.move(b1.x, b1.y, { steps: 8 }); await page.mouse.up();
   lv = (await text()).level;
   check('a drag from a block removes the blocks it crosses', [7, 8, 10, 11].every(x => lv.cells[10 * 20 + x] === ''));
   check('and leaves the checkpoint in its path alone', lv.cells[10 * 20 + 9] === 'checkpoint', lv.cells[10 * 20 + 9]);
   // a turret aims where you choose and mounts on a box it is placed on
-  await page.click('[data-tool=box]');
+  await pick('box');
   p = at(10, 3); await page.mouse.click(p.x, p.y);
-  await page.click('[data-tool=turret]');
+  await pick('turret');
   await page.click('[data-aim=down]');
   await page.click('[data-aim=right]');
   check('the last aimed direction cannot be turned off', await page.locator('[data-aim=down]').isDisabled());
@@ -111,36 +113,36 @@ try {
   lv = (await text()).level;
   const unmounted = lv.entities.find(e => e.x === 10 && e.y === 3);
   check('clicking a mounted turret again takes only the turret off', unmounted?.kind === 'box' && !unmounted.turret, JSON.stringify(unmounted));
-  await page.click('[data-tool=mover]');
+  await pick('mover');
   await page.click('[data-mode=follow]');
   check('a follower has no patrol axis to pick', !(await page.locator('[data-axis=h]').isVisible()));
   p = at(14, 3); await page.mouse.click(p.x, p.y);
   lv = (await text()).level;
   check('a follow piece saves its clock', lv.entities.find(e => e.x === 14 && e.y === 3)?.mode === 'follow');
   await page.click('[data-mode=input]');
-  await page.click('[data-tool=gate]');
+  await pick('gate');
   await page.click('[data-pass=left]');
   q = at(15, 3); await page.mouse.click(q.x, q.y);
   check('a one-way tile keeps its directions', (await text()).level.cells[3 * 20 + 15] === 'gate:right,left', (await text()).level.cells[3 * 20 + 15]);
   await page.click('[data-pass=right]');
   check('the last allowed direction cannot be turned off', await page.locator('[data-pass=left]').isDisabled());
-  await page.click('[data-tool=spring]');
+  await pick('spring');
   await page.click('[data-face=left]');
   q = at(16, 3); await page.mouse.click(q.x, q.y);
-  await page.click('[data-tool=death]');
+  await pick('death');
   q = at(17, 3); await page.mouse.click(q.x, q.y);
   lv = (await text()).level;
   check('a spring keeps the way it faces, and a death block places', lv.cells[3 * 20 + 16] === 'spring:left' && lv.cells[3 * 20 + 17] === 'death', lv.cells[3 * 20 + 16] + ' ' + lv.cells[3 * 20 + 17]);
-  await page.click('[data-tool=sensor]');
+  await pick('sensor');
   await page.click('[data-colour=blue]');
   q = at(18, 3); await page.mouse.click(q.x, q.y);
   check('a laser sensor places in its colour', (await text()).level.cells[3 * 20 + 18] === 'sensor:blue', (await text()).level.cells[3 * 20 + 18]);
   await page.mouse.click(q.x, q.y);
   check('and clicking it again with the sensor tool removes it', (await text()).level.cells[3 * 20 + 18] === '');
-  await page.click('[data-tool=water]');
+  await pick('water');
   q = at(18, 4); await page.mouse.click(q.x, q.y);
   check('water places', (await text()).level.cells[4 * 20 + 18] === 'water', (await text()).level.cells[4 * 20 + 18]);
-  await page.click('[data-tool=wall]');
+  await pick('wall');
   check('enemy options hide for a block', !(await page.locator('[data-axis=h]').isVisible()));
   await page.screenshot({ path: 'shots/edit.png' });
 
@@ -152,6 +154,7 @@ try {
     '#..o..D..#',
     '##########',
   ]));
+  await pick('water');
   await page.keyboard.press('e');
   await page.evaluate(() => { window.__manualClock = true; });
   check('E enters play', (await text()).mode === 'play');
@@ -186,7 +189,7 @@ try {
   check('R returns to the start before any checkpoint', s.player.x === 1 && s.player.y === 1, JSON.stringify(s.player));
   await page.keyboard.press('e');
   check('E goes back to editing', (await text()).mode === 'edit');
-  check('going back to editing selects Look', await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')));
+  check('going back to editing selects Look, on its open tab', await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')) && await page.locator('[data-tool=look]').isVisible());
   check('playing did not change the room', (await text()).level.entities[0].x === 4);
 
   // save writes a .wee file; open reads it back
