@@ -94,12 +94,12 @@ press lets go); a light box glues to you and comes along until the first move it
 A still heavy box does not stick. One check at the end of each tick lets go whenever you and
 what you hold came apart.
 
-## Laser sensor
+## Laser relay ("sensor" in level files)
 
 A coloured floor plate, held down while a turret beam crosses it; the beam goes on. A piece on it
 keeps the beam off. It joins its colour's buttons and receivers: every one must be held.
 
-## Receiver
+## Laser catcher ("receiver" in level files)
 
 A block with a coloured eye. While a turret beam ends on it, it counts as a pressed button of its
 colour, so it combines with that colour's buttons (all must be held).

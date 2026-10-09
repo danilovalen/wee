@@ -1226,8 +1226,8 @@ const TOOLS = [
   { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },
   { id: 'button', label: 'Button', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
-  { id: 'receiver', label: 'Receiver', group: 'switches' },
-  { id: 'sensor', label: 'Laser sensor', group: 'switches' },
+  { id: 'receiver', label: 'Laser catcher', group: 'switches' },
+  { id: 'sensor', label: 'Laser relay', group: 'switches' },
 ];
 const POWER_TEXT = {
   boomerang: 'While sliding, press back to slide the other way.',
@@ -1312,7 +1312,8 @@ function describe(x, y) {
     else if (kind === 'sticky') parts.push('Sticky puddle');
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
-    else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser sensor`);
+    else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser relay`);
+    else if (kind === 'receiver') parts.push(`${COLOUR_NAME[v]} laser catcher`);
     else parts.push(`${COLOUR_NAME[v]} ${kind}`);
   }
   if (level.start.x === x && level.start.y === y) parts.push('Start');
