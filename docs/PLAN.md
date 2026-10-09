@@ -86,6 +86,14 @@ touches water passes on and shocks the whole body of water (cells joined side by
 armored or not, unless hidden; weak enemies die; strong enemies, blocks and boxes are untouched.
 No flowing water: it is a top-down tile.
 
+## Sticky puddle
+
+Passing it makes you sticky until water washes it off or you stick to something, which uses it
+up. You stop at what you meet: a moving block or sliding box carries you until you move (any
+press lets go); a light box glues to you and comes along until the first move it cannot follow.
+A still heavy box does not stick. One check at the end of each tick lets go whenever you and
+what you hold came apart.
+
 ## Laser sensor
 
 A coloured floor plate, held down while a turret beam crosses it; the beam goes on. A piece on it

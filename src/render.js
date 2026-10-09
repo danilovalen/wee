@@ -8,6 +8,7 @@ const AIM = { up: -Math.PI / 2, right: 0, down: Math.PI / 2, left: Math.PI };
 export const T = 32;
 
 export const INK = {
+  goo: '#a6d62f', gooDark: '#5f7d16',
   water: '#1c4d7a', waterHi: '#5fa8e0', shock: '#fff1a8',
   armor: '#8fa3bb',
   floor: '#14171f', grid: '#1c2130', wall: '#3a4256', wallTop: '#4d5770',
@@ -33,7 +34,15 @@ function drawCell(g, c, x, y, s, scale = 1) {
   const px = x * T, py = y * T;
   g.save();
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
-  if (c === 'water') {
+  if (c === 'sticky') {
+    // A lumpy green puddle with a couple of bubbles.
+    g.fillStyle = INK.gooDark;
+    g.beginPath(); g.ellipse(16, 17, 12, 9, 0, 0, Math.PI * 2); g.ellipse(9, 13, 5, 4, 0, 0, Math.PI * 2); g.ellipse(23, 21, 5, 4, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = INK.goo;
+    g.beginPath(); g.ellipse(16, 16, 10, 7, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    g.beginPath(); g.arc(12, 14, 1.8, 0, Math.PI * 2); g.arc(20, 18, 1.2, 0, Math.PI * 2); g.fill();
+  } else if (c === 'water') {
     // A full tile, so a pool reads as one body; two waves drift across it.
     g.fillStyle = INK.water; g.fillRect(0, 0, T, T);
     g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
@@ -216,7 +225,7 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
 // Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
 // on top of you, so you can still be found. Swimming on land you wear a blue drop;
 // under water you waver, tinted, with a ripple.
-function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim = null) {
+function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim = null, sticky = false) {
   g.save(); g.globalAlpha = alpha;
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale);
   const under = swim === 'under';
@@ -240,6 +249,13 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
     for (const a of [0.25, 0.75, 1.25, 1.75]) { g.beginPath(); g.arc(Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6, 0, Math.PI * 2); g.fill(); }
   }
   g.fillStyle = '#0b2a2c'; g.beginPath(); g.arc(-3.5, -2, 2.2, 0, Math.PI * 2); g.arc(3.5, -2, 2.2, 0, Math.PI * 2); g.fill();
+  if (sticky) {
+    // Goo on top, dripping from the bottom.
+    g.fillStyle = INK.goo;
+    g.beginPath(); g.ellipse(0, -8, 7, 3, 0, 0, Math.PI * 2); g.fill();
+    const k = (clock % 900) / 900;
+    g.beginPath(); g.ellipse(-4, 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.ellipse(5, 9, 1.6, 2.4, 0, 0, Math.PI * 2); g.fill();
+  }
   if (under) {
     g.globalAlpha = alpha * 0.45; g.fillStyle = INK.waterHi;
     g.beginPath(); g.arc(0, 0, 10.5, 0, Math.PI * 2); g.fill();
@@ -356,7 +372,15 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
   }
   const swim = !p.swimming ? null : s.cells[p.y * s.w + p.x] === 'water' ? 'under' : 'on';
-  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim);
+  // Stuck, a goo strand ties you to what you ride or drag.
+  const st = p.stuck && s.entities.find(e => e.id === p.stuck.id && !e.dead);
+  if (st) {
+    const [ex, ey] = pos(st.id, st.x, st.y);
+    g.strokeStyle = INK.goo; g.lineWidth = 5; g.lineCap = 'round';
+    const ux = Math.sign(ex - px), uy = Math.sign(ey - py);
+    g.beginPath(); g.moveTo(px + T / 2 + ux * 9, py + T / 2 + uy * 9); g.lineTo(ex + T / 2 - ux * 13, ey + T / 2 - uy * 13); g.stroke(); g.lineCap = 'butt';
+  }
+  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);
   g.restore();
 }
 

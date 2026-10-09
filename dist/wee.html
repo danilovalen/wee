@@ -271,7 +271,7 @@ function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
   if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
-  if (c === 'death' || c === 'water') return true;
+  if (c === 'death' || c === 'water' || c === 'sticky') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
   if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
@@ -286,7 +286,7 @@ function createGame(level) {
     w: l.w, h: l.h, cells: l.cells, powers: l.powers, clock: l.clock,
     start: { ...l.start },
     checkpoint: { ...l.start },
-    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, snap: true },
+    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, snap: true },
     entities: l.entities.map(e => ({
       id: ++id, kind: e.kind, x: e.x, y: e.y,
       axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
@@ -401,8 +401,61 @@ function refreshDoors(s) {
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
 }
 
+// Sticky: a puddle makes you sticky until water washes it off or you stick to
+// something. You ride a moving block or a sliding box you meet until you move off; a
+// light box you meet glues to you and comes along until it cannot.
+const stuckTo = s => { const st = s.player.stuck; return st && s.entities.find(e => e.id === st.id && !e.dead); };
+const STICKS = e => e.kind === 'mover' || e.kind === 'box' || (e.kind === 'heavy' && !!e.slide);
+function stick(s, e) {
+  const p = s.player;
+  p.sticky = false;
+  p.stuck = { id: e.id, ride: e.kind === 'mover' || !!e.slide, dx: e.x - p.x, dy: e.y - p.y };
+  s.events.push({ type: 'stick', id: e.id });
+}
+function unstick(s) {
+  if (!s.player.stuck) return;
+  s.player.stuck = null;
+  s.events.push({ type: 'unstick' });
+}
+const DIR_OF = (dx, dy) => Object.keys(DIRS).find(k => DIRS[k][0] === dx && DIRS[k][1] === dy);
+// Where a piece lands moved straight by (dx, dy), or null if it cannot go.
+function shift(s, x, y, dx, dy, wet, not) {
+  const t = stepTo(s, x, y, DIR_OF(dx, dy), wet);
+  if (!t || t.x !== x + dx || t.y !== y + dy) return null;
+  if (!t.death && entAt(s, t.x, t.y, not)) return null;
+  return t;
+}
+// Moving onto a tile: a puddle makes you sticky, water washes it off.
+function entered(s) {
+  const p = s.player, c = cellAt(s, p.x, p.y);
+  if (c === 'sticky' && !p.stuck && !p.sticky) { p.sticky = true; s.events.push({ type: 'sticky' }); }
+  if (c === 'water') { p.sticky = false; unstick(s); }
+}
+// The piece you ride moved by (dx, dy): you go with it, or come off if you cannot.
+function carry(s, dx, dy) {
+  const p = s.player, t = shift(s, p.x, p.y, dx, dy, p.swimming, stuckTo(s));
+  if (!t) return;
+  if (t.death) { die(s); return; }
+  p.x = t.x; p.y = t.y;
+  entered(s);
+}
+// Your move took you by (dx, dy): a glued box behind or beside you follows, or falls off.
+function drag(s, g, dx, dy) {
+  const t = shift(s, g.x, g.y, dx, dy, false, g);
+  if (t) land(s, g, t);
+}
+// The end of a tick: the one place a stuck piece lets go when it and you came apart
+// (it could not follow, you could not, it died, you hid).
+function checkStuck(s) {
+  const p = s.player, st = p.stuck, e = stuckTo(s);
+  if (!st) return;
+  if (!e || p.hidden || e.x !== p.x + st.dx || e.y !== p.y + st.dy) { unstick(s); return; }
+  // A sliding box you rode has stopped: a light one is glued to you now, a heavy one lets go.
+  if (st.ride && e.kind !== 'mover' && !e.slide) { if (e.kind === 'box') st.ride = false; else unstick(s); }
+}
+
 function respawn(s) {
-  Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, snap: true });
+  Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, snap: true });
   refreshDoors(s);
 }
 
@@ -422,8 +475,15 @@ function playerStep(s, d, diving) {
   const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming);
   if (!t) return 'blocked';
   if (t.death) { die(s); return 'died'; }
-  const nx = t.x, ny = t.y, e = entAt(s, nx, ny);
-  if (e) {
+  const nx = t.x, ny = t.y, e = entAt(s, nx, ny), g = p.stuck && !p.stuck.ride ? stuckTo(s) : null;
+  const dx = nx - p.x, dy = ny - p.y, ahead = !!e && e === g;
+  if (ahead) {
+    // The glued box is ahead: it goes first, or it falls off and stops you.
+    const b = shift(s, g.x, g.y, dx, dy, false, g);
+    if (!b) { unstick(s); return 'blocked'; }
+    land(s, g, b);
+  } else if (e && p.sticky && STICKS(e)) { stick(s, e); return 'blocked'; }
+  else if (e) {
     let b;
     if (e.kind === 'enemy' && diving) kill(s, e, 'dive');
     else if (ENEMY.includes(e.kind)) { if (!crushes(s, e)) return 'blocked'; die(s); return 'died'; }
@@ -435,6 +495,8 @@ function playerStep(s, d, diving) {
   }
   p.x = nx; p.y = ny; p.moved++;
   if (p.dir) p.dir = t.d;
+  if (g && !ahead) drag(s, g, dx, dy);
+  entered(s);
   if (cellAt(s, nx, ny) === 'checkpoint' && (s.checkpoint.x !== nx || s.checkpoint.y !== ny)) {
     s.checkpoint = { x: nx, y: ny };
     s.events.push({ type: 'checkpoint', x: nx, y: ny });
@@ -577,7 +639,8 @@ const patrolDir = e => e.axis === 'h' ? (e.dir > 0 ? 'right' : 'left') : (e.dir 
 // Moves one tile along its patrol, or the given way. Blocked, it stays and turns its
 // patrol. A triangle turns a patrol onto the other axis.
 function moveMover(s, e, d, turned) {
-  const t = stepTo(s, e.x, e.y, d || patrolDir(e), wades(e));
+  const t = stepTo(s, e.x, e.y, d || patrolDir(e), wades(e)), ridden = stuckTo(s) === e;
+  let pushed = false;
   // Blocked, a patrol turns and moves the other way in the same step; a follower waits.
   const blocked = () => { if (d) return; e.dir = -e.dir; if (!turned) moveMover(s, e, null, true); };
   if (!t) { blocked(); return; }
@@ -597,11 +660,13 @@ function moveMover(s, e, d, turned) {
     }
     const p = s.player;
     if ((b = pushTo(s, t.x, t.y, t.d, p.swimming)) && b.death) die(s);
-    else if (b) { p.x = b.x; p.y = b.y; s.events.push({ type: 'pushed' }); }
+    else if (b) { p.x = b.x; p.y = b.y; pushed = true; s.events.push({ type: 'pushed' }); if (p.sticky) stick(s, e); entered(s); }
     else if (!crushes(s, e)) { blocked(); return; }
     else { e.x = t.x; e.y = t.y; die(s); return; }
   }
+  const mx = t.x - e.x, my = t.y - e.y;
   e.x = t.x; e.y = t.y;
+  if (ridden && !pushed && stuckTo(s) === e) carry(s, mx, my);
   if (!d) { e.axis = t.d === 'left' || t.d === 'right' ? 'h' : 'v'; e.dir = t.d === 'right' || t.d === 'down' ? 1 : -1; }
 }
 
@@ -617,9 +682,23 @@ function slidePiece(s, e) {
     if (e.kind === 'heavy' && ENEMY.includes(o.kind)) kill(s, o, 'squash');
     else { e.slide = null; return; }
   }
+  const p = s.player, ridden = stuckTo(s) === e;
+  if (playerAt(s, t.x, t.y) && (ridden || p.sticky) && !ENEMY.includes(e.kind)) {
+    // Sticky, a sliding box that reaches you pushes you along and you ride it.
+    const b = pushTo(s, t.x, t.y, t.d, p.swimming);
+    if (b && b.death) { die(s); return; }
+    if (b) {
+      p.x = b.x; p.y = b.y; e.slide = t.d; e.x = t.x; e.y = t.y;
+      if (!ridden) stick(s, e);
+      entered(s);
+      return;
+    }
+  }
   if (playerAt(s, t.x, t.y) && (!crushes(s, e) || (e.kind !== 'heavy' && !ENEMY.includes(e.kind)))) { e.slide = null; return; }
+  const mx = t.x - e.x, my = t.y - e.y;
   e.x = t.x; e.y = t.y; e.slide = t.d;
   if (playerAt(s, t.x, t.y)) die(s);
+  else if (ridden && stuckTo(s) === e) carry(s, mx, my);
 }
 
 // A spring launches whatever stands on the tile its face looks at, when that piece
@@ -671,6 +750,8 @@ function input(s, k) {
     return;
   }
   if (!DIRS[k] || p.hidden) return;
+  // Riding, a move lets go.
+  if (p.stuck && p.stuck.ride) unstick(s);
   if (!p.dir) { p.dir = k; p.moved = 0; return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
   else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { p.dir = k; s.events.push({ type: 'boomerang' }); } }
@@ -696,6 +777,7 @@ function step(s, inputs = []) {
   }
   if (s.player.hidden) unhide(s);
   fireSprings(s);
+  checkStuck(s);
   computeBeams(s, true);
   refreshDoors(s);
   s.tick++;
@@ -706,7 +788,7 @@ function step(s, inputs = []) {
 function gameText(s, mode = 'play') {
   return JSON.stringify({
     mode, tick: s.tick, clock: s.clock, worldSteps: s.worldSteps, deaths: s.deaths,
-    player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden, swimming: s.player.swimming },
+    player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden, swimming: s.player.swimming, sticky: s.player.sticky, stuck: s.player.stuck && (s.player.stuck.ride ? 'riding' : 'glued') },
     checkpoint: s.checkpoint,
     pieces: s.entities.filter(e => !e.dead).map(e => ({
       kind: e.kind, x: e.x, y: e.y,
@@ -740,6 +822,7 @@ const AIM = { up: -Math.PI / 2, right: 0, down: Math.PI / 2, left: Math.PI };
 const T = 32;
 
 const INK = {
+  goo: '#a6d62f', gooDark: '#5f7d16',
   water: '#1c4d7a', waterHi: '#5fa8e0', shock: '#fff1a8',
   armor: '#8fa3bb',
   floor: '#14171f', grid: '#1c2130', wall: '#3a4256', wallTop: '#4d5770',
@@ -765,7 +848,15 @@ function drawCell(g, c, x, y, s, scale = 1) {
   const px = x * T, py = y * T;
   g.save();
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
-  if (c === 'water') {
+  if (c === 'sticky') {
+    // A lumpy green puddle with a couple of bubbles.
+    g.fillStyle = INK.gooDark;
+    g.beginPath(); g.ellipse(16, 17, 12, 9, 0, 0, Math.PI * 2); g.ellipse(9, 13, 5, 4, 0, 0, Math.PI * 2); g.ellipse(23, 21, 5, 4, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = INK.goo;
+    g.beginPath(); g.ellipse(16, 16, 10, 7, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    g.beginPath(); g.arc(12, 14, 1.8, 0, Math.PI * 2); g.arc(20, 18, 1.2, 0, Math.PI * 2); g.fill();
+  } else if (c === 'water') {
     // A full tile, so a pool reads as one body; two waves drift across it.
     g.fillStyle = INK.water; g.fillRect(0, 0, T, T);
     g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
@@ -948,7 +1039,7 @@ function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
 // Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
 // on top of you, so you can still be found. Swimming on land you wear a blue drop;
 // under water you waver, tinted, with a ripple.
-function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim = null) {
+function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim = null, sticky = false) {
   g.save(); g.globalAlpha = alpha;
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale);
   const under = swim === 'under';
@@ -972,6 +1063,13 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
     for (const a of [0.25, 0.75, 1.25, 1.75]) { g.beginPath(); g.arc(Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6, 0, Math.PI * 2); g.fill(); }
   }
   g.fillStyle = '#0b2a2c'; g.beginPath(); g.arc(-3.5, -2, 2.2, 0, Math.PI * 2); g.arc(3.5, -2, 2.2, 0, Math.PI * 2); g.fill();
+  if (sticky) {
+    // Goo on top, dripping from the bottom.
+    g.fillStyle = INK.goo;
+    g.beginPath(); g.ellipse(0, -8, 7, 3, 0, 0, Math.PI * 2); g.fill();
+    const k = (clock % 900) / 900;
+    g.beginPath(); g.ellipse(-4, 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.ellipse(5, 9, 1.6, 2.4, 0, 0, Math.PI * 2); g.fill();
+  }
   if (under) {
     g.globalAlpha = alpha * 0.45; g.fillStyle = INK.waterHi;
     g.beginPath(); g.arc(0, 0, 10.5, 0, Math.PI * 2); g.fill();
@@ -1088,7 +1186,15 @@ function drawPlay(g, s, prev, alpha, fx, now) {
     g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
   }
   const swim = !p.swimming ? null : s.cells[p.y * s.w + p.x] === 'water' ? 'under' : 'on';
-  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim);
+  // Stuck, a goo strand ties you to what you ride or drag.
+  const st = p.stuck && s.entities.find(e => e.id === p.stuck.id && !e.dead);
+  if (st) {
+    const [ex, ey] = pos(st.id, st.x, st.y);
+    g.strokeStyle = INK.goo; g.lineWidth = 5; g.lineCap = 'round';
+    const ux = Math.sign(ex - px), uy = Math.sign(ey - py);
+    g.beginPath(); g.moveTo(px + T / 2 + ux * 9, py + T / 2 + uy * 9); g.lineTo(ex + T / 2 - ux * 13, ey + T / 2 - uy * 13); g.stroke(); g.lineCap = 'butt';
+  }
+  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);
   g.restore();
 }
 
@@ -1117,6 +1223,7 @@ const TOOLS = [
   { id: 'spring', label: 'Spring', group: 'tiles' },
   { id: 'death', label: 'Death block', group: 'tiles' },
   { id: 'water', label: 'Water', group: 'tiles' },
+  { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },
   { id: 'button', label: 'Button', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'receiver', label: 'Receiver', group: 'switches' },
@@ -1173,7 +1280,7 @@ const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 // Does (x, y) already hold the kind of thing this tool places?
 function holds(x, y, tool) {
   const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water') return c === tool;
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
   if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
@@ -1202,6 +1309,7 @@ function describe(x, y) {
     else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
     else if (kind === 'death') parts.push('Death block');
     else if (kind === 'water') parts.push('Water');
+    else if (kind === 'sticky') parts.push('Sticky puddle');
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
     else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser sensor`);
@@ -1225,14 +1333,14 @@ function place(x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water'].includes(ui.tool)) setCell('');
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
     if (isStart) return;
     removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
-  } else if (t === 'water') {
+  } else if (t === 'water' || t === 'sticky') {
     if (isStart) return;
-    setCell('water');
+    setCell(t);
   } else if (t === 'gate') {
     if (isStart) return;
     removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
@@ -1414,8 +1522,8 @@ function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'look') {
     x.strokeStyle = '#c3cad8'; x.lineWidth = 2.5;

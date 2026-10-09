@@ -87,7 +87,7 @@ function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
   if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
-  if (c === 'death' || c === 'water') return true;
+  if (c === 'death' || c === 'water' || c === 'sticky') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
   if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
@@ -102,7 +102,7 @@ export function createGame(level) {
     w: l.w, h: l.h, cells: l.cells, powers: l.powers, clock: l.clock,
     start: { ...l.start },
     checkpoint: { ...l.start },
-    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, snap: true },
+    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, snap: true },
     entities: l.entities.map(e => ({
       id: ++id, kind: e.kind, x: e.x, y: e.y,
       axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
@@ -217,8 +217,61 @@ function refreshDoors(s) {
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
 }
 
+// Sticky: a puddle makes you sticky until water washes it off or you stick to
+// something. You ride a moving block or a sliding box you meet until you move off; a
+// light box you meet glues to you and comes along until it cannot.
+const stuckTo = s => { const st = s.player.stuck; return st && s.entities.find(e => e.id === st.id && !e.dead); };
+const STICKS = e => e.kind === 'mover' || e.kind === 'box' || (e.kind === 'heavy' && !!e.slide);
+function stick(s, e) {
+  const p = s.player;
+  p.sticky = false;
+  p.stuck = { id: e.id, ride: e.kind === 'mover' || !!e.slide, dx: e.x - p.x, dy: e.y - p.y };
+  s.events.push({ type: 'stick', id: e.id });
+}
+function unstick(s) {
+  if (!s.player.stuck) return;
+  s.player.stuck = null;
+  s.events.push({ type: 'unstick' });
+}
+const DIR_OF = (dx, dy) => Object.keys(DIRS).find(k => DIRS[k][0] === dx && DIRS[k][1] === dy);
+// Where a piece lands moved straight by (dx, dy), or null if it cannot go.
+function shift(s, x, y, dx, dy, wet, not) {
+  const t = stepTo(s, x, y, DIR_OF(dx, dy), wet);
+  if (!t || t.x !== x + dx || t.y !== y + dy) return null;
+  if (!t.death && entAt(s, t.x, t.y, not)) return null;
+  return t;
+}
+// Moving onto a tile: a puddle makes you sticky, water washes it off.
+function entered(s) {
+  const p = s.player, c = cellAt(s, p.x, p.y);
+  if (c === 'sticky' && !p.stuck && !p.sticky) { p.sticky = true; s.events.push({ type: 'sticky' }); }
+  if (c === 'water') { p.sticky = false; unstick(s); }
+}
+// The piece you ride moved by (dx, dy): you go with it, or come off if you cannot.
+function carry(s, dx, dy) {
+  const p = s.player, t = shift(s, p.x, p.y, dx, dy, p.swimming, stuckTo(s));
+  if (!t) return;
+  if (t.death) { die(s); return; }
+  p.x = t.x; p.y = t.y;
+  entered(s);
+}
+// Your move took you by (dx, dy): a glued box behind or beside you follows, or falls off.
+function drag(s, g, dx, dy) {
+  const t = shift(s, g.x, g.y, dx, dy, false, g);
+  if (t) land(s, g, t);
+}
+// The end of a tick: the one place a stuck piece lets go when it and you came apart
+// (it could not follow, you could not, it died, you hid).
+function checkStuck(s) {
+  const p = s.player, st = p.stuck, e = stuckTo(s);
+  if (!st) return;
+  if (!e || p.hidden || e.x !== p.x + st.dx || e.y !== p.y + st.dy) { unstick(s); return; }
+  // A sliding box you rode has stopped: a light one is glued to you now, a heavy one lets go.
+  if (st.ride && e.kind !== 'mover' && !e.slide) { if (e.kind === 'box') st.ride = false; else unstick(s); }
+}
+
 function respawn(s) {
-  Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, snap: true });
+  Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, snap: true });
   refreshDoors(s);
 }
 
@@ -238,8 +291,15 @@ function playerStep(s, d, diving) {
   const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming);
   if (!t) return 'blocked';
   if (t.death) { die(s); return 'died'; }
-  const nx = t.x, ny = t.y, e = entAt(s, nx, ny);
-  if (e) {
+  const nx = t.x, ny = t.y, e = entAt(s, nx, ny), g = p.stuck && !p.stuck.ride ? stuckTo(s) : null;
+  const dx = nx - p.x, dy = ny - p.y, ahead = !!e && e === g;
+  if (ahead) {
+    // The glued box is ahead: it goes first, or it falls off and stops you.
+    const b = shift(s, g.x, g.y, dx, dy, false, g);
+    if (!b) { unstick(s); return 'blocked'; }
+    land(s, g, b);
+  } else if (e && p.sticky && STICKS(e)) { stick(s, e); return 'blocked'; }
+  else if (e) {
     let b;
     if (e.kind === 'enemy' && diving) kill(s, e, 'dive');
     else if (ENEMY.includes(e.kind)) { if (!crushes(s, e)) return 'blocked'; die(s); return 'died'; }
@@ -251,6 +311,8 @@ function playerStep(s, d, diving) {
   }
   p.x = nx; p.y = ny; p.moved++;
   if (p.dir) p.dir = t.d;
+  if (g && !ahead) drag(s, g, dx, dy);
+  entered(s);
   if (cellAt(s, nx, ny) === 'checkpoint' && (s.checkpoint.x !== nx || s.checkpoint.y !== ny)) {
     s.checkpoint = { x: nx, y: ny };
     s.events.push({ type: 'checkpoint', x: nx, y: ny });
@@ -393,7 +455,8 @@ const patrolDir = e => e.axis === 'h' ? (e.dir > 0 ? 'right' : 'left') : (e.dir 
 // Moves one tile along its patrol, or the given way. Blocked, it stays and turns its
 // patrol. A triangle turns a patrol onto the other axis.
 function moveMover(s, e, d, turned) {
-  const t = stepTo(s, e.x, e.y, d || patrolDir(e), wades(e));
+  const t = stepTo(s, e.x, e.y, d || patrolDir(e), wades(e)), ridden = stuckTo(s) === e;
+  let pushed = false;
   // Blocked, a patrol turns and moves the other way in the same step; a follower waits.
   const blocked = () => { if (d) return; e.dir = -e.dir; if (!turned) moveMover(s, e, null, true); };
   if (!t) { blocked(); return; }
@@ -413,11 +476,13 @@ function moveMover(s, e, d, turned) {
     }
     const p = s.player;
     if ((b = pushTo(s, t.x, t.y, t.d, p.swimming)) && b.death) die(s);
-    else if (b) { p.x = b.x; p.y = b.y; s.events.push({ type: 'pushed' }); }
+    else if (b) { p.x = b.x; p.y = b.y; pushed = true; s.events.push({ type: 'pushed' }); if (p.sticky) stick(s, e); entered(s); }
     else if (!crushes(s, e)) { blocked(); return; }
     else { e.x = t.x; e.y = t.y; die(s); return; }
   }
+  const mx = t.x - e.x, my = t.y - e.y;
   e.x = t.x; e.y = t.y;
+  if (ridden && !pushed && stuckTo(s) === e) carry(s, mx, my);
   if (!d) { e.axis = t.d === 'left' || t.d === 'right' ? 'h' : 'v'; e.dir = t.d === 'right' || t.d === 'down' ? 1 : -1; }
 }
 
@@ -433,9 +498,23 @@ function slidePiece(s, e) {
     if (e.kind === 'heavy' && ENEMY.includes(o.kind)) kill(s, o, 'squash');
     else { e.slide = null; return; }
   }
+  const p = s.player, ridden = stuckTo(s) === e;
+  if (playerAt(s, t.x, t.y) && (ridden || p.sticky) && !ENEMY.includes(e.kind)) {
+    // Sticky, a sliding box that reaches you pushes you along and you ride it.
+    const b = pushTo(s, t.x, t.y, t.d, p.swimming);
+    if (b && b.death) { die(s); return; }
+    if (b) {
+      p.x = b.x; p.y = b.y; e.slide = t.d; e.x = t.x; e.y = t.y;
+      if (!ridden) stick(s, e);
+      entered(s);
+      return;
+    }
+  }
   if (playerAt(s, t.x, t.y) && (!crushes(s, e) || (e.kind !== 'heavy' && !ENEMY.includes(e.kind)))) { e.slide = null; return; }
+  const mx = t.x - e.x, my = t.y - e.y;
   e.x = t.x; e.y = t.y; e.slide = t.d;
   if (playerAt(s, t.x, t.y)) die(s);
+  else if (ridden && stuckTo(s) === e) carry(s, mx, my);
 }
 
 // A spring launches whatever stands on the tile its face looks at, when that piece
@@ -487,6 +566,8 @@ function input(s, k) {
     return;
   }
   if (!DIRS[k] || p.hidden) return;
+  // Riding, a move lets go.
+  if (p.stuck && p.stuck.ride) unstick(s);
   if (!p.dir) { p.dir = k; p.moved = 0; return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
   else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { p.dir = k; s.events.push({ type: 'boomerang' }); } }
@@ -512,6 +593,7 @@ export function step(s, inputs = []) {
   }
   if (s.player.hidden) unhide(s);
   fireSprings(s);
+  checkStuck(s);
   computeBeams(s, true);
   refreshDoors(s);
   s.tick++;
@@ -522,7 +604,7 @@ export function step(s, inputs = []) {
 export function gameText(s, mode = 'play') {
   return JSON.stringify({
     mode, tick: s.tick, clock: s.clock, worldSteps: s.worldSteps, deaths: s.deaths,
-    player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden, swimming: s.player.swimming },
+    player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden, swimming: s.player.swimming, sticky: s.player.sticky, stuck: s.player.stuck && (s.player.stuck.ride ? 'riding' : 'glued') },
     checkpoint: s.checkpoint,
     pieces: s.entities.filter(e => !e.dead).map(e => ({
       kind: e.kind, x: e.x, y: e.y,

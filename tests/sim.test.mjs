@@ -644,4 +644,73 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('your own laser into the water you swim in kills you', my.deaths === 1);
 }
 
+{ // sticky: a puddle makes you sticky until water or until you stick to something
+  const pass = slide(createGame(room(['########', '#P.%...#', '########'])), 'right');
+  check('sliding through a puddle makes you sticky', pass.player.sticky && at(pass.player, 6, 1), JSON.stringify(pass.player));
+  const wash = createGame(room(['#########', '#P%.ww..#', '#########'], { powers: { swim: true, cycle: false } }));
+  step(wash, ['hide']); slide(wash, 'right');
+  check('water washes it off', !wash.player.sticky && wash.player.x === 7, JSON.stringify(wash.player));
+  const g = slide(createGame(room(['#########', '#.......#', '#P%..B..#', '#########'])), 'right');
+  check('sticky, you stop at a box and it glues to you', at(g.player, 4, 2) && at(g.entities[0], 5, 2) && g.player.stuck && !g.player.sticky, JSON.stringify(g.player));
+  slide(g, 'up');
+  check('a glued box comes along beside you', at(g.player, 4, 1) && at(g.entities[0], 5, 1) && g.player.stuck, JSON.stringify(g.entities[0]));
+  slide(g, 'left');
+  check('and behind you', at(g.player, 1, 1) && at(g.entities[0], 2, 1) && g.player.stuck, JSON.stringify(g.entities[0]));
+  step(g, ['right']); step(g);
+  check('ahead, it goes first, one tile ahead of you', g.player.x === 3 && g.entities[0].x === 4 && g.player.stuck, JSON.stringify([g.player, g.entities[0]]));
+  slide(g, 'right');
+  check('until it cannot, then it falls off and you stop', at(g.entities[0], 7, 1) && at(g.player, 6, 1) && !g.player.stuck, JSON.stringify(g.player));
+  slide(g, 'left'); slide(g, 'right');
+  check('sticking used it up: the box is pushed as usual after', at(g.entities[0], 7, 1) && !g.player.stuck);
+  const sd = slide(createGame(room(['#########', '#.......#', '#P%B....#', '#.......#', '#########'])), 'right');
+  sd.cells[3 * 9 + 3] = 'wall';
+  slide(sd, 'down');
+  check('a glued box blocked beside you falls off while you go on', at(sd.player, 2, 3) && at(sd.entities[0], 3, 2) && !sd.player.stuck, JSON.stringify(sd.player));
+  const hv = slide(createGame(room(['########', '#P%.H..#', '########'])), 'right');
+  check('a still heavy box does not stick: you stay sticky', at(hv.player, 3, 1) && hv.player.sticky && !hv.player.stuck);
+  const plain = slide(createGame(room(['########', '#P..B..#', '########'])), 'right');
+  check('not sticky, a box is pushed as before', at(plain.entities[0], 6, 1) && !plain.player.stuck);
+  // riding a moving block
+  const rd = createGame(room(['##########', '#P%.M....#', '#........#', '##########'], { mode: 'realtime' }));
+  slide(rd, 'right');
+  check('sticky, you stop at a moving block and ride it', rd.player.stuck && rd.player.x === rd.entities[0].x - 1, JSON.stringify(rd.player));
+  for (let i = 0; i < 13; i++) step(rd);
+  check('it carries you as it moves away', rd.entities[0].x > 4 && rd.player.x === rd.entities[0].x - 1 && rd.player.stuck, JSON.stringify([rd.player, rd.entities[0]]));
+  step(rd, ['down']);
+  for (let i = 0; i < 4; i++) step(rd);
+  check('a move lets go', !rd.player.stuck && rd.player.y === 2, JSON.stringify(rd.player));
+  const wl = createGame(room(['##########', '#P%.M....#', '#........#', '##########'], { mode: 'realtime' }));
+  slide(wl, 'right');
+  wl.cells[1 * 10 + 4] = 'wall';
+  const mx = wl.entities[0].x;
+  for (let i = 0; i < 13; i++) step(wl);
+  check('when you cannot follow, you come off', !wl.player.stuck && wl.entities[0].x > mx && at(wl.player, 3, 1), JSON.stringify(wl.player));
+  // a sliding box reaching a sticky you
+  const sb = createGame(room(['###########', '#..P....B.#', '###########']));
+  sb.player.sticky = true; sb.entities[0].slide = 'left';
+  for (let i = 0; i < 12; i++) step(sb);
+  check('a sliding box pushes a sticky you along, then stays glued when it stops', at(sb.player, 1, 1) && at(sb.entities[0], 2, 1) && sb.player.stuck && !sb.player.stuck.ride, JSON.stringify(sb.player));
+  const rbRoom = ['#######', '#.....#', '#.....#', '#P....#', '#.....#', '#..B..#', '#######'];
+  const rb = createGame(room(rbRoom));
+  rb.player.sticky = true; rb.entities[0].slide = 'up'; rb.player.dir = 'right';
+  for (let i = 0; i < 8; i++) step(rb);
+  check('sticky, you meet a sliding box and ride it until it stops, then it is glued', at(rb.player, 2, 1) && at(rb.entities[0], 3, 1) && rb.player.stuck && !rb.player.stuck.ride, JSON.stringify([rb.player, rb.entities[0]]));
+  const rl = createGame(room(rbRoom));
+  rl.player.sticky = true; rl.entities[0].slide = 'up'; rl.player.dir = 'right';
+  step(rl); step(rl); step(rl);
+  step(rl, ['down']);
+  for (let i = 0; i < 8; i++) step(rl);
+  check('riding a sliding box, a move lets go and it slides on without you', at(rl.player, 2, 5) && at(rl.entities[0], 3, 1) && !rl.player.stuck, JSON.stringify([rl.player, rl.entities[0]]));
+  const rw = createGame(room(['##########', '#P%.M....#', '##########'], { mode: 'realtime' }));
+  slide(rw, 'right');
+  step(rw, ['up']);
+  check('riding, a press into a wall still lets go', !rw.player.stuck, JSON.stringify(rw.player));
+  const hd = slide(createGame(room(['#########', '#.......#', '#P%..B..#', '#########'])), 'right');
+  step(hd, ['hide']);
+  check('hiding lets go', !hd.player.stuck);
+  let pb = 0;
+  try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: ['sticky', ...Array(8).fill('')] })); } catch { pb++; }
+  check('a level file keeps a puddle', pb === 0);
+}
+
 done();

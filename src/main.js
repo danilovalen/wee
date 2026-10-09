@@ -23,6 +23,7 @@ const TOOLS = [
   { id: 'spring', label: 'Spring', group: 'tiles' },
   { id: 'death', label: 'Death block', group: 'tiles' },
   { id: 'water', label: 'Water', group: 'tiles' },
+  { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },
   { id: 'button', label: 'Button', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'receiver', label: 'Receiver', group: 'switches' },
@@ -79,7 +80,7 @@ const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 // Does (x, y) already hold the kind of thing this tool places?
 function holds(x, y, tool) {
   const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water') return c === tool;
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
   if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
@@ -108,6 +109,7 @@ function describe(x, y) {
     else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
     else if (kind === 'death') parts.push('Death block');
     else if (kind === 'water') parts.push('Water');
+    else if (kind === 'sticky') parts.push('Sticky puddle');
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
     else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser sensor`);
@@ -131,14 +133,14 @@ function place(x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water'].includes(ui.tool)) setCell('');
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
     if (isStart) return;
     removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
-  } else if (t === 'water') {
+  } else if (t === 'water' || t === 'sticky') {
     if (isStart) return;
-    setCell('water');
+    setCell(t);
   } else if (t === 'gate') {
     if (isStart) return;
     removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
@@ -320,8 +322,8 @@ function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'look') {
     x.strokeStyle = '#c3cad8'; x.lineWidth = 2.5;

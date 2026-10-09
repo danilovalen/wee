@@ -142,6 +142,9 @@ try {
   await pick('water');
   q = at(18, 4); await page.mouse.click(q.x, q.y);
   check('water places', (await text()).level.cells[4 * 20 + 18] === 'water', (await text()).level.cells[4 * 20 + 18]);
+  await pick('sticky');
+  q = at(17, 4); await page.mouse.click(q.x, q.y);
+  check('a sticky puddle places', (await text()).level.cells[4 * 20 + 17] === 'sticky', (await text()).level.cells[4 * 20 + 17]);
   await pick('wall');
   check('enemy options hide for a block', !(await page.locator('[data-axis=h]').isVisible()));
   await page.screenshot({ path: 'shots/edit.png' });
