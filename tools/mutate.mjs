@@ -248,7 +248,7 @@ const M = [
   ['src', "    step(s, [k]); watch();", "    step(s, [k]);", "tags"],
   ['src', "const solution = r && r.status === 'solved' ? r.moves : null;", "const solution = null;", "browser"],
   ['src', "if (!tagCache.has(v)) { const { level } = splitRoom(r); tagCache.set(v, new Set([...contains(level), ...(r.uses || [])])); }", "if (!tagCache.has(v)) tagCache.set(v, new Set(r.uses || []));", "browser"],
-  ['src', "  const shown = saved.filter(r => !filter || tagsOf(r).has(filter));", "  const shown = saved;", "browser"],
+  ["src", "      if (filter && !tags.has(filter)) continue;\n", "", "browser"],
   ['src', "  $('unexplored').replaceChildren(...MECHANISMS.filter(([t]) => !counts[t])", "  $('unexplored').replaceChildren(...MECHANISMS.filter(([t]) => counts[t])", "browser"],
   ['src', "  ...(meta.solution ? { par: meta.solution.length, solution: meta.solution, uses: meta.uses || [] } : {}),\n", "", "browser"],
   ["src", "  if (t.deaths !== deaths || !settled(t)) return null;", "  if (!settled(t)) return null;", "solve"],
