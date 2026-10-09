@@ -142,7 +142,10 @@ Each a warning in the Levels panel, with the tile highlighted on tap:
 
 ## Phase 13: the room from the image
 
-Waiting on the image, which did not come through.
+Done as data: `rooms/first-room.wee` (7x12), his room as drawn on 2026-10-09. Phase 2 ships every
+file in `rooms/` as a read-only **template** in the Levels panel ("Save as" to make your own).
+Phase 5 swaps its sticky puddle at the bottom right for the Goal tile, as he asked: "the puddle
+would be the goal".
 
 ## Order and size
 
