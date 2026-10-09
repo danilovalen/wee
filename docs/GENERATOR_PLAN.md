@@ -111,4 +111,7 @@ A new folder, `src/gen/`, allowed to import `rules/`, `level/` and `solve/`, nev
 1. ~~Must-use: used, or needed?~~ **Used** (owner, 2026-10-09): the shortest solution touches it.
    "Needed" (unsolvable without it) stays a possible later option.
 2. ~~Template or empty frame?~~ **Empty frame** (owner, 2026-10-09).
-3. Does the shelf need a name for each generated room, or is the recipe enough?
+3. ~~Shelf names?~~ **Made from the recipe** (owner, 2026-10-09): e.g. "8x8 · 6-12 moves · Door,
+   Box". No typing; a name of your own comes with Save.
+
+All open questions answered. Next: build G1.
