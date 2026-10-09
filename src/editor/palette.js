@@ -6,6 +6,7 @@ export const TOOLS = [
   { id: 'start', label: 'Start', group: 'basic' },
   { id: 'wall', label: 'Block', group: 'basic' },
   { id: 'checkpoint', label: 'Checkpoint', group: 'basic' },
+  { id: 'goal', label: 'Goal', group: 'basic' },
   { id: 'mover', label: 'Moving block', group: 'pieces' },
   { id: 'enemy', label: 'Weak enemy', group: 'pieces' },
   { id: 'strong', label: 'Strong enemy', group: 'pieces' },

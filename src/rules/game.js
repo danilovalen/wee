@@ -2,7 +2,7 @@
 // Pure and deterministic: no DOM, no clock, no randomness.
 import { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } from './base.js';
 import { aimOf, computeBeams, turnTurrets } from './beams.js';
-import { inWater } from './grid.js';
+import { cellAt, inWater } from './grid.js';
 import { freshPieces, refreshDoors } from './life.js';
 import { fireSprings, rushOnce, slidePiece } from './pieces.js';
 import { input, slideOnce, unhide } from './player.js';
@@ -18,7 +18,7 @@ export function createGame(level) {
     checkpoint: { ...l.start },
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
     entities: freshPieces(l.entities),
-    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, events: [],
+    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };
   computeBeams(s, false);
   refreshDoors(s);
@@ -28,7 +28,7 @@ export function createGame(level) {
 export function step(s, inputs = []) {
   s.events = [];
   s.player.snap = false;
-  for (const k of inputs) input(s, k);
+  if (!s.won) for (const k of inputs) input(s, k);
   // Pieces already sliding move first, so a piece a spring launched gets away
   // before you reach it.
   for (const e of s.entities) if (!e.dead && e.slide) slidePiece(s, e);
@@ -46,16 +46,25 @@ export function step(s, inputs = []) {
   fireSprings(s);
   checkStuck(s);
   checkGlue(s);
+  checkWin(s);
   computeBeams(s, true);
   refreshDoors(s);
   s.tick++;
   return s;
 }
 
+// You win by coming to rest on a goal: sliding over one does not count.
+function checkWin(s) {
+  const p = s.player;
+  if (s.won || p.dir || p.hidden || cellAt(s, p.x, p.y) !== 'goal') return;
+  s.won = true;
+  s.events.push({ type: 'win', x: p.x, y: p.y, moves: s.move });
+}
+
 // The one text reading of the game: tests, the bot and the agent all use it.
 export function gameText(s, mode = 'play') {
   return JSON.stringify({
-    mode, tick: s.tick, clock: s.clock, worldSteps: s.worldSteps, deaths: s.deaths,
+    mode, tick: s.tick, clock: s.clock, worldSteps: s.worldSteps, deaths: s.deaths, moves: s.move, won: s.won,
     player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden, swimming: s.player.swimming, sticky: s.player.sticky, stuck: s.player.stuck && (s.player.stuck.ride ? 'riding' : 'glued') },
     checkpoint: s.checkpoint,
     pieces: s.entities.filter(e => !e.dead).map(e => ({

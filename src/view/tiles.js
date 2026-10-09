@@ -83,6 +83,14 @@ export function drawCell(g, c, x, y, s, scale = 1) {
     g.beginPath(); g.arc(16, 16, 8.5, 0, Math.PI * 2); g.fill();
     g.strokeStyle = INK[col]; g.lineWidth = 3; g.stroke();
     if (lit) { g.globalAlpha = 0.35; g.fillStyle = INK[col]; g.beginPath(); g.arc(16, 16, 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
+  } else if (c === 'goal') {
+    // A gold ring with a star in it, pulsing slowly.
+    const k = 0.5 + 0.5 * Math.sin(frame.clock / 400);
+    g.strokeStyle = INK.goal; g.lineWidth = 2.5; g.globalAlpha = 0.55 + 0.45 * k;
+    g.beginPath(); g.arc(16, 16, 12, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
+    g.fillStyle = INK.goal; g.beginPath();
+    for (let i = 0; i < 10; i++) { const r = i % 2 ? 3.2 : 7.5, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(16 + Math.cos(a) * r, 16 + Math.sin(a) * r); }
+    g.fill();
   } else if (c === 'checkpoint') {
     const active = s && s.checkpoint.x === x && s.checkpoint.y === y;
     g.strokeStyle = INK.moverEdge; g.lineWidth = 2;

@@ -233,6 +233,18 @@ try {
   check('an early side key goes in as an aimed-back shot', JSON.parse(await page.evaluate(() => window.wee.report())).keys.some(k => k.k === 'back:up'));
   await page.keyboard.press('e');
 
+  // stopping on the goal shows the win, with the move count; Play again starts over
+  const goalRoom = room(['#######', '#P..#.#', '#######']); goalRoom.cells[10] = 'goal';
+  await page.evaluate(l => window.wee.loadLevel(l), goalRoom);
+  await page.keyboard.press('e');
+  check('a run starts at Moves 0', (await page.textContent('#moves')) === 'Moves 0');
+  await page.keyboard.press('ArrowRight'); await page.evaluate(() => window.advanceTime(600));
+  check('stopping on the goal shows the win', await page.locator('#win').isVisible() && (await page.textContent('#winText')) === 'Solved in 1 move.', await page.textContent('#winText'));
+  check('the counter counts the slide', (await page.textContent('#moves')) === 'Moves 1');
+  await page.click('#again');
+  check('Play again starts the room over', !(await page.locator('#win').isVisible()) && (await text()).player.x === 1);
+  await page.keyboard.press('e');
+
   // a disabled power reads as disabled and cannot be ticked
   const hook = page.locator('[data-power=hook]');
   check('a power that cannot act yet is disabled', await hook.isDisabled());

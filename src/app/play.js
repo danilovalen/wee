@@ -21,7 +21,9 @@ export function tick() {
   step(game, S.pending);
   S.pending = [];
   const t = now();
+  $('moves').textContent = `Moves ${game.move}`;
   for (const e of game.events) {
+    if (e.type === 'win') { $('winText').textContent = `Solved in ${e.moves} ${e.moves === 1 ? 'move' : 'moves'}.`; $('win').hidden = false; }
     if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
     else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
   }
@@ -37,6 +39,8 @@ export function setMode(m, keep) {
   $('mode').textContent = m === 'play' ? 'Edit' : 'Play';
   $('keys').textContent = keysText();
   $('pad').hidden = m !== 'play';
+  $('win').hidden = true;
+  $('moves').textContent = m === 'play' ? 'Moves 0' : '';
   S.fx = [];
   if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }
   syncPanel();

@@ -1008,4 +1008,27 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a hide after a slide starts the block again', g.entities[0].x !== x, JSON.stringify(g.entities));
 }
 
+{ // the goal: you win by coming to rest on it, not by sliding over it
+  const l = room(['#######', '#P....#', '#######']);
+  l.cells[10] = 'goal';
+  const over = slide(createGame(l), 'right');
+  check('sliding over the goal does not win', !over.won && at(over.player, 5, 1));
+  const r = room(['#######', '#P..#.#', '#######']);
+  r.cells[10] = 'goal';
+  const g = slide(createGame(r), 'right');
+  check('stopping on it wins', g.won && JSON.parse(gameText(g)).won);
+  check('the text counts your moves', JSON.parse(gameText(g)).moves === 1);
+  step(g, ['left']); step(g);
+  check('once won, keys do nothing', at(g.player, 3, 1) && !g.player.dir);
+  const h = room(['#######', '#P....#', '#######'], { powers: { cycle: true } });
+  h.cells[9] = 'goal';
+  const hg = createGame(h); hg.player.x = 2; step(hg, ['hide']);
+  check('hidden on it is not a win', !hg.won);
+  check('the goal is a cell', isCell('goal'));
+  const e = room(['#####', '#P..#', '#####']);
+  place(e, { tool: 'goal' }, 2, 1, 'place');
+  check('the editor places a goal and names it', e.cells[7] === 'goal' && describe(e, 2, 1) === 'Goal');
+  check('not on the start', place(e, { tool: 'goal' }, 1, 1, 'place').length === 0);
+}
+
 done();
