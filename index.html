@@ -67,11 +67,6 @@
           <span id="colours"></span>
         </div>
       </div>
-      <h2>Room</h2>
-      <div class="size">
-        <label>Width <input id="w" type="number" min="5" max="40"></label>
-        <label>Height <input id="h" type="number" min="5" max="30"></label>
-      </div>
       <p id="placeHint" class="hint"></p>
 
     </aside>
@@ -98,6 +93,28 @@
       <details id="lintBox" class="lint" hidden><summary id="lintSum"></summary><ul id="lintList"></ul></details>
     </section>
     <aside id="powers">
+      <div id="roomBox" class="roomBox">
+        <h2>Room</h2>
+        <div class="roomBody">
+      <div class="size">
+        <label>Width <input id="w" type="number" min="5" max="40"></label>
+        <label>Height <input id="h" type="number" min="5" max="30"></label>
+      </div>
+      <div class="sides">
+        <span>Add</span>
+        <button type="button" data-side="top" data-delta="1" title="Add a row on top">&uarr;</button>
+        <button type="button" data-side="bottom" data-delta="1" title="Add a row at the bottom">&darr;</button>
+        <button type="button" data-side="left" data-delta="1" title="Add a column on the left">&larr;</button>
+        <button type="button" data-side="right" data-delta="1" title="Add a column on the right">&rarr;</button>
+        <span>Cut</span>
+        <button type="button" data-side="top" data-delta="-1" title="Cut the top row">&uarr;</button>
+        <button type="button" data-side="bottom" data-delta="-1" title="Cut the bottom row">&darr;</button>
+        <button type="button" data-side="left" data-delta="-1" title="Cut the left column">&larr;</button>
+        <button type="button" data-side="right" data-delta="-1" title="Cut the right column">&rarr;</button>
+        <button id="border" type="button">Border</button>
+      </div>
+        </div>
+      </div>
       <h2>Powers</h2>
       <div id="powerList"></div>
       <h2>Status</h2>

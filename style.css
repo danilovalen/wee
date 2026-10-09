@@ -126,3 +126,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .lint summary { cursor: pointer; color: #f2c14e; }
 .lint ul { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 4px; }
 .lint button { text-align: left; width: 100%; }
+.sides { display: grid; grid-template-columns: auto repeat(4, 1fr); gap: 4px; align-items: center; margin-top: 6px; }
+.sides span { font-size: 0.85em; color: var(--muted, #8e98ad); }
+.sides #border { grid-column: 1 / -1; }
+.roomBox { margin-bottom: 10px; }

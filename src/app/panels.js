@@ -1,7 +1,7 @@
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 import { COLOURS, POWERS, NEEDS } from '../rules/base.js';
-import { emptyLevel, resizeLevel } from '../level/format.js';
+import { emptyLevel, resizeLevel, resizeSide, wallBorder } from '../level/format.js';
 import { T, INK } from '../view/ink.js';
 import { drawPiece } from '../view/pieces.js';
 import { drawEdit } from '../view/scene.js';
@@ -120,6 +120,12 @@ export function buildPanels(actions) {
     if (w !== level.w || h !== level.h) { change(() => { S.level = resizeLevel(level, w, h); }); fit(); }
   };
   $('w').onchange = resize; $('h').onchange = resize;
+  document.querySelectorAll('[data-side]').forEach(b => b.onclick = () => {
+    const l = resizeSide(S.level, b.dataset.side, +b.dataset.delta);
+    if (!l) { $('placeHint').textContent = 'That cut would remove the start, or make the room too small.'; return; }
+    change(() => { S.level = l; }); syncPanel(); fit();
+  });
+  $('border').onclick = () => { change(() => { S.level = wallBorder(S.level); }); syncPanel(); };
 }
 
 export function syncPanel() {

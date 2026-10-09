@@ -72,6 +72,8 @@ sharing a top-level name.
 
 ## Phase 3: crop-style resize
 
+**Done 2026-10-09 as buttons, not handles:** Add or Cut a row or column on each side, in the Room section of the side panel.
+
 - In edit mode each side of the room gets a handle. Drag outward to add rows or columns on that
   side, inward to cut them, with the cut area shaded before you let go.
 - Width and Height stay as boxes and grow from the bottom right, as now.
@@ -147,6 +149,8 @@ Each a warning in the Levels panel, with the tile highlighted on tap:
 - a goal the stop map cannot reach.
 
 ## Phase 11: wall tools
+
+**Border done 2026-10-09.** Line and Box modes not built: a drag already paints a path.
 
 - **Rectangle** and **Line** modes for any tile tool (drag from corner to corner).
 - **Wall the border** button: fills the outer ring.

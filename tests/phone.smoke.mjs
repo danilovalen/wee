@@ -35,8 +35,8 @@ try {
   const over = [];
   for (const [t, g] of await page.$$eval('[data-tool]', bs => bs.map(b => [b.dataset.tool, b.dataset.in]))) {
     await page.click(`[data-group=${g}]`); await page.click(`[data-tool=${t}]`);
-    const bottom = await page.evaluate(() => Math.max(...[...document.querySelectorAll('#tools button, #tools .opt')].filter(e => e.offsetParent).map(e => e.getBoundingClientRect().bottom)));
-    if (bottom > 844) over.push(`${t}:${Math.round(bottom)}`);
+    const [bottom, who] = await page.evaluate(() => { const es = [...document.querySelectorAll('#tools button, #tools .opt')].filter(e => e.offsetParent); const e = es.reduce((a, b) => b.getBoundingClientRect().bottom > a.getBoundingClientRect().bottom ? b : a); return [e.getBoundingClientRect().bottom, e.id || e.className || e.textContent.slice(0, 12)]; });
+    if (bottom > 844) over.push(`${t}:${Math.round(bottom)} (${who})`);
   }
   check('the room, a tab of tools and its options fit on one screen, for every tool', over.length === 0, over.join(' '));
   check('a tab shows only its own tools', await page.evaluate(() => [...document.querySelectorAll('#palette button')].filter(b => b.offsetParent).length <= 6));

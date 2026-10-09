@@ -1,7 +1,7 @@
 import { createGame, step, gameText, replay } from '../src/rules/game.js';
 import { worldStep as rawWorldStep } from '../src/rules/pieces.js';
 import { aimKey } from '../src/rules/player.js';
-import { parseLevel, emptyLevel, isCell } from '../src/level/format.js';
+import { parseLevel, emptyLevel, isCell, resizeSide, wallBorder } from '../src/level/format.js';
 import { solidCell } from '../src/rules/grid.js';
 import { place, describe } from '../src/editor/edit.js';
 import { newHistory, record, undo, redo, LIMIT } from '../src/editor/history.js';
@@ -1049,6 +1049,24 @@ const LONG = ['##########', '#..P....##', '##########'];
   for (let i = 0; i < LIMIT + 5; i++) { const b = JSON.stringify(m); m.cells[7] = String(i); record(e, b, m); }
   check('only the last 100 steps are kept', e.past.length === LIMIT);
   check('undo with nothing to undo does nothing', undo(newHistory(), m) === null);
+}
+
+{ // a row or column added or cut on one side moves everything with it
+  const l = room(['#####', '#P.B#', '#####']);
+  const top = resizeSide(l, 'top', 1);
+  check('adding a row on top shifts the room down', top.h === 4 && top.start.y === 2 && top.entities[0].y === 2 && top.cells[5] === 'wall' && top.cells[0] === '');
+  const left = resizeSide(l, 'left', 1);
+  check('adding a column on the left shifts it right', left.w === 6 && left.start.x === 2 && left.entities[0].x === 4);
+  const right = resizeSide(l, 'right', -1);
+  check('cutting the right column keeps the rest in place', right.w === 4 && right.cells.length === 12 && right.entities[0].x === 3 && right.cells[7] === '');
+  check('cutting the column with the start is refused', resizeSide(resizeSide(l, 'left', -1), 'left', -1) === null);
+  check('the box is cut away with its column', resizeSide(resizeSide(l, 'right', -1), 'right', -1).entities.length === 0);
+  check('a room stays at least 3 tiles', resizeSide(room(['###', '#P#', '###']), 'top', -1) === null);
+  const b = wallBorder(room(['.....', '.P...', '....B', '.....']));
+  check('Border walls every edge tile', b.cells.filter((c, i) => (i % 5 === 0 || i % 5 === 4 || i < 5 || i >= 15) && c !== 'wall').length === 0);
+  check('and removes pieces on the edge, keeps the start', b.entities.length === 0 && b.cells[6] === '');
+  const s2 = room(['P..', '...', '...']); s2.start = { x: 0, y: 0 };
+  check('the start on the edge is left open', wallBorder(s2).cells[0] === '');
 }
 
 done();

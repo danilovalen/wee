@@ -56,3 +56,29 @@ export function isCell(c) {
   const [kind, colour] = c.split(':');
   return (kind === 'button' || kind === 'door' || kind === 'idoor') && COLOURS.includes(colour);
 }
+
+// Adds (delta 1) or cuts (delta -1) one row or column on a side, moving everything with
+// it. Returns null when the cut would remove the start or go below 3 tiles.
+export function resizeSide(level, side, delta) {
+  const dx = side === 'left' ? delta : 0, dy = side === 'top' ? delta : 0;
+  const w = level.w + (side === 'left' || side === 'right' ? delta : 0), h = level.h + (side === 'top' || side === 'bottom' ? delta : 0);
+  if (w < 3 || h < 3 || w > 40 || h > 30) return null;
+  const inside = (x, y) => x >= 0 && y >= 0 && x < w && y < h;
+  const start = { x: level.start.x + dx, y: level.start.y + dy };
+  if (!inside(start.x, start.y)) return null;
+  const cells = Array(w * h).fill('');
+  for (let y = 0; y < level.h; y++) for (let x = 0; x < level.w; x++) if (inside(x + dx, y + dy)) cells[(y + dy) * w + x + dx] = level.cells[y * level.w + x];
+  const entities = level.entities.map(e => ({ ...e, x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y));
+  return { ...level, w, h, cells, start, entities };
+}
+
+// Walls on every edge tile, except where the start stands.
+export function wallBorder(level) {
+  const cells = [...level.cells], { w, h } = level;
+  for (let i = 0; i < w * h; i++) {
+    const x = i % w, y = (i - x) / w;
+    if ((x === 0 || y === 0 || x === w - 1 || y === h - 1) && !(x === level.start.x && y === level.start.y)) cells[i] = 'wall';
+  }
+  const edge = e => e.x === 0 || e.y === 0 || e.x === w - 1 || e.y === h - 1;
+  return { ...level, cells, entities: level.entities.filter(e => !edge(e)) };
+}

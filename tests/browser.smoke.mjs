@@ -200,6 +200,19 @@ try {
   check('going back to editing selects Look, on its open tab', await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')) && await page.locator('[data-tool=look]').isVisible());
   check('playing did not change the room', (await text()).level.entities[0].x === 4);
 
+  const roomBeforePanel = (await text()).level;
+  // adding and cutting a side, and Border, are single undoable steps
+  await page.evaluate(l => window.wee.loadLevel(l), room(['.....', '.P...', '.....']));
+  await page.click('[data-side=top][data-delta="1"]');
+  check('Add above makes the room a row taller, start moved down', (await text()).level.h === 4 && (await text()).level.start.y === 2);
+  await page.click('#border');
+  check('Border walls the edge', (await text()).level.cells.slice(0, 5).every(c => c === 'wall'));
+  await page.click('#undo'); await page.click('#undo');
+  check('and each undoes in one step', (await text()).level.h === 3);
+  await page.click('[data-side=left][data-delta="-1"]'); await page.click('[data-side=left][data-delta="-1"]');
+  check('a cut through the start is refused with a reason', (await text()).level.w === 4 && (await page.textContent('#placeHint')).includes('remove the start'));
+  await page.evaluate(l => window.wee.loadLevel(l), JSON.parse(JSON.stringify(roomBeforePanel)));
+
   // the Rooms panel: name and save the room, find it in the list, come back to it
   const wallsBefore = (await text()).level.cells.filter(c => c === 'wall').length;
   check('an unnamed room reads as unsaved', (await page.textContent('#roomsBtn')).includes('\u2022'));
