@@ -55,6 +55,18 @@ It runs in a Web Worker, so the page never freezes. The single-file build puts t
 the page and starts it from a blob; if a browser refuses that, the same loop runs in short slices on
 the page, the way Check already does.
 
+## Regenerating a room you changed
+
+Owner, 2026-10-09: a generated room you have edited is your work.
+
+- **Generate again over an edited room asks twice.** First "This room has changes. Generate a new
+  one?", then a second confirm naming what is lost. An unedited generated room regenerates
+  without asking.
+- **Undo brings it back.** A regenerate is one undo step on the open room, like a paste, so Ctrl+Z
+  returns the room you had, edits included.
+- Gate: edit a generated room, regenerate, confirm twice, undo; the room equals the edited one.
+  And: one confirm alone changes nothing.
+
 ## What you see while it runs
 
 - The best room so far, drawn small and redrawn when it improves.
@@ -98,5 +110,5 @@ A new folder, `src/gen/`, allowed to import `rules/`, `level/` and `solve/`, nev
 
 1. ~~Must-use: used, or needed?~~ **Used** (owner, 2026-10-09): the shortest solution touches it.
    "Needed" (unsolvable without it) stays a possible later option.
-2. Should a generated room start from a template's shape, or always from an empty frame?
+2. ~~Template or empty frame?~~ **Empty frame** (owner, 2026-10-09).
 3. Does the shelf need a name for each generated room, or is the recipe enough?
