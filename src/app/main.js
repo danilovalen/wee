@@ -2,7 +2,8 @@
 // text state and a fixed clock for tests and agents.
 import { TICK_MS } from '../rules/base.js';
 import { replay, gameText } from '../rules/game.js';
-import { parseLevel } from '../level/format.js';
+import { parseLevel, emptyLevel } from '../level/format.js';
+import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { portrait } from './dom.js';
 import { fit } from './fit.js';
@@ -18,7 +19,7 @@ window.advanceTime = ms => {
   for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
   S.acc = 0; render();
 };
-window.wee = { report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); syncPanel(); fit(); } };
+window.wee = { blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
 
 buildPanels({ setMode, copyReport, fit });
 bindInput();

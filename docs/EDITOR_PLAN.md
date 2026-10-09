@@ -54,6 +54,8 @@ sharing a top-level name.
 
 ## Phase 1: undo and redo
 
+**Done 2026-10-09.** Undo and Redo buttons in the header, Ctrl+Z and Ctrl+Shift+Z (or Ctrl+Y). Loading a room starts a fresh history; opening a file or the sample is itself one step.
+
 - A button and Ctrl+Z (Ctrl+Shift+Z or Ctrl+Y to redo).
 - A whole drag is one step; resize, paste, rotate and level switches are one step each.
 - The last 100 steps per level, in memory.
@@ -89,6 +91,8 @@ Borrowed from Factorio's copy and paste and Tiled's stamps.
   and a long press adds a box.
 
 ## Phase 5: the goal, and a room you can finish
+
+**Done 2026-10-09.** You must stop on the goal to win.
 
 - A **Goal** tile. Reaching it ends the run: a short celebration, the number of slides, and
   Play again / Edit.

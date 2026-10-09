@@ -4,6 +4,7 @@ import { aimKey } from '../src/rules/player.js';
 import { parseLevel, emptyLevel, isCell } from '../src/level/format.js';
 import { solidCell } from '../src/rules/grid.js';
 import { place, describe } from '../src/editor/edit.js';
+import { newHistory, record, undo, redo, LIMIT } from '../src/editor/history.js';
 import { RT_PERIOD } from '../src/rules/base.js';
 
 // One move of yours, as the world sees it: pieces on your move start their slide, then
@@ -1029,6 +1030,25 @@ const LONG = ['##########', '#..P....##', '##########'];
   place(e, { tool: 'goal' }, 2, 1, 'place');
   check('the editor places a goal and names it', e.cells[7] === 'goal' && describe(e, 2, 1) === 'Goal');
   check('not on the start', place(e, { tool: 'goal' }, 1, 1, 'place').length === 0);
+}
+
+{ // undo and redo are a stack of whole levels
+  const h = newHistory();
+  let l = room(['#####', '#P..#', '#####']);
+  const before = JSON.stringify(l);
+  check('an edit that changed nothing is not recorded', !record(h, before, l) && h.past.length === 0);
+  l.cells[7] = 'wall';
+  check('an edit that changed the level is', record(h, before, l) && h.past.length === 1);
+  l = undo(h, l);
+  check('undo brings the level back', l.cells[7] === '' && h.future.length === 1 && h.past.length === 0);
+  l = redo(h, l);
+  check('redo puts the edit back', l.cells[7] === 'wall' && h.past.length === 1 && h.future.length === 0);
+  const b2 = JSON.stringify(l); l = undo(h, l); l.cells[8] = 'wall'; record(h, b2, l);
+  check('a new edit clears redo', h.future.length === 0 && redo(h, l) === null);
+  const e = newHistory(); let m = room(['#####', '#P..#', '#####']);
+  for (let i = 0; i < LIMIT + 5; i++) { const b = JSON.stringify(m); m.cells[7] = String(i); record(e, b, m); }
+  check('only the last 100 steps are kept', e.past.length === LIMIT);
+  check('undo with nothing to undo does nothing', undo(newHistory(), m) === null);
 }
 
 done();

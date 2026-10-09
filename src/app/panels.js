@@ -9,6 +9,7 @@ import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
 import { S } from '../editor/state.js';
 import { SAMPLE } from '../level/sample.js';
 import { $, canvas, touch } from './dom.js';
+import { change, step as undoStep, syncUndo } from './undo.js';
 
 export function keysText() {
   return touch
@@ -93,24 +94,27 @@ export function buildPanels(actions) {
     row.className = 'power' + (NEEDS[p] ? ' off' : '');
     const box = document.createElement('input');
     box.type = 'checkbox'; box.dataset.power = p; box.disabled = !!NEEDS[p];
-    box.onchange = () => { S.level.powers[p] = box.checked; if (S.game) S.pending.push(`power:${p}:${box.checked ? 1 : 0}`); syncPanel(); };
+    box.onchange = () => { change(() => { S.level.powers[p] = box.checked; }); if (S.game) S.pending.push(`power:${p}:${box.checked ? 1 : 0}`); syncPanel(); };
     const name = document.createElement('b'); name.textContent = NAMES[p];
     const say = document.createElement('small'); say.textContent = NEEDS[p] ? 'Needs ' + NEEDS[p] + '.' : POWER_TEXT[p];
     row.append(box, name, say);
     $(p === 'armored' ? 'statusList' : 'powerList').append(row);
   }
-  document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { S.level.clock = r.value; if (S.game) S.pending.push('clock:' + r.value); });
+  document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { change(() => { S.level.clock = r.value; }); if (S.game) S.pending.push('clock:' + r.value); });
   $('mode').onclick = () => setMode(S.mode === 'play' ? 'edit' : 'play');
   $('hideBtn').onclick = () => S.pending.push('hide');
   $('respawnBtn').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
+  const after = () => { syncPanel(); fit(); };
+  $('undo').onclick = () => undoStep(true, after);
+  $('redo').onclick = () => undoStep(false, after);
   $('winEdit').onclick = () => setMode('edit');
   $('placeHint').textContent = touch ? 'Tap to place. Tap one again to remove it. Look changes nothing.' : 'Click to place. Click one again, or right click, to remove it. Look changes nothing.';
   const resize = () => {
     const level = S.level;
     const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));
-    if (w !== level.w || h !== level.h) { S.level = resizeLevel(level, w, h); fit(); }
+    if (w !== level.w || h !== level.h) { change(() => { S.level = resizeLevel(level, w, h); }); fit(); }
   };
   $('w').onchange = resize; $('h').onchange = resize;
   $('save').onclick = () => {
@@ -120,18 +124,19 @@ export function buildPanels(actions) {
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };
-  $('sample').onclick = () => { S.level = parseLevel(JSON.stringify(SAMPLE)); setMode('edit'); syncPanel(); fit(); };
+  $('sample').onclick = () => { change(() => { S.level = parseLevel(JSON.stringify(SAMPLE)); }); setMode('edit'); syncPanel(); fit(); };
   $('open').onclick = () => $('file').click();
   $('file').onchange = async () => {
     const f = $('file').files[0]; $('file').value = '';
     if (!f) return;
-    try { S.level = parseLevel(await f.text()); setMode('edit'); syncPanel(); fit(); }
+    try { const l = parseLevel(await f.text()); change(() => { S.level = l; }); setMode('edit'); syncPanel(); fit(); }
     catch (err) { alert('This file cannot be opened. ' + err.message); }
   };
 }
 
 export function syncPanel() {
   const ui = S.ui, level = S.level;
+  syncUndo();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });
   // A tab carries a dot when the selected tool sits in it.

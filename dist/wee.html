@@ -109,6 +109,8 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   <header>
     <b class="logo">wee</b>
     <button id="mode" type="button" title="E">Play</button>
+    <button id="undo" type="button" title="Ctrl+Z">Undo</button>
+    <button id="redo" type="button" title="Ctrl+Shift+Z">Redo</button>
     <span class="spacer"></span>
     <button id="sample" type="button">Sample</button>
     <button id="save" type="button">Save</button>
@@ -1060,11 +1062,44 @@ function isCell(c) {
 }
 return { checkTurret, emptyLevel, resizeLevel, parseLevel, isCell };
 })();
-// ---- src/editor/state.js
+// ---- src/editor/history.js
 const m10 = (() => {
+
+// Undo and redo: a stack of whole levels, as text. An edit is recorded only when it
+// changed the level, so a click that did nothing leaves nothing to undo.
+const LIMIT = 100;
+
+const newHistory = () => ({ past: [], future: [] });
+
+// before: the level as text from just before the edit; level: the level now.
+function record(h, before, level) {
+  if (before === JSON.stringify(level)) return false;
+  h.past.push(before);
+  if (h.past.length > LIMIT) h.past.shift();
+  h.future = [];
+  return true;
+}
+
+function undo(h, level) {
+  if (!h.past.length) return null;
+  h.future.push(JSON.stringify(level));
+  return JSON.parse(h.past.pop());
+}
+
+function redo(h, level) {
+  if (!h.future.length) return null;
+  h.past.push(JSON.stringify(level));
+  return JSON.parse(h.future.pop());
+}
+return { LIMIT, newHistory, record, undo, redo };
+})();
+// ---- src/editor/state.js
+const m11 = (() => {
 const { emptyLevel } = m9;
+const { newHistory } = m10;
 // The one shared state of the page: the level being edited, the editor's settings and
 // the run being played. Every app file reads and writes it here, never in a copy.
+
 
 // A new room takes the screen's shape: taller than wide on a phone held upright.
 function starterLevel(tall) {
@@ -1078,12 +1113,12 @@ const S = {
   level: null,
   ui: { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
   mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
-  played: null, keylog: [],
+  played: null, keylog: [], history: newHistory(), before: null,
 };
 return { starterLevel, S };
 })();
 // ---- src/app/dom.js
-const m11 = (() => {
+const m12 = (() => {
 
 // The page: the elements the app talks to, and what kind of screen it is on.
 const $ = id => document.getElementById(id);
@@ -1095,7 +1130,7 @@ const now = () => performance.now();
 return { $, canvas, g, touch, portrait, now };
 })();
 // ---- src/view/ink.js
-const m12 = (() => {
+const m13 = (() => {
 const { TICK_MS } = m0;
 // The palette, the tile size and the small drawing helpers every view file shares.
 
@@ -1133,10 +1168,10 @@ const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9, 5], [0
 return { AIM, T, INK, ease, lerp, frame, roundRect, LASER_MS, PUFF_MS, PUFFS };
 })();
 // ---- src/app/fit.js
-const m13 = (() => {
-const { T } = m12;
-const { S } = m10;
-const { $, canvas, g, portrait } = m11;
+const m14 = (() => {
+const { T } = m13;
+const { S } = m11;
+const { $, canvas, g, portrait } = m12;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 
 
@@ -1155,8 +1190,8 @@ function fit() {
 return { fit };
 })();
 // ---- src/view/pieces.js
-const m14 = (() => {
-const { AIM, INK, T, frame, roundRect } = m12;
+const m15 = (() => {
+const { AIM, INK, T, frame, roundRect } = m13;
 // Pieces and the player.
 
 // The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
@@ -1285,8 +1320,8 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
 return { modeBadge, drawTurret, drawPiece, drawPlayer };
 })();
 // ---- src/view/tiles.js
-const m15 = (() => {
-const { INK, T, frame, roundRect } = m12;
+const m16 = (() => {
+const { INK, T, frame, roundRect } = m13;
 // Tiles: floor, walls and every cell type, drawn in place.
 
 function drawCell(g, c, x, y, s, scale = 1) {
@@ -1433,11 +1468,11 @@ function drawFloor(g, w, h) {
 return { drawCell, pressedAt, drawFloor };
 })();
 // ---- src/view/scene.js
-const m16 = (() => {
+const m17 = (() => {
 const { DIRS } = m0;
-const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m12;
-const { drawPiece, drawPlayer } = m14;
-const { drawCell, drawFloor } = m15;
+const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m13;
+const { drawPiece, drawPlayer } = m15;
+const { drawCell, drawFloor } = m16;
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
 
@@ -1586,7 +1621,7 @@ function drawPlay(g, s, prev, alpha, fx, now) {
 return { drawEdit, drawPlay };
 })();
 // ---- src/editor/palette.js
-const m17 = (() => {
+const m18 = (() => {
 
 // The palette: every tool, its group and label, and the words the editor uses for
 // powers, colours, clocks and directions. Draft copy throughout.
@@ -1637,25 +1672,63 @@ const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'b
 return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/level/sample.js
-const m18 = (() => {
+const m19 = (() => {
 
 // The sample room, kept in step with rooms/sample.wee by tools/build-single.mjs.
 const SAMPLE = {"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"};
 return { SAMPLE };
 })();
+// ---- src/app/undo.js
+const m20 = (() => {
+const { record, undo, redo } = m10;
+const { S } = m11;
+const { $ } = m12;
+// Every change to the level goes through change(), so it can be undone as one step.
+
+
+
+function syncUndo() {
+  $('undo').disabled = S.mode !== 'edit' || !S.history.past.length;
+  $('redo').disabled = S.mode !== 'edit' || !S.history.future.length;
+}
+
+// A drag is one step: begin() at pointer down, end() at pointer up.
+function begin() { S.before = JSON.stringify(S.level); }
+function end() {
+  if (S.before === null) return;
+  record(S.history, S.before, S.level);
+  S.before = null;
+  syncUndo();
+}
+
+// One whole edit: fn may change S.level in place or replace it.
+function change(fn) { begin(); fn(); end(); }
+
+function step(back, after) {
+  if (S.mode !== 'edit') return;
+  const l = back ? undo(S.history, S.level) : redo(S.history, S.level);
+  if (!l) return;
+  S.level = l;
+  after();
+  syncUndo();
+}
+return { syncUndo, begin, end, change, step };
+})();
 // ---- src/app/panels.js
-const m19 = (() => {
+const m21 = (() => {
 const { COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel, parseLevel } = m9;
-const { T, INK } = m12;
-const { drawPiece } = m14;
-const { drawEdit } = m16;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m17;
-const { S } = m10;
-const { SAMPLE } = m18;
-const { $, canvas, touch } = m11;
+const { T, INK } = m13;
+const { drawPiece } = m15;
+const { drawEdit } = m17;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m18;
+const { S } = m11;
+const { SAMPLE } = m19;
+const { $, canvas, touch } = m12;
+const { change, step: undoStep, syncUndo } = m20;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -1748,24 +1821,27 @@ function buildPanels(actions) {
     row.className = 'power' + (NEEDS[p] ? ' off' : '');
     const box = document.createElement('input');
     box.type = 'checkbox'; box.dataset.power = p; box.disabled = !!NEEDS[p];
-    box.onchange = () => { S.level.powers[p] = box.checked; if (S.game) S.pending.push(`power:${p}:${box.checked ? 1 : 0}`); syncPanel(); };
+    box.onchange = () => { change(() => { S.level.powers[p] = box.checked; }); if (S.game) S.pending.push(`power:${p}:${box.checked ? 1 : 0}`); syncPanel(); };
     const name = document.createElement('b'); name.textContent = NAMES[p];
     const say = document.createElement('small'); say.textContent = NEEDS[p] ? 'Needs ' + NEEDS[p] + '.' : POWER_TEXT[p];
     row.append(box, name, say);
     $(p === 'armored' ? 'statusList' : 'powerList').append(row);
   }
-  document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { S.level.clock = r.value; if (S.game) S.pending.push('clock:' + r.value); });
+  document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { change(() => { S.level.clock = r.value; }); if (S.game) S.pending.push('clock:' + r.value); });
   $('mode').onclick = () => setMode(S.mode === 'play' ? 'edit' : 'play');
   $('hideBtn').onclick = () => S.pending.push('hide');
   $('respawnBtn').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
+  const after = () => { syncPanel(); fit(); };
+  $('undo').onclick = () => undoStep(true, after);
+  $('redo').onclick = () => undoStep(false, after);
   $('winEdit').onclick = () => setMode('edit');
   $('placeHint').textContent = touch ? 'Tap to place. Tap one again to remove it. Look changes nothing.' : 'Click to place. Click one again, or right click, to remove it. Look changes nothing.';
   const resize = () => {
     const level = S.level;
     const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));
-    if (w !== level.w || h !== level.h) { S.level = resizeLevel(level, w, h); fit(); }
+    if (w !== level.w || h !== level.h) { change(() => { S.level = resizeLevel(level, w, h); }); fit(); }
   };
   $('w').onchange = resize; $('h').onchange = resize;
   $('save').onclick = () => {
@@ -1775,18 +1851,19 @@ function buildPanels(actions) {
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };
-  $('sample').onclick = () => { S.level = parseLevel(JSON.stringify(SAMPLE)); setMode('edit'); syncPanel(); fit(); };
+  $('sample').onclick = () => { change(() => { S.level = parseLevel(JSON.stringify(SAMPLE)); }); setMode('edit'); syncPanel(); fit(); };
   $('open').onclick = () => $('file').click();
   $('file').onchange = async () => {
     const f = $('file').files[0]; $('file').value = '';
     if (!f) return;
-    try { S.level = parseLevel(await f.text()); setMode('edit'); syncPanel(); fit(); }
+    try { const l = parseLevel(await f.text()); change(() => { S.level = l; }); setMode('edit'); syncPanel(); fit(); }
     catch (err) { alert('This file cannot be opened. ' + err.message); }
   };
 }
 
 function syncPanel() {
   const ui = S.ui, level = S.level;
+  syncUndo();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });
   // A tab carries a dot when the selected tool sits in it.
@@ -1819,9 +1896,9 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/editor/edit.js
-const m20 = (() => {
+const m22 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
-const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m17;
+const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m18;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -1941,14 +2018,14 @@ function place(level, ui, x, y, how) {
 return { holds, describe, place };
 })();
 // ---- src/app/play.js
-const m21 = (() => {
+const m23 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
-const { drawEdit, drawPlay } = m16;
-const { S } = m10;
-const { $, g, now } = m11;
-const { syncPanel, keysText } = m19;
+const { drawEdit, drawPlay } = m17;
+const { S } = m11;
+const { $, g, now } = m12;
+const { syncPanel, keysText } = m21;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
 
@@ -2029,12 +2106,18 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m22 = (() => {
-const { describe, holds, place } = m20;
-const { S } = m10;
-const { $, canvas, touch, now } = m11;
-const { setMode, aim } = m21;
+const m24 = (() => {
+const { describe, holds, place } = m22;
+const { S } = m11;
+const { $, canvas, touch, now } = m12;
+const { setMode, aim } = m23;
+const { begin, end, step: undoStep } = m20;
+const { syncPanel } = m21;
+const { fit } = m14;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
+
+
+
 
 
 
@@ -2065,6 +2148,7 @@ function bindInput() {
     }
     const c = cellFromEvent(ev); if (!c) return;
     if (S.ui.tool === 'look') { $('placeHint').textContent = describe(S.level, c.x, c.y); return; }
+    begin();
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
     paint(c.x, c.y, S.painting);
@@ -2083,12 +2167,17 @@ function bindInput() {
     S.hover = touch ? null : c;
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
-  canvas.addEventListener('pointerup', () => { S.painting = 0; S.swipe = null; });
-  canvas.addEventListener('pointercancel', () => { S.painting = 0; S.swipe = null; });
+  const lift = () => { S.painting = 0; S.swipe = null; end(); };
+  canvas.addEventListener('pointerup', lift);
+  canvas.addEventListener('pointercancel', lift);
   canvas.addEventListener('pointerleave', () => { S.hover = null; });
 
   window.addEventListener('keydown', ev => {
     if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;
+    if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'z' || ev.key === 'Z' || ev.key === 'y')) {
+      undoStep(ev.key === 'z' && !ev.shiftKey, () => { syncPanel(); fit(); });
+      ev.preventDefault(); return;
+    }
     if (ev.key === 'e' || ev.key === 'E') { setMode(S.mode === 'play' ? 'edit' : 'play'); ev.preventDefault(); return; }
     if (S.mode !== 'play') return;
     const k = KEYS[ev.key];
@@ -2100,18 +2189,20 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/app/main.js
-const m23 = (() => {
+const m25 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
-const { parseLevel } = m9;
-const { S, starterLevel } = m10;
-const { portrait } = m11;
-const { fit } = m13;
-const { buildPanels, syncPanel } = m19;
-const { bindInput } = m22;
-const { setMode, frame, render, tick, report, copyReport } = m21;
+const { parseLevel, emptyLevel } = m9;
+const { newHistory } = m10;
+const { S, starterLevel } = m11;
+const { portrait } = m12;
+const { fit } = m14;
+const { buildPanels, syncPanel } = m21;
+const { bindInput } = m24;
+const { setMode, frame, render, tick, report, copyReport } = m23;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
+
 
 
 
@@ -2129,7 +2220,7 @@ window.advanceTime = ms => {
   for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
   S.acc = 0; render();
 };
-window.wee = { report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); syncPanel(); fit(); } };
+window.wee = { blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
 
 buildPanels({ setMode, copyReport, fit });
 bindInput();

@@ -233,6 +233,27 @@ try {
   check('an early side key goes in as an aimed-back shot', JSON.parse(await page.evaluate(() => window.wee.report())).keys.some(k => k.k === 'back:up'));
   await page.keyboard.press('e');
 
+  // undo takes back a whole drag in one step, redo puts it back, and both keys work
+  await page.evaluate(() => window.wee.loadLevel(window.wee.blank(20, 12)));
+  check('a loaded room starts with nothing to undo', await page.locator('#undo').isDisabled());
+  await pick('wall');
+  const row = y => [3, 4, 5].map(x => at(x, y));
+  const [a1, , a3] = row(3);
+  await page.mouse.move(a1.x, a1.y); await page.mouse.down(); await page.mouse.move(a3.x, a3.y, { steps: 6 }); await page.mouse.up();
+  const painted = (await text()).level.cells.slice(3 * 20 + 3, 3 * 20 + 6);
+  check('the drag painted three blocks', painted.every(c => c === 'wall'), painted.join());
+  await page.click('#undo');
+  check('one undo takes back the whole drag', (await text()).level.cells.slice(3 * 20 + 3, 3 * 20 + 6).every(c => c === ''));
+  await page.click('#redo');
+  check('redo puts it back', (await text()).level.cells.slice(3 * 20 + 3, 3 * 20 + 6).every(c => c === 'wall'));
+  await page.keyboard.press('Control+z');
+  check('Ctrl+Z undoes', (await text()).level.cells[3 * 20 + 3] === '');
+  await page.keyboard.press('Control+Shift+Z');
+  check('Ctrl+Shift+Z redoes', (await text()).level.cells[3 * 20 + 3] === 'wall');
+  await page.keyboard.press('e');
+  check('undo is off while playing', await page.locator('#undo').isDisabled());
+  await page.keyboard.press('e');
+
   // stopping on the goal shows the win, with the move count; Play again starts over
   const goalRoom = room(['#######', '#P..#.#', '#######']); goalRoom.cells[10] = 'goal';
   await page.evaluate(l => window.wee.loadLevel(l), goalRoom);

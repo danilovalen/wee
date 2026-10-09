@@ -1,6 +1,7 @@
 // The one shared state of the page: the level being edited, the editor's settings and
 // the run being played. Every app file reads and writes it here, never in a copy.
 import { emptyLevel } from '../level/format.js';
+import { newHistory } from './history.js';
 
 // A new room takes the screen's shape: taller than wide on a phone held upright.
 export function starterLevel(tall) {
@@ -14,5 +15,5 @@ export const S = {
   level: null,
   ui: { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
   mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
-  played: null, keylog: [],
+  played: null, keylog: [], history: newHistory(), before: null,
 };

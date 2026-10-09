@@ -3,6 +3,9 @@ import { describe, holds, place } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch, now } from './dom.js';
 import { setMode, aim } from './play.js';
+import { begin, end, step as undoStep } from './undo.js';
+import { syncPanel } from './panels.js';
+import { fit } from './fit.js';
 
 function cellFromEvent(ev) {
   const r = canvas.getBoundingClientRect(), level = S.level;
@@ -30,6 +33,7 @@ export function bindInput() {
     }
     const c = cellFromEvent(ev); if (!c) return;
     if (S.ui.tool === 'look') { $('placeHint').textContent = describe(S.level, c.x, c.y); return; }
+    begin();
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
     paint(c.x, c.y, S.painting);
@@ -48,12 +52,17 @@ export function bindInput() {
     S.hover = touch ? null : c;
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
-  canvas.addEventListener('pointerup', () => { S.painting = 0; S.swipe = null; });
-  canvas.addEventListener('pointercancel', () => { S.painting = 0; S.swipe = null; });
+  const lift = () => { S.painting = 0; S.swipe = null; end(); };
+  canvas.addEventListener('pointerup', lift);
+  canvas.addEventListener('pointercancel', lift);
   canvas.addEventListener('pointerleave', () => { S.hover = null; });
 
   window.addEventListener('keydown', ev => {
     if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;
+    if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'z' || ev.key === 'Z' || ev.key === 'y')) {
+      undoStep(ev.key === 'z' && !ev.shiftKey, () => { syncPanel(); fit(); });
+      ev.preventDefault(); return;
+    }
     if (ev.key === 'e' || ev.key === 'E') { setMode(S.mode === 'play' ? 'edit' : 'play'); ev.preventDefault(); return; }
     if (S.mode !== 'play') return;
     const k = KEYS[ev.key];
