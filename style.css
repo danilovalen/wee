@@ -118,3 +118,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .roomRow span { display: grid; }
 .roomRow small { color: var(--muted, #8e98ad); }
 .thumb { width: 56px; height: auto; max-height: 56px; object-fit: contain; border-radius: 4px; flex: none; }
+.rooms select { background: #0d1017; color: inherit; border: 1px solid var(--line, #2a3142); border-radius: 6px; padding: 6px 8px; font: inherit; }
+.explored { margin: 6px 0 10px; }
+.explored summary { cursor: pointer; color: var(--muted, #8e98ad); }
+.explored ul { columns: 2; margin: 4px 0; padding-left: 18px; font-size: 0.9em; }

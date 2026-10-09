@@ -194,7 +194,7 @@ draft. This replaces Phase 2's export/import as the main path (the `.weepack` st
 daily exercise needs a fast "is this solvable, in how many slides" answer, or a day's room can
 be broken without anyone knowing.
 
-**D4. A mechanism index, derived, never typed.** Every saved room is read by the rules code and
+**D4. A mechanism index, derived, never typed.** **Done 2026-10-09** (`src/solve/tags.js`; filter and tally in the Rooms panel; D5's note field too). Every saved room is read by the rules code and
 gets tags for what it contains and what its solution actually uses:
 - *contains*: tile kinds, piece kinds, powers, clocks, colours with switches, inverted doors;
 - *uses* (from the solver's path): you pushed a box, a spring launched something, a door

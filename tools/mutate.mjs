@@ -180,6 +180,18 @@ const M = [
   ['src', "  p.from = { x: p.x, y: p.y };\n", "", 'sim'],
   ['src', "if (!ev.repeat) { S.demo = null; S.pending.push(aim(k)); }", "if (!ev.repeat) { S.demo = null; S.pending.push(k); }", 'browser'],
   ['src', "const CRUSHABLE = ['enemy', 'strong', 'box'];", "const CRUSHABLE = ['enemy', 'strong'];", 'sim'],
+  ['src', "    if (e.turret && e.kind !== 'turret') tags.add('piece:mounted');\n", "", "tags"],
+  ['src', "  if (Object.values(colours).some(n => n > 1)) tags.add('wiring:and');\n", "", "tags"],
+  ['src', "  if (Object.keys(colours).length > 1) tags.add('wiring:colours');\n", "", "tags"],
+  ['src', "  for (const p of ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'armored']) if (level.powers[p]) tags.add('power:' + p);", "  for (const p of ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'armored']) tags.add('power:' + p);", "tags"],
+  ['src', "    if (p.pushing) tags.add('use:push');\n", "", "tags"],
+  ['src', "      if (s.cells.includes('door:' + col)) tags.add('use:door-opens');\n", "", "tags"],
+  ['src', "    step(s, [k]); watch();", "    step(s, [k]);", "tags"],
+  ['src', "const solution = r && r.status === 'solved' ? r.moves : null;", "const solution = null;", "browser"],
+  ['src', "const tagsOf = r => { const { level } = splitRoom(r); return new Set([...contains(level), ...(r.uses || [])]); };", "const tagsOf = r => new Set(r.uses || []);", "browser"],
+  ['src', "  const shown = saved.filter(r => !filter || tagsOf(r).has(filter));", "  const shown = saved;", "browser"],
+  ['src', "  $('unexplored').replaceChildren(...MECHANISMS.filter(([t]) => !counts[t])", "  $('unexplored').replaceChildren(...MECHANISMS.filter(([t]) => counts[t])", "browser"],
+  ['src', "  ...(meta.solution ? { par: meta.solution.length, solution: meta.solution, uses: meta.uses || [] } : {}),\n", "", "browser"],
   ["src", "  if (t.deaths !== deaths || !settled(t)) return null;", "  if (!settled(t)) return null;", "solve"],
   ["src", "  if (!t.won && stateKey(t) === before) return null;\n", "", "solve"],
   ["src", "  if (!level.cells.includes('goal')) return 'nogoal';\n", "", "solve"],
@@ -281,7 +293,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }

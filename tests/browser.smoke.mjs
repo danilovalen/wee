@@ -309,6 +309,23 @@ try {
   await page.evaluate(() => window.advanceTime(3000));
   check('a two-move solution plays to the win', await page.locator('#win').isVisible() && (await page.textContent('#winText')) === 'Solved in 2 moves.', await page.textContent('#winText'));
   await page.click('#winEdit');
+  // a checked room saves its par, and the mechanism filter and tally read the saved rooms
+  await page.click('#checkBtn');
+  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  await page.click('#roomsBtn');
+  await page.fill('#roomName', 'Par room');
+  await page.click('#roomSaveAs');
+  await page.waitForFunction(() => document.getElementById('roomList').textContent.includes('Par room'));
+  check('a checked room is listed with its par', (await page.locator('#roomList .roomRow', { hasText: 'Par room' }).textContent()).includes('par 2'));
+  check('an unchecked one says so', (await page.locator('#roomList .roomRow', { hasText: 'Smoke room' }).textContent()).includes('not checked'));
+  check('the tally counts explored mechanisms', /^Explored \d+ of \d+ mechanisms$/.test(await page.textContent('#exploredSum')));
+  await page.selectOption('#tagFilter', 'tile:goal');
+  check('filtering by Goal shows only rooms with one', (await page.locator('#roomList .roomRow').count()) >= 1 && !(await page.textContent('#roomList')).includes('Smoke room'));
+  await page.selectOption('#tagFilter', 'use:spring');
+  check('a mechanism no room has says so', (await page.textContent('#roomList')).includes('No room has this yet.'));
+  check('and is listed as not explored', (await page.textContent('#unexplored')).includes('A spring launches'));
+  await page.selectOption('#tagFilter', '');
+  await page.keyboard.press('Escape');
   await page.evaluate(l => window.wee.loadLevel(l), goalRoom);
   await page.keyboard.press('e');
   check('a run starts at Moves 0', (await page.textContent('#moves')) === 'Moves 0');

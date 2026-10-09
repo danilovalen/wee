@@ -125,6 +125,10 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .roomRow span { display: grid; }
 .roomRow small { color: var(--muted, #8e98ad); }
 .thumb { width: 56px; height: auto; max-height: 56px; object-fit: contain; border-radius: 4px; flex: none; }
+.rooms select { background: #0d1017; color: inherit; border: 1px solid var(--line, #2a3142); border-radius: 6px; padding: 6px 8px; font: inherit; }
+.explored { margin: 6px 0 10px; }
+.explored summary { cursor: pointer; color: var(--muted, #8e98ad); }
+.explored ul { columns: 2; margin: 4px 0; padding-left: 18px; font-size: 0.9em; }
 </style>
 </head>
 <body>
@@ -240,6 +244,8 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
     </div>
     <p id="roomsSay" class="hint"></p>
     <h3>Your rooms</h3>
+    <label class="field">Mechanism <select id="tagFilter"></select></label>
+    <details class="explored"><summary id="exploredSum"></summary><p class="hint">Not in any room yet:</p><ul id="unexplored"></ul></details>
     <ul id="roomList" class="roomList"></ul>
     <h3>Templates</h3>
     <ul id="templateList" class="roomList"></ul>
@@ -1867,7 +1873,7 @@ const m22 = (() => {
 const { parseLevel } = m9;
 // A room is a level plus what the person wrote about it. These split and join the two.
 
-const META = ['id', 'name', 'note', 'updated'];
+const META = ['id', 'name', 'note', 'updated', 'par', 'solution', 'uses'];
 
 function splitRoom(room) {
   const meta = {}, level = { ...room };
@@ -1875,7 +1881,10 @@ function splitRoom(room) {
   return { meta, level: parseLevel(JSON.stringify(level)) };
 }
 
-const joinRoom = (meta, level) => ({ ...level, id: meta.id, name: meta.name, note: meta.note || '' });
+const joinRoom = (meta, level) => ({
+  ...level, id: meta.id, name: meta.name, note: meta.note || '',
+  ...(meta.solution ? { par: meta.solution.length, solution: meta.solution, uses: meta.uses || [] } : {}),
+});
 
 // What counts as the room's content when asking whether it has unsaved changes.
 const stampOf = level => JSON.stringify(level);
@@ -1947,8 +1956,88 @@ async function remove(id) {
 }
 return { where, detect, newId, list, put, remove };
 })();
-// ---- src/app/rooms.js
+// ---- src/solve/tags.js
 const m24 = (() => {
+const { createGame, step } = m8;
+// The mechanism index: what a room contains, and what its solution actually does.
+// Both come from the room and the rules, never typed by hand, so the counts stay true.
+
+// Every tag, in the order the index lists them, with its label. Draft copy.
+const MECHANISMS = [
+  ['tile:goal', 'Goal'], ['tile:checkpoint', 'Checkpoint'], ['tile:tri', 'Triangle'], ['tile:gate', 'One-way'],
+  ['tile:spring', 'Spring'], ['tile:death', 'Death block'], ['tile:water', 'Water'], ['tile:sticky', 'Sticky puddle'],
+  ['tile:button', 'Button'], ['tile:door', 'Door'], ['tile:idoor', 'Inverted door'], ['tile:receiver', 'Laser catcher'], ['tile:sensor', 'Laser relay'],
+  ['piece:mover', 'Moving block'], ['piece:enemy', 'Weak enemy'], ['piece:strong', 'Strong enemy'], ['piece:turret', 'Laser turret'],
+  ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'],
+  ['clock:input', 'On your move'], ['clock:follow', 'Same way as you'], ['clock:realtime', 'Real time'],
+  ['power:boomerang', 'Boomerang'], ['power:dive', 'Dive'], ['power:laser', 'Laser'], ['power:cycle', 'Cycle (hide)'],
+  ['power:swim', 'Swim'], ['power:armored', 'Armored'],
+  ['wiring:and', 'Two switches, one colour'], ['wiring:colours', 'Two or more colours'],
+  ['use:push', 'You push a box'], ['use:pushed', 'A block pushes you'], ['use:spring', 'A spring launches'],
+  ['use:door-opens', 'A door opens'], ['use:idoor-closes', 'An inverted door closes'], ['use:lit', 'A beam lights a switch'],
+  ['use:door-kill', 'A door squashes a piece'], ['use:squash', 'A heavy box breaks something'], ['use:death', 'A piece falls into death'],
+  ['use:beam-kill', 'A beam kills an enemy'], ['use:stick', 'You stick to something'], ['use:glue', 'Pieces glue together'],
+  ['use:hide', 'You hide'], ['use:swim', 'You swim'], ['use:checkpoint', 'You reach a checkpoint'],
+  ['use:tri', 'A triangle turns you'], ['use:gate', 'You pass a one-way'],
+];
+const LABEL = Object.fromEntries(MECHANISMS);
+
+// What the room holds, read off the level.
+function contains(level) {
+  const tags = new Set();
+  const colours = {};
+  for (const c of level.cells) {
+    if (!c || c === 'wall') continue;
+    const [kind, v] = c.split(':');
+    if (LABEL['tile:' + kind]) tags.add('tile:' + kind);
+    if (['button', 'receiver', 'sensor'].includes(kind)) colours[v] = (colours[v] || 0) + 1;
+  }
+  for (const e of level.entities) {
+    if (LABEL['piece:' + e.kind]) tags.add('piece:' + e.kind);
+    if (e.turret && e.kind !== 'turret') tags.add('piece:mounted');
+    const clock = e.turret ? e.turret.mode : e.mode;
+    if (clock && ['mover', 'enemy', 'strong', 'turret'].includes(e.kind) || e.turret) tags.add('clock:' + (clock || 'input'));
+  }
+  for (const p of ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'armored']) if (level.powers[p]) tags.add('power:' + p);
+  if (Object.values(colours).some(n => n > 1)) tags.add('wiring:and');
+  if (Object.keys(colours).length > 1) tags.add('wiring:colours');
+  return [...tags];
+}
+
+const EVENT_TAG = { pushed: 'use:pushed', spring: 'use:spring', stick: 'use:stick', glue: 'use:glue', hide: 'use:hide', checkpoint: 'use:checkpoint' };
+const KILL_TAG = { door: 'use:door-kill', squash: 'use:squash', death: 'use:death', turret: 'use:beam-kill', laser: 'use:beam-kill' };
+
+// What the solution does: the room replayed move by move, watching events and state.
+function uses(level, moves) {
+  const tags = new Set(), s = createGame(level), at = (x, y) => s.cells[y * s.w + x];
+  const busy = () => s.player.dir || s.player.hidden || s.entities.some(e => !e.dead && (e.rush || e.slide));
+  const watch = () => {
+    for (const ev of s.events) {
+      if (EVENT_TAG[ev.type]) tags.add(EVENT_TAG[ev.type]);
+      if (ev.type === 'kill' && KILL_TAG[ev.how]) tags.add(KILL_TAG[ev.how]);
+    }
+    const p = s.player, c = at(p.x, p.y);
+    if (p.pushing) tags.add('use:push');
+    if (p.swimming && c === 'water') tags.add('use:swim');
+    if (c.startsWith('tri:')) tags.add('use:tri');
+    if (c.startsWith('gate:')) tags.add('use:gate');
+    for (const [col, on] of Object.entries(s.open)) {
+      if (!on) continue;
+      if (s.cells.includes('door:' + col)) tags.add('use:door-opens');
+      if (s.cells.includes('idoor:' + col)) tags.add('use:idoor-closes');
+    }
+    for (const i of s.lit) if (/^(sensor|receiver):/.test(s.cells[i])) tags.add('use:lit');
+  };
+  for (const k of moves) {
+    step(s, [k]); watch();
+    for (let i = 0; i < 4 * s.w * s.h + 40 && busy(); i++) { step(s); watch(); }
+  }
+  return [...tags];
+}
+return { MECHANISMS, LABEL, contains, uses };
+})();
+// ---- src/app/rooms.js
+const m25 = (() => {
 const { TEMPLATES } = m21;
 const { splitRoom, joinRoom, stampOf, pack, unpack } = m22;
 const { starterLevel } = m11;
@@ -1957,9 +2046,11 @@ const { S } = m11;
 const { T } = m13;
 const { drawEdit } = m17;
 const { list, put, remove, where, newId, detect } = m23;
+const { contains, uses, MECHANISMS } = m24;
 const { $ } = m12;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
+
 
 
 
@@ -2006,8 +2097,11 @@ async function save(asNew) {
   const name = $('roomName').value.trim();
   if (!name) { say('Give the room a name first.'); $('roomName').focus(); return false; }
   const id = asNew || !S.room.id ? newId() : S.room.id;
+  // A check of this exact room gives the room its par, solution and what it uses.
+  const r = S.check && S.check.stamp === JSON.stringify(S.level) && S.check.result;
+  const solution = r && r.status === 'solved' ? r.moves : null;
   try {
-    await put(joinRoom({ id, name, note: $('roomNote').value }, S.level));
+    await put(joinRoom({ id, name, note: $('roomNote').value, solution, uses: solution ? uses(S.level, solution) : [] }, S.level));
   } catch (e) { say(e.message); return false; }
   Object.assign(S.room, { id, name, note: $('roomNote').value, saved: stampOf(S.level), edited: false });
   remember(id);
@@ -2042,13 +2136,32 @@ const when = iso => iso ? new Date(iso).toLocaleDateString(undefined, { day: 'nu
 async function refresh() {
   try { saved = await list(); } catch (e) { say(e.message); saved = []; }
   saved.sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
-  const ul = $('roomList');
-  ul.replaceChildren(...saved.map(r => {
-    const { meta, level } = splitRoom(r);
-    return row(level, meta.name || 'Untitled', `${level.w}x${level.h} · ${when(meta.updated)}`, () => { if (leaveOk()) { openRoom(level, meta); $('roomsBox').close(); } });
-  }));
-  if (!saved.length) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = 'No saved rooms yet.'; ul.append(li); }
+  renderList();
   return saved;
+}
+
+// A room's tags: what it holds, and what its saved solution does.
+const tagsOf = r => { const { level } = splitRoom(r); return new Set([...contains(level), ...(r.uses || [])]); };
+
+function renderList() {
+  const filter = $('tagFilter').value, ul = $('roomList');
+  const counts = {};
+  for (const r of saved) for (const t of tagsOf(r)) counts[t] = (counts[t] || 0) + 1;
+  const shown = saved.filter(r => !filter || tagsOf(r).has(filter));
+  ul.replaceChildren(...shown.map(r => {
+    const { meta, level } = splitRoom(r);
+    const par = meta.par ? ` · par ${meta.par}` : ' · not checked';
+    return row(level, meta.name || 'Untitled', `${level.w}x${level.h}${par} · ${when(meta.updated)}`, () => { if (leaveOk()) { openRoom(level, meta); $('roomsBox').close(); } });
+  }));
+  if (!shown.length) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'No saved rooms yet.'; ul.append(li); }
+  // The filter lists every mechanism with how many rooms have it; the tally shows the gaps.
+  const opts = [new Option('All rooms', '')];
+  for (const [t, label] of MECHANISMS) opts.push(new Option(`${label} (${counts[t] || 0})`, t));
+  $('tagFilter').replaceChildren(...opts);
+  $('tagFilter').value = filter;
+  const explored = MECHANISMS.filter(([t]) => counts[t]).length;
+  $('exploredSum').textContent = `Explored ${explored} of ${MECHANISMS.length} mechanisms`;
+  $('unexplored').replaceChildren(...MECHANISMS.filter(([t]) => !counts[t]).map(([, label]) => { const li = document.createElement('li'); li.textContent = label; return li; }));
 }
 
 function download(name, data) {
@@ -2066,6 +2179,7 @@ function buildRooms(actions) {
     return row(level, t.name, `Template · ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.saved = null; syncRoomsButton(); $('roomsBox').close(); } });
   }));
   $('roomsBtn').onclick = async () => { fillCurrent(); say(''); $('roomsBox').showModal(); await refresh(); };
+  $('tagFilter').onchange = renderList;
   $('roomSave').onclick = () => save(false);
   $('roomSaveAs').onclick = () => save(true);
   $('roomName').oninput = $('roomNote').oninput = () => { if (S.room) S.room.edited = true; else S.room = { id: null, name: '', note: '', saved: null, edited: true }; syncRoomsButton(); };
@@ -2112,12 +2226,12 @@ async function bootRooms() {
 return { dirty, leaveOk, syncRoomsButton, openRoom, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m25 = (() => {
+const m26 = (() => {
 const { record, undo, redo } = m10;
 const { S } = m11;
 const { $ } = m12;
 const { syncCheck } = m20;
-const { syncRoomsButton } = m24;
+const { syncRoomsButton } = m25;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -2154,7 +2268,7 @@ function step(back, after) {
 return { syncUndo, begin, end, change, step };
 })();
 // ---- src/app/panels.js
-const m26 = (() => {
+const m27 = (() => {
 const { COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel } = m9;
 const { T, INK } = m13;
@@ -2163,9 +2277,9 @@ const { drawEdit } = m17;
 const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m18;
 const { S } = m11;
 const { $, canvas, touch } = m12;
-const { change, step: undoStep, syncUndo } = m25;
+const { change, step: undoStep, syncUndo } = m26;
 const { runCheck, syncCheck } = m20;
-const { syncRoomsButton } = m24;
+const { syncRoomsButton } = m25;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -2326,7 +2440,7 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/editor/edit.js
-const m27 = (() => {
+const m28 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
 const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m18;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
@@ -2448,14 +2562,14 @@ function place(level, ui, x, y, how) {
 return { holds, describe, place };
 })();
 // ---- src/app/play.js
-const m28 = (() => {
+const m29 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m17;
 const { S } = m11;
 const { $, g, now } = m12;
-const { syncPanel, keysText } = m26;
+const { syncPanel, keysText } = m27;
 const { feedDemo } = m20;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
@@ -2540,14 +2654,14 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m29 = (() => {
-const { describe, holds, place } = m27;
+const m30 = (() => {
+const { describe, holds, place } = m28;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m28;
-const { begin, end, step: undoStep } = m25;
-const { save } = m24;
-const { syncPanel } = m26;
+const { setMode, aim } = m29;
+const { begin, end, step: undoStep } = m26;
+const { save } = m25;
+const { syncPanel } = m27;
 const { fit } = m14;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
@@ -2630,7 +2744,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/app/main.js
-const m30 = (() => {
+const m31 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -2638,10 +2752,10 @@ const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { portrait } = m12;
 const { fit } = m14;
-const { buildPanels, syncPanel } = m26;
-const { bindInput } = m29;
-const { setMode, frame, render, tick, report, copyReport } = m28;
-const { buildRooms, bootRooms } = m24;
+const { buildPanels, syncPanel } = m27;
+const { bindInput } = m30;
+const { setMode, frame, render, tick, report, copyReport } = m29;
+const { buildRooms, bootRooms } = m25;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 

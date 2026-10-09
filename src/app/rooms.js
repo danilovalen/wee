@@ -8,6 +8,7 @@ import { S } from '../editor/state.js';
 import { T } from '../view/ink.js';
 import { drawEdit } from '../view/scene.js';
 import { list, put, remove, where, newId, detect } from './store.js';
+import { contains, uses, MECHANISMS } from '../solve/tags.js';
 import { $ } from './dom.js';
 
 const LAST = 'wee.last';
@@ -47,8 +48,11 @@ export async function save(asNew) {
   const name = $('roomName').value.trim();
   if (!name) { say('Give the room a name first.'); $('roomName').focus(); return false; }
   const id = asNew || !S.room.id ? newId() : S.room.id;
+  // A check of this exact room gives the room its par, solution and what it uses.
+  const r = S.check && S.check.stamp === JSON.stringify(S.level) && S.check.result;
+  const solution = r && r.status === 'solved' ? r.moves : null;
   try {
-    await put(joinRoom({ id, name, note: $('roomNote').value }, S.level));
+    await put(joinRoom({ id, name, note: $('roomNote').value, solution, uses: solution ? uses(S.level, solution) : [] }, S.level));
   } catch (e) { say(e.message); return false; }
   Object.assign(S.room, { id, name, note: $('roomNote').value, saved: stampOf(S.level), edited: false });
   remember(id);
@@ -83,13 +87,32 @@ const when = iso => iso ? new Date(iso).toLocaleDateString(undefined, { day: 'nu
 export async function refresh() {
   try { saved = await list(); } catch (e) { say(e.message); saved = []; }
   saved.sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
-  const ul = $('roomList');
-  ul.replaceChildren(...saved.map(r => {
-    const { meta, level } = splitRoom(r);
-    return row(level, meta.name || 'Untitled', `${level.w}x${level.h} · ${when(meta.updated)}`, () => { if (leaveOk()) { openRoom(level, meta); $('roomsBox').close(); } });
-  }));
-  if (!saved.length) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = 'No saved rooms yet.'; ul.append(li); }
+  renderList();
   return saved;
+}
+
+// A room's tags: what it holds, and what its saved solution does.
+const tagsOf = r => { const { level } = splitRoom(r); return new Set([...contains(level), ...(r.uses || [])]); };
+
+function renderList() {
+  const filter = $('tagFilter').value, ul = $('roomList');
+  const counts = {};
+  for (const r of saved) for (const t of tagsOf(r)) counts[t] = (counts[t] || 0) + 1;
+  const shown = saved.filter(r => !filter || tagsOf(r).has(filter));
+  ul.replaceChildren(...shown.map(r => {
+    const { meta, level } = splitRoom(r);
+    const par = meta.par ? ` · par ${meta.par}` : ' · not checked';
+    return row(level, meta.name || 'Untitled', `${level.w}x${level.h}${par} · ${when(meta.updated)}`, () => { if (leaveOk()) { openRoom(level, meta); $('roomsBox').close(); } });
+  }));
+  if (!shown.length) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'No saved rooms yet.'; ul.append(li); }
+  // The filter lists every mechanism with how many rooms have it; the tally shows the gaps.
+  const opts = [new Option('All rooms', '')];
+  for (const [t, label] of MECHANISMS) opts.push(new Option(`${label} (${counts[t] || 0})`, t));
+  $('tagFilter').replaceChildren(...opts);
+  $('tagFilter').value = filter;
+  const explored = MECHANISMS.filter(([t]) => counts[t]).length;
+  $('exploredSum').textContent = `Explored ${explored} of ${MECHANISMS.length} mechanisms`;
+  $('unexplored').replaceChildren(...MECHANISMS.filter(([t]) => !counts[t]).map(([, label]) => { const li = document.createElement('li'); li.textContent = label; return li; }));
 }
 
 function download(name, data) {
@@ -107,6 +130,7 @@ export function buildRooms(actions) {
     return row(level, t.name, `Template · ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.saved = null; syncRoomsButton(); $('roomsBox').close(); } });
   }));
   $('roomsBtn').onclick = async () => { fillCurrent(); say(''); $('roomsBox').showModal(); await refresh(); };
+  $('tagFilter').onchange = renderList;
   $('roomSave').onclick = () => save(false);
   $('roomSaveAs').onclick = () => save(true);
   $('roomName').oninput = $('roomNote').oninput = () => { if (S.room) S.room.edited = true; else S.room = { id: null, name: '', note: '', saved: null, edited: true }; syncRoomsButton(); };
