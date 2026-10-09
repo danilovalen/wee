@@ -1,5 +1,6 @@
 import { createGame, step, gameText, replay } from '../src/rules/game.js';
 import { worldStep as rawWorldStep } from '../src/rules/pieces.js';
+import { aimKey } from '../src/rules/player.js';
 import { parseLevel, emptyLevel } from '../src/level/format.js';
 import { RT_PERIOD } from '../src/rules/base.js';
 
@@ -805,6 +806,25 @@ const LONG = ['##########', '#..P....##', '##########'];
   step(f, ['right']); step(f);
   step(f, ['down']); settle(f);
   check('a follower still sliding your old way finishes that slide first', at(f.entities[0], 8, 1), JSON.stringify(f.entities[0]));
+}
+
+{ // a side shot leaves from the tile you were drawn on when you pressed
+  const R = ['##########', '#........#', '###.######', '#P.......#', '##########'];
+  const g = createGame(room(R));
+  step(g, ['right']); step(g); step(g);
+  check('three ticks in, you are past the hole', at(g.player, 4, 3), JSON.stringify(g.player));
+  check('pressed early in the tick, a side key is aimed back', aimKey(g, 'up', 0.2) === 'back:up' && aimKey(g, 'up', 0.7) === 'up');
+  check('along your slide it is not', aimKey(g, 'right', 0.2) === 'right' && aimKey(g, 'left', 0.2) === 'left');
+  step(g, ['back:up']);
+  const shot = g.events.find(e => e.type === 'laser');
+  check('aimed back, the shot goes up through the hole you just passed', shot && shot.path.some(([x, y]) => x === 3 && y === 1), JSON.stringify(shot));
+  const h = createGame(room(R));
+  step(h, ['right']); step(h); step(h);
+  step(h, ['up']);
+  const miss = h.events.find(e => e.type === 'laser');
+  check('not aimed back, it leaves from your tile and hits the wall', miss && miss.path.length === 1 && miss.path[0][0] === 4, JSON.stringify(miss));
+  const st = createGame(room(R));
+  check('standing still, no key is aimed back', aimKey(st, 'up', 0.1) === 'up');
 }
 
 done();

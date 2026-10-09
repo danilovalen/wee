@@ -425,8 +425,9 @@ function laserHit(s, o, how) {
   return false;
 }
 
-function laser(s, d) {
-  const r = trace(s, s.player.x, s.player.y, d, o => laserHit(s, o, 'laser'), false);
+function laser(s, d, from) {
+  const o = from || s.player;
+  const r = trace(s, o.x, o.y, d, o => laserHit(s, o, 'laser'), false);
   const pools = shockPools(s, r.path);
   s.events.push({ type: 'laser', d, ...r, shocked: [...pools] });
   if (shockHarms(s, pools, 'laser')) die(s);
@@ -710,6 +711,7 @@ function playerStep(s, d, diving) {
     else return 'blocked';
   }
   p.pushing = pushed;
+  p.from = { x: p.x, y: p.y };
   p.x = nx; p.y = ny; p.moved++;
   if (p.dir) p.dir = t.d;
   if (g && !ahead) drag(s, g, dx, dy);
@@ -782,15 +784,28 @@ function input(s, k) {
     hideCycle(s);
     return;
   }
+  // 'back:left' is a side shot aimed from the tile you were drawn on when you pressed,
+  // the one you just left (see aimKey).
+  let from = null;
+  if (k.startsWith('back:')) { k = k.slice(5); from = p.dir && p.from; }
   if (!DIRS[k] || p.hidden) return;
   // Riding, a move lets go.
   if (p.stuck && p.stuck.ride) unstick(s);
   if (!p.dir) { p.dir = k; p.moved = 0; s.move++; return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
   else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { letGo(s); p.dir = k; s.events.push({ type: 'boomerang', from: OPPOSITE[k] }); } }
-  else if (s.powers.laser) laser(s, k);
+  else if (s.powers.laser) laser(s, k, from);
 }
-return { playerStep, endSlide, slideOnce, dive, unhide, letGo, input };
+
+// The screen draws you between your last tile and this one. A side shot pressed while
+// you still looked nearer the last tile is sent as 'back:', so it leaves from where you
+// saw yourself; replays get the same key, so they shoot the same way.
+function aimKey(s, k, alpha) {
+  const p = s.player;
+  const side = p.dir && DIRS[k] && k !== p.dir && k !== OPPOSITE[p.dir];
+  return side && p.from && alpha < 0.5 ? 'back:' + k : k;
+}
+return { playerStep, endSlide, slideOnce, dive, unhide, letGo, input, aimKey };
 })();
 // ---- src/rules/game.js
 const m7 = (() => {
@@ -1778,11 +1793,13 @@ return { holds, describe, place };
 const m20 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m7;
+const { aimKey } = m6;
 const { drawEdit, drawPlay } = m15;
 const { S } = m9;
 const { $, g, now } = m10;
 const { syncPanel, keysText } = m18;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
 
 
 
@@ -1808,6 +1825,9 @@ function tick() {
     else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
   }
 }
+
+// A key as the rules should take it, given where you are drawn right now.
+const aim = k => S.game ? aimKey(S.game, k, S.acc / TICK_MS) : k;
 
 function setMode(m, keep) {
   if (keep) { $('keys').textContent = keysText(); return; }
@@ -1851,14 +1871,14 @@ async function copyReport() {
   catch { $('reportText').value = text; $('reportBox').showModal(); $('reportText').select(); }
 }
 function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mode, true), 2500); }
-return { snapshot, tick, setMode, frame, render, report, copyReport };
+return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
 const m21 = (() => {
 const { describe, holds, place } = m19;
 const { S } = m9;
 const { $, canvas, touch, now } = m10;
-const { setMode } = m20;
+const { setMode, aim } = m20;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -1899,7 +1919,7 @@ function bindInput() {
       const sw = S.swipe, dx = ev.clientX - sw.x, dy = ev.clientY - sw.y;
       if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_PX) return;
       const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
-      if (d !== sw.last) S.pending.push(d);
+      if (d !== sw.last) S.pending.push(aim(d));
       Object.assign(sw, { x: ev.clientX, y: ev.clientY, last: d });
       return;
     }
@@ -1919,7 +1939,7 @@ function bindInput() {
     const k = KEYS[ev.key];
     if (!k) return;
     ev.preventDefault();
-    if (!ev.repeat) S.pending.push(k);
+    if (!ev.repeat) S.pending.push(aim(k));
   });
 }
 return { bindInput };

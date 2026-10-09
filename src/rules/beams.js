@@ -28,8 +28,9 @@ export function laserHit(s, o, how) {
   return false;
 }
 
-export function laser(s, d) {
-  const r = trace(s, s.player.x, s.player.y, d, o => laserHit(s, o, 'laser'), false);
+export function laser(s, d, from) {
+  const o = from || s.player;
+  const r = trace(s, o.x, o.y, d, o => laserHit(s, o, 'laser'), false);
   const pools = shockPools(s, r.path);
   s.events.push({ type: 'laser', d, ...r, shocked: [...pools] });
   if (shockHarms(s, pools, 'laser')) die(s);

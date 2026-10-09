@@ -176,6 +176,12 @@ const M = [
   ['src', "&& !e.rush && e.mode === 'realtime' && MOVES.includes(e.kind)) e.rush = true;", "&& !e.rush && e.mode === 'realtime' && MOVES.includes(e.kind)) {}", 'sim'],
   ['src', "if (!p.dir) { p.dir = k; p.moved = 0; s.move++; return; }", "if (!p.dir) { p.dir = k; p.moved = 0; return; }", 'sim'],
   ['src', "  s.move++;\n  for (const e of s.entities) if (!e.dead && e.mode === 'input'", "  for (const e of s.entities) if (!e.dead && e.mode === 'input'", 'sim'],
+  ['src', "return side && p.from && alpha < 0.5 ? 'back:' + k : k;", "return k;", 'sim'],
+  ['src', "return side && p.from && alpha < 0.5 ? 'back:' + k : k;", "return side && p.from ? 'back:' + k : k;", 'sim'],
+  ['src', "const side = p.dir && DIRS[k] && k !== p.dir && k !== OPPOSITE[p.dir];", "const side = p.dir && DIRS[k];", 'sim'],
+  ['src', "const o = from || s.player;", "const o = s.player;", 'sim'],
+  ['src', "  p.from = { x: p.x, y: p.y };\n", "", 'sim'],
+  ['src', "if (!ev.repeat) S.pending.push(aim(k));", "if (!ev.repeat) S.pending.push(k);", 'browser'],
   ['src', "tool === 'receiver' || tool === 'sensor' || tool === 'gate') return", "tool === 'receiver' || tool === 'gate') return", 'browser'],
   ['src', "drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);\n  g.restore();", "g.restore();", 'browser'],
 ];

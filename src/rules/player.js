@@ -31,6 +31,7 @@ export function playerStep(s, d, diving) {
     else return 'blocked';
   }
   p.pushing = pushed;
+  p.from = { x: p.x, y: p.y };
   p.x = nx; p.y = ny; p.moved++;
   if (p.dir) p.dir = t.d;
   if (g && !ahead) drag(s, g, dx, dy);
@@ -103,11 +104,24 @@ export function input(s, k) {
     hideCycle(s);
     return;
   }
+  // 'back:left' is a side shot aimed from the tile you were drawn on when you pressed,
+  // the one you just left (see aimKey).
+  let from = null;
+  if (k.startsWith('back:')) { k = k.slice(5); from = p.dir && p.from; }
   if (!DIRS[k] || p.hidden) return;
   // Riding, a move lets go.
   if (p.stuck && p.stuck.ride) unstick(s);
   if (!p.dir) { p.dir = k; p.moved = 0; s.move++; return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
   else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { letGo(s); p.dir = k; s.events.push({ type: 'boomerang', from: OPPOSITE[k] }); } }
-  else if (s.powers.laser) laser(s, k);
+  else if (s.powers.laser) laser(s, k, from);
+}
+
+// The screen draws you between your last tile and this one. A side shot pressed while
+// you still looked nearer the last tile is sent as 'back:', so it leaves from where you
+// saw yourself; replays get the same key, so they shoot the same way.
+export function aimKey(s, k, alpha) {
+  const p = s.player;
+  const side = p.dir && DIRS[k] && k !== p.dir && k !== OPPOSITE[p.dir];
+  return side && p.from && alpha < 0.5 ? 'back:' + k : k;
 }

@@ -227,6 +227,10 @@ try {
     return best;
   });
   check('a boomerang leaves a cloud ahead of where you turned', puff > 200, String(puff));
+  // a side key pressed right after a tick is aimed from the tile you were drawn on
+  await page.keyboard.press('ArrowRight'); await page.evaluate(() => window.advanceTime(60));
+  await page.keyboard.press('ArrowUp'); await page.evaluate(() => window.advanceTime(60));
+  check('an early side key goes in as an aimed-back shot', JSON.parse(await page.evaluate(() => window.wee.report())).keys.some(k => k.k === 'back:up'));
   await page.keyboard.press('e');
 
   // a disabled power reads as disabled and cannot be ticked

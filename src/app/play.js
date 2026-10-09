@@ -1,6 +1,7 @@
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 import { TICK_MS } from '../rules/base.js';
 import { createGame, step, gameText } from '../rules/game.js';
+import { aimKey } from '../rules/player.js';
 import { drawEdit, drawPlay } from '../view/scene.js';
 import { S } from '../editor/state.js';
 import { $, g, now } from './dom.js';
@@ -25,6 +26,9 @@ export function tick() {
     else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
   }
 }
+
+// A key as the rules should take it, given where you are drawn right now.
+export const aim = k => S.game ? aimKey(S.game, k, S.acc / TICK_MS) : k;
 
 export function setMode(m, keep) {
   if (keep) { $('keys').textContent = keysText(); return; }

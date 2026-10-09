@@ -2,7 +2,7 @@
 import { describe, holds, place } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch, now } from './dom.js';
-import { setMode } from './play.js';
+import { setMode, aim } from './play.js';
 
 function cellFromEvent(ev) {
   const r = canvas.getBoundingClientRect(), level = S.level;
@@ -39,7 +39,7 @@ export function bindInput() {
       const sw = S.swipe, dx = ev.clientX - sw.x, dy = ev.clientY - sw.y;
       if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_PX) return;
       const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
-      if (d !== sw.last) S.pending.push(d);
+      if (d !== sw.last) S.pending.push(aim(d));
       Object.assign(sw, { x: ev.clientX, y: ev.clientY, last: d });
       return;
     }
@@ -59,6 +59,6 @@ export function bindInput() {
     const k = KEYS[ev.key];
     if (!k) return;
     ev.preventDefault();
-    if (!ev.repeat) S.pending.push(k);
+    if (!ev.repeat) S.pending.push(aim(k));
   });
 }
