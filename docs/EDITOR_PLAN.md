@@ -172,7 +172,7 @@ So the editor is good enough to build with, and nothing around it supports a dai
 
 ### What to build, in order
 
-**D1. A home for it: `dev.wee`, private.** Recommendation: a subdomain on the server that already
+**D1. A home for it: `dev.wee`, private.** Decided 2026-10-09: his VPS. Recommendation was: a subdomain on the server that already
 runs `play.manganacarta.com` (nginx and TLS are there), e.g. `wee.manganacarta.com`, behind HTTP
 basic auth. Free, private, one config block. Alternatives: Cloudflare Pages + Cloudflare Access
 (free, login by email code, no server to keep); GitHub Pages cannot be private on a free plan.
