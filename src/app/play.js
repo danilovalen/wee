@@ -46,7 +46,7 @@ export function setMode(m, keep) {
   S.fx = [];
   if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }
   syncPanel();
-  if (m !== 'play') S.demo = null;
+  if (m !== 'play') { S.demo = null; S.demoWait = null; }
   if (m === 'play') { S.played = JSON.parse(JSON.stringify(S.level)); S.keylog = []; S.game = createGame(S.level); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
   else S.game = null;
 }

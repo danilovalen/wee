@@ -1,6 +1,7 @@
 // The mechanism index: what a room contains, and what its solution actually does.
 // Both come from the room and the rules, never typed by hand, so the counts stay true.
 import { createGame, step } from '../rules/game.js';
+import { parseMove } from './solve.js';
 
 // Every tag, in the order the index lists them, with its label. Draft copy.
 export const MECHANISMS = [
@@ -17,6 +18,7 @@ export const MECHANISMS = [
   ['use:door-opens', 'A door opens'], ['use:idoor-closes', 'An inverted door closes'], ['use:lit', 'A beam lights a switch'],
   ['use:door-kill', 'A door squashes a piece'], ['use:squash', 'A heavy box breaks something'], ['use:death', 'A piece falls into death'],
   ['use:beam-kill', 'A beam kills an enemy'], ['use:stick', 'You stick to something'], ['use:glue', 'Pieces glue together'],
+  ['use:boomerang', 'You turn back mid-slide'], ['use:dive', 'You dive'], ['use:laser', 'You fire the laser'],
   ['use:hide', 'You hide'], ['use:swim', 'You swim'], ['use:checkpoint', 'You reach a checkpoint'],
   ['use:tri', 'A triangle turns you'], ['use:gate', 'You pass a one-way'],
 ];
@@ -44,7 +46,7 @@ export function contains(level) {
   return [...tags];
 }
 
-const EVENT_TAG = { pushed: 'use:pushed', spring: 'use:spring', stick: 'use:stick', glue: 'use:glue', hide: 'use:hide', checkpoint: 'use:checkpoint' };
+const EVENT_TAG = { boomerang: 'use:boomerang', dive: 'use:dive', laser: 'use:laser', pushed: 'use:pushed', spring: 'use:spring', stick: 'use:stick', glue: 'use:glue', hide: 'use:hide', checkpoint: 'use:checkpoint' };
 const KILL_TAG = { door: 'use:door-kill', squash: 'use:squash', death: 'use:death', turret: 'use:beam-kill', laser: 'use:beam-kill' };
 
 // What the solution does: the room replayed move by move, watching events and state.
@@ -68,9 +70,10 @@ export function uses(level, moves) {
     }
     for (const i of s.lit) if (/^(sensor|receiver):/.test(s.cells[i])) tags.add('use:lit');
   };
-  for (const k of moves) {
+  for (const m of moves) {
+    const { k, at, then } = parseMove(m);
     step(s, [k]); watch();
-    for (let i = 0; i < 4 * s.w * s.h + 40 && busy(); i++) { step(s); watch(); }
+    for (let i = 1; i <= 4 * s.w * s.h + 40 && busy(); i++) { step(s, i === at ? [then] : []); watch(); }
   }
   return [...tags];
 }

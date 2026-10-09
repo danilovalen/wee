@@ -32,5 +32,7 @@ check('his first room: you push a box and a door opens', uf.includes('use:push')
 check('every tag uses() gives is a known mechanism', uf.every(t => LABEL[t]));
 const hide = room(['#####', '#P..#', '#####'], { powers: { cycle: true } });
 check('what happens on the key press itself counts (a hide)', uses(hide, ['hide']).includes('use:hide'));
+const dv = room(['#######', '#P.H..#', '#######']); dv.cells[11] = 'goal';
+check('a mid-slide key in the solution counts (a dive)', uses(dv, ['right@1:right', 'right']).includes('use:dive'));
 check('no moves, no uses', uses(push, []).length === 0);
 done();

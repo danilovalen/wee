@@ -2,7 +2,7 @@
 // returns actually wins when replayed through the plain rules, key by key.
 import { readFileSync } from 'node:fs';
 import { createGame, step } from '../src/rules/game.js';
-import { solve, move, stateKey, unsearchable } from '../src/solve/solve.js';
+import { solve, move, stateKey, unsearchable, powerMoves, parseMove } from '../src/solve/solve.js';
 import { room, suite } from './lib.mjs';
 
 const { check, done } = suite('solve');
@@ -11,9 +11,10 @@ const goal = (l, x, y) => { l.cells[y * l.w + x] = 'goal'; return l; };
 // Replays a solution without the solver: press, then tick until at rest.
 function replays(level, keys) {
   const s = createGame(level);
-  for (const k of keys) {
+  for (const m of keys) {
+    const [k, rest] = m.split('@'), [at, then] = rest ? rest.split(':') : [0, null];
     step(s, [k]);
-    for (let i = 0; i < 500 && (s.player.dir || s.player.hidden || s.entities.some(e => !e.dead && (e.rush || e.slide))); i++) step(s);
+    for (let i = 1; i < 500 && (s.player.dir || s.player.hidden || s.entities.some(e => !e.dead && (e.rush || e.slide))); i++) step(s, i === +at ? [then] : []);
   }
   return s.won;
 }
@@ -55,4 +56,12 @@ const a = createGame(one), b = createGame(one);
 check('two fresh games have one key', stateKey(a) === stateKey(b));
 b.player.x = 2;
 check('moving you changes the key', stateKey(a) !== stateKey(b));
+const dive = goal(room(['#######', '#P.H..#', '#######']), 4, 1);
+const rd = solve(dive);
+check('a room that needs a dive is solved with one', rd.status === 'solved' && rd.moves.join() === 'right@1:right,right' && replays(dive, rd.moves), JSON.stringify(rd));
+check('and is unsolvable with Dive off', solve({ ...dive, powers: { ...dive.powers, dive: false } }).status === 'unsolvable');
+check('with no powers on, no mid-slide moves are tried', powerMoves(createGame({ ...dive, powers: { ...dive.powers, boomerang: false, dive: false, laser: false } })).length === 0);
+const pm = powerMoves(createGame(dive));
+check('mid-slide moves name the slide, the tick and the key', pm.includes('right@1:right') && pm.includes('right@1:left') && pm.includes('right@1:up'));
+check('a move string reads back', JSON.stringify(parseMove('right@3:left')) === JSON.stringify({ k: 'right', at: 3, then: 'left' }) && parseMove('up').then === null);
 done();

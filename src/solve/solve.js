@@ -1,9 +1,10 @@
 // The solver: a breadth-first search over the room's states, one move of yours per
 // edge, using the real rules. A move is a slide you start from rest (or a hide), run
 // until you and every piece have stopped. Mid-slide powers (Boomerang, Dive, Laser)
-// are not tried, so a room that needs one reads as unsolved; the result says so.
+// are tried once per move: 'right@3:left' starts a slide right and presses left on the
+// third tick after (here a boomerang).
 import { createGame, step } from '../rules/game.js';
-import { MOVES } from '../rules/base.js';
+import { MOVES, OPPOSITE } from '../rules/base.js';
 
 export const MAX_STATES = 20000;
 const KEYS = ['up', 'right', 'down', 'left'];
@@ -20,13 +21,41 @@ const settled = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => 
 
 // One move from state s: a fresh copy, the key, then ticks until everything stops.
 // Null when the move changes nothing, kills you, or never settles.
-export function move(s, k) {
+export function parseMove(m) {
+  const [k, rest] = m.split('@');
+  if (!rest) return { k, at: 0, then: null };
+  const [n, then] = rest.split(':');
+  return { k, at: +n, then };
+}
+
+const limit = s => 4 * s.w * s.h + 40;
+
+export function move(s, m) {
+  const { k, at, then } = parseMove(m);
   const t = structuredClone(s), deaths = t.deaths, before = stateKey(s);
   step(t, [k]);
-  for (let i = 0; i < 4 * t.w * t.h + 40 && !settled(t); i++) step(t);
+  for (let i = 1; i <= limit(t) && !settled(t); i++) step(t, i === at ? [then] : []);
   if (t.deaths !== deaths || !settled(t)) return null;
   if (!t.won && stateKey(t) === before) return null;
   return t;
+}
+
+// The mid-slide moves worth trying from s: for each slide, each tick it is still going,
+// each power that is on (Boomerang turns back, Dive lands, Laser shoots either side).
+export function powerMoves(s) {
+  const pw = s.powers, out = [];
+  for (const d of KEYS) {
+    const t = structuredClone(s);
+    step(t, [d]);
+    for (let i = 1; i <= limit(t) && t.player.dir && !t.won; i++) {
+      const pd = t.player.dir;
+      if (pw.boomerang) out.push(`${d}@${i}:${OPPOSITE[pd]}`);
+      if (pw.dive) out.push(`${d}@${i}:${pd}`);
+      if (pw.laser) for (const side of KEYS) if (side !== pd && side !== OPPOSITE[pd]) out.push(`${d}@${i}:${side}`);
+      step(t);
+    }
+  }
+  return out;
 }
 
 // Why a room cannot be searched, or null when it can.
@@ -48,7 +77,7 @@ export function* search(level, max = MAX_STATES) {
   while (frontier.length) {
     const next = [];
     for (const { s, path } of frontier) {
-      for (const k of keys) {
+      for (const k of [...keys, ...powerMoves(s)]) {
         const t = move(s, k);
         if (!t) continue;
         if (t.won) return { status: 'solved', moves: [...path, k], states: seen.size };

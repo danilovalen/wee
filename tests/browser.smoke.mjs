@@ -309,6 +309,18 @@ try {
   await page.evaluate(() => window.advanceTime(3000));
   check('a two-move solution plays to the win', await page.locator('#win').isVisible() && (await page.textContent('#winText')) === 'Solved in 2 moves.', await page.textContent('#winText'));
   await page.click('#winEdit');
+  // a solution with a dive plays its mid-slide key on the right tick
+  const diveRoom = room(['#######', '#P.H..#', '#######']); diveRoom.cells[11] = 'goal';
+  await page.evaluate(l => window.wee.loadLevel(l), diveRoom);
+  await page.click('#checkBtn');
+  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  await page.click('#showSolution');
+  await page.evaluate(() => window.advanceTime(3000));
+  check('Show solution plays a dive to the win', await page.locator('#win').isVisible(), await page.textContent('#checkText'));
+  await page.click('#winEdit');
+  await page.evaluate(l => window.wee.loadLevel(l), turnRoom);
+  await page.click('#checkBtn');
+  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
   // a checked room saves its par, and the mechanism filter and tally read the saved rooms
   await page.click('#checkBtn');
   await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));

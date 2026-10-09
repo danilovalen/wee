@@ -74,6 +74,6 @@ export function bindInput() {
     const k = KEYS[ev.key];
     if (!k) return;
     ev.preventDefault();
-    if (!ev.repeat) { S.demo = null; S.pending.push(aim(k)); }
+    if (!ev.repeat) { S.demo = null; S.demoWait = null; S.pending.push(aim(k)); }
   });
 }

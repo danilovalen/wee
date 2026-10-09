@@ -103,7 +103,7 @@ Borrowed from Factorio's copy and paste and Tiled's stamps.
 
 ## Phase 6: solver
 
-**Done 2026-10-09.** `src/solve/solve.js`: breadth-first, one move from rest per edge (four slides, plus hide when Cycle or Swim is on), real rules, 20,000-position cap, run in slices so the page stays responsive. **Scope said out loud:** mid-slide powers (Boomerang, Dive, Laser) are not tried yet, so a room that needs one reads as unsolved. Check in the header; Show solution plays it. His first room: 19 moves, 1,795 positions, 0.6 s.
+**Done 2026-10-09.** `src/solve/solve.js`: breadth-first, one move from rest per edge (four slides, plus hide when Cycle or Swim is on), real rules, 20,000-position cap, run in slices so the page stays responsive. Mid-slide powers are tried too, one press per move (`right@1:right`: slide right and dive at once). Check in the header; Show solution plays it. His first room: 19 moves, 1,795 positions, 0.6 s.
 
 The rules are deterministic and tile-based, which is what makes ice puzzles solvable by search.
 

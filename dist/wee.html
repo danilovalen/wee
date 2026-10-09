@@ -1164,7 +1164,7 @@ const S = {
   level: null,
   ui: { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
   mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
-  played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null,
+  played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null,
 };
 return { starterLevel, S };
 })();
@@ -1725,11 +1725,12 @@ return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNE
 // ---- src/solve/solve.js
 const m19 = (() => {
 const { createGame, step } = m8;
-const { MOVES } = m0;
+const { MOVES, OPPOSITE } = m0;
 // The solver: a breadth-first search over the room's states, one move of yours per
 // edge, using the real rules. A move is a slide you start from rest (or a hide), run
 // until you and every piece have stopped. Mid-slide powers (Boomerang, Dive, Laser)
-// are not tried, so a room that needs one reads as unsolved; the result says so.
+// are tried once per move: 'right@3:left' starts a slide right and presses left on the
+// third tick after (here a boomerang).
 
 
 const MAX_STATES = 20000;
@@ -1747,13 +1748,41 @@ const settled = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => 
 
 // One move from state s: a fresh copy, the key, then ticks until everything stops.
 // Null when the move changes nothing, kills you, or never settles.
-function move(s, k) {
+function parseMove(m) {
+  const [k, rest] = m.split('@');
+  if (!rest) return { k, at: 0, then: null };
+  const [n, then] = rest.split(':');
+  return { k, at: +n, then };
+}
+
+const limit = s => 4 * s.w * s.h + 40;
+
+function move(s, m) {
+  const { k, at, then } = parseMove(m);
   const t = structuredClone(s), deaths = t.deaths, before = stateKey(s);
   step(t, [k]);
-  for (let i = 0; i < 4 * t.w * t.h + 40 && !settled(t); i++) step(t);
+  for (let i = 1; i <= limit(t) && !settled(t); i++) step(t, i === at ? [then] : []);
   if (t.deaths !== deaths || !settled(t)) return null;
   if (!t.won && stateKey(t) === before) return null;
   return t;
+}
+
+// The mid-slide moves worth trying from s: for each slide, each tick it is still going,
+// each power that is on (Boomerang turns back, Dive lands, Laser shoots either side).
+function powerMoves(s) {
+  const pw = s.powers, out = [];
+  for (const d of KEYS) {
+    const t = structuredClone(s);
+    step(t, [d]);
+    for (let i = 1; i <= limit(t) && t.player.dir && !t.won; i++) {
+      const pd = t.player.dir;
+      if (pw.boomerang) out.push(`${d}@${i}:${OPPOSITE[pd]}`);
+      if (pw.dive) out.push(`${d}@${i}:${pd}`);
+      if (pw.laser) for (const side of KEYS) if (side !== pd && side !== OPPOSITE[pd]) out.push(`${d}@${i}:${side}`);
+      step(t);
+    }
+  }
+  return out;
 }
 
 // Why a room cannot be searched, or null when it can.
@@ -1775,7 +1804,7 @@ function* search(level, max = MAX_STATES) {
   while (frontier.length) {
     const next = [];
     for (const { s, path } of frontier) {
-      for (const k of keys) {
+      for (const k of [...keys, ...powerMoves(s)]) {
         const t = move(s, k);
         if (!t) continue;
         if (t.won) return { status: 'solved', moves: [...path, k], states: seen.size };
@@ -1797,11 +1826,11 @@ function solve(level, max) {
   const it = search(level, max);
   for (;;) { const r = it.next(); if (r.done) return r.value; }
 }
-return { MAX_STATES, stateKey, move, unsearchable, search, solve };
+return { MAX_STATES, stateKey, parseMove, move, powerMoves, unsearchable, search, solve };
 })();
 // ---- src/app/check.js
 const m20 = (() => {
-const { search } = m19;
+const { search, parseMove } = m19;
 const { S } = m11;
 const { $ } = m12;
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
@@ -1854,10 +1883,16 @@ function syncCheck() {
 }
 
 // Called each tick in play: feeds the next solution move once everything has stopped.
+// A compound move ('right@3:left') presses its second key on that tick of the slide.
 function feedDemo(game) {
+  const w = S.demoWait;
+  if (w) { if (++w.i === w.at) { S.pending.push(w.then); S.demoWait = null; } return; }
   if (!S.demo || !S.demo.length) return;
   const busy = game.player.dir || game.player.hidden || game.entities.some(e => !e.dead && (e.rush || e.slide));
-  if (!busy) S.pending.push(S.demo.shift());
+  if (busy) return;
+  const { k, at, then } = parseMove(S.demo.shift());
+  S.pending.push(k);
+  if (then) S.demoWait = { i: 0, at, then };
 }
 return { checkText, runCheck, syncCheck, feedDemo };
 })();
@@ -1959,8 +1994,10 @@ return { where, detect, newId, list, put, remove };
 // ---- src/solve/tags.js
 const m24 = (() => {
 const { createGame, step } = m8;
+const { parseMove } = m19;
 // The mechanism index: what a room contains, and what its solution actually does.
 // Both come from the room and the rules, never typed by hand, so the counts stay true.
+
 
 // Every tag, in the order the index lists them, with its label. Draft copy.
 const MECHANISMS = [
@@ -1977,6 +2014,7 @@ const MECHANISMS = [
   ['use:door-opens', 'A door opens'], ['use:idoor-closes', 'An inverted door closes'], ['use:lit', 'A beam lights a switch'],
   ['use:door-kill', 'A door squashes a piece'], ['use:squash', 'A heavy box breaks something'], ['use:death', 'A piece falls into death'],
   ['use:beam-kill', 'A beam kills an enemy'], ['use:stick', 'You stick to something'], ['use:glue', 'Pieces glue together'],
+  ['use:boomerang', 'You turn back mid-slide'], ['use:dive', 'You dive'], ['use:laser', 'You fire the laser'],
   ['use:hide', 'You hide'], ['use:swim', 'You swim'], ['use:checkpoint', 'You reach a checkpoint'],
   ['use:tri', 'A triangle turns you'], ['use:gate', 'You pass a one-way'],
 ];
@@ -2004,7 +2042,7 @@ function contains(level) {
   return [...tags];
 }
 
-const EVENT_TAG = { pushed: 'use:pushed', spring: 'use:spring', stick: 'use:stick', glue: 'use:glue', hide: 'use:hide', checkpoint: 'use:checkpoint' };
+const EVENT_TAG = { boomerang: 'use:boomerang', dive: 'use:dive', laser: 'use:laser', pushed: 'use:pushed', spring: 'use:spring', stick: 'use:stick', glue: 'use:glue', hide: 'use:hide', checkpoint: 'use:checkpoint' };
 const KILL_TAG = { door: 'use:door-kill', squash: 'use:squash', death: 'use:death', turret: 'use:beam-kill', laser: 'use:beam-kill' };
 
 // What the solution does: the room replayed move by move, watching events and state.
@@ -2028,9 +2066,10 @@ function uses(level, moves) {
     }
     for (const i of s.lit) if (/^(sensor|receiver):/.test(s.cells[i])) tags.add('use:lit');
   };
-  for (const k of moves) {
+  for (const m of moves) {
+    const { k, at, then } = parseMove(m);
     step(s, [k]); watch();
-    for (let i = 0; i < 4 * s.w * s.h + 40 && busy(); i++) { step(s); watch(); }
+    for (let i = 1; i <= 4 * s.w * s.h + 40 && busy(); i++) { step(s, i === at ? [then] : []); watch(); }
   }
   return [...tags];
 }
@@ -2618,7 +2657,7 @@ function setMode(m, keep) {
   S.fx = [];
   if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }
   syncPanel();
-  if (m !== 'play') S.demo = null;
+  if (m !== 'play') { S.demo = null; S.demoWait = null; }
   if (m === 'play') { S.played = JSON.parse(JSON.stringify(S.level)); S.keylog = []; S.game = createGame(S.level); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
   else S.game = null;
 }
@@ -2738,7 +2777,7 @@ function bindInput() {
     const k = KEYS[ev.key];
     if (!k) return;
     ev.preventDefault();
-    if (!ev.repeat) { S.demo = null; S.pending.push(aim(k)); }
+    if (!ev.repeat) { S.demo = null; S.demoWait = null; S.pending.push(aim(k)); }
   });
 }
 return { bindInput };

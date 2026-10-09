@@ -1,6 +1,6 @@
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
-import { search } from '../solve/solve.js';
+import { search, parseMove } from '../solve/solve.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 
@@ -49,8 +49,14 @@ export function syncCheck() {
 }
 
 // Called each tick in play: feeds the next solution move once everything has stopped.
+// A compound move ('right@3:left') presses its second key on that tick of the slide.
 export function feedDemo(game) {
+  const w = S.demoWait;
+  if (w) { if (++w.i === w.at) { S.pending.push(w.then); S.demoWait = null; } return; }
   if (!S.demo || !S.demo.length) return;
   const busy = game.player.dir || game.player.hidden || game.entities.some(e => !e.dead && (e.rush || e.slide));
-  if (!busy) S.pending.push(S.demo.shift());
+  if (busy) return;
+  const { k, at, then } = parseMove(S.demo.shift());
+  S.pending.push(k);
+  if (then) S.demoWait = { i: 0, at, then };
 }
