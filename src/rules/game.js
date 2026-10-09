@@ -7,6 +7,7 @@ import { freshPieces, refreshDoors } from './life.js';
 import { fireSprings, rushOnce, slidePiece } from './pieces.js';
 import { input, slideOnce, unhide } from './player.js';
 import { checkStuck } from './sticky.js';
+import { checkGlue, partnerOf } from './glue.js';
 
 export function createGame(level) {
   const l = JSON.parse(JSON.stringify(level));
@@ -38,12 +39,13 @@ export function step(s, inputs = []) {
     if (!s.player.stroke) slideOnce(s, false);
   }
   if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
-    for (const e of s.entities) if (!e.dead && !e.slide && !e.rush && e.mode === 'realtime' && MOVES.includes(e.kind)) e.rush = true;
+    for (const e of s.entities) if (!e.dead && !e.slide && !e.rush && e.mode === 'realtime' && MOVES.includes(e.kind) && !partnerOf(s, e)?.rush) e.rush = true;
     turnTurrets(s, 'realtime');
   }
   if (s.player.hidden) unhide(s);
   fireSprings(s);
   checkStuck(s);
+  checkGlue(s);
   computeBeams(s, true);
   refreshDoors(s);
   s.tick++;
@@ -58,6 +60,7 @@ export function gameText(s, mode = 'play') {
     checkpoint: s.checkpoint,
     pieces: s.entities.filter(e => !e.dead).map(e => ({
       kind: e.kind, x: e.x, y: e.y,
+      ...(e.sticky ? { sticky: true } : {}), ...(partnerOf(s, e) ? { glued: true } : {}),
       ...(MOVES.includes(e.kind) ? { axis: e.axis, mode: e.mode } : {}),
       ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, aim: aimOf(e.turret) } } : {}),
     })),

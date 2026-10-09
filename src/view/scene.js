@@ -62,6 +62,23 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
       drawPiece(g, e, e.x * T, e.y * T, 1 + 0.3 * t, 1 - t);
     }
   }
+  // A sticky piece wears goo on top; a glued pair is joined by a goo bridge.
+  g.fillStyle = INK.goo; g.strokeStyle = INK.goo; g.lineCap = 'round';
+  for (const e of s.entities) {
+    if (e.dead) continue;
+    const [px, py] = pos(e.id, e.x, e.y), k = (now % 900) / 900;
+    if (e.sticky) {
+      g.beginPath(); g.ellipse(px + 16, py + 7, 8, 3, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(px + 11, py + 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.fill();
+    }
+    const o = e.glue > e.id && s.entities.find(q => q.id === e.glue && !q.dead);
+    if (o) {
+      const [ox, oy] = pos(o.id, o.x, o.y);
+      const ux = Math.sign(o.x - e.x), uy = Math.sign(o.y - e.y);
+      g.lineWidth = 7; g.beginPath(); g.moveTo(px + 16 + ux * 11, py + 16 + uy * 11); g.lineTo(ox + 16 - ux * 11, oy + 16 - uy * 11); g.stroke();
+    }
+  }
+  g.lineCap = 'butt';
   for (const f of fx) if (f.type === 'laser' && now - f.at < LASER_MS) {
     const t = (now - f.at) / LASER_MS, c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
     g.strokeStyle = INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;

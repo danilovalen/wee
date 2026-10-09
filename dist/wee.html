@@ -318,7 +318,7 @@ return { inb, cellAt, solidCell, triAt, facing, gateAt, stepTo, pushTo, inWater,
 // ---- src/rules/life.js
 const m2 = (() => {
 const { CLOCKWISE, COLOURS, HOLDS_DOOR } = m0;
-const { entAt, playerAt } = m1;
+const { cellAt, entAt, playerAt } = m1;
 // Doors and switches, dying, and the room reset.
 
 
@@ -385,10 +385,14 @@ function kill(s, e, how) {
   s.events.push({ type: 'kill', id: e.id, how });
 }
 
-// Puts a piece on t, or destroys it when t is a death block.
+// Puts a piece on t, or destroys it when t is a death block. A puddle makes it sticky
+// (a turret never is), water washes that off.
 function land(s, e, t) {
   if (t.death) { kill(s, e, 'death'); return false; }
   e.x = t.x; e.y = t.y;
+  const c = cellAt(s, e.x, e.y);
+  if (c === 'sticky' && e.kind !== 'turret' && !e.glue && !e.sticky) { e.sticky = true; s.events.push({ type: 'sticky', id: e.id }); }
+  if (c === 'water') e.sticky = false;
   return true;
 }
 return { freshPieces, refreshDoors, respawn, die, kill, land };
@@ -535,14 +539,76 @@ function checkStuck(s) {
 }
 return { stuckTo, STICKS, stick, unstick, entered, carry, drag, checkStuck };
 })();
-// ---- src/rules/pieces.js
+// ---- src/rules/glue.js
 const m5 = (() => {
+const { wades } = m0;
+const { entAt, playerAt, shift } = m1;
+const { land } = m2;
+// Sticky pieces: a piece that crosses a puddle is sticky until water washes it off or it
+// meets another piece, and then the two are glued. A glued pair moves as one: when one
+// moves, the other moves the same way, or they come apart.
+
+
+
+const partnerOf = (s, e) => (e.glue && s.entities.find(o => o.id === e.glue && !o.dead)) || null;
+
+// A sticky e ran into o: they glue, which uses the stickiness up. A turret never glues,
+// and a piece glues to one other at most. (A glued piece is never sticky: see land.)
+function meet(s, e, o) {
+  if (!e.sticky || o.kind === 'turret' || partnerOf(s, o)) return false;
+  e.sticky = false;
+  e.glue = o.id; o.glue = e.id;
+  s.events.push({ type: 'glue', id: e.id, to: o.id });
+  return true;
+}
+
+function unglue(s, e) {
+  const o = partnerOf(s, e);
+  e.glue = null;
+  if (!o) return;
+  o.glue = null;
+  s.events.push({ type: 'unglue', id: e.id, to: o.id });
+}
+
+// Moves e's partner by (dx, dy): it goes, or the two come apart.
+function bring(s, e, dx, dy) {
+  const o = partnerOf(s, e);
+  if (!o) { e.glue = null; return false; }
+  const t = shift(s, o.x, o.y, dx, dy, wades(o), o);
+  if (t && !playerAt(s, t.x, t.y)) { land(s, o, t); return true; }
+  unglue(s, e);
+  return false;
+}
+
+// e is about to move by (dx, dy) and its partner is in the way: the partner goes
+// first, or they come apart and e stays.
+const lead = (s, e, dx, dy) => bring(s, e, dx, dy);
+// e moved by (dx, dy): its partner follows.
+const follow = (s, e, dx, dy) => { if (e.glue) bring(s, e, dx, dy); };
+// The piece in e's way when it is e's partner, so the caller leads it instead.
+const partnerAt = (s, e, x, y) => { const o = entAt(s, x, y, e); return o && o.id === e.glue ? o : null; };
+
+// The end of a tick: a pair that ended up apart (one died, or was moved by something
+// that does not bring its partner) lets go.
+function checkGlue(s) {
+  for (const e of s.entities) {
+    if (e.dead || !e.glue) continue;
+    const o = partnerOf(s, e);
+    if (!o || Math.abs(o.x - e.x) + Math.abs(o.y - e.y) !== 1) unglue(s, e);
+  }
+}
+return { partnerOf, meet, unglue, lead, follow, partnerAt, checkGlue };
+})();
+// ---- src/rules/pieces.js
+const m6 = (() => {
 const { DIRS, ENEMY, MOVES, wades } = m0;
 const { turnTurrets } = m3;
 const { crushes, entAt, inb, playerAt, pushTo, stepTo } = m1;
 const { die, kill, land, refreshDoors } = m2;
 const { carry, entered, stick, stuckTo } = m4;
+const { follow, lead, meet, partnerAt, partnerOf } = m5;
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
+
 
 
 
@@ -562,13 +628,14 @@ function hideCycle(s) {
 // something stops it. A patrol then turns; a follower just stops.
 function rushOnce(s, e) {
   const x = e.x, y = e.y;
-  moveMover(s, e, e.rushDir, true);
+  moveMover(s, e, e.rushDir);
   if (e.x === x && e.y === y) { e.rush = false; e.rushDir = null; }
 }
 
 // Starts a piece's slide, at most once per move of yours (s.move), and not while one is going.
+// A glued pair moves as one, so only one of them starts a slide.
 const launch = (s, e, d) => {
-  if (e.rush || e.lastMove === s.move) return;
+  if (e.rush || e.lastMove === s.move || partnerOf(s, e)?.rush) return;
   e.rush = true; e.rushDir = d || null; e.lastMove = s.move;
 };
 
@@ -588,18 +655,19 @@ const patrolDir = e => e.axis === 'h' ? (e.dir > 0 ? 'right' : 'left') : (e.dir 
 
 // Moves one tile along its patrol, or the given way. Blocked, it stays and turns its
 // patrol. A triangle turns a patrol onto the other axis.
-function moveMover(s, e, d, turned) {
+function moveMover(s, e, d) {
   const t = stepTo(s, e.x, e.y, d || patrolDir(e), wades(e)), ridden = stuckTo(s) === e;
   let pushed = false;
-  // Blocked, a patrol turns and moves the other way in the same step; a follower waits.
-  const blocked = () => { if (d) return; e.dir = -e.dir; if (!turned) moveMover(s, e, null, true); };
+  // Blocked, the slide ends there; a patrol turns, so its next slide goes the other way.
+  const blocked = () => { e.dir = -e.dir; };
   if (!t) { blocked(); return; }
-  if (t.death) { kill(s, e, 'death'); return; }
+  const mx = t.x - e.x, my = t.y - e.y, ahead = partnerAt(s, e, t.x, t.y);
+  if (ahead && !lead(s, e, mx, my)) { blocked(); return; }
   const o = entAt(s, t.x, t.y, e);
   let b;
   if (o) {
-    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d, false))) land(s, o, b);
-    else { blocked(); return; }
+    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d, false))) { if (land(s, o, b)) follow(s, o, mx, my); }
+    else { meet(s, e, o); blocked(); return; }
   }
   if (playerAt(s, t.x, t.y)) {
     if (ENEMY.includes(e.kind)) {
@@ -614,8 +682,8 @@ function moveMover(s, e, d, turned) {
     else if (!crushes(s, e)) { blocked(); return; }
     else { e.x = t.x; e.y = t.y; die(s); return; }
   }
-  const mx = t.x - e.x, my = t.y - e.y;
-  e.x = t.x; e.y = t.y;
+  land(s, e, t);
+  if (!ahead) follow(s, e, mx, my);
   if (ridden && !pushed && stuckTo(s) === e) carry(s, mx, my);
   if (!d) { e.axis = t.d === 'left' || t.d === 'right' ? 'h' : 'v'; e.dir = t.d === 'right' || t.d === 'down' ? 1 : -1; }
 }
@@ -629,9 +697,11 @@ const CRUSHABLE = ['enemy', 'strong', 'box'];
 function slidePiece(s, e) {
   const t = stepTo(s, e.x, e.y, e.slide, wades(e));
   if (!t) { e.slide = null; return; }
-  if (t.death) { kill(s, e, 'death'); return; }
+  const mx = t.x - e.x, my = t.y - e.y, ahead = partnerAt(s, e, t.x, t.y);
+  if (ahead && !lead(s, e, mx, my)) { e.slide = null; return; }
   const o = entAt(s, t.x, t.y, e);
   if (o) {
+    if (meet(s, e, o)) { e.slide = null; return; }
     if (e.kind === 'heavy' && CRUSHABLE.includes(o.kind)) kill(s, o, 'squash');
     else { e.slide = null; return; }
   }
@@ -641,15 +711,15 @@ function slidePiece(s, e) {
     const b = pushTo(s, t.x, t.y, t.d, p.swimming);
     if (b && b.death) { die(s); return; }
     if (b) {
-      p.x = b.x; p.y = b.y; e.slide = t.d; e.x = t.x; e.y = t.y;
+      p.x = b.x; p.y = b.y; e.slide = t.d; land(s, e, t);
       if (!ridden) stick(s, e);
       entered(s);
       return;
     }
   }
   if (playerAt(s, t.x, t.y) && (!crushes(s, e) || (e.kind !== 'heavy' && !ENEMY.includes(e.kind)))) { e.slide = null; return; }
-  const mx = t.x - e.x, my = t.y - e.y;
-  e.x = t.x; e.y = t.y; e.slide = t.d;
+  land(s, e, t); e.slide = t.d;
+  if (!ahead) follow(s, e, mx, my);
   if (playerAt(s, t.x, t.y)) die(s);
   else if (ridden && stuckTo(s) === e) carry(s, mx, my);
 }
@@ -674,17 +744,19 @@ function fireSprings(s) {
     }
   });
 }
-return { hideCycle, rushOnce, worldStep, patrolDir, moveMover, slidePiece, fireSprings };
+return { hideCycle, rushOnce, launch, worldStep, patrolDir, moveMover, slidePiece, fireSprings };
 })();
 // ---- src/rules/player.js
-const m6 = (() => {
+const m7 = (() => {
 const { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } = m0;
 const { laser, turnTurrets } = m3;
 const { cellAt, crushes, entAt, inWater, pushTo, shift, solidCell, stepTo } = m1;
 const { die, kill, land, refreshDoors, respawn } = m2;
-const { hideCycle, worldStep } = m5;
+const { hideCycle, worldStep } = m6;
 const { STICKS, drag, entered, stick, stuckTo, unstick } = m4;
+const { follow, lead, meet, partnerAt } = m5;
 // You: one slide step at a time, dive, hide, and what each key does.
+
 
 
 
@@ -712,8 +784,12 @@ function playerStep(s, d, diving) {
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d, false))) { if (land(s, e, b)) pushed = { id: e.id, d: b.d }; }
-    else return 'blocked';
+    } else if (e.kind === 'box') {
+      // A box glued to another piece: the one ahead goes first, the one behind follows.
+      const led = !!partnerAt(s, e, nx + dx, ny + dy) && lead(s, e, dx, dy);
+      if (!(b = pushTo(s, nx, ny, t.d, false))) { const o = entAt(s, nx + dx, ny + dy, e); if (o) meet(s, e, o); return 'blocked'; }
+      if (land(s, e, b)) { pushed = { id: e.id, d: b.d }; if (!led) follow(s, e, dx, dy); }
+    } else return 'blocked';
   }
   p.pushing = pushed;
   p.from = { x: p.x, y: p.y };
@@ -813,16 +889,18 @@ function aimKey(s, k, alpha) {
 return { playerStep, endSlide, slideOnce, dive, unhide, letGo, input, aimKey };
 })();
 // ---- src/rules/game.js
-const m7 = (() => {
+const m8 = (() => {
 const { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } = m0;
 const { aimOf, computeBeams, turnTurrets } = m3;
 const { inWater } = m1;
 const { freshPieces, refreshDoors } = m2;
-const { fireSprings, rushOnce, slidePiece } = m5;
-const { input, slideOnce, unhide } = m6;
+const { fireSprings, rushOnce, slidePiece } = m6;
+const { input, slideOnce, unhide } = m7;
 const { checkStuck } = m4;
+const { checkGlue, partnerOf } = m5;
 // A run: the state, one tick of it, its text reading, and replaying a key log.
 // Pure and deterministic: no DOM, no clock, no randomness.
+
 
 
 
@@ -860,12 +938,13 @@ function step(s, inputs = []) {
     if (!s.player.stroke) slideOnce(s, false);
   }
   if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
-    for (const e of s.entities) if (!e.dead && !e.slide && !e.rush && e.mode === 'realtime' && MOVES.includes(e.kind)) e.rush = true;
+    for (const e of s.entities) if (!e.dead && !e.slide && !e.rush && e.mode === 'realtime' && MOVES.includes(e.kind) && !partnerOf(s, e)?.rush) e.rush = true;
     turnTurrets(s, 'realtime');
   }
   if (s.player.hidden) unhide(s);
   fireSprings(s);
   checkStuck(s);
+  checkGlue(s);
   computeBeams(s, true);
   refreshDoors(s);
   s.tick++;
@@ -880,6 +959,7 @@ function gameText(s, mode = 'play') {
     checkpoint: s.checkpoint,
     pieces: s.entities.filter(e => !e.dead).map(e => ({
       kind: e.kind, x: e.x, y: e.y,
+      ...(e.sticky ? { sticky: true } : {}), ...(partnerOf(s, e) ? { glued: true } : {}),
       ...(MOVES.includes(e.kind) ? { axis: e.axis, mode: e.mode } : {}),
       ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, aim: aimOf(e.turret) } } : {}),
     })),
@@ -898,7 +978,7 @@ function replay(level, log, ticks) {
 return { createGame, step, gameText, replay };
 })();
 // ---- src/level/format.js
-const m8 = (() => {
+const m9 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, KINDS, MODES, MOVES } = m0;
 // The level file: an empty room, resizing, and parsing that refuses what it does not know.
 
@@ -960,8 +1040,8 @@ function isCell(c) {
 return { checkTurret, emptyLevel, resizeLevel, parseLevel, isCell };
 })();
 // ---- src/editor/state.js
-const m9 = (() => {
-const { emptyLevel } = m8;
+const m10 = (() => {
+const { emptyLevel } = m9;
 // The one shared state of the page: the level being edited, the editor's settings and
 // the run being played. Every app file reads and writes it here, never in a copy.
 
@@ -982,7 +1062,7 @@ const S = {
 return { starterLevel, S };
 })();
 // ---- src/app/dom.js
-const m10 = (() => {
+const m11 = (() => {
 
 // The page: the elements the app talks to, and what kind of screen it is on.
 const $ = id => document.getElementById(id);
@@ -994,7 +1074,7 @@ const now = () => performance.now();
 return { $, canvas, g, touch, portrait, now };
 })();
 // ---- src/view/ink.js
-const m11 = (() => {
+const m12 = (() => {
 const { TICK_MS } = m0;
 // The palette, the tile size and the small drawing helpers every view file shares.
 
@@ -1032,10 +1112,10 @@ const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9, 5], [0
 return { AIM, T, INK, ease, lerp, frame, roundRect, LASER_MS, PUFF_MS, PUFFS };
 })();
 // ---- src/app/fit.js
-const m12 = (() => {
-const { T } = m11;
-const { S } = m9;
-const { $, canvas, g, portrait } = m10;
+const m13 = (() => {
+const { T } = m12;
+const { S } = m10;
+const { $, canvas, g, portrait } = m11;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 
 
@@ -1054,8 +1134,8 @@ function fit() {
 return { fit };
 })();
 // ---- src/view/pieces.js
-const m13 = (() => {
-const { AIM, INK, T, frame, roundRect } = m11;
+const m14 = (() => {
+const { AIM, INK, T, frame, roundRect } = m12;
 // Pieces and the player.
 
 // The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
@@ -1184,8 +1264,8 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
 return { modeBadge, drawTurret, drawPiece, drawPlayer };
 })();
 // ---- src/view/tiles.js
-const m14 = (() => {
-const { INK, T, frame, roundRect } = m11;
+const m15 = (() => {
+const { INK, T, frame, roundRect } = m12;
 // Tiles: floor, walls and every cell type, drawn in place.
 
 function drawCell(g, c, x, y, s, scale = 1) {
@@ -1324,11 +1404,11 @@ function drawFloor(g, w, h) {
 return { drawCell, pressedAt, drawFloor };
 })();
 // ---- src/view/scene.js
-const m15 = (() => {
+const m16 = (() => {
 const { DIRS } = m0;
-const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m11;
-const { drawPiece, drawPlayer } = m13;
-const { drawCell, drawFloor } = m14;
+const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m12;
+const { drawPiece, drawPlayer } = m14;
+const { drawCell, drawFloor } = m15;
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
 
@@ -1392,6 +1472,23 @@ function drawPlay(g, s, prev, alpha, fx, now) {
       drawPiece(g, e, e.x * T, e.y * T, 1 + 0.3 * t, 1 - t);
     }
   }
+  // A sticky piece wears goo on top; a glued pair is joined by a goo bridge.
+  g.fillStyle = INK.goo; g.strokeStyle = INK.goo; g.lineCap = 'round';
+  for (const e of s.entities) {
+    if (e.dead) continue;
+    const [px, py] = pos(e.id, e.x, e.y), k = (now % 900) / 900;
+    if (e.sticky) {
+      g.beginPath(); g.ellipse(px + 16, py + 7, 8, 3, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(px + 11, py + 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.fill();
+    }
+    const o = e.glue > e.id && s.entities.find(q => q.id === e.glue && !q.dead);
+    if (o) {
+      const [ox, oy] = pos(o.id, o.x, o.y);
+      const ux = Math.sign(o.x - e.x), uy = Math.sign(o.y - e.y);
+      g.lineWidth = 7; g.beginPath(); g.moveTo(px + 16 + ux * 11, py + 16 + uy * 11); g.lineTo(ox + 16 - ux * 11, oy + 16 - uy * 11); g.stroke();
+    }
+  }
+  g.lineCap = 'butt';
   for (const f of fx) if (f.type === 'laser' && now - f.at < LASER_MS) {
     const t = (now - f.at) / LASER_MS, c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
     g.strokeStyle = INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
@@ -1460,7 +1557,7 @@ function drawPlay(g, s, prev, alpha, fx, now) {
 return { drawEdit, drawPlay };
 })();
 // ---- src/editor/palette.js
-const m16 = (() => {
+const m17 = (() => {
 
 // The palette: every tool, its group and label, and the words the editor uses for
 // powers, colours, clocks and directions. Draft copy throughout.
@@ -1510,23 +1607,23 @@ const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'b
 return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/level/sample.js
-const m17 = (() => {
+const m18 = (() => {
 
 // The sample room, kept in step with rooms/sample.wee by tools/build-single.mjs.
 const SAMPLE = {"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"};
 return { SAMPLE };
 })();
 // ---- src/app/panels.js
-const m18 = (() => {
+const m19 = (() => {
 const { COLOURS, POWERS, NEEDS } = m0;
-const { emptyLevel, resizeLevel, parseLevel } = m8;
-const { T, INK } = m11;
-const { drawPiece } = m13;
-const { drawEdit } = m15;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m16;
-const { S } = m9;
-const { SAMPLE } = m17;
-const { $, canvas, touch } = m10;
+const { emptyLevel, resizeLevel, parseLevel } = m9;
+const { T, INK } = m12;
+const { drawPiece } = m14;
+const { drawEdit } = m16;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m17;
+const { S } = m10;
+const { SAMPLE } = m18;
+const { $, canvas, touch } = m11;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -1690,9 +1787,9 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/editor/edit.js
-const m19 = (() => {
+const m20 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
-const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m16;
+const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m17;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -1811,14 +1908,14 @@ function place(level, ui, x, y, how) {
 return { holds, describe, place };
 })();
 // ---- src/app/play.js
-const m20 = (() => {
+const m21 = (() => {
 const { TICK_MS } = m0;
-const { createGame, step, gameText } = m7;
-const { aimKey } = m6;
-const { drawEdit, drawPlay } = m15;
-const { S } = m9;
-const { $, g, now } = m10;
-const { syncPanel, keysText } = m18;
+const { createGame, step, gameText } = m8;
+const { aimKey } = m7;
+const { drawEdit, drawPlay } = m16;
+const { S } = m10;
+const { $, g, now } = m11;
+const { syncPanel, keysText } = m19;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
 
@@ -1895,11 +1992,11 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m21 = (() => {
-const { describe, holds, place } = m19;
-const { S } = m9;
-const { $, canvas, touch, now } = m10;
-const { setMode, aim } = m20;
+const m22 = (() => {
+const { describe, holds, place } = m20;
+const { S } = m10;
+const { $, canvas, touch, now } = m11;
+const { setMode, aim } = m21;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -1966,16 +2063,16 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/app/main.js
-const m22 = (() => {
+const m23 = (() => {
 const { TICK_MS } = m0;
-const { replay, gameText } = m7;
-const { parseLevel } = m8;
-const { S, starterLevel } = m9;
-const { portrait } = m10;
-const { fit } = m12;
-const { buildPanels, syncPanel } = m18;
-const { bindInput } = m21;
-const { setMode, frame, render, tick, report, copyReport } = m20;
+const { replay, gameText } = m8;
+const { parseLevel } = m9;
+const { S, starterLevel } = m10;
+const { portrait } = m11;
+const { fit } = m13;
+const { buildPanels, syncPanel } = m19;
+const { bindInput } = m22;
+const { setMode, frame, render, tick, report, copyReport } = m21;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 

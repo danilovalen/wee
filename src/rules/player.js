@@ -5,6 +5,7 @@ import { cellAt, crushes, entAt, inWater, pushTo, shift, solidCell, stepTo } fro
 import { die, kill, land, refreshDoors, respawn } from './life.js';
 import { hideCycle, worldStep } from './pieces.js';
 import { STICKS, drag, entered, stick, stuckTo, unstick } from './sticky.js';
+import { follow, lead, meet, partnerAt } from './glue.js';
 
 // One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
 export function playerStep(s, d, diving) {
@@ -27,8 +28,12 @@ export function playerStep(s, d, diving) {
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d, false))) { if (land(s, e, b)) pushed = { id: e.id, d: b.d }; }
-    else return 'blocked';
+    } else if (e.kind === 'box') {
+      // A box glued to another piece: the one ahead goes first, the one behind follows.
+      const led = !!partnerAt(s, e, nx + dx, ny + dy) && lead(s, e, dx, dy);
+      if (!(b = pushTo(s, nx, ny, t.d, false))) { const o = entAt(s, nx + dx, ny + dy, e); if (o) meet(s, e, o); return 'blocked'; }
+      if (land(s, e, b)) { pushed = { id: e.id, d: b.d }; if (!led) follow(s, e, dx, dy); }
+    } else return 'blocked';
   }
   p.pushing = pushed;
   p.from = { x: p.x, y: p.y };

@@ -1,6 +1,6 @@
 // Doors and switches, dying, and the room reset.
 import { CLOCKWISE, COLOURS, HOLDS_DOOR } from './base.js';
-import { entAt, playerAt } from './grid.js';
+import { cellAt, entAt, playerAt } from './grid.js';
 
 // The room's pieces as the level places them; a reset builds them again from here.
 export const freshPieces = list => list.map((e, i) => ({
@@ -65,9 +65,13 @@ export function kill(s, e, how) {
   s.events.push({ type: 'kill', id: e.id, how });
 }
 
-// Puts a piece on t, or destroys it when t is a death block.
+// Puts a piece on t, or destroys it when t is a death block. A puddle makes it sticky
+// (a turret never is), water washes that off.
 export function land(s, e, t) {
   if (t.death) { kill(s, e, 'death'); return false; }
   e.x = t.x; e.y = t.y;
+  const c = cellAt(s, e.x, e.y);
+  if (c === 'sticky' && e.kind !== 'turret' && !e.glue && !e.sticky) { e.sticky = true; s.events.push({ type: 'sticky', id: e.id }); }
+  if (c === 'water') e.sticky = false;
   return true;
 }

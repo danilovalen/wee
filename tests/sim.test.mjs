@@ -900,4 +900,112 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('moving the start onto one clears it', l.cells[8] === '' && l.start.x === 3);
 }
 
+{ // a piece that crosses a puddle is sticky and glues to the first piece it meets
+  const g = createGame(room(['#######', '#M%..B#', '#.....#', '#######']));
+  g.player.x = 1; g.player.y = 2;
+  worldStep(g);
+  const [m, b] = g.entities;
+  check('a moving block crossing a puddle glues to the box it is stopped by', m.glue === b.id && b.glue === m.id && !m.sticky, JSON.stringify(g.entities));
+  check('the text says so', JSON.parse(gameText(g)).pieces.every(p => p.glued));
+  worldStep(g);
+  check('on its next slide the box comes back with it', at(m, 1, 1) && at(b, 2, 1), JSON.stringify(g.entities));
+  worldStep(g); worldStep(g);
+  check('the box ahead goes first, until it cannot: then they come apart', at(b, 5, 1) && !m.glue && !b.glue, JSON.stringify(g.entities));
+  check('back over the puddle alone, the block is sticky again', m.sticky && at(m, 1, 1), JSON.stringify(m));
+  const e = createGame(room(['#######', '#E%..B#', '#.....#', '#######'], { mode: 'input' }));
+  e.player.x = 1; e.player.y = 2;
+  worldStep(e);
+  check('an enemy glues to a box too', e.entities[0].glue === e.entities[1].id, JSON.stringify(e.entities));
+  const w = createGame(room(['#######', '#M%w..#', '#.....#', '#######']));
+  w.player.x = 1; w.player.y = 2;
+  w.move++; rawWorldStep(w); step(w);
+  check('crossing a puddle makes a piece sticky', w.entities[0].sticky && JSON.parse(gameText(w)).pieces[0].sticky, JSON.stringify(w.entities));
+  settle(w);
+  check('water washes it off', !w.entities[0].sticky, JSON.stringify(w.entities));
+  const t = createGame(room(['#######', '#M%..T#', '#.....#', '#######']));
+  t.player.x = 1; t.player.y = 2;
+  worldStep(t);
+  check('a turret does not glue', !t.entities[0].glue && !t.entities[1].glue, JSON.stringify(t.entities));
+}
+{ // you push a sticky box into another: they glue, and the next push moves both
+  const sticky = l => { const g = createGame(l); g.entities[0].sticky = true; return g; };
+  const g = slide(sticky(room(['#########', '#PB..B..#', '#########'])), 'right');
+  const [a, b] = g.entities;
+  check('the sticky box glues to the box it is pushed into', a.glue === b.id && at(a, 4, 1) && at(g.player, 3, 1), JSON.stringify(g.entities));
+  slide(g, 'right');
+  check('pushed again, the pair moves as one until the front one is stopped', at(a, 6, 1) && at(b, 7, 1) && at(g.player, 5, 1) && !a.glue, JSON.stringify(g.entities));
+  const h = slide(sticky(room(['#########', '#PB..H..#', '#########'])), 'right');
+  slide(h, 'right');
+  check('glued to a heavy box, a light one brings it along', at(h.entities[1], 7, 1), JSON.stringify(h.entities));
+  const k = createGame(room(['#######', '#PB...#', '#.B...#', '#######']));
+  const [top, low] = k.entities;
+  top.glue = low.id; low.glue = top.id;
+  slide(k, 'right');
+  check('pushed, a box brings the one glued beside it', at(top, 5, 1) && at(low, 5, 2) && top.glue === low.id, JSON.stringify(k.entities));
+}
+
+{ // a glued pair moves as one, whatever moves it
+  const glue = (a, b) => { a.glue = b.id; b.glue = a.id; };
+  const two = createGame(room(['########', '#MM....#', '#......#', '########']));
+  two.player.x = 1; two.player.y = 2;
+  glue(two.entities[0], two.entities[1]);
+  two.move++; rawWorldStep(two); step(two);
+  check('two glued blocks start one slide between them, not two', at(two.entities[0], 2, 1) && at(two.entities[1], 3, 1), JSON.stringify(two.entities));
+  const rt = createGame(room(['########', '#MM....#', '#......#', '########'], { mode: 'realtime' }));
+  rt.player.x = 1; rt.player.y = 2;
+  glue(rt.entities[0], rt.entities[1]);
+  for (let i = 0; i < RT_PERIOD + 1; i++) step(rt);
+  check('on a beat too', at(rt.entities[0], 2, 1) && at(rt.entities[1], 3, 1), JSON.stringify(rt.entities));
+  const pm = createGame(room(['#######', '#M.B..#', '#..B..#', '#######']));
+  pm.player.x = 1; pm.player.y = 2;
+  glue(pm.entities[1], pm.entities[2]);
+  worldStep(pm);
+  check('a block pushing a box brings the box glued to it', at(pm.entities[1], 5, 1) && at(pm.entities[2], 5, 2), JSON.stringify(pm.entities));
+  const sh = createGame(room(['#######', '#H..B.#', '#######']));
+  sh.entities[0].sticky = true; sh.entities[0].slide = 'right';
+  settle(sh);
+  check('a sticky heavy box glues to the box it slides into instead of breaking it', sh.entities[0].glue === sh.entities[1].id && !sh.entities[1].dead && at(sh.entities[0], 3, 1), JSON.stringify(sh.entities));
+  const sf = createGame(room(['#######', '#BH...#', '#######']));
+  glue(sf.entities[0], sf.entities[1]); sf.entities[1].slide = 'right';
+  settle(sf);
+  check('a sliding piece brings its partner behind it', at(sf.entities[1], 5, 1) && at(sf.entities[0], 4, 1) && sf.entities[0].glue, JSON.stringify(sf.entities));
+  const sl = createGame(room(['#######', '#HB...#', '#######']));
+  glue(sl.entities[0], sl.entities[1]); sl.entities[0].slide = 'right';
+  settle(sl);
+  check('a partner ahead of a slide goes first, and falls off where it stops', at(sl.entities[1], 5, 1) && at(sl.entities[0], 4, 1) && !sl.entities[0].glue && !sl.entities[1].glue, JSON.stringify(sl.entities));
+  const gp = createGame(room(['########', '#MM%...#', '#......#', '########']));
+  gp.player.x = 1; gp.player.y = 2;
+  glue(gp.entities[0], gp.entities[1]);
+  worldStep(gp);
+  check('a glued piece crossing a puddle does not get sticky', !gp.entities[0].sticky && !gp.entities[1].sticky && at(gp.entities[0], 5, 1), JSON.stringify(gp.entities));
+  const tg = createGame(room(['#######', '#.BBB.#', '#..P..#', '#######']));
+  tg.entities[0].sticky = true; glue(tg.entities[1], tg.entities[2]);
+  tg.player.x = 1; tg.player.y = 1;
+  slide(tg, 'right');
+  check('a piece already glued takes no second partner', tg.entities[0].sticky && !tg.entities[0].glue, JSON.stringify(tg.entities));
+  const dd = createGame(room(['#######', '#.BB..#', '#..P..#', '#######']));
+  glue(dd.entities[0], dd.entities[1]);
+  dd.entities[1].dead = true; step(dd);
+  check('a piece whose partner is gone lets go', !dd.entities[0].glue);
+  const ap = createGame(room(['#######', '#.BB..#', '#..P..#', '#######']));
+  glue(ap.entities[0], ap.entities[1]);
+  ap.entities[1].x = 5; step(ap);
+  check('so does a pair that ended up apart', !ap.entities[0].glue && !ap.entities[1].glue);
+}
+
+{ // a partner cannot follow onto you: they come apart
+  const g = createGame(room(['#######', '#M....#', '#BP...#', '#######']));
+  g.entities[0].glue = g.entities[1].id; g.entities[1].glue = g.entities[0].id;
+  worldStep(g);
+  check('a box glued to a block stays when you stand where it would go', at(g.entities[1], 1, 2) && !g.entities[1].glue && at(g.entities[0], 5, 1), JSON.stringify(g.entities));
+}
+{ // each hide is a move of its own: a piece slides again after your slide
+  const g = createGame(room(['#######', '#M....#', '#P....#', '#######']));
+  slide(g, 'right');
+  settle(g);
+  const x = g.entities[0].x;
+  step(g, ['hide']); settle(g);
+  check('a hide after a slide starts the block again', g.entities[0].x !== x, JSON.stringify(g.entities));
+}
+
 done();

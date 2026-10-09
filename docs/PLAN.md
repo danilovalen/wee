@@ -99,6 +99,14 @@ press lets go); a light box glues to you and comes along until the first move it
 A still heavy box does not stick. One check at the end of each tick lets go whenever you and
 what you hold came apart.
 
+Pieces get sticky too. Any piece but a turret that crosses a puddle is sticky until water washes
+it off or it runs into another piece, and then the two are glued (one partner each). A glued pair
+moves as one, whatever moves it (its own slide, a push from you or a block, a spring): a partner in
+the way goes first, the other follows, and the first time one cannot, they come apart. Two glued
+pieces that both slide on your move start one slide between them. A sticky heavy box glues to the
+box it hits instead of breaking it, and a light box glued to a heavy one brings it along when you
+push. A partner never follows onto you. Drawn as goo on top, and a goo bridge between a pair.
+
 ## Laser relay ("sensor" in level files)
 
 A coloured floor plate, held down while a turret beam crosses it; the beam goes on. A piece on it
