@@ -208,6 +208,27 @@ try {
   await page.waitForFunction(() => window.wee.getLevel().cells[0] === 'wall');
   check('open restores the saved room', (await text()).level.cells.filter(c => c === 'wall').length === saved.cells.filter(c => c === 'wall').length);
 
+  // a boomerang kicks up a cloud where you turned, blown the way you were going
+  await page.evaluate(l => window.wee.loadLevel(l), room(['############', '#P.........#', '############']));
+  await page.keyboard.press('e');
+  await page.evaluate(() => { window.__manualClock = true; window.advanceTime(60); });
+  await page.keyboard.press('ArrowRight'); await page.evaluate(() => window.advanceTime(250));
+  await page.keyboard.press('ArrowLeft'); await page.evaluate(() => window.advanceTime(110));
+  // the brightest grey along the corridor, away from the player, is the cloud
+  const puff = await page.evaluate(() => {
+    const c = document.getElementById('game'), tile = c.width / window.wee.getLevel().w, px = JSON.parse(window.renderGameToText()).player.x;
+    const row = c.getContext('2d').getImageData(0, Math.round(1.5 * tile), c.width, 1).data;
+    let best = 0;
+    for (let x = Math.ceil(tile); x < c.width - tile; x++) {
+      if (Math.abs(x / tile - (px + 0.5)) < 1.2) continue;
+      const i = x * 4, r = row[i], g = row[i + 1], b = row[i + 2];
+      if (Math.abs(r - b) < 40) best = Math.max(best, r + g + b);
+    }
+    return best;
+  });
+  check('a boomerang leaves a cloud ahead of where you turned', puff > 200, String(puff));
+  await page.keyboard.press('e');
+
   // a disabled power reads as disabled and cannot be ticked
   const hook = page.locator('[data-power=hook]');
   check('a power that cannot act yet is disabled', await hook.isDisabled());

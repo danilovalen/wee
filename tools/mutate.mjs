@@ -166,6 +166,7 @@ const M = [
   ['src/sim.js', "{ if (land(s, e, b)) pushed = { id: e.id, d: b.d }; }", "land(s, e, b);", 'sim'],
   ['src/sim.js', "  p.pushing = pushed;\n", "", 'sim'],
   ['src/sim.js', "if (e && !e.slide) e.slide = pu.d;", "if (e && !e.slide) e.slide = OPPOSITE[pu.d];", 'sim'],
+  ['src/sim.js', "s.events.push({ type: 'boomerang', from: OPPOSITE[k] });", "s.events.push({ type: 'boomerang' });", 'browser'],
   ['src/main.js', "tool === 'receiver' || tool === 'sensor' || tool === 'gate') return", "tool === 'receiver' || tool === 'gate') return", 'browser'],
   ['src/render.js', "drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);\n  g.restore();", "g.restore();", 'browser'],
 ];

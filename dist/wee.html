@@ -781,7 +781,7 @@ function input(s, k) {
   if (p.stuck && p.stuck.ride) unstick(s);
   if (!p.dir) { p.dir = k; p.moved = 0; return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
-  else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { letGo(s); p.dir = k; s.events.push({ type: 'boomerang' }); } }
+  else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { letGo(s); p.dir = k; s.events.push({ type: 'boomerang', from: OPPOSITE[k] }); } }
   else if (s.powers.laser) laser(s, k);
 }
 
@@ -849,6 +849,7 @@ const AIM = { up: -Math.PI / 2, right: 0, down: Math.PI / 2, left: Math.PI };
 const T = 32;
 
 const INK = {
+  puff: '#e3e8f2',
   goo: '#a6d62f', gooDark: '#5f7d16',
   water: '#1c4d7a', waterHi: '#5fa8e0', shock: '#fff1a8',
   armor: '#8fa3bb',
@@ -1196,6 +1197,20 @@ function drawPlay(g, s, prev, alpha, fx, now) {
     g.globalAlpha = 1; g.lineWidth = 2.5; g.strokeStyle = '#ffd0d0'; line();
     g.lineCap = 'butt';
   }
+  // A boomerang kicks up a puff of cloud where you turned, blown the way you were going.
+  for (const f of fx) if (f.type === 'boomerang' && f.from && now - f.at < PUFF_MS) {
+    const t = (now - f.at) / PUFF_MS, [fx0, fy0] = DIRS[f.from], cx = f.x * T + T / 2, cy = f.y * T + T / 2;
+    // One path for the whole cloud, so overlapping puffs read as one soft shape.
+    const k = ease(t);
+    g.fillStyle = INK.puff; g.globalAlpha = 0.65 * (1 - t);
+    g.beginPath();
+    for (const [along, side, r0] of PUFFS) {
+      const x = cx + (fx0 * along + -fy0 * side) * (6 + 10 * k), y = cy + (fy0 * along + fx0 * side) * (6 + 10 * k), r = r0 * (0.7 + 0.6 * k);
+      g.moveTo(x + r, y); g.arc(x, y, r, 0, Math.PI * 2);
+    }
+    g.fill('nonzero');
+    g.globalAlpha = 1;
+  }
   for (const f of fx) if (f.type === 'dive' && now - f.at < 200) {
     const t = (now - f.at) / 200;
     g.strokeStyle = INK.player; g.globalAlpha = 0.6 * (1 - t); g.lineWidth = 14 * (1 - t) + 2; g.lineCap = 'round';
@@ -1226,6 +1241,9 @@ function drawPlay(g, s, prev, alpha, fx, now) {
 }
 
 const LASER_MS = 5 * TICK_MS;
+const PUFF_MS = 380;
+// [along the old way, to the side, radius] for each little cloud of a puff.
+const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9, 5], [0.1, -0.9, 5], [1.3, 0.35, 4.5], [1.3, -0.35, 4.5]];
 
 // ---- src/main.js
 
