@@ -94,6 +94,35 @@ export function* search(level, max = MAX_STATES) {
   return { status: 'unsolvable', moves: null, states: seen.size };
 }
 
+// The stop map: every tile you can come to rest on from the start, by any moves.
+// A generator like search; returns { stops: [cell index], capped }, or { why } when the
+// room cannot be searched (real-time pieces).
+export function* reach(level, max = MAX_STATES) {
+  if (unsearchable({ ...level, cells: [...level.cells, 'goal'] })) return { why: 'realtime', stops: [] };
+  const start = createGame(level);
+  const keys = [...KEYS, ...(level.powers.cycle || level.powers.swim ? ['hide'] : [])];
+  const seen = new Set([stateKey(start)]), stops = new Set([start.player.y * start.w + start.player.x]);
+  let frontier = [start];
+  while (frontier.length) {
+    const next = [];
+    for (const s of frontier) {
+      for (const k of [...keys, ...powerMoves(s)]) {
+        const t = move(s, k);
+        if (!t) continue;
+        stops.add(t.player.y * t.w + t.player.x);
+        const key = stateKey(t);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (seen.size >= max) return { stops: [...stops], capped: true };
+        next.push(t);
+      }
+      yield seen.size;
+    }
+    frontier = next;
+  }
+  return { stops: [...stops], capped: false };
+}
+
 // The whole search at once, for tests and tools.
 export function solve(level, max) {
   const it = search(level, max);

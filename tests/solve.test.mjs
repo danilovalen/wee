@@ -2,7 +2,7 @@
 // returns actually wins when replayed through the plain rules, key by key.
 import { readFileSync } from 'node:fs';
 import { createGame, step } from '../src/rules/game.js';
-import { solve, move, stateKey, unsearchable, powerMoves, parseMove } from '../src/solve/solve.js';
+import { solve, move, stateKey, unsearchable, powerMoves, parseMove, reach } from '../src/solve/solve.js';
 import { room, suite } from './lib.mjs';
 
 const { check, done } = suite('solve');
@@ -64,4 +64,14 @@ check('with no powers on, no mid-slide moves are tried', powerMoves(createGame({
 const pm = powerMoves(createGame(dive));
 check('mid-slide moves name the slide, the tick and the key', pm.includes('right@1:right') && pm.includes('right@1:left') && pm.includes('right@1:up'));
 check('a move string reads back', JSON.stringify(parseMove('right@3:left')) === JSON.stringify({ k: 'right', at: 3, then: 'left' }) && parseMove('up').then === null);
+const run = it => { for (;;) { const r = it.next(); if (r.done) return r.value; } };
+const corner = room(['######', '#P...#', '#....#', '######']);
+corner.powers = { ...corner.powers, boomerang: false, dive: false, laser: false };
+const st = run(reach(corner));
+check('the stop map of an open box is its four corners', st.stops.sort((a, b) => a - b).join() === [7, 10, 13, 16].join() && !st.capped, st.stops.join());
+const blocked = room(['######', '#P.#.#', '#....#', '######']);
+blocked.powers = corner.powers;
+check('a wall makes a new stop beside it', run(reach(blocked)).stops.includes(8));
+check('a room with real-time pieces has no stop map', run(reach(room(['#####', '#PM.#', '#####'], { mode: 'realtime' }))).why === 'realtime');
+check('the stop map stops at its cap', run(reach(corner, 2)).capped);
 done();

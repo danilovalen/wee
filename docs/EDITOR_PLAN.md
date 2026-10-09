@@ -119,11 +119,15 @@ The rules are deterministic and tile-based, which is what makes ice puzzles solv
 
 ## Phase 7: stop map
 
+**Done 2026-10-09**, in the Look tool (dots only; not from the player's current tile in play yet).
+
 - An overlay in edit mode: every tile you can come to rest on from the start, with arrows for
   each slide, and the unreachable floor shaded.
 - From the player's current tile in play mode too, as a hint toggle.
 
 ## Phase 8: play from here
+
+**Done 2026-10-09**: Look, tap a tile, Play from here.
 
 - Long press or right-click a tile in edit mode: **Play from here**, starting on that tile with
   the room as it is.

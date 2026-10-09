@@ -33,7 +33,15 @@ export function bindInput() {
       return;
     }
     const c = cellFromEvent(ev); if (!c) return;
-    if (S.ui.tool === 'look') { $('placeHint').textContent = describe(S.level, c.x, c.y); return; }
+    if (S.ui.tool === 'look') {
+      $('placeHint').textContent = describe(S.level, c.x, c.y);
+      // You can start a run from any tile you could stand on.
+      const cell = S.level.cells[c.y * S.level.w + c.x];
+      const open = !/^(wall|receiver:|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);
+      S.lookAt = open ? c : null;
+      $('playHere').hidden = !open;
+      return;
+    }
     begin();
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);

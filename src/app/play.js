@@ -47,7 +47,10 @@ export function setMode(m, keep) {
   if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }
   syncPanel();
   if (m !== 'play') { S.demo = null; S.demoWait = null; }
-  if (m === 'play') { S.played = JSON.parse(JSON.stringify(S.level)); S.keylog = []; S.game = createGame(S.level); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
+  // Play from here: the same room, starting on the tile you looked at.
+  const from = m === 'play' && S.playFrom ? { ...S.level, start: S.playFrom } : S.level;
+  S.playFrom = null;
+  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.game = createGame(from); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
   else S.game = null;
 }
 
@@ -65,7 +68,7 @@ export function render() {
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t);
+  else drawEdit(g, S.level, S.hover, S.fx, t, S.stops && S.stops.stamp === JSON.stringify(S.level) ? S.stops.list : null);
 }
 
 // A report is the room as it was when play began, every key with its tick, and the

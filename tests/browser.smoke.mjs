@@ -201,6 +201,28 @@ try {
   check('playing did not change the room', (await text()).level.entities[0].x === 4);
 
   const roomBeforePanel = (await text()).level;
+  // the Look tool: Show stops marks the tiles you can stop on; Play from here starts there
+  const box6 = room(['######', '#P...#', '#....#', '######']);
+  box6.powers = { ...box6.powers, boomerang: false, dive: false, laser: false };
+  await page.evaluate(l => window.wee.loadLevel(l), box6);
+  await pick('look');
+  await page.click('#stopsBtn');
+  await page.waitForFunction(() => document.getElementById('placeHint').textContent.includes('tiles you can stop on'));
+  check('Show stops counts the tiles you can stop on', (await page.textContent('#placeHint')).startsWith('4 tiles'), await page.textContent('#placeHint'));
+  const dot = async (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * t), Math.round((y + 0.5) * t), 1, 1).data; return d[1] > 150 && d[2] > 150; }, [x, y]);
+  check('a stop gets a dot, a tile you only slide over does not', await dot(4, 2) && !(await dot(2, 2)));
+  await page.click('#stopsBtn');
+  await page.waitForTimeout(80);
+  check('Hide stops takes the dots away', !(await dot(4, 2)));
+  const L6 = await page.locator('#game').boundingBox();
+  const at6 = (x, y) => ({ x: L6.x + (x + 0.5) * L6.width / 6, y: L6.y + (y + 0.5) * L6.height / 4 });
+  let p6 = at6(0, 0); await page.mouse.click(p6.x, p6.y);
+  check('Play from here is not offered on a block', !(await page.locator('#playHere').isVisible()));
+  p6 = at6(3, 2); await page.mouse.click(p6.x, p6.y);
+  await page.click('#playHere');
+  check('Play from here starts the run on that tile', (await text()).mode === 'play' && (await text()).player.x === 3 && (await text()).player.y === 2);
+  await page.keyboard.press('e');
+  check('and the room itself keeps its start', (await text()).level.start.x === 1);
   // adding and cutting a side, and Border, are single undoable steps
   await page.evaluate(l => window.wee.loadLevel(l), room(['.....', '.P...', '.....']));
   await page.click('[data-side=top][data-delta="1"]');

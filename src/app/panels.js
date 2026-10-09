@@ -9,7 +9,7 @@ import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch } from './dom.js';
 import { change, step as undoStep, syncUndo } from './undo.js';
-import { runCheck, syncCheck, syncLint } from './check.js';
+import { runCheck, syncCheck, syncLint, toggleStops } from './check.js';
 import { syncRoomsButton } from './rooms.js';
 
 export function keysText() {
@@ -108,6 +108,8 @@ export function buildPanels(actions) {
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
   $('checkBtn').onclick = runCheck;
+  $('stopsBtn').onclick = toggleStops;
+  $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };
   $('showSolution').onclick = () => { const moves = S.check?.result?.moves; if (!moves) return; setMode('play'); S.demo = [...moves]; };
   const after = () => { syncPanel(); fit(); };
   $('undo').onclick = () => undoStep(true, after);

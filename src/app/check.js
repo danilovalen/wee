@@ -1,6 +1,6 @@
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
-import { search, parseMove } from '../solve/solve.js';
+import { search, parseMove, reach } from '../solve/solve.js';
 import { lint, brokenAt } from '../solve/lint.js';
 import { now } from './dom.js';
 import { S } from '../editor/state.js';
@@ -84,4 +84,28 @@ export function syncLint() {
     li.append(b);
     return li;
   }));
+}
+
+// The stop map, toggled from the Look tool: computed a slice at a time, drawn while the
+// room is unchanged.
+export function toggleStops() {
+  if (S.stops) { S.stops = null; $('stopsBtn').setAttribute('aria-pressed', 'false'); $('stopsBtn').textContent = 'Show stops'; return; }
+  const stamp = JSON.stringify(S.level), it = reach(JSON.parse(stamp));
+  S.stops = { stamp, list: null };
+  $('stopsBtn').setAttribute('aria-pressed', 'true'); $('stopsBtn').textContent = 'Hide stops';
+  const slice = () => {
+    if (!S.stops || S.stops.stamp !== stamp) return;
+    const until = performance.now() + SLICE_MS;
+    for (;;) {
+      const r = it.next();
+      if (r.done) {
+        S.stops.list = r.value.stops;
+        $('placeHint').textContent = r.value.why ? 'Has real-time pieces, so stops cannot be mapped.' : `${r.value.stops.length} tiles you can stop on${r.value.capped ? ' (stopped early, maybe more)' : ''}.`;
+        return;
+      }
+      if (performance.now() > until) break;
+    }
+    setTimeout(slice, 0);
+  };
+  slice();
 }

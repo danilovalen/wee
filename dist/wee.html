@@ -155,6 +155,10 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
       <div id="groups" class="tabs" role="tablist"></div>
       <div id="palette" class="grid"></div>
       <div id="options">
+        <div class="opt" data-for="look">
+          <button id="stopsBtn" type="button" aria-pressed="false">Show stops</button>
+          <button id="playHere" type="button" hidden>Play from here</button>
+        </div>
         <div class="opt" data-for="mover enemy strong" id="axisOpt">
           <span>Moves</span>
           <button type="button" data-axis="h">Across</button>
@@ -1216,7 +1220,7 @@ const S = {
   level: null,
   ui: { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
   mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
-  played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null,
+  played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null, lookAt: null, playFrom: null, stops: null,
 };
 return { starterLevel, S };
 })();
@@ -1583,7 +1587,8 @@ const { drawCell, drawFloor } = m16;
 
 
 // fx: [{type, at(ms), ...}] effects started by game events or edits.
-function drawEdit(g, level, hover, fx, now) {
+// stops: cell indexes you can come to rest on, drawn as dots, or null.
+function drawEdit(g, level, hover, fx, now, stops = null) {
   frame.clock = now;
   drawFloor(g, level.w, level.h);
   const pop = (x, y) => {
@@ -1597,6 +1602,10 @@ function drawEdit(g, level, hover, fx, now) {
     const t = (now - f.at) / 160;
     if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);
     if (f.piece) drawPiece(g, f.piece, f.x * T, f.y * T, 1 - ease(t) * 0.8, 1 - t);
+  }
+  if (stops) {
+    g.fillStyle = INK.player;
+    for (const i of stops) { g.beginPath(); g.arc((i % level.w) * T + T / 2, Math.floor(i / level.w) * T + T / 2, 4, 0, Math.PI * 2); g.fill(); }
   }
   // A tile a warning points at gets a gold ring that fades.
   for (const f of fx) if (f.type === 'flash' && now - f.at < 900) {
@@ -1879,12 +1888,41 @@ function* search(level, max = MAX_STATES) {
   return { status: 'unsolvable', moves: null, states: seen.size };
 }
 
+// The stop map: every tile you can come to rest on from the start, by any moves.
+// A generator like search; returns { stops: [cell index], capped }, or { why } when the
+// room cannot be searched (real-time pieces).
+function* reach(level, max = MAX_STATES) {
+  if (unsearchable({ ...level, cells: [...level.cells, 'goal'] })) return { why: 'realtime', stops: [] };
+  const start = createGame(level);
+  const keys = [...KEYS, ...(level.powers.cycle || level.powers.swim ? ['hide'] : [])];
+  const seen = new Set([stateKey(start)]), stops = new Set([start.player.y * start.w + start.player.x]);
+  let frontier = [start];
+  while (frontier.length) {
+    const next = [];
+    for (const s of frontier) {
+      for (const k of [...keys, ...powerMoves(s)]) {
+        const t = move(s, k);
+        if (!t) continue;
+        stops.add(t.player.y * t.w + t.player.x);
+        const key = stateKey(t);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (seen.size >= max) return { stops: [...stops], capped: true };
+        next.push(t);
+      }
+      yield seen.size;
+    }
+    frontier = next;
+  }
+  return { stops: [...stops], capped: false };
+}
+
 // The whole search at once, for tests and tools.
 function solve(level, max) {
   const it = search(level, max);
   for (;;) { const r = it.next(); if (r.done) return r.value; }
 }
-return { MAX_STATES, stateKey, parseMove, move, powerMoves, unsearchable, search, solve };
+return { MAX_STATES, stateKey, parseMove, move, powerMoves, unsearchable, search, reach, solve };
 })();
 // ---- src/solve/lint.js
 const m20 = (() => {
@@ -1940,7 +1978,7 @@ return { lint, brokenAt };
 })();
 // ---- src/app/check.js
 const m21 = (() => {
-const { search, parseMove } = m19;
+const { search, parseMove, reach } = m19;
 const { lint, brokenAt } = m20;
 const { now } = m12;
 const { S } = m11;
@@ -2031,7 +2069,31 @@ function syncLint() {
     return li;
   }));
 }
-return { checkText, runCheck, syncCheck, feedDemo, syncLint };
+
+// The stop map, toggled from the Look tool: computed a slice at a time, drawn while the
+// room is unchanged.
+function toggleStops() {
+  if (S.stops) { S.stops = null; $('stopsBtn').setAttribute('aria-pressed', 'false'); $('stopsBtn').textContent = 'Show stops'; return; }
+  const stamp = JSON.stringify(S.level), it = reach(JSON.parse(stamp));
+  S.stops = { stamp, list: null };
+  $('stopsBtn').setAttribute('aria-pressed', 'true'); $('stopsBtn').textContent = 'Hide stops';
+  const slice = () => {
+    if (!S.stops || S.stops.stamp !== stamp) return;
+    const until = performance.now() + SLICE_MS;
+    for (;;) {
+      const r = it.next();
+      if (r.done) {
+        S.stops.list = r.value.stops;
+        $('placeHint').textContent = r.value.why ? 'Has real-time pieces, so stops cannot be mapped.' : `${r.value.stops.length} tiles you can stop on${r.value.capped ? ' (stopped early, maybe more)' : ''}.`;
+        return;
+      }
+      if (performance.now() > until) break;
+    }
+    setTimeout(slice, 0);
+  };
+  slice();
+}
+return { checkText, runCheck, syncCheck, feedDemo, syncLint, toggleStops };
 })();
 // ---- src/level/templates.js
 const m22 = (() => {
@@ -2455,7 +2517,7 @@ const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m18;
 const { S } = m11;
 const { $, canvas, touch } = m12;
 const { change, step: undoStep, syncUndo } = m27;
-const { runCheck, syncCheck, syncLint } = m21;
+const { runCheck, syncCheck, syncLint, toggleStops } = m21;
 const { syncRoomsButton } = m26;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
@@ -2566,6 +2628,8 @@ function buildPanels(actions) {
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
   $('checkBtn').onclick = runCheck;
+  $('stopsBtn').onclick = toggleStops;
+  $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };
   $('showSolution').onclick = () => { const moves = S.check?.result?.moves; if (!moves) return; setMode('play'); S.demo = [...moves]; };
   const after = () => { syncPanel(); fit(); };
   $('undo').onclick = () => undoStep(true, after);
@@ -2803,7 +2867,10 @@ function setMode(m, keep) {
   if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }
   syncPanel();
   if (m !== 'play') { S.demo = null; S.demoWait = null; }
-  if (m === 'play') { S.played = JSON.parse(JSON.stringify(S.level)); S.keylog = []; S.game = createGame(S.level); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
+  // Play from here: the same room, starting on the tile you looked at.
+  const from = m === 'play' && S.playFrom ? { ...S.level, start: S.playFrom } : S.level;
+  S.playFrom = null;
+  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.game = createGame(from); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
   else S.game = null;
 }
 
@@ -2821,7 +2888,7 @@ function render() {
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t);
+  else drawEdit(g, S.level, S.hover, S.fx, t, S.stops && S.stops.stamp === JSON.stringify(S.level) ? S.stops.list : null);
 }
 
 // A report is the room as it was when play began, every key with its tick, and the
@@ -2881,7 +2948,15 @@ function bindInput() {
       return;
     }
     const c = cellFromEvent(ev); if (!c) return;
-    if (S.ui.tool === 'look') { $('placeHint').textContent = describe(S.level, c.x, c.y); return; }
+    if (S.ui.tool === 'look') {
+      $('placeHint').textContent = describe(S.level, c.x, c.y);
+      // You can start a run from any tile you could stand on.
+      const cell = S.level.cells[c.y * S.level.w + c.x];
+      const open = !/^(wall|receiver:|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);
+      S.lookAt = open ? c : null;
+      $('playHere').hidden = !open;
+      return;
+    }
     begin();
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);

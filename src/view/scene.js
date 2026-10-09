@@ -6,7 +6,8 @@ import { drawPiece, drawPlayer } from './pieces.js';
 import { drawCell, drawFloor } from './tiles.js';
 
 // fx: [{type, at(ms), ...}] effects started by game events or edits.
-export function drawEdit(g, level, hover, fx, now) {
+// stops: cell indexes you can come to rest on, drawn as dots, or null.
+export function drawEdit(g, level, hover, fx, now, stops = null) {
   frame.clock = now;
   drawFloor(g, level.w, level.h);
   const pop = (x, y) => {
@@ -20,6 +21,10 @@ export function drawEdit(g, level, hover, fx, now) {
     const t = (now - f.at) / 160;
     if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);
     if (f.piece) drawPiece(g, f.piece, f.x * T, f.y * T, 1 - ease(t) * 0.8, 1 - t);
+  }
+  if (stops) {
+    g.fillStyle = INK.player;
+    for (const i of stops) { g.beginPath(); g.arc((i % level.w) * T + T / 2, Math.floor(i / level.w) * T + T / 2, 4, 0, Math.PI * 2); g.fill(); }
   }
   // A tile a warning points at gets a gold ring that fades.
   for (const f of fx) if (f.type === 'flash' && now - f.at < 900) {
