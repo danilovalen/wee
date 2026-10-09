@@ -5,7 +5,9 @@
   "scripts": {
     "start": "node tools/serve.mjs",
     "test": "node tools/run-tests.mjs",
-    "smoke": "node tests/browser.smoke.mjs"
+    "smoke": "node tests/browser.smoke.mjs",
+    "build": "node tools/build-single.mjs",
+    "mutate": "node tools/mutate.mjs"
   },
   "devDependencies": {
     "playwright-core": "1.56"

@@ -8,6 +8,10 @@ Rooms that link into each other (metroidvania) are out of scope.
 
 ## Phase 0: architecture (no behaviour change)
 
+**Done 2026-10-09.** `src/` is the six folders below; `tests/arch.test.mjs` holds the import
+directions, the 300-line limit and a clean bundle. Editing still changes the level in place
+(`editor/edit.js`); undo will keep snapshots of the level, which gives the same result.
+
 Today: four flat files. `sim.js` is 640 lines holding every rule, `main.js` mixes editor state,
 panels and input, and the single-file build depends on a hand-kept order and on no two files
 sharing a top-level name.

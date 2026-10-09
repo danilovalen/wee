@@ -23,7 +23,7 @@ button:hover { border-color: var(--dim); }
 button.on { border-color: var(--accent); background: #183238; }
 button:disabled { opacity: .4; cursor: default; }
 #mode { min-width: 72px; }
-main { display: grid; grid-template-columns: 256px minmax(0, 1fr) 260px; gap: 16px; padding: 16px; align-items: start; }
+main { display: grid; grid-template-columns: 300px minmax(0, 1fr) 260px; gap: 16px; padding: 16px; align-items: start; }
 aside { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
 h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin: 4px 0 8px; }
 h2:not(:first-child) { margin-top: 16px; }
@@ -38,7 +38,6 @@ h2:not(:first-child) { margin-top: 16px; }
   .tabs, #tools > h2:first-child { display: none; }
   .ghead { display: block; }
   .grid button[hidden] { display: flex; }
-  main { grid-template-columns: 300px minmax(0, 1fr) 260px; }
   .grid button { white-space: nowrap; padding: 4px 6px; font-size: 12.5px; }
   .grid canvas { width: 18px; height: 18px; }
   .ghead { margin-top: 6px; }
@@ -193,9 +192,11 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
     </aside>
   </main>
   <script type="module">
-// ---- src/sim.js
-// The rules. Pure and deterministic: no DOM, no clock, no randomness.
-// One call to step() is one tick; the renderer only reads state.
+// ---- src/rules/base.js
+const m0 = (() => {
+
+// The rules' vocabulary: directions, colours, piece kinds, timings and the small tables
+// every other rules file reads.
 
 const TICK_MS = 60;
 const RT_PERIOD = 6;
@@ -231,88 +232,25 @@ const MODES = ['realtime', 'input', 'follow'];
 // A turret can stand alone or ride one of these.
 const CARRIES_TURRET = ['box', 'heavy', 'enemy', 'strong'];
 
-function checkTurret(t) {
-  if (!Array.isArray(t.dirs) || t.dirs.length < 1 || t.dirs.length > 4 || t.dirs.some(d => !CLOCKWISE.includes(d)) || new Set(t.dirs).size !== t.dirs.length)
-    throw new Error('A turret needs one to four different directions.');
-  if (!MODES.includes(t.mode)) throw new Error('Unknown turret clock: ' + t.mode);
-}
-
 // A power listed in NEEDS cannot act until its block type exists.
 const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'hook', 'swim', 'light', 'armored'];
 const NEEDS = { hook: 'grapple tiles', light: 'dark levels' };
 
-function emptyLevel(w = 20, h = 12) {
-  return {
-    format: 'wee-level', version: 1, w, h,
-    cells: Array(w * h).fill(''),
-    start: { x: 1, y: 1 },
-    entities: [],
-    powers: { boomerang: true, dive: true, laser: true, cycle: true, hook: false, swim: false, light: false, armored: false },
-    clock: 'tile',
-  };
-}
+// Water stops you unless you are swimming, and stops weak enemies, light boxes and
+// lone turrets. Strong enemies, heavy boxes and blocks go through it.
+const WADES = ['strong', 'heavy', 'mover'];
+const wades = e => WADES.includes(e.kind);
+// A closing door squashes what is in it, unless one of these holds it open.
+const HOLDS_DOOR = ['strong', 'heavy', 'mover'];
 
-function resizeLevel(level, w, h) {
-  const cells = Array(w * h).fill('');
-  for (let y = 0; y < Math.min(h, level.h); y++)
-    for (let x = 0; x < Math.min(w, level.w); x++) cells[y * w + x] = level.cells[y * level.w + x];
-  return {
-    ...level, w, h, cells,
-    start: { x: Math.min(level.start.x, w - 1), y: Math.min(level.start.y, h - 1) },
-    entities: level.entities.filter(e => e.x < w && e.y < h),
-  };
-}
-
-// Refuses a file it does not understand instead of half-loading it.
-function parseLevel(text) {
-  const l = JSON.parse(text);
-  if (l.format !== 'wee-level') throw new Error('Not a wee level file.');
-  if (!(l.w > 0 && l.h > 0) || !Array.isArray(l.cells) || l.cells.length !== l.w * l.h)
-    throw new Error('The room size does not match its cells.');
-  for (const c of l.cells) if (!isCell(c)) throw new Error('Unknown tile: ' + c);
-  for (const e of l.entities) {
-    if (!KINDS.includes(e.kind)) throw new Error('Unknown piece: ' + e.kind);
-    if (e.turret) checkTurret(e.turret);
-    if (MOVES.includes(e.kind) && e.mode && !MODES.includes(e.mode)) throw new Error('Unknown clock: ' + e.mode);
-  }
-  if (!['tile', 'slide'].includes(l.clock)) throw new Error('Unknown clock: ' + l.clock);
-  return { ...emptyLevel(l.w, l.h), ...l, powers: { ...emptyLevel().powers, ...l.powers } };
-}
-
-function isCell(c) {
-  if (c === '' || c === 'wall' || c === 'checkpoint') return true;
-  if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
-  if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
-  if (c === 'death' || c === 'water' || c === 'sticky') return true;
-  if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
-  if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
-  if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
-  const [kind, colour] = c.split(':');
-  return (kind === 'button' || kind === 'door') && COLOURS.includes(colour);
-}
-
-// The room's pieces as the level places them; a reset builds them again from here.
-const freshPieces = list => list.map((e, i) => ({
-  id: i + 1, kind: e.kind, x: e.x, y: e.y,
-  axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
-  turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: 0 } : null,
-}));
-
-function createGame(level) {
-  const l = JSON.parse(JSON.stringify(level));
-  const s = {
-    origin: l.entities,
-    w: l.w, h: l.h, cells: l.cells, powers: l.powers, clock: l.clock,
-    start: { ...l.start },
-    checkpoint: { ...l.start },
-    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
-    entities: freshPieces(l.entities),
-    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, deaths: 0, events: [],
-  };
-  computeBeams(s, false);
-  refreshDoors(s);
-  return s;
-}
+const DIR_OF = (dx, dy) => Object.keys(DIRS).find(k => DIRS[k][0] === dx && DIRS[k][1] === dy);
+return { TICK_MS, RT_PERIOD, HIDE_TICKS, LASER_TICKS, DIRS, OPPOSITE, COLOURS, CORNERS, EXIT_FACE, ENTRY_FACE, OUT, OPP, openFaces, turn, CLOCKWISE, KINDS, MOVES, ENEMY, MODES, CARRIES_TURRET, POWERS, NEEDS, WADES, wades, HOLDS_DOOR, DIR_OF };
+})();
+// ---- src/rules/grid.js
+const m1 = (() => {
+const { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, openFaces, turn } = m0;
+// Geometry: what is on a tile, and where one step from a tile lands (walls, doors,
+// triangles, one-way tiles, water).
 
 const inb = (s, x, y) => x >= 0 && y >= 0 && x < s.w && y < s.h;
 const cellAt = (s, x, y) => s.cells[y * s.w + x];
@@ -360,17 +298,6 @@ function pushTo(s, x, y, d, wet) {
   return t && (t.death || (!entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y))) ? t : null;
 }
 
-// Puts a piece on t, or destroys it when t is a death block.
-function land(s, e, t) {
-  if (t.death) { kill(s, e, 'death'); return false; }
-  e.x = t.x; e.y = t.y;
-  return true;
-}
-
-// Water stops you unless you are swimming, and stops weak enemies, light boxes and
-// lone turrets. Strong enemies, heavy boxes and blocks go through it.
-const WADES = ['strong', 'heavy', 'mover'];
-const wades = e => WADES.includes(e.kind);
 const inWater = (s, x, y) => inb(s, x, y) && cellAt(s, x, y) === 'water';
 
 const entAt = (s, x, y, not) => s.entities.find(e => !e.dead && e !== not && e.x === x && e.y === y);
@@ -378,8 +305,28 @@ const entAt = (s, x, y, not) => s.entities.find(e => !e.dead && e !== not && e.x
 const playerAt = (s, x, y) => !s.player.hidden && s.player.x === x && s.player.y === y;
 // Armored, only the heavy things crush you: a strong enemy and a heavy box.
 const crushes = (s, e) => e.kind === 'heavy' || e.kind === 'strong' || !s.powers.armored;
-// A closing door squashes what is in it, unless one of these holds it open.
-const HOLDS_DOOR = ['strong', 'heavy', 'mover'];
+// Where a piece lands moved straight by (dx, dy), or null if it cannot go.
+function shift(s, x, y, dx, dy, wet, not) {
+  const t = stepTo(s, x, y, DIR_OF(dx, dy), wet);
+  if (!t || t.x !== x + dx || t.y !== y + dy) return null;
+  if (!t.death && entAt(s, t.x, t.y, not)) return null;
+  return t;
+}
+return { inb, cellAt, solidCell, triAt, facing, gateAt, stepTo, pushTo, inWater, entAt, playerAt, crushes, shift };
+})();
+// ---- src/rules/life.js
+const m2 = (() => {
+const { CLOCKWISE, COLOURS, HOLDS_DOOR } = m0;
+const { entAt, playerAt } = m1;
+// Doors and switches, dying, and the room reset.
+
+
+// The room's pieces as the level places them; a reset builds them again from here.
+const freshPieces = list => list.map((e, i) => ({
+  id: i + 1, kind: e.kind, x: e.x, y: e.y,
+  axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
+  turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: 0 } : null,
+}));
 
 // A colour's doors open only while every button, receiver and sensor of that colour
 // is held. A closing door squashes you, weak enemies, boxes and lone turrets, unless a
@@ -416,59 +363,6 @@ function refreshDoors(s) {
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
 }
 
-// Sticky: a puddle makes you sticky until water washes it off or you stick to
-// something. You ride a moving block or a sliding box you meet until you move off; a
-// light box you meet glues to you and comes along until it cannot.
-const stuckTo = s => { const st = s.player.stuck; return st && s.entities.find(e => e.id === st.id && !e.dead); };
-const STICKS = e => e.kind === 'mover' || e.kind === 'box' || (e.kind === 'heavy' && !!e.slide);
-function stick(s, e) {
-  const p = s.player;
-  p.sticky = false;
-  p.stuck = { id: e.id, ride: e.kind === 'mover' || !!e.slide, dx: e.x - p.x, dy: e.y - p.y };
-  s.events.push({ type: 'stick', id: e.id });
-}
-function unstick(s) {
-  if (!s.player.stuck) return;
-  s.player.stuck = null;
-  s.events.push({ type: 'unstick' });
-}
-const DIR_OF = (dx, dy) => Object.keys(DIRS).find(k => DIRS[k][0] === dx && DIRS[k][1] === dy);
-// Where a piece lands moved straight by (dx, dy), or null if it cannot go.
-function shift(s, x, y, dx, dy, wet, not) {
-  const t = stepTo(s, x, y, DIR_OF(dx, dy), wet);
-  if (!t || t.x !== x + dx || t.y !== y + dy) return null;
-  if (!t.death && entAt(s, t.x, t.y, not)) return null;
-  return t;
-}
-// Moving onto a tile: a puddle makes you sticky, water washes it off.
-function entered(s) {
-  const p = s.player, c = cellAt(s, p.x, p.y);
-  if (c === 'sticky' && !p.stuck && !p.sticky) { p.sticky = true; s.events.push({ type: 'sticky' }); }
-  if (c === 'water') { p.sticky = false; unstick(s); }
-}
-// The piece you ride moved by (dx, dy): you go with it, or come off if you cannot.
-function carry(s, dx, dy) {
-  const p = s.player, t = shift(s, p.x, p.y, dx, dy, p.swimming, stuckTo(s));
-  if (!t) return;
-  if (t.death) { die(s); return; }
-  p.x = t.x; p.y = t.y;
-  entered(s);
-}
-// Your move took you by (dx, dy): a glued box behind or beside you follows, or falls off.
-function drag(s, g, dx, dy) {
-  const t = shift(s, g.x, g.y, dx, dy, false, g);
-  if (t) land(s, g, t);
-}
-// The end of a tick: the one place a stuck piece lets go when it and you came apart
-// (it could not follow, you could not, it died, you hid).
-function checkStuck(s) {
-  const p = s.player, st = p.stuck, e = stuckTo(s);
-  if (!st) return;
-  if (!e || p.hidden || e.x !== p.x + st.dx || e.y !== p.y + st.dy) { unstick(s); return; }
-  // A sliding box you rode has stopped: a light one is glued to you now, a heavy one lets go.
-  if (st.ride && e.kind !== 'mover' && !e.slide) { if (e.kind === 'box') st.ride = false; else unstick(s); }
-}
-
 // Dying or pressing Reset puts the whole room back as it started, with you on your last
 // checkpoint. Pieces still moving this tick are left behind, marked dead.
 function respawn(s) {
@@ -489,66 +383,22 @@ function kill(s, e, how) {
   s.events.push({ type: 'kill', id: e.id, how });
 }
 
-// One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
-function playerStep(s, d, diving) {
-  const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming);
-  if (!t) return 'blocked';
-  if (t.death) { die(s); return 'died'; }
-  const nx = t.x, ny = t.y, e = entAt(s, nx, ny), g = p.stuck && !p.stuck.ride ? stuckTo(s) : null;
-  const dx = nx - p.x, dy = ny - p.y, ahead = !!e && e === g;
-  let pushed = null;
-  if (ahead) {
-    // The glued box is ahead: it goes first, or it falls off and stops you.
-    const b = shift(s, g.x, g.y, dx, dy, false, g);
-    if (!b) { unstick(s); return 'blocked'; }
-    land(s, g, b);
-  } else if (e && p.sticky && STICKS(e)) { stick(s, e); return 'blocked'; }
-  else if (e) {
-    let b;
-    if (e.kind === 'enemy' && diving) kill(s, e, 'dive');
-    else if (ENEMY.includes(e.kind)) { if (!crushes(s, e)) return 'blocked'; die(s); return 'died'; }
-    else if (e.kind === 'heavy') {
-      if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
-      return 'blocked';
-    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d, false))) { if (land(s, e, b)) pushed = { id: e.id, d: b.d }; }
-    else return 'blocked';
-  }
-  p.pushing = pushed;
-  p.x = nx; p.y = ny; p.moved++;
-  if (p.dir) p.dir = t.d;
-  if (g && !ahead) drag(s, g, dx, dy);
-  entered(s);
-  if (cellAt(s, nx, ny) === 'checkpoint' && (s.checkpoint.x !== nx || s.checkpoint.y !== ny)) {
-    s.checkpoint = { x: nx, y: ny };
-    s.events.push({ type: 'checkpoint', x: nx, y: ny });
-  }
-  refreshDoors(s);
-  return 'moved';
+// Puts a piece on t, or destroys it when t is a death block.
+function land(s, e, t) {
+  if (t.death) { kill(s, e, 'death'); return false; }
+  e.x = t.x; e.y = t.y;
+  return true;
 }
+return { freshPieces, refreshDoors, respawn, die, kill, land };
+})();
+// ---- src/rules/beams.js
+const m3 = (() => {
+const { DIRS } = m0;
+const { cellAt, entAt, facing, inWater, inb, playerAt, stepTo } = m1;
+const { die, kill } = m2;
+// Lasers: your shot, turret beams, relays, catchers and shocked water.
 
-function endSlide(s) {
-  const moved = s.player.moved, d = s.player.dir;
-  s.player.dir = null; s.player.moved = 0;
-  if (moved > 0 && s.clock === 'slide') worldStep(s, d);
-}
 
-// A slide that moved the player gives the world its step, per the clock.
-function slideOnce(s, diving) {
-  const d = s.player.dir, r = playerStep(s, d, diving);
-  if (r === 'moved') { if (s.clock === 'tile') worldStep(s, d); return true; }
-  if (r === 'blocked') endSlide(s);
-  return false;
-}
-
-function dive(s) {
-  s.events.push({ type: 'dive', fromX: s.player.x, fromY: s.player.y });
-  for (let i = 0; i < s.w * s.h && s.player.dir; i++) {
-    const before = s.deaths;
-    if (!slideOnce(s, true) || s.deaths !== before) break;
-  }
-  if (s.player.dir) endSlide(s);
-  s.player.snap = true;
-}
 
 // A beam from (x, y) heading d, turned by triangles. hit(piece) says whether it
 // passes on. Returns the cells it crossed, whether geometry stopped it (and the
@@ -625,6 +475,75 @@ function computeBeams(s, harm) {
   if (harm && shockHarms(s, s.shocked, 'turret')) hitYou = true;
   if (harm && hitYou) die(s);
 }
+return { trace, laserHit, laser, shockPools, shockHarms, aimOf, turnTurrets, computeBeams };
+})();
+// ---- src/rules/sticky.js
+const m4 = (() => {
+const { cellAt, shift } = m1;
+const { die, land } = m2;
+// Sticky: a puddle makes you sticky until water washes it off or you stick to
+// something. You ride a moving block or a sliding box you meet until you move off; a
+// light box you meet glues to you and comes along until it cannot.
+
+
+// Sticky: a puddle makes you sticky until water washes it off or you stick to
+// something. You ride a moving block or a sliding box you meet until you move off; a
+// light box you meet glues to you and comes along until it cannot.
+const stuckTo = s => { const st = s.player.stuck; return st && s.entities.find(e => e.id === st.id && !e.dead); };
+const STICKS = e => e.kind === 'mover' || e.kind === 'box' || (e.kind === 'heavy' && !!e.slide);
+function stick(s, e) {
+  const p = s.player;
+  p.sticky = false;
+  p.stuck = { id: e.id, ride: e.kind === 'mover' || !!e.slide, dx: e.x - p.x, dy: e.y - p.y };
+  s.events.push({ type: 'stick', id: e.id });
+}
+function unstick(s) {
+  if (!s.player.stuck) return;
+  s.player.stuck = null;
+  s.events.push({ type: 'unstick' });
+}
+// Moving onto a tile: a puddle makes you sticky, water washes it off.
+function entered(s) {
+  const p = s.player, c = cellAt(s, p.x, p.y);
+  if (c === 'sticky' && !p.stuck && !p.sticky) { p.sticky = true; s.events.push({ type: 'sticky' }); }
+  if (c === 'water') { p.sticky = false; unstick(s); }
+}
+// The piece you ride moved by (dx, dy): you go with it, or come off if you cannot.
+function carry(s, dx, dy) {
+  const p = s.player, t = shift(s, p.x, p.y, dx, dy, p.swimming, stuckTo(s));
+  if (!t) return;
+  if (t.death) { die(s); return; }
+  p.x = t.x; p.y = t.y;
+  entered(s);
+}
+// Your move took you by (dx, dy): a glued box behind or beside you follows, or falls off.
+function drag(s, g, dx, dy) {
+  const t = shift(s, g.x, g.y, dx, dy, false, g);
+  if (t) land(s, g, t);
+}
+// The end of a tick: the one place a stuck piece lets go when it and you came apart
+// (it could not follow, you could not, it died, you hid).
+function checkStuck(s) {
+  const p = s.player, st = p.stuck, e = stuckTo(s);
+  if (!st) return;
+  if (!e || p.hidden || e.x !== p.x + st.dx || e.y !== p.y + st.dy) { unstick(s); return; }
+  // A sliding box you rode has stopped: a light one is glued to you now, a heavy one lets go.
+  if (st.ride && e.kind !== 'mover' && !e.slide) { if (e.kind === 'box') st.ride = false; else unstick(s); }
+}
+return { stuckTo, STICKS, stick, unstick, entered, carry, drag, checkStuck };
+})();
+// ---- src/rules/pieces.js
+const m5 = (() => {
+const { DIRS, ENEMY, MOVES, wades } = m0;
+const { turnTurrets } = m3;
+const { crushes, entAt, inb, playerAt, pushTo, stepTo } = m1;
+const { die, kill, land, refreshDoors } = m2;
+const { carry, entered, stick, stuckTo } = m4;
+// Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
+
+
+
+
 
 // A hide is one cycle with no direction: each on-your-move piece slides along its
 // patrol until something stops it, a tile per tick (see step), and turns there.
@@ -742,6 +661,83 @@ function fireSprings(s) {
     }
   });
 }
+return { hideCycle, rushOnce, worldStep, patrolDir, moveMover, slidePiece, fireSprings };
+})();
+// ---- src/rules/player.js
+const m6 = (() => {
+const { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } = m0;
+const { laser } = m3;
+const { cellAt, crushes, entAt, inWater, pushTo, shift, solidCell, stepTo } = m1;
+const { die, kill, land, refreshDoors, respawn } = m2;
+const { hideCycle, worldStep } = m5;
+const { STICKS, drag, entered, stick, stuckTo, unstick } = m4;
+// You: one slide step at a time, dive, hide, and what each key does.
+
+
+
+
+
+
+// One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
+function playerStep(s, d, diving) {
+  const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming);
+  if (!t) return 'blocked';
+  if (t.death) { die(s); return 'died'; }
+  const nx = t.x, ny = t.y, e = entAt(s, nx, ny), g = p.stuck && !p.stuck.ride ? stuckTo(s) : null;
+  const dx = nx - p.x, dy = ny - p.y, ahead = !!e && e === g;
+  let pushed = null;
+  if (ahead) {
+    // The glued box is ahead: it goes first, or it falls off and stops you.
+    const b = shift(s, g.x, g.y, dx, dy, false, g);
+    if (!b) { unstick(s); return 'blocked'; }
+    land(s, g, b);
+  } else if (e && p.sticky && STICKS(e)) { stick(s, e); return 'blocked'; }
+  else if (e) {
+    let b;
+    if (e.kind === 'enemy' && diving) kill(s, e, 'dive');
+    else if (ENEMY.includes(e.kind)) { if (!crushes(s, e)) return 'blocked'; die(s); return 'died'; }
+    else if (e.kind === 'heavy') {
+      if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
+      return 'blocked';
+    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d, false))) { if (land(s, e, b)) pushed = { id: e.id, d: b.d }; }
+    else return 'blocked';
+  }
+  p.pushing = pushed;
+  p.x = nx; p.y = ny; p.moved++;
+  if (p.dir) p.dir = t.d;
+  if (g && !ahead) drag(s, g, dx, dy);
+  entered(s);
+  if (cellAt(s, nx, ny) === 'checkpoint' && (s.checkpoint.x !== nx || s.checkpoint.y !== ny)) {
+    s.checkpoint = { x: nx, y: ny };
+    s.events.push({ type: 'checkpoint', x: nx, y: ny });
+  }
+  refreshDoors(s);
+  return 'moved';
+}
+
+function endSlide(s) {
+  const moved = s.player.moved, d = s.player.dir;
+  s.player.dir = null; s.player.moved = 0;
+  if (moved > 0 && s.clock === 'slide') worldStep(s, d);
+}
+
+// A slide that moved the player gives the world its step, per the clock.
+function slideOnce(s, diving) {
+  const d = s.player.dir, r = playerStep(s, d, diving);
+  if (r === 'moved') { if (s.clock === 'tile') worldStep(s, d); return true; }
+  if (r === 'blocked') endSlide(s);
+  return false;
+}
+
+function dive(s) {
+  s.events.push({ type: 'dive', fromX: s.player.x, fromY: s.player.y });
+  for (let i = 0; i < s.w * s.h && s.player.dir; i++) {
+    const before = s.deaths;
+    if (!slideOnce(s, true) || s.deaths !== before) break;
+  }
+  if (s.player.dir) endSlide(s);
+  s.player.snap = true;
+}
 
 // You come back once the hide has lasted HIDE_TICKS and nothing it sent sliding is
 // still going. Whatever is on your tile then squashes you.
@@ -783,6 +779,41 @@ function input(s, k) {
   if (k === p.dir) { if (s.powers.dive) dive(s); }
   else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { letGo(s); p.dir = k; s.events.push({ type: 'boomerang', from: OPPOSITE[k] }); } }
   else if (s.powers.laser) laser(s, k);
+}
+return { playerStep, endSlide, slideOnce, dive, unhide, letGo, input };
+})();
+// ---- src/rules/game.js
+const m7 = (() => {
+const { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } = m0;
+const { aimOf, computeBeams, turnTurrets } = m3;
+const { inWater } = m1;
+const { freshPieces, refreshDoors } = m2;
+const { fireSprings, moveMover, rushOnce, slidePiece } = m5;
+const { input, slideOnce, unhide } = m6;
+const { checkStuck } = m4;
+// A run: the state, one tick of it, its text reading, and replaying a key log.
+// Pure and deterministic: no DOM, no clock, no randomness.
+
+
+
+
+
+
+
+function createGame(level) {
+  const l = JSON.parse(JSON.stringify(level));
+  const s = {
+    origin: l.entities,
+    w: l.w, h: l.h, cells: l.cells, powers: l.powers, clock: l.clock,
+    start: { ...l.start },
+    checkpoint: { ...l.start },
+    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
+    entities: freshPieces(l.entities),
+    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, deaths: 0, events: [],
+  };
+  computeBeams(s, false);
+  refreshDoors(s);
+  return s;
 }
 
 function step(s, inputs = []) {
@@ -834,15 +865,108 @@ function replay(level, log, ticks) {
   for (let t = 0; t < ticks; t++) step(s, log.filter(i => i.t === t).map(i => i.k));
   return s;
 }
+return { createGame, step, gameText, replay };
+})();
+// ---- src/level/format.js
+const m8 = (() => {
+const { CLOCKWISE, COLOURS, CORNERS, KINDS, MODES, MOVES } = m0;
+// The level file: an empty room, resizing, and parsing that refuses what it does not know.
 
-// ---- src/sample.js
-// The sample room, kept in step with rooms/sample.wee by tools/build-single.mjs.
-const SAMPLE = {"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"};
+function checkTurret(t) {
+  if (!Array.isArray(t.dirs) || t.dirs.length < 1 || t.dirs.length > 4 || t.dirs.some(d => !CLOCKWISE.includes(d)) || new Set(t.dirs).size !== t.dirs.length)
+    throw new Error('A turret needs one to four different directions.');
+  if (!MODES.includes(t.mode)) throw new Error('Unknown turret clock: ' + t.mode);
+}
 
-// ---- src/render.js
-// Draws a level (edit mode) or a running game (play mode) on the canvas.
-// Motion is drawn between the previous tick and this one; nothing here changes state.
+function emptyLevel(w = 20, h = 12) {
+  return {
+    format: 'wee-level', version: 1, w, h,
+    cells: Array(w * h).fill(''),
+    start: { x: 1, y: 1 },
+    entities: [],
+    powers: { boomerang: true, dive: true, laser: true, cycle: true, hook: false, swim: false, light: false, armored: false },
+    clock: 'tile',
+  };
+}
 
+function resizeLevel(level, w, h) {
+  const cells = Array(w * h).fill('');
+  for (let y = 0; y < Math.min(h, level.h); y++)
+    for (let x = 0; x < Math.min(w, level.w); x++) cells[y * w + x] = level.cells[y * level.w + x];
+  return {
+    ...level, w, h, cells,
+    start: { x: Math.min(level.start.x, w - 1), y: Math.min(level.start.y, h - 1) },
+    entities: level.entities.filter(e => e.x < w && e.y < h),
+  };
+}
+
+// Refuses a file it does not understand instead of half-loading it.
+function parseLevel(text) {
+  const l = JSON.parse(text);
+  if (l.format !== 'wee-level') throw new Error('Not a wee level file.');
+  if (!(l.w > 0 && l.h > 0) || !Array.isArray(l.cells) || l.cells.length !== l.w * l.h)
+    throw new Error('The room size does not match its cells.');
+  for (const c of l.cells) if (!isCell(c)) throw new Error('Unknown tile: ' + c);
+  for (const e of l.entities) {
+    if (!KINDS.includes(e.kind)) throw new Error('Unknown piece: ' + e.kind);
+    if (e.turret) checkTurret(e.turret);
+    if (MOVES.includes(e.kind) && e.mode && !MODES.includes(e.mode)) throw new Error('Unknown clock: ' + e.mode);
+  }
+  if (!['tile', 'slide'].includes(l.clock)) throw new Error('Unknown clock: ' + l.clock);
+  return { ...emptyLevel(l.w, l.h), ...l, powers: { ...emptyLevel().powers, ...l.powers } };
+}
+
+function isCell(c) {
+  if (c === '' || c === 'wall' || c === 'checkpoint') return true;
+  if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
+  if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
+  if (c === 'death' || c === 'water' || c === 'sticky') return true;
+  if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
+  if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
+  if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
+  const [kind, colour] = c.split(':');
+  return (kind === 'button' || kind === 'door') && COLOURS.includes(colour);
+}
+return { checkTurret, emptyLevel, resizeLevel, parseLevel, isCell };
+})();
+// ---- src/editor/state.js
+const m9 = (() => {
+const { emptyLevel } = m8;
+// The one shared state of the page: the level being edited, the editor's settings and
+// the run being played. Every app file reads and writes it here, never in a copy.
+
+// A new room takes the screen's shape: taller than wide on a phone held upright.
+function starterLevel(tall) {
+  const l = tall ? emptyLevel(12, 14) : emptyLevel(20, 12);
+  for (let x = 0; x < l.w; x++) { l.cells[x] = 'wall'; l.cells[(l.h - 1) * l.w + x] = 'wall'; }
+  for (let y = 0; y < l.h; y++) { l.cells[y * l.w] = 'wall'; l.cells[y * l.w + l.w - 1] = 'wall'; }
+  return l;
+}
+
+const S = {
+  level: null,
+  ui: { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
+  mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
+  played: null, keylog: [],
+};
+return { starterLevel, S };
+})();
+// ---- src/app/dom.js
+const m10 = (() => {
+
+// The page: the elements the app talks to, and what kind of screen it is on.
+const $ = id => document.getElementById(id);
+const canvas = $('game');
+const g = canvas.getContext('2d');
+const touch = matchMedia('(pointer: coarse)').matches;
+const portrait = () => innerHeight > innerWidth;
+const now = () => performance.now();
+return { $, canvas, g, touch, portrait, now };
+})();
+// ---- src/view/ink.js
+const m11 = (() => {
+const { TICK_MS } = m0;
+// The palette, the tile size and the small drawing helpers every view file shares.
 
 const AIM = { up: -Math.PI / 2, right: 0, down: Math.PI / 2, left: Math.PI };
 
@@ -863,13 +987,176 @@ const INK = {
 const ease = t => 1 - Math.pow(1 - t, 3);
 const lerp = (a, b, t) => a + (b - a) * t;
 // The time the current frame is drawn at, for tiles that move on their own.
-let clock = 0;
+const frame = { clock: 0 };
 
 function roundRect(g, x, y, w, h, r) {
   g.beginPath();
   g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
   g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
 }
+
+const LASER_MS = 5 * TICK_MS;
+const PUFF_MS = 380;
+// [along the old way, to the side, radius] for each little cloud of a puff.
+const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9, 5], [0.1, -0.9, 5], [1.3, 0.35, 4.5], [1.3, -0.35, 4.5]];
+return { AIM, T, INK, ease, lerp, frame, roundRect, LASER_MS, PUFF_MS, PUFFS };
+})();
+// ---- src/app/fit.js
+const m12 = (() => {
+const { T } = m11;
+const { S } = m9;
+const { $, canvas, g, portrait } = m10;
+// Sizes the canvas to the room and the screen, sharp on high-density displays.
+
+
+
+function fit() {
+  const level = S.level;
+  const stage = $('stage').clientWidth || level.w * T;
+  const room = portrait() ? innerHeight * 0.62 : innerHeight - 140;
+  const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));
+  const k = (window.devicePixelRatio || 1) * zoom;
+  canvas.width = Math.round(level.w * T * k); canvas.height = Math.round(level.h * T * k);
+  canvas.style.width = Math.round(level.w * T * zoom) + 'px';
+  g.setTransform(canvas.width / (level.w * T), 0, 0, canvas.height / (level.h * T), 0, 0);
+  $('w').value = level.w; $('h').value = level.h;
+}
+return { fit };
+})();
+// ---- src/view/pieces.js
+const m13 = (() => {
+const { AIM, INK, T, frame, roundRect } = m11;
+// Pieces and the player.
+
+// The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
+function modeBadge(g, mode, bx = 24, by = 8) {
+  g.save(); g.translate(bx, by);
+  g.fillStyle = '#0b0d12'; g.beginPath(); g.arc(0, 0, 5.5, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#e9edf5'; g.fillStyle = '#e9edf5'; g.lineWidth = 1.4;
+  if (mode === 'realtime') {
+    g.beginPath(); g.arc(0, 0, 3.6, 0, Math.PI * 2); g.stroke();
+    g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -2.4); g.moveTo(0, 0); g.lineTo(1.8, 0.8); g.stroke();
+  } else if (mode === 'follow') {
+    g.beginPath(); g.moveTo(-3, -2.5); g.lineTo(-0.5, 0); g.lineTo(-3, 2.5); g.moveTo(0.5, -2.5); g.lineTo(3, 0); g.lineTo(0.5, 2.5); g.stroke();
+  } else {
+    g.beginPath(); g.moveTo(-2.5, 2); g.lineTo(0, -2.5); g.lineTo(2.5, 2); g.closePath(); g.fill();
+  }
+  g.restore();
+}
+
+// A turret head: one barrel per direction it fires; the next to fire is lit.
+function drawTurret(g, t, badge, mounted) {
+  const next = t.dirs[(t.aim || 0) % t.dirs.length];
+  g.save();
+  if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
+  for (const d of t.dirs) {
+    g.save(); g.translate(16, 16); g.rotate(AIM[d]);
+    g.fillStyle = d === next ? INK.beam : INK.barrel;
+    roundRect(g, 4, -3, 11, 6, 2); g.fill();
+    g.restore();
+  }
+  g.fillStyle = '#20242f'; g.beginPath(); g.arc(16, 16, 7, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = INK.beam; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = INK.beam; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
+  g.restore();
+  if (badge) modeBadge(g, t.mode, badge[0], badge[1]);
+}
+
+function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
+  g.save();
+  g.globalAlpha = alpha;
+  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
+  if (e.kind === 'mover') {
+    g.fillStyle = INK.mover; roundRect(g, 2, 2, T - 4, T - 4, 6); g.fill();
+    g.strokeStyle = INK.moverEdge; g.lineWidth = 2; g.stroke();
+    g.strokeStyle = '#3b4252'; g.lineWidth = 2.5;
+    g.beginPath();
+    if (e.axis === 'h') { g.moveTo(10, 12); g.lineTo(6, 16); g.lineTo(10, 20); g.moveTo(22, 12); g.lineTo(26, 16); g.lineTo(22, 20); }
+    else { g.moveTo(12, 10); g.lineTo(16, 6); g.lineTo(20, 10); g.moveTo(12, 22); g.lineTo(16, 26); g.lineTo(20, 22); }
+    g.stroke();
+    modeBadge(g, e.mode);
+  } else if (e.kind === 'enemy') {
+    g.fillStyle = INK.enemy;
+    g.beginPath(); g.moveTo(16, 3); g.lineTo(29, 16); g.lineTo(16, 29); g.lineTo(3, 16); g.closePath(); g.fill();
+    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
+    g.fillStyle = '#fff';
+    g.beginPath(); g.arc(12 + lx, 15 + ly, 3, 0, Math.PI * 2); g.arc(20 + lx, 15 + ly, 3, 0, Math.PI * 2); g.fill();
+    modeBadge(g, e.mode);
+  } else if (e.kind === 'strong') {
+    g.fillStyle = INK.strong; roundRect(g, 2, 3, T - 4, T - 5, 7); g.fill();
+    g.strokeStyle = INK.strongEdge; g.lineWidth = 2; g.stroke();
+    g.fillStyle = INK.strongEdge;
+    g.beginPath(); g.moveTo(6, 6); g.lineTo(9, 0); g.lineTo(12, 5); g.moveTo(20, 5); g.lineTo(23, 0); g.lineTo(26, 6); g.fill();
+    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
+    g.fillStyle = '#ffd34d';
+    g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
+    modeBadge(g, e.mode);
+  } else if (e.kind === 'turret') {
+    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+  } else if (e.kind === 'box') {
+    g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
+    g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();
+    g.beginPath(); g.moveTo(7, 7); g.lineTo(25, 25); g.moveTo(25, 7); g.lineTo(7, 25); g.stroke();
+  } else if (e.kind === 'heavy') {
+    g.fillStyle = INK.heavy; roundRect(g, 2, 2, T - 4, T - 4, 3); g.fill();
+    g.strokeStyle = INK.heavyEdge; g.lineWidth = 3; g.stroke();
+    g.fillStyle = INK.rivet;
+    for (const [rx, ry] of [[7, 7], [25, 7], [7, 25], [25, 25]]) { g.beginPath(); g.arc(rx, ry, 2, 0, Math.PI * 2); g.fill(); }
+  }
+  if (e.turret) drawTurret(g, e.turret, e.kind === 'turret' ? [24, 8] : [8, 24], e.kind !== 'turret');
+  g.restore();
+}
+
+// Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
+// on top of you, so you can still be found. Swimming on land you wear a blue drop;
+// under water you waver, tinted, with a ripple.
+function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim = null, sticky = false) {
+  g.save(); g.globalAlpha = alpha;
+  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale);
+  const under = swim === 'under';
+  if (under) {
+    const w = Math.sin(frame.clock / 170);
+    g.strokeStyle = INK.waterHi; g.lineWidth = 1.5;
+    const rp = (frame.clock % 1100) / 1100;
+    g.globalAlpha = alpha * 0.6 * (1 - rp); g.beginPath(); g.arc(0, 0, 11 + 6 * rp, 0, Math.PI * 2); g.stroke();
+    g.globalAlpha = alpha * 0.8;
+    g.translate(w * 1.5, 0); g.scale(1 + 0.07 * w, 1 - 0.07 * w);
+  }
+  if (hidden) {
+    g.strokeStyle = INK.player; g.lineWidth = 2; g.setLineDash([3, 3]);
+    g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+  } else { g.fillStyle = INK.player; g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill(); }
+  if (armored) {
+    // A steel rim with four rivets.
+    g.strokeStyle = INK.armor; g.lineWidth = 3.5;
+    g.beginPath(); g.arc(0, 0, 11.5, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = '#e8eef6';
+    for (const a of [0.25, 0.75, 1.25, 1.75]) { g.beginPath(); g.arc(Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6, 0, Math.PI * 2); g.fill(); }
+  }
+  g.fillStyle = '#0b2a2c'; g.beginPath(); g.arc(-3.5, -2, 2.2, 0, Math.PI * 2); g.arc(3.5, -2, 2.2, 0, Math.PI * 2); g.fill();
+  if (sticky) {
+    // Goo on top, dripping from the bottom.
+    g.fillStyle = INK.goo;
+    g.beginPath(); g.ellipse(0, -8, 7, 3, 0, 0, Math.PI * 2); g.fill();
+    const k = (frame.clock % 900) / 900;
+    g.beginPath(); g.ellipse(-4, 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.ellipse(5, 9, 1.6, 2.4, 0, 0, Math.PI * 2); g.fill();
+  }
+  if (under) {
+    g.globalAlpha = alpha * 0.45; g.fillStyle = INK.waterHi;
+    g.beginPath(); g.arc(0, 0, 10.5, 0, Math.PI * 2); g.fill();
+  } else if (swim === 'on') {
+    g.fillStyle = INK.waterHi;
+    g.beginPath(); g.moveTo(9, -16); g.quadraticCurveTo(14, -9, 9, -7); g.quadraticCurveTo(4, -9, 9, -16); g.fill();
+  }
+  g.restore();
+}
+return { modeBadge, drawTurret, drawPiece, drawPlayer };
+})();
+// ---- src/view/tiles.js
+const m14 = (() => {
+const { INK, T, frame, roundRect } = m11;
+// Tiles: floor, walls and every cell type, drawn in place.
 
 function drawCell(g, c, x, y, s, scale = 1) {
   if (!c) return;
@@ -888,7 +1175,7 @@ function drawCell(g, c, x, y, s, scale = 1) {
     // A full tile, so a pool reads as one body; two waves drift across it.
     g.fillStyle = INK.water; g.fillRect(0, 0, T, T);
     g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
-    const k = (clock / 900 + x * 0.37 + y * 0.53) % 1;
+    const k = (frame.clock / 900 + x * 0.37 + y * 0.53) % 1;
     for (const wy of [10, 22]) {
       g.beginPath();
       for (let wx = 0; wx <= T; wx += 4) g.lineTo(wx, wy + Math.sin((wx / T + k) * Math.PI * 2) * 2);
@@ -984,130 +1271,6 @@ function pressedAt(s, x, y) {
     s.entities.some(e => !e.dead && e.x === x && e.y === y);
 }
 
-// The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
-function modeBadge(g, mode, bx = 24, by = 8) {
-  g.save(); g.translate(bx, by);
-  g.fillStyle = '#0b0d12'; g.beginPath(); g.arc(0, 0, 5.5, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = '#e9edf5'; g.fillStyle = '#e9edf5'; g.lineWidth = 1.4;
-  if (mode === 'realtime') {
-    g.beginPath(); g.arc(0, 0, 3.6, 0, Math.PI * 2); g.stroke();
-    g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -2.4); g.moveTo(0, 0); g.lineTo(1.8, 0.8); g.stroke();
-  } else if (mode === 'follow') {
-    g.beginPath(); g.moveTo(-3, -2.5); g.lineTo(-0.5, 0); g.lineTo(-3, 2.5); g.moveTo(0.5, -2.5); g.lineTo(3, 0); g.lineTo(0.5, 2.5); g.stroke();
-  } else {
-    g.beginPath(); g.moveTo(-2.5, 2); g.lineTo(0, -2.5); g.lineTo(2.5, 2); g.closePath(); g.fill();
-  }
-  g.restore();
-}
-
-// A turret head: one barrel per direction it fires; the next to fire is lit.
-function drawTurret(g, t, badge, mounted) {
-  const next = t.dirs[(t.aim || 0) % t.dirs.length];
-  g.save();
-  if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
-  for (const d of t.dirs) {
-    g.save(); g.translate(16, 16); g.rotate(AIM[d]);
-    g.fillStyle = d === next ? INK.beam : INK.barrel;
-    roundRect(g, 4, -3, 11, 6, 2); g.fill();
-    g.restore();
-  }
-  g.fillStyle = '#20242f'; g.beginPath(); g.arc(16, 16, 7, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = INK.beam; g.lineWidth = 1.5; g.stroke();
-  g.fillStyle = INK.beam; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
-  g.restore();
-  if (badge) modeBadge(g, t.mode, badge[0], badge[1]);
-}
-
-function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
-  g.save();
-  g.globalAlpha = alpha;
-  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
-  if (e.kind === 'mover') {
-    g.fillStyle = INK.mover; roundRect(g, 2, 2, T - 4, T - 4, 6); g.fill();
-    g.strokeStyle = INK.moverEdge; g.lineWidth = 2; g.stroke();
-    g.strokeStyle = '#3b4252'; g.lineWidth = 2.5;
-    g.beginPath();
-    if (e.axis === 'h') { g.moveTo(10, 12); g.lineTo(6, 16); g.lineTo(10, 20); g.moveTo(22, 12); g.lineTo(26, 16); g.lineTo(22, 20); }
-    else { g.moveTo(12, 10); g.lineTo(16, 6); g.lineTo(20, 10); g.moveTo(12, 22); g.lineTo(16, 26); g.lineTo(20, 22); }
-    g.stroke();
-    modeBadge(g, e.mode);
-  } else if (e.kind === 'enemy') {
-    g.fillStyle = INK.enemy;
-    g.beginPath(); g.moveTo(16, 3); g.lineTo(29, 16); g.lineTo(16, 29); g.lineTo(3, 16); g.closePath(); g.fill();
-    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
-    g.fillStyle = '#fff';
-    g.beginPath(); g.arc(12 + lx, 15 + ly, 3, 0, Math.PI * 2); g.arc(20 + lx, 15 + ly, 3, 0, Math.PI * 2); g.fill();
-    modeBadge(g, e.mode);
-  } else if (e.kind === 'strong') {
-    g.fillStyle = INK.strong; roundRect(g, 2, 3, T - 4, T - 5, 7); g.fill();
-    g.strokeStyle = INK.strongEdge; g.lineWidth = 2; g.stroke();
-    g.fillStyle = INK.strongEdge;
-    g.beginPath(); g.moveTo(6, 6); g.lineTo(9, 0); g.lineTo(12, 5); g.moveTo(20, 5); g.lineTo(23, 0); g.lineTo(26, 6); g.fill();
-    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
-    g.fillStyle = '#ffd34d';
-    g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
-    modeBadge(g, e.mode);
-  } else if (e.kind === 'turret') {
-    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
-    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
-  } else if (e.kind === 'box') {
-    g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
-    g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();
-    g.beginPath(); g.moveTo(7, 7); g.lineTo(25, 25); g.moveTo(25, 7); g.lineTo(7, 25); g.stroke();
-  } else if (e.kind === 'heavy') {
-    g.fillStyle = INK.heavy; roundRect(g, 2, 2, T - 4, T - 4, 3); g.fill();
-    g.strokeStyle = INK.heavyEdge; g.lineWidth = 3; g.stroke();
-    g.fillStyle = INK.rivet;
-    for (const [rx, ry] of [[7, 7], [25, 7], [7, 25], [25, 25]]) { g.beginPath(); g.arc(rx, ry, 2, 0, Math.PI * 2); g.fill(); }
-  }
-  if (e.turret) drawTurret(g, e.turret, e.kind === 'turret' ? [24, 8] : [8, 24], e.kind !== 'turret');
-  g.restore();
-}
-
-// Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
-// on top of you, so you can still be found. Swimming on land you wear a blue drop;
-// under water you waver, tinted, with a ripple.
-function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim = null, sticky = false) {
-  g.save(); g.globalAlpha = alpha;
-  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale);
-  const under = swim === 'under';
-  if (under) {
-    const w = Math.sin(clock / 170);
-    g.strokeStyle = INK.waterHi; g.lineWidth = 1.5;
-    const rp = (clock % 1100) / 1100;
-    g.globalAlpha = alpha * 0.6 * (1 - rp); g.beginPath(); g.arc(0, 0, 11 + 6 * rp, 0, Math.PI * 2); g.stroke();
-    g.globalAlpha = alpha * 0.8;
-    g.translate(w * 1.5, 0); g.scale(1 + 0.07 * w, 1 - 0.07 * w);
-  }
-  if (hidden) {
-    g.strokeStyle = INK.player; g.lineWidth = 2; g.setLineDash([3, 3]);
-    g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
-  } else { g.fillStyle = INK.player; g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill(); }
-  if (armored) {
-    // A steel rim with four rivets.
-    g.strokeStyle = INK.armor; g.lineWidth = 3.5;
-    g.beginPath(); g.arc(0, 0, 11.5, 0, Math.PI * 2); g.stroke();
-    g.fillStyle = '#e8eef6';
-    for (const a of [0.25, 0.75, 1.25, 1.75]) { g.beginPath(); g.arc(Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6, 0, Math.PI * 2); g.fill(); }
-  }
-  g.fillStyle = '#0b2a2c'; g.beginPath(); g.arc(-3.5, -2, 2.2, 0, Math.PI * 2); g.arc(3.5, -2, 2.2, 0, Math.PI * 2); g.fill();
-  if (sticky) {
-    // Goo on top, dripping from the bottom.
-    g.fillStyle = INK.goo;
-    g.beginPath(); g.ellipse(0, -8, 7, 3, 0, 0, Math.PI * 2); g.fill();
-    const k = (clock % 900) / 900;
-    g.beginPath(); g.ellipse(-4, 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.ellipse(5, 9, 1.6, 2.4, 0, 0, Math.PI * 2); g.fill();
-  }
-  if (under) {
-    g.globalAlpha = alpha * 0.45; g.fillStyle = INK.waterHi;
-    g.beginPath(); g.arc(0, 0, 10.5, 0, Math.PI * 2); g.fill();
-  } else if (swim === 'on') {
-    g.fillStyle = INK.waterHi;
-    g.beginPath(); g.moveTo(9, -16); g.quadraticCurveTo(14, -9, 9, -7); g.quadraticCurveTo(4, -9, 9, -16); g.fill();
-  }
-  g.restore();
-}
-
 function drawFloor(g, w, h) {
   g.fillStyle = INK.floor; g.fillRect(0, 0, w * T, h * T);
   g.strokeStyle = INK.grid; g.lineWidth = 1;
@@ -1116,10 +1279,23 @@ function drawFloor(g, w, h) {
   for (let y = 1; y < h; y++) { g.moveTo(0, y * T + 0.5); g.lineTo(w * T, y * T + 0.5); }
   g.stroke();
 }
+return { drawCell, pressedAt, drawFloor };
+})();
+// ---- src/view/scene.js
+const m15 = (() => {
+const { DIRS } = m0;
+const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m11;
+const { drawPiece, drawPlayer } = m13;
+const { drawCell, drawFloor } = m14;
+// A whole frame: the level in edit mode, or a running game in play mode, with motion
+// drawn between the previous tick and this one. Nothing here changes state.
+
+
+
 
 // fx: [{type, at(ms), ...}] effects started by game events or edits.
 function drawEdit(g, level, hover, fx, now) {
-  clock = now;
+  frame.clock = now;
   drawFloor(g, level.w, level.h);
   const pop = (x, y) => {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
@@ -1141,7 +1317,7 @@ function drawEdit(g, level, hover, fx, now) {
 
 // prev: positions before the last tick; alpha: 0..1 progress into the next tick.
 function drawPlay(g, s, prev, alpha, fx, now) {
-  clock = now;
+  frame.clock = now;
   const shake = fx.find(f => f.type === 'crash' && now - f.at < 180);
   g.save();
   if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
@@ -1239,18 +1415,13 @@ function drawPlay(g, s, prev, alpha, fx, now) {
   drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);
   g.restore();
 }
+return { drawEdit, drawPlay };
+})();
+// ---- src/editor/palette.js
+const m16 = (() => {
 
-const LASER_MS = 5 * TICK_MS;
-const PUFF_MS = 380;
-// [along the old way, to the side, radius] for each little cloud of a puff.
-const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9, 5], [0.1, -0.9, 5], [1.3, 0.35, 4.5], [1.3, -0.35, 4.5]];
-
-// ---- src/main.js
-
-const $ = id => document.getElementById(id);
-const canvas = $('game'), g = canvas.getContext('2d');
-
-// Draft copy: each line is the rule in the order the player meets it.
+// The palette: every tool, its group and label, and the words the editor uses for
+// powers, colours, clocks and directions. Draft copy throughout.
 const TOOLS = [
   { id: 'look', label: 'Look', group: 'basic' },
   { id: 'erase', label: 'Erase', group: 'basic' },
@@ -1286,284 +1457,55 @@ const POWER_TEXT = {
 };
 const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', hook: 'Hook', swim: 'Swim', light: 'Light', armored: 'Armored' };
 
-const touch = matchMedia('(pointer: coarse)').matches;
-const portrait = () => innerHeight > innerWidth;
 
-// A new room takes the screen's shape: taller than wide on a phone held upright.
-function starterLevel() {
-  const l = portrait() ? emptyLevel(12, 14) : emptyLevel(20, 12);
-  for (let x = 0; x < l.w; x++) { l.cells[x] = 'wall'; l.cells[(l.h - 1) * l.w + x] = 'wall'; }
-  for (let y = 0; y < l.h; y++) { l.cells[y * l.w] = 'wall'; l.cells[y * l.w + l.w - 1] = 'wall'; }
-  return l;
-}
-
-// The palette shows one group at a time, so it fits a phone without scrolling.
+// The palette shows one group at a time on a phone, so it fits without scrolling.
 const GROUPS = [['basic', 'Basics'], ['pieces', 'Pieces'], ['tiles', 'Tiles'], ['switches', 'Switches']];
-const ui = { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' };
-let level = starterLevel();
-let played = null, keylog = [];
-let mode = 'edit', game = null, prev = null, pending = [], acc = 0, last = 0, fx = [], hover = null, painting = 0, swipe = null;
-
-function now() { return performance.now(); }
-
-// ---------- canvas size ----------
-function fit() {
-  const stage = $('stage').clientWidth || level.w * T;
-  const room = portrait() ? innerHeight * 0.62 : innerHeight - 140;
-  const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));
-  const k = (window.devicePixelRatio || 1) * zoom;
-  canvas.width = Math.round(level.w * T * k); canvas.height = Math.round(level.h * T * k);
-  canvas.style.width = Math.round(level.w * T * zoom) + 'px';
-  g.setTransform(canvas.width / (level.w * T), 0, 0, canvas.height / (level.h * T), 0, 0);
-  $('w').value = level.w; $('h').value = level.h;
-}
-
-// ---------- editing ----------
-const idx = (x, y) => y * level.w + x;
-const pieceAt = (x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
-
-// Does (x, y) already hold the kind of thing this tool places?
-function holds(x, y, tool) {
-  const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)];
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky') return c === tool;
-  if (tool === 'spring') return c.startsWith('spring:');
-  if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
-  if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
-  return !!pc && pc.kind === tool;
-}
-
 const COLOUR_NAME = { red: 'Red', blue: 'Blue', yellow: 'Yellow', green: 'Green' };
 const CLOCK_NAME = { realtime: 'real time', input: 'on your move', follow: 'same way as you' };
 const ARROW = { up: '\u2191', right: '\u2192', down: '\u2193', left: '\u2190' };
 const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'bottom right' };
+return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
+})();
+// ---- src/level/sample.js
+const m17 = (() => {
 
-// The Look tool's one line about a tile: what is on it and how it is set.
-function describe(x, y) {
-  const c = level.cells[idx(x, y)], pc = level.entities[pieceAt(x, y)], parts = [];
-  if (pc) {
-    const name = TOOLS.find(t => t.id === pc.kind)?.label || pc.kind;
-    parts.push(['mover', 'enemy', 'strong'].includes(pc.kind)
-      ? `${name} \u00b7 ${pc.mode === 'follow' ? '' : (pc.axis === 'h' ? 'across \u00b7 ' : 'up and down \u00b7 ')}${CLOCK_NAME[pc.mode]}` : name);
-    if (pc.turret && pc.kind !== 'turret') parts.push('carries a turret');
-    if (pc.turret) parts.push(`fires ${pc.turret.dirs.map(d => ARROW[d]).join(' ')} \u00b7 ${CLOCK_NAME[pc.turret.mode]}`);
-  }
-  if (c) {
-    const [kind, v] = c.split(':');
-    if (kind === 'wall') parts.push('Block');
-    else if (kind === 'checkpoint') parts.push('Checkpoint');
-    else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
-    else if (kind === 'death') parts.push('Death block');
-    else if (kind === 'water') parts.push('Water');
-    else if (kind === 'sticky') parts.push('Sticky puddle');
-    else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
-    else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
-    else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser relay`);
-    else if (kind === 'receiver') parts.push(`${COLOUR_NAME[v]} laser catcher`);
-    else parts.push(`${COLOUR_NAME[v]} ${kind}`);
-  }
-  if (level.start.x === x && level.start.y === y) parts.push('Start');
-  return parts.length ? parts.join(' \u00b7 ') : 'Empty floor';
-}
+// The sample room, kept in step with rooms/sample.wee by tools/build-single.mjs.
+const SAMPLE = {"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"};
+return { SAMPLE };
+})();
+// ---- src/app/panels.js
+const m18 = (() => {
+const { COLOURS, POWERS, NEEDS } = m0;
+const { emptyLevel, resizeLevel, parseLevel } = m8;
+const { T, INK } = m11;
+const { drawPiece } = m13;
+const { drawEdit } = m15;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m16;
+const { S } = m9;
+const { SAMPLE } = m17;
+const { $, canvas, touch } = m10;
+// The side panels: the tool palette and its options, powers and status, the room size,
+// and the file buttons. syncPanel makes every control show the current state.
 
-// how: 'place', 'remove' (only what this tool places) or 'erase' (anything).
-function place(x, y, how) {
-  if (how === 'remove' && !holds(x, y, ui.tool)) return;
-  if (how === 'place' && holds(x, y, ui.tool)) return;
-  const t = how === 'erase' ? 'erase' : how === 'remove' ? 'remove' : ui.tool, i = idx(x, y), pi = pieceAt(x, y);
-  const gone = { type: 'erase', x, y, at: now() };
-  const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
-  const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
-  const isStart = level.start.x === x && level.start.y === y;
-  if (t === 'erase') {
-    if (pi >= 0) removePiece(); else setCell('');
-  } else if (t === 'remove') {
-    const host = pi >= 0 ? level.entities[pi] : null;
-    if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky'].includes(ui.tool)) setCell('');
-    else removePiece();
-  } else if (t === 'spring' || t === 'death') {
-    if (isStart) return;
-    removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
-  } else if (t === 'water' || t === 'sticky') {
-    if (isStart) return;
-    setCell(t);
-  } else if (t === 'gate') {
-    if (isStart) return;
-    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
-  } else if (t === 'tri') {
-    if (isStart) return;
-    removePiece(); setCell('tri:' + ui.corner);
-  } else if (t === 'start') {
-    if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
-    removePiece();
-    level.start = { x, y };
-  } else if (t === 'wall') {
-    if (isStart) return;
-    removePiece(); setCell('wall');
-  } else if (t === 'checkpoint' || t === 'button' || t === 'door' || t === 'receiver' || t === 'sensor') {
-    if ((t === 'door' || t === 'receiver') && isStart) return;
-    if (t === 'door' || t === 'receiver') removePiece();
-    setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
-  } else if (t === 'turret') {
-    if (isStart) return;
-    const turret = { dirs: CLOCKWISE.filter(d => ui.aim.includes(d)), mode: ui.mode };
-    const host = pi >= 0 ? level.entities[pi] : null;
-    if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
-      if (JSON.stringify(host.turret) === JSON.stringify(turret)) return;
-      host.turret = turret;
-    } else {
-      removePiece();
-      if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
-      level.entities.push({ kind: 'turret', x, y, turret });
-    }
-  } else {
-    if (isStart) return;
-    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: 1, mode: ui.mode } : {}) };
-    if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return;
-    removePiece();
-    if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
-    level.entities.push(want);
-  }
-  if (gone.cell || gone.piece) fx.push(gone);
-  if (t !== 'erase' && t !== 'remove') fx.push({ type: 'place', x, y, at: now() });
-}
 
-function cellFromEvent(ev) {
-  const r = canvas.getBoundingClientRect();
-  const x = Math.floor((ev.clientX - r.left) / r.width * level.w);
-  const y = Math.floor((ev.clientY - r.top) / r.height * level.h);
-  return x >= 0 && y >= 0 && x < level.w && y < level.h ? { x, y } : null;
-}
 
-canvas.addEventListener('contextmenu', ev => ev.preventDefault());
-// In play, a swipe is an arrow key: each new direction within one drag sends once.
-const SWIPE_PX = 24;
-canvas.addEventListener('pointerdown', ev => {
-  if (mode === 'play') {
-    swipe = { x: ev.clientX, y: ev.clientY, last: null };
-    canvas.setPointerCapture(ev.pointerId);
-    return;
-  }
-  const c = cellFromEvent(ev); if (!c) return;
-  if (ui.tool === 'look') { $('placeHint').textContent = describe(c.x, c.y); return; }
-  painting = ev.button === 2 ? 'erase' : holds(c.x, c.y, ui.tool) && ui.tool !== 'start' ? 'remove' : 'place';
-  canvas.setPointerCapture(ev.pointerId);
-  place(c.x, c.y, painting);
-});
-canvas.addEventListener('pointermove', ev => {
-  if (mode === 'play' && swipe) {
-    const dx = ev.clientX - swipe.x, dy = ev.clientY - swipe.y;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_PX) return;
-    const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
-    if (d !== swipe.last) pending.push(d);
-    Object.assign(swipe, { x: ev.clientX, y: ev.clientY, last: d });
-    return;
-  }
-  const c = mode === 'edit' ? cellFromEvent(ev) : null;
-  // The outline follows a mouse only; a finger would leave it behind on lift.
-  hover = touch ? null : c;
-  if (painting && c && ui.tool !== 'start') place(c.x, c.y, painting);
-});
-canvas.addEventListener('pointerup', () => { painting = 0; swipe = null; });
-canvas.addEventListener('pointercancel', () => { painting = 0; swipe = null; });
-canvas.addEventListener('pointerleave', () => { hover = null; });
 
-// ---------- play ----------
-function snapshot(s) {
-  const ents = {};
-  for (const e of s.entities) ents[e.id] = { x: e.x, y: e.y };
-  return { player: { x: s.player.x, y: s.player.y }, ents };
-}
 
-function tick() {
-  for (const k of pending) keylog.push({ t: game.tick, k });
-  prev = snapshot(game);
-  const before = { x: game.player.x, y: game.player.y };
-  step(game, pending);
-  pending = [];
-  const t = now();
-  for (const e of game.events) {
-    if (e.type === 'dive') fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
-    else fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
-  }
-}
+
+
+
 
 function keysText() {
   return touch
-    ? (mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : '')
-    : (mode === 'play' ? `Arrows slide. ${tapText()}R resets the room. E goes back to editing.` : 'E plays this room.');
+    ? (S.mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : '')
+    : (S.mode === 'play' ? `Arrows slide. ${tapText()}R resets the room. E goes back to editing.` : 'E plays this room.');
 }
 
 function tapText() {
-  const { cycle, swim } = level.powers;
+  const { cycle, swim } = S.level.powers;
   return cycle && swim ? 'Space hides you and starts or stops swimming. ' : cycle ? 'Space hides you. ' : swim ? 'Space starts or stops swimming. ' : '';
 }
 
-function setMode(m, keep) {
-  if (keep) { $('keys').textContent = keysText(); return; }
-  mode = m;
-  document.body.classList.toggle('play', m === 'play');
-  $('mode').textContent = m === 'play' ? 'Edit' : 'Play';
-  $('keys').textContent = keysText();
-  $('pad').hidden = m !== 'play';
-  fx = [];
-  if (m === 'edit') { ui.tool = 'look'; ui.group = 'basic'; }
-  syncPanel();
-  if (m === 'play') { played = JSON.parse(JSON.stringify(level)); keylog = []; game = createGame(level); prev = snapshot(game); pending = []; acc = 0; }
-  else game = null;
-}
-
-const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', ' ': 'hide', r: 'respawn', R: 'respawn' };
-window.addEventListener('keydown', ev => {
-  if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;
-  if (ev.key === 'e' || ev.key === 'E') { setMode(mode === 'play' ? 'edit' : 'play'); ev.preventDefault(); return; }
-  if (mode !== 'play') return;
-  const k = KEYS[ev.key];
-  if (!k) return;
-  ev.preventDefault();
-  if (!ev.repeat) pending.push(k);
-});
-
-// ---------- loop ----------
-function frame(t) {
-  const dt = Math.min(250, t - (last || t)); last = t;
-  if (mode === 'play' && !window.__manualClock) {
-    acc += dt;
-    while (acc >= TICK_MS) { tick(); acc -= TICK_MS; }
-  }
-  render();
-  requestAnimationFrame(frame);
-}
-
-function render() {
-  const t = now();
-  fx = fx.filter(f => t - f.at < 400);
-  if (mode === 'play') drawPlay(g, game, prev, Math.min(1, acc / TICK_MS), fx, t);
-  else drawEdit(g, level, hover, fx, t);
-}
-
-// A report is the room as it was when play began, every key with its tick, and the
-// state it ended in, so one run can be replayed exactly with replay().
-function report() {
-  return JSON.stringify({ format: 'wee-report', version: 1, ticks: game.tick, level: played, keys: keylog, end: JSON.parse(gameText(game)) });
-}
-async function copyReport() {
-  const text = report();
-  try { await navigator.clipboard.writeText(text); flash('Report copied. Paste it in the chat.'); }
-  catch { $('reportText').value = text; $('reportBox').showModal(); $('reportText').select(); }
-}
-function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(mode, true), 2500); }
-
-// The text state and a fixed clock, for gates and agents.
-window.renderGameToText = () => mode === 'play' ? gameText(game, 'play') : JSON.stringify({ mode: 'edit', level });
-window.advanceTime = ms => {
-  if (mode !== 'play') return;
-  for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
-  acc = 0; render();
-};
-window.wee = { report, replay, gameText, press: k => pending.push(k), setMode, getLevel: () => level, loadLevel: l => { level = parseLevel(JSON.stringify(l)); syncPanel(); fit(); } };
-
-// ---------- panels ----------
 function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
@@ -1585,11 +1527,14 @@ function icon(tool) {
   return c;
 }
 
-function buildPanels() {
+// actions: what the panels trigger elsewhere (setMode, copyReport, fit), passed in so
+// the panels never import the play loop.
+function buildPanels(actions) {
+  const { setMode, copyReport, fit } = actions;
   for (const [g, name] of GROUPS) {
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.group = g; b.textContent = name;
-    b.onclick = () => { ui.group = g; syncPanel(); };
+    b.onclick = () => { S.ui.group = g; syncPanel(); };
     $('groups').append(b);
   }
   for (const t of TOOLS) {
@@ -1602,28 +1547,28 @@ function buildPanels() {
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.tool = t.id; b.dataset.in = t.group;
     b.append(icon(t.id), t.label);
-    b.onclick = () => { ui.tool = t.id; syncPanel(); };
+    b.onclick = () => { S.ui.tool = t.id; syncPanel(); };
     $('palette').append(b);
   }
   for (const col of COLOURS) {
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.colour = col; b.title = col;
     b.style.background = INK[col];
-    b.onclick = () => { ui.colour = col; syncPanel(); };
+    b.onclick = () => { S.ui.colour = col; syncPanel(); };
     $('colours').append(b);
   }
-  document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { ui.axis = b.dataset.axis; syncPanel(); });
-  document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { ui.mode = b.dataset.mode; syncPanel(); });
-  document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { ui.corner = b.dataset.corner; syncPanel(); });
-  document.querySelectorAll('[data-face]').forEach(b => b.onclick = () => { ui.face = b.dataset.face; syncPanel(); });
+  document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { S.ui.axis = b.dataset.axis; syncPanel(); });
+  document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { S.ui.mode = b.dataset.mode; syncPanel(); });
+  document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { S.ui.corner = b.dataset.corner; syncPanel(); });
+  document.querySelectorAll('[data-face]').forEach(b => b.onclick = () => { S.ui.face = b.dataset.face; syncPanel(); });
   document.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => {
-    const d = b.dataset.pass;
+    const d = b.dataset.pass, ui = S.ui;
     if (ui.pass.includes(d)) { if (ui.pass.length > 1) ui.pass = ui.pass.filter(p => p !== d); }
     else ui.pass = [...ui.pass, d];
     syncPanel();
   });
   document.querySelectorAll('[data-aim]').forEach(b => b.onclick = () => {
-    const d = b.dataset.aim;
+    const d = b.dataset.aim, ui = S.ui;
     if (ui.aim.includes(d)) { if (ui.aim.length > 1) ui.aim = ui.aim.filter(a => a !== d); }
     else ui.aim = [...ui.aim, d];
     syncPanel();
@@ -1633,42 +1578,44 @@ function buildPanels() {
     row.className = 'power' + (NEEDS[p] ? ' off' : '');
     const box = document.createElement('input');
     box.type = 'checkbox'; box.dataset.power = p; box.disabled = !!NEEDS[p];
-    box.onchange = () => { level.powers[p] = box.checked; if (game) pending.push(`power:${p}:${box.checked ? 1 : 0}`); syncPanel(); };
+    box.onchange = () => { S.level.powers[p] = box.checked; if (S.game) S.pending.push(`power:${p}:${box.checked ? 1 : 0}`); syncPanel(); };
     const name = document.createElement('b'); name.textContent = NAMES[p];
     const say = document.createElement('small'); say.textContent = NEEDS[p] ? 'Needs ' + NEEDS[p] + '.' : POWER_TEXT[p];
     row.append(box, name, say);
     $(p === 'armored' ? 'statusList' : 'powerList').append(row);
   }
-  document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { level.clock = r.value; if (game) pending.push('clock:' + r.value); });
-  $('mode').onclick = () => setMode(mode === 'play' ? 'edit' : 'play');
-  $('hideBtn').onclick = () => pending.push('hide');
-  $('respawnBtn').onclick = () => pending.push('respawn');
+  document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { S.level.clock = r.value; if (S.game) S.pending.push('clock:' + r.value); });
+  $('mode').onclick = () => setMode(S.mode === 'play' ? 'edit' : 'play');
+  $('hideBtn').onclick = () => S.pending.push('hide');
+  $('respawnBtn').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('placeHint').textContent = touch ? 'Tap to place. Tap one again to remove it. Look changes nothing.' : 'Click to place. Click one again, or right click, to remove it. Look changes nothing.';
   const resize = () => {
+    const level = S.level;
     const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));
-    if (w !== level.w || h !== level.h) { level = resizeLevel(level, w, h); fit(); }
+    if (w !== level.w || h !== level.h) { S.level = resizeLevel(level, w, h); fit(); }
   };
   $('w').onchange = resize; $('h').onchange = resize;
   $('save').onclick = () => {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(level, null, 1)], { type: 'application/json' }));
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(S.level, null, 1)], { type: 'application/json' }));
     a.download = 'room.wee';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };
-  $('sample').onclick = () => { level = parseLevel(JSON.stringify(SAMPLE)); setMode('edit'); syncPanel(); fit(); };
+  $('sample').onclick = () => { S.level = parseLevel(JSON.stringify(SAMPLE)); setMode('edit'); syncPanel(); fit(); };
   $('open').onclick = () => $('file').click();
   $('file').onchange = async () => {
     const f = $('file').files[0]; $('file').value = '';
     if (!f) return;
-    try { level = parseLevel(await f.text()); setMode('edit'); syncPanel(); fit(); }
+    try { S.level = parseLevel(await f.text()); setMode('edit'); syncPanel(); fit(); }
     catch (err) { alert('This file cannot be opened. ' + err.message); }
   };
 }
 
 function syncPanel() {
-  canvas.style.touchAction = mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
+  const ui = S.ui, level = S.level;
+  canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
@@ -1697,13 +1644,317 @@ function syncPanel() {
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
 }
+return { keysText, buildPanels, syncPanel };
+})();
+// ---- src/editor/edit.js
+const m19 = (() => {
+const { CLOCKWISE, CARRIES_TURRET } = m0;
+const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m16;
+// Editing a level in place: what a tile holds, the Look line, and placing or removing
+// with the current tool. Returns what changed so the caller can animate it.
 
-buildPanels();
+
+const idx = (level, x, y) => y * level.w + x;
+const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
+
+// Does (x, y) already hold the kind of thing this tool places?
+function holds(level, x, y, tool) {
+  const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky') return c === tool;
+  if (tool === 'spring') return c.startsWith('spring:');
+  if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
+  if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
+  return !!pc && pc.kind === tool;
+}
+
+
+// The Look tool's one line about a tile: what is on it and how it is set.
+function describe(level, x, y) {
+  const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)], parts = [];
+  if (pc) {
+    const name = TOOLS.find(t => t.id === pc.kind)?.label || pc.kind;
+    parts.push(['mover', 'enemy', 'strong'].includes(pc.kind)
+      ? `${name} \u00b7 ${pc.mode === 'follow' ? '' : (pc.axis === 'h' ? 'across \u00b7 ' : 'up and down \u00b7 ')}${CLOCK_NAME[pc.mode]}` : name);
+    if (pc.turret && pc.kind !== 'turret') parts.push('carries a turret');
+    if (pc.turret) parts.push(`fires ${pc.turret.dirs.map(d => ARROW[d]).join(' ')} \u00b7 ${CLOCK_NAME[pc.turret.mode]}`);
+  }
+  if (c) {
+    const [kind, v] = c.split(':');
+    if (kind === 'wall') parts.push('Block');
+    else if (kind === 'checkpoint') parts.push('Checkpoint');
+    else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
+    else if (kind === 'death') parts.push('Death block');
+    else if (kind === 'water') parts.push('Water');
+    else if (kind === 'sticky') parts.push('Sticky puddle');
+    else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
+    else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
+    else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser relay`);
+    else if (kind === 'receiver') parts.push(`${COLOUR_NAME[v]} laser catcher`);
+    else parts.push(`${COLOUR_NAME[v]} ${kind}`);
+  }
+  if (level.start.x === x && level.start.y === y) parts.push('Start');
+  return parts.length ? parts.join(' \u00b7 ') : 'Empty floor';
+}
+
+
+// how: 'place', 'remove' (only what this tool places) or 'erase' (anything).
+// Returns the effects to show: what was taken off the tile, and a pop where it placed.
+function place(level, ui, x, y, how) {
+  const out = [];
+  if (how === 'remove' && !holds(level, x, y, ui.tool)) return out;
+  if (how === 'place' && holds(level, x, y, ui.tool)) return out;
+  const t = how === 'erase' ? 'erase' : how === 'remove' ? 'remove' : ui.tool, i = idx(level, x, y), pi = pieceAt(level, x, y);
+  const gone = { type: 'erase', x, y };
+  const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
+  const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
+  const isStart = level.start.x === x && level.start.y === y;
+  if (t === 'erase') {
+    if (pi >= 0) removePiece(); else setCell('');
+  } else if (t === 'remove') {
+    const host = pi >= 0 ? level.entities[pi] : null;
+    if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
+    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky'].includes(ui.tool)) setCell('');
+    else removePiece();
+  } else if (t === 'spring' || t === 'death') {
+    if (isStart) return out;
+    removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
+  } else if (t === 'water' || t === 'sticky') {
+    if (isStart) return out;
+    setCell(t);
+  } else if (t === 'gate') {
+    if (isStart) return out;
+    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
+  } else if (t === 'tri') {
+    if (isStart) return out;
+    removePiece(); setCell('tri:' + ui.corner);
+  } else if (t === 'start') {
+    if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
+    removePiece();
+    level.start = { x, y };
+  } else if (t === 'wall') {
+    if (isStart) return out;
+    removePiece(); setCell('wall');
+  } else if (t === 'checkpoint' || t === 'button' || t === 'door' || t === 'receiver' || t === 'sensor') {
+    if ((t === 'door' || t === 'receiver') && isStart) return out;
+    if (t === 'door' || t === 'receiver') removePiece();
+    setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
+  } else if (t === 'turret') {
+    if (isStart) return out;
+    const turret = { dirs: CLOCKWISE.filter(d => ui.aim.includes(d)), mode: ui.mode };
+    const host = pi >= 0 ? level.entities[pi] : null;
+    if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
+      if (JSON.stringify(host.turret) === JSON.stringify(turret)) return out;
+      host.turret = turret;
+    } else {
+      removePiece();
+      if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
+      level.entities.push({ kind: 'turret', x, y, turret });
+    }
+  } else {
+    if (isStart) return out;
+    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: 1, mode: ui.mode } : {}) };
+    if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return out;
+    removePiece();
+    if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
+    level.entities.push(want);
+  }
+  if (gone.cell || gone.piece) out.push(gone);
+  if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
+  return out;
+}
+return { holds, describe, place };
+})();
+// ---- src/app/play.js
+const m20 = (() => {
+const { TICK_MS } = m0;
+const { createGame, step, gameText } = m7;
+const { drawEdit, drawPlay } = m15;
+const { S } = m9;
+const { $, g, now } = m10;
+const { syncPanel, keysText } = m18;
+// Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
+
+
+
+
+
+function snapshot(s) {
+  const ents = {};
+  for (const e of s.entities) ents[e.id] = { x: e.x, y: e.y };
+  return { player: { x: s.player.x, y: s.player.y }, ents };
+}
+
+function tick() {
+  const game = S.game;
+  for (const k of S.pending) S.keylog.push({ t: game.tick, k });
+  S.prev = snapshot(game);
+  const before = { x: game.player.x, y: game.player.y };
+  step(game, S.pending);
+  S.pending = [];
+  const t = now();
+  for (const e of game.events) {
+    if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
+    else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
+  }
+}
+
+function setMode(m, keep) {
+  if (keep) { $('keys').textContent = keysText(); return; }
+  S.mode = m;
+  document.body.classList.toggle('play', m === 'play');
+  $('mode').textContent = m === 'play' ? 'Edit' : 'Play';
+  $('keys').textContent = keysText();
+  $('pad').hidden = m !== 'play';
+  S.fx = [];
+  if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }
+  syncPanel();
+  if (m === 'play') { S.played = JSON.parse(JSON.stringify(S.level)); S.keylog = []; S.game = createGame(S.level); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
+  else S.game = null;
+}
+
+function frame(t) {
+  const dt = Math.min(250, t - (S.last || t)); S.last = t;
+  if (S.mode === 'play' && !window.__manualClock) {
+    S.acc += dt;
+    while (S.acc >= TICK_MS) { tick(); S.acc -= TICK_MS; }
+  }
+  render();
+  requestAnimationFrame(frame);
+}
+
+function render() {
+  const t = now();
+  S.fx = S.fx.filter(f => t - f.at < 400);
+  if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
+  else drawEdit(g, S.level, S.hover, S.fx, t);
+}
+
+// A report is the room as it was when play began, every key with its tick, and the
+// state it ended in, so one run can be replayed exactly with replay().
+function report() {
+  return JSON.stringify({ format: 'wee-report', version: 1, ticks: S.game.tick, level: S.played, keys: S.keylog, end: JSON.parse(gameText(S.game)) });
+}
+async function copyReport() {
+  const text = report();
+  try { await navigator.clipboard.writeText(text); flash('Report copied. Paste it in the chat.'); }
+  catch { $('reportText').value = text; $('reportBox').showModal(); $('reportText').select(); }
+}
+function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mode, true), 2500); }
+return { snapshot, tick, setMode, frame, render, report, copyReport };
+})();
+// ---- src/app/input.js
+const m21 = (() => {
+const { describe, holds, place } = m19;
+const { S } = m9;
+const { $, canvas, touch, now } = m10;
+const { setMode } = m20;
+// Pointer and keys: painting in edit mode, swipes and arrows in play mode.
+
+
+
+
+function cellFromEvent(ev) {
+  const r = canvas.getBoundingClientRect(), level = S.level;
+  const x = Math.floor((ev.clientX - r.left) / r.width * level.w);
+  const y = Math.floor((ev.clientY - r.top) / r.height * level.h);
+  return x >= 0 && y >= 0 && x < level.w && y < level.h ? { x, y } : null;
+}
+
+function paint(x, y, how) {
+  const t = now();
+  for (const f of place(S.level, S.ui, x, y, how)) S.fx.push({ ...f, at: t });
+}
+
+// In play, a swipe is an arrow key: each new direction within one drag sends once.
+const SWIPE_PX = 24;
+const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', ' ': 'hide', r: 'respawn', R: 'respawn' };
+
+function bindInput() {
+  canvas.addEventListener('contextmenu', ev => ev.preventDefault());
+  canvas.addEventListener('pointerdown', ev => {
+    if (S.mode === 'play') {
+      S.swipe = { x: ev.clientX, y: ev.clientY, last: null };
+      canvas.setPointerCapture(ev.pointerId);
+      return;
+    }
+    const c = cellFromEvent(ev); if (!c) return;
+    if (S.ui.tool === 'look') { $('placeHint').textContent = describe(S.level, c.x, c.y); return; }
+    S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
+    canvas.setPointerCapture(ev.pointerId);
+    paint(c.x, c.y, S.painting);
+  });
+  canvas.addEventListener('pointermove', ev => {
+    if (S.mode === 'play' && S.swipe) {
+      const sw = S.swipe, dx = ev.clientX - sw.x, dy = ev.clientY - sw.y;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_PX) return;
+      const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+      if (d !== sw.last) S.pending.push(d);
+      Object.assign(sw, { x: ev.clientX, y: ev.clientY, last: d });
+      return;
+    }
+    const c = S.mode === 'edit' ? cellFromEvent(ev) : null;
+    // The outline follows a mouse only; a finger would leave it behind on lift.
+    S.hover = touch ? null : c;
+    if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
+  });
+  canvas.addEventListener('pointerup', () => { S.painting = 0; S.swipe = null; });
+  canvas.addEventListener('pointercancel', () => { S.painting = 0; S.swipe = null; });
+  canvas.addEventListener('pointerleave', () => { S.hover = null; });
+
+  window.addEventListener('keydown', ev => {
+    if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;
+    if (ev.key === 'e' || ev.key === 'E') { setMode(S.mode === 'play' ? 'edit' : 'play'); ev.preventDefault(); return; }
+    if (S.mode !== 'play') return;
+    const k = KEYS[ev.key];
+    if (!k) return;
+    ev.preventDefault();
+    if (!ev.repeat) S.pending.push(k);
+  });
+}
+return { bindInput };
+})();
+// ---- src/app/main.js
+const m22 = (() => {
+const { TICK_MS } = m0;
+const { replay, gameText } = m7;
+const { parseLevel } = m8;
+const { S, starterLevel } = m9;
+const { portrait } = m10;
+const { fit } = m12;
+const { buildPanels, syncPanel } = m18;
+const { bindInput } = m21;
+const { setMode, frame, render, tick, report, copyReport } = m20;
+// The entry point: builds the panels, wires input, starts the loop, and exposes the
+// text state and a fixed clock for tests and agents.
+
+
+
+
+
+
+
+
+
+S.level = starterLevel(portrait());
+
+window.renderGameToText = () => S.mode === 'play' ? gameText(S.game, 'play') : JSON.stringify({ mode: 'edit', level: S.level });
+window.advanceTime = ms => {
+  if (S.mode !== 'play') return;
+  for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
+  S.acc = 0; render();
+};
+window.wee = { report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); syncPanel(); fit(); } };
+
+buildPanels({ setMode, copyReport, fit });
+bindInput();
 syncPanel();
 addEventListener('resize', fit);
 fit();
 setMode('edit');
 requestAnimationFrame(frame);
+return {  };
+})();
 </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-import { emptyLevel } from '../src/sim.js';
+import { emptyLevel } from '../src/level/format.js';
 
 // A room drawn in text. Legend:
 //   #  wall          P  player start     C  checkpoint
@@ -62,17 +62,4 @@ export function room(rows, opts = {}) {
 }
 
 // Every gate ends on one "N/N passed" line; the runner treats a missing total as red.
-export function suite(name) {
-  const results = [];
-  const check = (label, cond, detail = '') => {
-    results.push(!!cond);
-    if (!cond) console.log(`FAIL ${name}: ${label}${detail ? ' :: ' + detail : ''}`);
-  };
-  const done = () => {
-    const ok = results.filter(Boolean).length;
-    console.log(`${name}: ${ok}/${results.length} passed`);
-    if (results.length === 0) { console.log('FAIL: checked nothing'); process.exit(1); }
-    process.exit(ok === results.length ? 0 : 1);
-  };
-  return { check, done };
-}
+export { suite } from './suite.mjs';

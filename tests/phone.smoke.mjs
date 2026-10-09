@@ -70,6 +70,7 @@ try {
   check('a finger drag from a block removes them all', row.every(c => c === ''), row.join(','));
   await page.screenshot({ path: 'shots/phone-edit.png' });
 
+  await pick('water');
   await page.click('#mode');
   await page.evaluate(() => { window.__manualClock = true; });
   check('the play buttons show in play', await page.locator('#hideBtn').isVisible());
@@ -109,6 +110,8 @@ try {
   const cutPad = await page.evaluate(() => [...document.querySelectorAll('#pad button')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent));
   check('the play buttons fit their labels', cutPad.length === 0, cutPad.join(', '));
   await page.screenshot({ path: 'shots/phone-play.png' });
+  await page.click('#mode');
+  check('back in edit, Look is picked on its open tab', await page.locator('[data-tool=look]').isVisible() && await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) {
   check('the smoke ran to the end', false, err.message);

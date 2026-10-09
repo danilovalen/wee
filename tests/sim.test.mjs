@@ -1,4 +1,7 @@
-import { createGame, step, worldStep, gameText, replay, parseLevel, emptyLevel, RT_PERIOD } from '../src/sim.js';
+import { createGame, step, gameText, replay } from '../src/rules/game.js';
+import { worldStep } from '../src/rules/pieces.js';
+import { parseLevel, emptyLevel } from '../src/level/format.js';
+import { RT_PERIOD } from '../src/rules/base.js';
 import { room, suite } from './lib.mjs';
 import { readFileSync } from 'node:fs';
 
@@ -759,6 +762,20 @@ const LONG = ['##########', '#..P....##', '##########'];
   step(gl, ['right']); step(gl);
   step(gl, ['left']); step(gl);
   check('a glued box does not slide off on a turn', gl.player.stuck && Math.abs(gl.entities[0].x - gl.player.x) === 1, JSON.stringify([gl.player, gl.entities[0]]));
+}
+
+{ // a moving block pushing a box into a death block destroys the box at once
+  const g = createGame(room(['########', '#M.B.X.#', '#P.....#', '########']));
+  worldStep(g, 'right'); worldStep(g, 'right'); worldStep(g, 'right');
+  check('the box is gone the moment it is pushed in', g.entities.find(e => e.kind === 'box').dead, JSON.stringify(g.entities));
+}
+{ // one death per moment: pieces from before a reset do not act after it
+  const l = room(['#####', '#.PE#', '#...#', '#F..#', '#####']);
+  l.entities[0].dir = -1; l.entities[1].dir = -1;
+  const g = createGame(l);
+  g.checkpoint = { x: 1, y: 2 };
+  worldStep(g);
+  check('an old piece cannot kill you again after the room resets', g.deaths === 1, String(g.deaths));
 }
 
 done();

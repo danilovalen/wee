@@ -16,7 +16,7 @@ button:hover { border-color: var(--dim); }
 button.on { border-color: var(--accent); background: #183238; }
 button:disabled { opacity: .4; cursor: default; }
 #mode { min-width: 72px; }
-main { display: grid; grid-template-columns: 256px minmax(0, 1fr) 260px; gap: 16px; padding: 16px; align-items: start; }
+main { display: grid; grid-template-columns: 300px minmax(0, 1fr) 260px; gap: 16px; padding: 16px; align-items: start; }
 aside { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
 h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin: 4px 0 8px; }
 h2:not(:first-child) { margin-top: 16px; }
@@ -31,7 +31,6 @@ h2:not(:first-child) { margin-top: 16px; }
   .tabs, #tools > h2:first-child { display: none; }
   .ghead { display: block; }
   .grid button[hidden] { display: flex; }
-  main { grid-template-columns: 300px minmax(0, 1fr) 260px; }
   .grid button { white-space: nowrap; padding: 4px 6px; font-size: 12.5px; }
   .grid canvas { width: 18px; height: 18px; }
   .ghead { margin-top: 6px; }
