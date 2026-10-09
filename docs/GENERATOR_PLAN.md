@@ -1,7 +1,39 @@
 # Generator plan: a room made to order, in the page
 
-Status: planned 2026-10-09, nothing built. Each phase ships on its own: tests, mutation run, one
-`dist/wee.html`, a register line.
+Status: **G1 to G3 built 2026-10-09.** The plan below is kept as written; where the build went
+another way, "As built" says so and why.
+
+## As built
+
+- **The door** is a **Generate a room** button in Rooms, next to New room, not a question asked
+  by New room. One tap fewer, and New room keeps meaning a blank room.
+- **27 ingredients**, every mechanism in the index except two: real-time pieces (the solver
+  cannot check them, and the panel says so) and "On your move" (every piece has it unless told
+  otherwise). Powers are ingredients like any other. An ingredient that needs another brings it
+  as Allowed (a laser catcher brings a turret and a door), and the form shows that.
+- **Must use, in detail.** Each ingredient names what its solution must do: push the box, open
+  the door, pass the one-way, and so on, read off the index's `use:` tags plus `touch:` tags
+  (a piece you push, stop against or that dies; a tile you stop against). Hazards and obstacles
+  (heavy box, water, death block, moving block, enemies, turret) also count when they **shape**
+  the solution: the room without them has a shorter solution, or none. An enemy you never meet
+  can still be the reason you go the long way.
+- **No Web Worker.** The loop runs in 25 ms slices on the page, like Check. The perf gate runs a
+  12x12 turret-and-enemy recipe at 4x slower CPU and no task passes 250 ms, so a worker would add a
+  second bundle for nothing.
+- **The shelf is in the browser only** (`wee.generated`, last 20). It holds the closest room of a
+  run that did not fit as well, marked "Closest".
+- **Opening asks twice whenever the open room has unsaved changes**, generated or not. Undo after
+  opening brings back the room before, its name included, and Redo the generated one.
+- **The score** is: refused if anything Off is in the room; -1000 unsolved; then -100 per unused
+  Must, -10 per move outside the range, and a small pull toward the middle of the range. The
+  dead-end count in the plan is not built.
+- **Found on the way: a solver bug.** A turret's aim counter grows forever, so the solver never
+  saw a repeated state in any room with a turret and always ran to its cap. The state key now
+  takes the aim modulo the turret's directions: Check on turret rooms ends, and laser catcher
+  rooms generate in about 0.5 s instead of 20 to 50 s.
+- **Measured** (Node, 8x8, 6 to 12 moves, each ingredient alone as Must, seeds 1 and 2): 53 of 54
+  fit, most under 0.5 s, the slowest about 1.3 s. The one miss is Two buttons, one door on seed 1,
+  2,500 tries; seed 2 fits in 2 s.
 
 The point: start a new room, pick what it should contain and how long it should take, press
 Generate, and get one room that fits, made in the page while you watch. It is a way to feel the
@@ -102,9 +134,9 @@ A new folder, `src/gen/`, allowed to import `rules/`, `level/` and `solve/`, nev
 
 | Phase | Ships | Rough size |
 |---|---|---|
-| G1 | `src/gen/` with placers for 10 common mechanisms (box, heavy, door and button, inverted door, triangle, one-way, spring, water, death block, turret and catcher), tests | half a day |
-| G2 | the Generator panel, worker, shelf, Save with recipe, browser and perf smokes | half a day |
-| G3 | placers for the rest, mechanisms without one shown as "not yet" until then | a day, in pieces |
+| G1 (done) | `src/gen/` with placers for 10 common mechanisms (box, heavy, door and button, inverted door, triangle, one-way, spring, water, death block, turret and catcher), tests | half a day |
+| G2 (done) | the Generator panel, worker, shelf, Save with recipe, browser and perf smokes | half a day |
+| G3 (done) | placers for the rest, mechanisms without one shown as "not yet" until then | a day, in pieces |
 
 ## Open questions
 
@@ -114,4 +146,4 @@ A new folder, `src/gen/`, allowed to import `rules/`, `level/` and `solve/`, nev
 3. ~~Shelf names?~~ **Made from the recipe** (owner, 2026-10-09): e.g. "8x8 · 6-12 moves · Door,
    Box". No typing; a name of your own comes with Save.
 
-All open questions answered. Next: build G1.
+All open questions answered and built.

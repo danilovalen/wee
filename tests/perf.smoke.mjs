@@ -62,6 +62,15 @@ try {
   check('Show stops answers within a few seconds', Date.now() - t0 < 8000, `${Date.now() - t0} ms`);
   check(`and never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
 
+  // a generator run: turret rooms are the slowest to judge
+  await page.click('#roomsBtn'); await page.click('#roomGen');
+  await page.locator('.genIngBox summary').click();
+  for (const id of ['receiver', 'box', 'enemy']) await page.selectOption(`#genIng select[data-id=${id}]`, 'must');
+  for (const [id, v] of [['genW', 12], ['genH', 12], ['genMin', 8], ['genMax', 14], ['genSeed', 4], ['genTime', 5]]) await page.fill('#' + id, String(v));
+  w = await worst(async () => { await page.click('#genGo'); await page.waitForSelector('#genResult:not([hidden])', { timeout: 30000 }); });
+  check(`a generator run never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
+  await page.keyboard.press('Escape');
+
   // Check on a 40x30 room with 60 boxes
   const big = await page.evaluate(() => {
     const l = window.wee.blank(40, 30);

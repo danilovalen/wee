@@ -11,6 +11,7 @@ import { buildPanels, syncPanel } from './panels.js';
 import { bindInput } from './input.js';
 import { setMode, frame, render, tick, report, copyReport } from './play.js';
 import { buildRooms, bootRooms } from './rooms.js';
+import { buildGenerator } from './generator.js';
 
 S.level = starterLevel(portrait());
 
@@ -24,6 +25,7 @@ window.wee = { draws: () => S.draws, blank: (w, h) => emptyLevel(w, h), report, 
 
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
+buildGenerator({ setMode, syncPanel, fit });
 bindInput();
 syncPanel();
 addEventListener('resize', fit);

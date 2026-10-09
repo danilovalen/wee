@@ -13,7 +13,7 @@ const KEYS = ['up', 'right', 'down', 'left'];
 export function stateKey(s) {
   const p = s.player;
   return JSON.stringify([p.x, p.y, p.swimming, p.sticky, p.stuck && [p.stuck.id, p.stuck.ride], s.checkpoint.x, s.checkpoint.y,
-    s.entities.filter(e => !e.dead).map(e => [e.id, e.x, e.y, e.dir, e.axis, e.sticky ? 1 : 0, e.glue || 0, e.turret ? e.turret.aim : -1]),
+    s.entities.filter(e => !e.dead).map(e => [e.id, e.x, e.y, e.dir, e.axis, e.sticky ? 1 : 0, e.glue || 0, e.turret ? e.turret.aim % e.turret.dirs.length : -1]),
     Object.keys(s.open).filter(c => s.open[c]).sort()]);
 }
 

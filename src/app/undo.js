@@ -3,7 +3,7 @@ import { record, undo, redo } from '../editor/history.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 import { syncCheck, syncLint } from './check.js';
-import { syncRoomsButton } from './rooms.js';
+import { syncRoomsButton, followUndo } from './rooms.js';
 
 export function syncUndo() {
   $('undo').disabled = S.mode !== 'edit' || !S.history.past.length;
@@ -30,6 +30,7 @@ export function step(back, after) {
   const l = back ? undo(S.history, S.level) : redo(S.history, S.level);
   if (!l) return;
   S.level = l;
+  followUndo();
   after();
   syncUndo();
 }

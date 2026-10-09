@@ -245,9 +245,9 @@ const M = [
   ['src', "  for (const p of ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'armored']) if (level.powers[p]) tags.add('power:' + p);", "  for (const p of ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'armored']) tags.add('power:' + p);", "tags"],
   ['src', "    if (p.pushing) tags.add('use:push');\n", "", "tags"],
   ['src', "      if (s.cells.includes('door:' + col)) tags.add('use:door-opens');\n", "", "tags"],
-  ['src', "    step(s, [k]); watch();", "    step(s, [k]);", "tags"],
+  ['src', "    step(s, [k]); watch();\n    for (let i = 1; i <= 4 * s.w * s.h + 40 && busy(); i++) { step(s, i === at ? [then] : []); watch(); }", "    step(s, [k]);\n    for (let i = 1; i <= 4 * s.w * s.h + 40 && busy(); i++) { step(s, i === at ? [then] : []); watch(); }", "tags"],
   ['src', "const solution = r && r.status === 'solved' ? r.moves : null;", "const solution = null;", "browser"],
-  ['src', "if (!tagCache.has(v)) { const { level } = splitRoom(r); tagCache.set(v, new Set([...contains(level), ...(r.uses || [])])); }", "if (!tagCache.has(v)) tagCache.set(v, new Set(r.uses || []));", "browser"],
+  ['src', "tagCache.set(v, new Set([...contains(level), ...(r.uses || []), ...(r.recipe ? [GENERATED] : [])])); }", "tagCache.set(v, new Set([...(r.uses || []), ...(r.recipe ? [GENERATED] : [])])); }", "browser"],
   ["src", "      if (filter && !tags.has(filter)) continue;\n", "", "browser"],
   ['src', "  $('unexplored').replaceChildren(...MECHANISMS.filter(([t]) => !counts[t])", "  $('unexplored').replaceChildren(...MECHANISMS.filter(([t]) => counts[t])", "browser"],
   ['src', "  ...(meta.solution ? { par: meta.solution.length, solution: meta.solution, uses: meta.uses || [] } : {}),\n", "", "browser"],
@@ -334,6 +334,38 @@ const M = [
   ['src', "    else if (kind === 'idoor') parts.push(`${COLOUR_NAME[v]} inverted door`);\n", "", 'sim'],
   ['src', "tool === 'receiver' || tool === 'sensor' || tool === 'gate') return", "tool === 'receiver' || tool === 'gate') return", 'browser'],
   ['src', "drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);\n  g.restore();", "g.restore();", 'browser'],
+  // generator
+  ['src', "let a = seed >>> 0;", "let a = 0;", 'gen'],
+  ['src', "if (inside(l, i) && l.cells[i] === '' && !taken(l, i)) free.push(i);", "if (inside(l, i) && l.cells[i] === '') free.push(i);", 'gen'],
+  ['src', "for (let k = 0; k < n; k++) if (ctx.and || !switchOf(l, col)) tile(l, r, 'button:' + col);", "for (let k = 0; k < n; k++) tile(l, r, 'button:' + col);", 'gen'],
+  ['src', "|| r.pick(COLOURS) : 'red';", "|| r.pick(COLOURS) : r.pick(COLOURS);", 'gen'],
+  ['src', "return Object.keys(ING).filter(id => !recipe.ing[id] && ING[id].tags.some(t => have.has(t)));", "return Object.keys(ING).filter(id => ING[id].tags.some(t => have.has(t)));", 'gen'],
+  ['src', "    if (needs.some(t => have.has(t))) continue;\n", "", 'gen'],
+  ['src', "r.moves.length < moves.length)) continue;", "r.moves.length <= moves.length)) continue;", 'gen'],
+  ['src', "if (r.status === 'unsolvable' || (r.status === 'solved'", "if ((r.status === 'solved'", 'gen'],
+  ['src', "  if (off.length) return { fit: false, score: -Infinity, status: 'off', off };\n", "", 'gen'],
+  ['src', "const out = par < recipe.min ? recipe.min - par : par > recipe.max ? par - recipe.max : 0;", "const out = 0;", 'gen'],
+  ['src', "    else if (c && c !== 'wall') tags.add('touch:' + c.split(':')[0]);\n", "", 'gen'],
+  ['src', "if (!ing[w]) { ing[w] = 'allowed'; grew = true; }", "if (!ing[w]) { grew = false; }", 'gen'],
+  ['src', "w: clamp(recipe.w ?? 8, LIMITS.size)", "w: +recipe.w || 8", 'gen'],
+  ['src', "if (recipe.ing[g.id] === 'must' || r.next() < 0.5) g.place(l, r, ctx);", "if (r.next() < 0.5) g.place(l, r, ctx);", 'gen'],
+  ['src', "  for (const p of Object.keys(l.powers)) l.powers[p] = false;\n", "", 'gen'],
+  ['src', "      if (nv.fit) return { fit: true, level: next, verdict: nv, tries: out.tries };\n", "", 'gen'],
+  ['src', "if (x > 0 && y > 0 && x < l.w - 1 && y < l.h - 1) inner.push(i);", "inner.push(i);", 'gen'],
+  ['src', "const must = INGREDIENTS.filter(g => recipe.ing[g.id] === 'must').map(g => g.label);", "const must = INGREDIENTS.filter(g => recipe.ing[g.id]).map(g => g.label);", 'gen'],
+  ['src', "e.turret ? e.turret.aim % e.turret.dirs.length : -1", "e.turret ? e.turret.aim : -1", 'solve'],
+  ['src', "    if (!confirm('This room has changes. Open the generated room instead?')) return false;\n", "", 'genui'],
+  ['src', "    if (!confirm(`Replace ${name}? Its unsaved changes go. Undo brings them back.`)) return false;\n", "", 'genui'],
+  ['src', "change(() => { S.level = structuredClone(entry.level); });", "S.level = structuredClone(entry.level);", 'genui'],
+  ['src', "if (S.room === g.gen && now === g.prevStamp) S.room = g.prev;", "if (false) S.room = g.prev;", 'genui'],
+  ['src', "else if (S.room === g.prev && now === g.genStamp) S.room = g.gen;", "else if (false) S.room = g.gen;", 'genui'],
+  ['src', "if (performance.now() > until || $('genStop')", "if ($('genStop')", 'genui'],
+  ['src', "$('genStop').dataset.stop === String(my)) {", "false) {", 'genui'],
+  ['src', "solution, uses: solution ? uses(S.level, solution) : [], recipe: S.room.recipe }", "solution, uses: solution ? uses(S.level, solution) : [] }", 'genui'],
+  ['src', "...(r.recipe ? [GENERATED] : [])", "...[]", 'genui'],
+  ['src', "sel.onchange = () => fillForm(recipeFromForm());", "sel.onchange = () => {};", 'genui'],
+  ['src', "write(SHELF, [entry, ...shelf()].slice(0, KEEP));", "write(SHELF, [entry]);", 'genui'],
+  ['src', "KEEP = 20, SLICE_MS = 25;", "KEEP = 20, SLICE_MS = 3000;", 'perf'],
 ];
 
 let caught = 0, crashed = 0;
@@ -352,7 +384,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }

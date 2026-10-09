@@ -25,11 +25,21 @@ export function syncRoomsButton() {
   $('roomsBtn').title = (S.room && S.room.name) || 'Unsaved room';
 }
 
-function remember(id) { try { if (id) localStorage.setItem(LAST, id); else localStorage.removeItem(LAST); } catch { /* storage off */ } }
+export function remember(id) { try { if (id) localStorage.setItem(LAST, id); else localStorage.removeItem(LAST); } catch { /* storage off */ } }
+
+// Opening a generated room is one undo step; undoing it, or redoing it, brings back the
+// room it replaced, name and all, instead of leaving the generated room's name on it.
+export function followUndo() {
+  const g = S.genPrev, now = stampOf(S.level);
+  if (!g) return;
+  if (S.room === g.gen && now === g.prevStamp) S.room = g.prev;
+  else if (S.room === g.prev && now === g.genStamp) S.room = g.gen;
+}
 
 export function openRoom(level, meta) {
   S.level = level;
-  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null, saved: stampOf(level), edited: false };
+  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null, recipe: meta.recipe || null, saved: stampOf(level), edited: false };
+  S.genPrev = null;
   S.history = newHistory();
   remember(S.room.id);
   A.setMode('edit'); A.syncPanel(); A.fit();
@@ -55,7 +65,7 @@ export async function save(asNew) {
   const solution = r && r.status === 'solved' ? r.moves : null;
   let stored;
   try {
-    stored = await put(joinRoom({ id, name, note: $('roomNote').value, solution, uses: solution ? uses(S.level, solution) : [] }, S.level));
+    stored = await put(joinRoom({ id, name, note: $('roomNote').value, solution, uses: solution ? uses(S.level, solution) : [], recipe: S.room.recipe }, S.level));
   } catch (e) { say(e.message); return false; }
   Object.assign(S.room, { id, name, note: $('roomNote').value, solution, saved: stampOf(S.level), edited: false });
   remember(id);
@@ -98,10 +108,11 @@ export async function refresh() {
   return saved;
 }
 
-// A room's tags: what it holds, and what its saved solution does.
+// A room's tags: what it holds, what its saved solution does, and whether it started generated.
+const GENERATED = 'from:generated';
 function tagsOf(r) {
   const v = versionOf(r);
-  if (!tagCache.has(v)) { const { level } = splitRoom(r); tagCache.set(v, new Set([...contains(level), ...(r.uses || [])])); }
+  if (!tagCache.has(v)) { const { level } = splitRoom(r); tagCache.set(v, new Set([...contains(level), ...(r.uses || []), ...(r.recipe ? [GENERATED] : [])])); }
   return tagCache.get(v);
 }
 
@@ -128,7 +139,7 @@ function renderList() {
     if (i < saved.length) { setTimeout(slice, 0); return; }
     if (!shown) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'No saved rooms yet.'; ul.append(li); }
     // The filter lists every mechanism with how many rooms have it; the tally shows the gaps.
-    const opts = [new Option('All rooms', '')];
+    const opts = [new Option('All rooms', ''), new Option(`Started generated (${counts[GENERATED] || 0})`, GENERATED)];
     for (const [t, label] of MECHANISMS) opts.push(new Option(`${label} (${counts[t] || 0})`, t));
     $('tagFilter').replaceChildren(...opts);
     $('tagFilter').value = filter;

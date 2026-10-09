@@ -142,6 +142,16 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   /* The room stays in view while the tool list scrolls past it. */
   #stage { position: sticky; top: 0; align-self: start; }
 }
+
+.genNums { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: end; margin: 8px 0; }
+.genNums label { display: grid; gap: 2px; font-size: 0.9em; }
+.genNums input { width: 4.5em; box-sizing: border-box; background: #0d1017; color: inherit; border: 1px solid var(--line, #2a3142); border-radius: 6px; padding: 6px; font: inherit; }
+.genNums #genSeed { width: 6.5em; }
+.genIng { list-style: none; margin: 6px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 12px; }
+.genIng label { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.9em; }
+.genResult { display: flex; gap: 12px; align-items: flex-start; margin: 8px 0; }
+.genResult img { width: 120px; height: auto; image-rendering: pixelated; border-radius: 4px; flex: none; }
+.genResult p { margin: 0 0 6px; }
 </style>
 </head>
 <body>
@@ -282,6 +292,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
       <button id="roomSave" type="button">Save</button>
       <button id="roomSaveAs" type="button">Save as new</button>
       <button id="roomNew" type="button">New room</button>
+      <button id="roomGen" type="button">Generate a room</button>
       <button id="roomDelete" type="button">Delete</button>
     </div>
     <p id="roomsSay" class="hint"></p>
@@ -306,6 +317,33 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
       <button id="importBtn" type="button">Import</button>
       <input id="importFile" type="file" accept=".weepack,.wee,.json" hidden>
     </div>
+  </dialog>
+  <dialog id="genBox" class="rooms gen">
+    <div class="roomsHead"><b>Generate a room</b><form method="dialog"><button>Close</button></form></div>
+    <p class="hint">Pick what the room is made of. Must use: the solution uses it. Allowed: it may be in the room. Real-time pieces are left out, since the solver cannot check them.</p>
+    <div class="genNums">
+      <label>Width <input id="genW" type="number"></label>
+      <label>Height <input id="genH" type="number"></label>
+      <label>Moves from <input id="genMin" type="number"></label>
+      <label>to <input id="genMax" type="number"></label>
+      <label>Seed <input id="genSeed" type="number" min="0"></label>
+      <button id="genReroll" type="button">Re-roll</button>
+      <label>Seconds <input id="genTime" type="number" min="5" max="60"></label>
+    </div>
+    <div class="row">
+      <button id="genGo" type="button">Generate</button>
+      <button id="genStop" type="button" hidden>Stop</button>
+    </div>
+    <p id="genSay" class="hint" aria-live="polite"></p>
+    <div id="genResult" class="genResult" hidden>
+      <img id="genThumb" alt="">
+      <div><p id="genInfo"></p>
+        <div class="row"><button id="genOpen" type="button">Open in editor</button><button id="genAgain" type="button">Try again</button></div>
+      </div>
+    </div>
+    <details class="genIngBox"><summary>What it is made of</summary><ul id="genIng" class="genIng"></ul></details>
+    <h3>Generated</h3>
+    <ul id="genShelf" class="roomList"></ul>
   </dialog>
   <script type="module">
 // ---- src/rules/base.js
@@ -1241,7 +1279,7 @@ const S = {
   level: null,
   ui: { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
   mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
-  played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null, lookAt: null, playFrom: null, stops: null, sel: null, clip: null, paste: null, redraw: true, drawnAt: 0, draws: 0,
+  played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null, lookAt: null, playFrom: null, stops: null, sel: null, clip: null, paste: null, redraw: true, drawnAt: 0, draws: 0, genPrev: null,
 };
 return { starterLevel, S };
 })();
@@ -1851,7 +1889,7 @@ const KEYS = ['up', 'right', 'down', 'left'];
 function stateKey(s) {
   const p = s.player;
   return JSON.stringify([p.x, p.y, p.swimming, p.sticky, p.stuck && [p.stuck.id, p.stuck.ride], s.checkpoint.x, s.checkpoint.y,
-    s.entities.filter(e => !e.dead).map(e => [e.id, e.x, e.y, e.dir, e.axis, e.sticky ? 1 : 0, e.glue || 0, e.turret ? e.turret.aim : -1]),
+    s.entities.filter(e => !e.dead).map(e => [e.id, e.x, e.y, e.dir, e.axis, e.sticky ? 1 : 0, e.glue || 0, e.turret ? e.turret.aim % e.turret.dirs.length : -1]),
     Object.keys(s.open).filter(c => s.open[c]).sort()]);
 }
 
@@ -2233,7 +2271,7 @@ const m24 = (() => {
 const { parseLevel } = m9;
 // A room is a level plus what the person wrote about it. These split and join the two.
 
-const META = ['id', 'name', 'note', 'updated', 'par', 'solution', 'uses'];
+const META = ['id', 'name', 'note', 'updated', 'par', 'solution', 'uses', 'recipe'];
 
 function splitRoom(room) {
   const meta = {}, level = { ...room };
@@ -2244,6 +2282,7 @@ function splitRoom(room) {
 const joinRoom = (meta, level) => ({
   ...level, id: meta.id, name: meta.name, note: meta.note || '',
   ...(meta.solution ? { par: meta.solution.length, solution: meta.solution, uses: meta.uses || [] } : {}),
+  ...(meta.recipe ? { recipe: meta.recipe } : {}),
 });
 
 // What counts as the room's content when asking whether it has unsaved changes.
@@ -2502,9 +2541,19 @@ function syncRoomsButton() {
 
 function remember(id) { try { if (id) localStorage.setItem(LAST, id); else localStorage.removeItem(LAST); } catch { /* storage off */ } }
 
+// Opening a generated room is one undo step; undoing it, or redoing it, brings back the
+// room it replaced, name and all, instead of leaving the generated room's name on it.
+function followUndo() {
+  const g = S.genPrev, now = stampOf(S.level);
+  if (!g) return;
+  if (S.room === g.gen && now === g.prevStamp) S.room = g.prev;
+  else if (S.room === g.prev && now === g.genStamp) S.room = g.gen;
+}
+
 function openRoom(level, meta) {
   S.level = level;
-  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null, saved: stampOf(level), edited: false };
+  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null, recipe: meta.recipe || null, saved: stampOf(level), edited: false };
+  S.genPrev = null;
   S.history = newHistory();
   remember(S.room.id);
   A.setMode('edit'); A.syncPanel(); A.fit();
@@ -2530,7 +2579,7 @@ async function save(asNew) {
   const solution = r && r.status === 'solved' ? r.moves : null;
   let stored;
   try {
-    stored = await put(joinRoom({ id, name, note: $('roomNote').value, solution, uses: solution ? uses(S.level, solution) : [] }, S.level));
+    stored = await put(joinRoom({ id, name, note: $('roomNote').value, solution, uses: solution ? uses(S.level, solution) : [], recipe: S.room.recipe }, S.level));
   } catch (e) { say(e.message); return false; }
   Object.assign(S.room, { id, name, note: $('roomNote').value, solution, saved: stampOf(S.level), edited: false });
   remember(id);
@@ -2573,10 +2622,11 @@ async function refresh() {
   return saved;
 }
 
-// A room's tags: what it holds, and what its saved solution does.
+// A room's tags: what it holds, what its saved solution does, and whether it started generated.
+const GENERATED = 'from:generated';
 function tagsOf(r) {
   const v = versionOf(r);
-  if (!tagCache.has(v)) { const { level } = splitRoom(r); tagCache.set(v, new Set([...contains(level), ...(r.uses || [])])); }
+  if (!tagCache.has(v)) { const { level } = splitRoom(r); tagCache.set(v, new Set([...contains(level), ...(r.uses || []), ...(r.recipe ? [GENERATED] : [])])); }
   return tagCache.get(v);
 }
 
@@ -2603,7 +2653,7 @@ function renderList() {
     if (i < saved.length) { setTimeout(slice, 0); return; }
     if (!shown) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'No saved rooms yet.'; ul.append(li); }
     // The filter lists every mechanism with how many rooms have it; the tally shows the gaps.
-    const opts = [new Option('All rooms', '')];
+    const opts = [new Option('All rooms', ''), new Option(`Started generated (${counts[GENERATED] || 0})`, GENERATED)];
     for (const [t, label] of MECHANISMS) opts.push(new Option(`${label} (${counts[t] || 0})`, t));
     $('tagFilter').replaceChildren(...opts);
     $('tagFilter').value = filter;
@@ -2716,7 +2766,7 @@ async function bootRooms() {
   if (r) { const { meta, level } = splitRoom(r); openRoom(level, meta); }
   else { S.room = { id: null, name: '', note: '', saved: stampOf(S.level), edited: false }; syncRoomsButton(); }
 }
-return { dirty, leaveOk, syncRoomsButton, openRoom, save, refresh, buildRooms, bootRooms };
+return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
 const m30 = (() => {
@@ -2724,7 +2774,7 @@ const { record, undo, redo } = m10;
 const { S } = m11;
 const { $ } = m12;
 const { syncCheck, syncLint } = m21;
-const { syncRoomsButton } = m29;
+const { syncRoomsButton, followUndo } = m29;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -2756,6 +2806,7 @@ function step(back, after) {
   const l = back ? undo(S.history, S.level) : redo(S.history, S.level);
   if (!l) return;
   S.level = l;
+  followUndo();
   after();
   syncUndo();
 }
@@ -3444,8 +3495,471 @@ function bindInput() {
 }
 return { bindInput };
 })();
-// ---- src/app/main.js
+// ---- src/gen/ingredients.js
 const m37 = (() => {
+const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
+// What a generated room can be made of. Each ingredient says which index tags mark it in
+// a room (so Off can be checked), what its solution must do for Must use to count (any
+// one of needs; none means being in the room is enough), what else it brings along, and
+// how to put one in a level. 'shapes' counts a piece or tile that changes the solution: the
+// room without it has a shorter one, or none. Labels are draft copy.
+
+const inside = (l, i) => { const x = i % l.w, y = (i - x) / l.w; return x > 0 && y > 0 && x < l.w - 1 && y < l.h - 1; };
+const taken = (l, i) => l.entities.some(e => e.y * l.w + e.x === i) || l.start.y * l.w + l.start.x === i;
+
+// A random empty interior tile, or -1 when the room is full.
+function spot(l, r) {
+  const free = [];
+  for (let i = 0; i < l.cells.length; i++) if (inside(l, i) && l.cells[i] === '' && !taken(l, i)) free.push(i);
+  return free.length ? r.pick(free) : -1;
+}
+
+const tile = (l, r, c) => { const i = spot(l, r); if (i >= 0) l.cells[i] = c; return i; };
+const piece = (l, r, e) => { const i = spot(l, r); if (i >= 0) l.entities.push({ x: i % l.w, y: (i - i % l.w) / l.w, dir: 1, mode: 'input', ...e }); return i; };
+// ctx.many: more than one colour is allowed; ctx.and: two switches of one colour are.
+// Without them every switch shares red, and a colour that has a switch gets no second one.
+const switchOf = (l, col) => l.cells.some(c => /^(button|receiver|sensor):/.test(c) && c.endsWith(':' + col));
+const colour = (l, r, ctx) => ctx.many ? r.pick(COLOURS.filter(c => !l.cells.some(x => x.endsWith(':' + c)))) || r.pick(COLOURS) : 'red';
+const switches = (l, r, col, n, ctx, door = 'door') => {
+  for (let k = 0; k < n; k++) if (ctx.and || !switchOf(l, col)) tile(l, r, 'button:' + col);
+  tile(l, r, door + ':' + col);
+};
+
+// A turret in line with the tile at i, facing it, so its beam can reach.
+function aimAt(l, r, i) {
+  const x = i % l.w, y = (i - x) / l.w, ways = [];
+  for (const d of CLOCKWISE) {
+    const [dx, dy] = DIRS[d];
+    for (let k = 2; ; k++) {
+      const tx = x + dx * k, ty = y + dy * k, j = ty * l.w + tx;
+      if (!inside(l, j)) break;
+      if (l.cells[j] === '' && !taken(l, j)) ways.push([j, OPPOSITE[d]]);
+    }
+  }
+  if (!ways.length) return;
+  const [j, aim] = r.pick(ways), other = r.pick(CLOCKWISE.filter(d => d !== aim));
+  l.entities.push({ kind: 'turret', x: j % l.w, y: (j - j % l.w) / l.w, turret: { dirs: r.next() < 0.5 ? [aim] : [aim, other], mode: 'input' } });
+}
+
+const beamSwitch = kind => (l, r, ctx) => { const col = colour(l, r, ctx), i = tile(l, r, kind + ':' + col); tile(l, r, 'door:' + col); if (i >= 0) aimAt(l, r, i); };
+
+// Beam switches come before doors, so a door can share their colour instead of adding a button.
+const INGREDIENTS = [
+  { id: 'box', label: 'Box', tags: ['piece:box'], needs: ['use:push'], place: (l, r) => piece(l, r, { kind: 'box' }) },
+  { id: 'heavy', label: 'Heavy box', tags: ['piece:heavy'], needs: ['use:squash', 'touch:heavy', 'shapes'], place: (l, r) => piece(l, r, { kind: 'heavy' }) },
+  { id: 'receiver', label: 'Laser catcher', tags: ['tile:receiver'], with: ['turret', 'door'], needs: ['use:lit'], place: beamSwitch('receiver') },
+  { id: 'sensor', label: 'Laser relay', tags: ['tile:sensor'], with: ['turret', 'door'], needs: ['use:lit'], place: beamSwitch('sensor') },
+  { id: 'door', label: 'Door and button', tags: ['tile:door'], needs: ['use:door-opens'], place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 1, ctx) },
+  { id: 'idoor', label: 'Inverted door', tags: ['tile:idoor'], needs: ['use:idoor-closes'], place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 1, ctx, 'idoor') },
+  { id: 'and', label: 'Two buttons, one door', tags: ['wiring:and'], with: ['door', 'box'], needs: ['use:door-opens'], place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 2, ctx) },
+  { id: 'colours', label: 'Two colours', tags: ['wiring:colours'], with: ['door'], needs: ['use:door-opens'], place: (l, r, ctx) => { switches(l, r, colour(l, r, ctx), 1, ctx); switches(l, r, colour(l, r, ctx), 1, ctx); } },
+  { id: 'tri', label: 'Triangle', tags: ['tile:tri'], needs: ['use:tri'], place: (l, r) => tile(l, r, 'tri:' + r.pick(CORNERS)) },
+  { id: 'gate', label: 'One-way', tags: ['tile:gate'], needs: ['use:gate'], place: (l, r) => tile(l, r, 'gate:' + r.pick(CLOCKWISE)) },
+  { id: 'spring', label: 'Spring', tags: ['tile:spring'], needs: ['use:spring'], place: (l, r) => tile(l, r, 'spring:' + r.pick(CLOCKWISE)) },
+  { id: 'death', label: 'Death block', tags: ['tile:death'], with: ['box'], needs: ['use:death', 'shapes'], place: (l, r) => { tile(l, r, 'death'); piece(l, r, { kind: 'box' }); } },
+  { id: 'water', label: 'Water', tags: ['tile:water'], needs: ['touch:water', 'use:swim', 'shapes'], place: (l, r) => { const i = tile(l, r, 'water'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'water'; } },
+  { id: 'sticky', label: 'Sticky puddle', tags: ['tile:sticky'], with: ['box'], needs: ['use:stick', 'use:glue'], place: (l, r) => { tile(l, r, 'sticky'); piece(l, r, { kind: 'box' }); } },
+  { id: 'checkpoint', label: 'Checkpoint', tags: ['tile:checkpoint'], needs: ['use:checkpoint'], place: (l, r) => tile(l, r, 'checkpoint') },
+  { id: 'mover', label: 'Moving block', tags: ['piece:mover'], needs: ['use:pushed', 'touch:mover', 'shapes'], place: (l, r) => piece(l, r, { kind: 'mover', axis: r.pick(['h', 'v']) }) },
+  { id: 'follow', label: 'Moves the same way as you', tags: ['clock:follow'], with: ['mover'], needs: null, place: (l, r) => piece(l, r, { kind: 'mover', axis: 'h', mode: 'follow' }) },
+  { id: 'enemy', label: 'Weak enemy', tags: ['piece:enemy'], needs: ['touch:enemy', 'shapes'], place: (l, r) => piece(l, r, { kind: 'enemy', axis: r.pick(['h', 'v']) }) },
+  { id: 'strong', label: 'Strong enemy', tags: ['piece:strong'], needs: ['touch:strong', 'shapes'], place: (l, r) => piece(l, r, { kind: 'strong', axis: r.pick(['h', 'v']) }) },
+  { id: 'turret', label: 'Laser turret', tags: ['piece:turret'], needs: ['touch:turret', 'use:lit', 'use:beam-kill', 'shapes'], place: (l, r) => piece(l, r, { kind: 'turret', turret: { dirs: [r.pick(CLOCKWISE)], mode: 'input' } }) },
+  { id: 'mounted', label: 'Mounted turret', tags: ['piece:mounted'], with: ['box'], needs: ['touch:mounted'], place: (l, r) => piece(l, r, { kind: 'box', turret: { dirs: [r.pick(CLOCKWISE)], mode: 'input' } }) },
+  { id: 'boomerang', label: 'Boomerang', tags: ['power:boomerang'], with: ['box'], needs: ['use:boomerang'], power: 'boomerang' },
+  { id: 'dive', label: 'Dive', tags: ['power:dive'], with: ['enemy'], needs: ['use:dive'], power: 'dive' },
+  { id: 'laser', label: 'Laser', tags: ['power:laser'], with: ['enemy'], needs: ['use:laser'], power: 'laser' },
+  { id: 'cycle', label: 'Cycle (hide)', tags: ['power:cycle'], with: ['mover'], needs: ['use:hide'], power: 'cycle' },
+  { id: 'swim', label: 'Swim', tags: ['power:swim'], with: ['water'], needs: ['use:swim'], power: 'swim' },
+  { id: 'armored', label: 'Armored', tags: ['power:armored'], needs: null, power: 'armored' },
+];
+
+const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
+return { spot, INGREDIENTS, ING };
+})();
+// ---- src/gen/score.js
+const m38 = (() => {
+const { createGame, step } = m8;
+const { DIRS } = m0;
+const { facing } = m1;
+const { search, parseMove } = m19;
+const { contains, uses } = m27;
+const { ING } = m37;
+// Judging a generated room: solved, par inside the range, every Must-use ingredient used by
+// the solution, nothing set to Off in the room. The score orders the rooms that fail, so the
+// search can climb toward one that fits.
+
+
+
+
+
+
+const pieceTag = e => e.turret && e.kind !== 'turret' ? ['touch:' + e.kind, 'touch:mounted'] : ['touch:' + e.kind];
+
+// What the solution touches, beyond the index's tags: a piece you stop against (a push ends
+// against the box) or that dies; a tile you stop against. 'touch:water' is water that stopped you.
+function touches(level, moves) {
+  const tags = new Set(), s = createGame(level);
+  const busy = () => s.player.dir || s.player.hidden || s.entities.some(e => !e.dead && (e.rush || e.slide));
+  const watch = () => {
+    for (const ev of s.events) if (ev.type === 'kill') { const e = s.entities.find(o => o.id === ev.id); if (e) pieceTag(e).forEach(t => tags.add(t)); }
+  };
+  for (const m of moves) {
+    const { k, at, then } = parseMove(m);
+    let last = null;
+    step(s, [k]); watch(); if (s.player.dir) last = s.player.dir;
+    for (let i = 1; i <= 4 * s.w * s.h + 40 && busy(); i++) { step(s, i === at ? [then] : []); watch(); if (s.player.dir) last = s.player.dir; }
+    if (!last) continue;
+    const p = s.player, d = facing(s, p.x, p.y, last), x = p.x + DIRS[d][0], y = p.y + DIRS[d][1];
+    if (x < 0 || y < 0 || x >= s.w || y >= s.h) continue;
+    const e = s.entities.find(o => !o.dead && o.x === x && o.y === y), c = s.cells[y * s.w + x];
+    if (e) pieceTag(e).forEach(t => tags.add(t));
+    else if (c && c !== 'wall') tags.add('touch:' + c.split(':')[0]);
+  }
+  return [...tags];
+}
+
+// The Off ingredients whose tags the room holds.
+const offFound = (level, recipe) => {
+  const have = new Set(contains(level));
+  return Object.keys(ING).filter(id => !recipe.ing[id] && ING[id].tags.some(t => have.has(t)));
+};
+
+// The room with every piece or tile an ingredient marks taken away.
+function without(level, id) {
+  const kind = ING[id].tags[0].split(':')[1];
+  const l = structuredClone(level);
+  l.entities = l.entities.filter(e => e.kind !== kind);
+  l.cells = l.cells.map(c => c.split(':')[0] === kind ? '' : c);
+  return l;
+}
+
+// Must-use ingredients the solution did not use. A generator, since 'shapes' solves again.
+function* missing(level, recipe, moves, max) {
+  const have = new Set([...contains(level), ...uses(level, moves), ...touches(level, moves)]), out = [];
+  for (const id of Object.keys(recipe.ing)) {
+    if (recipe.ing[id] !== 'must') continue;
+    const needs = ING[id].needs || ING[id].tags;
+    if (needs.some(t => have.has(t))) continue;
+    if (needs.includes('shapes')) {
+      const r = yield* search(without(level, id), max);
+      if (r.status === 'unsolvable' || (r.status === 'solved' && r.moves.length < moves.length)) continue;
+    }
+    out.push(id);
+  }
+  return out;
+}
+
+// A generator: runs the solver a slice at a time, then returns the verdict.
+function* judge(level, recipe, max = 3000) {
+  const off = offFound(level, recipe);
+  if (off.length) return { fit: false, score: -Infinity, status: 'off', off };
+  const r = yield* search(level, max);
+  if (r.status !== 'solved') return { fit: false, score: -1000, status: r.status };
+  const par = r.moves.length, miss = yield* missing(level, recipe, r.moves, max);
+  const out = par < recipe.min ? recipe.min - par : par > recipe.max ? par - recipe.max : 0;
+  const mid = (recipe.min + recipe.max) / 2;
+  const score = -100 * miss.length - 10 * out - Math.abs(par - mid) / 10;
+  return { fit: !miss.length && !out, score, status: 'solved', par, moves: r.moves, missing: miss };
+}
+return { touches, offFound, without, missing, judge };
+})();
+// ---- src/gen/random.js
+const m39 = (() => {
+
+// A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
+function rng(seed) {
+  let a = seed >>> 0;
+  const next = () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  return { next, int: n => Math.floor(next() * n), pick: list => list[Math.floor(next() * list.length)] };
+}
+return { rng };
+})();
+// ---- src/gen/generate.js
+const m40 = (() => {
+const { CLOCKWISE, CORNERS } = m0;
+const { emptyLevel, wallBorder } = m9;
+const { INGREDIENTS, ING, spot } = m37;
+const { judge } = m38;
+const { rng } = m39;
+// Making one room to order: build a walled room holding the asked-for ingredients, judge
+// it with the solver, change one thing at a time while the score goes up, and start over
+// when it stops going up. The same recipe always walks the same path, so it rebuilds the
+// same room; only a time limit, applied by the caller, can cut the walk short.
+
+
+
+
+
+const LIMITS = { size: [5, 14], moves: [1, 40] };
+const clamp = (v, [a, b]) => Math.max(a, Math.min(b, Math.round(+v || a)));
+const STALE = 40;
+
+// Fills in defaults, keeps the numbers in range, and turns on what a Must or Allowed
+// ingredient brings with it (a laser catcher needs a turret).
+function normalize(recipe) {
+  const ing = {};
+  for (const [id, v] of Object.entries(recipe.ing || {})) if (ING[id] && (v === 'must' || v === 'allowed')) ing[id] = v;
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const id of Object.keys(ing)) for (const w of ING[id].with || []) if (!ing[w]) { ing[w] = 'allowed'; grew = true; }
+  }
+  const min = clamp(recipe.min ?? 6, LIMITS.moves), max = Math.max(min, clamp(recipe.max ?? 12, LIMITS.moves));
+  return { w: clamp(recipe.w ?? 8, LIMITS.size), h: clamp(recipe.h ?? 8, LIMITS.size), ing, min, max, seed: (+recipe.seed || 0) >>> 0 };
+}
+
+// The shelf's name for a recipe: size, move range, and what it must use.
+function recipeLabel(recipe) {
+  const must = INGREDIENTS.filter(g => recipe.ing[g.id] === 'must').map(g => g.label);
+  return [`${recipe.w}x${recipe.h}`, `${recipe.min}-${recipe.max} moves`, ...(must.length ? [must.join(', ')] : [])].join(' · ');
+}
+
+const ctxOf = recipe => ({ many: !!recipe.ing.colours, and: !!recipe.ing.and });
+const placers = recipe => INGREDIENTS.filter(g => recipe.ing[g.id] && g.place);
+
+function build(recipe, r) {
+  let l = wallBorder(emptyLevel(recipe.w, recipe.h));
+  for (const p of Object.keys(l.powers)) l.powers[p] = false;
+  for (const g of INGREDIENTS) if (g.power && recipe.ing[g.id]) l.powers[g.power] = true;
+  const s = spot(l, r);
+  l.start = { x: s % l.w, y: (s - s % l.w) / l.w };
+  l.cells[spot(l, r)] = 'goal';
+  const ctx = ctxOf(recipe);
+  for (const g of placers(recipe)) if (recipe.ing[g.id] === 'must' || r.next() < 0.5) g.place(l, r, ctx);
+  const area = (l.w - 2) * (l.h - 2), rocks = Math.round(area * (0.08 + r.next() * 0.1));
+  for (let k = 0; k < rocks; k++) { const i = spot(l, r); if (i >= 0) l.cells[i] = 'wall'; }
+  return l;
+}
+
+const turned = (c, r) => {
+  const [k] = c.split(':');
+  if (k === 'tri') return 'tri:' + r.pick(CORNERS);
+  if (k === 'gate' || k === 'spring') return k + ':' + r.pick(CLOCKWISE);
+  return null;
+};
+
+// One change: move a tile, a piece, the start or the goal; add or take away a rock; turn a
+// tile that has a direction; now and then add an Allowed ingredient.
+function mutate(level, recipe, r) {
+  const l = structuredClone(level), inner = [];
+  for (let i = 0; i < l.cells.length; i++) { const x = i % l.w, y = (i - x) / l.w; if (x > 0 && y > 0 && x < l.w - 1 && y < l.h - 1) inner.push(i); }
+  const op = r.int(6), to = spot(l, r);
+  if (op === 0 && to >= 0) { const walls = inner.filter(i => l.cells[i] === 'wall'); if (walls.length && r.next() < 0.5) l.cells[r.pick(walls)] = ''; else l.cells[to] = 'wall'; }
+  else if (op === 1 && to >= 0) { const tiles = inner.filter(i => l.cells[i] && l.cells[i] !== 'wall'); if (tiles.length) { const i = r.pick(tiles); l.cells[to] = l.cells[i]; l.cells[i] = ''; } }
+  else if (op === 2 && to >= 0 && l.entities.length) { const e = r.pick(l.entities); e.x = to % l.w; e.y = (to - e.x) / l.w; }
+  else if (op === 3 && to >= 0) l.start = { x: to % l.w, y: (to - to % l.w) / l.w };
+  else if (op === 4) { const ts = inner.filter(i => turned(l.cells[i], r)); if (ts.length) { const i = r.pick(ts); l.cells[i] = turned(l.cells[i], r); } else if (to >= 0) l.cells[to] = 'wall'; }
+  else if (op === 5) {
+    const allowed = placers(recipe).filter(g => recipe.ing[g.id] === 'allowed');
+    if (allowed.length && r.next() < 0.3) r.pick(allowed).place(l, r, ctxOf(recipe));
+    else if (to >= 0) { const g = l.cells.indexOf('goal'); l.cells[g] = ''; l.cells[to] = 'goal'; }
+  }
+  return l;
+}
+
+// A generator over a recipe. Yields while it works; out.best and out.tries say how far it
+// got. Returns { fit, level, verdict, tries } with the first room that fits, or the closest
+// one when maxTries runs out.
+function* generate(recipe, { maxTries = Infinity, out = {} } = {}) {
+  recipe = normalize(recipe);
+  const r = rng(recipe.seed);
+  out.tries = 0; out.best = null;
+  const keep = (level, v) => { out.tries++; if (!out.best || v.score > out.best.verdict.score) out.best = { level, verdict: v }; };
+  while (out.tries < maxTries) {
+    let cur = build(recipe, r), cv = yield* judge(cur, recipe);
+    keep(cur, cv);
+    if (cv.fit) return { fit: true, level: cur, verdict: cv, tries: out.tries };
+    for (let stale = 0; stale < STALE && out.tries < maxTries;) {
+      const next = mutate(cur, recipe, r), nv = yield* judge(next, recipe);
+      keep(next, nv);
+      if (nv.fit) return { fit: true, level: next, verdict: nv, tries: out.tries };
+      if (nv.score > cv.score) stale = 0; else stale++;
+      if (nv.score >= cv.score) { cur = next; cv = nv; }
+      yield out.tries;
+    }
+  }
+  return { fit: false, level: out.best.level, verdict: out.best.verdict, tries: out.tries };
+}
+
+// The whole walk at once, for tests and tools.
+function generateNow(recipe, opts) {
+  const it = generate(recipe, opts);
+  for (;;) { const r = it.next(); if (r.done) return r.value; }
+}
+return { LIMITS, normalize, recipeLabel, build, mutate, generate, generateNow };
+})();
+// ---- src/app/generator.js
+const m41 = (() => {
+const { INGREDIENTS } = m37;
+const { generate, normalize, recipeLabel, LIMITS } = m40;
+const { stampOf } = m24;
+const { S } = m11;
+const { thumbURL } = m25;
+const { $ } = m12;
+const { change } = m30;
+const { dirty, remember, syncRoomsButton } = m29;
+// The Generator: pick a size, a move range and what the room is made of, and it makes one
+// room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
+// own shelf; one joins your rooms only when you open it and Save. All copy is draft.
+
+
+
+
+
+
+
+
+const SHELF = 'wee.generated', FORM = 'wee.genForm', KEEP = 20, SLICE_MS = 25;
+const CHOICES = [['', 'Off'], ['allowed', 'Allowed'], ['must', 'Must use']];
+let A = null, run = 0, shown = null;
+
+const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 'null') ?? d; } catch { return d; } };
+const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage off or full */ } };
+const shelf = () => read(SHELF, []);
+const newSeed = () => 1 + Math.floor(Math.random() * 999999);
+const say = t => { $('genSay').textContent = t; };
+
+function recipeFromForm() {
+  const ing = {};
+  for (const sel of $('genIng').querySelectorAll('select')) if (sel.value) ing[sel.dataset.id] = sel.value;
+  return normalize({ w: $('genW').value, h: $('genH').value, min: $('genMin').value, max: $('genMax').value, seed: $('genSeed').value, ing });
+}
+
+// The form shows the recipe as normalize() leaves it, so a brought-along ingredient shows
+// as Allowed and a number out of range shows its nearest allowed value.
+function fillForm(r) {
+  $('genW').value = r.w; $('genH').value = r.h; $('genMin').value = r.min; $('genMax').value = r.max; $('genSeed').value = r.seed;
+  for (const sel of $('genIng').querySelectorAll('select')) sel.value = r.ing[sel.dataset.id] || '';
+}
+
+function verdictText(entry) {
+  const { recipe, verdict: v } = entry, names = id => INGREDIENTS.find(g => g.id === id).label;
+  if (v.status !== 'solved') return v.status === 'off' ? 'Closest room holds something set to Off.' : 'Closest room has no solution yet.';
+  const lines = [`Par ${v.par}.`];
+  if (v.par < recipe.min || v.par > recipe.max) lines.push(`Wanted ${recipe.min} to ${recipe.max} moves.`);
+  if (v.missing.length) lines.push(`The solution does not use: ${v.missing.map(names).join(', ')}.`);
+  return lines.join(' ');
+}
+
+function show(entry) {
+  shown = entry;
+  $('genResult').hidden = !entry;
+  if (!entry) return;
+  $('genThumb').src = thumbURL(entry.level);
+  $('genInfo').textContent = `${entry.fit ? 'Fits.' : 'Closest so far.'} ${verdictText(entry)}`;
+}
+
+function renderShelf() {
+  const list = shelf();
+  $('genShelf').replaceChildren(...(list.length ? list.map(entry => {
+    const li = document.createElement('li'), b = document.createElement('button'), img = new Image(), text = document.createElement('span');
+    b.type = 'button'; b.className = 'roomRow';
+    img.src = thumbURL(entry.level); img.className = 'thumb'; img.alt = '';
+    const name = document.createElement('b'), small = document.createElement('small');
+    name.textContent = recipeLabel(entry.recipe);
+    small.textContent = `${entry.fit ? 'Fits' : 'Closest'} · par ${entry.verdict.par ?? '-'} · seed ${entry.recipe.seed}`;
+    text.append(name, small);
+    b.append(img, text);
+    b.onclick = () => { fillForm(entry.recipe); show(entry); };
+    li.append(b);
+    return li;
+  }) : [Object.assign(document.createElement('li'), { className: 'empty', textContent: 'Nothing generated yet.' })]));
+}
+
+function keep(entry) {
+  write(SHELF, [entry, ...shelf()].slice(0, KEEP));
+  renderShelf();
+}
+
+function setRunning(on) {
+  $('genGo').disabled = on; $('genAgain').disabled = on;
+  $('genStop').hidden = !on;
+}
+
+// Runs one recipe until it fits, the time runs out, or Stop. A newer run ends an older one.
+function start(recipe, seconds) {
+  const my = ++run, out = {}, it = generate(recipe, { out }), until = performance.now() + seconds * 1000;
+  write(FORM, { recipe, seconds });
+  setRunning(true); show(null);
+  say('Trying...');
+  const finish = res => {
+    setRunning(false);
+    const entry = { recipe, level: res.level, verdict: res.verdict, fit: res.fit, at: new Date().toISOString() };
+    say(res.fit ? `Found one after ${res.tries} ${res.tries === 1 ? 'try' : 'tries'}.` : `Nothing fit after ${res.tries} tries. Here is the closest.`);
+    keep(entry); show(entry);
+  };
+  const slice = () => {
+    if (my !== run) return;
+    const stop = performance.now() + SLICE_MS;
+    for (;;) {
+      const r = it.next();
+      if (r.done) { finish(r.value); return; }
+      if (performance.now() > until || $('genStop').dataset.stop === String(my)) {
+        if (!out.best) { setRunning(false); say('Stopped before the first room was judged.'); return; }
+        finish({ fit: false, level: out.best.level, verdict: out.best.verdict, tries: out.tries });
+        return;
+      }
+      if (performance.now() > stop) break;
+    }
+    say(`Trying... ${out.tries} rooms`);
+    setTimeout(slice, 0);
+  };
+  slice();
+}
+
+// Replaces the room in the editor with a generated one, as one undo step. A room with
+// unsaved changes asks twice first.
+function openInEditor(entry) {
+  if (dirty()) {
+    const name = S.room && S.room.name ? `"${S.room.name}"` : 'this unsaved room';
+    if (!confirm('This room has changes. Open the generated room instead?')) return false;
+    if (!confirm(`Replace ${name}? Its unsaved changes go. Undo brings them back.`)) return false;
+  }
+  if (S.mode !== 'edit') A.setMode('edit');
+  const prev = S.room, prevStamp = stampOf(S.level);
+  change(() => { S.level = structuredClone(entry.level); });
+  S.room = { id: null, name: '', note: '', solution: entry.fit ? entry.verdict.moves : null, recipe: entry.recipe, saved: stampOf(S.level), edited: false };
+  S.genPrev = { prev, prevStamp, gen: S.room, genStamp: S.room.saved };
+  remember(null);
+  A.syncPanel(); A.fit(); syncRoomsButton();
+  $('genBox').close();
+  $('placeHint').textContent = 'A generated room. Name it and Save to keep it.';
+  return true;
+}
+
+function buildGenerator(actions) {
+  A = actions;
+  for (const [id, [lo, hi]] of [['genW', LIMITS.size], ['genH', LIMITS.size], ['genMin', LIMITS.moves], ['genMax', LIMITS.moves]]) { $(id).min = lo; $(id).max = hi; }
+  $('genIng').replaceChildren(...INGREDIENTS.map(g => {
+    const li = document.createElement('li'), label = document.createElement('label'), sel = document.createElement('select');
+    sel.dataset.id = g.id;
+    sel.append(...CHOICES.map(([v, t]) => new Option(t, v)));
+    sel.onchange = () => fillForm(recipeFromForm());
+    label.append(g.label, sel);
+    li.append(label);
+    return li;
+  }));
+  const saved = read(FORM, null);
+  fillForm(normalize(saved ? saved.recipe : { seed: newSeed() }));
+  $('genTime').value = saved ? saved.seconds : 15;
+  $('roomGen').onclick = () => { $('roomsBox').close(); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
+  $('genReroll').onclick = () => { $('genSeed').value = newSeed(); };
+  const seconds = () => Math.max(5, Math.min(60, +$('genTime').value || 15));
+  $('genGo').onclick = () => { const r = recipeFromForm(); fillForm(r); start(r, seconds()); };
+  $('genAgain').onclick = () => { $('genSeed').value = newSeed(); $('genGo').onclick(); };
+  $('genStop').onclick = () => { $('genStop').dataset.stop = String(run); };
+  $('genOpen').onclick = () => { if (shown) openInEditor(shown); };
+}
+return { shelf, start, openInEditor, buildGenerator };
+})();
+// ---- src/app/main.js
+const m42 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -3457,8 +3971,10 @@ const { buildPanels, syncPanel } = m33;
 const { bindInput } = m36;
 const { setMode, frame, render, tick, report, copyReport } = m35;
 const { buildRooms, bootRooms } = m29;
+const { buildGenerator } = m41;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
+
 
 
 
@@ -3482,6 +3998,7 @@ window.wee = { draws: () => S.draws, blank: (w, h) => emptyLevel(w, h), report, 
 
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
+buildGenerator({ setMode, syncPanel, fit });
 bindInput();
 syncPanel();
 addEventListener('resize', fit);

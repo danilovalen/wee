@@ -27,6 +27,12 @@ check('a one-slide room is solved in one move', r1.status === 'solved' && r1.mov
 const two = goal(room(['#######', '#P....#', '#.#####', '#######']), 3, 1);
 check('a goal you can only slide over is unsolvable', solve(two).status === 'unsolvable');
 
+// A turret's aim counts up forever; two states a whole turn apart are the same state.
+const aimed = room(['#######', '#P....#', '#.....#', '#T....#', '#######']);
+aimed.entities[0].turret.dirs = ['up', 'right'];
+const ar = solve(goal(aimed, 5, 2));
+check('a turret room is searched to the end, not to the cap', ar.status === 'unsolvable' && ar.states < 200, JSON.stringify({ status: ar.status, states: ar.states }));
+
 const turn = goal(room(['#####', '#P..#', '###.#', '###.#', '#####']), 3, 3);
 const r2 = solve(turn);
 check('a turn takes two moves and the solution is the shortest', r2.status === 'solved' && r2.moves.length === 2, JSON.stringify(r2));

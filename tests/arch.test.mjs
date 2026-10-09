@@ -12,7 +12,8 @@ const ALLOWED = {
   solve: ['rules', 'level', 'solve'],
   view: ['rules', 'level', 'view'],
   editor: ['rules', 'level', 'solve', 'editor'],
-  app: ['rules', 'level', 'solve', 'view', 'editor', 'app'],
+  gen: ['rules', 'level', 'solve', 'gen'],
+  app: ['rules', 'level', 'solve', 'view', 'editor', 'gen', 'app'],
 };
 const MAX_LINES = 300;
 const walk = d => readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(join(d, e.name)) : e.name.endsWith('.js') ? [join(d, e.name)] : []);

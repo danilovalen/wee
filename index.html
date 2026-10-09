@@ -144,6 +144,7 @@
       <button id="roomSave" type="button">Save</button>
       <button id="roomSaveAs" type="button">Save as new</button>
       <button id="roomNew" type="button">New room</button>
+      <button id="roomGen" type="button">Generate a room</button>
       <button id="roomDelete" type="button">Delete</button>
     </div>
     <p id="roomsSay" class="hint"></p>
@@ -168,6 +169,33 @@
       <button id="importBtn" type="button">Import</button>
       <input id="importFile" type="file" accept=".weepack,.wee,.json" hidden>
     </div>
+  </dialog>
+  <dialog id="genBox" class="rooms gen">
+    <div class="roomsHead"><b>Generate a room</b><form method="dialog"><button>Close</button></form></div>
+    <p class="hint">Pick what the room is made of. Must use: the solution uses it. Allowed: it may be in the room. Real-time pieces are left out, since the solver cannot check them.</p>
+    <div class="genNums">
+      <label>Width <input id="genW" type="number"></label>
+      <label>Height <input id="genH" type="number"></label>
+      <label>Moves from <input id="genMin" type="number"></label>
+      <label>to <input id="genMax" type="number"></label>
+      <label>Seed <input id="genSeed" type="number" min="0"></label>
+      <button id="genReroll" type="button">Re-roll</button>
+      <label>Seconds <input id="genTime" type="number" min="5" max="60"></label>
+    </div>
+    <div class="row">
+      <button id="genGo" type="button">Generate</button>
+      <button id="genStop" type="button" hidden>Stop</button>
+    </div>
+    <p id="genSay" class="hint" aria-live="polite"></p>
+    <div id="genResult" class="genResult" hidden>
+      <img id="genThumb" alt="">
+      <div><p id="genInfo"></p>
+        <div class="row"><button id="genOpen" type="button">Open in editor</button><button id="genAgain" type="button">Try again</button></div>
+      </div>
+    </div>
+    <details class="genIngBox"><summary>What it is made of</summary><ul id="genIng" class="genIng"></ul></details>
+    <h3>Generated</h3>
+    <ul id="genShelf" class="roomList"></ul>
   </dialog>
   <script type="module" src="src/app/main.js"></script>
 </body>
