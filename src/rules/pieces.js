@@ -9,27 +9,34 @@ import { carry, entered, stick, stuckTo } from './sticky.js';
 // patrol until something stops it, a tile per tick (see step), and turns there.
 export function hideCycle(s) {
   s.worldSteps++;
-  for (const e of s.entities) if (!e.dead && e.mode === 'input' && MOVES.includes(e.kind)) e.rush = true;
+  s.move++;
+  for (const e of s.entities) if (!e.dead && e.mode === 'input' && MOVES.includes(e.kind)) launch(s, e);
   turnTurrets(s, 'input');
   refreshDoors(s);
 }
 
+// A moving piece goes like you do, on ice: once started it slides a tile per tick until
+// something stops it. A patrol then turns; a follower just stops.
 export function rushOnce(s, e) {
   const x = e.x, y = e.y;
-  moveMover(s, e, null, true);
-  if (e.x === x && e.y === y) e.rush = false;
+  moveMover(s, e, e.rushDir, true);
+  if (e.x === x && e.y === y) { e.rush = false; e.rushDir = null; }
 }
+
+// Starts a piece's slide, at most once per move of yours (s.move), and not while one is going.
+const launch = (s, e, d) => {
+  if (e.rush || e.lastMove === s.move) return;
+  e.rush = true; e.rushDir = d || null; e.lastMove = s.move;
+};
 
 // d is the way the player moved for this step, which 'follow' pieces and turrets copy.
 export function worldStep(s, d) {
   s.worldSteps++;
   for (const e of s.entities) {
-    if (e.dead || !MOVES.includes(e.kind)) continue;
-    if (e.slide) continue;
-    if (e.mode === 'input' && !e.rush) moveMover(s, e);
-    else if (e.mode === 'follow') moveMover(s, e, d);
+    if (e.dead || !MOVES.includes(e.kind) || e.slide) continue;
+    if (e.mode === 'input') launch(s, e);
+    else if (e.mode === 'follow') launch(s, e, d);
   }
-  turnTurrets(s, 'input');
   for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === 'follow' && e.turret.dirs.includes(d)) e.turret.aim = e.turret.dirs.indexOf(d);
   refreshDoors(s);
 }
@@ -116,7 +123,7 @@ export function fireSprings(s) {
     }
     const e = entAt(s, x, y);
     if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e))) {
-      e.slide = d;
+      e.slide = d; e.rush = false; e.rushDir = null;
       s.events.push({ type: 'spring', x, y, d });
     }
   });

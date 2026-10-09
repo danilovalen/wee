@@ -1,7 +1,12 @@
 import { createGame, step, gameText, replay } from '../src/rules/game.js';
-import { worldStep } from '../src/rules/pieces.js';
+import { worldStep as rawWorldStep } from '../src/rules/pieces.js';
 import { parseLevel, emptyLevel } from '../src/level/format.js';
 import { RT_PERIOD } from '../src/rules/base.js';
+
+// One move of yours, as the world sees it: pieces on your move start their slide, then
+// every slide and push runs to its end before the test looks.
+const settle = g => { for (let i = 0; i < 60 && g.entities.some(e => !e.dead && (e.rush || e.slide)); i++) step(g); return g; };
+const worldStep = (g, d) => { g.move++; rawWorldStep(g, d); return settle(g); };
 import { room, suite } from './lib.mjs';
 import { readFileSync } from 'node:fs';
 
@@ -85,7 +90,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   step(s, ['right']); step(s, ['right']); step(s);
   check('heavy box squashes the enemy', s.entities.find(e => e.kind === 'enemy').dead);
   const t = createGame(room(['#######', '#.E.B.#', '#P....#', '#######']));
-  worldStep(t); worldStep(t);
+  worldStep(t);
   check('an enemy pushes a light box', at(t.entities.find(e => e.kind === 'box'), 5, 1) && at(t.entities.find(e => e.kind === 'enemy'), 4, 1));
 }
 { // a heavy box moving into you squashes you
@@ -96,9 +101,12 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('heavy box squashes you', s.deaths === 1 && at(s.player, 1, 2), JSON.stringify(s.player));
 }
 { // a moving block pushes you, and crushes you against a wall
-  const s = createGame(room(['########', '#M.P...#', '########']));
-  worldStep(s); worldStep(s);
-  check('mover pushes you a tile', at(s.player, 4, 1) && at(s.entities[0], 3, 1), JSON.stringify(s.player));
+  const s = createGame(room(['########', '#M.P...#', '#......#', '########']));
+  s.checkpoint = { x: 1, y: 2 };
+  s.move++; rawWorldStep(s); for (let i = 0; i < 3; i++) step(s);
+  check('a sliding block pushes you ahead of it', at(s.player, 5, 1) && at(s.entities[0], 4, 1), JSON.stringify(s.player));
+  settle(s);
+  check('all the way to the wall, where it crushes you', s.deaths === 1, JSON.stringify(s.player));
   const t = createGame(room(['#####', '#M.P#', '#...#', '#####']));
   t.checkpoint = { x: 1, y: 2 };
   worldStep(t); worldStep(t);
@@ -167,7 +175,9 @@ const LONG = ['##########', '#..P....##', '##########'];
 { // real-time movers move with no input; on-input movers wait
   const s = createGame(room(['#######', '#M....#', '#P....#', '#######'], { mode: 'realtime' }));
   for (let i = 0; i < RT_PERIOD; i++) step(s);
-  check('real-time mover moves on its own', at(s.entities[0], 2, 1));
+  check('real-time mover sets off on its own clock', s.entities[0].rush);
+  for (let i = 0; i < 5; i++) step(s);
+  check('and slides on ice to the wall', at(s.entities[0], 5, 1), JSON.stringify(s.entities[0]));
   const t = createGame(room(['#######', '#M....#', '#P....#', '#######']));
   for (let i = 0; i < RT_PERIOD * 3; i++) step(t);
   check('on-input mover waits for you', at(t.entities[0], 1, 1));
@@ -234,8 +244,13 @@ const LONG = ['##########', '#..P....##', '##########'];
   l.entities[0].turret.dirs = ['left', 'up', 'down'];
   const s = createGame(l);
   const aims = [s.beams[0].d];
-  for (let i = 0; i < 3; i++) { worldStep(s, 'right'); step(s); aims.push(s.beams[0].d); }
-  check('a turret turns clockwise and loops', aims.join() === 'up,down,left,up', aims.join());
+  s.player.x = 1;
+  for (let i = 0; i < 3; i++) { step(s, ['hide']); for (let k = 0; k < 8; k++) step(s); aims.push(s.beams[0].d); }
+  check('a turret turns clockwise and loops, once per move of yours', aims.join() === 'up,down,left,up' && s.deaths === 0, aims.join());
+  step(s, ['up']); step(s);
+  check('and holds its beam still while you slide', s.player.dir === 'up' && s.beams[0].d === 'up', s.beams[0].d);
+  slide(s, 'up');
+  check('turning once when the slide ends', s.beams[0].d === 'down', s.beams[0].d);
   const w = createGame(room(['#######', '#T....#', '#.....#', '#..P..#', '#.....#', '#######']));
   w.checkpoint = { x: 5, y: 4 };
   slide(w, 'up');
@@ -306,7 +321,8 @@ const LONG = ['##########', '#..P....##', '##########'];
   const w = slide(createGame(room(['##########', '#M..#....#', '#P.......#', '##########'], { mode: 'follow' })), 'right');
   check('a blocked follower waits while you go on', at(w.entities[0], 3, 1) && at(w.player, 8, 2), JSON.stringify(w.entities[0]));
   const t = slide(createGame(room(F, { mode: 'follow', clock: 'slide' })), 'right');
-  check('per slide, a follower takes one tile your way', at(t.entities[0], 2, 1), JSON.stringify(t.entities[0]));
+  settle(t);
+  check('per slide, a follower slides all the way your way', at(t.entities[0], 8, 1), JSON.stringify(t.entities[0]));
   const u = createGame(room(F, { mode: 'follow' }));
   step(u, ['hide']);
   check('a hide has no direction, so followers stay', at(u.entities[0], 1, 1) && u.worldSteps === 1);
@@ -341,8 +357,10 @@ const LONG = ['##########', '#..P....##', '##########'];
   const s = replay(r.level, r.keys, r.ticks);
   check('his run: the enemy ends level with him', s.entities[0].x === s.player.x, `enemy ${s.entities[0].x}, player ${s.player.x}`);
   const t = createGame(room(['#####', '#M..#', '#P..#', '#####']));
-  worldStep(t); worldStep(t); worldStep(t);
-  check('a patrol bounces off a wall without losing a step', at(t.entities[0], 2, 1), JSON.stringify(t.entities[0]));
+  worldStep(t);
+  check('on your move a patrol slides on ice to the wall and turns there', at(t.entities[0], 3, 1) && t.entities[0].dir === -1, JSON.stringify(t.entities[0]));
+  worldStep(t);
+  check('and on your next move slides all the way back', at(t.entities[0], 1, 1), JSON.stringify(t.entities[0]));
   const u = createGame(room(['###', '#M#', '#P#', '###']));
   worldStep(u);
   check('a patrol boxed in on both sides stays put', at(u.entities[0], 1, 1));
@@ -369,8 +387,8 @@ const LONG = ['##########', '#..P....##', '##########'];
   step(v, ['right']);
   check('a laser turns at a triangle', v.entities[0].dead, JSON.stringify(v.events.find(e => e.type === 'laser')));
   const w = createGame(room(['#######', '#M...9#', '#.....#', '#.....#', '#P....#', '#######']));
-  for (let i = 0; i < 6; i++) worldStep(w);
-  check('a patrol turns onto the other axis at a triangle', w.entities[0].axis === 'v' && at(w.entities[0], 5, 3), JSON.stringify(w.entities[0]));
+  worldStep(w);
+  check('a patrol turns onto the other axis at a triangle', w.entities[0].axis === 'v' && at(w.entities[0], 5, 4), JSON.stringify(w.entities[0]));
   const x = createGame(room(['########', '#P...H9#', '#......#', '#......#', '########']));
   step(x, ['right']); step(x, ['right']);
   for (let i = 0; i < 8; i++) step(x);
@@ -521,7 +539,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   l.entities[0].dir = -1;
   const e = createGame(l);
   worldStep(e);
-  check('a weak enemy walking into you turns back', e.deaths === 0 && at(e.entities[0], 4, 1), JSON.stringify(e.entities[0]));
+  check('a weak enemy sliding into you stops and turns back', e.deaths === 0 && at(e.entities[0], 3, 1) && e.entities[0].dir === 1, JSON.stringify(e.entities[0]));
   const sl = slide(createGame(room(['#######', '#P..E.#', '#######'], { ...A, mode: 'realtime' })), 'right');
   check('sliding into a weak enemy stops you in front', sl.deaths === 0 && at(sl.player, 3, 1), JSON.stringify(sl.player));
   const st = room(['######', '#.PS.#', '#....#', '######'], A);
@@ -560,7 +578,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('under a strong one, you are squashed', hs.deaths === 1);
   const pushed = createGame(room(['######', '#MP..#', '######'], A));
   worldStep(pushed);
-  check('a block still pushes you when it can', at(pushed.player, 3, 1));
+  check('a block still pushes you as far as it can', pushed.deaths === 0 && at(pushed.player, 4, 1), JSON.stringify(pushed.player));
   const ls = createGame(room(['#######', '#P...E#', '#######'], A));
   ls.entities[0].slide = 'left';
   for (let i = 0; i < 6; i++) step(ls);
@@ -677,7 +695,8 @@ const LONG = ['##########', '#..P....##', '##########'];
   const rd = createGame(room(['##########', '#P%.M....#', '#........#', '##########'], { mode: 'realtime' }));
   slide(rd, 'right');
   check('sticky, you stop at a moving block and ride it', rd.player.stuck && rd.player.x === rd.entities[0].x - 1, JSON.stringify(rd.player));
-  for (let i = 0; i < 13; i++) step(rd);
+  const x0 = rd.entities[0].x;
+  for (let i = 0; i < 20 && rd.entities[0].x === x0; i++) step(rd);
   check('it carries you as it moves away', rd.entities[0].x > 4 && rd.player.x === rd.entities[0].x - 1 && rd.player.stuck, JSON.stringify([rd.player, rd.entities[0]]));
   step(rd, ['down']);
   for (let i = 0; i < 4; i++) step(rd);
@@ -733,7 +752,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   const t = room(['#######', '#.....#', '#T....#', '#P....#', '#######']);
   t.entities[0].turret = { dirs: ['up', 'right'], mode: 'input' };
   const tg = createGame(t);
-  worldStep(tg, 'right'); step(tg);
+  slide(tg, 'right');
   const aim = tg.beams[0].d;
   step(tg, ['respawn']);
   check('a turret points where it started', aim === 'right' && tg.beams[0].d === 'up', aim + ' ' + tg.beams[0].d);
@@ -776,6 +795,16 @@ const LONG = ['##########', '#..P....##', '##########'];
   g.checkpoint = { x: 1, y: 2 };
   worldStep(g);
   check('an old piece cannot kill you again after the room resets', g.deaths === 1, String(g.deaths));
+}
+
+{ // a piece slides once per move of yours, and finishes a slide before starting another
+  const g = createGame(room(['##########', '#P.......#', '#M.#.....#', '##########']));
+  slide(g, 'right'); settle(g);
+  check('one long slide of yours on the per-tile clock moves a patrol once, not back and forth', at(g.entities[0], 2, 2), JSON.stringify(g.entities[0]));
+  const f = createGame(room(['##########', '#M.......#', '#P.#.....#', '#........#', '##########'], { mode: 'follow' }));
+  step(f, ['right']); step(f);
+  step(f, ['down']); settle(f);
+  check('a follower still sliding your old way finishes that slide first', at(f.entities[0], 8, 1), JSON.stringify(f.entities[0]));
 }
 
 done();

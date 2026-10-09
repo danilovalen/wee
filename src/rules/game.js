@@ -4,7 +4,7 @@ import { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } from './base.js';
 import { aimOf, computeBeams, turnTurrets } from './beams.js';
 import { inWater } from './grid.js';
 import { freshPieces, refreshDoors } from './life.js';
-import { fireSprings, moveMover, rushOnce, slidePiece } from './pieces.js';
+import { fireSprings, rushOnce, slidePiece } from './pieces.js';
 import { input, slideOnce, unhide } from './player.js';
 import { checkStuck } from './sticky.js';
 
@@ -17,7 +17,7 @@ export function createGame(level) {
     checkpoint: { ...l.start },
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
     entities: freshPieces(l.entities),
-    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, deaths: 0, events: [],
+    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, events: [],
   };
   computeBeams(s, false);
   refreshDoors(s);
@@ -38,7 +38,7 @@ export function step(s, inputs = []) {
     if (!s.player.stroke) slideOnce(s, false);
   }
   if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
-    for (const e of s.entities) if (!e.dead && !e.slide && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
+    for (const e of s.entities) if (!e.dead && !e.slide && !e.rush && e.mode === 'realtime' && MOVES.includes(e.kind)) e.rush = true;
     turnTurrets(s, 'realtime');
   }
   if (s.player.hidden) unhide(s);

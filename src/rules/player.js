@@ -1,6 +1,6 @@
 // You: one slide step at a time, dive, hide, and what each key does.
 import { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } from './base.js';
-import { laser } from './beams.js';
+import { laser, turnTurrets } from './beams.js';
 import { cellAt, crushes, entAt, inWater, pushTo, shift, solidCell, stepTo } from './grid.js';
 import { die, kill, land, refreshDoors, respawn } from './life.js';
 import { hideCycle, worldStep } from './pieces.js';
@@ -47,6 +47,9 @@ export function endSlide(s) {
   const moved = s.player.moved, d = s.player.dir;
   s.player.dir = null; s.player.moved = 0;
   if (moved > 0 && s.clock === 'slide') worldStep(s, d);
+  // An on-your-move turret turns once per slide, when it ends, so its beam holds still
+  // while you slide.
+  if (moved > 0) turnTurrets(s, 'input');
 }
 
 // A slide that moved the player gives the world its step, per the clock.
@@ -103,7 +106,7 @@ export function input(s, k) {
   if (!DIRS[k] || p.hidden) return;
   // Riding, a move lets go.
   if (p.stuck && p.stuck.ride) unstick(s);
-  if (!p.dir) { p.dir = k; p.moved = 0; return; }
+  if (!p.dir) { p.dir = k; p.moved = 0; s.move++; return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
   else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { letGo(s); p.dir = k; s.events.push({ type: 'boomerang', from: OPPOSITE[k] }); } }
   else if (s.powers.laser) laser(s, k);

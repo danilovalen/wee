@@ -549,27 +549,34 @@ const { carry, entered, stick, stuckTo } = m4;
 // patrol until something stops it, a tile per tick (see step), and turns there.
 function hideCycle(s) {
   s.worldSteps++;
-  for (const e of s.entities) if (!e.dead && e.mode === 'input' && MOVES.includes(e.kind)) e.rush = true;
+  s.move++;
+  for (const e of s.entities) if (!e.dead && e.mode === 'input' && MOVES.includes(e.kind)) launch(s, e);
   turnTurrets(s, 'input');
   refreshDoors(s);
 }
 
+// A moving piece goes like you do, on ice: once started it slides a tile per tick until
+// something stops it. A patrol then turns; a follower just stops.
 function rushOnce(s, e) {
   const x = e.x, y = e.y;
-  moveMover(s, e, null, true);
-  if (e.x === x && e.y === y) e.rush = false;
+  moveMover(s, e, e.rushDir, true);
+  if (e.x === x && e.y === y) { e.rush = false; e.rushDir = null; }
 }
+
+// Starts a piece's slide, at most once per move of yours (s.move), and not while one is going.
+const launch = (s, e, d) => {
+  if (e.rush || e.lastMove === s.move) return;
+  e.rush = true; e.rushDir = d || null; e.lastMove = s.move;
+};
 
 // d is the way the player moved for this step, which 'follow' pieces and turrets copy.
 function worldStep(s, d) {
   s.worldSteps++;
   for (const e of s.entities) {
-    if (e.dead || !MOVES.includes(e.kind)) continue;
-    if (e.slide) continue;
-    if (e.mode === 'input' && !e.rush) moveMover(s, e);
-    else if (e.mode === 'follow') moveMover(s, e, d);
+    if (e.dead || !MOVES.includes(e.kind) || e.slide) continue;
+    if (e.mode === 'input') launch(s, e);
+    else if (e.mode === 'follow') launch(s, e, d);
   }
-  turnTurrets(s, 'input');
   for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === 'follow' && e.turret.dirs.includes(d)) e.turret.aim = e.turret.dirs.indexOf(d);
   refreshDoors(s);
 }
@@ -656,7 +663,7 @@ function fireSprings(s) {
     }
     const e = entAt(s, x, y);
     if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e))) {
-      e.slide = d;
+      e.slide = d; e.rush = false; e.rushDir = null;
       s.events.push({ type: 'spring', x, y, d });
     }
   });
@@ -666,7 +673,7 @@ return { hideCycle, rushOnce, worldStep, patrolDir, moveMover, slidePiece, fireS
 // ---- src/rules/player.js
 const m6 = (() => {
 const { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } = m0;
-const { laser } = m3;
+const { laser, turnTurrets } = m3;
 const { cellAt, crushes, entAt, inWater, pushTo, shift, solidCell, stepTo } = m1;
 const { die, kill, land, refreshDoors, respawn } = m2;
 const { hideCycle, worldStep } = m5;
@@ -719,6 +726,9 @@ function endSlide(s) {
   const moved = s.player.moved, d = s.player.dir;
   s.player.dir = null; s.player.moved = 0;
   if (moved > 0 && s.clock === 'slide') worldStep(s, d);
+  // An on-your-move turret turns once per slide, when it ends, so its beam holds still
+  // while you slide.
+  if (moved > 0) turnTurrets(s, 'input');
 }
 
 // A slide that moved the player gives the world its step, per the clock.
@@ -775,7 +785,7 @@ function input(s, k) {
   if (!DIRS[k] || p.hidden) return;
   // Riding, a move lets go.
   if (p.stuck && p.stuck.ride) unstick(s);
-  if (!p.dir) { p.dir = k; p.moved = 0; return; }
+  if (!p.dir) { p.dir = k; p.moved = 0; s.move++; return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
   else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { letGo(s); p.dir = k; s.events.push({ type: 'boomerang', from: OPPOSITE[k] }); } }
   else if (s.powers.laser) laser(s, k);
@@ -788,7 +798,7 @@ const { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } = m0;
 const { aimOf, computeBeams, turnTurrets } = m3;
 const { inWater } = m1;
 const { freshPieces, refreshDoors } = m2;
-const { fireSprings, moveMover, rushOnce, slidePiece } = m5;
+const { fireSprings, rushOnce, slidePiece } = m5;
 const { input, slideOnce, unhide } = m6;
 const { checkStuck } = m4;
 // A run: the state, one tick of it, its text reading, and replaying a key log.
@@ -809,7 +819,7 @@ function createGame(level) {
     checkpoint: { ...l.start },
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
     entities: freshPieces(l.entities),
-    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, deaths: 0, events: [],
+    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, events: [],
   };
   computeBeams(s, false);
   refreshDoors(s);
@@ -830,7 +840,7 @@ function step(s, inputs = []) {
     if (!s.player.stroke) slideOnce(s, false);
   }
   if (s.tick % RT_PERIOD === RT_PERIOD - 1) {
-    for (const e of s.entities) if (!e.dead && !e.slide && e.mode === 'realtime' && MOVES.includes(e.kind)) moveMover(s, e);
+    for (const e of s.entities) if (!e.dead && !e.slide && !e.rush && e.mode === 'realtime' && MOVES.includes(e.kind)) e.rush = true;
     turnTurrets(s, 'realtime');
   }
   if (s.player.hidden) unhide(s);
