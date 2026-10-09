@@ -5,6 +5,7 @@ import { $, canvas, touch, now } from './dom.js';
 import { setMode, aim } from './play.js';
 import { begin, end, step as undoStep } from './undo.js';
 import { save } from './rooms.js';
+import { selectDown, selectMove, selectKey } from './select.js';
 import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
 
@@ -42,6 +43,7 @@ export function bindInput() {
       $('playHere').hidden = !open;
       return;
     }
+    if (S.ui.tool === 'select') { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }
     begin();
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
@@ -58,7 +60,8 @@ export function bindInput() {
     }
     const c = S.mode === 'edit' ? cellFromEvent(ev) : null;
     // The outline follows a mouse only; a finger would leave it behind on lift.
-    S.hover = touch ? null : c;
+    S.hover = touch && S.ui.tool !== 'select' ? null : c;
+    if (c && S.ui.tool === 'select' && ev.buttons) selectMove(c);
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
   const lift = () => { S.painting = 0; S.swipe = null; end(); };
@@ -68,6 +71,7 @@ export function bindInput() {
 
   window.addEventListener('keydown', ev => {
     if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;
+    if (S.mode === 'edit' && selectKey(ev)) return;
     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'z' || ev.key === 'Z' || ev.key === 'y')) {
       undoStep(ev.key === 'z' && !ev.shiftKey, () => { syncPanel(); fit(); });
       ev.preventDefault(); return;

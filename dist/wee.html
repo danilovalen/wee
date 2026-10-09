@@ -138,6 +138,10 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .sides #border { grid-column: 1 / -1; }
 .roomBox { margin-bottom: 10px; }
 #codeIn { flex: 1; min-width: 0; }
+@media (min-width: 901px) {
+  /* The room stays in view while the tool list scrolls past it. */
+  #stage { position: sticky; top: 0; align-self: start; }
+}
 </style>
 </head>
 <body>
@@ -156,6 +160,13 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
       <div id="groups" class="tabs" role="tablist"></div>
       <div id="palette" class="grid"></div>
       <div id="options">
+        <div class="opt" data-for="select">
+          <button id="selCopy" type="button">Copy</button>
+          <button id="selCut" type="button">Cut</button>
+          <button id="selDelete" type="button">Delete</button>
+          <button id="selRotate" type="button">Rotate</button>
+          <button id="selPaste" type="button">Paste</button>
+        </div>
         <div class="opt" data-for="look">
           <button id="stopsBtn" type="button" aria-pressed="false">Show stops</button>
           <button id="playHere" type="button" hidden>Play from here</button>
@@ -1230,7 +1241,7 @@ const S = {
   level: null,
   ui: { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
   mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
-  played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null, lookAt: null, playFrom: null, stops: null,
+  played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null, lookAt: null, playFrom: null, stops: null, sel: null, clip: null, paste: null,
 };
 return { starterLevel, S };
 })();
@@ -1598,7 +1609,8 @@ const { drawCell, drawFloor } = m16;
 
 // fx: [{type, at(ms), ...}] effects started by game events or edits.
 // stops: cell indexes you can come to rest on, drawn as dots, or null.
-function drawEdit(g, level, hover, fx, now, stops = null) {
+// over: { sel: box } or { paste: clip, x, y } from the Select tool, or null.
+function drawEdit(g, level, hover, fx, now, stops = null, over = null) {
   frame.clock = now;
   drawFloor(g, level.w, level.h);
   const pop = (x, y) => {
@@ -1622,6 +1634,26 @@ function drawEdit(g, level, hover, fx, now, stops = null) {
     const t = (now - f.at) / 900;
     g.strokeStyle = INK.goal; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
     g.strokeRect(f.x * T + 2, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
+  }
+  if (over && over.sel) {
+    const r = over.sel;
+    g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.setLineDash([6, 4]);
+    g.strokeRect(r.x0 * T + 1, r.y0 * T + 1, (r.x1 - r.x0 + 1) * T - 2, (r.y1 - r.y0 + 1) * T - 2); g.setLineDash([]);
+  }
+  if (over && over.paste) {
+    // The ghost: the copy at half strength, red where it would cover something.
+    const { paste: p, x: ox, y: oy } = over;
+    g.globalAlpha = 0.55;
+    p.cells.forEach((c, i) => { const x = ox + i % p.w, y = oy + Math.floor(i / p.w); if (x < level.w && y < level.h) drawCell(g, c, x, y, null); });
+    for (const e of p.entities) if (ox + e.x < level.w && oy + e.y < level.h) drawPiece(g, e, (ox + e.x) * T, (oy + e.y) * T);
+    g.globalAlpha = 1;
+    for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) {
+      const x = ox + i, y = oy + j;
+      if (x >= level.w || y >= level.h) continue;
+      const busy = level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y);
+      g.fillStyle = busy ? 'rgba(230,80,80,0.25)' : 'rgba(80,220,140,0.18)';
+      g.fillRect(x * T, y * T, T, T);
+    }
   }
   if (hover) {
     g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2;
@@ -1756,6 +1788,7 @@ const m18 = (() => {
 const TOOLS = [
   { id: 'look', label: 'Look', group: 'basic' },
   { id: 'erase', label: 'Erase', group: 'basic' },
+  { id: 'select', label: 'Select', group: 'basic' },
   { id: 'start', label: 'Start', group: 'basic' },
   { id: 'wall', label: 'Block', group: 'basic' },
   { id: 'checkpoint', label: 'Checkpoint', group: 'basic' },
@@ -2577,8 +2610,170 @@ function step(back, after) {
 }
 return { syncUndo, begin, end, change, step };
 })();
-// ---- src/app/panels.js
+// ---- src/level/region.js
 const m29 = (() => {
+const { CLOCKWISE } = m0;
+// Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
+// each takes a level or a clip and returns a new one. The start never moves.
+
+const cw = d => CLOCKWISE[(CLOCKWISE.indexOf(d) + 1) % 4];
+const CORNER_CW = { nw: 'ne', ne: 'se', se: 'sw', sw: 'nw' };
+
+// r: {x0, y0, x1, y1}, corners in any order.
+const norm = r => ({ x0: Math.min(r.x0, r.x1), y0: Math.min(r.y0, r.y1), x1: Math.max(r.x0, r.x1), y1: Math.max(r.y0, r.y1) });
+const inR = (r, x, y) => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1;
+
+function copyRegion(level, r) {
+  r = norm(r);
+  const w = r.x1 - r.x0 + 1, h = r.y1 - r.y0 + 1, cells = [];
+  for (let y = r.y0; y <= r.y1; y++) for (let x = r.x0; x <= r.x1; x++) cells.push(level.cells[y * level.w + x]);
+  const entities = level.entities.filter(e => inR(r, e.x, e.y)).map(e => ({ ...JSON.parse(JSON.stringify(e)), x: e.x - r.x0, y: e.y - r.y0 }));
+  return { w, h, cells, entities };
+}
+
+function clearRegion(level, r) {
+  r = norm(r);
+  const cells = level.cells.map((c, i) => inR(r, i % level.w, Math.floor(i / level.w)) ? '' : c);
+  return { ...level, cells, entities: level.entities.filter(e => !inR(r, e.x, e.y)) };
+}
+
+// A quarter turn clockwise, turning everything that has a direction with it.
+function turnCell(c) {
+  const [kind, v] = c.split(':');
+  if (kind === 'spring') return 'spring:' + cw(v);
+  if (kind === 'tri') return 'tri:' + CORNER_CW[v];
+  if (kind === 'gate') return 'gate:' + CLOCKWISE.filter(d => v.split(',').map(cw).includes(d)).join(',');
+  return c;
+}
+function turnPiece(e, h) {
+  const t = { ...e, x: h - 1 - e.y, y: e.x };
+  if (e.axis) { // h, +1 is right -> down; v, +1 is down -> left
+    t.axis = e.axis === 'h' ? 'v' : 'h';
+    t.dir = e.axis === 'h' ? (e.dir || 1) : -(e.dir || 1);
+  }
+  if (e.turret) t.turret = { ...e.turret, dirs: CLOCKWISE.filter(d => e.turret.dirs.map(cw).includes(d)) };
+  return t;
+}
+function rotateClip(clip) {
+  const { w, h } = clip, cells = Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) cells[x * h + (h - 1 - y)] = turnCell(clip.cells[y * w + x]);
+  return { w: h, h: w, cells, entities: clip.entities.map(e => turnPiece(e, h)) };
+}
+
+// Stamps a clip with its top-left at (x, y). What falls outside the room is dropped; a
+// piece in the clip replaces one already there; the start's tile stays free.
+function pasteRegion(level, clip, x, y) {
+  const cells = [...level.cells], isStart = (cx, cy) => cx === level.start.x && cy === level.start.y;
+  const inside = (cx, cy) => cx >= 0 && cy >= 0 && cx < level.w && cy < level.h;
+  for (let j = 0; j < clip.h; j++) for (let i = 0; i < clip.w; i++) {
+    const cx = x + i, cy = y + j;
+    if (inside(cx, cy) && !(isStart(cx, cy) && clip.cells[j * clip.w + i])) cells[cy * level.w + cx] = clip.cells[j * clip.w + i];
+  }
+  const placed = clip.entities.map(e => ({ ...JSON.parse(JSON.stringify(e)), x: e.x + x, y: e.y + y })).filter(e => inside(e.x, e.y) && !isStart(e.x, e.y));
+  const taken = new Set(placed.map(e => e.x + ',' + e.y));
+  return { ...level, cells, entities: [...level.entities.filter(e => !taken.has(e.x + ',' + e.y)), ...placed] };
+}
+return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
+})();
+// ---- src/app/select.js
+const m30 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m29;
+const { S } = m11;
+const { change } = m28;
+const { $ } = m12;
+// The Select tool: drag a box, then Copy, Cut, Delete or Rotate it; Paste shows the copy
+// as a ghost under the pointer and stamps it on a click or tap. One undo step each.
+
+
+
+
+let A = null; // { syncPanel }
+function buildSelect(actions) {
+  A = actions;
+  $('selCopy').onclick = copy;
+  $('selCut').onclick = cut;
+  $('selDelete').onclick = del;
+  $('selRotate').onclick = rotate;
+  $('selPaste').onclick = startPaste;
+}
+
+const say = t => { $('placeHint').textContent = t; };
+function syncSelect() {
+  const has = !!S.sel;
+  for (const id of ['selCopy', 'selCut', 'selDelete']) $(id).disabled = !has;
+  $('selRotate').disabled = !has && !S.paste;
+  $('selPaste').disabled = !S.clip;
+  $('selPaste').textContent = S.paste ? 'Done' : 'Paste';
+}
+
+// Pointer: a press starts a box (or stamps, when pasting); a drag grows it.
+function selectDown(c) {
+  if (S.paste) { change(() => { S.level = pasteRegion(S.level, S.paste, c.x, c.y); }); A.syncPanel(); return; }
+  S.sel = { x0: c.x, y0: c.y, x1: c.x, y1: c.y };
+  syncSelect();
+}
+function selectMove(c) { if (S.sel && !S.paste) { S.sel.x1 = c.x; S.sel.y1 = c.y; } }
+
+function copy() {
+  if (!S.sel) return;
+  S.clip = copyRegion(S.level, S.sel);
+  say(`Copied ${S.clip.w}x${S.clip.h}. Paste places it.`);
+  syncSelect();
+}
+function cut() {
+  if (!S.sel) return;
+  copy();
+  change(() => { S.level = clearRegion(S.level, S.sel); });
+  A.syncPanel();
+}
+function del() {
+  if (!S.sel) return;
+  change(() => { S.level = clearRegion(S.level, S.sel); });
+  A.syncPanel();
+}
+// Rotating a box turns it a quarter clockwise in place, around its top-left corner.
+function rotate() {
+  if (S.paste) { S.paste = rotateClip(S.paste); return; }
+  if (!S.sel) return;
+  const r = norm(S.sel), turned = rotateClip(copyRegion(S.level, r));
+  change(() => { S.level = pasteRegion(clearRegion(S.level, r), turned, r.x0, r.y0); });
+  S.sel = { x0: r.x0, y0: r.y0, x1: r.x0 + turned.w - 1, y1: r.y0 + turned.h - 1 };
+  A.syncPanel();
+}
+function startPaste() {
+  if (S.paste) { S.paste = null; say(''); syncSelect(); return; }
+  if (!S.clip) return;
+  S.paste = JSON.parse(JSON.stringify(S.clip));
+  S.sel = null;
+  say('Click or tap where the top-left corner goes. Rotate turns it.');
+  syncSelect();
+}
+
+// Keys in edit mode with Select: Ctrl+C, Ctrl+X, Ctrl+V, Delete, R, Escape.
+function selectKey(ev) {
+  if (S.ui.tool !== 'select') return false;
+  const ctrl = ev.ctrlKey || ev.metaKey, k = ev.key.toLowerCase();
+  if (ctrl && k === 'c') copy();
+  else if (ctrl && k === 'x') cut();
+  else if (ctrl && k === 'v') { if (!S.paste) startPaste(); }
+  else if (!ctrl && (k === 'delete' || k === 'backspace')) del();
+  else if (!ctrl && k === 'r') rotate();
+  else if (k === 'escape') { S.paste = null; S.sel = null; say(''); syncSelect(); }
+  else return false;
+  ev.preventDefault();
+  return true;
+}
+
+// What edit view draws on top: the box, or the ghost of the paste under the pointer.
+function selectOverlay() {
+  if (S.ui.tool !== 'select') return null;
+  if (S.paste) return S.hover ? { paste: S.paste, x: S.hover.x, y: S.hover.y } : null;
+  return S.sel ? { sel: norm(S.sel) } : null;
+}
+return { buildSelect, syncSelect, selectDown, selectMove, selectKey, selectOverlay };
+})();
+// ---- src/app/panels.js
+const m31 = (() => {
 const { COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel, resizeSide, wallBorder } = m9;
 const { T, INK } = m13;
@@ -2590,8 +2785,10 @@ const { $, canvas, touch } = m12;
 const { change, step: undoStep, syncUndo } = m28;
 const { runCheck, syncCheck, syncLint, toggleStops } = m21;
 const { syncRoomsButton } = m27;
+const { buildSelect, syncSelect } = m30;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -2621,6 +2818,8 @@ function icon(tool) {
   if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky' || tool === 'goal') {
     const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
+  } else if (tool === 'select') {
+    x.strokeStyle = '#c3cad8'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
   } else if (tool === 'look') {
     x.strokeStyle = '#c3cad8'; x.lineWidth = 2.5;
     x.beginPath(); x.arc(14, 14, 7, 0, Math.PI * 2); x.moveTo(19, 19); x.lineTo(26, 26); x.stroke();
@@ -2699,6 +2898,7 @@ function buildPanels(actions) {
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
   $('checkBtn').onclick = runCheck;
+  buildSelect({ syncPanel });
   $('stopsBtn').onclick = toggleStops;
   $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };
   $('showSolution').onclick = () => { const moves = S.check?.result?.moves; if (!moves) return; setMode('play'); S.demo = [...moves]; };
@@ -2726,6 +2926,7 @@ function syncPanel() {
   syncUndo();
   syncCheck();
   syncLint();
+  syncSelect();
   syncRoomsButton();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });
@@ -2759,7 +2960,7 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/editor/edit.js
-const m30 = (() => {
+const m32 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
 const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m18;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
@@ -2881,16 +3082,18 @@ function place(level, ui, x, y, how) {
 return { holds, describe, place };
 })();
 // ---- src/app/play.js
-const m31 = (() => {
+const m33 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m17;
 const { S } = m11;
 const { $, g, now } = m12;
-const { syncPanel, keysText } = m29;
+const { syncPanel, keysText } = m31;
 const { feedDemo } = m21;
+const { selectOverlay } = m30;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
 
 
 
@@ -2959,7 +3162,7 @@ function render() {
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t, S.stops && S.stops.stamp === JSON.stringify(S.level) ? S.stops.list : null);
+  else drawEdit(g, S.level, S.hover, S.fx, t, S.stops && S.stops.stamp === JSON.stringify(S.level) ? S.stops.list : null, selectOverlay());
 }
 
 // A report is the room as it was when play began, every key with its tick, and the
@@ -2976,16 +3179,18 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m32 = (() => {
-const { describe, holds, place } = m30;
+const m34 = (() => {
+const { describe, holds, place } = m32;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m31;
+const { setMode, aim } = m33;
 const { begin, end, step: undoStep } = m28;
 const { save } = m27;
-const { syncPanel } = m29;
+const { selectDown, selectMove, selectKey } = m30;
+const { syncPanel } = m31;
 const { fit } = m14;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
+
 
 
 
@@ -3028,6 +3233,7 @@ function bindInput() {
       $('playHere').hidden = !open;
       return;
     }
+    if (S.ui.tool === 'select') { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }
     begin();
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
@@ -3044,7 +3250,8 @@ function bindInput() {
     }
     const c = S.mode === 'edit' ? cellFromEvent(ev) : null;
     // The outline follows a mouse only; a finger would leave it behind on lift.
-    S.hover = touch ? null : c;
+    S.hover = touch && S.ui.tool !== 'select' ? null : c;
+    if (c && S.ui.tool === 'select' && ev.buttons) selectMove(c);
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
   const lift = () => { S.painting = 0; S.swipe = null; end(); };
@@ -3054,6 +3261,7 @@ function bindInput() {
 
   window.addEventListener('keydown', ev => {
     if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;
+    if (S.mode === 'edit' && selectKey(ev)) return;
     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'z' || ev.key === 'Z' || ev.key === 'y')) {
       undoStep(ev.key === 'z' && !ev.shiftKey, () => { syncPanel(); fit(); });
       ev.preventDefault(); return;
@@ -3074,7 +3282,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/app/main.js
-const m33 = (() => {
+const m35 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -3082,9 +3290,9 @@ const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { portrait } = m12;
 const { fit } = m14;
-const { buildPanels, syncPanel } = m29;
-const { bindInput } = m32;
-const { setMode, frame, render, tick, report, copyReport } = m31;
+const { buildPanels, syncPanel } = m31;
+const { bindInput } = m34;
+const { setMode, frame, render, tick, report, copyReport } = m33;
 const { buildRooms, bootRooms } = m27;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.

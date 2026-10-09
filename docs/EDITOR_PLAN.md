@@ -81,6 +81,8 @@ sharing a top-level name.
 
 ## Phase 4: select, move, rotate, copy, cut, paste
 
+**Done 2026-10-09 for one box at a time** (`src/level/region.js`, `src/app/select.js`); multi-box selection with Ctrl and dragging a selection to move it are not built (move is Cut then Paste).
+
 Borrowed from Factorio's copy and paste and Tiled's stamps.
 
 - **Select tool:** drag a box. **Ctrl-drag** adds another box anywhere; the selection is the
@@ -258,5 +260,5 @@ D1 and D2 are what make "every day, from anywhere" true; D3 makes the rooms puzz
 
 1. Goal: does touching it win, or must you stop on it? (Phase 5)
 2. Does a run still count if an enemy is alive, or are there other win conditions? (Phase 5)
-3. Should a rotated selection also rotate a moving block's patrol, or keep its axis? (Phase 4)
-4. Keep 20 recent copies like Factorio, or only the last one? (Phase 4)
+3. Should a rotated selection also rotate a moving block's patrol, or keep its axis? (Phase 4) **My call: it rotates.**
+4. Keep 20 recent copies like Factorio, or only the last one? (Phase 4) **My call: only the last.**

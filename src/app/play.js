@@ -7,6 +7,7 @@ import { S } from '../editor/state.js';
 import { $, g, now } from './dom.js';
 import { syncPanel, keysText } from './panels.js';
 import { feedDemo } from './check.js';
+import { selectOverlay } from './select.js';
 
 export function snapshot(s) {
   const ents = {};
@@ -68,7 +69,7 @@ export function render() {
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t, S.stops && S.stops.stamp === JSON.stringify(S.level) ? S.stops.list : null);
+  else drawEdit(g, S.level, S.hover, S.fx, t, S.stops && S.stops.stamp === JSON.stringify(S.level) ? S.stops.list : null, selectOverlay());
 }
 
 // A report is the room as it was when play began, every key with its tick, and the

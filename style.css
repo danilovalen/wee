@@ -131,3 +131,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .sides #border { grid-column: 1 / -1; }
 .roomBox { margin-bottom: 10px; }
 #codeIn { flex: 1; min-width: 0; }
+@media (min-width: 901px) {
+  /* The room stays in view while the tool list scrolls past it. */
+  #stage { position: sticky; top: 0; align-self: start; }
+}

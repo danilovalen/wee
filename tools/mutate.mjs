@@ -180,6 +180,17 @@ const M = [
   ['src', "  p.from = { x: p.x, y: p.y };\n", "", 'sim'],
   ['src', "if (!ev.repeat) { S.demo = null; S.pending.push(aim(k)); }", "if (!ev.repeat) { S.demo = null; S.pending.push(k); }", 'browser'],
   ['src', "const CRUSHABLE = ['enemy', 'strong', 'box'];", "const CRUSHABLE = ['enemy', 'strong'];", 'sim'],
+  ['src', "  if (kind === 'spring') return 'spring:' + cw(v);", "  if (kind === 'spring') return c;", "region"],
+  ['src', "  if (kind === 'tri') return 'tri:' + CORNER_CW[v];", "  if (kind === 'tri') return c;", "region"],
+  ['src', "    t.dir = e.axis === 'h' ? (e.dir || 1) : -(e.dir || 1);", "    t.dir = e.dir || 1;", "region"],
+  ['src', "  if (e.turret) t.turret = { ...e.turret, dirs: CLOCKWISE.filter(d => e.turret.dirs.map(cw).includes(d)) };\n", "", "region"],
+  ['src', "    if (inside(cx, cy) && !(isStart(cx, cy) && clip.cells[j * clip.w + i])) cells[cy * level.w + cx] = clip.cells[j * clip.w + i];", "    if (inside(cx, cy)) cells[cy * level.w + cx] = clip.cells[j * clip.w + i];", "region"],
+  ['src', "  return { ...level, cells, entities: [...level.entities.filter(e => !taken.has(e.x + ',' + e.y)), ...placed] };", "  return { ...level, cells, entities: [...level.entities, ...placed] };", "region"],
+  ['src', "  const entities = level.entities.filter(e => inR(r, e.x, e.y)).map(e => ({ ...JSON.parse(JSON.stringify(e)), x: e.x - r.x0, y: e.y - r.y0 }));", "  const entities = level.entities.filter(e => inR(r, e.x, e.y)).map(e => Object.assign(e, { x: e.x - r.x0, y: e.y - r.y0 }));", "region"],
+  ['src', "  if (S.paste) { change(() => { S.level = pasteRegion(S.level, S.paste, c.x, c.y); }); A.syncPanel(); return; }", "  if (S.paste) return;", "browser"],
+  ['src', "  change(() => { S.level = pasteRegion(clearRegion(S.level, r), turned, r.x0, r.y0); });", "  change(() => { S.level = pasteRegion(S.level, turned, r.x0, r.y0); });", "browser"],
+  ['src', "    if (S.ui.tool === 'select') { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }", "    if (false) { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }", "browser"],
+  ['src', "    if (S.mode === 'edit' && selectKey(ev)) return;\n", "", "browser"],
   ['src', "  code = code.trim().replace(/^.*#room=/, '');", "  code = code.trim();", "code"],
   ['src', "  if (!code.startsWith('w1')) throw new Error('Not a wee room code.');\n", "", "code"],
   ['src', "  return parseLevel(text);", "  return JSON.parse(text);", "code"],
@@ -330,7 +341,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }

@@ -22,6 +22,8 @@ try {
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
   const pick = async t => { const tab = page.locator(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); if (await tab.isVisible()) await tab.click(); await page.click(`[data-tool=${t}]`); };
+  // Canvas clicks are aimed from the room's position with the page scrolled to the top.
+  for (const fn of ['click', 'move']) { const real = page.mouse[fn].bind(page.mouse); page.mouse[fn] = async (...a) => { await page.evaluate(() => scrollTo(0, 0)); return real(...a); }; }
   const box = await page.locator('#game').boundingBox();
   const at = (x, y) => ({ x: box.x + (x + 0.5) * box.width / 20, y: box.y + (y + 0.5) * box.height / 12 });
 
@@ -201,6 +203,38 @@ try {
   check('playing did not change the room', (await text()).level.entities[0].x === 4);
 
   const roomBeforePanel = (await text()).level;
+  // Select: drag a box, copy, paste where you click, rotate, delete, all undoable
+  const sr = room(['########', '#P.....#', '#.B....#', '#.o....#', '#......#', '########']);
+  await page.evaluate(l => window.wee.loadLevel(l), sr);
+  await page.evaluate(() => scrollTo(0, 0));
+  const S8 = await page.locator('#game').boundingBox();
+  const at8 = (x, y) => ({ x: S8.x + (x + 0.5) * S8.width / 8, y: S8.y + (y + 0.5) * S8.height / 6 });
+  await pick('select');
+  check('with nothing selected, Copy is off', await page.locator('#selCopy').isDisabled());
+  let a8 = at8(2, 2), b8 = at8(2, 3);
+  await page.mouse.move(a8.x, a8.y); await page.mouse.down(); await page.mouse.move(b8.x, b8.y, { steps: 4 }); await page.mouse.up();
+  await page.click('#selCopy');
+  check('Copy says what it took', (await page.textContent('#placeHint')).startsWith('Copied 1x2'));
+  await page.click('#selPaste');
+  a8 = at8(5, 2); await page.mouse.move(a8.x, a8.y); await page.mouse.click(a8.x, a8.y);
+  let lv8 = (await text()).level;
+  check('Paste stamps the copy where you click', lv8.entities.some(e => e.kind === 'box' && e.x === 5 && e.y === 2) && lv8.cells[3 * 8 + 5] === 'button:red');
+  await page.click('#selPaste');
+  check('Done leaves paste mode', (await page.textContent('#selPaste')) === 'Paste');
+  await page.click('#undo');
+  check('the paste is one undo step', !(await text()).level.entities.some(e => e.x === 5));
+  a8 = at8(2, 2); b8 = at8(2, 3);
+  await page.mouse.move(a8.x, a8.y); await page.mouse.down(); await page.mouse.move(b8.x, b8.y, { steps: 4 }); await page.mouse.up();
+  await page.click('#selRotate');
+  lv8 = (await text()).level;
+  check('Rotate turns the box in place: a 1x2 column becomes a 2x1 row', lv8.cells[2 * 8 + 2] === 'button:red' && lv8.cells[3 * 8 + 2] === '' && lv8.entities.length === 1 && lv8.entities[0].x === 3 && lv8.entities[0].y === 2, JSON.stringify(lv8.entities));
+  await page.keyboard.press('Delete');
+  check('Delete clears the box', (await text()).level.entities.length === 0);
+  await page.keyboard.press('Control+z'); await page.keyboard.press('Control+z');
+  lv8 = (await text()).level;
+  check('and both undo', lv8.entities.some(e => e.x === 2 && e.y === 2) && lv8.cells[3 * 8 + 2] === 'button:red');
+  await page.keyboard.press('Escape');
+  await page.evaluate(l => window.wee.loadLevel(l), JSON.parse(JSON.stringify(roomBeforePanel)));
   // the Look tool: Show stops marks the tiles you can stop on; Play from here starts there
   const box6 = room(['######', '#P...#', '#....#', '######']);
   box6.powers = { ...box6.powers, boomerang: false, dive: false, laser: false };
@@ -214,6 +248,7 @@ try {
   await page.click('#stopsBtn');
   await page.waitForTimeout(80);
   check('Hide stops takes the dots away', !(await dot(4, 2)));
+  await page.evaluate(() => scrollTo(0, 0));
   const L6 = await page.locator('#game').boundingBox();
   const at6 = (x, y) => ({ x: L6.x + (x + 0.5) * L6.width / 6, y: L6.y + (y + 0.5) * L6.height / 4 });
   let p6 = at6(0, 0); await page.mouse.click(p6.x, p6.y);

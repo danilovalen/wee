@@ -7,7 +7,8 @@ import { drawCell, drawFloor } from './tiles.js';
 
 // fx: [{type, at(ms), ...}] effects started by game events or edits.
 // stops: cell indexes you can come to rest on, drawn as dots, or null.
-export function drawEdit(g, level, hover, fx, now, stops = null) {
+// over: { sel: box } or { paste: clip, x, y } from the Select tool, or null.
+export function drawEdit(g, level, hover, fx, now, stops = null, over = null) {
   frame.clock = now;
   drawFloor(g, level.w, level.h);
   const pop = (x, y) => {
@@ -31,6 +32,26 @@ export function drawEdit(g, level, hover, fx, now, stops = null) {
     const t = (now - f.at) / 900;
     g.strokeStyle = INK.goal; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
     g.strokeRect(f.x * T + 2, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
+  }
+  if (over && over.sel) {
+    const r = over.sel;
+    g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.setLineDash([6, 4]);
+    g.strokeRect(r.x0 * T + 1, r.y0 * T + 1, (r.x1 - r.x0 + 1) * T - 2, (r.y1 - r.y0 + 1) * T - 2); g.setLineDash([]);
+  }
+  if (over && over.paste) {
+    // The ghost: the copy at half strength, red where it would cover something.
+    const { paste: p, x: ox, y: oy } = over;
+    g.globalAlpha = 0.55;
+    p.cells.forEach((c, i) => { const x = ox + i % p.w, y = oy + Math.floor(i / p.w); if (x < level.w && y < level.h) drawCell(g, c, x, y, null); });
+    for (const e of p.entities) if (ox + e.x < level.w && oy + e.y < level.h) drawPiece(g, e, (ox + e.x) * T, (oy + e.y) * T);
+    g.globalAlpha = 1;
+    for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) {
+      const x = ox + i, y = oy + j;
+      if (x >= level.w || y >= level.h) continue;
+      const busy = level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y);
+      g.fillStyle = busy ? 'rgba(230,80,80,0.25)' : 'rgba(80,220,140,0.18)';
+      g.fillRect(x * T, y * T, T, T);
+    }
   }
   if (hover) {
     g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2;
