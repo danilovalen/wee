@@ -7,6 +7,8 @@ import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 
 const SLICE_MS = 25;
+// The stop map searches this long, then shows what it found.
+const STOPS_BUDGET_MS = 2000;
 const SAY = {
   solved: r => `Solvable in ${r.moves.length} ${r.moves.length === 1 ? 'move' : 'moves'}.`,
   unsolvable: () => 'No solution. Every reachable position was tried.',
@@ -90,8 +92,8 @@ export function syncLint() {
 // room is unchanged.
 export function toggleStops() {
   if (S.stops) { S.stops = null; $('stopsBtn').setAttribute('aria-pressed', 'false'); $('stopsBtn').textContent = 'Show stops'; return; }
-  const stamp = JSON.stringify(S.level), it = reach(JSON.parse(stamp));
-  S.stops = { stamp, list: null };
+  const stamp = JSON.stringify(S.level), out = {}, it = reach(JSON.parse(stamp), { budgetMs: STOPS_BUDGET_MS, out });
+  S.stops = { stamp, list: null, out };
   $('stopsBtn').setAttribute('aria-pressed', 'true'); $('stopsBtn').textContent = 'Hide stops';
   const slice = () => {
     if (!S.stops || S.stops.stamp !== stamp) return;
@@ -100,7 +102,8 @@ export function toggleStops() {
       const r = it.next();
       if (r.done) {
         S.stops.list = r.value.stops;
-        $('placeHint').textContent = r.value.why ? 'Has real-time pieces, so stops cannot be mapped.' : `${r.value.stops.length} tiles you can stop on${r.value.capped ? ' (stopped early, maybe more)' : ''}.`;
+        S.redraw = true;
+        $('placeHint').textContent = r.value.why ? 'Has real-time pieces, so stops cannot be mapped.' : `${r.value.stops.length} tiles you can stop on${r.value.capped ? ', maybe more' : ''}.`;
         return;
       }
       if (performance.now() > until) break;

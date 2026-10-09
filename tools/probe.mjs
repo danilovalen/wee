@@ -36,8 +36,8 @@ rows.push({ name: 'boot to ready', ms: Date.now() - t0, ...(await read()) });
 
 // Idle: the render loop runs every frame even when nothing changes.
 await measure('2 s idle in edit', () => page.waitForTimeout(2000));
-const idle = await page.evaluate(() => new Promise(ok => { let n = 0; const t = performance.now(); const f = () => { n++; if (performance.now() - t < 1000) requestAnimationFrame(f); else ok(n); }; requestAnimationFrame(f); }));
-rows.push({ name: 'frames drawn per idle second', ms: idle });
+const d0 = await page.evaluate(() => window.wee.draws()); await page.waitForTimeout(1000);
+rows.push({ name: 'redraws per idle second', ms: await page.evaluate(() => window.wee.draws()) - d0 });
 
 // A big room: 40x30 with pieces, the worst case for every per-edit cost.
 const big = await page.evaluate(() => {

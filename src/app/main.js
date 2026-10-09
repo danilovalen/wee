@@ -20,13 +20,15 @@ window.advanceTime = ms => {
   for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
   S.acc = 0; render();
 };
-window.wee = { blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
+window.wee = { draws: () => S.draws, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
 
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
 bindInput();
 syncPanel();
 addEventListener('resize', fit);
+// Any input may change what the room looks like; the next frame redraws it.
+for (const t of ['pointerdown', 'pointermove', 'pointerup', 'keydown', 'click', 'input', 'change', 'resize']) addEventListener(t, () => { S.redraw = true; }, true);
 fit();
 setMode('edit');
 requestAnimationFrame(frame);

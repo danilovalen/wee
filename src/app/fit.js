@@ -13,4 +13,5 @@ export function fit() {
   canvas.style.width = Math.round(level.w * T * zoom) + 'px';
   g.setTransform(canvas.width / (level.w * T), 0, 0, canvas.height / (level.h * T), 0, 0);
   $('w').value = level.w; $('h').value = level.h;
+  S.redraw = true;
 }

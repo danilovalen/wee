@@ -136,6 +136,7 @@ export function buildPanels(actions) {
 
 export function syncPanel() {
   const ui = S.ui, level = S.level;
+  S.redraw = true;
   syncUndo();
   syncCheck();
   syncLint();

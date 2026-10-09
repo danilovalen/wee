@@ -55,21 +55,32 @@ export function setMode(m, keep) {
   else S.game = null;
 }
 
+// Edit mode redraws when something may have changed (any input, an effect still
+// playing, a search still running), and otherwise only slowly, for rooms with tiles that
+// move on their own (water, goal). Play redraws every frame.
+const AMBIENT_MS = 100;
+const ANIMATED = /^(water|goal)$/;
+function editNeedsDraw(t) {
+  if (S.redraw) return true;
+  if (S.fx.length || S.paste || (S.stops && !S.stops.list)) return true;
+  return t - (S.drawnAt || 0) > AMBIENT_MS && S.level.cells.some(c => ANIMATED.test(c));
+}
 export function frame(t) {
   const dt = Math.min(250, t - (S.last || t)); S.last = t;
   if (S.mode === 'play' && !window.__manualClock) {
     S.acc += dt;
     while (S.acc >= TICK_MS) { tick(); S.acc -= TICK_MS; }
   }
-  render();
+  if (S.mode === 'play' || editNeedsDraw(t)) { render(); S.redraw = false; S.drawnAt = t; }
   requestAnimationFrame(frame);
 }
 
 export function render() {
+  S.draws++;
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t, S.stops && S.stops.stamp === JSON.stringify(S.level) ? S.stops.list : null, selectOverlay());
+  else drawEdit(g, S.level, S.hover, S.fx, t, S.stops && S.stops.stamp === JSON.stringify(S.level) ? (S.stops.list || [...S.stops.out.stops || []]) : null, selectOverlay());
 }
 
 // A report is the room as it was when play began, every key with its tick, and the

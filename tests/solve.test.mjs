@@ -2,7 +2,7 @@
 // returns actually wins when replayed through the plain rules, key by key.
 import { readFileSync } from 'node:fs';
 import { createGame, step } from '../src/rules/game.js';
-import { solve, move, stateKey, unsearchable, powerMoves, parseMove, reach } from '../src/solve/solve.js';
+import { solve, move, stateKey, unsearchable, powerMoves, parseMove, reach, successors } from '../src/solve/solve.js';
 import { room, suite } from './lib.mjs';
 
 const { check, done } = suite('solve');
@@ -73,5 +73,19 @@ const blocked = room(['######', '#P.#.#', '#....#', '######']);
 blocked.powers = corner.powers;
 check('a wall makes a new stop beside it', run(reach(blocked)).stops.includes(8));
 check('a room with real-time pieces has no stop map', run(reach(room(['#####', '#PM.#', '#####'], { mode: 'realtime' }))).why === 'realtime');
-check('the stop map stops at its cap', run(reach(corner, 2)).capped);
+check('the stop map stops at its cap', run(reach(corner, { max: 2 })).capped);
+check('and at its time budget', run(reach(corner, { budgetMs: 0 })).capped);
+const live = {}; const it = reach(corner, { out: live }); it.next();
+check('stops fill in while the search runs', live.stops instanceof Set && live.stops.size >= 1);
+const pushy = room(['#######', '#P.B..#', '#.....#', '#######']);
+pushy.powers = corner.powers;
+const fast = run(reach(pushy, { budgetMs: 30 })), full = run(reach(pushy));
+check('the first pass alone already finds stops', fast.stops.length >= 2 && fast.stops.length <= full.stops.length);
+const s0 = createGame(JSON.parse(readFileSync('rooms/first-room.wee', 'utf8')));
+const succ = [...successors(s0, ['up', 'right', 'down', 'left', 'hide'])].filter(Boolean);
+check('every generated move leads where replaying it from scratch does', succ.length > 5 && succ.every(([k, t]) => { const m = move(s0, k); return m && stateKey(m) === stateKey(t); }));
+check('mid-slide moves are generated', succ.some(([k]) => k.includes('@')));
+check('and can be left out', [...successors(s0, ['right'], false)].filter(Boolean).every(([k]) => !k.includes('@')));
+const noLaser = goal(room(['#######', '#P....#', '#######']), 5, 1);
+check('a laser is not tried where it cannot change anything', [...successors(createGame(noLaser), [])].filter(Boolean).every(([k]) => !/:(up|down)$/.test(k)));
 done();

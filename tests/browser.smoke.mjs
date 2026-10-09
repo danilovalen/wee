@@ -298,6 +298,21 @@ try {
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   check('a reload reopens the room you were on', (await text()).level.cells.filter(c => c === 'wall').length === wallsBefore && (await page.getAttribute('#roomsBtn', 'title')) === 'Smoke room');
+  // autosave: an unsaved edit survives a reload, and saving clears the draft
+  await page.keyboard.press('Escape').catch(() => {});
+  await pick('wall');
+  const lvA = (await text()).level; await page.evaluate(() => scrollTo(0, 0)); const bA = await page.locator('#game').boundingBox();
+  const ax = lvA.w - 2, ay = lvA.h - 2, apos = { x: bA.x + (ax + 0.5) * bA.width / lvA.w, y: bA.y + (ay + 0.5) * bA.height / lvA.h };
+  if (lvA.cells[ay * lvA.w + ax] === 'wall') await page.mouse.click(apos.x, apos.y);
+  await page.mouse.click(apos.x, apos.y);
+  await page.waitForTimeout(500);
+  await page.reload();
+  await page.waitForFunction(() => window.wee && window.wee.roomsReady);
+  await page.evaluate(() => window.wee.roomsReady);
+  check('an unsaved edit comes back after a reload', (await text()).level.cells[ay * lvA.w + ax] === 'wall' && (await page.textContent('#roomsBtn')).includes('\u2022') && (await page.textContent('#placeHint')).includes('unsaved changes are back'));
+  await page.keyboard.press('Control+s');
+  await page.waitForFunction(() => !document.getElementById('roomsBtn').textContent.includes('\u2022'));
+  check('saving clears the draft', await page.evaluate(() => localStorage.getItem('wee.draft') === null));
   await page.click('#roomsBtn');
   await page.locator('#templateList .roomRow', { hasText: 'First room' }).click();
   check('a template opens as a new, unsaved room', (await text()).level.w === 7 && (await page.textContent('#roomsBtn')).includes('\u2022'));

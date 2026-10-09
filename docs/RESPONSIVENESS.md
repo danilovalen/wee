@@ -31,7 +31,22 @@ its client. Times include the test driver's own round trips, so read them as rel
 
 At one room a day, #3 reaches the 50-room numbers in seven weeks, and roughly ten times them in a year.
 
-## Proposals, most valuable first (not built yet)
+## Fixed (2026-10-09), and held by `tests/perf.smoke.mjs`
+
+The gate runs in `npm test`: phone size, CPU 4x slower, no task over 250 ms.
+
+| # | Fix | After |
+|---|---|---|
+| 6 | **Autosave.** Every change writes a draft to the browser 0.4 s after you stop, and at once when the tab is hidden or closed. A reload brings it back, marked unsaved ("Your unsaved changes are back. Save to keep them."). Saving clears it. | |
+| 3 | **Rooms panel costs one room, not all.** Thumbnails are 4 px per tile and drawn once per version of a room; tags are worked out once per version; Save updates its own row instead of re-listing. | 100 rooms: no task over 250 ms opening, saving or filtering (the list builds a few rooms at a time) |
+| 1 | **Stop map in two passes with a 2 s budget.** First pass: plain slides, positions counted by your tile only, so dots appear almost at once; second pass: the full search with powers until the budget runs out, then "N tiles you can stop on, maybe more". Dots fill in while it runs. | his room: answer in ~2 s instead of over 30 s |
+| 2 | **The search hands control back after every move it tries**, even ones that lead nowhere, and a mid-slide power branches from the slide in progress instead of replaying it, and Laser is not tried in rooms where it cannot change anything. | 40x30 with 60 boxes: worst task under 250 ms (was 1.8 s); his room's Check 0.1 s |
+| 4 | **Edit mode draws only when something may have changed** (any input, an effect playing, a search running), plus 10 times a second for rooms with water or a goal, which move on their own. | still room: 0 to 2 redraws a second instead of 60 |
+
+Not done: #5, the server's room list still sends whole rooms. Rooms are small (about 1 KB), and
+Save no longer re-downloads the list, so it waits until it shows up in a measurement.
+
+## Original proposals
 
 1. **Autosave a draft** of the open room to the browser on every edit, and offer it back after a
    crash or a closed tab (PuzzleScript keeps a ring of recent versions; LDtk keeps crash backups).
