@@ -82,7 +82,7 @@ try {
   await page.click('#respawnBtn');
   await page.evaluate(() => window.advanceTime(60));
   s = await text();
-  check('the checkpoint button sends you back', s.player.x === 1 && s.player.y === 1, JSON.stringify(s.player));
+  check('the Reset button sends you back', s.player.x === 1 && s.player.y === 1, JSON.stringify(s.player));
   await page.click('#hideBtn');
   await page.evaluate(() => window.advanceTime(60));
   check('the hide button hides', (await text()).player.hidden);

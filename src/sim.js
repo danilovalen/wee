@@ -95,19 +95,22 @@ function isCell(c) {
   return (kind === 'button' || kind === 'door') && COLOURS.includes(colour);
 }
 
+// The room's pieces as the level places them; a reset builds them again from here.
+const freshPieces = list => list.map((e, i) => ({
+  id: i + 1, kind: e.kind, x: e.x, y: e.y,
+  axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
+  turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: 0 } : null,
+}));
+
 export function createGame(level) {
   const l = JSON.parse(JSON.stringify(level));
-  let id = 0;
   const s = {
+    origin: l.entities,
     w: l.w, h: l.h, cells: l.cells, powers: l.powers, clock: l.clock,
     start: { ...l.start },
     checkpoint: { ...l.start },
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, snap: true },
-    entities: l.entities.map(e => ({
-      id: ++id, kind: e.kind, x: e.x, y: e.y,
-      axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
-      turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: 0 } : null,
-    })),
+    entities: freshPieces(l.entities),
     open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, deaths: 0, events: [],
   };
   computeBeams(s, false);
@@ -270,7 +273,11 @@ function checkStuck(s) {
   if (st.ride && e.kind !== 'mover' && !e.slide) { if (e.kind === 'box') st.ride = false; else unstick(s); }
 }
 
+// Dying or pressing Reset puts the whole room back as it started, with you on your last
+// checkpoint. Pieces still moving this tick are left behind, marked dead.
 function respawn(s) {
+  for (const e of s.entities) e.dead = true;
+  s.entities = freshPieces(s.origin);
   Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, snap: true });
   refreshDoors(s);
 }

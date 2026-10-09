@@ -160,6 +160,8 @@ const M = [
   ['style.css', "  .grid button[hidden] { display: flex; }\n  main {", "  main {", 'browser'],
   ['style.css', "  .tabs, #tools > h2:first-child { display: none; }\n", "", 'browser'],
   ['style.css', "  .ghead { display: block; }\n", "", 'browser'],
+  ['src/sim.js', "  s.entities = freshPieces(s.origin);\n", "", 'sim'],
+  ['src/sim.js', "  for (const e of s.entities) e.dead = true;\n", "", 'sim'],
   ['src/main.js', "tool === 'receiver' || tool === 'sensor' || tool === 'gate') return", "tool === 'receiver' || tool === 'gate') return", 'browser'],
   ['src/render.js', "drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);\n  g.restore();", "g.restore();", 'browser'],
 ];

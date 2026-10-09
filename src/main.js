@@ -246,7 +246,7 @@ function tick() {
 function keysText() {
   return touch
     ? (mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : '')
-    : (mode === 'play' ? `Arrows slide. ${tapText()}R returns you to the checkpoint. E goes back to editing.` : 'E plays this room.');
+    : (mode === 'play' ? `Arrows slide. ${tapText()}R resets the room. E goes back to editing.` : 'E plays this room.');
 }
 
 function tapText() {

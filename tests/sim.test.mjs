@@ -139,7 +139,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a door held open by a block on its button', dg.open.red);
   step(dg, ['hide']);
   for (let i = 0; i < 8; i++) step(dg);
-  check('a door that closes on you while you hide squashes you', dg.deaths === 1 && !dg.open.red, JSON.stringify(dg.player));
+  check('a door that closes on you while you hide squashes you', dg.deaths === 1, JSON.stringify(dg.player));
   const k = createGame(room(['######', '#.P..#', '#....#', '######']));
   step(k, ['hide']); step(k, ['right']);
   check('hidden, you cannot slide', k.player.dir === null && at(k.player, 2, 1));
@@ -441,7 +441,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   const s = slide(createGame(room(['#######', '#.....#', '#P..X.#', '#######'])), 'right');
   check('you die sliding into one', s.deaths === 1);
   const b = slide(createGame(room(['#######', '#PB.X.#', '#######'])), 'right');
-  check('a pushed box is destroyed, and on ice you follow it in', b.entities[0].dead && b.deaths === 1, JSON.stringify(b.player));
+  check('a pushed box is destroyed, and on ice you follow it in', b.deaths === 1, JSON.stringify(b.player));
   const m = createGame(room(['#######', '#M.X..#', '#P....#', '#######']));
   worldStep(m, 'right'); worldStep(m, 'right');
   check('a moving block is destroyed', m.entities[0].dead);
@@ -500,7 +500,7 @@ const LONG = ['##########', '#..P....##', '##########'];
     return g;
   };
   const you = doorRoom(null);
-  check('a closing door squashes you', you.deaths === 1 && !you.open.red);
+  check('a closing door squashes you', you.deaths === 1);
   const arm = doorRoom(null, { powers: { armored: true } });
   check('armored, you hold it open', arm.deaths === 0 && arm.open.red);
   for (const k of ['enemy', 'box']) {
@@ -711,6 +711,29 @@ const LONG = ['##########', '#..P....##', '##########'];
   let pb = 0;
   try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: ['sticky', ...Array(8).fill('')] })); } catch { pb++; }
   check('a level file keeps a puddle', pb === 0);
+}
+
+{ // dying, or Reset, puts the whole room back as it started, with you on your last checkpoint
+  const l = room(['#########', '#P.B...C#', '#.......#', '#.....D.#', '#..o....#', '#########']);
+  const g = createGame(l);
+  slide(g, 'right');
+  check('pushing the box first', g.entities[0].x === 7 && at(g.player, 6, 1), JSON.stringify(g.entities[0]));
+  g.checkpoint = { x: 2, y: 2 };
+  g.entities.push({ id: 50, kind: 'enemy', x: 9, y: 9, axis: 'h', dir: 1, mode: 'input', slide: null, dead: false, rush: false });
+  step(g, ['respawn']);
+  check('Reset puts every piece back where the room starts', g.entities.length === 1 && at(g.entities[0], 3, 1) && !g.entities[0].dead, JSON.stringify(g.entities));
+  check('and you on your last checkpoint', at(g.player, 2, 2));
+  const d = createGame(room(['#######', '#.....#', '#PB.X.#', '#######']));
+  d.checkpoint = { x: 1, y: 1 };
+  slide(d, 'right');
+  check('dying resets the room too: the box you lost is back', d.deaths === 1 && at(d.entities[0], 2, 2) && !d.entities[0].dead && at(d.player, 1, 1), JSON.stringify(d.entities[0]));
+  const t = room(['#######', '#.....#', '#T....#', '#P....#', '#######']);
+  t.entities[0].turret = { dirs: ['up', 'right'], mode: 'input' };
+  const tg = createGame(t);
+  worldStep(tg, 'right'); step(tg);
+  const aim = tg.beams[0].d;
+  step(tg, ['respawn']);
+  check('a turret points where it started', aim === 'right' && tg.beams[0].d === 'up', aim + ' ' + tg.beams[0].d);
 }
 
 done();

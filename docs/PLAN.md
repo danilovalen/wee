@@ -8,6 +8,11 @@ blocks they need are not built yet. First test bed for the `game-skills` layer-1
 A Mario Maker style sandbox on a web canvas. You build a room, play it on the same screen,
 and switch player powers on and off, to feel them out before committing to a set.
 
+## Dying and Reset
+
+Dying, the Reset button and R all put every piece, door and turret back as the room starts, with
+you on your last checkpoint.
+
 ## Movement (decided)
 
 - Top-down, four directions, **Pokemon ice**: one press and you slide tile by tile until a block
