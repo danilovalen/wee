@@ -62,6 +62,8 @@ sharing a top-level name.
 
 ## Phase 2: level list, kept in the page
 
+**Done 2026-10-09**, as the **Rooms** panel (header button). Name, note, Save, Save as new, New room, Delete; your rooms newest first with thumbnails; the templates (every `rooms/*.wee`, generated into `src/level/templates.js`); Download this room, Export all (`.weepack`), Import. Rooms live on the server when the page is served by `tools/server.mjs`, otherwise in the browser. The button shows a dot while there are unsaved changes, leaving asks first, Ctrl+S saves, and a reload reopens the room you were on.
+
 - A **Levels** panel: New, Save, Save as, Rename, Delete, and a list with a tiny thumbnail each.
 - Kept in the browser's local storage. **Risk:** an HTML file opened from a phone's files may not
   keep local storage in every browser, so the panel also has **Export all** and **Import**, one
@@ -100,6 +102,8 @@ Borrowed from Factorio's copy and paste and Tiled's stamps.
 - A room with no goal plays as now, as a sandbox.
 
 ## Phase 6: solver
+
+**Done 2026-10-09.** `src/solve/solve.js`: breadth-first, one move from rest per edge (four slides, plus hide when Cycle or Swim is on), real rules, 20,000-position cap, run in slices so the page stays responsive. **Scope said out loud:** mid-slide powers (Boomerang, Dive, Laser) are not tried yet, so a room that needs one reads as unsolved. Check in the header; Show solution plays it. His first room: 19 moves, 1,795 positions, 0.6 s.
 
 The rules are deterministic and tile-based, which is what makes ice puzzles solvable by search.
 

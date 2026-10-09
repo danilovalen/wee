@@ -14,9 +14,12 @@ try {
   await page.waitForFunction(() => window.wee, null, { timeout: 5000 });
   check('the file opens from disk', true);
   check('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-  await page.click('#sample');
+  await page.evaluate(() => window.wee.roomsReady);
+  await page.click('#roomsBtn');
+  check('from a file, rooms are kept in this browser', (await page.textContent('#roomsWhere')).includes('this browser'));
+  await page.locator('#templateList .roomRow', { hasText: 'Sample' }).click();
   const lv = await page.evaluate(() => window.wee.getLevel());
-  check('Sample loads the sample room', lv.entities.length > 5 && lv.w === 20, `${lv.w}x${lv.h}`);
+  check('the Sample template loads the sample room', lv.entities.length > 5 && lv.w === 20, `${lv.w}x${lv.h}`);
   await page.click('#mode');
   await page.evaluate(() => { window.__manualClock = true; });
   const box = await page.locator('#game').boundingBox();

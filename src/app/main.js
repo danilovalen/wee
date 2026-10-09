@@ -10,6 +10,7 @@ import { fit } from './fit.js';
 import { buildPanels, syncPanel } from './panels.js';
 import { bindInput } from './input.js';
 import { setMode, frame, render, tick, report, copyReport } from './play.js';
+import { buildRooms, bootRooms } from './rooms.js';
 
 S.level = starterLevel(portrait());
 
@@ -22,9 +23,11 @@ window.advanceTime = ms => {
 window.wee = { blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
 
 buildPanels({ setMode, copyReport, fit });
+buildRooms({ setMode, syncPanel, fit });
 bindInput();
 syncPanel();
 addEventListener('resize', fit);
 fit();
 setMode('edit');
 requestAnimationFrame(frame);
+window.wee.roomsReady = bootRooms();

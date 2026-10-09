@@ -96,3 +96,25 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   background: #10131bee; border: 2px solid #f2c14e; border-radius: 12px; padding: 16px 20px; z-index: 5; }
 .win[hidden] { display: none; }
 .win b { color: #f2c14e; font-size: 1.15em; }
+.check { display: flex; gap: 8px; align-items: center; margin: 4px 0 0; font-size: 0.9em; }
+.check:has(#checkText:empty) { display: none; }
+.check [hidden] { display: none; }
+@media (max-width: 600px) {
+  header { gap: 4px; padding: 8px 8px; }
+  header button { padding-left: 8px; padding-right: 8px; }
+  .logo { margin-right: 2px; }
+}
+
+.rooms { width: min(560px, 100vw - 16px); max-height: calc(100vh - 16px); background: var(--panel, #161a24); color: inherit; border: 1px solid var(--line, #2a3142); border-radius: 12px; padding: 14px; }
+.rooms::backdrop { background: #0008; }
+.roomsHead { display: flex; justify-content: space-between; align-items: center; font-size: 1.1em; }
+.rooms .field { display: grid; gap: 4px; margin: 8px 0; }
+.rooms input[type=text], .rooms textarea { width: 100%; box-sizing: border-box; background: #0d1017; color: inherit; border: 1px solid var(--line, #2a3142); border-radius: 6px; padding: 6px 8px; font: inherit; }
+.rooms .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.rooms h3 { margin: 12px 0 6px; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; color: var(--muted, #8e98ad); }
+.roomList { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.roomList .empty { color: var(--muted, #8e98ad); font-size: 0.9em; }
+.roomRow { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; }
+.roomRow span { display: grid; }
+.roomRow small { color: var(--muted, #8e98ad); }
+.thumb { width: 56px; height: auto; max-height: 56px; object-fit: contain; border-radius: 4px; flex: none; }

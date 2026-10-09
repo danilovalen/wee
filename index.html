@@ -10,13 +10,11 @@
   <header>
     <b class="logo">wee</b>
     <button id="mode" type="button" title="E">Play</button>
-    <button id="undo" type="button" title="Ctrl+Z">Undo</button>
-    <button id="redo" type="button" title="Ctrl+Shift+Z">Redo</button>
+    <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
+    <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
+    <button id="checkBtn" type="button">Check</button>
     <span class="spacer"></span>
-    <button id="sample" type="button">Sample</button>
-    <button id="save" type="button">Save</button>
-    <button id="open" type="button">Open</button>
-    <input id="file" type="file" accept=".wee,.json" hidden>
+    <button id="roomsBtn" type="button">Rooms</button>
   </header>
   <main>
     <aside id="tools">
@@ -75,6 +73,7 @@
         <label>Height <input id="h" type="number" min="5" max="30"></label>
       </div>
       <p id="placeHint" class="hint"></p>
+
     </aside>
     <section id="stage">
       <canvas id="game"></canvas>
@@ -95,6 +94,7 @@
         <form method="dialog"><button>Close</button></form>
       </dialog>
       <p id="keys" class="hint"></p>
+      <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
     </section>
     <aside id="powers">
       <h2>Powers</h2>
@@ -106,6 +106,29 @@
       <label class="radio"><input type="radio" name="clock" value="slide"> Each slide</label>
     </aside>
   </main>
+  <dialog id="roomsBox" class="rooms">
+    <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
+    <p id="roomsWhere" class="hint"></p>
+    <label class="field">Name <input id="roomName" type="text" maxlength="60" placeholder="Name this room"></label>
+    <label class="field">Note <textarea id="roomNote" rows="2" maxlength="400" placeholder="What is this room about?"></textarea></label>
+    <div class="row">
+      <button id="roomSave" type="button">Save</button>
+      <button id="roomSaveAs" type="button">Save as new</button>
+      <button id="roomNew" type="button">New room</button>
+      <button id="roomDelete" type="button">Delete</button>
+    </div>
+    <p id="roomsSay" class="hint"></p>
+    <h3>Your rooms</h3>
+    <ul id="roomList" class="roomList"></ul>
+    <h3>Templates</h3>
+    <ul id="templateList" class="roomList"></ul>
+    <div class="row">
+      <button id="roomDownload" type="button">Download this room</button>
+      <button id="exportAll" type="button">Export all</button>
+      <button id="importBtn" type="button">Import</button>
+      <input id="importFile" type="file" accept=".weepack,.wee,.json" hidden>
+    </div>
+  </dialog>
   <script type="module" src="src/app/main.js"></script>
 </body>
 </html>

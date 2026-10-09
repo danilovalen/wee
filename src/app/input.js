@@ -4,6 +4,7 @@ import { S } from '../editor/state.js';
 import { $, canvas, touch, now } from './dom.js';
 import { setMode, aim } from './play.js';
 import { begin, end, step as undoStep } from './undo.js';
+import { save } from './rooms.js';
 import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
 
@@ -63,11 +64,16 @@ export function bindInput() {
       undoStep(ev.key === 'z' && !ev.shiftKey, () => { syncPanel(); fit(); });
       ev.preventDefault(); return;
     }
+    if ((ev.ctrlKey || ev.metaKey) && (ev.key === 's' || ev.key === 'S')) {
+      ev.preventDefault();
+      save(false).then(ok => { if (!ok) $('roomsBtn').click(); });
+      return;
+    }
     if (ev.key === 'e' || ev.key === 'E') { setMode(S.mode === 'play' ? 'edit' : 'play'); ev.preventDefault(); return; }
     if (S.mode !== 'play') return;
     const k = KEYS[ev.key];
     if (!k) return;
     ev.preventDefault();
-    if (!ev.repeat) S.pending.push(aim(k));
+    if (!ev.repeat) { S.demo = null; S.pending.push(aim(k)); }
   });
 }

@@ -6,6 +6,7 @@ import { drawEdit, drawPlay } from '../view/scene.js';
 import { S } from '../editor/state.js';
 import { $, g, now } from './dom.js';
 import { syncPanel, keysText } from './panels.js';
+import { feedDemo } from './check.js';
 
 export function snapshot(s) {
   const ents = {};
@@ -15,6 +16,7 @@ export function snapshot(s) {
 
 export function tick() {
   const game = S.game;
+  feedDemo(game);
   for (const k of S.pending) S.keylog.push({ t: game.tick, k });
   S.prev = snapshot(game);
   const before = { x: game.player.x, y: game.player.y };
@@ -44,6 +46,7 @@ export function setMode(m, keep) {
   S.fx = [];
   if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }
   syncPanel();
+  if (m !== 'play') S.demo = null;
   if (m === 'play') { S.played = JSON.parse(JSON.stringify(S.level)); S.keylog = []; S.game = createGame(S.level); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
   else S.game = null;
 }

@@ -2,6 +2,8 @@
 import { record, undo, redo } from '../editor/history.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
+import { syncCheck } from './check.js';
+import { syncRoomsButton } from './rooms.js';
 
 export function syncUndo() {
   $('undo').disabled = S.mode !== 'edit' || !S.history.past.length;
@@ -15,6 +17,8 @@ export function end() {
   record(S.history, S.before, S.level);
   S.before = null;
   syncUndo();
+  syncCheck();
+  syncRoomsButton();
 }
 
 // One whole edit: fn may change S.level in place or replace it.

@@ -4,6 +4,7 @@
 // export, a default export and an exported `let` (a snapshot cannot follow it).
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
+import { templatesSource } from './templates.mjs';
 
 const ENTRY = 'src/app/main.js';
 const IMPORT = /^import\s*\{([^}]*)\}\s*from\s*'([^']+)';\s*$/gm;
@@ -45,9 +46,8 @@ export function bundle(entry = ENTRY) {
 }
 
 if (process.argv[1] && process.argv[1].endsWith('build-single.mjs')) {
-  const sample = JSON.parse(readFileSync('rooms/sample.wee', 'utf8'));
-  if (readFileSync('src/level/sample.js', 'utf8').indexOf(JSON.stringify(sample)) < 0)
-    throw new Error('src/level/sample.js is out of step with rooms/sample.wee');
+  if (readFileSync('src/level/templates.js', 'utf8') !== templatesSource())
+    throw new Error('src/level/templates.js is out of step with rooms/: run node tools/templates.mjs');
   const js = bundle();
   const html = readFileSync('index.html', 'utf8')
     .replace('<link rel="stylesheet" href="style.css">', () => `<style>\n${readFileSync('style.css', 'utf8')}</style>`)

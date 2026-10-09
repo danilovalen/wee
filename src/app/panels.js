@@ -1,15 +1,16 @@
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 import { COLOURS, POWERS, NEEDS } from '../rules/base.js';
-import { emptyLevel, resizeLevel, parseLevel } from '../level/format.js';
+import { emptyLevel, resizeLevel } from '../level/format.js';
 import { T, INK } from '../view/ink.js';
 import { drawPiece } from '../view/pieces.js';
 import { drawEdit } from '../view/scene.js';
 import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
 import { S } from '../editor/state.js';
-import { SAMPLE } from '../level/sample.js';
 import { $, canvas, touch } from './dom.js';
 import { change, step as undoStep, syncUndo } from './undo.js';
+import { runCheck, syncCheck } from './check.js';
+import { syncRoomsButton } from './rooms.js';
 
 export function keysText() {
   return touch
@@ -106,6 +107,8 @@ export function buildPanels(actions) {
   $('respawnBtn').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
+  $('checkBtn').onclick = runCheck;
+  $('showSolution').onclick = () => { const moves = S.check?.result?.moves; if (!moves) return; setMode('play'); S.demo = [...moves]; };
   const after = () => { syncPanel(); fit(); };
   $('undo').onclick = () => undoStep(true, after);
   $('redo').onclick = () => undoStep(false, after);
@@ -117,26 +120,13 @@ export function buildPanels(actions) {
     if (w !== level.w || h !== level.h) { change(() => { S.level = resizeLevel(level, w, h); }); fit(); }
   };
   $('w').onchange = resize; $('h').onchange = resize;
-  $('save').onclick = () => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(S.level, null, 1)], { type: 'application/json' }));
-    a.download = 'room.wee';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  };
-  $('sample').onclick = () => { change(() => { S.level = parseLevel(JSON.stringify(SAMPLE)); }); setMode('edit'); syncPanel(); fit(); };
-  $('open').onclick = () => $('file').click();
-  $('file').onchange = async () => {
-    const f = $('file').files[0]; $('file').value = '';
-    if (!f) return;
-    try { const l = parseLevel(await f.text()); change(() => { S.level = l; }); setMode('edit'); syncPanel(); fit(); }
-    catch (err) { alert('This file cannot be opened. ' + err.message); }
-  };
 }
 
 export function syncPanel() {
   const ui = S.ui, level = S.level;
   syncUndo();
+  syncCheck();
+  syncRoomsButton();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });
   // A tab carries a dot when the selected tool sits in it.

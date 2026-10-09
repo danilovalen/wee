@@ -1,7 +1,9 @@
 // Drives the real page: edit by clicking, play by keys, save and open a file,
 // and checks painted pixels where the text state says the player is.
 import { chromium } from 'playwright-core';
-import { readFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, mkdirSync, mkdtempSync, readdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { serve } from '../tools/serve.mjs';
 import { room, suite } from './lib.mjs';
 
@@ -198,15 +200,42 @@ try {
   check('going back to editing selects Look, on its open tab', await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')) && await page.locator('[data-tool=look]').isVisible());
   check('playing did not change the room', (await text()).level.entities[0].x === 4);
 
-  // save writes a .wee file; open reads it back
-  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#save')]);
-  const path = await dl.path();
-  const saved = JSON.parse(readFileSync(path, 'utf8'));
-  check('save downloads a .wee file', dl.suggestedFilename().endsWith('.wee') && saved.format === 'wee-level');
-  await page.evaluate(() => window.wee.loadLevel(JSON.parse(JSON.stringify({ ...window.wee.getLevel(), cells: window.wee.getLevel().cells.map(() => '') }))));
-  await page.locator('#file').setInputFiles(path);
-  await page.waitForFunction(() => window.wee.getLevel().cells[0] === 'wall');
-  check('open restores the saved room', (await text()).level.cells.filter(c => c === 'wall').length === saved.cells.filter(c => c === 'wall').length);
+  // the Rooms panel: name and save the room, find it in the list, come back to it
+  const wallsBefore = (await text()).level.cells.filter(c => c === 'wall').length;
+  check('an unnamed room reads as unsaved', (await page.textContent('#roomsBtn')).includes('\u2022'));
+  await page.click('#roomsBtn');
+  check('the panel says where rooms are kept', (await page.textContent('#roomsWhere')).includes('this browser'));
+  check('the templates are listed', (await page.locator('#templateList li').count()) >= 2);
+  await page.click('#roomSave');
+  check('saving without a name asks for one', (await page.textContent('#roomsSay')).includes('name'));
+  await page.fill('#roomName', 'Smoke room');
+  await page.fill('#roomNote', 'checks the panel');
+  await page.click('#roomSave');
+  await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 1);
+  check('a saved room shows in the list, by name', (await page.textContent('#roomList')).includes('Smoke room'));
+  check('and the button no longer says unsaved', !(await page.textContent('#roomsBtn')).includes('\u2022'));
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#roomDownload')]);
+  const saved = JSON.parse(readFileSync(await dl.path(), 'utf8'));
+  check('Download gives a .wee with its name and note', dl.suggestedFilename() === 'Smoke-room.wee' && saved.name === 'Smoke room' && saved.note === 'checks the panel');
+  page.once('dialog', d => d.accept());
+  await page.click('#roomNew');
+  check('New room starts an empty one', (await text()).level.cells.filter(c => c === 'wall').length !== wallsBefore || (await page.inputValue('#roomName')) === '');
+  await page.click('#roomsBtn').catch(() => {});
+  if (!(await page.locator('#roomsBox').isVisible())) await page.click('#roomsBtn');
+  await page.locator('#roomList .roomRow', { hasText: 'Smoke room' }).click();
+  check('opening it from the list brings it back', (await text()).level.cells.filter(c => c === 'wall').length === wallsBefore);
+  await page.reload();
+  await page.waitForFunction(() => window.wee && window.wee.roomsReady);
+  await page.evaluate(() => window.wee.roomsReady);
+  check('a reload reopens the room you were on', (await text()).level.cells.filter(c => c === 'wall').length === wallsBefore && (await page.getAttribute('#roomsBtn', 'title')) === 'Smoke room');
+  await page.click('#roomsBtn');
+  await page.locator('#templateList .roomRow', { hasText: 'First room' }).click();
+  check('a template opens as a new, unsaved room', (await text()).level.w === 7 && (await page.textContent('#roomsBtn')).includes('\u2022'));
+  await page.click('#roomsBtn');
+  await page.locator('#importFile').setInputFiles({ name: 'two.weepack', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ format: 'wee-pack', version: 1, rooms: [{ ...room(['#####', '#P..#', '#####']), id: 'ra', name: 'A' }, { ...room(['#####', '#P..#', '#####']), id: 'rb', name: 'B' }] })) });
+  await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 3);
+  check('Import adds every room in a pack', (await page.textContent('#roomsSay')).includes('Imported 2 rooms'));
+  await page.keyboard.press('Escape');
 
   // a boomerang kicks up a cloud where you turned, blown the way you were going
   await page.evaluate(l => window.wee.loadLevel(l), room(['############', '#P.........#', '############']));
@@ -257,6 +286,30 @@ try {
   // stopping on the goal shows the win, with the move count; Play again starts over
   const goalRoom = room(['#######', '#P..#.#', '#######']); goalRoom.cells[10] = 'goal';
   await page.evaluate(l => window.wee.loadLevel(l), goalRoom);
+  await page.click('#checkBtn');
+  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  check('Check finds the solution and its length', (await page.textContent('#checkText')) === 'Solvable in 1 move.' && await page.locator('#showSolution').isVisible());
+  await pick('enemy');
+  check('picking a tool keeps the check', (await page.textContent('#checkText')) === 'Solvable in 1 move.');
+  await pick('wall'); const g1 = at(5, 5); await page.mouse.click(g1.x, g1.y);
+  check('editing the room clears a stale check', (await page.textContent('#checkText')) === '' && !(await page.locator('#showSolution').isVisible()));
+  await page.keyboard.press('Control+z');
+  await page.click('#checkBtn');
+  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  await page.click('#showSolution');
+  await page.evaluate(() => window.advanceTime(1200));
+  check('Show solution plays it to the win', await page.locator('#win').isVisible());
+  await page.click('#winEdit');
+  // a two-move solution waits for the first slide to end before the second
+  const turnRoom = room(['#####', '#P..#', '###.#', '###.#', '#####']); turnRoom.cells[3 * 5 + 3] = 'goal';
+  await page.evaluate(l => window.wee.loadLevel(l), turnRoom);
+  await page.click('#checkBtn');
+  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  await page.click('#showSolution');
+  await page.evaluate(() => window.advanceTime(3000));
+  check('a two-move solution plays to the win', await page.locator('#win').isVisible() && (await page.textContent('#winText')) === 'Solved in 2 moves.', await page.textContent('#winText'));
+  await page.click('#winEdit');
+  await page.evaluate(l => window.wee.loadLevel(l), goalRoom);
   await page.keyboard.press('e');
   check('a run starts at Moves 0', (await page.textContent('#moves')) === 'Moves 0');
   await page.keyboard.press('ArrowRight'); await page.evaluate(() => window.advanceTime(600));
@@ -269,6 +322,22 @@ try {
   // a disabled power reads as disabled and cannot be ticked
   const hook = page.locator('[data-power=hook]');
   check('a power that cannot act yet is disabled', await hook.isDisabled());
+  // served with a rooms directory, the page saves to the server instead of the browser
+  const roomsDir = mkdtempSync(join(tmpdir(), 'wee-rooms-'));
+  const withApi = await serve(PORT + 1, { rooms: roomsDir });
+  const sp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  sp.on('pageerror', e => errors.push(e.message));
+  await sp.goto(`http://localhost:${PORT + 1}/`);
+  await sp.waitForFunction(() => window.wee && window.wee.roomsReady);
+  await sp.evaluate(() => window.wee.roomsReady);
+  await sp.click('#roomsBtn');
+  check('served with a rooms directory, rooms are kept on the server', (await sp.textContent('#roomsWhere')).includes('server'));
+  await sp.fill('#roomName', 'On the server');
+  await sp.click('#roomSave');
+  await sp.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 1);
+  check('a saved room lands in the directory as a file', readdirSync(roomsDir).some(f => f.endsWith('.wee')));
+  await sp.close(); withApi.close();
+
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) {
   check('the smoke ran to the end', false, err.message);

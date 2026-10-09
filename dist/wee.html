@@ -103,19 +103,39 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   background: #10131bee; border: 2px solid #f2c14e; border-radius: 12px; padding: 16px 20px; z-index: 5; }
 .win[hidden] { display: none; }
 .win b { color: #f2c14e; font-size: 1.15em; }
+.check { display: flex; gap: 8px; align-items: center; margin: 4px 0 0; font-size: 0.9em; }
+.check:has(#checkText:empty) { display: none; }
+.check [hidden] { display: none; }
+@media (max-width: 600px) {
+  header { gap: 4px; padding: 8px 8px; }
+  header button { padding-left: 8px; padding-right: 8px; }
+  .logo { margin-right: 2px; }
+}
+
+.rooms { width: min(560px, 100vw - 16px); max-height: calc(100vh - 16px); background: var(--panel, #161a24); color: inherit; border: 1px solid var(--line, #2a3142); border-radius: 12px; padding: 14px; }
+.rooms::backdrop { background: #0008; }
+.roomsHead { display: flex; justify-content: space-between; align-items: center; font-size: 1.1em; }
+.rooms .field { display: grid; gap: 4px; margin: 8px 0; }
+.rooms input[type=text], .rooms textarea { width: 100%; box-sizing: border-box; background: #0d1017; color: inherit; border: 1px solid var(--line, #2a3142); border-radius: 6px; padding: 6px 8px; font: inherit; }
+.rooms .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.rooms h3 { margin: 12px 0 6px; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; color: var(--muted, #8e98ad); }
+.roomList { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.roomList .empty { color: var(--muted, #8e98ad); font-size: 0.9em; }
+.roomRow { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; }
+.roomRow span { display: grid; }
+.roomRow small { color: var(--muted, #8e98ad); }
+.thumb { width: 56px; height: auto; max-height: 56px; object-fit: contain; border-radius: 4px; flex: none; }
 </style>
 </head>
 <body>
   <header>
     <b class="logo">wee</b>
     <button id="mode" type="button" title="E">Play</button>
-    <button id="undo" type="button" title="Ctrl+Z">Undo</button>
-    <button id="redo" type="button" title="Ctrl+Shift+Z">Redo</button>
+    <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
+    <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
+    <button id="checkBtn" type="button">Check</button>
     <span class="spacer"></span>
-    <button id="sample" type="button">Sample</button>
-    <button id="save" type="button">Save</button>
-    <button id="open" type="button">Open</button>
-    <input id="file" type="file" accept=".wee,.json" hidden>
+    <button id="roomsBtn" type="button">Rooms</button>
   </header>
   <main>
     <aside id="tools">
@@ -174,6 +194,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
         <label>Height <input id="h" type="number" min="5" max="30"></label>
       </div>
       <p id="placeHint" class="hint"></p>
+
     </aside>
     <section id="stage">
       <canvas id="game"></canvas>
@@ -194,6 +215,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
         <form method="dialog"><button>Close</button></form>
       </dialog>
       <p id="keys" class="hint"></p>
+      <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
     </section>
     <aside id="powers">
       <h2>Powers</h2>
@@ -205,6 +227,29 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
       <label class="radio"><input type="radio" name="clock" value="slide"> Each slide</label>
     </aside>
   </main>
+  <dialog id="roomsBox" class="rooms">
+    <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
+    <p id="roomsWhere" class="hint"></p>
+    <label class="field">Name <input id="roomName" type="text" maxlength="60" placeholder="Name this room"></label>
+    <label class="field">Note <textarea id="roomNote" rows="2" maxlength="400" placeholder="What is this room about?"></textarea></label>
+    <div class="row">
+      <button id="roomSave" type="button">Save</button>
+      <button id="roomSaveAs" type="button">Save as new</button>
+      <button id="roomNew" type="button">New room</button>
+      <button id="roomDelete" type="button">Delete</button>
+    </div>
+    <p id="roomsSay" class="hint"></p>
+    <h3>Your rooms</h3>
+    <ul id="roomList" class="roomList"></ul>
+    <h3>Templates</h3>
+    <ul id="templateList" class="roomList"></ul>
+    <div class="row">
+      <button id="roomDownload" type="button">Download this room</button>
+      <button id="exportAll" type="button">Export all</button>
+      <button id="importBtn" type="button">Import</button>
+      <input id="importFile" type="file" accept=".weepack,.wee,.json" hidden>
+    </div>
+  </dialog>
   <script type="module">
 // ---- src/rules/base.js
 const m0 = (() => {
@@ -1113,7 +1158,7 @@ const S = {
   level: null,
   ui: { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
   mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
-  played: null, keylog: [], history: newHistory(), before: null,
+  played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null,
 };
 return { starterLevel, S };
 })();
@@ -1671,19 +1716,411 @@ const ARROW = { up: '\u2191', right: '\u2192', down: '\u2193', left: '\u2190' };
 const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'bottom right' };
 return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
-// ---- src/level/sample.js
+// ---- src/solve/solve.js
 const m19 = (() => {
+const { createGame, step } = m8;
+const { MOVES } = m0;
+// The solver: a breadth-first search over the room's states, one move of yours per
+// edge, using the real rules. A move is a slide you start from rest (or a hide), run
+// until you and every piece have stopped. Mid-slide powers (Boomerang, Dive, Laser)
+// are not tried, so a room that needs one reads as unsolved; the result says so.
 
-// The sample room, kept in step with rooms/sample.wee by tools/build-single.mjs.
-const SAMPLE = {"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"};
-return { SAMPLE };
+
+const MAX_STATES = 20000;
+const KEYS = ['up', 'right', 'down', 'left'];
+
+// What makes two states the same for the search: everything the next move depends on.
+function stateKey(s) {
+  const p = s.player;
+  return JSON.stringify([p.x, p.y, p.swimming, p.sticky, p.stuck && [p.stuck.id, p.stuck.ride], s.checkpoint.x, s.checkpoint.y,
+    s.entities.filter(e => !e.dead).map(e => [e.id, e.x, e.y, e.dir, e.axis, e.sticky ? 1 : 0, e.glue || 0, e.turret ? e.turret.aim : -1]),
+    Object.keys(s.open).filter(c => s.open[c]).sort()]);
+}
+
+const settled = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => !e.dead && (e.rush || e.slide));
+
+// One move from state s: a fresh copy, the key, then ticks until everything stops.
+// Null when the move changes nothing, kills you, or never settles.
+function move(s, k) {
+  const t = structuredClone(s), deaths = t.deaths, before = stateKey(s);
+  step(t, [k]);
+  for (let i = 0; i < 4 * t.w * t.h + 40 && !settled(t); i++) step(t);
+  if (t.deaths !== deaths || !settled(t)) return null;
+  if (!t.won && stateKey(t) === before) return null;
+  return t;
+}
+
+// Why a room cannot be searched, or null when it can.
+function unsearchable(level) {
+  if (!level.cells.includes('goal')) return 'nogoal';
+  if (level.entities.some(e => (MOVES.includes(e.kind) && e.mode === 'realtime') || (e.turret && e.turret.mode === 'realtime'))) return 'realtime';
+  return null;
+}
+
+// A generator, so the page can run it a slice at a time and stay responsive. Yields the
+// number of states seen so far; returns { status, moves, states }.
+function* search(level, max = MAX_STATES) {
+  const why = unsearchable(level);
+  if (why) return { status: why, moves: null, states: 0 };
+  const start = createGame(level);
+  const keys = [...KEYS, ...(level.powers.cycle || level.powers.swim ? ['hide'] : [])];
+  const seen = new Map([[stateKey(start), null]]);
+  let frontier = [{ s: start, path: [] }];
+  while (frontier.length) {
+    const next = [];
+    for (const { s, path } of frontier) {
+      for (const k of keys) {
+        const t = move(s, k);
+        if (!t) continue;
+        if (t.won) return { status: 'solved', moves: [...path, k], states: seen.size };
+        const key = stateKey(t);
+        if (seen.has(key)) continue;
+        seen.set(key, true);
+        if (seen.size >= max) return { status: 'capped', moves: null, states: seen.size };
+        next.push({ s: t, path: [...path, k] });
+      }
+      yield seen.size;
+    }
+    frontier = next;
+  }
+  return { status: 'unsolvable', moves: null, states: seen.size };
+}
+
+// The whole search at once, for tests and tools.
+function solve(level, max) {
+  const it = search(level, max);
+  for (;;) { const r = it.next(); if (r.done) return r.value; }
+}
+return { MAX_STATES, stateKey, move, unsearchable, search, solve };
+})();
+// ---- src/app/check.js
+const m20 = (() => {
+const { search } = m19;
+const { S } = m11;
+const { $ } = m12;
+// Check: runs the solver a slice at a time so the page stays responsive, and shows the
+// answer. Show solution plays the found moves in play mode, one each time you come to rest.
+
+
+
+const SLICE_MS = 25;
+const SAY = {
+  solved: r => `Solvable in ${r.moves.length} ${r.moves.length === 1 ? 'move' : 'moves'}.`,
+  unsolvable: () => 'No solution. Every reachable position was tried.',
+  capped: r => `Stopped after ${r.states} positions without finding one.`,
+  nogoal: () => 'Place a Goal to check the room.',
+  realtime: () => 'Has real-time pieces, so it cannot be checked.',
+};
+
+function checkText(r) { return SAY[r.status](r); }
+
+function runCheck() {
+  const level = JSON.parse(JSON.stringify(S.level)), stamp = JSON.stringify(level);
+  const it = search(level);
+  S.check = { stamp, result: null };
+  $('checkText').textContent = 'Checking...';
+  $('showSolution').hidden = true;
+  const slice = () => {
+    if (!S.check || S.check.stamp !== stamp) return;
+    const until = performance.now() + SLICE_MS;
+    for (;;) {
+      const r = it.next();
+      if (r.done) { finish(r.value); return; }
+      if (performance.now() > until) { $('checkText').textContent = `Checking... ${r.value} positions`; break; }
+    }
+    setTimeout(slice, 0);
+  };
+  slice();
+}
+
+function finish(r) {
+  S.check.result = r;
+  $('checkText').textContent = checkText(r);
+  $('showSolution').hidden = r.status !== 'solved';
+}
+
+// A check goes stale the moment the room changes.
+function syncCheck() {
+  if (!S.check || S.check.stamp === JSON.stringify(S.level)) return;
+  S.check = null;
+  $('checkText').textContent = '';
+  $('showSolution').hidden = true;
+}
+
+// Called each tick in play: feeds the next solution move once everything has stopped.
+function feedDemo(game) {
+  if (!S.demo || !S.demo.length) return;
+  const busy = game.player.dir || game.player.hidden || game.entities.some(e => !e.dead && (e.rush || e.slide));
+  if (!busy) S.pending.push(S.demo.shift());
+}
+return { checkText, runCheck, syncCheck, feedDemo };
+})();
+// ---- src/level/templates.js
+const m21 = (() => {
+
+// Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.
+const TEMPLATES = [{"name":"First room","level":{"format":"wee-level","version":1,"w":7,"h":12,"cells":["wall","","","wall","wall","wall","wall","wall","","","","","","button:red","wall","","","","","","","wall","","","","","","","wall","","","","","","","","door:red","","","","","","wall","wall","","","","","","wall","","","","","","","wall","","","","","","","wall","","","","","","","wall","wall","wall","wall","wall","wall","door:red","wall","wall","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":5,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":7,"dir":1,"mode":"input"}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"}}];
+return { TEMPLATES };
+})();
+// ---- src/level/room.js
+const m22 = (() => {
+const { parseLevel } = m9;
+// A room is a level plus what the person wrote about it. These split and join the two.
+
+const META = ['id', 'name', 'note', 'updated'];
+
+function splitRoom(room) {
+  const meta = {}, level = { ...room };
+  for (const k of META) { meta[k] = room[k] ?? null; delete level[k]; }
+  return { meta, level: parseLevel(JSON.stringify(level)) };
+}
+
+const joinRoom = (meta, level) => ({ ...level, id: meta.id, name: meta.name, note: meta.note || '' });
+
+// What counts as the room's content when asking whether it has unsaved changes.
+const stampOf = level => JSON.stringify(level);
+
+function pack(rooms) { return { format: 'wee-pack', version: 1, rooms }; }
+
+// A pack file, or a single level file read as a pack of one.
+function unpack(text) {
+  const data = JSON.parse(text);
+  if (data.format === 'wee-pack' && Array.isArray(data.rooms)) return data.rooms.map(r => { splitRoom(r); return r; });
+  if (data.format === 'wee-level') { splitRoom(data); return [data]; }
+  throw new Error('Not a wee room or pack file.');
+}
+return { META, splitRoom, joinRoom, stampOf, pack, unpack };
+})();
+// ---- src/app/store.js
+const m23 = (() => {
+
+// Where rooms are kept: on the server when the page is served by one, otherwise in this
+// browser's local storage. A room is a level file with id, name, note and updated added.
+const KEY = 'wee.rooms';
+let mode = 'device';
+
+const where = () => mode;
+
+async function detect() {
+  try {
+    const r = await fetch('api/rooms', { cache: 'no-store' });
+    if (r.ok && (r.headers.get('content-type') || '').includes('json')) { mode = 'server'; return mode; }
+  } catch { /* opened from a file, or no server */ }
+  mode = 'device';
+  return mode;
+}
+
+function readLocal() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
+function writeLocal(rooms) { localStorage.setItem(KEY, JSON.stringify(rooms)); }
+
+const newId = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+async function list() {
+  if (mode === 'server') {
+    const r = await fetch('api/rooms', { cache: 'no-store' });
+    if (!r.ok) throw new Error('The server did not list the rooms.');
+    return r.json();
+  }
+  return readLocal();
+}
+
+async function put(room) {
+  room = { ...room, updated: new Date().toISOString() };
+  if (mode === 'server') {
+    const r = await fetch('api/rooms/' + room.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(room) });
+    if (!r.ok) throw new Error('The server did not save the room: ' + (await r.text()));
+    return r.json();
+  }
+  const rooms = readLocal().filter(o => o.id !== room.id);
+  rooms.push(room);
+  writeLocal(rooms);
+  return room;
+}
+
+async function remove(id) {
+  if (mode === 'server') {
+    const r = await fetch('api/rooms/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error('The server did not delete the room.');
+    return;
+  }
+  writeLocal(readLocal().filter(o => o.id !== id));
+}
+return { where, detect, newId, list, put, remove };
+})();
+// ---- src/app/rooms.js
+const m24 = (() => {
+const { TEMPLATES } = m21;
+const { splitRoom, joinRoom, stampOf, pack, unpack } = m22;
+const { starterLevel } = m11;
+const { newHistory } = m10;
+const { S } = m11;
+const { T } = m13;
+const { drawEdit } = m17;
+const { list, put, remove, where, newId, detect } = m23;
+const { $ } = m12;
+// The Rooms panel: the room being edited (name, note, save), the saved rooms, the
+// templates, and moving rooms in and out as files.
+
+
+
+
+
+
+
+
+
+const LAST = 'wee.last';
+let A = null; // the page actions (setMode, syncPanel, fit), passed in to avoid an import cycle
+let saved = [];
+
+const dirty = () => !S.room || stampOf(S.level) !== S.room.saved || S.room.edited;
+const leaveOk = () => !dirty() || confirm('This room has changes that are not saved. Leave them?');
+
+function syncRoomsButton() {
+  $('roomsBtn').textContent = dirty() ? 'Rooms •' : 'Rooms';
+  $('roomsBtn').title = (S.room && S.room.name) || 'Unsaved room';
+}
+
+function remember(id) { try { if (id) localStorage.setItem(LAST, id); else localStorage.removeItem(LAST); } catch { /* storage off */ } }
+
+function openRoom(level, meta) {
+  S.level = level;
+  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', saved: stampOf(level), edited: false };
+  S.history = newHistory();
+  remember(S.room.id);
+  A.setMode('edit'); A.syncPanel(); A.fit();
+  fillCurrent();
+}
+
+function fillCurrent() {
+  $('roomName').value = S.room ? S.room.name : '';
+  $('roomNote').value = S.room ? S.room.note : '';
+  $('roomDelete').disabled = !S.room || !S.room.id;
+  $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only. Export all to keep a copy.';
+}
+
+function say(msg) { $('roomsSay').textContent = msg; }
+
+async function save(asNew) {
+  if (!S.room) S.room = { id: null, name: '', note: '', saved: null, edited: false };
+  const name = $('roomName').value.trim();
+  if (!name) { say('Give the room a name first.'); $('roomName').focus(); return false; }
+  const id = asNew || !S.room.id ? newId() : S.room.id;
+  try {
+    await put(joinRoom({ id, name, note: $('roomNote').value }, S.level));
+  } catch (e) { say(e.message); return false; }
+  Object.assign(S.room, { id, name, note: $('roomNote').value, saved: stampOf(S.level), edited: false });
+  remember(id);
+  say(`Saved "${name}".`);
+  fillCurrent(); syncRoomsButton();
+  await refresh();
+  return true;
+}
+
+function thumb(level) {
+  const c = document.createElement('canvas');
+  c.width = level.w * T; c.height = level.h * T;
+  drawEdit(c.getContext('2d'), level, null, [], 0);
+  c.className = 'thumb';
+  return c;
+}
+
+function row(level, title, sub, onOpen) {
+  const li = document.createElement('li'), b = document.createElement('button');
+  b.type = 'button'; b.className = 'roomRow';
+  const text = document.createElement('span'), name = document.createElement('b'), small = document.createElement('small');
+  name.textContent = title; small.textContent = sub;
+  text.append(name, small);
+  b.append(thumb(level), text);
+  b.onclick = onOpen;
+  li.append(b);
+  return li;
+}
+
+const when = iso => iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
+
+async function refresh() {
+  try { saved = await list(); } catch (e) { say(e.message); saved = []; }
+  saved.sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
+  const ul = $('roomList');
+  ul.replaceChildren(...saved.map(r => {
+    const { meta, level } = splitRoom(r);
+    return row(level, meta.name || 'Untitled', `${level.w}x${level.h} · ${when(meta.updated)}`, () => { if (leaveOk()) { openRoom(level, meta); $('roomsBox').close(); } });
+  }));
+  if (!saved.length) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = 'No saved rooms yet.'; ul.append(li); }
+  return saved;
+}
+
+function download(name, data) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function buildRooms(actions) {
+  A = actions;
+  $('templateList').replaceChildren(...TEMPLATES.map(t => {
+    const { level } = splitRoom(t.level);
+    return row(level, t.name, `Template · ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.saved = null; syncRoomsButton(); $('roomsBox').close(); } });
+  }));
+  $('roomsBtn').onclick = async () => { fillCurrent(); say(''); $('roomsBox').showModal(); await refresh(); };
+  $('roomSave').onclick = () => save(false);
+  $('roomSaveAs').onclick = () => save(true);
+  $('roomName').oninput = $('roomNote').oninput = () => { if (S.room) S.room.edited = true; else S.room = { id: null, name: '', note: '', saved: null, edited: true }; syncRoomsButton(); };
+  $('roomNew').onclick = () => { if (!leaveOk()) return; openRoom(starterLevel(innerHeight > innerWidth), {}); say('A new room. Name it and save.'); };
+  $('roomDelete').onclick = async () => {
+    if (!S.room || !S.room.id || !confirm(`Delete "${S.room.name}"? This cannot be undone.`)) return;
+    try { await remove(S.room.id); } catch (e) { say(e.message); return; }
+    S.room.id = null; S.room.saved = null; remember(null);
+    say('Deleted. The room is still open here, unsaved.');
+    fillCurrent(); syncRoomsButton(); await refresh();
+  };
+  $('roomDownload').onclick = () => download(($('roomName').value.trim() || 'room').replace(/[^\w-]+/g, '-') + '.wee', joinRoom({ id: S.room?.id || null, name: $('roomName').value, note: $('roomNote').value }, S.level));
+  $('exportAll').onclick = async () => download('wee-rooms.weepack', pack(await refresh()));
+  $('importBtn').onclick = () => $('importFile').click();
+  $('importFile').onchange = async () => {
+    const f = $('importFile').files[0]; $('importFile').value = '';
+    if (!f) return;
+    let rooms;
+    try { rooms = unpack(await f.text()); } catch (e) { say('This file cannot be opened. ' + e.message); return; }
+    if (rooms.length === 1 && !rooms[0].id) {
+      if (!leaveOk()) return;
+      const { meta, level } = splitRoom(rooms[0]);
+      openRoom(level, { name: meta.name || f.name.replace(/\.\w+$/, ''), note: meta.note });
+      S.room.saved = null; syncRoomsButton();
+      say('Opened. Save it to keep it.');
+      return;
+    }
+    for (const r of rooms) await put({ ...r, id: r.id || newId() });
+    say(`Imported ${rooms.length} ${rooms.length === 1 ? 'room' : 'rooms'}.`);
+    await refresh();
+  };
+}
+
+// At start: find the store, and reopen the room you were last on.
+async function bootRooms() {
+  await detect();
+  let last = null;
+  try { last = localStorage.getItem(LAST); } catch { /* storage off */ }
+  const rooms = await refresh();
+  const r = last && rooms.find(o => o.id === last);
+  if (r) { const { meta, level } = splitRoom(r); openRoom(level, meta); }
+  else { S.room = { id: null, name: '', note: '', saved: stampOf(S.level), edited: false }; syncRoomsButton(); }
+}
+return { dirty, leaveOk, syncRoomsButton, openRoom, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m20 = (() => {
+const m25 = (() => {
 const { record, undo, redo } = m10;
 const { S } = m11;
 const { $ } = m12;
+const { syncCheck } = m20;
+const { syncRoomsButton } = m24;
 // Every change to the level goes through change(), so it can be undone as one step.
+
+
 
 
 
@@ -1699,6 +2136,8 @@ function end() {
   record(S.history, S.before, S.level);
   S.before = null;
   syncUndo();
+  syncCheck();
+  syncRoomsButton();
 }
 
 // One whole edit: fn may change S.level in place or replace it.
@@ -1715,19 +2154,21 @@ function step(back, after) {
 return { syncUndo, begin, end, change, step };
 })();
 // ---- src/app/panels.js
-const m21 = (() => {
+const m26 = (() => {
 const { COLOURS, POWERS, NEEDS } = m0;
-const { emptyLevel, resizeLevel, parseLevel } = m9;
+const { emptyLevel, resizeLevel } = m9;
 const { T, INK } = m13;
 const { drawPiece } = m15;
 const { drawEdit } = m17;
 const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m18;
 const { S } = m11;
-const { SAMPLE } = m19;
 const { $, canvas, touch } = m12;
-const { change, step: undoStep, syncUndo } = m20;
+const { change, step: undoStep, syncUndo } = m25;
+const { runCheck, syncCheck } = m20;
+const { syncRoomsButton } = m24;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -1833,6 +2274,8 @@ function buildPanels(actions) {
   $('respawnBtn').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
+  $('checkBtn').onclick = runCheck;
+  $('showSolution').onclick = () => { const moves = S.check?.result?.moves; if (!moves) return; setMode('play'); S.demo = [...moves]; };
   const after = () => { syncPanel(); fit(); };
   $('undo').onclick = () => undoStep(true, after);
   $('redo').onclick = () => undoStep(false, after);
@@ -1844,26 +2287,13 @@ function buildPanels(actions) {
     if (w !== level.w || h !== level.h) { change(() => { S.level = resizeLevel(level, w, h); }); fit(); }
   };
   $('w').onchange = resize; $('h').onchange = resize;
-  $('save').onclick = () => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(S.level, null, 1)], { type: 'application/json' }));
-    a.download = 'room.wee';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  };
-  $('sample').onclick = () => { change(() => { S.level = parseLevel(JSON.stringify(SAMPLE)); }); setMode('edit'); syncPanel(); fit(); };
-  $('open').onclick = () => $('file').click();
-  $('file').onchange = async () => {
-    const f = $('file').files[0]; $('file').value = '';
-    if (!f) return;
-    try { const l = parseLevel(await f.text()); change(() => { S.level = l; }); setMode('edit'); syncPanel(); fit(); }
-    catch (err) { alert('This file cannot be opened. ' + err.message); }
-  };
 }
 
 function syncPanel() {
   const ui = S.ui, level = S.level;
   syncUndo();
+  syncCheck();
+  syncRoomsButton();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });
   // A tab carries a dot when the selected tool sits in it.
@@ -1896,7 +2326,7 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/editor/edit.js
-const m22 = (() => {
+const m27 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
 const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m18;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
@@ -2018,15 +2448,17 @@ function place(level, ui, x, y, how) {
 return { holds, describe, place };
 })();
 // ---- src/app/play.js
-const m23 = (() => {
+const m28 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m17;
 const { S } = m11;
 const { $, g, now } = m12;
-const { syncPanel, keysText } = m21;
+const { syncPanel, keysText } = m26;
+const { feedDemo } = m20;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
 
 
 
@@ -2042,6 +2474,7 @@ function snapshot(s) {
 
 function tick() {
   const game = S.game;
+  feedDemo(game);
   for (const k of S.pending) S.keylog.push({ t: game.tick, k });
   S.prev = snapshot(game);
   const before = { x: game.player.x, y: game.player.y };
@@ -2071,6 +2504,7 @@ function setMode(m, keep) {
   S.fx = [];
   if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }
   syncPanel();
+  if (m !== 'play') S.demo = null;
   if (m === 'play') { S.played = JSON.parse(JSON.stringify(S.level)); S.keylog = []; S.game = createGame(S.level); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
   else S.game = null;
 }
@@ -2106,15 +2540,17 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m24 = (() => {
-const { describe, holds, place } = m22;
+const m29 = (() => {
+const { describe, holds, place } = m27;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m23;
-const { begin, end, step: undoStep } = m20;
-const { syncPanel } = m21;
+const { setMode, aim } = m28;
+const { begin, end, step: undoStep } = m25;
+const { save } = m24;
+const { syncPanel } = m26;
 const { fit } = m14;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
+
 
 
 
@@ -2178,18 +2614,23 @@ function bindInput() {
       undoStep(ev.key === 'z' && !ev.shiftKey, () => { syncPanel(); fit(); });
       ev.preventDefault(); return;
     }
+    if ((ev.ctrlKey || ev.metaKey) && (ev.key === 's' || ev.key === 'S')) {
+      ev.preventDefault();
+      save(false).then(ok => { if (!ok) $('roomsBtn').click(); });
+      return;
+    }
     if (ev.key === 'e' || ev.key === 'E') { setMode(S.mode === 'play' ? 'edit' : 'play'); ev.preventDefault(); return; }
     if (S.mode !== 'play') return;
     const k = KEYS[ev.key];
     if (!k) return;
     ev.preventDefault();
-    if (!ev.repeat) S.pending.push(aim(k));
+    if (!ev.repeat) { S.demo = null; S.pending.push(aim(k)); }
   });
 }
 return { bindInput };
 })();
 // ---- src/app/main.js
-const m25 = (() => {
+const m30 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -2197,11 +2638,13 @@ const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { portrait } = m12;
 const { fit } = m14;
-const { buildPanels, syncPanel } = m21;
-const { bindInput } = m24;
-const { setMode, frame, render, tick, report, copyReport } = m23;
+const { buildPanels, syncPanel } = m26;
+const { bindInput } = m29;
+const { setMode, frame, render, tick, report, copyReport } = m28;
+const { buildRooms, bootRooms } = m24;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
+
 
 
 
@@ -2223,12 +2666,14 @@ window.advanceTime = ms => {
 window.wee = { blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
 
 buildPanels({ setMode, copyReport, fit });
+buildRooms({ setMode, syncPanel, fit });
 bindInput();
 syncPanel();
 addEventListener('resize', fit);
 fit();
 setMode('edit');
 requestAnimationFrame(frame);
+window.wee.roomsReady = bootRooms();
 return {  };
 })();
 </script>

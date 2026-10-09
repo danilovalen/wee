@@ -1,0 +1,14 @@
+[Unit]
+Description=wee level editor (private)
+After=network.target
+
+[Service]
+Type=simple
+User=wee
+WorkingDirectory=/opt/wee
+EnvironmentFile=/etc/wee.env
+ExecStart=/usr/bin/node tools/server.mjs
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
