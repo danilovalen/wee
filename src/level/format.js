@@ -54,5 +54,5 @@ export function isCell(c) {
   if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
-  return (kind === 'button' || kind === 'door') && COLOURS.includes(colour);
+  return (kind === 'button' || kind === 'door' || kind === 'idoor') && COLOURS.includes(colour);
 }

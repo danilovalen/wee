@@ -10,6 +10,7 @@ export function solidCell(s, x, y) {
   const c = cellAt(s, x, y);
   if (c === 'wall' || c.startsWith('receiver:') || c.startsWith('spring:')) return true;
   if (c.startsWith('door:')) return !s.open[c.slice(5)];
+  if (c.startsWith('idoor:')) return !!s.open[c.slice(6)];
   return false;
 }
 

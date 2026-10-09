@@ -127,6 +127,7 @@ box or a block in it holds that colour's doors open.
   squashes an enemy in its way, and squashes you if it moves against you.
 - **Button:** pressed while a box or you stand on it. Released, its doors close again.
 - **Door:** a block while closed.
+- **Inverted door:** the opposite. Open until every switch of its colour is held, then closed. Drawn as a door's negative: dark with coloured bars, a minus sign when open. It squashes and is held like a door; a held one keeps the whole colour as it was, so its plain doors stay shut too.
 - **Wiring is by colour.** A colour's doors open only while **every** button of that colour is
   pressed (AND), and one colour's buttons open **all** its doors.
 

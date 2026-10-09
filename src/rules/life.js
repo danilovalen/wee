@@ -10,8 +10,9 @@ export const freshPieces = list => list.map((e, i) => ({
 }));
 
 // A colour's doors open only while every button, receiver and sensor of that colour
-// is held. A closing door squashes you, weak enemies, boxes and lone turrets, unless a
-// strong enemy, a heavy box or a block stands in it (or you, armored): then it stays open.
+// is held; its inverted doors close then. A closing door of either kind squashes you,
+// weak enemies, boxes and lone turrets, unless a strong enemy, a heavy box or a block
+// stands in it (or you, armored): then the colour keeps its state, so both kinds hold.
 export function refreshDoors(s) {
   const pressed = {}, any = {};
   // A receiver or a sensor is a button that a turret beam holds down.
@@ -28,9 +29,9 @@ export function refreshDoors(s) {
   let squashed = false;
   for (const col of COLOURS) {
     const want = !!(any[col] && pressed[col]);
-    if (!want && s.open[col]) {
-      const doors = [];
-      s.cells.forEach((c, i) => { if (c === 'door:' + col) doors.push([i % s.w, Math.floor(i / s.w)]); });
+    if (want !== !!s.open[col]) {
+      const closing = (want ? 'idoor:' : 'door:') + col, doors = [];
+      s.cells.forEach((c, i) => { if (c === closing) doors.push([i % s.w, Math.floor(i / s.w)]); });
       const inside = ([x, y]) => s.entities.filter(e => !e.dead && e.x === x && e.y === y);
       const youIn = ([x, y]) => s.player.x === x && s.player.y === y;
       if (doors.some(d => inside(d).some(e => HOLDS_DOOR.includes(e.kind)) || (youIn(d) && s.powers.armored))) continue;

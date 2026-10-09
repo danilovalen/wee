@@ -5,7 +5,7 @@ import { emptyLevel } from '../src/level/format.js';
 //   M  mover, h      V  mover, v         E  enemy, h     F  enemy, v
 //   S  strong enemy, h                  T  laser turret (fires right)
 //   B  box           H  heavy box
-//   o  red button    D  red door         u  blue button  Q  blue door    r  red receiver  s  red laser sensor  w  water  %  sticky puddle
+//   o  red button    D  red door         u  blue button  Q  blue door    N  red inverted door    r  red receiver  s  red laser sensor  w  water  %  sticky puddle
 //   > < ^ v  one-way tile (that way)      =  two-way, across      |  two-way, up and down
 //   X  death block    8 6 2 4  spring facing up, right, down, left (numpad)
 //   7 9 1 3  triangle, solid in the corner a numpad key points to (7 = north-west)
@@ -30,6 +30,7 @@ export function room(rows, opts = {}) {
       case 'w': l.cells[i] = 'water'; break;
       case '%': l.cells[i] = 'sticky'; break;
       case 'Q': l.cells[i] = 'door:blue'; break;
+      case 'N': l.cells[i] = 'idoor:red'; break;
       case 'P': l.start = { x, y }; break;
       case 'M': put('mover', 'h'); break;
       case 'V': put('mover', 'v'); break;

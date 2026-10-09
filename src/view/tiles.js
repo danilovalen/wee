@@ -96,6 +96,18 @@ export function drawCell(g, c, x, y, s, scale = 1) {
       const down = s && pressedAt(s, x, y);
       g.globalAlpha = 0.35; g.beginPath(); g.arc(16, 16, 11, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
       g.beginPath(); g.arc(16, down ? 17 : 15, down ? 6 : 8, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'idoor') {
+      // The negative of a door: dark inside, the colour on the rim and the bars. Open,
+      // a dashed rim around a minus sign.
+      const open = s && !s.open[col];
+      if (open) {
+        g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]);
+        roundRect(g, 11, 14, 10, 4, 1.5); g.fill();
+      } else {
+        g.fillStyle = INK.idoor; roundRect(g, 2, 2, T - 4, T - 4, 4); g.fill(); g.stroke();
+        g.fillStyle = INK[col];
+        for (const bx of [9, 15, 21]) g.fillRect(bx, 5, 2, T - 10);
+      }
     } else {
       const open = s && s.open[col];
       if (open) { g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]); }

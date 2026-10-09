@@ -7,7 +7,7 @@ export const T = 32;
 
 export const INK = {
   puff: '#e3e8f2',
-  goo: '#a6d62f', gooDark: '#5f7d16',
+  goo: '#a6d62f', gooDark: '#5f7d16', idoor: '#0b0d12',
   water: '#1c4d7a', waterHi: '#5fa8e0', shock: '#fff1a8',
   armor: '#8fa3bb',
   floor: '#14171f', grid: '#1c2130', wall: '#3a4256', wallTop: '#4d5770',

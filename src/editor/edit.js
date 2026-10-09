@@ -4,6 +4,7 @@ import { CLOCKWISE, CARRIES_TURRET } from '../rules/base.js';
 import { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } from './palette.js';
 
 const idx = (level, x, y) => y * level.w + x;
+const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');
 const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 
 // Does (x, y) already hold the kind of thing this tool places?
@@ -11,7 +12,7 @@ export function holds(level, x, y, tool) {
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
   if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
-  if (tool === 'button' || tool === 'door' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
+  if (tool === 'button' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;
 }
@@ -39,6 +40,7 @@ export function describe(level, x, y) {
     else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
     else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser relay`);
     else if (kind === 'receiver') parts.push(`${COLOUR_NAME[v]} laser catcher`);
+    else if (kind === 'idoor') parts.push(`${COLOUR_NAME[v]} inverted door`);
     else parts.push(`${COLOUR_NAME[v]} ${kind}`);
   }
   if (level.start.x === x && level.start.y === y) parts.push('Start');
@@ -62,7 +64,7 @@ export function place(level, ui, x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky'].includes(ui.tool)) setCell('');
+    else if (['wall', 'checkpoint', 'button', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
     if (isStart) return out;
@@ -77,15 +79,16 @@ export function place(level, ui, x, y, how) {
     if (isStart) return out;
     removePiece(); setCell('tri:' + ui.corner);
   } else if (t === 'start') {
-    if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
+    if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
     removePiece();
     level.start = { x, y };
   } else if (t === 'wall') {
     if (isStart) return out;
     removePiece(); setCell('wall');
-  } else if (t === 'checkpoint' || t === 'button' || t === 'door' || t === 'receiver' || t === 'sensor') {
-    if ((t === 'door' || t === 'receiver') && isStart) return out;
-    if (t === 'door' || t === 'receiver') removePiece();
+  } else if (t === 'checkpoint' || t === 'button' || t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor') {
+    const solid = t === 'door' || t === 'idoor' || t === 'receiver';
+    if (solid && isStart) return out;
+    if (solid) removePiece();
     setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
   } else if (t === 'turret') {
     if (isStart) return out;
@@ -96,7 +99,7 @@ export function place(level, ui, x, y, how) {
       host.turret = turret;
     } else {
       removePiece();
-      if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
+      if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
       level.entities.push({ kind: 'turret', x, y, turret });
     }
   } else {
@@ -104,7 +107,7 @@ export function place(level, ui, x, y, how) {
     const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: 1, mode: ui.mode } : {}) };
     if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return out;
     removePiece();
-    if (level.cells[i] === 'wall' || level.cells[i].startsWith('door:')) setCell('');
+    if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
     level.entities.push(want);
   }
   if (gone.cell || gone.piece) out.push(gone);

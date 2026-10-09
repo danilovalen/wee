@@ -20,6 +20,7 @@ export const TOOLS = [
   { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },
   { id: 'button', label: 'Button', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
+  { id: 'idoor', label: 'Inverted door', group: 'switches' },
   { id: 'receiver', label: 'Laser catcher', group: 'switches' },
   { id: 'sensor', label: 'Laser relay', group: 'switches' },
 ];

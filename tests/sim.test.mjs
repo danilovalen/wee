@@ -1,7 +1,9 @@
 import { createGame, step, gameText, replay } from '../src/rules/game.js';
 import { worldStep as rawWorldStep } from '../src/rules/pieces.js';
 import { aimKey } from '../src/rules/player.js';
-import { parseLevel, emptyLevel } from '../src/level/format.js';
+import { parseLevel, emptyLevel, isCell } from '../src/level/format.js';
+import { solidCell } from '../src/rules/grid.js';
+import { place, describe } from '../src/editor/edit.js';
 import { RT_PERIOD } from '../src/rules/base.js';
 
 // One move of yours, as the world sees it: pieces on your move start their slide, then
@@ -837,6 +839,65 @@ const LONG = ['##########', '#..P....##', '##########'];
   h.entities[0].slide = 'right';
   for (let i = 0; i < 8; i++) step(h);
   check('a heavy box only stops at another heavy box', at(h.entities[0], 3, 1) && !h.entities[1].dead, JSON.stringify(h.entities));
+}
+
+{ // an inverted door is open until every switch of its colour is held, then closes
+  const s = createGame(room(['#######', '#P.N..#', '#o....#', '#######']));
+  check('with no switch held, an inverted door is open', !s.open.red && !solidCell(s, 3, 1));
+  const lone = createGame(room(['#####', '#PN.#', '#####']));
+  check('with no switch of its colour at all, it is open', !solidCell(lone, 2, 1));
+  s.player.x = 1; s.player.y = 2; step(s);
+  check('pressing the button closes it', s.open.red && solidCell(s, 3, 1));
+  s.player.x = 2; s.player.y = 2; step(s);
+  check('releasing the button opens it again', !s.open.red && !solidCell(s, 3, 1));
+  const t = room(['#######', '#P.N..#', '#B....#', '#######']);
+  t.cells[2 * 7 + 1] = 'button:red';
+  const g = slide(createGame(t), 'right');
+  check('a closed inverted door stops a slide', at(g.player, 2, 1), JSON.stringify(g.player));
+  const both = room(['#######', '#PDN..#', '#.....#', '#######']);
+  both.cells[2 * 7 + 1] = 'button:red';
+  const bg = createGame(both);
+  bg.player.x = 1; bg.player.y = 2; step(bg);
+  check('one colour opens its doors and closes its inverted doors together', !solidCell(bg, 2, 1) && solidCell(bg, 3, 1));
+  const beam = room(['#######', '#T.N..#', '#o....#', '#######']);
+  const bm = createGame(beam);
+  check('an open inverted door lets a beam through', bm.beams[0].path.length === 5, JSON.stringify(bm.beams[0].path));
+  bm.player.x = 1; bm.player.y = 2; step(bm); step(bm);
+  check('a closed one stops it', bm.beams[0].path.length === 2, JSON.stringify(bm.beams[0].path));
+}
+{ // a closing inverted door squashes and is held like a door
+  const idoorRoom = (kind, opts) => {
+    const l = room(['#######', '#N....#', '#.M...#', '#.....#', '#######'], opts);
+    l.cells[2 * 7 + 5] = 'button:red';
+    if (kind) { l.start = { x: 4, y: 3 }; l.entities.push({ kind, x: 1, y: 1, axis: 'h', dir: 1, mode: 'realtime' }); }
+    else l.start = { x: 1, y: 1 };
+    const g = createGame(l);
+    g.checkpoint = { x: 5, y: 3 };
+    worldStep(g, 'right');
+    return g;
+  };
+  const you = idoorRoom(null);
+  check('a closing inverted door squashes you', you.deaths === 1, JSON.stringify(you.player));
+  const arm = idoorRoom(null, { powers: { armored: true } });
+  check('armored, you hold it open', arm.deaths === 0 && !arm.open.red);
+  for (const k of ['enemy', 'box']) {
+    const g = idoorRoom(k);
+    check(`it destroys a ${k}`, g.entities.find(e => e.kind === k).dead && g.open.red);
+  }
+  for (const k of ['strong', 'heavy']) {
+    const g = idoorRoom(k);
+    check(`a ${k} holds it open`, !g.entities.find(e => e.kind === k).dead && !g.open.red);
+  }
+}
+{ // the editor places, names and reads back an inverted door
+  check('idoor:red is a cell', isCell('idoor:red') && !isCell('idoor:pink'));
+  const l = room(['#####', '#P.E#', '#####']);
+  place(l, { tool: 'idoor', colour: 'blue' }, 3, 1, 'place');
+  check('placing one clears the piece there', l.cells[8] === 'idoor:blue' && l.entities.length === 0, JSON.stringify(l.entities));
+  check('Look names it', describe(l, 3, 1) === 'Blue inverted door');
+  check('it is not placed on the start', place(l, { tool: 'idoor', colour: 'red' }, 1, 1, 'place').length === 0 && l.cells[6] === '');
+  place(l, { tool: 'start' }, 3, 1, 'place');
+  check('moving the start onto one clears it', l.cells[8] === '' && l.start.x === 3);
 }
 
 done();
