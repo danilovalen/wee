@@ -109,7 +109,7 @@ export function createGame(level) {
     w: l.w, h: l.h, cells: l.cells, powers: l.powers, clock: l.clock,
     start: { ...l.start },
     checkpoint: { ...l.start },
-    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, snap: true },
+    player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
     entities: freshPieces(l.entities),
     open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, deaths: 0, events: [],
   };
@@ -278,7 +278,7 @@ function checkStuck(s) {
 function respawn(s) {
   for (const e of s.entities) e.dead = true;
   s.entities = freshPieces(s.origin);
-  Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, snap: true });
+  Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, pushing: null, snap: true });
   refreshDoors(s);
 }
 
@@ -300,6 +300,7 @@ function playerStep(s, d, diving) {
   if (t.death) { die(s); return 'died'; }
   const nx = t.x, ny = t.y, e = entAt(s, nx, ny), g = p.stuck && !p.stuck.ride ? stuckTo(s) : null;
   const dx = nx - p.x, dy = ny - p.y, ahead = !!e && e === g;
+  let pushed = null;
   if (ahead) {
     // The glued box is ahead: it goes first, or it falls off and stops you.
     const b = shift(s, g.x, g.y, dx, dy, false, g);
@@ -313,9 +314,10 @@ function playerStep(s, d, diving) {
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d, false))) land(s, e, b);
+    } else if (e.kind === 'box' && (b = pushTo(s, nx, ny, t.d, false))) { if (land(s, e, b)) pushed = { id: e.id, d: b.d }; }
     else return 'blocked';
   }
+  p.pushing = pushed;
   p.x = nx; p.y = ny; p.moved++;
   if (p.dir) p.dir = t.d;
   if (g && !ahead) drag(s, g, dx, dy);
@@ -555,6 +557,12 @@ function unhide(s) {
   if (s.entities.some(e => !e.dead && e.x === p.x && e.y === p.y && crushes(s, e)) || solidCell(s, p.x, p.y)) { s.events.push({ type: 'squash', x: p.x, y: p.y }); die(s); }
 }
 
+// Turning back mid-push, the box you were pushing slides on alone, the way it was going.
+function letGo(s) {
+  const pu = s.player.pushing, e = pu && s.entities.find(o => o.id === pu.id && !o.dead);
+  if (e && !e.slide) e.slide = pu.d;
+}
+
 // Besides keys, a run takes settings changed mid-play: 'power:dive:0', 'clock:slide'.
 function input(s, k) {
   const p = s.player;
@@ -577,7 +585,7 @@ function input(s, k) {
   if (p.stuck && p.stuck.ride) unstick(s);
   if (!p.dir) { p.dir = k; p.moved = 0; return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
-  else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { p.dir = k; s.events.push({ type: 'boomerang' }); } }
+  else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { letGo(s); p.dir = k; s.events.push({ type: 'boomerang' }); } }
   else if (s.powers.laser) laser(s, k);
 }
 

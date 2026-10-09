@@ -736,4 +736,29 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a turret points where it started', aim === 'right' && tg.beams[0].d === 'up', aim + ' ' + tg.beams[0].d);
 }
 
+{ // turning back mid-push: the box slides on alone, the way it was going
+  const g = createGame(room(['##########', '#PB......#', '##########']));
+  step(g, ['right']); step(g); step(g);
+  const bx = g.entities[0].x;
+  step(g, ['left']);
+  for (let i = 0; i < 10; i++) step(g);
+  check('the box you were pushing slides on to the wall', bx === 5 && at(g.entities[0], 8, 1), JSON.stringify(g.entities[0]));
+  check('and you slide back', at(g.player, 1, 1), JSON.stringify(g.player));
+  const f = createGame(room(['##########', '#P...B...#', '##########']));
+  step(f, ['right']); step(f);
+  step(f, ['left']);
+  for (let i = 0; i < 10; i++) step(f);
+  check('a box you were not pushing stays put', at(f.entities[0], 5, 1), JSON.stringify(f.entities[0]));
+  const n = createGame(room(['##########', '#PB......#', '##########'], { powers: { boomerang: false } }));
+  step(n, ['right']); step(n); step(n);
+  step(n, ['left']);
+  for (let i = 0; i < 10; i++) step(n);
+  check('without Boomerang you keep pushing', at(n.entities[0], 8, 1) && at(n.player, 7, 1));
+  const gl = slide(createGame(room(['##########', '#P%.B....#', '#........#', '##########'])), 'right');
+  slide(gl, 'left');
+  step(gl, ['right']); step(gl);
+  step(gl, ['left']); step(gl);
+  check('a glued box does not slide off on a turn', gl.player.stuck && Math.abs(gl.entities[0].x - gl.player.x) === 1, JSON.stringify([gl.player, gl.entities[0]]));
+}
+
 done();

@@ -162,6 +162,10 @@ const M = [
   ['style.css', "  .ghead { display: block; }\n", "", 'browser'],
   ['src/sim.js', "  s.entities = freshPieces(s.origin);\n", "", 'sim'],
   ['src/sim.js', "  for (const e of s.entities) e.dead = true;\n", "", 'sim'],
+  ['src/sim.js', "if (s.powers.boomerang) { letGo(s); p.dir = k;", "if (s.powers.boomerang) { p.dir = k;", 'sim'],
+  ['src/sim.js', "{ if (land(s, e, b)) pushed = { id: e.id, d: b.d }; }", "land(s, e, b);", 'sim'],
+  ['src/sim.js', "  p.pushing = pushed;\n", "", 'sim'],
+  ['src/sim.js', "if (e && !e.slide) e.slide = pu.d;", "if (e && !e.slide) e.slide = OPPOSITE[pu.d];", 'sim'],
   ['src/main.js', "tool === 'receiver' || tool === 'sensor' || tool === 'gate') return", "tool === 'receiver' || tool === 'gate') return", 'browser'],
   ['src/render.js', "drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);\n  g.restore();", "g.restore();", 'browser'],
 ];
