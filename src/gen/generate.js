@@ -13,10 +13,11 @@ const clamp = (v, [a, b]) => Math.max(a, Math.min(b, Math.round(+v || a)));
 const STALE = 40;
 
 // Fills in defaults, keeps the numbers in range, and turns on what a Must or Allowed
-// ingredient brings with it (a laser catcher needs a turret).
+// ingredient brings with it (a laser catcher needs a turret). One that can never change the
+// answer (a checkpoint) is Allowed at most.
 export function normalize(recipe) {
   const ing = {};
-  for (const [id, v] of Object.entries(recipe.ing || {})) if (ING[id] && (v === 'must' || v === 'allowed')) ing[id] = v;
+  for (const [id, v] of Object.entries(recipe.ing || {})) if (ING[id] && (v === 'must' || v === 'allowed')) ing[id] = ING[id].allowedOnly ? 'allowed' : v;
   for (let grew = true; grew;) {
     grew = false;
     for (const id of Object.keys(ing)) for (const w of ING[id].with || []) if (!ing[w]) { ing[w] = 'allowed'; grew = true; }

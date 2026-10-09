@@ -38,7 +38,7 @@ function verdictText(entry) {
   if (v.status !== 'solved') return v.status === 'off' ? 'Closest room holds something set to Off.' : 'Closest room has no solution yet.';
   const lines = [`Par ${v.par}.`];
   if (v.par < recipe.min || v.par > recipe.max) lines.push(`Wanted ${recipe.min} to ${recipe.max} moves.`);
-  if (v.missing.length) lines.push(`The solution does not use: ${v.missing.map(names).join(', ')}.`);
+  if (v.missing.length) lines.push(`Works the same without: ${v.missing.map(names).join(', ')}.`);
   return lines.join(' ');
 }
 
@@ -134,7 +134,8 @@ export function buildGenerator(actions) {
   $('genIng').replaceChildren(...INGREDIENTS.map(g => {
     const li = document.createElement('li'), label = document.createElement('label'), sel = document.createElement('select');
     sel.dataset.id = g.id;
-    sel.append(...CHOICES.map(([v, t]) => new Option(t, v)));
+    sel.append(...CHOICES.filter(([v]) => !(g.allowedOnly && v === 'must')).map(([v, t]) => new Option(t, v)));
+    if (g.allowedOnly) label.title = g.allowedOnly;
     sel.onchange = () => fillForm(recipeFromForm());
     label.append(g.label, sel);
     li.append(label);

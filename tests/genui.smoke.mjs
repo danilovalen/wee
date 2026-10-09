@@ -23,6 +23,7 @@ try {
   await page.evaluate(() => window.wee.roomsReady);
   await openPanel();
   check('Generate a room opens its own panel', await page.locator('#genBox').isVisible() && !(await page.locator('#roomsBox').isVisible()));
+  check('a checkpoint cannot be Must use, and says why', await page.evaluate(() => { const s = document.querySelector('#genIng select[data-id=checkpoint]'); return ![...s.options].some(o => o.value === 'must') && /never dies/.test(s.closest('label').title); }));
   check('every ingredient starts Off', await page.evaluate(() => [...document.querySelectorAll('#genIng select')].every(s => s.value === '')));
   await page.locator('#genIng details, .genIngBox summary').first().click();
   await page.selectOption('#genIng select[data-id=receiver]', 'must');

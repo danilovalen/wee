@@ -1,8 +1,7 @@
 // What a generated room can be made of. Each ingredient says which index tags mark it in
-// a room (so Off can be checked), what its solution must do for Must use to count (any
-// one of needs; none means being in the room is enough), what else it brings along, and
-// how to put one in a level. 'shapes' counts a piece or tile that changes the solution: the
-// room without it has a shorter one, or none. Labels are draft copy.
+// a room (so Off can be checked), what else it brings along, how to put one in a level, and
+// how to take it out again: Must use counts only when the room without it has no solution
+// or a different number of moves. Labels are draft copy.
 import { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } from '../rules/base.js';
 
 const inside = (l, i) => { const x = i % l.w, y = (i - x) / l.w; return x > 0 && y > 0 && x < l.w - 1 && y < l.h - 1; };
@@ -44,35 +43,44 @@ function aimAt(l, r, i) {
 
 const beamSwitch = kind => (l, r, ctx) => { const col = colour(l, r, ctx), i = tile(l, r, kind + ':' + col); tile(l, r, 'door:' + col); if (i >= 0) aimAt(l, r, i); };
 
+// Taking an ingredient out. By default every piece and tile of its kind goes; a door stays
+// shut by losing its buttons, a power is switched off.
+const kindOf = g => g.tags[0].split(':')[1];
+const drop = (l, kind) => ({ ...l, entities: l.entities.filter(e => e.kind !== kind), cells: l.cells.map(c => c.split(':')[0] === kind ? '' : c) });
+const noButtons = l => ({ ...l, cells: l.cells.map(c => c.startsWith('button:') ? '' : c) });
+export const knock = (g, l) => g.knock ? g.knock(l) : g.power ? { ...l, powers: { ...l.powers, [g.power]: false } } : drop(l, kindOf(g));
+
 // Beam switches come before doors, so a door can share their colour instead of adding a button.
+// A door opens only while its button is held, and you cannot hold it and walk through, so a
+// door brings a box, and two buttons bring two.
 export const INGREDIENTS = [
-  { id: 'box', label: 'Box', tags: ['piece:box'], needs: ['use:push'], place: (l, r) => piece(l, r, { kind: 'box' }) },
-  { id: 'heavy', label: 'Heavy box', tags: ['piece:heavy'], needs: ['use:squash', 'touch:heavy', 'shapes'], place: (l, r) => piece(l, r, { kind: 'heavy' }) },
-  { id: 'receiver', label: 'Laser catcher', tags: ['tile:receiver'], with: ['turret', 'door'], needs: ['use:lit'], place: beamSwitch('receiver') },
-  { id: 'sensor', label: 'Laser relay', tags: ['tile:sensor'], with: ['turret', 'door'], needs: ['use:lit'], place: beamSwitch('sensor') },
-  { id: 'door', label: 'Door and button', tags: ['tile:door'], needs: ['use:door-opens'], place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 1, ctx) },
-  { id: 'idoor', label: 'Inverted door', tags: ['tile:idoor'], needs: ['use:idoor-closes'], place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 1, ctx, 'idoor') },
-  { id: 'and', label: 'Two buttons, one door', tags: ['wiring:and'], with: ['door', 'box'], needs: ['use:door-opens'], place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 2, ctx) },
-  { id: 'colours', label: 'Two colours', tags: ['wiring:colours'], with: ['door'], needs: ['use:door-opens'], place: (l, r, ctx) => { switches(l, r, colour(l, r, ctx), 1, ctx); switches(l, r, colour(l, r, ctx), 1, ctx); } },
-  { id: 'tri', label: 'Triangle', tags: ['tile:tri'], needs: ['use:tri'], place: (l, r) => tile(l, r, 'tri:' + r.pick(CORNERS)) },
-  { id: 'gate', label: 'One-way', tags: ['tile:gate'], needs: ['use:gate'], place: (l, r) => tile(l, r, 'gate:' + r.pick(CLOCKWISE)) },
-  { id: 'spring', label: 'Spring', tags: ['tile:spring'], needs: ['use:spring'], place: (l, r) => tile(l, r, 'spring:' + r.pick(CLOCKWISE)) },
-  { id: 'death', label: 'Death block', tags: ['tile:death'], with: ['box'], needs: ['use:death', 'shapes'], place: (l, r) => { tile(l, r, 'death'); piece(l, r, { kind: 'box' }); } },
-  { id: 'water', label: 'Water', tags: ['tile:water'], needs: ['touch:water', 'use:swim', 'shapes'], place: (l, r) => { const i = tile(l, r, 'water'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'water'; } },
-  { id: 'sticky', label: 'Sticky puddle', tags: ['tile:sticky'], with: ['box'], needs: ['use:stick', 'use:glue'], place: (l, r) => { tile(l, r, 'sticky'); piece(l, r, { kind: 'box' }); } },
-  { id: 'checkpoint', label: 'Checkpoint', tags: ['tile:checkpoint'], needs: ['use:checkpoint'], place: (l, r) => tile(l, r, 'checkpoint') },
-  { id: 'mover', label: 'Moving block', tags: ['piece:mover'], needs: ['use:pushed', 'touch:mover', 'shapes'], place: (l, r) => piece(l, r, { kind: 'mover', axis: r.pick(['h', 'v']) }) },
-  { id: 'follow', label: 'Moves the same way as you', tags: ['clock:follow'], with: ['mover'], needs: null, place: (l, r) => piece(l, r, { kind: 'mover', axis: 'h', mode: 'follow' }) },
-  { id: 'enemy', label: 'Weak enemy', tags: ['piece:enemy'], needs: ['touch:enemy', 'shapes'], place: (l, r) => piece(l, r, { kind: 'enemy', axis: r.pick(['h', 'v']) }) },
-  { id: 'strong', label: 'Strong enemy', tags: ['piece:strong'], needs: ['touch:strong', 'shapes'], place: (l, r) => piece(l, r, { kind: 'strong', axis: r.pick(['h', 'v']) }) },
-  { id: 'turret', label: 'Laser turret', tags: ['piece:turret'], needs: ['touch:turret', 'use:lit', 'use:beam-kill', 'shapes'], place: (l, r) => piece(l, r, { kind: 'turret', turret: { dirs: [r.pick(CLOCKWISE)], mode: 'input' } }) },
-  { id: 'mounted', label: 'Mounted turret', tags: ['piece:mounted'], with: ['box'], needs: ['touch:mounted'], place: (l, r) => piece(l, r, { kind: 'box', turret: { dirs: [r.pick(CLOCKWISE)], mode: 'input' } }) },
-  { id: 'boomerang', label: 'Boomerang', tags: ['power:boomerang'], with: ['box'], needs: ['use:boomerang'], power: 'boomerang' },
-  { id: 'dive', label: 'Dive', tags: ['power:dive'], with: ['enemy'], needs: ['use:dive'], power: 'dive' },
-  { id: 'laser', label: 'Laser', tags: ['power:laser'], with: ['enemy'], needs: ['use:laser'], power: 'laser' },
-  { id: 'cycle', label: 'Cycle (hide)', tags: ['power:cycle'], with: ['mover'], needs: ['use:hide'], power: 'cycle' },
-  { id: 'swim', label: 'Swim', tags: ['power:swim'], with: ['water'], needs: ['use:swim'], power: 'swim' },
-  { id: 'armored', label: 'Armored', tags: ['power:armored'], needs: null, power: 'armored' },
+  { id: 'box', label: 'Box', tags: ['piece:box'], place: (l, r) => piece(l, r, { kind: 'box' }) },
+  { id: 'heavy', label: 'Heavy box', tags: ['piece:heavy'], place: (l, r) => piece(l, r, { kind: 'heavy' }) },
+  { id: 'receiver', label: 'Laser catcher', tags: ['tile:receiver'], with: ['turret', 'door'], knock: l => ({ ...l, cells: l.cells.map(c => c.startsWith('receiver:') ? 'wall' : c) }), place: beamSwitch('receiver') },
+  { id: 'sensor', label: 'Laser relay', tags: ['tile:sensor'], with: ['turret', 'door'], place: beamSwitch('sensor') },
+  { id: 'door', label: 'Door and button', tags: ['tile:door'], with: ['box'], knock: noButtons, place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 1, ctx) },
+  { id: 'idoor', label: 'Inverted door', tags: ['tile:idoor'], knock: noButtons, place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 1, ctx, 'idoor') },
+  { id: 'and', label: 'Two buttons, one door', tags: ['wiring:and'], with: ['door', 'box'], knock: noButtons, place: (l, r, ctx) => { switches(l, r, colour(l, r, ctx), 2, ctx); piece(l, r, { kind: 'box' }); piece(l, r, { kind: 'box' }); } },
+  { id: 'colours', label: 'Two colours', tags: ['wiring:colours'], with: ['door'], knock: noButtons, place: (l, r, ctx) => { switches(l, r, colour(l, r, ctx), 1, ctx); switches(l, r, colour(l, r, ctx), 1, ctx); } },
+  { id: 'tri', label: 'Triangle', tags: ['tile:tri'], place: (l, r) => tile(l, r, 'tri:' + r.pick(CORNERS)) },
+  { id: 'gate', label: 'One-way', tags: ['tile:gate'], place: (l, r) => tile(l, r, 'gate:' + r.pick(CLOCKWISE)) },
+  { id: 'spring', label: 'Spring', tags: ['tile:spring'], place: (l, r) => tile(l, r, 'spring:' + r.pick(CLOCKWISE)) },
+  { id: 'death', label: 'Death block', tags: ['tile:death'], with: ['box'], place: (l, r) => { tile(l, r, 'death'); piece(l, r, { kind: 'box' }); } },
+  { id: 'water', label: 'Water', tags: ['tile:water'], place: (l, r) => { const i = tile(l, r, 'water'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'water'; } },
+  { id: 'sticky', label: 'Sticky puddle', tags: ['tile:sticky'], with: ['box'], place: (l, r) => { tile(l, r, 'sticky'); piece(l, r, { kind: 'box' }); } },
+  { id: 'checkpoint', label: 'Checkpoint', tags: ['tile:checkpoint'], allowedOnly: 'A solution never dies, so a checkpoint cannot change it.', place: (l, r) => tile(l, r, 'checkpoint') },
+  { id: 'mover', label: 'Moving block', tags: ['piece:mover'], place: (l, r) => piece(l, r, { kind: 'mover', axis: r.pick(['h', 'v']) }) },
+  { id: 'follow', label: 'Moves the same way as you', tags: ['clock:follow'], with: ['mover'], knock: l => ({ ...l, entities: l.entities.map(e => e.mode === 'follow' ? { ...e, mode: 'input' } : e) }), place: (l, r) => piece(l, r, { kind: 'mover', axis: 'h', mode: 'follow' }) },
+  { id: 'enemy', label: 'Weak enemy', tags: ['piece:enemy'], place: (l, r) => piece(l, r, { kind: 'enemy', axis: r.pick(['h', 'v']) }) },
+  { id: 'strong', label: 'Strong enemy', tags: ['piece:strong'], place: (l, r) => piece(l, r, { kind: 'strong', axis: r.pick(['h', 'v']) }) },
+  { id: 'turret', label: 'Laser turret', tags: ['piece:turret'], place: (l, r) => piece(l, r, { kind: 'turret', turret: { dirs: [r.pick(CLOCKWISE)], mode: 'input' } }) },
+  { id: 'mounted', label: 'Mounted turret', tags: ['piece:mounted'], with: ['box'], knock: l => ({ ...l, entities: l.entities.map(e => e.turret && e.kind !== 'turret' ? { ...e, turret: undefined } : e) }), place: (l, r) => piece(l, r, { kind: 'box', turret: { dirs: [r.pick(CLOCKWISE)], mode: 'input' } }) },
+  { id: 'boomerang', label: 'Boomerang', tags: ['power:boomerang'], with: ['box'], power: 'boomerang' },
+  { id: 'dive', label: 'Dive', tags: ['power:dive'], with: ['enemy'], power: 'dive' },
+  { id: 'laser', label: 'Laser', tags: ['power:laser'], with: ['enemy'], power: 'laser' },
+  { id: 'cycle', label: 'Cycle (hide)', tags: ['power:cycle'], with: ['mover'], power: 'cycle' },
+  { id: 'swim', label: 'Swim', tags: ['power:swim'], with: ['water'], power: 'swim' },
+  { id: 'armored', label: 'Armored', tags: ['power:armored'], with: ['enemy'], power: 'armored' },
 ];
 
 export const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));

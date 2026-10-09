@@ -11,12 +11,18 @@ another way, "As built" says so and why.
   cannot check them, and the panel says so) and "On your move" (every piece has it unless told
   otherwise). Powers are ingredients like any other. An ingredient that needs another brings it
   as Allowed (a laser catcher brings a turret and a door), and the form shows that.
-- **Must use, in detail.** Each ingredient names what its solution must do: push the box, open
-  the door, pass the one-way, and so on, read off the index's `use:` tags plus `touch:` tags
-  (a piece you push, stop against or that dies; a tile you stop against). Hazards and obstacles
-  (heavy box, water, death block, moving block, enemies, turret) also count when they **shape**
-  the solution: the room without them has a shorter solution, or none. An enemy you never meet
-  can still be the reason you go the long way.
+- **Must use, in detail** (owner, 2026-10-09, replacing "the solution touches it"): the room
+  is solved again with the ingredient taken out, and it counts only when that room has **no
+  solution or a different number of moves**. Taken out means: every piece and tile of its kind
+  removed; a door, inverted door or two-colour or two-button set loses its buttons, so it never
+  changes; a laser catcher becomes wall; a power is switched off; a follower moves on your move;
+  a mounted turret leaves its box. A search that hits its cap proves nothing and counts as not
+  shown. Why: under the old rule 15 of 53 generated rooms worked the same without the
+  mechanism they were asked to use; doors were all 7 of the door rooms, because a door opens
+  only while its button is held and you cannot hold it and walk through, so a door now brings a
+  box (two buttons, two). A checkpoint can never change the answer, since a solution never
+  dies, so it is Allowed at most and the panel says why. Under the new rule 0 of 52 fits are
+  decorative.
 - **No Web Worker.** The loop runs in 25 ms slices on the page, like Check. The perf gate runs a
   12x12 turret-and-enemy recipe at 4x slower CPU and no task passes 250 ms, so a worker would add a
   second bundle for nothing.
@@ -31,9 +37,10 @@ another way, "As built" says so and why.
   saw a repeated state in any room with a turret and always ran to its cap. The state key now
   takes the aim modulo the turret's directions: Check on turret rooms ends, and laser catcher
   rooms generate in about 0.5 s instead of 20 to 50 s.
-- **Measured** (Node, 8x8, 6 to 12 moves, each ingredient alone as Must, seeds 1 and 2): 53 of 54
-  fit, most under 0.5 s, the slowest about 1.3 s. The one miss is Two buttons, one door on seed 1,
-  2,500 tries; seed 2 fits in 2 s.
+- **Measured** (Node, 8x8, 6 to 12 moves, each ingredient alone as Must, seeds 1 and 2, the
+  knockout rule): 50 of 52 fit within 2,500 tries, most under 0.5 s, doors 1 to 2.5 s, the
+  slowest about 4.6 s. Two buttons, one door misses on both seeds: it needs both boxes pushed
+  onto both buttons, and 2,500 tries are not enough; give it more seconds or a bigger room.
 
 The point: start a new room, pick what it should contain and how long it should take, press
 Generate, and get one room that fits, made in the page while you watch. It is a way to feel the
@@ -141,7 +148,8 @@ A new folder, `src/gen/`, allowed to import `rules/`, `level/` and `solve/`, nev
 ## Open questions
 
 1. ~~Must-use: used, or needed?~~ **Used** (owner, 2026-10-09): the shortest solution touches it.
-   "Needed" (unsolvable without it) stays a possible later option.
+   **Revised the same day** after measuring: it must **change the answer** (no solution, or a
+   different number of moves, without it). See As built.
 2. ~~Template or empty frame?~~ **Empty frame** (owner, 2026-10-09).
 3. ~~Shelf names?~~ **Made from the recipe** (owner, 2026-10-09): e.g. "8x8 · 6-12 moves · Door,
    Box". No typing; a name of your own comes with Save.
