@@ -128,11 +128,15 @@ The rules are deterministic and tile-based, which is what makes ice puzzles solv
 
 ## Phase 9: saved solution check
 
+**Done 2026-10-09.** The solution comes from Check at save time, not from recording a run.
+
 - **Record solution** saves the keys of a run that reaches the goal.
 - After every edit the saved solution is replayed in the background; if it stops reaching the
   goal, the level shows a warning with the slide where it breaks.
 
 ## Phase 10: lint
+
+**Done 2026-10-09**, shown under the room rather than in the Levels panel; "a goal the stop map cannot reach" is what Check already answers.
 
 Each a warning in the Levels panel, with the tile highlighted on tap:
 

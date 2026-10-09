@@ -1,0 +1,31 @@
+// Lint warnings, and the saved-solution check.
+import { lint, brokenAt } from '../src/solve/lint.js';
+import { solve } from '../src/solve/solve.js';
+import { room, suite } from './lib.mjs';
+
+const { check, done } = suite('lint');
+const has = (l, text) => lint(l).some(w => w.msg.includes(text));
+check('a clean room has no warnings', lint(room(['#####', '#P.o#', '#..D#', '#####'])).length === 0, JSON.stringify(lint(room(['#####', '#P.o#', '#..D#', '#####']))));
+const nd = room(['#####', '#P..#', '#..D#', '#####']);
+check('a door with no switch of its colour', has(nd, 'red door with no red switch') && lint(nd)[0].x === 3 && lint(nd)[0].y === 2);
+const id = room(['#####', '#P..#', '#...#', '#####']); id.cells[11] = 'idoor:blue';
+check('an inverted door counts as a door', has(id, 'blue door with no blue switch'));
+check('a switch with no door', has(room(['#####', '#Po.#', '#####']), 'red switch with no red door'));
+check('a laser relay is a switch', has(room(['#####', '#Ps.#', '#####']), 'red switch with no red door'));
+const tw = room(['#####', '#PT.#', '#####']); tw.entities[0].turret.dirs = ['up'];
+check('a turret aimed into a block', has(tw, 'fires up straight into a block'));
+const ts = room(['#####', '#PT.#', '#####']); ts.cells[8] = 'spring:up';
+check('a spring counts as a block for a turret', lint(ts).some(w => w.msg.includes('fires right straight into a block')));
+check('a turret aimed into open floor is fine', !has(room(['#####', '#PT.#', '#####']), 'into a block'));
+const boxed = room(['#####', '#P#.#', '##B##', '#####']);
+check('a piece walled in on every side', has(boxed, 'piece is walled in'));
+check('the start walled in', has(room(['#####', '#P#.#', '##..#', '#####']), 'start is walled in'));
+check('a turret in a corner is not a walled-in piece', !has(room(['###', '#T#', '###']), 'piece is walled in'));
+const g = room(['#####', '#P..#', '#####']); g.cells[8] = 'goal';
+const sol = solve(g).moves;
+check('a saved solution that still wins is not broken', brokenAt(g, sol) === 0);
+const moved = JSON.parse(JSON.stringify(g)); moved.cells[8] = ''; moved.cells[7] = 'goal';
+check('one that no longer reaches the goal is broken at its last move', brokenAt(moved, sol) === 1);
+const deadly = JSON.parse(JSON.stringify(g)); deadly.cells[7] = 'death';
+check('one that now dies says on which move', brokenAt(deadly, ['right', 'left']) === 1);
+done();

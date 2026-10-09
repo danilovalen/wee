@@ -1,6 +1,8 @@
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
 import { search, parseMove } from '../solve/solve.js';
+import { lint, brokenAt } from '../solve/lint.js';
+import { now } from './dom.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 
@@ -59,4 +61,27 @@ export function feedDemo(game) {
   const { k, at, then } = parseMove(S.demo.shift());
   S.pending.push(k);
   if (then) S.demoWait = { i: 0, at, then };
+}
+
+// Warnings about the room, and whether its saved solution still wins. Tap one to see where.
+let lintStamp = null;
+export function syncLint() {
+  if (S.mode !== 'edit') { $('lintBox').hidden = true; return; }
+  const stamp = JSON.stringify(S.level) + (S.room && S.room.solution ? S.room.solution.join() : '');
+  if (stamp === lintStamp) return;
+  lintStamp = stamp;
+  const warns = lint(S.level), sol = S.room && S.room.solution;
+  if (sol) {
+    const n = brokenAt(S.level, sol);
+    if (n) warns.unshift({ x: S.level.start.x, y: S.level.start.y, msg: `The saved solution no longer wins: it breaks at move ${n} of ${sol.length}. Check again and save.` });
+  }
+  $('lintBox').hidden = !warns.length;
+  $('lintSum').textContent = `${warns.length} ${warns.length === 1 ? 'warning' : 'warnings'}`;
+  $('lintList').replaceChildren(...warns.map(w => {
+    const li = document.createElement('li'), b = document.createElement('button');
+    b.type = 'button'; b.textContent = w.msg;
+    b.onclick = () => S.fx.push({ type: 'flash', x: w.x, y: w.y, at: now() });
+    li.append(b);
+    return li;
+  }));
 }

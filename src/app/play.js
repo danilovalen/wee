@@ -63,7 +63,7 @@ export function frame(t) {
 
 export function render() {
   const t = now();
-  S.fx = S.fx.filter(f => t - f.at < 400);
+  S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
   else drawEdit(g, S.level, S.hover, S.fx, t);
 }

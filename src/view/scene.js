@@ -21,6 +21,12 @@ export function drawEdit(g, level, hover, fx, now) {
     if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);
     if (f.piece) drawPiece(g, f.piece, f.x * T, f.y * T, 1 - ease(t) * 0.8, 1 - t);
   }
+  // A tile a warning points at gets a gold ring that fades.
+  for (const f of fx) if (f.type === 'flash' && now - f.at < 900) {
+    const t = (now - f.at) / 900;
+    g.strokeStyle = INK.goal; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
+    g.strokeRect(f.x * T + 2, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
+  }
   if (hover) {
     g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2;
     g.strokeRect(hover.x * T + 1, hover.y * T + 1, T - 2, T - 2);

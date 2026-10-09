@@ -180,6 +180,16 @@ const M = [
   ['src', "  p.from = { x: p.x, y: p.y };\n", "", 'sim'],
   ['src', "if (!ev.repeat) { S.demo = null; S.pending.push(aim(k)); }", "if (!ev.repeat) { S.demo = null; S.pending.push(k); }", 'browser'],
   ['src', "const CRUSHABLE = ['enemy', 'strong', 'box'];", "const CRUSHABLE = ['enemy', 'strong'];", 'sim'],
+  ['src', "const fixed = (l, x, y) => x < 0 || y < 0 || x >= l.w || y >= l.h || /^(wall|receiver:|spring:)/.test(l.cells[y * l.w + x]);", "const fixed = (l, x, y) => x < 0 || y < 0 || x >= l.w || y >= l.h || /^(wall)/.test(l.cells[y * l.w + x]);", "lint"],
+  ['src', "    if (kind === 'door' || kind === 'idoor') (doors[col] ||= []).push(i);", "    if (kind === 'door') (doors[col] ||= []).push(i);", "lint"],
+  ['src', "    if (kind === 'button' || kind === 'receiver' || kind === 'sensor') (switches[col] ||= []).push(i);", "    if (kind === 'button' || kind === 'receiver') (switches[col] ||= []).push(i);", "lint"],
+  ['src', "    if (e.kind !== 'turret' && Object.values(DIRS)", "    if (Object.values(DIRS)", "lint"],
+  ['src', "    if (s.deaths !== deaths) return n + 1;\n", "", "lint"],
+  ['src', "  return s.won ? 0 : moves.length;", "  return 0;", "lint"],
+  ['src', "    if (n) warns.unshift(", "    if (false) warns.unshift(", "browser"],
+  ['src', "  $('lintBox').hidden = !warns.length;", "  $('lintBox').hidden = true;", "browser"],
+  ['src', "    b.onclick = () => S.fx.push({ type: 'flash', x: w.x, y: w.y, at: now() });", "    b.onclick = () => {};", "browser"],
+  ['src', "  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null,", "  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: null,", "browser"],
   ['src', "  for (let i = 1; i <= limit(t) && !settled(t); i++) step(t, i === at ? [then] : []);", "  for (let i = 1; i <= limit(t) && !settled(t); i++) step(t);", "solve"],
   ['src', "      if (pw.dive) out.push(`${d}@${i}:${pd}`);\n", "", "solve"],
   ['src', "      for (const k of [...keys, ...powerMoves(s)]) {", "      for (const k of keys) {", "solve"],
@@ -299,7 +309,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }

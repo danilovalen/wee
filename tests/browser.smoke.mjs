@@ -338,6 +338,24 @@ try {
   check('and is listed as not explored', (await page.textContent('#unexplored')).includes('A spring launches'));
   await page.selectOption('#tagFilter', '');
   await page.keyboard.press('Escape');
+  check('a room with nothing wrong shows no warnings', !(await page.locator('#lintBox').isVisible()));
+  await page.click('#roomsBtn');
+  await page.locator('#roomList .roomRow', { hasText: 'Par room' }).click();
+  const blocked = JSON.parse(JSON.stringify(turnRoom)); blocked.cells[2 * 5 + 3] = 'wall';
+  await page.evaluate(l => window.wee.loadLevel(l), blocked);
+  check('editing the room so its saved solution fails says so', (await page.textContent('#lintList')).includes('saved solution no longer wins'), await page.textContent('#lintList'));
+  const lone = room(['#####', '#P.D#', '#####']);
+  await page.evaluate(l => window.wee.loadLevel(l), lone);
+  check('a door with no switch is a warning', (await page.textContent('#lintSum')) === '2 warnings' && (await page.textContent('#lintList')).includes('red door with no red switch'), await page.textContent('#lintList'));
+  await page.click('#lintBox summary');
+  await page.locator('#lintList button').last().click();
+  await page.waitForTimeout(60);
+  const gold = await page.evaluate(() => {
+    const c = document.getElementById('game'), tile = c.width / window.wee.getLevel().w;
+    const d = c.getContext('2d').getImageData(Math.round(3 * tile + tile * 0.065), Math.round(1.5 * tile), 1, 1).data;
+    return [d[0], d[1], d[2]];
+  });
+  check('tapping a warning flashes its tile', gold[0] > 180 && gold[1] > 130 && gold[2] < 140, gold.join());
   await page.evaluate(l => window.wee.loadLevel(l), goalRoom);
   await page.keyboard.press('e');
   check('a run starts at Moves 0', (await page.textContent('#moves')) === 'Moves 0');

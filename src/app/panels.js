@@ -9,7 +9,7 @@ import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch } from './dom.js';
 import { change, step as undoStep, syncUndo } from './undo.js';
-import { runCheck, syncCheck } from './check.js';
+import { runCheck, syncCheck, syncLint } from './check.js';
 import { syncRoomsButton } from './rooms.js';
 
 export function keysText() {
@@ -126,6 +126,7 @@ export function syncPanel() {
   const ui = S.ui, level = S.level;
   syncUndo();
   syncCheck();
+  syncLint();
   syncRoomsButton();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });

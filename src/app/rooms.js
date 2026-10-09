@@ -27,7 +27,7 @@ function remember(id) { try { if (id) localStorage.setItem(LAST, id); else local
 
 export function openRoom(level, meta) {
   S.level = level;
-  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', saved: stampOf(level), edited: false };
+  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null, saved: stampOf(level), edited: false };
   S.history = newHistory();
   remember(S.room.id);
   A.setMode('edit'); A.syncPanel(); A.fit();
@@ -54,7 +54,7 @@ export async function save(asNew) {
   try {
     await put(joinRoom({ id, name, note: $('roomNote').value, solution, uses: solution ? uses(S.level, solution) : [] }, S.level));
   } catch (e) { say(e.message); return false; }
-  Object.assign(S.room, { id, name, note: $('roomNote').value, saved: stampOf(S.level), edited: false });
+  Object.assign(S.room, { id, name, note: $('roomNote').value, solution, saved: stampOf(S.level), edited: false });
   remember(id);
   say(`Saved "${name}".`);
   fillCurrent(); syncRoomsButton();

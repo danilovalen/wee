@@ -2,7 +2,7 @@
 import { record, undo, redo } from '../editor/history.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
-import { syncCheck } from './check.js';
+import { syncCheck, syncLint } from './check.js';
 import { syncRoomsButton } from './rooms.js';
 
 export function syncUndo() {
@@ -18,6 +18,7 @@ export function end() {
   S.before = null;
   syncUndo();
   syncCheck();
+  syncLint();
   syncRoomsButton();
 }
 
