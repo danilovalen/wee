@@ -157,6 +157,9 @@ const M = [
   ['src/sim.js', "if (!e || p.hidden || e.x !== p.x + st.dx || e.y !== p.y + st.dy) { unstick(s); return; }", "if (!e || p.hidden) { unstick(s); return; }", 'sim'],
   ['src/sim.js', "if (c === 'death' || c === 'water' || c === 'sticky') return true;", "if (c === 'death' || c === 'water') return true;", 'sim'],
   ['src/main.js', "  { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },\n", "", 'browser'],
+  ['style.css', "  .grid button[hidden] { display: flex; }\n  main {", "  main {", 'browser'],
+  ['style.css', "  .tabs, #tools > h2:first-child { display: none; }\n", "", 'browser'],
+  ['style.css', "  .ghead { display: block; }\n", "", 'browser'],
   ['src/main.js', "tool === 'receiver' || tool === 'sensor' || tool === 'gate') return", "tool === 'receiver' || tool === 'gate') return", 'browser'],
   ['src/render.js', "drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);\n  g.restore();", "g.restore();", 'browser'],
 ];

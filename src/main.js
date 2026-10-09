@@ -348,6 +348,12 @@ function buildPanels() {
     $('groups').append(b);
   }
   for (const t of TOOLS) {
+    // On a wide screen the palette is sections, each under its own heading.
+    if (TOOLS.find(o => o.group === t.group) === t) {
+      const h = document.createElement('h3');
+      h.className = 'ghead'; h.textContent = GROUPS.find(([g]) => g === t.group)[1];
+      $('palette').append(h);
+    }
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.tool = t.id; b.dataset.in = t.group;
     b.append(icon(t.id), t.label);

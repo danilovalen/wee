@@ -19,7 +19,7 @@ try {
   await page.waitForFunction(() => window.wee);
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
-  const pick = async t => { await page.click(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); await page.click(`[data-tool=${t}]`); };
+  const pick = async t => { const tab = page.locator(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); if (await tab.isVisible()) await tab.click(); await page.click(`[data-tool=${t}]`); };
   const lv = (await text()).level;
   check('a new room is taller than wide', lv.h > lv.w, `${lv.w}x${lv.h}`);
 

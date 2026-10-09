@@ -19,10 +19,13 @@ try {
   await page.waitForFunction(() => window.wee);
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
-  const pick = async t => { await page.click(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); await page.click(`[data-tool=${t}]`); };
+  const pick = async t => { const tab = page.locator(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); if (await tab.isVisible()) await tab.click(); await page.click(`[data-tool=${t}]`); };
   const box = await page.locator('#game').boundingBox();
   const at = (x, y) => ({ x: box.x + (x + 0.5) * box.width / 20, y: box.y + (y + 0.5) * box.height / 12 });
 
+  // on a wide screen every tool shows at once, in sections, with no tabs
+  const wide = await page.evaluate(() => ({ tabs: !!document.getElementById('groups').offsetParent, hidden: [...document.querySelectorAll('[data-tool]')].filter(b => !b.offsetParent).length, heads: [...document.querySelectorAll('.ghead')].filter(h => h.offsetParent).length }));
+  check('on desktop the tools are sections, all visible, no tabs', !wide.tabs && wide.hidden === 0 && wide.heads === 4, JSON.stringify(wide));
   // nothing in a panel is cut by its panel: every control sits inside its box
   const cut = await page.evaluate(() => {
     const out = [];

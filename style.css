@@ -24,6 +24,18 @@ h2:not(:first-child) { margin-top: 16px; }
 .tabs button { padding: 5px 0; min-width: 0; font-size: 12px; position: relative; }
 .tabs button.holds::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .grid button[hidden] { display: none; }
+.ghead { display: none; grid-column: 1 / -1; margin: 8px 0 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.ghead:first-child { margin-top: 0; }
+/* Wide screens show every section at once; the tabs are for phones. */
+@media (min-width: 901px) {
+  .tabs, #tools > h2:first-child { display: none; }
+  .ghead { display: block; }
+  .grid button[hidden] { display: flex; }
+  main { grid-template-columns: 300px minmax(0, 1fr) 260px; }
+  .grid button { white-space: nowrap; padding: 4px 6px; font-size: 12.5px; }
+  .grid canvas { width: 18px; height: 18px; }
+  .ghead { margin-top: 6px; }
+}
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .grid button { min-width: 0; text-align: left; display: flex; align-items: center; gap: 6px; padding: 5px 6px; font-size: 13px; }
 .grid canvas { width: 20px; height: 20px; flex: none; }
