@@ -1,13 +1,13 @@
 <title>wee Look Directions</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Asap:wght@400;600;700&family=Outfit:wght@300;400;800;900&family=Fredoka:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Asap:wght@400;600;700&family=Outfit:wght@200;300;400;800&family=Fredoka:wght@300;400;600&display=swap">
 <style>
-/* Layout: one column of three direction cards, each a strip of the real editor plus a motion demo. Dark only: wee's room is dark. */
+/* Layout: one column of Drift variants, each an editor strip that plays by itself. Dark only: wee's room is dark. */
 :root {
   color-scheme: dark;
   --paper: #050508; --panel: #151518; --ink: #f8fafc; --soft: #a1a1aa;
-  --accent: #ff2a5f; --on-accent: #fff; --sticker: #0b0b0e; --inset-rim: rgba(210,210,220,.15);
-  --ice: #5ee0e6; --goal: #f2c14e; --floor: #14171f; --wall: #3a4256; --wallTop: #4d5770;
+  --accent: #ff2a5f; --on-accent: #fff; --sticker: #0b0b0e;
+  --ice: #5ee0e6; --frost: #eaf6ff; --goal: #f2c14e; --floor: #14171f; --wall: #3a4256; --wallTop: #4d5770;
   --r-s: 8px; --r-m: 10px; --r-l: 16px; --r-pill: 999px;
   --body: 'Asap', 'Helvetica Neue', Arial, sans-serif;
   --head: 'Outfit', 'Asap', sans-serif;
@@ -23,64 +23,59 @@ h1 { font: 800 30px/1.1 var(--head); margin: 0; text-wrap: balance; }
 .dir ul { margin: 0; padding-left: 18px; color: var(--soft); font-size: 14px; }
 .dir ul b { color: var(--ink); font-weight: 600; }
 
-/* The editor strip, in Manga's form: tone not strokes, sticker shadows, inset rings. */
-.ed { background: var(--panel); border-radius: var(--r-l); overflow: hidden; box-shadow: 4px 4px 0 0 var(--sticker); }
+/* The editor strip in Manga's form, frosted over a snow layer that fills the whole card. */
+.ed { position: relative; border-radius: var(--r-l); overflow: hidden; box-shadow: 4px 4px 0 0 var(--sticker); background: #0a0b10; }
+.ed > .snow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.ed > :not(.snow) { position: relative; z-index: 1; }
+.bar, .status, .ctxline { background: color-mix(in srgb, var(--panel) var(--frost-mix, 78%), transparent); backdrop-filter: blur(var(--blur, 6px)); -webkit-backdrop-filter: blur(var(--blur, 6px)); }
 .bar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; flex-wrap: wrap; }
-.bar + .bar { background: rgba(255,255,255,.03); }
 .ctxline { color: var(--soft); font-size: 13px; padding: 6px 12px 10px; }
-.btn { font: 600 13px var(--body); color: var(--ink); background: color-mix(in srgb, var(--panel) 60%, #fff 8%); border: 0; border-radius: var(--r-s); padding: 7px 12px; cursor: pointer;
-  box-shadow: 4px 4px 0 0 var(--sticker); transition: transform .08s, box-shadow .08s; touch-action: manipulation; }
-.btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 0 var(--sticker); }
-.btn:active, .btn.pressing { transform: none; box-shadow: 1px 1px 0 0 var(--sticker); }
+.btn { font: 600 13px var(--body); color: var(--ink); background: color-mix(in srgb, var(--panel) 60%, #fff 8%); border: 0; border-radius: var(--r-s); padding: 7px 12px;
+  box-shadow: 4px 4px 0 0 var(--sticker); transition: transform .08s, box-shadow .08s; }
+.btn.pressing { transform: none; box-shadow: 1px 1px 0 0 var(--sticker); }
 .btn.on { box-shadow: inset 0 0 0 2px var(--accent), 4px 4px 0 0 var(--sticker); color: var(--accent); }
-.btn:focus-visible { outline: 2px solid var(--goal); outline-offset: 2px; }
-.sp { flex: 1; }
-.stage { display: grid; place-items: center; padding: 18px 12px; background: var(--paper); position: relative; overflow: hidden; }
+.stage { display: grid; place-items: center; padding: 18px 12px; }
 .room { display: grid; grid-template-columns: repeat(7, 34px); grid-template-rows: repeat(4, 34px); gap: 2px; position: relative; }
 .t { background: var(--floor); border-radius: 3px; }
 .t.w { background: linear-gradient(var(--wallTop) 0 30%, var(--wall) 30%); border-radius: 6px; }
 .goal { display: grid; place-items: center; color: var(--goal); font-size: 18px; }
-.p { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--ice); left: 4px; top: 4px; z-index: 2; }
+.p { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--ice); left: 4px; top: 4px; z-index: 3; }
 .p::before, .p::after { content: ''; position: absolute; top: 9px; width: 4px; height: 6px; border-radius: 2px; background: #10131b; }
 .p::before { left: 8px; } .p::after { right: 8px; }
-.chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 12px 0; }
-.chip { font: 600 12px var(--body); border-radius: var(--r-pill); padding: 4px 10px; background: color-mix(in srgb, var(--panel) 60%, #fff 6%); color: var(--soft); box-shadow: 3px 3px 0 0 var(--sticker); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 12px 10px; }
+.chip { font: 600 12px var(--body); border-radius: var(--r-pill); padding: 4px 10px; background: color-mix(in srgb, var(--panel) 70%, #fff 6%); color: var(--soft); box-shadow: 3px 3px 0 0 var(--sticker); }
 .chip.on { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent), 3px 3px 0 0 var(--sticker); }
 .status { display: flex; gap: 10px; align-items: center; padding: 10px 12px; font-size: 13px; color: var(--soft); flex-wrap: wrap; }
 .status b { color: var(--ink); }
 .led { width: 8px; height: 8px; border-radius: 50%; background: #46c37b; }
-.go { background: var(--accent); color: var(--on-accent); }
+.trail { position: absolute; pointer-events: none; z-index: 2; }
 
-/* A: Whoosh. Fast and fleeting: italic heavy wordmark that stretches, streaks behind a slide, squash on press. */
-.A .logo { font: italic 900 22px var(--head); letter-spacing: -0.02em; display: inline-flex; }
-.A .logo .e { display: inline-block; transition: transform .18s cubic-bezier(.2,.9,.3,1.4); transform-origin: left; }
-.A .logo:hover .e, .A .logo.zoom .e { transform: scaleX(1.9); }
-.A .btn:active, .A .btn.pressing { transform: scale(1.08, .86); }
-.A .streak { position: absolute; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--ice)); opacity: 0; }
-.A.go-run .streak { animation: streak .5s ease-out forwards; }
-@keyframes streak { 0% { opacity: .9; } 100% { opacity: 0; transform: scaleX(.2); transform-origin: right; } }
-.A .chip { animation: whoosh .35s cubic-bezier(.2,.9,.3,1) both; }
-.A .chip:nth-child(2) { animation-delay: .04s } .A .chip:nth-child(3) { animation-delay: .08s } .A .chip:nth-child(4) { animation-delay: .12s }
-@keyframes whoosh { from { transform: translateX(-40px); opacity: 0; } }
-
-/* B: Puff. Cutesy: rounded face, pills, a bouncy press, a puff of snow where you tap or land. */
-.B .logo { font: 700 24px var(--round); color: var(--ice); letter-spacing: .01em; }
-.B .btn { border-radius: var(--r-pill); font-family: var(--round); font-weight: 500; }
-.B .btn:active, .B .btn.pressing { animation: boing .32s cubic-bezier(.3,1.6,.5,1); }
-@keyframes boing { 0% { transform: scale(.88); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
-.B .puff { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #eaf6ff; pointer-events: none; animation: puff .5s ease-out forwards; }
-@keyframes puff { to { transform: translate(var(--dx), var(--dy)) scale(.2); opacity: 0; } }
-.B .land { animation: squish .3s cubic-bezier(.3,1.6,.5,1); }
-@keyframes squish { 0% { transform: scale(1.35, .7); } 100% { transform: scale(1); } }
-
-/* C: Drift. Airy: frosted panels over drifting snow, a thin wordmark with a sheen, long glides with a fading ghost. */
-.C .ed { background: color-mix(in srgb, var(--panel) 78%, transparent); backdrop-filter: blur(6px); position: relative; }
-.C .ed > .snow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-.C .ed > * { position: relative; z-index: 1; }
-.C .logo { font: 300 24px var(--head); letter-spacing: .12em; background: linear-gradient(100deg, var(--ink) 40%, var(--ice) 50%, var(--ink) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
+/* C1 Drift: the first sketch. Thin spaced wordmark with a passing sheen; a fading ghost behind a slide. */
+.C1 .logo { font: 300 24px var(--head); letter-spacing: .12em; background: linear-gradient(100deg, var(--ink) 40%, var(--ice) 50%, var(--ink) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
 @keyframes sheen { to { background-position: -300% 0; } }
-.C .ghost { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--ice); opacity: .35; animation: fade .6s ease-out forwards; z-index: 1; }
+.C1 .trail { width: 26px; height: 26px; border-radius: 50%; background: var(--ice); opacity: .35; animation: fade .6s ease-out forwards; }
 @keyframes fade { to { opacity: 0; transform: scale(.6); } }
+
+/* C2 Gust: denser fine snow that streaks into lines while it rushes; a soft comet tail. */
+.C2 .logo { font: italic 200 26px var(--head); letter-spacing: .2em; }
+.C2 .trail { height: 10px; border-radius: 6px; background: linear-gradient(var(--tail-dir, 90deg), transparent, color-mix(in srgb, var(--ice) 60%, transparent)); animation: tail .5s ease-out forwards; }
+@keyframes tail { to { opacity: 0; transform: scaleY(.3); } }
+
+/* C3 Frost glass: clearer, lighter panels, so the snow shows through them too; dots of ice left on the floor. */
+.C3 { --frost-mix: 45%; --blur: 10px; }
+.C3 .bar, .C3 .status, .C3 .ctxline { background: color-mix(in srgb, #2a3140 45%, transparent); }
+.C3 .logo { font: 400 24px var(--round); letter-spacing: .08em; color: var(--frost); text-shadow: 0 0 12px color-mix(in srgb, var(--ice) 60%, transparent); }
+.C3 .trail { width: 6px; height: 6px; border-radius: 50%; background: var(--frost); opacity: .8; animation: melt 1.1s ease-out forwards; }
+@keyframes melt { to { opacity: 0; transform: scale(.2); } }
+
+/* C4 Breath: few big soft flakes, near-solid panels; the wordmark trails its own dots; puff rings behind a slide. */
+.C4 { --frost-mix: 88%; --blur: 2px; }
+.C4 .logo { font: 300 24px var(--round); display: inline-flex; align-items: baseline; gap: 2px; }
+.C4 .logo .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ice); display: inline-block; animation: drift 2.4s ease-in-out infinite; }
+.C4 .logo .dot:nth-of-type(2) { animation-delay: .2s; opacity: .7 } .C4 .logo .dot:nth-of-type(3) { animation-delay: .4s; opacity: .4 }
+@keyframes drift { 50% { transform: translate(4px, -4px); } }
+.C4 .trail { width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--frost) 70%, transparent); animation: ring .7s ease-out forwards; }
+@keyframes ring { to { opacity: 0; transform: scale(1.8); } }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 @media (max-width: 420px) { .room { grid-template-columns: repeat(7, 30px); grid-template-rows: repeat(4, 30px); } }
@@ -88,77 +83,89 @@ h1 { font: 800 30px/1.1 var(--head); margin: 0; text-wrap: balance; }
 
 <main>
   <div>
-    <h1>wee, three ways</h1>
-    <p class="lede">The Manga form stays the same in all three: no strokes, hard sticker shadows, a pink inset ring for "on". Each adds a wee layer on top. Each one plays by itself: the player slides across and back, and a button presses itself in between.</p>
+    <h1>wee, Drift variants</h1>
+    <p class="lede">All four keep the Manga form and pink for "on", with snow behind the shell. When the player slides, the snow gusts the same way for a moment. Each one plays by itself.</p>
   </div>
 </main>
 
 <script>
-const dirs = [
-  ['A', 'Whoosh', 'Fast and fleeting. Everything leaves a streak and is gone a moment later.',
-    ['<b>Wordmark</b>: heavy italic; the e\'s stretch out when you point at it.', '<b>Press</b>: a quick squash, like a puck hitting the ice.', '<b>Motion</b>: chips whoosh in from the side; a slide leaves streaks that vanish.']],
-  ['B', 'Puff', 'Cutesy and soft. Round shapes, a bounce on every tap, a little puff of snow.',
-    ['<b>Wordmark</b>: a rounded face in the player\'s ice blue.', '<b>Press</b>: buttons are pills that boing.', '<b>Motion</b>: the player squishes when it stops; taps puff snow.']],
-  ['C', 'Drift', 'Airy and light. Frosted panels over slow snow, long glides that fade out.',
-    ['<b>Wordmark</b>: thin and spaced, with a sheen passing over it.', '<b>Press</b>: Manga\'s sticker press, unchanged.', '<b>Motion</b>: snow drifts behind the shell; a slide leaves a fading ghost.']],
+// Each variant: how much snow, flake sizes, how hard a gust pushes, whether flakes streak in a gust, and the slide's trail.
+const VARIANTS = [
+  { id: 'C1', name: 'Drift', say: 'The first sketch, with the gust added.', flakes: 40, size: [.4, 2], gust: 1, streak: false, trail: 'ghost', dots: false,
+    notes: ['<b>Wordmark</b>: thin and spaced, a sheen passes over it.', '<b>Snow</b>: medium, drifts down, gusts with the slide.', '<b>Trail</b>: a fading ghost of the player.'] },
+  { id: 'C2', name: 'Gust', say: 'Faster. More, finer snow that streaks into lines while it rushes.', flakes: 90, size: [.3, 1.2], gust: 2.2, streak: true, trail: 'tail', dots: false,
+    notes: ['<b>Wordmark</b>: very thin italic, wide spacing.', '<b>Snow</b>: dense and fine; in a gust each flake becomes a short line.', '<b>Trail</b>: a soft comet tail that thins out.'] },
+  { id: 'C3', name: 'Frost glass', say: 'Lighter. The panels are clearer glass, so the snow shows through them too.', flakes: 55, size: [.5, 2.2], gust: 1.3, streak: false, trail: 'dots', dots: false,
+    notes: ['<b>Wordmark</b>: rounded, frost white with a cold glow.', '<b>Snow</b>: visible behind the bars as well as the room.', '<b>Trail</b>: little dots of ice left on the floor that melt.'] },
+  { id: 'C4', name: 'Breath', say: 'Quieter. A few big soft flakes and almost solid panels; small, airy touches.', flakes: 16, size: [1.6, 3.4], gust: .8, streak: false, trail: 'ring', dots: true,
+    notes: ['<b>Wordmark</b>: rounded "wee" trailing three dots that drift.', '<b>Snow</b>: few, big, slow; the gust nudges them.', '<b>Trail</b>: puff rings that open and fade.'] },
 ];
-const W = '#', layout = ['#######', '#.....#', '#.#...G', '#######'];
+const layout = ['#######', '#.....#', '#.#...G', '#######'];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const main = document.querySelector('main');
-for (const [id, name, say, notes] of dirs) {
-  const sec = document.createElement('section'); sec.className = 'dir ' + id;
-  const tiles = layout.map(r => [...r].map(c => `<div class="t${c === W ? ' w' : ''}${c === 'G' ? ' goal' : ''}">${c === 'G' ? '★' : ''}</div>`).join('')).join('');
-  const logo = id === 'A' ? '<span class="logo" tabindex="0">w<span class="e">e</span><span class="e">e</span></span>' : '<span class="logo">wee</span>';
-  sec.innerHTML = `<header><h2>${id}. ${name}</h2><p>${say}</p></header>
-    <div class="ed">${id === 'C' ? '<canvas class="snow"></canvas>' : ''}
-      <div class="bar">${logo}<button class="btn" type="button">Play</button><button class="btn" type="button">Check</button><button class="btn on" type="button">Lenses</button><span class="sp"></span><button class="btn go slide" type="button">Slide</button></div>
+const LEFT = 1, RIGHT = 5, ROW = 1;
+
+for (const v of VARIANTS) {
+  const sec = document.createElement('section'); sec.className = 'dir ' + v.id;
+  const tiles = layout.map(r => [...r].map(c => `<div class="t${c === '#' ? ' w' : ''}${c === 'G' ? ' goal' : ''}">${c === 'G' ? '★' : ''}</div>`).join('')).join('');
+  const logo = v.dots ? '<span class="logo">wee<i class="dot"></i><i class="dot"></i><i class="dot"></i></span>' : '<span class="logo">wee</span>';
+  sec.innerHTML = `<header><h2>${v.id}. ${v.name}</h2><p>${v.say}</p></header>
+    <div class="ed"><canvas class="snow"></canvas>
+      <div class="bar">${logo}<button class="btn" type="button">Play</button><button class="btn" type="button">Check</button><button class="btn on" type="button">Lenses</button></div>
       <div class="ctxline">Laser turret · fires one way at a time, turning clockwise.</div>
       <div class="stage"><div class="room">${tiles}<div class="p"></div></div></div>
       <div class="chips"><span class="chip">Colour Off</span><span class="chip on">Dots Stops</span><span class="chip">Lines Off</span><span class="chip on">Frames Traps</span></div>
       <div class="status"><span class="led"></span><b>Solvable in 1 move.</b><button class="btn" type="button">Show solution</button><span>7×4</span></div>
     </div>
-    <ul>${notes.map(n => `<li>${n}</li>`).join('')}</ul>`;
+    <ul>${v.notes.map(n => `<li>${n}</li>`).join('')}</ul>`;
   main.append(sec);
+  run(sec, v);
 }
 
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const STEP = 36, START = { x: 1, y: 1 };
-document.querySelectorAll('.dir').forEach(sec => {
-  const id = sec.classList[1], p = sec.querySelector('.p'), room = sec.querySelector('.room');
+function run(sec, v) {
+  const p = sec.querySelector('.p'), room = sec.querySelector('.room'), cv = sec.querySelector('.snow'), g = cv.getContext('2d');
   const step = () => (innerWidth <= 420 ? 32 : 36);
-  const put = (x, y) => { p.style.left = (x * step() + 4) + 'px'; p.style.top = (y * step() + 4) + 'px'; };
-  put(START.x, START.y);
-  const puff = (x, y) => { for (let i = 0; i < 6; i++) { const d = document.createElement('i'); d.className = 'puff'; const a = i / 6 * Math.PI * 2; d.style.cssText = `left:${x}px;top:${y}px;--dx:${Math.cos(a) * 22}px;--dy:${Math.sin(a) * 22}px`; room.append(d); setTimeout(() => d.remove(), 520); } };
-  if (id === 'B') sec.querySelectorAll('.btn').forEach(b => b.addEventListener('pointerdown', e => { const r = room.getBoundingClientRect(); if (e.clientY > r.top && e.clientY < r.bottom) puff(e.clientX - r.left, e.clientY - r.top); }));
-  // It plays by itself: slide across, press a button, slide back, again.
-  const LEFT = 1, RIGHT = 5;
+  const put = x => { p.style.left = (x * step() + 4) + 'px'; p.style.top = (ROW * step() + 4) + 'px'; };
+  put(LEFT);
+  // Snow positions are fractions of the card; wind is the push a gust adds, fading back to still.
+  const flakes = Array.from({ length: v.flakes }, () => ({ x: Math.random(), y: Math.random(), r: v.size[0] + Math.random() * (v.size[1] - v.size[0]), fall: .0004 + Math.random() * .001, sway: Math.random() * 6 }));
+  let wind = 0;
+  const draw = t => {
+    const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+    if (cv.width !== Math.round(r.width * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, r.width, r.height);
+    g.fillStyle = g.strokeStyle = 'rgba(234,246,255,.55)';
+    for (const f of flakes) {
+      if (!reduce) { f.y += f.fall; f.x += Math.sin(t / 1400 + f.sway) * .0003 + wind * f.r * .0016; if (f.y > 1) f.y -= 1; f.x = (f.x + 1) % 1; }
+      const x = f.x * r.width, y = f.y * r.height;
+      if (v.streak && Math.abs(wind) > .15) { g.lineWidth = f.r; g.beginPath(); g.moveTo(x, y); g.lineTo(x - wind * 14 * f.r, y); g.stroke(); }
+      else { g.beginPath(); g.arc(x, y, f.r, 0, 7); g.fill(); }
+    }
+    wind *= .94;
+    requestAnimationFrame(draw);
+  };
+  requestAnimationFrame(draw);
+
   let at = LEFT;
   const slide = () => {
-    const s = step(), from = at, to = at === LEFT ? RIGHT : LEFT, n = Math.abs(to - from), dir = Math.sign(to - from);
-    const dur = id === 'C' ? 900 : id === 'A' ? 260 : 420, ease = id === 'C' ? 'cubic-bezier(.15,.7,.2,1)' : id === 'A' ? 'cubic-bezier(.5,0,.2,1)' : 'cubic-bezier(.3,1.25,.5,1)';
-    p.classList.remove('land');
-    p.style.transition = reduce ? 'none' : `left ${dur}ms ${ease}`; put(to, START.y); at = to;
-    if (id === 'A' && !reduce) for (let i = 0; i < 3; i++) { const k = document.createElement('i'); k.className = 'streak'; k.style.cssText = `left:${Math.min(from, to) * s + 4}px;top:${START.y * s + 8 + i * 6}px;width:${n * s}px;transform-origin:${dir > 0 ? 'right' : 'left'};background:linear-gradient(${dir > 0 ? 90 : 270}deg, transparent, var(--ice))`; room.append(k); requestAnimationFrame(() => sec.classList.add('go-run')); setTimeout(() => { k.remove(); sec.classList.remove('go-run'); }, 600); }
-    if (id === 'C' && !reduce) for (let i = 1; i < n; i++) setTimeout(() => { const g = document.createElement('i'); g.className = 'ghost'; g.style.cssText = `left:${(from + dir * i) * s + 4}px;top:${START.y * s + 4}px`; room.append(g); setTimeout(() => g.remove(), 650); }, dur * i / n * .5);
-    setTimeout(() => { if (id === 'B') { p.classList.add('land'); puff(to * s + 17, START.y * s + 30); } }, dur);
+    const s = step(), from = at, to = at === LEFT ? RIGHT : LEFT, n = Math.abs(to - from), dir = Math.sign(to - from), dur = v.id === 'C2' ? 520 : 900;
+    p.style.transition = reduce ? 'none' : `left ${dur}ms cubic-bezier(.15,.7,.2,1)`; put(to); at = to;
+    if (reduce) return;
+    wind = dir * v.gust;
+    if (v.trail === 'tail') { const k = document.createElement('i'); k.className = 'trail'; k.style.cssText = `left:${Math.min(from, to) * s + 8}px;top:${ROW * s + 12}px;width:${n * s}px;--tail-dir:${dir > 0 ? 90 : 270}deg`; room.append(k); setTimeout(() => k.remove(), 520); return; }
+    for (let i = 1; i <= n; i++) setTimeout(() => {
+      const k = document.createElement('i'); k.className = 'trail';
+      const cx = (from + dir * (i - 1)) * s + 17, cy = ROW * s + 17;
+      if (v.trail === 'ghost') k.style.cssText = `left:${cx - 13}px;top:${cy - 13}px`;
+      if (v.trail === 'dots') k.style.cssText = `left:${cx - 3}px;top:${cy + 8}px`;
+      if (v.trail === 'ring') k.style.cssText = `left:${cx - 10}px;top:${cy - 10}px`;
+      room.append(k); setTimeout(() => k.remove(), 1200);
+    }, dur * (i - 1) / n * .55);
   };
-  const buttons = [...sec.querySelectorAll('.bar .btn:not(.slide), .status .btn')];
-  const press = () => { const b = buttons[Math.floor(Math.random() * buttons.length)]; b.classList.add('pressing'); setTimeout(() => b.classList.remove('pressing'), 340); };
-  const logo = sec.querySelector('.logo');
+  const buttons = [...sec.querySelectorAll('.btn')];
+  const press = () => { const b = buttons[Math.floor(Math.random() * buttons.length)]; b.classList.add('pressing'); setTimeout(() => b.classList.remove('pressing'), 260); };
   let beat = 0;
-  const tick = () => {
-    beat++;
-    if (beat % 2) slide(); else press();
-    if (id === 'A' && beat % 4 === 1) { logo.classList.add('zoom'); setTimeout(() => logo.classList.remove('zoom'), 500); }
-  };
-  sec.querySelector('.slide').addEventListener('click', slide);
-  if (!reduce) setTimeout(() => { tick(); setInterval(tick, 1400); }, 400 + ['A', 'B', 'C'].indexOf(id) * 300);
-  if (id === 'C') {
-    const cv = sec.querySelector('.snow'), g = cv.getContext('2d'), flakes = Array.from({ length: 40 }, () => ({ x: Math.random(), y: Math.random(), r: Math.random() * 1.6 + .4, v: Math.random() * .0012 + .0004 }));
-    const draw = () => { const r = cv.parentElement.getBoundingClientRect(); if (cv.width !== Math.round(r.width)) { cv.width = r.width; cv.height = r.height; }
-      g.clearRect(0, 0, cv.width, cv.height); g.fillStyle = 'rgba(234,246,255,.45)';
-      for (const f of flakes) { if (!reduce) { f.y += f.v; f.x += Math.sin(f.y * 12) * .0006; if (f.y > 1) f.y = 0; } g.beginPath(); g.arc(f.x * cv.width, f.y * cv.height, f.r, 0, 7); g.fill(); }
-      if (!reduce) requestAnimationFrame(draw); };
-    draw();
-  }
-});
+  const tick = () => { beat++; if (beat % 2) slide(); else press(); };
+  if (!reduce) setTimeout(() => { tick(); setInterval(tick, 1500); }, 300 + VARIANTS.indexOf(v) * 250);
+}
 </script>
