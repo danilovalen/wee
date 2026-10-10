@@ -195,7 +195,16 @@ ones the sources agreed on; uncertain ones are marked (unconfirmed).
 | U4 | Tab hides chrome, `?` key list, keys on buttons | a few hours |
 | later | a command palette; recent tools; options in a bubble on a placed piece | open |
 
-## 6. Questions for the owner, one at a time
+## 6. Decisions (owner, 2026-10-10)
+
+1. **Lens chips on the room's edge.** On phones, one row of four chips under the room.
+2. **Room size by "+" handles on the room's edges**, plus a clickable size readout in the status line.
+3. **Findings in a tab of a fixed-height well under the room.** On phones, the well opens as a sheet.
+4. **A mockup first**, viewable on a phone; the owner will see desktop only scaled down, and goes with the flow there.
+
+The richer page with round two of the research is `docs/ui-pass.html`.
+
+## 7. Questions asked, kept for the record
 
 1. Lens chips: on the room's edge (always visible, one click), or inside the header's Lenses
    dropdown (zero space, two clicks)?
