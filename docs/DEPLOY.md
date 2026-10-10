@@ -14,9 +14,10 @@ Every step below runs as root on the server, except the DNS record.
    useradd --system --create-home --home-dir /var/lib/wee wee
    git clone https://github.com/danilovalen/wee.git /opt/wee
    chown -R wee:wee /opt/wee
-   sudo -u wee node /opt/wee/tools/build-single.mjs
+   cd /opt/wee && sudo -u wee node tools/build-single.mjs
    ```
-   The repo is private: clone with a deploy key or a token the way the engine repo is cloned.
+   The code repo is public, so no key is needed. Your rooms never go in it: they live in
+   `/var/lib/wee/rooms` on the server.
 3. **Password.**
    ```sh
    cp /opt/wee/deploy/wee.env.example /etc/wee.env
