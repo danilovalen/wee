@@ -85,7 +85,9 @@ try {
   await page.keyboard.press('0');
   check('key 0 turns every lens off', !(await legend()).trim() && await on('dots') === 'off');
   await page.click('#stopsBtn');
-  check('the Lenses button hides the chips and the rows', await page.locator('#lensBox').isHidden() && await page.locator('#lensChips').isHidden() && await page.locator('#well').isHidden());
+  // The chips follow on the next frame, so wait for it rather than race it.
+  const gone = await page.waitForFunction(() => document.getElementById('lensChips').hidden, null, { timeout: 3000 }).then(() => true, () => false);
+  check('the Lenses button hides the chips and the rows', gone && await page.locator('#lensBox').isHidden() && await page.locator('#well').isHidden());
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the lens smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

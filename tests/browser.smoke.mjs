@@ -286,14 +286,25 @@ try {
   check('and the room itself keeps its start', (await text()).level.start.x === 1);
   // adding and cutting a side, and Border, are single undoable steps
   await page.evaluate(l => window.wee.loadLevel(l), room(['.....', '.P...', '.....']));
+  // The "+" on the room's right edge adds a column there; the status bar reads the new size.
+  await page.click('[data-plus=right]');
+  check('the + on an edge adds a column there, and the size readout follows', (await text()).level.w === 6 && (await page.textContent('#sizeBtn')) === '6\u00d73', await page.textContent('#sizeBtn'));
+  await page.click('#undo');
+  check('the size readout opens the size controls', await page.locator('#sizePop').isHidden() && await page.click('#sizeBtn').then(() => page.locator('#sizePop').isVisible()));
+  await page.keyboard.press('Escape');
+  check('Escape shuts them', await page.locator('#sizePop').isHidden());
+  await page.click('#sizeBtn');
   await page.click('[data-side=top][data-delta="1"]');
   check('Add above makes the room a row taller, start moved down', (await text()).level.h === 4 && (await text()).level.start.y === 2);
   await page.click('#border');
   check('Border walls the edge', (await text()).level.cells.slice(0, 5).every(c => c === 'wall'));
   await page.click('#undo'); await page.click('#undo');
   check('and each undoes in one step', (await text()).level.h === 3);
+  await page.click('#sizeBtn');
   await page.click('[data-side=left][data-delta="-1"]'); await page.click('[data-side=left][data-delta="-1"]');
   check('a cut through the start is refused with a reason', (await text()).level.w === 4 && (await page.textContent('#placeHint')).includes('remove the start'));
+  await page.mouse.click(5, 5);
+  check('a click elsewhere shuts the size controls', await page.locator('#sizePop').isHidden());
   await page.evaluate(l => window.wee.loadLevel(l), JSON.parse(JSON.stringify(roomBeforePanel)));
 
   // the Rooms panel: name and save the room, find it in the list, come back to it

@@ -94,7 +94,12 @@
 
     </aside>
     <section id="stage">
-      <div id="roomArea" class="roomArea"><canvas id="game"></canvas></div>
+      <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="game"></canvas>
+        <button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button>
+        <button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom">+</button>
+        <button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left">+</button>
+        <button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right">+</button>
+      </div></div>
       <div id="lensChips" class="chips" hidden></div>
       <div id="pad" class="pad" hidden>
         <button id="hideBtn" type="button">Hide / Swim</button>
@@ -141,8 +146,23 @@
       </div>
     </section>
     <aside id="powers">
-      <div id="roomBox" class="roomBox">
-        <h2>Room</h2>
+      <h2>Powers</h2>
+      <div id="powerList"></div>
+      <h2>Status</h2>
+      <div id="statusList"></div>
+      <h2>World moves</h2>
+      <label class="radio"><input type="radio" name="clock" value="tile"> Each tile you slide</label>
+      <label class="radio"><input type="radio" name="clock" value="slide"> Each slide</label>
+    </aside>
+  </main>
+  <footer id="statusBar" class="statusBar">
+    <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
+    <button id="wellBtn" type="button">Findings</button>
+    <button id="sizeBtn" type="button" aria-label="Room size" aria-expanded="false"></button>
+    <p id="info" class="hint"></p>
+    <p id="keys" class="hint"></p>
+  </footer>
+  <div id="sizePop" class="sizePop" hidden role="dialog" aria-label="Room size">
         <div class="roomBody">
       <div class="size">
         <label>Width <input id="w" type="number" min="5" max="40"></label>
@@ -162,22 +182,7 @@
         <button id="border" type="button">Border</button>
       </div>
         </div>
-      </div>
-      <h2>Powers</h2>
-      <div id="powerList"></div>
-      <h2>Status</h2>
-      <div id="statusList"></div>
-      <h2>World moves</h2>
-      <label class="radio"><input type="radio" name="clock" value="tile"> Each tile you slide</label>
-      <label class="radio"><input type="radio" name="clock" value="slide"> Each slide</label>
-    </aside>
-  </main>
-  <footer id="statusBar" class="statusBar">
-    <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
-    <button id="wellBtn" type="button">Findings</button>
-    <p id="info" class="hint"></p>
-    <p id="keys" class="hint"></p>
-  </footer>
+  </div>
   <dialog id="roomsBox" class="rooms">
     <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
     <p id="roomsWhere" class="hint"></p>

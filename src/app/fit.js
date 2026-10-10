@@ -2,6 +2,7 @@
 import { T } from '../view/ink.js';
 import { S } from '../editor/state.js';
 import { $, canvas, g, portrait } from './dom.js';
+import { syncSize } from './size.js';
 
 // A wide screen is a frame: the tool's options in a bar under the header, the verdict and
 // keys in a bar at the bottom, the play buttons in that bar too. Only the room flexes. A phone
@@ -20,12 +21,15 @@ function place(wide) {
   }
 }
 
+const EDGE = 14;
+
 export function fit() {
   const level = S.level, wide = innerWidth > 700;
   place(wide);
   const area = $('roomArea');
-  const stage = (wide ? area.clientWidth - 8 : $('stage').clientWidth) || level.w * T;
-  const room = wide ? area.clientHeight - 8 : portrait() ? innerHeight * 0.62 : innerHeight - 140;
+  // The room keeps a margin for the "+" on each of its edges.
+  const stage = (wide ? area.clientWidth - 2 * EDGE : $('stage').clientWidth - 2 * EDGE) || level.w * T;
+  const room = wide ? area.clientHeight - 2 * EDGE : portrait() ? innerHeight * 0.62 : innerHeight - 140;
   const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
   const k = (window.devicePixelRatio || 1) * zoom;
   // Setting a canvas size clears it, even to the same size, so only a real change is written.
@@ -34,6 +38,7 @@ export function fit() {
   if (canvas.style.width !== css) canvas.style.width = css;
   g.setTransform(canvas.width / (level.w * T), 0, 0, canvas.height / (level.h * T), 0, 0);
   $('w').value = level.w; $('h').value = level.h;
+  syncSize(level);
   S.redraw = true;
 }
 

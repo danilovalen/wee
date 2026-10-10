@@ -40,11 +40,19 @@ try {
     const cutOff = () => page.evaluate(() => ['ctx', 'statusBar', 'well', 'lensChips'].flatMap(id => { const bar = document.getElementById(id), r = bar.getBoundingClientRect();
       return [...bar.querySelectorAll('button, .opt > span')].filter(b => b.offsetParent && b.closest('.wellBody') === null).filter(b => { const q = b.getBoundingClientRect(); return q.right > r.right + 0.5 || q.bottom > r.bottom + 0.5 || b.scrollWidth > b.clientWidth + 1; }).map(b => `${id}:${b.textContent.trim().slice(0, 16)}`); }));
     const share = () => page.evaluate(() => document.getElementById('roomArea').clientHeight / innerHeight);
-    // The room takes the area it is given, its width or its height nearly all of it, and no more.
-    const fills = () => page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), a = document.getElementById('roomArea'); return (c.width >= a.clientWidth - 12 || c.height >= a.clientHeight - 12) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
+    // The room takes the area it is given, less the margin its "+" handles sit in, and no more.
+    const fills = () => page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), a = document.getElementById('roomArea'); return (c.width >= a.clientWidth - 40 || c.height >= a.clientHeight - 40) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
     const ctxOpts = await page.evaluate(() => [...document.querySelectorAll('#ctx .opt')].filter(o => !o.hidden).length);
     check(`${w}x${h}: the turret's options sit in the context bar`, ctxOpts >= 3, String(ctxOpts));
     const open = await share();
+    // Over the room, its four "+" show and none is clipped by the room's area.
+    const gb = await page.locator('#game').boundingBox();
+    await page.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2);
+    await page.waitForTimeout(250);
+    const plus = await page.evaluate(() => { const a = document.getElementById('roomArea').getBoundingClientRect(); return [...document.querySelectorAll('[data-plus]')].filter(b => { const r = b.getBoundingClientRect(); return getComputedStyle(b).opacity < 0.9 || r.left < a.left || r.top < a.top || r.right > a.right || r.bottom > a.bottom; }).map(b => b.dataset.plus); });
+    check(`${w}x${h}: the room's four + show on hover, none clipped`, !plus.length, plus.join(' '));
+    const unnamed = await page.evaluate(() => [...document.querySelectorAll('[data-tool]')].filter(b => !b.title || (b.querySelector('.lbl').offsetParent === null) !== (innerWidth <= 1100)).map(b => b.dataset.tool));
+    check(`${w}x${h}: tools are icons up to 1100 px wide, labelled above it, and always named on hover`, !unnamed.length, unnamed.join(' '));
     check(`${w}x${h}: everything open: nothing scrolls, nothing is cut, the room fills its area`, !(await over()) && !(await cutOff()).length && await page.locator('#well').isVisible() && await page.locator('#lensChips').isVisible() && await fills(), JSON.stringify({ cut: await cutOff(), over: await over() }));
     check(`${w}x${h}: everything open, the room keeps at least 45% of the height`, open >= 0.45, open.toFixed(2));
     await page.click('#wellClose');

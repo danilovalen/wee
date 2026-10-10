@@ -84,7 +84,7 @@ const M = [
   ['src', "  for (const k of S.pending) S.keylog.push({ t: game.tick, k });\n", "", 'phone'],
   ['src', "S.played = JSON.parse(JSON.stringify(from)); S.keylog = [];", "S.played = from; S.keylog = [];", 'phone'],
   ['style.css', ".opt[hidden] { display: none; }", "", 'browser'],
-  ['src', "const room = wide ? area.clientHeight - 8 : portrait() ? innerHeight * 0.62", "const room = portrait() ? innerHeight * 0.62 : wide ? area.clientHeight - 8", 'fit'],
+  ['src', "const room = wide ? area.clientHeight - 2 * EDGE : portrait() ? innerHeight * 0.62", "const room = portrait() ? innerHeight * 0.62 : wide ? area.clientHeight - 2 * EDGE", 'fit'],
   ['style.css', "  .grid button { flex-direction: column; justify-content: center; text-align: center; gap: 1px; padding: 3px 2px; font-size: 10.5px; line-height: 1.1; white-space: normal; }\n}", "}", 'fit'],
   ['src', "wide = innerWidth > 700;", "wide = innerWidth > 900;", 'fit'],
   ['style.css', "grid-template-columns: 300px", "grid-template-columns: 200px", 'browser'],
@@ -418,7 +418,7 @@ const M = [
   ['src', ": { ...level, cells: walled(e.y * level.w + e.x), entities: rest };", ": null;", 'design'],
   ['src', "const stand = held.has(i) || c.startsWith('receiver:') ? null", "const stand = c.startsWith('receiver:') ? null", 'design'],
   ['src', "export const variants = (g, l) => [knock(g, l), standIn(g, l)].filter(Boolean);", "export const variants = (g, l) => [knock(g, l)];", 'gen'],
-  ['src', "wide ? area.clientHeight - 8 :", "wide ? innerHeight - canvas.getBoundingClientRect().top - 170 :", 'fit'],
+  ['src', "wide ? area.clientHeight - 2 * EDGE :", "wide ? innerHeight - canvas.getBoundingClientRect().top - 170 :", 'fit'],
   ['src', "  new ResizeObserver(() => requestAnimationFrame(fit)).observe($('roomArea'));", "", 'fit'],
   ['src', "if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }", "canvas.width = cw; canvas.height = ch;", 'designui'],
   ['src', "e.turret ? e.turret.aim % e.turret.dirs.length : -1", "e.turret ? e.turret.aim : -1", 'solve'],
@@ -453,6 +453,15 @@ const M = [
   ['src', "  if (!l.open && WELL.open && WELL.tab === 'lenses') closeWell();", "", 'lensui'],
   ['src', "const show = S.lens.open && S.mode === 'edit';", "const show = S.lens.open;", 'fit'],
   ['src', "onclick: () => openWell('lenses') }", "onclick: () => {} }", 'lensui'],
+  // room size on the edges and in the status bar; icon tools when narrow (U3)
+  ['src', "forEach(b => b.onclick = () => document.querySelector(`[data-side=${b.dataset.plus}][data-delta=\"1\"]`).click());", "forEach(b => b.onclick = () => {});", 'browser'],
+  ['src', "  syncSize(level);\n", "", 'browser'],
+  ['src', "addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSize(); });", "", 'browser'],
+  ['src', "if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize();", "", 'browser'],
+  ['src', "const EDGE = 14;", "const EDGE = 0;", 'fit'],
+  ['style.css', "  .grid button .lbl { display: none; }\n", "", 'fit'],
+  ['src', "    b.title = t.label;\n", "", 'fit'],
+  ['style.css', ".roomWrap:hover .plus, .plus:focus-visible { opacity: 1; }", "", 'fit'],
 ];
 
 let caught = 0, crashed = 0;

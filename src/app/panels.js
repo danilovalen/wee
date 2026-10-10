@@ -13,6 +13,7 @@ import { runCheck, syncCheck, syncLint } from './check.js';
 import { buildLenses, syncLenses } from './lenses.js';
 import { buildWell, openWell } from './well.js';
 import { buildChips } from './chips.js';
+import { buildSize } from './size.js';
 import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
 
@@ -69,7 +70,8 @@ export function buildPanels(actions) {
     }
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.tool = t.id; b.dataset.in = t.group;
-    b.append(icon(t.id), t.label);
+    b.title = t.label;
+    b.append(icon(t.id), Object.assign(document.createElement('span'), { className: 'lbl', textContent: t.label }));
     b.onclick = () => { S.ui.tool = t.id; syncPanel(); };
     $('palette').append(b);
   }
@@ -118,6 +120,7 @@ export function buildPanels(actions) {
   $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
   buildWell();
   buildChips();
+  buildSize();
   document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
   buildLenses();
