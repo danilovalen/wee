@@ -8,6 +8,7 @@ import { $, g, now } from './dom.js';
 import { syncPanel, keysText } from './panels.js';
 import { feedDemo } from './check.js';
 import { selectOverlay } from './select.js';
+import { watchStuck, resetStuck } from './stuck.js';
 
 export function snapshot(s) {
   const ents = {};
@@ -30,6 +31,7 @@ export function tick() {
     if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
     else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
   }
+  watchStuck(game);
 }
 
 // A key as the rules should take it, given where you are drawn right now.
@@ -43,6 +45,7 @@ export function setMode(m, keep) {
   $('keys').textContent = keysText();
   $('pad').hidden = m !== 'play';
   $('win').hidden = true;
+  resetStuck();
   $('moves').textContent = m === 'play' ? 'Moves 0' : '';
   S.fx = [];
   if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }

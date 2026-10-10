@@ -2,7 +2,7 @@
 // returns actually wins when replayed through the plain rules, key by key.
 import { readFileSync } from 'node:fs';
 import { createGame, step } from '../src/rules/game.js';
-import { solve, move, stateKey, unsearchable, powerMoves, parseMove, reach, successors } from '../src/solve/solve.js';
+import { solve, canWin, move, stateKey, unsearchable, powerMoves, parseMove, reach, successors } from '../src/solve/solve.js';
 import { room, suite } from './lib.mjs';
 
 const { check, done } = suite('solve');
@@ -94,4 +94,18 @@ check('mid-slide moves are generated', succ.some(([k]) => k.includes('@')));
 check('and can be left out', [...successors(s0, ['right'], false)].filter(Boolean).every(([k]) => !k.includes('@')));
 const noLaser = goal(room(['#######', '#P....#', '#######']), 5, 1);
 check('a laser is not tried where it cannot change anything', [...successors(createGame(noLaser), [])].filter(Boolean).every(([k]) => !/:(up|down)$/.test(k)));
+// Softlock: past a one-way, the goal behind you is out of reach for good.
+const oneWay = goal(room(['########', '#...P>.#', '########']), 1, 1);
+const runIt = it => { for (;;) { const r = it.next(); if (r.done) return r.value; } };
+const lock = createGame(oneWay);
+check('from the start the goal can still be reached', runIt(canWin(lock)) === true);
+const past = move(lock, 'right');
+check('past the one-way it cannot, and the check says so', past && past.player.x === 6 && runIt(canWin(past)) === false, past && JSON.stringify(past.player));
+check('a search that hits its cap does not call it a softlock', runIt(canWin(lock, 1)) === null);
+// In play the game keeps moving while the check runs in slices; the check answers for the
+// position it was asked about.
+const moving = createGame(oneWay), asked = canWin(moving);
+asked.next();
+step(moving, ["right"]); for (let i = 0; i < 20; i++) step(moving, []);
+check("a check answers for the position it was asked about, while the game moves on", moving.player.x === 6 && runIt(asked) === true);
 done();

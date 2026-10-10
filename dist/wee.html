@@ -103,6 +103,9 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   background: #10131bee; border: 2px solid #f2c14e; border-radius: 12px; padding: 16px 20px; z-index: 5; }
 .win[hidden] { display: none; }
 .win b { color: #f2c14e; font-size: 1.15em; }
+.stuck { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; white-space: nowrap;
+  background: #10131bee; border: 2px solid #e5484d; border-radius: 10px; padding: 6px 10px; z-index: 5; }
+.stuck[hidden] { display: none; }
 .check { display: flex; gap: 8px; align-items: center; margin: 4px 0 0; font-size: 0.9em; }
 .check:has(#checkText:empty) { display: none; }
 .check [hidden] { display: none; }
@@ -259,6 +262,10 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
         <button id="respawnBtn" type="button">Reset</button>
         <button id="reportBtn" type="button">Copy report</button>
         <span id="moves" class="moves"></span>
+      </div>
+      <div id="stuck" class="stuck" hidden>
+        <span>The goal is out of reach.</span>
+        <button id="stuckReset" type="button">Reset</button>
       </div>
       <div id="win" class="win" hidden>
         <b id="winText"></b>
@@ -2053,8 +2060,19 @@ function unsearchable(level) {
 function* search(level, max = MAX_STATES) {
   const why = unsearchable(level);
   if (why) return { status: why, moves: null, states: 0 };
-  const start = createGame(level);
-  const keys = [...KEYS, ...(level.powers.cycle || level.powers.swim ? ['hide'] : [])];
+  return yield* searchFrom(createGame(level), max);
+}
+
+// Whether the goal can still be reached from a game at rest, as in play: true, false, or
+// null when the search hits its cap.
+function* canWin(s, max = MAX_STATES) {
+  if (s.won) return true;
+  const r = yield* searchFrom(structuredClone(s), max);
+  return r.status === 'solved' ? true : r.status === 'unsolvable' ? false : null;
+}
+
+function* searchFrom(start, max) {
+  const keys = [...KEYS, ...(start.powers.cycle || start.powers.swim ? ['hide'] : [])];
   const seen = new Map([[stateKey(start), null]]);
   let frontier = [{ s: start, path: [] }];
   while (frontier.length) {
@@ -2120,7 +2138,7 @@ function solve(level, max) {
   const it = search(level, max);
   for (;;) { const r = it.next(); if (r.done) return r.value; }
 }
-return { MAX_STATES, stateKey, parseMove, move, powerMoves, successors, unsearchable, search, reach, solve };
+return { MAX_STATES, stateKey, settled, parseMove, move, powerMoves, successors, unsearchable, search, canWin, reach, solve };
 })();
 // ---- src/solve/lint.js
 const m20 = (() => {
@@ -3367,7 +3385,7 @@ function buildPanels(actions) {
   document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { change(() => { S.level.clock = r.value; }); if (S.game) S.pending.push('clock:' + r.value); });
   $('mode').onclick = () => setMode(S.mode === 'play' ? 'edit' : 'play');
   $('hideBtn').onclick = () => S.pending.push('hide');
-  $('respawnBtn').onclick = () => S.pending.push('respawn');
+  $('respawnBtn').onclick = $('stuckReset').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
   $('checkBtn').onclick = () => runCheck();
@@ -3555,8 +3573,43 @@ function place(level, ui, x, y, how) {
 }
 return { holds, describe, place };
 })();
-// ---- src/app/play.js
+// ---- src/app/stuck.js
 const m37 = (() => {
+const { canWin, settled, stateKey, unsearchable } = m19;
+const { S } = m11;
+const { $ } = m12;
+// While you play: once everything has come to rest, a search in the background asks whether
+// the goal can still be reached, and says so when it cannot. All copy is draft.
+
+
+
+const SLICE_MS = 8;
+let job = null;
+
+function resetStuck() { job = null; $('stuck').hidden = true; }
+
+function watchStuck(game) {
+  if (game.won || !settled(game) || unsearchable(S.played)) return;
+  const key = stateKey(game);
+  if (job && job.key === key) return;
+  const me = job = { key }, it = canWin(game);
+  $('stuck').hidden = true;
+  const slice = () => {
+    if (job !== me) return;
+    const until = performance.now() + SLICE_MS;
+    for (;;) {
+      const r = it.next();
+      if (r.done) { $('stuck').hidden = r.value !== false; return; }
+      if (performance.now() > until) break;
+    }
+    setTimeout(slice, 0);
+  };
+  setTimeout(slice, 0);
+}
+return { resetStuck, watchStuck };
+})();
+// ---- src/app/play.js
+const m38 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
@@ -3566,7 +3619,9 @@ const { $, g, now } = m12;
 const { syncPanel, keysText } = m35;
 const { feedDemo } = m23;
 const { selectOverlay } = m34;
+const { watchStuck, resetStuck } = m37;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
 
 
 
@@ -3597,6 +3652,7 @@ function tick() {
     if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
     else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
   }
+  watchStuck(game);
 }
 
 // A key as the rules should take it, given where you are drawn right now.
@@ -3610,6 +3666,7 @@ function setMode(m, keep) {
   $('keys').textContent = keysText();
   $('pad').hidden = m !== 'play';
   $('win').hidden = true;
+  resetStuck();
   $('moves').textContent = m === 'play' ? 'Moves 0' : '';
   S.fx = [];
   if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }
@@ -3675,11 +3732,11 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m38 = (() => {
+const m39 = (() => {
 const { describe, holds, place } = m36;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m37;
+const { setMode, aim } = m38;
 const { begin, end, step: undoStep } = m32;
 const { save } = m31;
 const { selectDown, selectMove, selectKey } = m34;
@@ -3778,7 +3835,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m39 = (() => {
+const m40 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -3886,10 +3943,10 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m40 = (() => {
+const m41 = (() => {
 const { search } = m19;
 const { contains } = m29;
-const { ING, variants } = m39;
+const { ING, variants } = m40;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -3934,7 +3991,7 @@ function* judge(level, recipe, max = 3000) {
 return { offFound, missing, judge };
 })();
 // ---- src/gen/random.js
-const m41 = (() => {
+const m42 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -3951,12 +4008,12 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m42 = (() => {
+const m43 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
-const { INGREDIENTS, ING, spot } = m39;
-const { judge } = m40;
-const { rng } = m41;
+const { INGREDIENTS, ING, spot } = m40;
+const { judge } = m41;
+const { rng } = m42;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -4065,9 +4122,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m43 = (() => {
-const { INGREDIENTS } = m39;
-const { generate, normalize, recipeLabel, LIMITS } = m42;
+const m44 = (() => {
+const { INGREDIENTS } = m40;
+const { generate, normalize, recipeLabel, LIMITS } = m43;
 const { stampOf } = m26;
 const { S } = m11;
 const { thumbURL } = m27;
@@ -4231,7 +4288,7 @@ function buildGenerator(actions) {
 return { shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m44 = (() => {
+const m45 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -4240,10 +4297,10 @@ const { S, starterLevel } = m11;
 const { portrait } = m12;
 const { fit, watchStage } = m14;
 const { buildPanels, syncPanel } = m35;
-const { bindInput } = m38;
-const { setMode, frame, render, tick, report, copyReport } = m37;
+const { bindInput } = m39;
+const { setMode, frame, render, tick, report, copyReport } = m38;
 const { buildRooms, bootRooms } = m31;
-const { buildGenerator } = m43;
+const { buildGenerator } = m44;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 

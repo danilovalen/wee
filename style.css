@@ -96,6 +96,9 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   background: #10131bee; border: 2px solid #f2c14e; border-radius: 12px; padding: 16px 20px; z-index: 5; }
 .win[hidden] { display: none; }
 .win b { color: #f2c14e; font-size: 1.15em; }
+.stuck { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; white-space: nowrap;
+  background: #10131bee; border: 2px solid #e5484d; border-radius: 10px; padding: 6px 10px; z-index: 5; }
+.stuck[hidden] { display: none; }
 .check { display: flex; gap: 8px; align-items: center; margin: 4px 0 0; font-size: 0.9em; }
 .check:has(#checkText:empty) { display: none; }
 .check [hidden] { display: none; }

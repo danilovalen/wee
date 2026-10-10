@@ -17,7 +17,7 @@ export function stateKey(s) {
     Object.keys(s.open).filter(c => s.open[c]).sort()]);
 }
 
-const settled = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => !e.dead && (e.rush || e.slide));
+export const settled = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => !e.dead && (e.rush || e.slide));
 
 // One move from state s: a fresh copy, the key, then ticks until everything stops.
 // Null when the move changes nothing, kills you, or never settles.
@@ -109,8 +109,19 @@ export function unsearchable(level) {
 export function* search(level, max = MAX_STATES) {
   const why = unsearchable(level);
   if (why) return { status: why, moves: null, states: 0 };
-  const start = createGame(level);
-  const keys = [...KEYS, ...(level.powers.cycle || level.powers.swim ? ['hide'] : [])];
+  return yield* searchFrom(createGame(level), max);
+}
+
+// Whether the goal can still be reached from a game at rest, as in play: true, false, or
+// null when the search hits its cap.
+export function* canWin(s, max = MAX_STATES) {
+  if (s.won) return true;
+  const r = yield* searchFrom(structuredClone(s), max);
+  return r.status === 'solved' ? true : r.status === 'unsolvable' ? false : null;
+}
+
+function* searchFrom(start, max) {
+  const keys = [...KEYS, ...(start.powers.cycle || start.powers.swim ? ['hide'] : [])];
   const seen = new Map([[stateKey(start), null]]);
   let frontier = [{ s: start, path: [] }];
   while (frontier.length) {
