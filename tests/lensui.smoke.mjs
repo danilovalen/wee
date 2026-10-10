@@ -49,6 +49,13 @@ try {
   check('key 1 cycles Colour to Distance', await on('colour') === 'distance');
   const [near, past] = [await pixel(1.75, 0.75), await pixel(5.75, 0.75)];
   check('near the goal is green, past the one-way is grey', near[1] > near[0] && Math.abs(past[0] - past[1]) < 30 && past[0] > 60, JSON.stringify([near, past]));
+  // Passes: a big dot where you stop, a small one where you only slide through.
+  await page.click('[data-lens-group=lines][data-lens=off]');
+  await page.click('[data-lens-group=colour][data-lens=off]');
+  await page.click('[data-lens-group=dots][data-lens=passes]');
+  await settle();
+  const big = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'); const at = (x, y, dx) => g.getImageData(Math.round((x + 0.5) * t + dx * t / 32), Math.round((y + 0.5) * t), 1, 1).data[2]; return { stopEdge: at(4, 1, 3), passEdge: at(3, 1, 3), passCentre: at(3, 1, 0) }; });
+  check('Passes draws a big dot on a stop and a small one where you slide through', (await legend()).includes('small where you only pass') && big.stopEdge > 150 && big.passEdge < 100 && big.passCentre > 80, JSON.stringify(big) + await legend());
   await page.keyboard.press('0');
   check('key 0 turns every lens off', !(await legend()).trim() && await on('dots') === 'off');
   await page.click('#stopsBtn');

@@ -36,6 +36,12 @@ const old = splitRoom(JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee'
 check('a tile shows the fewest moves from any stop on it', run(lensData(old)).distance.get(13) === 4);
 const his = splitRoom(JSON.parse(readFileSync('rooms/first-room.wee', 'utf8'))).level;
 check('the solution in his room is its 21 moves', run(lensData(his)).solution.length - 1 === 21);
+// Passes: the tiles a move crosses without ending on them, only for moves that work.
+const hall = room(['######', '#P..#', '######'].map(r => r.slice(0, 5)), { powers: OFF });
+const hp = run(lensData(hall));
+check('a slide passes the tiles between its stops', [...hp.passes].join() === '7' && [...hp.stops].sort().join() === '6,8', JSON.stringify([[...hp.passes], [...hp.stops]]));
+const pit = room(['######', '#P..X#', '######'], { powers: OFF });
+check('a move that kills you passes nothing', run(lensData(pit)).passes.size === 0);
 check('a search past its cap says so', run(lensData(oneWay, 1)).capped === true);
 const rt = room(['#####', '#P.E#', '#####'], { mode: 'realtime' });
 check('a room with real-time pieces gives no answer', run(lensData(rt)) === null);

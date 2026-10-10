@@ -20,11 +20,16 @@ export function drawHeat(g, w, heat) {
   g.globalAlpha = 1;
 }
 
-// marks: { dots: [tiles], lines: [tiles in order], frames: Set of tiles }.
-export function drawLensMarks(g, w, { dots, lines, frames } = {}) {
+// marks: { dots: [tiles], small: [tiles], lines: [tiles in order], frames: Set of tiles }.
+export function drawLensMarks(g, w, { dots, small, lines, frames } = {}) {
   if (dots) {
     g.fillStyle = INK.player;
     for (const i of dots) { const [x, y] = centre(i, w); g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill(); }
+  }
+  if (small) {
+    g.fillStyle = INK.player; g.globalAlpha = 0.6;
+    for (const i of small) { const [x, y] = centre(i, w); g.beginPath(); g.arc(x, y, 1.8, 0, Math.PI * 2); g.fill(); }
+    g.globalAlpha = 1;
   }
   if (lines && lines.length > 1) {
     g.strokeStyle = INK.goal; g.fillStyle = INK.goal; g.lineWidth = 2.5; g.lineCap = 'round';

@@ -102,7 +102,7 @@ Two lenses changed home while grouping:
 | Phase | Ships | Rough size |
 |---|---|---|
 | L1 | the four group rows, keys, legend, the Lenses button; Stops and Traps moved in; Solution and Distance | half a day |
-| L2 | the search records motion: Passes, Lines, Danger | a day |
+| L2 | the search records motion: Passes (built 2026-10-10), Lines, Danger | a day |
 | L3 | Beams and Pieces | half a day |
 | L4 | Plays: store play reports per room on the server, heat from them | a day, needs the server |
 

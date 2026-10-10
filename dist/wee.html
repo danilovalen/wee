@@ -1757,11 +1757,16 @@ function drawHeat(g, w, heat) {
   g.globalAlpha = 1;
 }
 
-// marks: { dots: [tiles], lines: [tiles in order], frames: Set of tiles }.
-function drawLensMarks(g, w, { dots, lines, frames } = {}) {
+// marks: { dots: [tiles], small: [tiles], lines: [tiles in order], frames: Set of tiles }.
+function drawLensMarks(g, w, { dots, small, lines, frames } = {}) {
   if (dots) {
     g.fillStyle = INK.player;
     for (const i of dots) { const [x, y] = centre(i, w); g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill(); }
+  }
+  if (small) {
+    g.fillStyle = INK.player; g.globalAlpha = 0.6;
+    for (const i of small) { const [x, y] = centre(i, w); g.beginPath(); g.arc(x, y, 1.8, 0, Math.PI * 2); g.fill(); }
+    g.globalAlpha = 1;
   }
   if (lines && lines.length > 1) {
     g.strokeStyle = INK.goal; g.fillStyle = INK.goal; g.lineWidth = 2.5; g.lineCap = 'round';
@@ -2063,11 +2068,12 @@ function parseMove(m) {
 
 const limit = s => 4 * s.w * s.h + 40;
 
-function move(s, m) {
+// onTick, when given, sees the state after every tick, for a caller that maps where moves go.
+function move(s, m, onTick) {
   const { k, at, then } = parseMove(m);
   const t = structuredClone(s), deaths = t.deaths, before = stateKey(s);
-  step(t, [k]);
-  for (let i = 1; i <= limit(t) && !settled(t); i++) step(t, i === at ? [then] : []);
+  step(t, [k]); if (onTick) onTick(t);
+  for (let i = 1; i <= limit(t) && !settled(t); i++) { step(t, i === at ? [then] : []); if (onTick) onTick(t); }
   if (t.deaths !== deaths || !settled(t)) return null;
   if (!t.won && stateKey(t) === before) return null;
   return t;
@@ -2107,9 +2113,10 @@ function settleFrom(t, deaths, before, at = 0, then = null, from = 1) {
 // Every move from s and where it leads: [move, state] pairs. A mid-slide power branches
 // from the slide as it is on that tick, instead of replaying the slide from the start.
 // A move that leads nowhere yields null, so a caller can hand control back between tries.
-function* successors(s, keys, powers = true) {
+// onTick sees the plain moves only: a power branches off a slide on the line it already covers.
+function* successors(s, keys, powers = true, onTick = null) {
   const before = stateKey(s), pw = s.powers, laser = pw.laser && laserMatters(s);
-  for (const k of keys) { const t = move(s, k); if (t) yield [k, t]; }
+  for (const k of keys) { const t = move(s, k, onTick); yield t ? [k, t] : null; }
   if (!powers || (!pw.boomerang && !pw.dive && !laser)) return;
   for (const d of KEYS) {
     const t = structuredClone(s);
@@ -3153,7 +3160,8 @@ const { createGame } = m8;
 const { computeBeams } = m3;
 const { successors, stateKey, unsearchable, MAX_STATES } = m20;
 // What the editor's lenses draw, from every position the room can reach: how far each tile
-// is from winning, a shortest way there, and every tile a beam or a piece ever covers. A
+// is from winning, a shortest way there, every tile you pass through on the way to a stop,
+// and every tile a beam or a piece ever covers. A
 // generator, so the page can run it a slice at a time.
 
 
@@ -3164,12 +3172,16 @@ const PIECES = ['box', 'heavy', 'mover', 'enemy', 'strong'];
 
 // { distance: Map tile -> fewest moves to win from a stop there, hopeless: tiles where no stop
 // can win, solution: the tiles a shortest way stops on, start first, beams and pieces: Sets of
-// tiles, capped }. Null for a room with real-time pieces.
+// tiles, passes: a Set of every tile you cross in a move that works, stops: every tile a move
+// ends on, capped }. Null for a room with real-time pieces.
 function* lensData(level, max = MAX_STATES) {
   if (unsearchable({ ...level, cells: [...level.cells, 'goal'] })) return null;
   const start = createGame(level), keys = [...KEYS, ...(level.powers.cycle || level.powers.swim ? ['hide'] : [])];
   const tileOf = s => s.player.y * s.w + s.player.x;
-  const beams = new Set(), pieces = new Set();
+  const beams = new Set(), pieces = new Set(), passes = new Set(), stops = new Set([tileOf(start)]);
+  // The tiles of the move being tried; kept only when the move works.
+  let crossed = [];
+  const onTick = s => { crossed.push(tileOf(s)); };
   const record = s => {
     computeBeams(s, false);
     for (const b of s.beams) for (const [x, y] of b.path.slice(1)) beams.add(y * s.w + x);
@@ -3182,9 +3194,12 @@ function* lensData(level, max = MAX_STATES) {
   for (let i = 0; i < order.length && !capped; i++) {
     const k = order[i], s = waiting.get(k), node = nodes.get(k);
     waiting.delete(k);
-    for (const pair of successors(s, keys)) {
+    for (const pair of successors(s, keys, true, onTick)) {
+      if (pair) for (const i of crossed) passes.add(i);
+      crossed = [];
       if (pair) {
         const t = pair[1];
+        stops.add(tileOf(t));
         if (t.won) { node.next.add(WIN); if (!win) win = { from: k, tile: tileOf(t) }; }
         else {
           const tk = stateKey(t);
@@ -3212,7 +3227,8 @@ function* lensData(level, max = MAX_STATES) {
   }
   const solution = [];
   if (win) { solution.push(win.tile); for (let k = win.from; k; k = nodes.get(k).parent) solution.unshift(nodes.get(k).tile); }
-  return { distance, hopeless: [...seen].filter(t => !distance.has(t)), solution, beams, pieces, capped, positions: nodes.size };
+  for (const i of stops) passes.delete(i);
+  return { distance, hopeless: [...seen].filter(t => !distance.has(t)), solution, beams, pieces, passes, stops, capped, positions: nodes.size };
 }
 return { lensData };
 })();
@@ -3239,14 +3255,14 @@ const { sliced } = m23;
 const STOPS_BUDGET_MS = 2000;
 const LENS_GROUPS = [
   { id: 'colour', label: 'Colour', key: '1', lenses: [['distance', 'Distance'], ['beams', 'Beams'], ['pieces', 'Pieces']] },
-  { id: 'dots', label: 'Dots', key: '2', lenses: [['stops', 'Stops']] },
+  { id: 'dots', label: 'Dots', key: '2', lenses: [['stops', 'Stops'], ['passes', 'Passes']] },
   { id: 'lines', label: 'Lines', key: '3', lenses: [['solution', 'Solution']] },
   { id: 'frames', label: 'Frames', key: '4', lenses: [['traps', 'Traps']] },
 ];
 // The lens a tool opens by itself, while it is in hand.
 const PIECE = { colour: 'pieces' }, BEAM = { colour: 'beams' }, AIM = { colour: 'distance', lines: 'solution' };
 const AUTO = { turret: BEAM, receiver: BEAM, sensor: BEAM, box: PIECE, heavy: PIECE, mover: PIECE, enemy: PIECE, strong: PIECE, goal: AIM, start: AIM };
-const SEARCHED = ['distance', 'beams', 'pieces', 'solution'];
+const SEARCHED = ['distance', 'beams', 'pieces', 'solution', 'passes'];
 
 const L = () => S.lens;
 // What is on in a group: your pick, else what the tool opens, else nothing.
@@ -3320,6 +3336,7 @@ function lensMarks() {
     if (d && colour === 'beams') out.heat = { tiles: d.beams, colour: INK.beam };
     if (d && colour === 'pieces') out.heat = { tiles: d.pieces, colour: INK.box };
     if (st && lensOn('dots') === 'stops') out.dots = st.list || [...(st.out.stops || [])];
+    if (d && lensOn('dots') === 'passes') { out.dots = [...d.stops]; out.small = [...d.passes]; }
     if (d && lensOn('lines') === 'solution') out.lines = d.solution;
     if (st && st.traps && lensOn('frames') === 'traps') out.frames = new Set(st.traps);
   }
@@ -3334,6 +3351,7 @@ function line(id) {
   const wait = 'Working it out...';
   switch (id) {
     case 'stops': return st && st.list ? `Dots: ${tiles(st.list.length)} you can stop on${st.capped ? ', maybe more' : ''}.` : wait;
+    case 'passes': return !d ? wait : `Dots: big where you stop (${d.stops.size}), small where you only pass (${d.passes.size}).${part}`;
     case 'traps': return !S.level.cells.includes('goal') ? 'Frames: place a Goal to find traps.' : st && st.traps ? `Frames: ${tiles(st.traps.length)} where the goal is out of reach for good.` : wait;
     case 'distance': return !d ? wait : !S.level.cells.includes('goal') ? 'Colour: place a Goal to see how far each tile is.' : `Colour: green is near the goal, red is far, grey can no longer win.${part}`;
     case 'beams': return !d ? wait : `Colour: red where a laser can ever reach.${part}`;

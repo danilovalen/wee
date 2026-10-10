@@ -30,11 +30,12 @@ export function parseMove(m) {
 
 const limit = s => 4 * s.w * s.h + 40;
 
-export function move(s, m) {
+// onTick, when given, sees the state after every tick, for a caller that maps where moves go.
+export function move(s, m, onTick) {
   const { k, at, then } = parseMove(m);
   const t = structuredClone(s), deaths = t.deaths, before = stateKey(s);
-  step(t, [k]);
-  for (let i = 1; i <= limit(t) && !settled(t); i++) step(t, i === at ? [then] : []);
+  step(t, [k]); if (onTick) onTick(t);
+  for (let i = 1; i <= limit(t) && !settled(t); i++) { step(t, i === at ? [then] : []); if (onTick) onTick(t); }
   if (t.deaths !== deaths || !settled(t)) return null;
   if (!t.won && stateKey(t) === before) return null;
   return t;
@@ -74,9 +75,10 @@ function settleFrom(t, deaths, before, at = 0, then = null, from = 1) {
 // Every move from s and where it leads: [move, state] pairs. A mid-slide power branches
 // from the slide as it is on that tick, instead of replaying the slide from the start.
 // A move that leads nowhere yields null, so a caller can hand control back between tries.
-export function* successors(s, keys, powers = true) {
+// onTick sees the plain moves only: a power branches off a slide on the line it already covers.
+export function* successors(s, keys, powers = true, onTick = null) {
   const before = stateKey(s), pw = s.powers, laser = pw.laser && laserMatters(s);
-  for (const k of keys) { const t = move(s, k); if (t) yield [k, t]; }
+  for (const k of keys) { const t = move(s, k, onTick); yield t ? [k, t] : null; }
   if (!powers || (!pw.boomerang && !pw.dive && !laser)) return;
   for (const d of KEYS) {
     const t = structuredClone(s);
