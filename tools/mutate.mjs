@@ -371,6 +371,8 @@ const M = [
   ['src', "if (nodes.size >= max) return null;", "", 'design'],
   ['src', "const idle = ps.filter(p => p.without === par);", "const idle = [];", 'designui'],
   ['src', "  S.check = null;\n  clearDesign();", "  S.check = null;", 'designui'],
+  ['src', "liveTimer = setTimeout(() => { if (!S.check && JSON.stringify(S.level) === stamp) runCheck(true); }, LIVE_WAIT_MS);", "", 'designui'],
+  ['src', "if (r.status === 'solved' && !S.check.live) runDesign", "if (r.status === 'solved') runDesign", 'designui'],
   ['src', "const unused = es.filter(e => e.without === par), plain", "const unused = [], plain", 'designui'],
   ['src', "plain = es.filter(e => e.without !== par && e.standIn === par);", "plain = [];", 'designui'],
   ['src', ": { ...level, cells: walled(e.y * level.w + e.x), entities: rest };", ": null;", 'design'],

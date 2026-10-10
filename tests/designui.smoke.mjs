@@ -47,6 +47,10 @@ try {
   const box = await page.locator('#game').boundingBox(), lv = await page.evaluate(() => window.wee.getLevel());
   await page.mouse.click(box.x + 4.5 * box.width / lv.w, box.y + 3.5 * box.height / lv.h);
   check('an edit clears the notes', await page.locator('#designBox').isHidden());
+  // Then the room is solved again by itself, without the design notes.
+  const live = await page.waitForFunction(() => /^(Solvable in \d+|No solution|Too big)/.test(document.getElementById('checkText').textContent), null, { timeout: 5000 }).then(() => true, () => false);
+  check('after an edit the room is solved again by itself', live, await page.textContent('#checkText'));
+  check('and the live check leaves the design notes to Check', await page.locator('#designBox').isHidden());
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the design smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

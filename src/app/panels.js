@@ -111,7 +111,7 @@ export function buildPanels(actions) {
   $('respawnBtn').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
-  $('checkBtn').onclick = runCheck;
+  $('checkBtn').onclick = () => runCheck();
   buildSelect({ syncPanel });
   $('stopsBtn').onclick = toggleStops;
   $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };

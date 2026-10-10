@@ -11,6 +11,9 @@ import { routes } from '../solve/design.js';
 const SLICE_MS = 25;
 // The stop map searches this long, then shows what it found.
 const STOPS_BUDGET_MS = 2000;
+// While you edit, the room is solved this long after the last change, with a smaller cap.
+const LIVE_WAIT_MS = 300, LIVE_MAX = 5000;
+let liveTimer = null;
 const SAY = {
   solved: r => `Solvable in ${r.moves.length} ${r.moves.length === 1 ? 'move' : 'moves'}.`,
   unsolvable: () => 'No solution. Every reachable position was tried.',
@@ -21,10 +24,12 @@ const SAY = {
 
 export function checkText(r) { return SAY[r.status](r); }
 
-export function runCheck() {
+// A live check runs by itself after an edit: it has a smaller cap and leaves the design
+// notes to Check.
+export function runCheck(live = false) {
   const level = JSON.parse(JSON.stringify(S.level)), stamp = JSON.stringify(level);
-  const it = search(level);
-  S.check = { stamp, result: null };
+  const it = search(level, live ? LIVE_MAX : undefined);
+  S.check = { stamp, result: null, live };
   clearDesign();
   $('checkText').textContent = 'Checking...';
   $('showSolution').hidden = true;
@@ -43,18 +48,23 @@ export function runCheck() {
 
 function finish(r) {
   S.check.result = r;
-  $('checkText').textContent = checkText(r);
+  $('checkText').textContent = S.check.live && r.status === 'capped' ? 'Too big to tell while editing. Press Check to search further.' : checkText(r);
   $('showSolution').hidden = r.status !== 'solved';
-  if (r.status === 'solved') runDesign(r.moves.length);
+  if (r.status === 'solved' && !S.check.live) runDesign(r.moves.length);
 }
 
-// A check goes stale the moment the room changes.
+// A check goes stale the moment the room changes, and a live one starts after a pause.
 export function syncCheck() {
-  if (!S.check || S.check.stamp === JSON.stringify(S.level)) return;
-  S.check = null;
-  clearDesign();
-  $('checkText').textContent = '';
-  $('showSolution').hidden = true;
+  const stamp = JSON.stringify(S.level);
+  if (S.check && S.check.stamp === stamp) return;
+  if (S.check) {
+    S.check = null;
+    clearDesign();
+    $('checkText').textContent = '';
+    $('showSolution').hidden = true;
+  }
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(() => { if (!S.check && JSON.stringify(S.level) === stamp) runCheck(true); }, LIVE_WAIT_MS);
 }
 
 // Called each tick in play: feeds the next solution move once everything has stopped.

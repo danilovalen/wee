@@ -227,7 +227,7 @@ The hill climb starts from the open room instead of an empty frame, and the piec
 already there are locked: changes only add or move what the generator placed. The same judge
 applies, so Must use and the wall stand-in hold for the added parts.
 
-## Solvable while you edit (proposed, 2026-10-10)
+## Solvable while you edit (built 2026-10-10)
 
 Asked: is the "solvable" line too expensive after every change? Measured: First room solves in
 about 40 ms, the old 7x12 room in about 200 ms, in Node. Proposal: after each edit, wait for a
