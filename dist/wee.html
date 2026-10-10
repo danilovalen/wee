@@ -210,13 +210,14 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 }
 @media (min-width: 701px) {
   /* Two fixed rows: the tool's controls, then one line of text. Nothing is shortened. */
-  .ctx { flex: none; display: grid; align-content: center; row-gap: 4px; height: 62px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
+  .ctx { flex: none; display: grid; align-content: center; row-gap: 4px; min-height: 62px; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
   .ctx #options { display: flex; gap: 16px; }
   .ctx #options:not(:has(.opt:not([hidden]))) { display: none; }
   .ctx .opt { margin: 0; flex-wrap: nowrap; flex: none; }
   .ctx .opt > span:first-child { width: auto; font-size: 12.5px; }
   .ctx .opt .note { display: none; }
-  .ctx #options { gap: 10px; }
+  /* In a narrow window the controls take a second row rather than run off the edge. */
+  .ctx #options { gap: 4px 10px; flex-wrap: wrap; }
   .ctx .opt { gap: 3px; }
   .ctx .opt [data-aim], .ctx .opt [data-start], .ctx .opt [data-corner], .ctx .opt [data-pass], .ctx .opt [data-face], .ctx .opt [data-axis] { width: 28px; }
   .ctx #ctxNote, .ctx #placeHint { margin: 0; font-size: 12.5px; }

@@ -475,6 +475,7 @@ const M = [
   ['style.css', "  .ctx #ctxNote, .ctx #placeHint { order: 1; }\n", "", 'fit'],
   ['style.css', "  .ctx .opt .note { display: none; }\n", "", 'fit'],
   ['src', "  $('placeHint').classList.toggle('quiet', !message && !!note);", "", 'fit'],
+  ['style.css', "  .ctx #options { gap: 4px 10px; flex-wrap: wrap; }", "  .ctx #options { gap: 4px 10px; }", 'fit'],
 ];
 
 let caught = 0, crashed = 0;

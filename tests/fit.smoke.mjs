@@ -8,7 +8,7 @@ const { check, done } = suite('fit');
 const server = await serve(5191);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
 try {
-  for (const [w, h] of [[874, 900], [760, 900], [1280, 720], [1366, 768], [1920, 1080]]) {
+  for (const [w, h] of [[874, 900], [760, 900], [701, 900], [1280, 720], [1366, 768], [1920, 1080]]) {
     const page = await browser.newPage({ viewport: { width: w, height: h } });
     await page.goto('http://localhost:5191/');
     await page.waitForFunction(() => window.wee && window.wee.roomsReady);
@@ -51,7 +51,8 @@ try {
     // A bar's control past the bar's edge, or with its own text cut, is cut off.
     const cutOff = () => page.evaluate(() => ['ctx', 'statusBar', 'well', 'lensChips'].flatMap(id => { const bar = document.getElementById(id), r = bar.getBoundingClientRect();
       return [...bar.querySelectorAll('button, .opt > span')].filter(b => b.offsetParent && b.closest('.wellBody') === null).filter(b => { const q = b.getBoundingClientRect(); return q.right > r.right + 0.5 || q.bottom > r.bottom + 0.5 || b.scrollWidth > b.clientWidth + 1; }).map(b => `${id}:${b.textContent.trim().slice(0, 16)}`); }));
-    const share = () => page.evaluate(() => document.getElementById('roomArea').clientHeight / innerHeight);
+    // The room's share of the height; a room held back by the window's width loses nothing to height, so it counts as whole.
+    const share = () => page.evaluate(() => { const a = document.getElementById('roomArea'), c = document.getElementById('game').getBoundingClientRect(); return c.width >= a.clientWidth - 40 && c.height < a.clientHeight - 40 ? 1 : a.clientHeight / innerHeight; });
     // The room takes the area it is given, less the margin its "+" handles sit in, and no more.
     const fills = () => page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), a = document.getElementById('roomArea'); return (c.width >= a.clientWidth - 40 || c.height >= a.clientHeight - 40) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
     const ctxOpts = await page.evaluate(() => [...document.querySelectorAll('#ctx .opt')].filter(o => !o.hidden).length);
