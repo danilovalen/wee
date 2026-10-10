@@ -74,7 +74,7 @@ a { color: var(--ice); }
 <div class="wrap">
   <div class="status">Diagnosis · nothing built · 2026-10-10</div>
   <h1>The <span>wee</span> UI pass</h1>
-  <p class="lede">Why the editor runs off the bottom of the screen, how 35 level editors, strategy games and creative tools keep a single screen readable, and what wee should take from them.</p>
+  <p class="lede">Why the editor runs off the bottom of the screen, how about 75 editors, games and analysis tools keep a single screen readable, and what wee should take from them.</p>
   <blockquote>"These options seem like something that will be cut on the page end due to our no-scrolling-allowed rule. We need a UI pass on this tool. Diagnose how other similar tools work so we can improve ours."</blockquote>
 
   <h2>1. The problem, measured</h2>
@@ -107,9 +107,9 @@ a { color: var(--ice); }
   </table></div>
 
   <h2>2. How other tools do it</h2>
-  <p class="caveat">Three research passes: puzzle and level editors, information-dense games, creative tools. The network policy blocked most direct page fetches, so most facts come from search summaries quoting official docs and wikis. Tiled, Lönn and PuzzleScript were read in full from their GitHub sources. Uncertain facts are marked.</p>
+  <p class="caveat">Six research passes in two rounds. Round one: puzzle and level editors, information-dense games, creative tools. Round two: editors on tiny or touch screens, analysis and debug visualisers, and editors with a solver, generator or level library. The network policy blocked most direct page fetches, so most facts come from search summaries quoting official docs and wikis. Where a tool's source or manual lives on GitHub it was read in full: Tiled, Lönn, PuzzleScript, KaTrain, Ultimate Doom Builder, TrenchBroom, Simon Tatham's puzzles, SixCells, Snakefall. Uncertain facts are marked.</p>
 
-  <h3>Level editors</h3>
+  <h3>Round one · Level editors</h3>
   <ul>
     <li><b>Super Mario Maker 2.</b> Only the 12 most recent parts are on screen; hold one to pin it. The full catalogue opens as a grid. A part's options open in a bubble on the part itself and grey out the rest. Its director's stated goal was "the right number of icons onscreen"; reviews still call it crammed.</li>
     <li><b>PuzzleScript.</b> No option panels at all. Keys 1 to 0 pick tiles; a "+" on the room's edge adds a row or column, right click removes one; E switches between editing and playing.</li>
@@ -120,7 +120,7 @@ a { color: var(--ice); }
     <li><b>A Sokoban research tool</b> draws dead squares, the search and the best path on the grid, and pointing at a dead square says which rule kills it. The closest thing to wee's lenses, and it explains on hover, not in a panel.</li>
   </ul>
 
-  <h3>Information-dense games</h3>
+  <h3>Round one · Information-dense games</h3>
   <ul>
     <li><b>Europa Universalis, Hearts of Iron.</b> Map modes are a small cluster on keys, and <b>pressing a key again cycles to the next mode on that key</b>. Hearts of Iron shows the common few and hides the rest behind one control.</li>
     <li><b>Civilization VI.</b> The settler lens opens by itself when a settler is selected. A popular mod made that a setting. The legend shows only while a lens is on (placement unconfirmed).</li>
@@ -133,7 +133,7 @@ a { color: var(--ice); }
     <li><b>Lichess.</b> Arrows by right-drag, colour by modifier key, one key toggles the engine's arrows, <code>?</code> lists every shortcut.</li>
   </ul>
 
-  <h3>Creative tools</h3>
+  <h3>Round one · Creative tools</h3>
   <ul>
     <li><b>Aseprite.</b> The context bar, a strip under the menu, shows the current tool's options and nothing else. The timeline hides on Tab.</li>
     <li><b>Photoshop, Photopea.</b> Panels collapse to an icon strip; a "narrow options bar" turns the options' words into icons on small screens; Photopea folds each sidebar column into buttons that open one panel at a time.</li>
@@ -142,6 +142,53 @@ a { color: var(--ice); }
     <li><b>tldraw.</b> The contextual toolbar floats over the selection, shows only options that apply, hides while dragging, and is not drawn at all when nothing applies.</li>
     <li><b>Ableton.</b> The Info View: one small fixed box that explains whatever the mouse is over.</li>
     <li><b>Linear, VS Code.</b> A command palette that runs anything and shows each command's key, so using it teaches the shortcuts; every panel has a toggle; a mode that hides everything.</li>
+  </ul>
+
+
+  <h3>Round two · Tiny and touch screens</h3>
+  <p>Editors where one screen is forced by the hardware, so nothing is allowed to push the canvas.</p>
+  <ul>
+    <li><b>PICO-8</b> (128×128 pixels for everything). Five editors behind a tab strip in a corner; Alt+arrows cycles them. The sprite sheet is paged into four tabs instead of scrolling. Holding Space in the map editor pans and outlines what fits on screen.</li>
+    <li><b>TIC-80.</b> F1 to F5 open the editors; number keys pick map tools. <b>Holding Shift shows the tile sheet over the map</b> and releasing hides it; one key toggles the grid. An "advanced" button reveals rarer options such as sprite flags.</li>
+    <li><b>Bitsy.</b> Separate small panels you open when needed; every paint panel has the same layout; one "find" panel catalogues everything by type.</li>
+    <li><b>Super Mario Maker for 3DS.</b> The top screen plays, the touch screen edits. Its editing view is only 16 squares wide against the Wii U's 24, and the <b>side bars can be switched off to gain room</b>. Reviewers still call it cramped. On Wii U, variants come from gestures on the part (shake a mushroom), not from extra palette entries.</li>
+    <li><b>Game Builder Garage.</b> Two full screens, game and program, swapped by one button while the game runs. A reference ("Nodopedia") is one press away instead of always visible.</li>
+    <li><b>WarioWare D.I.Y.</b> Art, music and assembly are separate full screens; its 3 to 5 second microgames keep every edit screen small by design.</li>
+    <li><b>Townscaper, Islanders.</b> Almost no interface: left click builds, right click removes, one colour strip. Islanders shows whether a building fits and the score it would earn before you place it.</li>
+    <li><b>Procreate Pocket.</b> One Modify button opens everything else; settings slide up as cards over the canvas; two-finger tap undoes and names what it undid.</li>
+    <li><b>Scratch.</b> A small-stage button gives the code area room on small screens.</li>
+    <li><b>Counterexamples.</b> Roblox Studio's forced ribbon redesign (reported for January 2026) drew complaints that its padding wastes space and its labels get cut off; staff chose cut labels over multi-line ones. Pixaki tied the palette to the layers panel, so hiding one hid the other.</li>
+  </ul>
+
+  <h3>Round two · Analysis and debug visualisers</h3>
+  <p>Tools whose whole job is drawing computed information over a board: the closest relatives of wee's lenses.</p>
+  <ul>
+    <li><b>KaTrain</b> (Go review). A row of overlay checkboxes, each on one key (q, w, e, r, t). Overlays stack except where two compete for the same marks: turning on policy turns off top moves. Colour says how big a mistake was and dot size says whether it was punished. <b>"Small or faint dots indicate high uncertainty and never show text."</b> Losses fall into six buckets, not a continuous ramp. Hovering a move animates its line. Overlay setup is remembered separately for play and for analysis.</li>
+    <li><b>Lizzie</b> (Go). Each candidate is a filled circle carrying two numbers; the best one gets its own colour. Holding x lists every command on screen.</li>
+    <li><b>ChessBase.</b> Clicking a piece colours its destination squares red to green by evaluation. Values appear only for the piece you touch.</li>
+    <li><b>Chess.com, En Croissant.</b> Moves get a bucketed label (??, ?, !?, !) instead of a raw number. Each engine draws arrows in its own colour, and a setting says how many arrows show.</li>
+    <li><b>JSoko</b> (Sokoban). Dead squares are darker for the whole level. Clicking the player or a box marks the squares it can reach with small circles. An unexplained refusal is treated as a bug.</li>
+    <li><b>PuzzleGraph</b> (Rune Skovbo Johansen). Builds a puzzle's state space and marks solution paths, dead ends and fail states. Commenters note tile-level spaces are too big to draw as a graph, which is the argument for projecting onto the board as wee does. The search found no ice-puzzle tool that draws stops, passes or moves: <b>wee's Dots, Lines and Frames lenses look new.</b></li>
+    <li><b>Unreal's gameplay debugger.</b> One key toggles it; number keys toggle categories, and the on-screen header lists the categories with their numbers, so <b>the legend is also the toggle bar.</b></li>
+    <li><b>Unity's navigation overlay.</b> A small box docked in a corner of the scene, with grouped checkboxes; colours and opacity live in preferences, not in the box.</li>
+    <li><b>Halo 3 heatmaps.</b> One red ramp per view, darker meaning more; filters switch the view rather than stacking.</li>
+    <li><b>Firefox and Chrome grid overlays.</b> Firefox caps them at three grids at once, each in its own colour, and <b>the colour swatch next to each checkbox is the legend</b>. Hovering a cell of a mini-grid in the panel highlights that area on the page.</li>
+    <li><b>Ultimate Doom Builder, Hammer, TrenchBroom</b> (map checks). Problems form a list. <b>Clicking one zooms the view to the object</b> and shows a one-line description under the list, with Fix buttons where a fix exists (Hammer adds "fix all of this type"). TrenchBroom's issue list updates live whenever the map changes, with a filter by type and a Hide option.</li>
+    <li><b>QGIS, ArcGIS.</b> Each layer's toggle row expands into its own legend; classes are checkable children; a filter hides legend entries nothing uses.</li>
+    <li><b>Football pass maps.</b> Edge width is how often two players pass to each other, and links below a minimum are dropped: "the cutoff depends on the message". The same idea as wee's Moves lens.</li>
+  </ul>
+
+  <h3>Round two · Editors with a solver, generator or library</h3>
+  <ul>
+    <li><b>Ultimate Doom Builder.</b> A collapsible information panel at the bottom summarises whatever you hover. The status bar has a light (green idle, yellow working, red busy) beside the status text, and on its right the grid size and zoom: <b>clicking a readout opens its setting</b>. Test from the current position is one key.</li>
+    <li><b>TrenchBroom.</b> A context bar above the view shows the current tool's controls, and a "View Options" dropdown at its right end holds every render toggle. The inspector is one panel with pages. Compile and launch are dialogs, not panels.</li>
+    <li><b>Simon Tatham's puzzles.</b> <b>Solve adds the solved state to the end of the undo chain</b>; Undo goes back to solving it yourself. The manual is honest about what the solver cannot solve. Every puzzle has a short game ID or seed that regenerates it exactly. Some games offer "ensure unique solution", and the developer notes explain that generating "at most this hard" is easy while "at least this hard" is hard, and that generators have failure rates.</li>
+    <li><b>webpbn's nonogram checker.</b> Three verdicts, not two: solvable, unique, and solvable by line logic alone, meaning a person can do it without guessing.</li>
+    <li><b>SixCells, HexSolver</b> (Hexcells). Tab toggles playtest and Shift+Tab plays from the start. HexSolver separates "show the next step" from "execute all".</li>
+    <li><b>Snakefall</b> (a Snakebird clone). It <b>removed its playtest button</b>: you edit while the game runs. Edit undo and move undo are separate, redo after a reset replays the moves, and levels and replays are shared as URLs. A research paper on Snakebird searched every level and showed that one-tile edits can greatly lengthen the shortest solution.</li>
+    <li><b>JSoko, YASC</b> (Sokoban). A solution optimiser where you pick the measure (moves, pushes, direction changes) and give it a time budget; it returns the best found so far.</li>
+    <li><b>Opus Magnum, Human Resource Machine.</b> After a solve, histograms place your result among everyone's; targets are thresholds ("size", "speed"), not prose. Opus Magnum records the solution as a looping GIF.</li>
+    <li><b>Mario Maker 2's Course World, Baba Is You.</b> A level is a card with its name, creator, likes, clear rate and a short code; tabs for popular, new and search; an endless mode plays levels in sequence.</li>
   </ul>
 
   <h2>3. What keeps coming back</h2>
@@ -157,7 +204,15 @@ a { color: var(--ice); }
     <li><div><b>One key hides everything else.</b><small>Tiled, LDtk, Figma, VS Code</small></div></li>
     <li><div><b>Every control shows its key; <code>?</code> lists them all.</b><small>Excalidraw, LDtk, Lichess, Linear</small></div></li>
     <li><div><b>Edit the room's own edge</b> instead of a size form.<small>PuzzleScript</small></div></li>
-    <li><div><b>Few icons on screen, the rest one step away.</b><small>Mario Maker, Baba Is You</small></div></li>
+    <li><div><b>Few icons on screen, the rest one step away.</b><small>Mario Maker, Baba Is You, Minecraft's hotbar</small></div></li>
+    <li><div><b>Results live in one fixed-height well with tabs; collapsed, it still reports.</b> Nothing pushes the canvas; more content means another tab, never more height.<small>TrenchBroom, Ultimate Doom Builder, PICO-8, WarioWare</small></div></li>
+    <li><div><b>The legend is the toggle.</b> Each overlay button carries its own swatch or ramp; only a lit one expands to a line of text.<small>Firefox grid overlays, Unreal's debugger, ArcGIS, QGIS</small></div></li>
+    <li><div><b>Buckets, not raw values; faint marks get no text; rare ones are dropped.</b><small>KaTrain, Chess.com, Halo heatmaps, football pass maps</small></div></li>
+    <li><div><b>A finding is a row that jumps to the board, with a fix where one exists.</b><small>Ultimate Doom Builder, Hammer, TrenchBroom</small></div></li>
+    <li><div><b>Say what the solver proved, and what it could not.</b> Solvable, unique, solvable without guessing; capped searches named as capped.<small>webpbn, Simon Tatham's puzzles, Hexcells tools</small></div></li>
+    <li><div><b>A solution is an undoable step or a replay, and a hint is one step of it.</b><small>Simon Tatham's puzzles, Snakefall, HexSolver, Opus Magnum</small></div></li>
+    <li><div><b>Hold a key to peek</b> at something big, release to hide it.<small>TIC-80, PICO-8, Lizzie, Into the Breach</small></div></li>
+    <li><div><b>Settings live in their readouts.</b> Click "7×12" to resize, click the clock to change it.<small>Ultimate Doom Builder's status bar</small></div></li>
   </ol>
 
   <h2>4. Proposal for wee</h2>
@@ -188,31 +243,33 @@ a { color: var(--ice); }
         <rect class="room" x="66" y="44" width="188" height="140" rx="2"/><text x="140" y="118">room</text>
         <rect class="ice" x="72" y="168" width="16" height="10" rx="2"/><rect class="ice" x="92" y="168" width="16" height="10" rx="2"/><rect class="ice" x="112" y="168" width="16" height="10" rx="2"/><rect class="ice" x="132" y="168" width="16" height="10" rx="2"/>
         <text x="152" y="177" class="lbl">lens chips</text>
-        <rect class="fixed" x="4" y="190" width="312" height="14" rx="2"/><text x="10" y="200" class="lbl" style="fill:var(--gold)">status: solvable in 9 · notes ▸ · keys</text>
+        <rect class="fixed" x="4" y="190" width="312" height="14" rx="2"/><text x="10" y="200" class="lbl" style="fill:var(--gold)">● 9 moves · 3 findings ▸ · 7×12 · keys</text>
       </svg>
       <figcaption>Proposed: only the room flexes. Every other region has a fixed size.</figcaption>
     </figure>
   </div>
   <ol class="prop">
     <li><b>1 · Context bar.</b> One line under the header, fixed height: the current tool's options, which sit under the room today, and its hint when it has none. It absorbs the options block, the place hint and the key line.</li>
-    <li><b>2 · Status bar.</b> One line at the bottom, fixed: the live solve verdict, Show solution, a count of design notes that opens them, and the keys for what you are doing. In play: moves and the softlock warning.</li>
-    <li><b>3 · Design notes in a drawer,</b> opened from the status bar, never inline. Their findings stay on the room as frames, as now.</li>
-    <li><b>4 · Lenses as four chips</b>, one per row (Colour, Dots, Lines, Frames), on the room's edge. Each chip cycles its row on click and on its number key. The header's Lenses button turns them all on or off and holds Follow the tool. The legend becomes one short line per lit chip, so it is never longer than four. A lens the tool opened looks hollow until you pick one yourself.</li>
-    <li><b>5 · Hover a tile, read everything.</b> One info line in the status bar: "3 moves to win · a laser reaches here · you only pass". Long legend words move there too.</li>
-    <li><b>6 · Right column as tabs:</b> Room, Powers, World. Or the room's size moves to "+" handles on its edges, which frees the column for powers.</li>
-    <li><b>7 · Narrow windows.</b> Tool labels become icons below about 1100 px wide, with names and keys in the tooltip; the right column folds to an icon rail.</li>
-    <li><b>8 · Tab hides both side columns;</b> <code>?</code> lists every key; each tool button shows its key.</li>
-    <li><b>9 · The gate.</b> The fit test opens everything at once (every lens row, design notes, the tool with the most options, play mode) at every size it tests, and asserts nothing is cut and the room keeps at least 60% of the height. It fails today by 167 px, which is the point.</li>
+    <li><b>2 · Status line and well.</b> One line at the bottom, fixed: a light and the live verdict ("● 21 moves · 1 route"), Show solution, a count of findings, readouts that open their settings ("7×12", the world clock), and the keys for what you are doing. In play: moves and the softlock warning. The line is the collapsed state of a fixed-height well above it, with tabs (Findings, Lenses, Log), so opening it never changes the room's size.</li>
+    <li><b>3 · Design notes become findings.</b> In the well's Findings tab, counts first ("2 pieces not needed · Boomerang saves 10 moves · 103 dead positions"), each expanding to rows. Clicking a row flashes the piece or tile, and a Fix button appears where one exists: "Make it a wall", "Remove it". The verdict says what was proved: solvable, how many shortest routes, and "search capped" when it was.</li>
+    <li><b>4 · Lenses as four chips</b>, one per row (Colour, Dots, Lines, Frames), on the room's edge. Each chip cycles its row on click and on its number key, and <b>carries its own legend</b>: a five-step ramp on the Colour chip, a big and a small dot on Dots, a thin and a thick line on Lines, a frame on Frames. The header's Lenses button turns them all on or off and holds Follow the tool. A lens the tool opened looks hollow until you pick one yourself. Distance comes in five buckets instead of a smooth ramp; Moves hides moves made from very few positions, with the cutoff on its chip.</li>
+    <li><b>5 · Hover a tile, read everything.</b> One info line in the status bar: "3 moves to win · a laser reaches here · you only pass". Long legend words move there too. Hold a key (Shift, as TIC-80 does) to peek at the solution without turning a lens on.</li>
+    <li><b>6 · Solution as a step.</b> Show solution plays on the room and lands in the undo history, so Undo returns; "Next step" shows one move as a hint.</li>
+    <li><b>7 · Right column shrinks.</b> Room size and world clock move into status-line readouts or "+" handles on the room's edges; what stays is Powers, as compact toggles.</li>
+    <li><b>8 · Narrow windows.</b> Tool labels become icons below about 1100 px wide, with names and keys in the tooltip; the right column folds to an icon rail.</li>
+    <li><b>9 · Tab hides both side columns;</b> <code>?</code> lists every key; each tool button shows its key.</li>
+    <li><b>10 · The gate.</b> The fit test opens everything at once (every lens row, design notes, the tool with the most options, play mode) at every size it tests, and asserts nothing is cut and the room keeps at least 60% of the height. It fails today by 167 px, which is the point.</li>
   </ol>
 
   <h2>5. Phases</h2>
   <div class="tbl"><table class="phases">
     <thead><tr><th>Phase</th><th>Ships</th><th>Size</th></tr></thead>
     <tbody>
-      <tr><td>U1</td><td>The frame: context bar, status bar, design notes drawer, only the room flexes, the "everything open" gate</td><td>a day</td></tr>
+      <tr><td>U1</td><td>The frame: context bar, status line and fixed well, findings in the well, only the room flexes, the "everything open" gate</td><td>a day</td></tr>
       <tr><td>U2</td><td>Lens chips on the room's edge, short legends, the automatic look, the hover info line</td><td>half a day</td></tr>
       <tr><td>U3</td><td>Right column tabs or edge handles; icon-only tools when narrow</td><td>half a day</td></tr>
       <tr><td>U4</td><td>Tab hides chrome, <code>?</code> key list, keys on buttons</td><td>a few hours</td></tr>
+      <tr><td>U5</td><td>Findings as rows that jump to the board, with fixes; solution as an undo step and a next-step hint; distance buckets and a moves cutoff</td><td>a day</td></tr>
       <tr><td>later</td><td>A command palette; recent tools; options in a bubble on a placed piece</td><td>open</td></tr>
     </tbody>
   </table></div>
@@ -221,7 +278,7 @@ a { color: var(--ice); }
   <ol class="q">
     <li>Lens chips on the room's edge (always visible, one click), or inside the Lenses dropdown (no space, two clicks)?</li>
     <li>Room size: tabs in the right column, or "+" handles on the room's edges?</li>
-    <li>Design notes: a drawer over the room, or a tab in the right column?</li>
+    <li>Findings: a tab in a well under the room, or a tab in the right column?</li>
     <li>A clickable mockup first, at 1280×720 and 874×900, or straight to U1?</li>
   </ol>
 </div>
