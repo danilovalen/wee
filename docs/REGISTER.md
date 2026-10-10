@@ -79,3 +79,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 71 | "Plan: a proper lenses feature... movements, movement lines, heatmaps... like grand strategy games and design tooling. Include diagnosis from other software." | **planning**, see `docs/LENSES_PLAN.md`. |
 | 72 | "The ultimate power: moving one step at a time. Not sure how it will work with the other powers that require some movement first." | **recorded** in `docs/IDEAS.md`, with the clash he names and a separate-key option. |
 | 73 | "Adding 'one step' to enemies and moving blocks. Every cycle, they move one, instead of full glide." | **recorded** in `docs/IDEAS.md`. Checked: today they glide until blocked each world step. |
+| 74 | "Hybrid. Some lenses can stack, some can't... lens groups and you can enable one of each group." | **planned** in `docs/LENSES_PLAN.md` § Groups: four groups by what they paint (Colour, Dots, Lines, Frames), one lens per group, groups stack. |

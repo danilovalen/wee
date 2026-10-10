@@ -1,6 +1,6 @@
 # Lenses: seeing what a room does
 
-Status: **plan, 2026-10-10. Nothing built beyond Stops.** Owner: "a proper lenses feature to see
+Status: **plan, 2026-10-10, groups decided. Nothing built beyond Stops.** Owner: "a proper lenses feature to see
 the stuff we were discussing. Movements, movement lines, heatmaps, and such. Similar to how these
 grand strategy games have them too. Or these design tooling. Include diagnose from other
 software."
@@ -54,26 +54,54 @@ Each is a question a designer asks. Draft names.
 | **Danger** | Where can you die? | skulls where a move that would end there kills you | the search already drops those moves; count them | small |
 | **Plays** | Where do real players stop, die, give up and reset? | heat from play reports and the softlock banner | the keylog every play already records | larger: needs plays stored per room |
 
+## Groups (owner, 2026-10-10)
+
+> "Hybrid. Some lenses can stack, some can't. Maybe do lens groups and you can enable one of each
+> group. And a group of lenses are these non-stackable."
+
+A group is a **drawing channel**: lenses in one group paint the same thing (a tile's colour, a mark
+at a tile's centre, arrows between tiles), so two of them at once would paint over each other.
+**One lens per group, any number of groups at once.** That is the rule, and it falls out of the
+drawing, not out of taste.
+
+| Group | Paints | Lenses (one at a time) | Draw order |
+|---|---|---|---|
+| **Colour** | each tile's fill, as heat | Distance, Dead ends, Beams, Pieces, Plays | first, under everything |
+| **Dots** | a mark at each tile's centre | Stops, Passes, Danger | over Colour |
+| **Lines** | arrows between tiles | Solution, Lines, Patrols (an enemy's or block's path) | over Dots |
+| **Frames** | an outline around one tile | Unused (from the design notes), Traps | last, on top |
+
+So at most four lenses show at once, one per group: for example Distance heat, with Stops dots, the
+Solution arrows on top, and unused pieces framed.
+
+Two lenses changed home while grouping:
+- **Passes** draws big dots where you stop and small ones where you only pass, so it is a fuller
+  Stops, in the same group: a designer picks one or the other.
+- **Traps** were red Stops dots. As a frame they can show under any Dots lens, including Passes.
+
 ## How it would work
 
-1. **One row of lens buttons** under the room in edit mode, with keys 1 to 9, one lens at a time,
-   Stops becoming one of them. A legend line under the row says what the colours mean.
-2. **One search for all of them.** Extend `routes()` so each move records the tiles the player and
+1. **One row per group** under the room in edit mode: the group's name, then Off and its lenses,
+   as segmented buttons. Picking a lens replaces the one on in its group.
+2. **One key per group cycles it**: 1 Colour, 2 Dots, 3 Lines, 4 Frames, each press moves to the
+   next lens and then to Off. 0 turns every group off.
+3. **One legend line per lens on**, in draw order, under the rows.
+4. **Stops moves out of the header** into the Dots row. The header button becomes **Lenses**, which
+   shows or hides the rows, so a room you are just building stays clean.
+5. **One search for all of them.** Extend `routes()` so each move records the tiles the player and
    each piece passed through, and the beams in each settled position. Every lens reads the same
-   result, so switching lenses is instant and the search runs once per room change, in slices,
-   like the live check.
-3. **Heat lenses recolour tiles; mark lenses draw on top.** A mark lens may stay on under a heat
-   lens (Solution over Distance reads well); two heats never stack.
-4. **A lens can open by itself**: picking the turret tool shows Beams, picking a box shows Pieces.
-   Off by default; a setting.
-5. **Capped rooms say so.** A lens over a search that hit its cap draws what it found and the
+   result, so switching is instant and the search runs once per room change, in slices, like the
+   live check.
+6. **A lens can open by itself** for the tool in hand (turret shows Beams, box shows Pieces). Off
+   by default.
+7. **Capped rooms say so.** A lens over a search that hit its cap draws what it found and its
    legend says "partial".
 
 ## Phases
 
 | Phase | Ships | Rough size |
 |---|---|---|
-| L1 | the lens row, legend, keys; Stops moved into it; Solution and Distance | half a day |
+| L1 | the four group rows, keys, legend, the Lenses button; Stops and Traps moved in; Solution and Distance | half a day |
 | L2 | the search records motion: Passes, Lines, Danger | a day |
 | L3 | Beams and Pieces | half a day |
 | L4 | Plays: store play reports per room on the server, heat from them | a day, needs the server |
@@ -88,8 +116,7 @@ Each is a question a designer asks. Draft names.
 
 ## Open questions, for the owner, one at a time
 
-1. One lens at a time with marks allowed on top of a heat (the strategy-game pattern), or free
-   toggles that all stack (RimWorld)?
+1. ~~One at a time, or all stack?~~ **Groups** (owner, 2026-10-10): one per group, groups stack.
 2. Should a lens open by itself for the tool in hand?
 3. In play mode too, or only while editing?
 4. Plays (L4): store every play on the server, or only plays you send with Copy report?
