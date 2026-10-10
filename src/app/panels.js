@@ -18,6 +18,14 @@ import { buildKeys } from './keys.js';
 import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
 
+const DEFAULT_HINT = touch ? 'Tap to place. Tap one again to remove it. Look changes nothing.' : 'Click to place. Click one again, or right click, to remove it. Look changes nothing.';
+function syncCtxText() {
+  const note = [...document.querySelectorAll('.opt:not([hidden]) .note')].map(n => n.textContent).join(' ');
+  const message = $('placeHint').textContent !== DEFAULT_HINT;
+  $('ctxNote').textContent = message ? '' : note;
+  $('placeHint').classList.toggle('quiet', !message && !!note);
+}
+
 export function keysText() {
   return touch
     ? (S.mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : '')
@@ -132,7 +140,9 @@ export function buildPanels(actions) {
   $('undo').onclick = () => undoStep(true, after);
   $('redo').onclick = () => undoStep(false, after);
   $('winEdit').onclick = () => setMode('edit');
-  $('placeHint').textContent = touch ? 'Tap to place. Tap one again to remove it. Look changes nothing.' : 'Click to place. Click one again, or right click, to remove it. Look changes nothing.';
+  $('placeHint').textContent = DEFAULT_HINT;
+  // The context bar's one line of text: a message, else the tool's note, else the default hint.
+  new MutationObserver(syncCtxText).observe($('placeHint'), { childList: true, characterData: true, subtree: true });
   const resize = () => {
     const level = S.level;
     const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));
@@ -185,6 +195,7 @@ export function syncPanel() {
   // A turret with one direction has nothing to choose from; one aims first otherwise.
   const first = ui.aim.includes(ui.start) ? ui.start : CLOCKWISE.find(d => ui.aim.includes(d));
   if (ui.aim.length < 2) $('startOpt').hidden = true;
+  syncCtxText();
   document.querySelectorAll('[data-start]').forEach(b => { b.classList.toggle('on', b.dataset.start === first); b.disabled = !ui.aim.includes(b.dataset.start); });
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });

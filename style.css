@@ -202,19 +202,22 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .statusBar { max-width: none; }
 }
 @media (min-width: 701px) {
-  .ctx { flex: none; display: flex; align-items: center; gap: 16px; height: 40px; padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
-  .ctx #options { display: flex; gap: 16px; flex: none; }
-  .ctx .opt { margin: 0; flex-wrap: nowrap; }
+  /* Two fixed rows: the tool's controls, then one line of text. Nothing is shortened. */
+  .ctx { flex: none; display: grid; align-content: center; row-gap: 4px; height: 62px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
+  .ctx #options { display: flex; gap: 16px; }
+  .ctx #options:not(:has(.opt:not([hidden]))) { display: none; }
+  .ctx .opt { margin: 0; flex-wrap: nowrap; flex: none; }
   .ctx .opt > span:first-child { width: auto; font-size: 12.5px; }
-  /* A note shrinks to an ellipsis, with its full text on hover; a control never does. */
-  .ctx #options { flex: 0 1 auto; min-width: 0; }
-  .ctx .opt { flex: none; }
-  .ctx .opt:has(.note) { flex: 0 1 auto; min-width: 0; }
-  .ctx .opt .note { width: auto; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .ctx #placeHint { flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+  .ctx .opt .note { display: none; }
+  .ctx #options { gap: 10px; }
+  .ctx .opt { gap: 3px; }
+  .ctx .opt [data-aim], .ctx .opt [data-start], .ctx .opt [data-corner], .ctx .opt [data-pass], .ctx .opt [data-face], .ctx .opt [data-axis] { width: 28px; }
+  .ctx #ctxNote, .ctx #placeHint { margin: 0; font-size: 12.5px; }
+  .ctx #ctxNote, .ctx #placeHint { order: 1; }
+  .ctx #ctxNote:empty, .ctx #placeHint.quiet { display: none; }
   #stage { overflow: hidden; display: flex; flex-direction: column; gap: 8px; }
   .roomArea { flex: 1; min-height: 0; align-items: center; overflow: hidden; }
-  .well { flex: none; height: 190px; width: 100%; border-radius: var(--radius); }
+  .well { flex: none; height: 170px; width: 100%; border-radius: var(--radius); }
   .statusBar { flex: none; flex-wrap: nowrap; max-width: none; height: 36px; margin: 0; padding: 0 16px; background: var(--panel); border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
   .statusBar button { padding: 3px 10px; font-size: 12.5px; }
   .statusBar .pad { flex: none; width: auto; max-width: none; margin: 0; flex-wrap: nowrap; }

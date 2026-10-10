@@ -435,7 +435,7 @@ const M = [
   ['src', "write(SHELF, [entry, ...shelf()].slice(0, KEEP));", "write(SHELF, [entry]);", 'genui'],
   ['src', "KEEP = 20, SLICE_MS = 25;", "KEEP = 20, SLICE_MS = 3000;", 'perf'],
   // the frame (U1)
-  ['style.css', "  .well { flex: none; height: 190px;", "  .well { flex: none; height: 400px;", 'fit'],
+  ['style.css', "  .well { flex: none; height: 170px;", "  .well { flex: none; height: 400px;", 'fit'],
   ['style.css', "  .roomArea { flex: 1; min-height: 0;", "  .roomArea { flex: none; min-height: 0;", 'fit'],
   ['src', "    if ($('pad').nextElementSibling !== $('keys')) $('keys').before($('pad'));\n", "", 'fit'],
   ['src', "inside($('options'), $('ctx'));", "inside($('options'), $('tools'));", 'fit'],
@@ -470,6 +470,11 @@ const M = [
   ['src', "    b.append(Object.assign(document.createElement('kbd'), { className: 'key', textContent: k }));\n", "", 'browser'],
   ['src', "if (ev.key === '?' && !ev.ctrlKey && !ev.metaKey) { showKeys();", "if (ev.key === '?' && !ev.ctrlKey && !ev.metaKey) {", 'browser'],
   ['src', "  if (f && f !== document.body && f.id !== 'game') return false;\n", "", 'browser'],
+  // the context bar's two rows (register 88)
+  ['src', "  $('ctxNote').textContent = message ? '' : note;", "  $('ctxNote').textContent = '';", 'fit'],
+  ['style.css', "  .ctx #ctxNote, .ctx #placeHint { order: 1; }\n", "", 'fit'],
+  ['style.css', "  .ctx .opt .note { display: none; }\n", "", 'fit'],
+  ['src', "  $('placeHint').classList.toggle('quiet', !message && !!note);", "", 'fit'],
 ];
 
 let caught = 0, crashed = 0;

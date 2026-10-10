@@ -19,7 +19,7 @@
     <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
     <button id="roomsBtn" type="button">Rooms</button>
   </header>
-  <div id="ctx" class="ctx"></div>
+  <div id="ctx" class="ctx"><p id="ctxNote" class="hint"></p></div>
   <main>
     <aside id="tools">
       <h2>Build</h2>
@@ -51,12 +51,12 @@
           <button type="button" data-mode="follow">Same way as you</button>
         </div>
         <div class="opt" data-for="turret">
-          <span>Fires, one at a time, clockwise</span>
+          <span>Fires</span>
           <button type="button" data-aim="up" title="Up">&uarr;</button>
           <button type="button" data-aim="right" title="Right">&rarr;</button>
           <button type="button" data-aim="down" title="Down">&darr;</button>
           <button type="button" data-aim="left" title="Left">&larr;</button>
-          <small class="note">Place it on a box, a heavy box or an enemy to mount it there.</small>
+          <small class="note">Fires one way at a time, turning clockwise. To mount it, place it on a box, a heavy box or an enemy.</small>
         </div>
         <div class="opt" data-for="turret" id="startOpt">
           <span>Starts aiming</span>

@@ -209,19 +209,22 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .statusBar { max-width: none; }
 }
 @media (min-width: 701px) {
-  .ctx { flex: none; display: flex; align-items: center; gap: 16px; height: 40px; padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
-  .ctx #options { display: flex; gap: 16px; flex: none; }
-  .ctx .opt { margin: 0; flex-wrap: nowrap; }
+  /* Two fixed rows: the tool's controls, then one line of text. Nothing is shortened. */
+  .ctx { flex: none; display: grid; align-content: center; row-gap: 4px; height: 62px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
+  .ctx #options { display: flex; gap: 16px; }
+  .ctx #options:not(:has(.opt:not([hidden]))) { display: none; }
+  .ctx .opt { margin: 0; flex-wrap: nowrap; flex: none; }
   .ctx .opt > span:first-child { width: auto; font-size: 12.5px; }
-  /* A note shrinks to an ellipsis, with its full text on hover; a control never does. */
-  .ctx #options { flex: 0 1 auto; min-width: 0; }
-  .ctx .opt { flex: none; }
-  .ctx .opt:has(.note) { flex: 0 1 auto; min-width: 0; }
-  .ctx .opt .note { width: auto; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .ctx #placeHint { flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+  .ctx .opt .note { display: none; }
+  .ctx #options { gap: 10px; }
+  .ctx .opt { gap: 3px; }
+  .ctx .opt [data-aim], .ctx .opt [data-start], .ctx .opt [data-corner], .ctx .opt [data-pass], .ctx .opt [data-face], .ctx .opt [data-axis] { width: 28px; }
+  .ctx #ctxNote, .ctx #placeHint { margin: 0; font-size: 12.5px; }
+  .ctx #ctxNote, .ctx #placeHint { order: 1; }
+  .ctx #ctxNote:empty, .ctx #placeHint.quiet { display: none; }
   #stage { overflow: hidden; display: flex; flex-direction: column; gap: 8px; }
   .roomArea { flex: 1; min-height: 0; align-items: center; overflow: hidden; }
-  .well { flex: none; height: 190px; width: 100%; border-radius: var(--radius); }
+  .well { flex: none; height: 170px; width: 100%; border-radius: var(--radius); }
   .statusBar { flex: none; flex-wrap: nowrap; max-width: none; height: 36px; margin: 0; padding: 0 16px; background: var(--panel); border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
   .statusBar button { padding: 3px 10px; font-size: 12.5px; }
   .statusBar .pad { flex: none; width: auto; max-width: none; margin: 0; flex-wrap: nowrap; }
@@ -305,7 +308,7 @@ body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
     <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
     <button id="roomsBtn" type="button">Rooms</button>
   </header>
-  <div id="ctx" class="ctx"></div>
+  <div id="ctx" class="ctx"><p id="ctxNote" class="hint"></p></div>
   <main>
     <aside id="tools">
       <h2>Build</h2>
@@ -337,12 +340,12 @@ body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
           <button type="button" data-mode="follow">Same way as you</button>
         </div>
         <div class="opt" data-for="turret">
-          <span>Fires, one at a time, clockwise</span>
+          <span>Fires</span>
           <button type="button" data-aim="up" title="Up">&uarr;</button>
           <button type="button" data-aim="right" title="Right">&rarr;</button>
           <button type="button" data-aim="down" title="Down">&darr;</button>
           <button type="button" data-aim="left" title="Left">&larr;</button>
-          <small class="note">Place it on a box, a heavy box or an enemy to mount it there.</small>
+          <small class="note">Fires one way at a time, turning clockwise. To mount it, place it on a box, a heavy box or an enemy.</small>
         </div>
         <div class="opt" data-for="turret" id="startOpt">
           <span>Starts aiming</span>
@@ -4127,6 +4130,14 @@ const { buildSelect, syncSelect } = m42;
 
 
 
+const DEFAULT_HINT = touch ? 'Tap to place. Tap one again to remove it. Look changes nothing.' : 'Click to place. Click one again, or right click, to remove it. Look changes nothing.';
+function syncCtxText() {
+  const note = [...document.querySelectorAll('.opt:not([hidden]) .note')].map(n => n.textContent).join(' ');
+  const message = $('placeHint').textContent !== DEFAULT_HINT;
+  $('ctxNote').textContent = message ? '' : note;
+  $('placeHint').classList.toggle('quiet', !message && !!note);
+}
+
 function keysText() {
   return touch
     ? (S.mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : '')
@@ -4241,7 +4252,9 @@ function buildPanels(actions) {
   $('undo').onclick = () => undoStep(true, after);
   $('redo').onclick = () => undoStep(false, after);
   $('winEdit').onclick = () => setMode('edit');
-  $('placeHint').textContent = touch ? 'Tap to place. Tap one again to remove it. Look changes nothing.' : 'Click to place. Click one again, or right click, to remove it. Look changes nothing.';
+  $('placeHint').textContent = DEFAULT_HINT;
+  // The context bar's one line of text: a message, else the tool's note, else the default hint.
+  new MutationObserver(syncCtxText).observe($('placeHint'), { childList: true, characterData: true, subtree: true });
   const resize = () => {
     const level = S.level;
     const w = Math.max(5, Math.min(40, +$('w').value || level.w)), h = Math.max(5, Math.min(30, +$('h').value || level.h));
@@ -4294,6 +4307,7 @@ function syncPanel() {
   // A turret with one direction has nothing to choose from; one aims first otherwise.
   const first = ui.aim.includes(ui.start) ? ui.start : CLOCKWISE.find(d => ui.aim.includes(d));
   if (ui.aim.length < 2) $('startOpt').hidden = true;
+  syncCtxText();
   document.querySelectorAll('[data-start]').forEach(b => { b.classList.toggle('on', b.dataset.start === first); b.disabled = !ui.aim.includes(b.dataset.start); });
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });

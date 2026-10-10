@@ -15,11 +15,23 @@ try {
     await page.evaluate(() => window.wee.roomsReady);
     const over = () => page.evaluate(() => [document.documentElement, ...document.querySelectorAll('main > *')].map(e => e.scrollHeight - e.clientHeight).filter(n => n > 0).length);
     const bad = [];
+    // The context bar shows every tool whole: its controls on top, one line of text under them.
+    const ctxCut = () => page.evaluate(() => { const c = document.getElementById('ctx'), r = c.getBoundingClientRect(), opts = document.getElementById('options').getBoundingClientRect();
+      const parts = [...c.querySelectorAll('button, .opt > span, #ctxNote, #placeHint')].filter(e => e.offsetParent);
+      return c.scrollWidth > c.clientWidth || c.scrollHeight > c.clientHeight || parts.some(e => { const q = e.getBoundingClientRect(); return q.right > r.right + 0.5 || q.bottom > r.bottom + 0.5 || e.scrollWidth > e.clientWidth + 1; })
+        || [...c.querySelectorAll('#ctxNote, #placeHint')].some(e => e.offsetParent && opts.height && e.getBoundingClientRect().top < opts.bottom - 1); });
+    const cutTools = [];
+    let turretNote = false;
     for (const t of await page.$$eval('[data-tool]', bs => bs.map(b => b.dataset.tool))) {
       await page.click(`[data-tool=${t}]`);
       if (await over()) bad.push(t);
+      if (t === 'turret' && !(await page.locator('[data-aim=up]').getAttribute('class') || '').includes('on')) await page.click('[data-aim=up]');
+      if (await ctxCut()) cutTools.push(t);
+      if (t === 'turret') turretNote = await page.evaluate(() => !!document.getElementById('ctxNote').offsetParent && document.getElementById('ctxNote').textContent.includes('To mount it') && !document.getElementById('placeHint').offsetParent);
     }
     check(`${w}x${h}: nothing scrolls, with any tool picked`, !bad.length, bad.join(' '));
+    check(`${w}x${h}: the context bar shows every tool's controls and text whole, text under the controls`, !cutTools.length, cutTools.join(' '));
+    check(`${w}x${h}: a tool's note takes the text line in place of the general hint`, turretNote);
     const cut = await page.evaluate(() => [...document.querySelectorAll('#tools button')].filter(b => b.offsetParent && b.scrollWidth > b.clientWidth + 1).map(b => b.textContent.trim()));
     check(`${w}x${h}: no tool's name is cut`, !cut.length, cut.join(', '));
     const tall = await page.evaluate(() => { window.wee.loadLevel(window.wee.blank(12, 30)); return new Promise(r => requestAnimationFrame(() => r())); }).then(over);
