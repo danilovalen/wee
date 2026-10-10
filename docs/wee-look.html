@@ -31,7 +31,7 @@ h1 { font: 800 30px/1.1 var(--head); margin: 0; text-wrap: balance; }
 .btn { font: 600 13px var(--body); color: var(--ink); background: color-mix(in srgb, var(--panel) 60%, #fff 8%); border: 0; border-radius: var(--r-s); padding: 7px 12px; cursor: pointer;
   box-shadow: 4px 4px 0 0 var(--sticker); transition: transform .08s, box-shadow .08s; touch-action: manipulation; }
 .btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 0 var(--sticker); }
-.btn:active { transform: none; box-shadow: 1px 1px 0 0 var(--sticker); }
+.btn:active, .btn.pressing { transform: none; box-shadow: 1px 1px 0 0 var(--sticker); }
 .btn.on { box-shadow: inset 0 0 0 2px var(--accent), 4px 4px 0 0 var(--sticker); color: var(--accent); }
 .btn:focus-visible { outline: 2px solid var(--goal); outline-offset: 2px; }
 .sp { flex: 1; }
@@ -55,7 +55,7 @@ h1 { font: 800 30px/1.1 var(--head); margin: 0; text-wrap: balance; }
 .A .logo { font: italic 900 22px var(--head); letter-spacing: -0.02em; display: inline-flex; }
 .A .logo .e { display: inline-block; transition: transform .18s cubic-bezier(.2,.9,.3,1.4); transform-origin: left; }
 .A .logo:hover .e, .A .logo.zoom .e { transform: scaleX(1.9); }
-.A .btn:active { transform: scale(1.08, .86); }
+.A .btn:active, .A .btn.pressing { transform: scale(1.08, .86); }
 .A .streak { position: absolute; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--ice)); opacity: 0; }
 .A.go-run .streak { animation: streak .5s ease-out forwards; }
 @keyframes streak { 0% { opacity: .9; } 100% { opacity: 0; transform: scaleX(.2); transform-origin: right; } }
@@ -66,7 +66,7 @@ h1 { font: 800 30px/1.1 var(--head); margin: 0; text-wrap: balance; }
 /* B: Puff. Cutesy: rounded face, pills, a bouncy press, a puff of snow where you tap or land. */
 .B .logo { font: 700 24px var(--round); color: var(--ice); letter-spacing: .01em; }
 .B .btn { border-radius: var(--r-pill); font-family: var(--round); font-weight: 500; }
-.B .btn:active { animation: boing .32s cubic-bezier(.3,1.6,.5,1); }
+.B .btn:active, .B .btn.pressing { animation: boing .32s cubic-bezier(.3,1.6,.5,1); }
 @keyframes boing { 0% { transform: scale(.88); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
 .B .puff { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #eaf6ff; pointer-events: none; animation: puff .5s ease-out forwards; }
 @keyframes puff { to { transform: translate(var(--dx), var(--dy)) scale(.2); opacity: 0; } }
@@ -89,7 +89,7 @@ h1 { font: 800 30px/1.1 var(--head); margin: 0; text-wrap: balance; }
 <main>
   <div>
     <h1>wee, three ways</h1>
-    <p class="lede">The Manga form stays the same in all three: no strokes, hard sticker shadows, a pink inset ring for "on". Each adds a wee layer on top. Tap <b>Slide</b> to see each one move, and press the buttons.</p>
+    <p class="lede">The Manga form stays the same in all three: no strokes, hard sticker shadows, a pink inset ring for "on". Each adds a wee layer on top. Each one plays by itself: the player slides across and back, and a button presses itself in between.</p>
   </div>
 </main>
 
@@ -129,17 +129,29 @@ document.querySelectorAll('.dir').forEach(sec => {
   put(START.x, START.y);
   const puff = (x, y) => { for (let i = 0; i < 6; i++) { const d = document.createElement('i'); d.className = 'puff'; const a = i / 6 * Math.PI * 2; d.style.cssText = `left:${x}px;top:${y}px;--dx:${Math.cos(a) * 22}px;--dy:${Math.sin(a) * 22}px`; room.append(d); setTimeout(() => d.remove(), 520); } };
   if (id === 'B') sec.querySelectorAll('.btn').forEach(b => b.addEventListener('pointerdown', e => { const r = room.getBoundingClientRect(); if (e.clientY > r.top && e.clientY < r.bottom) puff(e.clientX - r.left, e.clientY - r.top); }));
-  sec.querySelector('.slide').addEventListener('click', () => {
-    const s = step(), to = 5, dur = id === 'C' ? 900 : id === 'A' ? 260 : 420, ease = id === 'C' ? 'cubic-bezier(.15,.7,.2,1)' : id === 'A' ? 'cubic-bezier(.5,0,.2,1)' : 'cubic-bezier(.3,1.25,.5,1)';
-    p.style.transition = 'none'; put(START.x, START.y); p.classList.remove('land');
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      p.style.transition = reduce ? 'none' : `left ${dur}ms ${ease}`; put(to, START.y);
-      if (id === 'A' && !reduce) { for (let i = 0; i < 3; i++) { const k = document.createElement('i'); k.className = 'streak'; k.style.cssText = `left:${START.x * s + 4}px;top:${START.y * s + 8 + i * 6}px;width:${(to - START.x) * s}px`; room.append(k); requestAnimationFrame(() => { sec.classList.add('go-run'); }); setTimeout(() => { k.remove(); sec.classList.remove('go-run'); }, 600); } }
-      if (id === 'C' && !reduce) for (let i = 1; i < to - START.x; i++) setTimeout(() => { const g = document.createElement('i'); g.className = 'ghost'; g.style.cssText = `left:${(START.x + i) * s + 4}px;top:${START.y * s + 4}px`; room.append(g); setTimeout(() => g.remove(), 650); }, dur * i / (to - START.x) * .5);
-      setTimeout(() => { if (id === 'B') { p.classList.add('land'); puff(to * s + 17, START.y * s + 30); } }, dur);
-    }));
-  });
-  if (id === 'A') { const logo = sec.querySelector('.logo'); logo.addEventListener('click', () => { logo.classList.add('zoom'); setTimeout(() => logo.classList.remove('zoom'), 500); }); }
+  // It plays by itself: slide across, press a button, slide back, again.
+  const LEFT = 1, RIGHT = 5;
+  let at = LEFT;
+  const slide = () => {
+    const s = step(), from = at, to = at === LEFT ? RIGHT : LEFT, n = Math.abs(to - from), dir = Math.sign(to - from);
+    const dur = id === 'C' ? 900 : id === 'A' ? 260 : 420, ease = id === 'C' ? 'cubic-bezier(.15,.7,.2,1)' : id === 'A' ? 'cubic-bezier(.5,0,.2,1)' : 'cubic-bezier(.3,1.25,.5,1)';
+    p.classList.remove('land');
+    p.style.transition = reduce ? 'none' : `left ${dur}ms ${ease}`; put(to, START.y); at = to;
+    if (id === 'A' && !reduce) for (let i = 0; i < 3; i++) { const k = document.createElement('i'); k.className = 'streak'; k.style.cssText = `left:${Math.min(from, to) * s + 4}px;top:${START.y * s + 8 + i * 6}px;width:${n * s}px;transform-origin:${dir > 0 ? 'right' : 'left'};background:linear-gradient(${dir > 0 ? 90 : 270}deg, transparent, var(--ice))`; room.append(k); requestAnimationFrame(() => sec.classList.add('go-run')); setTimeout(() => { k.remove(); sec.classList.remove('go-run'); }, 600); }
+    if (id === 'C' && !reduce) for (let i = 1; i < n; i++) setTimeout(() => { const g = document.createElement('i'); g.className = 'ghost'; g.style.cssText = `left:${(from + dir * i) * s + 4}px;top:${START.y * s + 4}px`; room.append(g); setTimeout(() => g.remove(), 650); }, dur * i / n * .5);
+    setTimeout(() => { if (id === 'B') { p.classList.add('land'); puff(to * s + 17, START.y * s + 30); } }, dur);
+  };
+  const buttons = [...sec.querySelectorAll('.bar .btn:not(.slide), .status .btn')];
+  const press = () => { const b = buttons[Math.floor(Math.random() * buttons.length)]; b.classList.add('pressing'); setTimeout(() => b.classList.remove('pressing'), 340); };
+  const logo = sec.querySelector('.logo');
+  let beat = 0;
+  const tick = () => {
+    beat++;
+    if (beat % 2) slide(); else press();
+    if (id === 'A' && beat % 4 === 1) { logo.classList.add('zoom'); setTimeout(() => logo.classList.remove('zoom'), 500); }
+  };
+  sec.querySelector('.slide').addEventListener('click', slide);
+  if (!reduce) setTimeout(() => { tick(); setInterval(tick, 1400); }, 400 + ['A', 'B', 'C'].indexOf(id) * 300);
   if (id === 'C') {
     const cv = sec.querySelector('.snow'), g = cv.getContext('2d'), flakes = Array.from({ length: 40 }, () => ({ x: Math.random(), y: Math.random(), r: Math.random() * 1.6 + .4, v: Math.random() * .0012 + .0004 }));
     const draw = () => { const r = cv.parentElement.getBoundingClientRect(); if (cv.width !== Math.round(r.width)) { cv.width = r.width; cv.height = r.height; }
