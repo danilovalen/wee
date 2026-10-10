@@ -78,7 +78,7 @@ await measure('change the mechanism filter', () => page.selectOption('#tagFilter
 await page.keyboard.press('Escape');
 
 // His first room: the small, real case.
-const first = JSON.parse(readFileSync('rooms/first-room.wee', 'utf8'));
+const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'));
 await page.evaluate(l => window.wee.loadLevel(l), first);
 await measure('Check his first room', async () => { await page.click('#checkBtn'); await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable')); });
 await page.click('[data-tool=look]');

@@ -13,7 +13,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || 
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
 await page.addInitScript(() => { window.__long = []; new PerformanceObserver(l => { for (const e of l.getEntries()) window.__long.push(e.duration); }).observe({ type: 'longtask', buffered: true }); });
 const worst = async fn => { await page.evaluate(() => { window.__long = []; }); await fn(); await page.waitForTimeout(100); return Math.round(await page.evaluate(() => Math.max(0, ...window.__long))); };
-const first = JSON.parse(readFileSync('rooms/first-room.wee', 'utf8'));
+const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'));
 try {
   await page.goto('http://localhost:5195/');
   await page.evaluate(f => { const rooms = []; for (let i = 0; i < 100; i++) rooms.push({ ...f, id: 'r' + i, name: 'Room ' + i, updated: new Date(Date.now() - i * 864e5).toISOString() }); localStorage.setItem('wee.rooms', JSON.stringify(rooms)); }, first);

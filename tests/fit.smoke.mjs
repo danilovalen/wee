@@ -23,7 +23,7 @@ try {
     const tall = await page.evaluate(() => { window.wee.loadLevel(window.wee.blank(12, 30)); return new Promise(r => requestAnimationFrame(() => r())); }).then(over);
     check(`${w}x${h}: a tall room still fits`, !tall);
     // With design notes under the room, in edit mode and in play mode, nothing is cut.
-    const first = JSON.parse(readFileSync('rooms/first-room.wee', 'utf8'));
+    const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'));
     await page.evaluate(l => window.wee.loadLevel(l), first);
     await page.click('#checkBtn');
     await page.waitForFunction(() => /changes the answer|nothing changes/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });

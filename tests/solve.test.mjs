@@ -41,7 +41,7 @@ const push = goal(room(['#######', '#P.B..#', '#.....#', '#######']), 4, 1);
 const r3 = solve(push);
 check('a box can be the stopper', r3.status === 'solved' && replays(push, r3.moves), JSON.stringify(r3));
 
-const first = JSON.parse(readFileSync('rooms/first-room.wee', 'utf8'));
+const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'));
 const rf = solve(first);
 check('his first room is solvable', rf.status === 'solved', JSON.stringify(rf));
 check('and its solution wins when replayed by the plain rules', replays(first, rf.moves));
@@ -87,7 +87,7 @@ const pushy = room(['#######', '#P.B..#', '#.....#', '#######']);
 pushy.powers = corner.powers;
 const fast = run(reach(pushy, { budgetMs: 30 })), full = run(reach(pushy));
 check('the first pass alone already finds stops', fast.stops.length >= 2 && fast.stops.length <= full.stops.length);
-const s0 = createGame(JSON.parse(readFileSync('rooms/first-room.wee', 'utf8')));
+const s0 = createGame(JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8')));
 const succ = [...successors(s0, ['up', 'right', 'down', 'left', 'hide'])].filter(Boolean);
 check('every generated move leads where replaying it from scratch does', succ.length > 5 && succ.every(([k, t]) => { const m = move(s0, k); return m && stateKey(m) === stateKey(t); }));
 check('mid-slide moves are generated', succ.some(([k]) => k.includes('@')));

@@ -11,7 +11,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || 
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
-const first = JSON.parse(readFileSync('rooms/first-room.wee', 'utf8'));
+const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'));
 const notes = () => page.textContent('#designList');
 try {
   await page.goto('http://localhost:5189/');

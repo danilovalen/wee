@@ -8,6 +8,7 @@ import { serve } from '../tools/serve.mjs';
 import { room, suite } from './lib.mjs';
 
 const { check, done } = suite('browser');
+const FIRST_W = JSON.parse(readFileSync('rooms/first-room.wee', 'utf8')).w;
 const PORT = 5199;
 const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
@@ -315,7 +316,7 @@ try {
   check('saving clears the draft', await page.evaluate(() => localStorage.getItem('wee.draft') === null));
   await page.click('#roomsBtn');
   await page.locator('#templateList .roomRow', { hasText: 'First room' }).click();
-  check('a template opens as a new, unsaved room', (await text()).level.w === 7 && (await page.textContent('#roomsBtn')).includes('\u2022'));
+  check('a template opens as a new, unsaved room', (await text()).level.w === FIRST_W && (await page.textContent('#roomsBtn')).includes('\u2022'));
   await page.click('#roomsBtn');
   // a share code round-trips through the box, and a #room= link opens the room
   await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('no')); });
@@ -330,7 +331,7 @@ try {
   await linkPage.goto(`http://localhost:${PORT}/#room=${code}`);
   await linkPage.waitForFunction(() => window.wee && window.wee.roomsReady);
   await linkPage.evaluate(() => window.wee.roomsReady);
-  check('a #room= link opens that room, unsaved', (await linkPage.evaluate(() => window.wee.getLevel().w)) === 7 && (await linkPage.textContent('#roomsBtn')).includes('\u2022') && !(await linkPage.evaluate(() => location.hash)));
+  check('a #room= link opens that room, unsaved', (await linkPage.evaluate(() => window.wee.getLevel().w)) === FIRST_W && (await linkPage.textContent('#roomsBtn')).includes('\u2022') && !(await linkPage.evaluate(() => location.hash)));
   await linkPage.close();
   await page.locator('#importFile').setInputFiles({ name: 'two.weepack', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ format: 'wee-pack', version: 1, rooms: [{ ...room(['#####', '#P..#', '#####']), id: 'ra', name: 'A' }, { ...room(['#####', '#P..#', '#####']), id: 'rb', name: 'B' }] })) });
   await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 3);

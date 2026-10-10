@@ -4,7 +4,7 @@ import { encodeRoom, decodeRoom } from '../src/level/code.js';
 import { suite } from './suite.mjs';
 
 const { check, done } = suite('code');
-const first = JSON.parse(readFileSync('rooms/first-room.wee', 'utf8'));
+const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'));
 const code = await encodeRoom({ ...first, name: 'secret', note: 'n' });
 check('a code is URL-safe text', /^w1[A-Za-z0-9_-]+$/.test(code), code.slice(0, 40));
 check('and much shorter than the file', code.length < JSON.stringify(first).length / 2, `${code.length} vs ${JSON.stringify(first).length}`);

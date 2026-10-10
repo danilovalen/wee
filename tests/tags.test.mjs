@@ -26,7 +26,7 @@ const push = room(['#######', '#P.B..#', '#.....#', '#######']); push.cells[11] 
 const sp = solve(push);
 const u = uses(push, sp.moves);
 check('replaying a solution that pushes a box says so', u.includes('use:push'), u.join());
-const first = JSON.parse(readFileSync('rooms/first-room.wee', 'utf8'));
+const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'));
 const uf = uses(first, solve(first).moves);
 check('his first room: you push a box and a door opens', uf.includes('use:push') && uf.includes('use:door-opens'), uf.join());
 check('every tag uses() gives is a known mechanism', uf.every(t => LABEL[t]));
