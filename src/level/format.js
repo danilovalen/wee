@@ -5,6 +5,7 @@ export function checkTurret(t) {
   if (!Array.isArray(t.dirs) || t.dirs.length < 1 || t.dirs.length > 4 || t.dirs.some(d => !CLOCKWISE.includes(d)) || new Set(t.dirs).size !== t.dirs.length)
     throw new Error('A turret needs one to four different directions.');
   if (!MODES.includes(t.mode)) throw new Error('Unknown turret clock: ' + t.mode);
+  if (t.start !== undefined && !t.dirs.includes(t.start)) throw new Error('A turret starts aiming in one of its directions.');
 }
 
 export function emptyLevel(w = 20, h = 12) {

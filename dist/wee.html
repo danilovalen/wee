@@ -208,9 +208,11 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
           <button id="playHere" type="button" hidden>Play from here</button>
         </div>
         <div class="opt" data-for="mover enemy strong" id="axisOpt">
-          <span>Moves</span>
-          <button type="button" data-axis="h">Across</button>
-          <button type="button" data-axis="v">Up and down</button>
+          <span>Starts moving</span>
+          <button type="button" data-axis="h" data-dir="1" title="Right">&rarr;</button>
+          <button type="button" data-axis="h" data-dir="-1" title="Left">&larr;</button>
+          <button type="button" data-axis="v" data-dir="-1" title="Up">&uarr;</button>
+          <button type="button" data-axis="v" data-dir="1" title="Down">&darr;</button>
         </div>
         <div class="opt" data-for="mover enemy strong turret">
           <span>Clock</span>
@@ -225,6 +227,13 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
           <button type="button" data-aim="down" title="Down">&darr;</button>
           <button type="button" data-aim="left" title="Left">&larr;</button>
           <small class="note">Place it on a box, a heavy box or an enemy to mount it there.</small>
+        </div>
+        <div class="opt" data-for="turret" id="startOpt">
+          <span>Starts aiming</span>
+          <button type="button" data-start="up" title="Up">&uarr;</button>
+          <button type="button" data-start="right" title="Right">&rarr;</button>
+          <button type="button" data-start="down" title="Down">&darr;</button>
+          <button type="button" data-start="left" title="Left">&larr;</button>
         </div>
         <div class="opt" data-for="spring">
           <span>Faces</span>
@@ -507,11 +516,14 @@ const { cellAt, entAt, playerAt } = m1;
 // Doors and switches, dying, and the room reset.
 
 
+// Which of its directions, in clockwise order, a turret aims first.
+const startAim = t => Math.max(0, CLOCKWISE.filter(d => t.dirs.includes(d)).indexOf(t.start));
+
 // The room's pieces as the level places them; a reset builds them again from here.
 const freshPieces = list => list.map((e, i) => ({
   id: i + 1, kind: e.kind, x: e.x, y: e.y,
   axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
-  turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: 0 } : null,
+  turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: startAim(e.turret) } : null,
 }));
 
 // A colour's doors open only while every button, receiver and sensor of that colour
@@ -580,7 +592,7 @@ function land(s, e, t) {
   if (c === 'water') e.sticky = false;
   return true;
 }
-return { freshPieces, refreshDoors, respawn, die, kill, land };
+return { startAim, freshPieces, refreshDoors, respawn, die, kill, land };
 })();
 // ---- src/rules/beams.js
 const m3 = (() => {
@@ -1185,6 +1197,7 @@ function checkTurret(t) {
   if (!Array.isArray(t.dirs) || t.dirs.length < 1 || t.dirs.length > 4 || t.dirs.some(d => !CLOCKWISE.includes(d)) || new Set(t.dirs).size !== t.dirs.length)
     throw new Error('A turret needs one to four different directions.');
   if (!MODES.includes(t.mode)) throw new Error('Unknown turret clock: ' + t.mode);
+  if (t.start !== undefined && !t.dirs.includes(t.start)) throw new Error('A turret starts aiming in one of its directions.');
 }
 
 function emptyLevel(w = 20, h = 12) {
@@ -1313,7 +1326,7 @@ function starterLevel(tall) {
 
 const S = {
   level: null,
-  ui: { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
+  ui: { group: 'basic', tool: 'look', axis: 'h', dir: 1, start: 'right', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
   mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
   played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null, lookAt: null, playFrom: null, stops: null, sel: null, clip: null, paste: null, redraw: true, drawnAt: 0, draws: 0, genPrev: null, design: null,
 };
@@ -1445,7 +1458,7 @@ function modeBadge(g, mode, bx = 24, by = 8) {
 
 // A turret head: one barrel per direction it fires; the next to fire is lit.
 function drawTurret(g, t, badge, mounted) {
-  const next = t.dirs[(t.aim || 0) % t.dirs.length];
+  const next = t.aim === undefined ? (t.start || t.dirs[0]) : t.dirs[t.aim % t.dirs.length];
   g.save();
   if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
   for (const d of t.dirs) {
@@ -3141,7 +3154,7 @@ function turnPiece(e, h) {
     t.axis = e.axis === 'h' ? 'v' : 'h';
     t.dir = e.axis === 'h' ? (e.dir || 1) : -(e.dir || 1);
   }
-  if (e.turret) t.turret = { ...e.turret, dirs: CLOCKWISE.filter(d => e.turret.dirs.map(cw).includes(d)) };
+  if (e.turret) t.turret = { ...e.turret, dirs: CLOCKWISE.filter(d => e.turret.dirs.map(cw).includes(d)), ...(e.turret.start ? { start: cw(e.turret.start) } : {}) };
   return t;
 }
 function rotateClip(clip) {
@@ -3264,7 +3277,7 @@ return { buildSelect, syncSelect, selectDown, selectMove, selectKey, selectOverl
 })();
 // ---- src/app/panels.js
 const m35 = (() => {
-const { COLOURS, POWERS, NEEDS } = m0;
+const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel, resizeSide, wallBorder } = m9;
 const { T, INK } = m13;
 const { drawPiece } = m15;
@@ -3354,7 +3367,8 @@ function buildPanels(actions) {
     b.onclick = () => { S.ui.colour = col; syncPanel(); };
     $('colours').append(b);
   }
-  document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { S.ui.axis = b.dataset.axis; syncPanel(); });
+  document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { S.ui.axis = b.dataset.axis; S.ui.dir = +b.dataset.dir; syncPanel(); });
+  document.querySelectorAll('[data-start]').forEach(b => b.onclick = () => { S.ui.start = b.dataset.start; syncPanel(); });
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { S.ui.mode = b.dataset.mode; syncPanel(); });
   document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { S.ui.corner = b.dataset.corner; syncPanel(); });
   document.querySelectorAll('[data-face]').forEach(b => b.onclick = () => { S.ui.face = b.dataset.face; syncPanel(); });
@@ -3429,7 +3443,7 @@ function syncPanel() {
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
   $('hideBtn').hidden = !tap.length; $('hideBtn').textContent = tap.join(' / ');
   $('keys').textContent = keysText();
-  document.querySelectorAll('[data-axis]').forEach(b => b.classList.toggle('on', b.dataset.axis === ui.axis));
+  document.querySelectorAll('[data-axis]').forEach(b => b.classList.toggle('on', b.dataset.axis === ui.axis && +b.dataset.dir === ui.dir));
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === ui.mode));
   document.querySelectorAll('[data-colour]').forEach(b => b.classList.toggle('on', b.dataset.colour === ui.colour));
   document.querySelectorAll('[data-corner]').forEach(b => b.classList.toggle('on', b.dataset.corner === ui.corner));
@@ -3446,6 +3460,10 @@ function syncPanel() {
   });
   document.querySelectorAll('.opt').forEach(o => { o.hidden = !o.dataset.for.split(' ').includes(ui.tool); });
   if (ui.mode === 'follow') $('axisOpt').hidden = true;
+  // A turret with one direction has nothing to choose from; one aims first otherwise.
+  const first = ui.aim.includes(ui.start) ? ui.start : CLOCKWISE.find(d => ui.aim.includes(d));
+  if (ui.aim.length < 2) $('startOpt').hidden = true;
+  document.querySelectorAll('[data-start]').forEach(b => { b.classList.toggle('on', b.dataset.start === first); b.disabled = !ui.aim.includes(b.dataset.start); });
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
 }
@@ -3549,7 +3567,8 @@ function place(level, ui, x, y, how) {
     setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
   } else if (t === 'turret') {
     if (isStart) return out;
-    const turret = { dirs: CLOCKWISE.filter(d => ui.aim.includes(d)), mode: ui.mode };
+    const dirs = CLOCKWISE.filter(d => ui.aim.includes(d));
+    const turret = { dirs, mode: ui.mode, ...(dirs.includes(ui.start) && ui.start !== dirs[0] ? { start: ui.start } : {}) };
     const host = pi >= 0 ? level.entities[pi] : null;
     if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
       if (JSON.stringify(host.turret) === JSON.stringify(turret)) return out;
@@ -3561,7 +3580,7 @@ function place(level, ui, x, y, how) {
     }
   } else {
     if (isStart) return out;
-    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: 1, mode: ui.mode } : {}) };
+    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: ui.dir, mode: ui.mode } : {}) };
     if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return out;
     removePiece();
     if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');

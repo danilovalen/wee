@@ -1,6 +1,6 @@
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
-import { COLOURS, POWERS, NEEDS } from '../rules/base.js';
+import { CLOCKWISE, COLOURS, POWERS, NEEDS } from '../rules/base.js';
 import { emptyLevel, resizeLevel, resizeSide, wallBorder } from '../level/format.js';
 import { T, INK } from '../view/ink.js';
 import { drawPiece } from '../view/pieces.js';
@@ -77,7 +77,8 @@ export function buildPanels(actions) {
     b.onclick = () => { S.ui.colour = col; syncPanel(); };
     $('colours').append(b);
   }
-  document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { S.ui.axis = b.dataset.axis; syncPanel(); });
+  document.querySelectorAll('[data-axis]').forEach(b => b.onclick = () => { S.ui.axis = b.dataset.axis; S.ui.dir = +b.dataset.dir; syncPanel(); });
+  document.querySelectorAll('[data-start]').forEach(b => b.onclick = () => { S.ui.start = b.dataset.start; syncPanel(); });
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { S.ui.mode = b.dataset.mode; syncPanel(); });
   document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { S.ui.corner = b.dataset.corner; syncPanel(); });
   document.querySelectorAll('[data-face]').forEach(b => b.onclick = () => { S.ui.face = b.dataset.face; syncPanel(); });
@@ -152,7 +153,7 @@ export function syncPanel() {
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
   $('hideBtn').hidden = !tap.length; $('hideBtn').textContent = tap.join(' / ');
   $('keys').textContent = keysText();
-  document.querySelectorAll('[data-axis]').forEach(b => b.classList.toggle('on', b.dataset.axis === ui.axis));
+  document.querySelectorAll('[data-axis]').forEach(b => b.classList.toggle('on', b.dataset.axis === ui.axis && +b.dataset.dir === ui.dir));
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === ui.mode));
   document.querySelectorAll('[data-colour]').forEach(b => b.classList.toggle('on', b.dataset.colour === ui.colour));
   document.querySelectorAll('[data-corner]').forEach(b => b.classList.toggle('on', b.dataset.corner === ui.corner));
@@ -169,6 +170,10 @@ export function syncPanel() {
   });
   document.querySelectorAll('.opt').forEach(o => { o.hidden = !o.dataset.for.split(' ').includes(ui.tool); });
   if (ui.mode === 'follow') $('axisOpt').hidden = true;
+  // A turret with one direction has nothing to choose from; one aims first otherwise.
+  const first = ui.aim.includes(ui.start) ? ui.start : CLOCKWISE.find(d => ui.aim.includes(d));
+  if (ui.aim.length < 2) $('startOpt').hidden = true;
+  document.querySelectorAll('[data-start]').forEach(b => { b.classList.toggle('on', b.dataset.start === first); b.disabled = !ui.aim.includes(b.dataset.start); });
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
 }

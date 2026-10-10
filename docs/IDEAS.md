@@ -71,3 +71,38 @@ Notes (mine):
 - Candidate lenses: tiles you pass, tiles a beam ever covers, tiles a box can ever reach, an
   enemy's whole path. Each is "every tile X ever occupies, over every reachable position".
 - One toggle that cycles lenses, or one button per lens: to decide.
+
+## Power-up bubbles (2026-10-10)
+
+> power up bubbles. End movement on one, you gain it for the remainder of the playthrough
+
+Notes (mine):
+- **"End movement on one"**: only a stop counts, passing over does not, which makes the bubble a
+  target for the ice slide like the goal is.
+- **"The remainder of the playthrough"**: until the room is reset, or across rooms in a run?
+  If across rooms, it ties into the unlock tree.
+- **Solver cost:** the held powers join the state key, so a bubble can double the positions.
+- Does the bubble vanish once taken, and does a reset bring it back?
+
+## One step at a time, as a power (2026-10-10)
+
+> the ultimate power: moving one step at a time. Not sure how it will work with the other powers
+> that require some movement first though.
+
+Notes (mine):
+- It ends the ice rule, so every tile becomes a stop: the solver's positions grow with the room's
+  floor, not its walls. Worth measuring on First room before deciding.
+- The clash he names: Boomerang, Dive and Laser are all pressed **during a slide**. With one-step
+  moves there is no slide to press them in. Options: one step is a separate key (slide stays the
+  default, so the other powers still work), or the other powers act from standing.
+- A separate key looks like the smaller change: Shift + arrow, or a toggle on the pad.
+
+## One step, for enemies and moving blocks (2026-10-10)
+
+> adding "one step" to enemies and moving blocks. Every cycle, they move one, instead of full
+> glide.
+
+Checked (mine): today an on-your-move patrol **launches** each world step and glides until
+blocked (`worldStep` calls `launch`). So this is a new per-piece choice, like the clock: **Glides**
+or **One step**. One step makes a patrol a metronome you can count, which suits the ice rule:
+your one slide is N of its steps on the tile clock, one on the slide clock.

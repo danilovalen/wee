@@ -13,7 +13,7 @@ export function starterLevel(tall) {
 
 export const S = {
   level: null,
-  ui: { group: 'basic', tool: 'look', axis: 'h', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
+  ui: { group: 'basic', tool: 'look', axis: 'h', dir: 1, start: 'right', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
   mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
   played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null, lookAt: null, playFrom: null, stops: null, sel: null, clip: null, paste: null, redraw: true, drawnAt: 0, draws: 0, genPrev: null, design: null,
 };

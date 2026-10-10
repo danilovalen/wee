@@ -73,7 +73,10 @@ try {
   check('and a second click removes it', (await text()).level.cells[5 * 20 + 5] === '');
   await pick('wall');
   await pick('enemy');
-  check('enemy options show', await page.locator('[data-axis=h]').isVisible());
+  check('enemy options show', await page.locator('[data-axis=h][data-dir="1"]').isVisible());
+  await page.click('[data-axis=v][data-dir="-1"]');
+  check('a starting direction is picked by its arrow', await page.locator('[data-axis=v][data-dir="-1"]').evaluate(b => b.classList.contains('on')) && !(await page.locator('[data-axis=v][data-dir="1"]').evaluate(b => b.classList.contains('on'))));
+  await page.click('[data-axis=h][data-dir="1"]');
   await page.click('[data-mode=realtime]');
   const a = at(3, 8), b = at(6, 8);
   await page.mouse.move(a.x, a.y); await page.mouse.down(); await page.mouse.move(b.x, b.y, { steps: 8 }); await page.mouse.up();
@@ -109,7 +112,9 @@ try {
   await page.click('[data-aim=down]');
   await page.click('[data-aim=right]');
   check('the last aimed direction cannot be turned off', await page.locator('[data-aim=down]').isDisabled());
+  check('a turret with one direction has no start to choose', !(await page.locator('#startOpt').isVisible()));
   await page.click('[data-aim=left]');
+  check('with two, it starts on one of them', await page.locator('#startOpt').isVisible() && await page.locator('[data-start=up]').isDisabled() && !(await page.locator('[data-start=left]').isDisabled()));
   await page.mouse.click(p.x, p.y);
   q = at(12, 3); await page.mouse.click(q.x, q.y);
   lv = (await text()).level;
@@ -123,7 +128,7 @@ try {
   check('clicking a mounted turret again takes only the turret off', unmounted?.kind === 'box' && !unmounted.turret, JSON.stringify(unmounted));
   await pick('mover');
   await page.click('[data-mode=follow]');
-  check('a follower has no patrol axis to pick', !(await page.locator('[data-axis=h]').isVisible()));
+  check('a follower has no patrol axis to pick', !(await page.locator('[data-axis=h][data-dir="1"]').isVisible()));
   p = at(14, 3); await page.mouse.click(p.x, p.y);
   lv = (await text()).level;
   check('a follow piece saves its clock', lv.entities.find(e => e.x === 14 && e.y === 3)?.mode === 'follow');
@@ -154,7 +159,7 @@ try {
   q = at(17, 4); await page.mouse.click(q.x, q.y);
   check('a sticky puddle places', (await text()).level.cells[4 * 20 + 17] === 'sticky', (await text()).level.cells[4 * 20 + 17]);
   await pick('wall');
-  check('enemy options hide for a block', !(await page.locator('[data-axis=h]').isVisible()));
+  check('enemy options hide for a block', !(await page.locator('[data-axis=h][data-dir="1"]').isVisible()));
   await page.screenshot({ path: 'shots/edit.png' });
 
   // play a known room by keys on a fixed clock

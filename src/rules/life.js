@@ -2,11 +2,14 @@
 import { CLOCKWISE, COLOURS, HOLDS_DOOR } from './base.js';
 import { cellAt, entAt, playerAt } from './grid.js';
 
+// Which of its directions, in clockwise order, a turret aims first.
+export const startAim = t => Math.max(0, CLOCKWISE.filter(d => t.dirs.includes(d)).indexOf(t.start));
+
 // The room's pieces as the level places them; a reset builds them again from here.
 export const freshPieces = list => list.map((e, i) => ({
   id: i + 1, kind: e.kind, x: e.x, y: e.y,
   axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
-  turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: 0 } : null,
+  turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: startAim(e.turret) } : null,
 }));
 
 // A colour's doors open only while every button, receiver and sensor of that colour

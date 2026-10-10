@@ -34,6 +34,8 @@ check('a piece moves with its cell', mv.x === 0 && mv.y === 0 && en.x === 1 && e
 check('a patrol going right now goes down', mv.axis === 'v' && mv.dir === 1);
 check('a patrol going down now goes left', en.axis === 'h' && en.dir === -1);
 check('a turret turns its barrels', tu.turret.dirs.join() === 'up,right');
+const aimed = rotateClip({ w: 1, h: 1, cells: [''], entities: [{ kind: 'turret', x: 0, y: 0, turret: { dirs: ['up', 'left'], mode: 'input', start: 'left' } }] });
+check('a turret keeps aiming first the same way, turned', aimed.entities[0].turret.start === 'up');
 const four = rotateClip(rotateClip(rotateClip(rotateClip(clip))));
 check('four turns come back to the start', JSON.stringify(four) === JSON.stringify(clip));
 done();

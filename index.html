@@ -35,9 +35,11 @@
           <button id="playHere" type="button" hidden>Play from here</button>
         </div>
         <div class="opt" data-for="mover enemy strong" id="axisOpt">
-          <span>Moves</span>
-          <button type="button" data-axis="h">Across</button>
-          <button type="button" data-axis="v">Up and down</button>
+          <span>Starts moving</span>
+          <button type="button" data-axis="h" data-dir="1" title="Right">&rarr;</button>
+          <button type="button" data-axis="h" data-dir="-1" title="Left">&larr;</button>
+          <button type="button" data-axis="v" data-dir="-1" title="Up">&uarr;</button>
+          <button type="button" data-axis="v" data-dir="1" title="Down">&darr;</button>
         </div>
         <div class="opt" data-for="mover enemy strong turret">
           <span>Clock</span>
@@ -52,6 +54,13 @@
           <button type="button" data-aim="down" title="Down">&darr;</button>
           <button type="button" data-aim="left" title="Left">&larr;</button>
           <small class="note">Place it on a box, a heavy box or an enemy to mount it there.</small>
+        </div>
+        <div class="opt" data-for="turret" id="startOpt">
+          <span>Starts aiming</span>
+          <button type="button" data-start="up" title="Up">&uarr;</button>
+          <button type="button" data-start="right" title="Right">&rarr;</button>
+          <button type="button" data-start="down" title="Down">&darr;</button>
+          <button type="button" data-start="left" title="Left">&larr;</button>
         </div>
         <div class="opt" data-for="spring">
           <span>Faces</span>

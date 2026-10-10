@@ -93,7 +93,8 @@ export function place(level, ui, x, y, how) {
     setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
   } else if (t === 'turret') {
     if (isStart) return out;
-    const turret = { dirs: CLOCKWISE.filter(d => ui.aim.includes(d)), mode: ui.mode };
+    const dirs = CLOCKWISE.filter(d => ui.aim.includes(d));
+    const turret = { dirs, mode: ui.mode, ...(dirs.includes(ui.start) && ui.start !== dirs[0] ? { start: ui.start } : {}) };
     const host = pi >= 0 ? level.entities[pi] : null;
     if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
       if (JSON.stringify(host.turret) === JSON.stringify(turret)) return out;
@@ -105,7 +106,7 @@ export function place(level, ui, x, y, how) {
     }
   } else {
     if (isStart) return out;
-    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: 1, mode: ui.mode } : {}) };
+    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: ui.dir, mode: ui.mode } : {}) };
     if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return out;
     removePiece();
     if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');

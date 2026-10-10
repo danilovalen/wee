@@ -37,7 +37,7 @@ function turnPiece(e, h) {
     t.axis = e.axis === 'h' ? 'v' : 'h';
     t.dir = e.axis === 'h' ? (e.dir || 1) : -(e.dir || 1);
   }
-  if (e.turret) t.turret = { ...e.turret, dirs: CLOCKWISE.filter(d => e.turret.dirs.map(cw).includes(d)) };
+  if (e.turret) t.turret = { ...e.turret, dirs: CLOCKWISE.filter(d => e.turret.dirs.map(cw).includes(d)), ...(e.turret.start ? { start: cw(e.turret.start) } : {}) };
   return t;
 }
 export function rotateClip(clip) {

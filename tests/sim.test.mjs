@@ -4,6 +4,8 @@ import { aimKey } from '../src/rules/player.js';
 import { parseLevel, emptyLevel, isCell, resizeSide, wallBorder } from '../src/level/format.js';
 import { solidCell } from '../src/rules/grid.js';
 import { place, describe } from '../src/editor/edit.js';
+import { drawTurret } from '../src/view/pieces.js';
+import { INK } from '../src/view/ink.js';
 import { newHistory, record, undo, redo, LIMIT } from '../src/editor/history.js';
 import { RT_PERIOD } from '../src/rules/base.js';
 
@@ -1075,6 +1077,31 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('and removes pieces on the edge, keeps the start', b.entities.length === 0 && b.cells[6] === '');
   const s2 = room(['P..', '...', '...']); s2.start = { x: 0, y: 0 };
   check('the start on the edge is left open', wallBorder(s2).cells[0] === '');
+}
+
+// Starting direction: a patrol starts the way it was placed, a turret aims first where told.
+{
+  const l = room(['.....', '.P...', '.....']);
+  place(l, { tool: 'enemy', axis: 'v', dir: -1, mode: 'input' }, 3, 1, 'place');
+  const en = l.entities.find(e => e.kind === 'enemy');
+  check('a patrol keeps the starting direction picked', en.axis === 'v' && en.dir === -1);
+  place(l, { tool: 'turret', aim: ['up', 'down'], start: 'down', mode: 'input' }, 2, 2, 'place');
+  const tu = l.entities.find(e => e.kind === 'turret');
+  check('a turret stores where it aims first', tu.turret.start === 'down');
+  place(l, { tool: 'turret', aim: ['up', 'down'], start: 'left', mode: 'input' }, 0, 0, 'place');
+  check('a start outside its directions is not stored', !('start' in l.entities.find(e => e.x === 0 && e.y === 0).turret));
+  const g = createGame(l);
+  check('in play it aims there first', g.entities.find(e => e.kind === 'turret' && e.x === 2).turret.aim === 1);
+  check('a start it cannot fire is refused', (() => { try { parseLevel(JSON.stringify({ ...l, entities: [{ kind: 'turret', x: 2, y: 2, turret: { dirs: ['up'], mode: 'input', start: 'down' } }] })); return false; } catch { return true; } })());
+}
+
+// In the editor, a turret's lit barrel is the one it fires first.
+{
+  const lit = [];
+  let angle = 0;
+  const g = new Proxy({}, { get: (o, k) => k === 'rotate' ? a => { angle = a; } : k === 'restore' ? () => { angle = 0; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle' && v === INK.beam && angle) lit.push(angle); o[k] = v; return true; } });
+  drawTurret(g, { dirs: ['up', 'down'], mode: 'input', start: 'down' });
+  check('the editor lights the barrel a turret fires first', lit.length === 1 && Math.abs(lit[0] - Math.PI / 2) < 1e-9, JSON.stringify(lit));
 }
 
 done();

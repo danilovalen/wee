@@ -19,7 +19,7 @@ export function modeBadge(g, mode, bx = 24, by = 8) {
 
 // A turret head: one barrel per direction it fires; the next to fire is lit.
 export function drawTurret(g, t, badge, mounted) {
-  const next = t.dirs[(t.aim || 0) % t.dirs.length];
+  const next = t.aim === undefined ? (t.start || t.dirs[0]) : t.dirs[t.aim % t.dirs.length];
   g.save();
   if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
   for (const d of t.dirs) {
