@@ -106,3 +106,37 @@ Checked (mine): today an on-your-move patrol **launches** each world step and gl
 blocked (`worldStep` calls `launch`). So this is a new per-piece choice, like the clock: **Glides**
 or **One step**. One step makes a patrol a metronome you can count, which suits the ice rule:
 your one slide is N of its steps on the tile clock, one on the slide clock.
+
+## Layers: rooms stacked above one another (2026-10-10)
+
+> multi layers above one another. we need 2 new pieces for that: holes and vertical springs.
+> a hole makes anything going over there fall down. unless it's the player dashing over it (unless
+> unless it hits a wall and there is a hole where it stopped)
+> a spring sends you one level above. Above a spring, the respective floor should have a "cloud" on
+> the same place, similar to a terraria's platform, where you step there when you end your
+> movement. These are coupled so remove one and the other is removed.
+> but you could have a cloud with a spring which sends you two levels above.
+> if you fall on a hole and there is a hole there you fall again
+> also, we could have destroyable floor. the moment something leaves it, it breaks. Not sure yet if
+> it regenerates after a few ticks, stays broken permanently, or both.
+> There will probably be much much more things regarding (like, what happens if something collides
+> with something already above) that so that's why I won't start this again.
+
+His rules, restated:
+- **Hole:** anything that passes over it falls to the layer below. The player sliding over it does
+  not fall, unless the slide stops on the hole (a wall right after it).
+- **Falling onto a hole** falls again, so a stack of holes drops you several layers.
+- **Vertical spring:** stopping on it sends you one layer up, onto a **cloud** at the same x, y. A
+  spring and its cloud are one placed thing: removing either removes both.
+- **Cloud with a spring on it:** two layers up in one go (and so on).
+- **Breakable floor:** breaks the moment something leaves it. Open: regrows after a few ticks,
+  stays broken, or both as two tiles.
+
+Open questions he names or that follow (mine):
+- What happens when something lands where something already is (his example: arriving under or
+  onto a piece on the layer above or below).
+- Does a box or enemy fall through a hole too ("anything"), and does it then block that tile below?
+- How the editor shows layers: one at a time with the others faded, or side by side.
+- Solver: the layer joins the state, so positions multiply by the layer count.
+
+**Parked by the owner** ("that's why I won't start this again"). Recorded, not planned.
