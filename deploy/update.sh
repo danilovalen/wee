@@ -1,5 +1,6 @@
 #!/bin/sh
-# Run on the server as root to take the latest wee: pull, build, restart.
+# Run on the server as root to take the latest wee: pull, build, restart. From your own
+# computer, run deploy/update-live.sh instead.
 set -e
 cd /opt/wee
 sudo -u wee git pull --ff-only

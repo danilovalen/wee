@@ -45,9 +45,14 @@ shortcut the engine's deploy already uses: `ssh manga-vps` (SSH is not on port 2
 
 ## Every update
 
+From your own computer, in your local copy:
+
 ```sh
-/opt/wee/deploy/update.sh
+./deploy/update-live.sh
 ```
+
+It logs in through the `manga-vps` SSH alias and runs `/opt/wee/deploy/update.sh` on the
+server (pull, build, restart). Already logged in to the server, run that script directly.
 
 ## Backups (recommended)
 
