@@ -10,6 +10,7 @@ import { feedDemo } from './check.js';
 import { selectOverlay } from './select.js';
 import { watchStuck, resetStuck } from './stuck.js';
 import { lensMarks, lensBusy } from './lenses.js';
+import { syncWell } from './well.js';
 
 export function snapshot(s) {
   const ents = {};
@@ -76,6 +77,7 @@ export function frame(t) {
     while (S.acc >= TICK_MS) { tick(); S.acc -= TICK_MS; }
   }
   if (S.mode === 'play' || editNeedsDraw(t)) { render(); S.redraw = false; S.drawnAt = t; }
+  syncWell();
   requestAnimationFrame(frame);
 }
 

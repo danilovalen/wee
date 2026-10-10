@@ -18,6 +18,7 @@
     <span class="spacer"></span>
     <button id="roomsBtn" type="button">Rooms</button>
   </header>
+  <div id="ctx" class="ctx"></div>
   <main>
     <aside id="tools">
       <h2>Build</h2>
@@ -93,7 +94,7 @@
 
     </aside>
     <section id="stage">
-      <canvas id="game"></canvas>
+      <div id="roomArea" class="roomArea"><canvas id="game"></canvas></div>
       <div id="pad" class="pad" hidden>
         <button id="hideBtn" type="button">Hide / Swim</button>
         <button id="respawnBtn" type="button">Reset</button>
@@ -114,15 +115,29 @@
         <textarea id="reportText" rows="8" readonly></textarea>
         <form method="dialog"><button>Close</button></form>
       </dialog>
-      <p id="keys" class="hint"></p>
-      <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
-      <div id="lensBox" class="lensBox" hidden>
-        <div id="lensRows"></div>
-        <label class="lensFollow"><input type="checkbox" id="lensFollow" checked> Follow the tool</label>
-        <ul id="lensLegend"></ul>
+      <div id="well" class="well" hidden>
+        <div class="wellTabs" role="tablist">
+          <button type="button" role="tab" data-well="findings">Findings</button>
+          <button type="button" role="tab" data-well="lenses">Lenses</button>
+          <span class="spacer"></span>
+          <button id="wellClose" type="button" aria-label="Close">&times;</button>
+        </div>
+        <div class="wellBody">
+          <div data-pane="findings">
+            <p id="wellEmpty" class="hint">To see design notes, press Check.</p>
+            <details id="lintBox" class="lint" hidden open><summary id="lintSum"></summary><ul id="lintList"></ul></details>
+            <details id="designBox" class="lint design" hidden open><summary>Design notes</summary><ul id="designList"></ul></details>
+          </div>
+          <div data-pane="lenses">
+            <p id="lensOff" class="hint">To see lenses, press Lenses in the header.</p>
+            <div id="lensBox" class="lensBox" hidden>
+              <div id="lensRows"></div>
+              <label class="lensFollow"><input type="checkbox" id="lensFollow" checked> Follow the tool</label>
+              <ul id="lensLegend"></ul>
+            </div>
+          </div>
+        </div>
       </div>
-      <details id="lintBox" class="lint" hidden><summary id="lintSum"></summary><ul id="lintList"></ul></details>
-      <details id="designBox" class="lint design" hidden open><summary>Design notes</summary><ul id="designList"></ul></details>
     </section>
     <aside id="powers">
       <div id="roomBox" class="roomBox">
@@ -156,6 +171,11 @@
       <label class="radio"><input type="radio" name="clock" value="slide"> Each slide</label>
     </aside>
   </main>
+  <footer id="statusBar" class="statusBar">
+    <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
+    <button id="wellBtn" type="button">Findings</button>
+    <p id="keys" class="hint"></p>
+  </footer>
   <dialog id="roomsBox" class="rooms">
     <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
     <p id="roomsWhere" class="hint"></p>

@@ -40,11 +40,11 @@ export function clearDesign() {
 // Called with a finished check of a solvable room.
 export function runDesign(par) {
   const level = JSON.parse(JSON.stringify(S.level)), stamp = JSON.stringify(level), list = $('designList');
-  S.design = { stamp, unused: [], traps: null };
+  S.design = { stamp, unused: [], traps: null, working: true };
   list.replaceChildren(line('Working out the design notes...'));
   $('designBox').hidden = false;
   const lines = [];
-  const show = () => list.replaceChildren(...lines);
+  const show = () => { S.design.working = false; list.replaceChildren(...lines); };
   sliced(routes(level), stamp, r => {
     if (r) {
       S.design.traps = r.traps;

@@ -11,6 +11,7 @@ import { $, canvas, touch } from './dom.js';
 import { change, step as undoStep, syncUndo } from './undo.js';
 import { runCheck, syncCheck, syncLint } from './check.js';
 import { buildLenses, syncLenses } from './lenses.js';
+import { buildWell, openWell } from './well.js';
 import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
 
@@ -113,7 +114,9 @@ export function buildPanels(actions) {
   $('respawnBtn').onclick = $('stuckReset').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
-  $('checkBtn').onclick = () => runCheck();
+  $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
+  buildWell();
+  document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
   buildLenses();
   $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };

@@ -473,7 +473,15 @@ try {
   const lone = room(['#####', '#P.D#', '#####']);
   await page.evaluate(l => window.wee.loadLevel(l), lone);
   check('a door with no switch is a warning', (await page.textContent('#lintSum')) === '2 warnings' && (await page.textContent('#lintList')).includes('red door with no red switch'), await page.textContent('#lintList'));
-  await page.click('#lintBox summary');
+  // Warnings live in the well: the status bar's Findings button counts them and opens it.
+  check('the status bar counts the warnings', (await page.textContent('#wellBtn')) === 'Findings 2', await page.textContent('#wellBtn'));
+  if (await page.locator('#well').isHidden()) await page.click('#wellBtn');
+  await page.click('[data-well=lenses]');
+  await page.click('#wellBtn');
+  check('the Findings button opens the well on its findings, from any tab', await page.locator('#lintList').isVisible());
+  await page.click('#wellBtn');
+  check('and pressed again, shuts it', await page.locator('#well').isHidden());
+  await page.click('#wellBtn');
   await page.locator('#lintList button').last().click();
   await page.waitForTimeout(60);
   const gold = await page.evaluate(() => {

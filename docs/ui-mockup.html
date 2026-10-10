@@ -53,7 +53,7 @@ body { background: var(--page); color: var(--page-fg); font: 15px/1.5 var(--ui);
 .roomwrap:hover .plus, .ed.touch .plus { opacity: 1; }
 .plus.t { left: 50%; top: -14px; transform: translateX(-50%); } .plus.b { left: 50%; bottom: -14px; transform: translateX(-50%); }
 .plus.l { top: 50%; left: -14px; transform: translateY(-50%); } .plus.r { top: 50%; right: -14px; transform: translateY(-50%); }
-.chips { display: flex; gap: 5px; flex-wrap: nowrap; }
+.chips { display: flex; gap: 5px; flex-wrap: nowrap; margin-top: 10px; }
 .chip { display: flex; align-items: center; gap: 6px; padding: 3px 8px !important; border-radius: 999px !important; font-size: 12px; white-space: nowrap; }
 .chip .g { font: 600 9px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
 .chip.auto { border-style: dashed !important; }
@@ -67,7 +67,7 @@ body { background: var(--page); color: var(--page-fg); font: 15px/1.5 var(--ui);
 .status .led { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); flex: none; }
 .status .verdict { font-weight: 600; }
 .status button { padding: 1px 8px; font-size: 12px; }
-.status .info { color: var(--dim); overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; text-align: right; }
+.status .info { color: var(--dim); overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; text-align: left; }
 .status .sz { font-family: var(--mono); font-size: 12px; }
 .well { position: absolute; left: 0; right: 0; bottom: 0; background: var(--panel); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(0,0,0,.35); transform: translateY(105%); transition: transform .2s ease; display: flex; flex-direction: column; z-index: 5; }
 .well.open { transform: none; }
@@ -288,7 +288,7 @@ function infoFor(i) {
   if (stops.has(i)) bits.push('you can stop here'); else if (passes.has(i)) bits.push('you only slide through');
   if (beams.has(i)) bits.push('a laser reaches here');
   if (danger.has(i)) bits.push('a move kills you here');
-  return bits.join(' · ') || 'nothing reaches this tile';
+  return `Tile ${i % W}, ${Math.floor(i / W)}: ` + (bits.join(' · ') || 'nothing reaches it');
 }
 let roomSize = 40;
 function render() {
@@ -310,7 +310,7 @@ function render() {
   // the room gets whatever is left
   const centre = ed.querySelector('.centre');
   requestAnimationFrame(() => {
-    const cw = centre.clientWidth - 40, chipsH = ui.lenses && !ui.play ? 44 : 0;
+    const cw = centre.clientWidth - 40, chipsH = ui.lenses && !ui.play ? 54 : 0;
     const ch = ui.mode === 'phone' ? Math.round(fh * 0.44) : centre.clientHeight - 40 - chipsH;
     roomSize = Math.max(16, Math.floor(Math.min(cw / W, ch / H)));
     const cv = ed.querySelector('#room'); drawRoom(cv, roomSize);

@@ -9,6 +9,7 @@ import { INK } from '../view/ink.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 import { sliced } from './design.js';
+import { WELL, openWell, closeWell } from './well.js';
 
 const STOPS_BUDGET_MS = 2000;
 export const LENS_GROUPS = [
@@ -36,6 +37,8 @@ export function toggleLenses() {
   l.open = !l.open;
   // Opening the first time shows what Stops used to: every stop, and the traps among them.
   if (l.open && !l.opened) { l.opened = true; l.pick.dots = 'stops'; l.pick.frames = 'traps'; }
+  // Turning lenses on shows their tab; turning them off closes it if it was showing.
+  if (l.open) openWell('lenses'); else if (WELL.tab === 'lenses') closeWell();
   syncLenses();
 }
 export function pickLens(group, id) { L().pick[group] = id; syncLenses(); }

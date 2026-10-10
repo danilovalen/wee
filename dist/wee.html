@@ -143,10 +143,6 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .sides #border { grid-column: 1 / -1; }
 .roomBox { margin-bottom: 10px; }
 #codeIn { flex: 1; min-width: 0; }
-@media (min-width: 701px) {
-  /* The room stays in view while the tool list scrolls past it. */
-  #stage { position: sticky; top: 0; align-self: start; }
-}
 
 .genNums { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: end; margin: 8px 0; }
 .genNums label { display: grid; gap: 2px; font-size: 0.9em; }
@@ -191,6 +187,47 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .lensRow button { padding: 2px 7px; font-size: 12px; }
 .lensFollow { display: flex; gap: 6px; align-items: center; color: var(--dim); margin: 2px 0; }
 #lensLegend { list-style: none; margin: 2px 0 0; padding: 0; color: var(--dim); }
+
+/* The frame. A wide screen: header, a context bar for the tool's options, the three columns,
+   and a status bar; only the room flexes. The well under the room has a fixed height. */
+.roomArea { display: flex; justify-content: center; width: 100%; }
+.ctx { display: none; }
+.statusBar { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; width: 100%; max-width: 480px; margin-top: 4px; font-size: 13px; }
+.statusBar .check { margin: 0; }
+.statusBar #keys { margin: 0; }
+.statusBar > [hidden] { display: none; }
+.well { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius) var(--radius) 0 0; }
+.well[hidden] { display: none; }
+.wellTabs { display: flex; gap: 4px; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.wellTabs button { padding: 3px 10px; font-size: 12.5px; }
+.wellBody { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 10px 8px; scrollbar-width: thin; }
+.wellBody [data-pane][hidden], .wellBody .hint[hidden] { display: none; }
+.wellBody .lensBox { max-width: none; }
+@media (max-width: 700px) {
+  /* A phone: the well is a sheet over the bottom of the screen. */
+  .well { position: fixed; left: 0; right: 0; bottom: 0; max-height: 55vh; z-index: 30; box-shadow: 0 -8px 24px rgba(0,0,0,.45); }
+  .statusBar { max-width: none; }
+}
+@media (min-width: 701px) {
+  .ctx { flex: none; display: flex; align-items: center; gap: 16px; height: 40px; padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
+  .ctx #options { display: flex; gap: 16px; flex: none; }
+  .ctx .opt { margin: 0; flex-wrap: nowrap; }
+  .ctx .opt > span:first-child { width: auto; font-size: 12.5px; }
+  /* A note shrinks to an ellipsis, with its full text on hover; a control never does. */
+  .ctx #options { flex: 0 1 auto; min-width: 0; }
+  .ctx .opt { flex: none; }
+  .ctx .opt:has(.note) { flex: 0 1 auto; min-width: 0; }
+  .ctx .opt .note { width: auto; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .ctx #placeHint { flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+  #stage { overflow: hidden; display: flex; flex-direction: column; gap: 8px; }
+  .roomArea { flex: 1; min-height: 0; align-items: center; overflow: hidden; }
+  .well { flex: none; height: 190px; width: 100%; border-radius: var(--radius); }
+  .statusBar { flex: none; flex-wrap: nowrap; max-width: none; height: 36px; margin: 0; padding: 0 16px; background: var(--panel); border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
+  .statusBar button { padding: 3px 10px; font-size: 12.5px; }
+  .statusBar .pad { flex: none; width: auto; max-width: none; margin: 0; flex-wrap: nowrap; }
+  .statusBar .pad button { flex: none; min-height: 0; font-size: 12.5px; }
+  .statusBar #keys { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+}
 </style>
 </head>
 <body>
@@ -205,6 +242,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
     <span class="spacer"></span>
     <button id="roomsBtn" type="button">Rooms</button>
   </header>
+  <div id="ctx" class="ctx"></div>
   <main>
     <aside id="tools">
       <h2>Build</h2>
@@ -280,7 +318,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 
     </aside>
     <section id="stage">
-      <canvas id="game"></canvas>
+      <div id="roomArea" class="roomArea"><canvas id="game"></canvas></div>
       <div id="pad" class="pad" hidden>
         <button id="hideBtn" type="button">Hide / Swim</button>
         <button id="respawnBtn" type="button">Reset</button>
@@ -301,15 +339,29 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
         <textarea id="reportText" rows="8" readonly></textarea>
         <form method="dialog"><button>Close</button></form>
       </dialog>
-      <p id="keys" class="hint"></p>
-      <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
-      <div id="lensBox" class="lensBox" hidden>
-        <div id="lensRows"></div>
-        <label class="lensFollow"><input type="checkbox" id="lensFollow" checked> Follow the tool</label>
-        <ul id="lensLegend"></ul>
+      <div id="well" class="well" hidden>
+        <div class="wellTabs" role="tablist">
+          <button type="button" role="tab" data-well="findings">Findings</button>
+          <button type="button" role="tab" data-well="lenses">Lenses</button>
+          <span class="spacer"></span>
+          <button id="wellClose" type="button" aria-label="Close">&times;</button>
+        </div>
+        <div class="wellBody">
+          <div data-pane="findings">
+            <p id="wellEmpty" class="hint">To see design notes, press Check.</p>
+            <details id="lintBox" class="lint" hidden open><summary id="lintSum"></summary><ul id="lintList"></ul></details>
+            <details id="designBox" class="lint design" hidden open><summary>Design notes</summary><ul id="designList"></ul></details>
+          </div>
+          <div data-pane="lenses">
+            <p id="lensOff" class="hint">To see lenses, press Lenses in the header.</p>
+            <div id="lensBox" class="lensBox" hidden>
+              <div id="lensRows"></div>
+              <label class="lensFollow"><input type="checkbox" id="lensFollow" checked> Follow the tool</label>
+              <ul id="lensLegend"></ul>
+            </div>
+          </div>
+        </div>
       </div>
-      <details id="lintBox" class="lint" hidden><summary id="lintSum"></summary><ul id="lintList"></ul></details>
-      <details id="designBox" class="lint design" hidden open><summary>Design notes</summary><ul id="designList"></ul></details>
     </section>
     <aside id="powers">
       <div id="roomBox" class="roomBox">
@@ -343,6 +395,11 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
       <label class="radio"><input type="radio" name="clock" value="slide"> Each slide</label>
     </aside>
   </main>
+  <footer id="statusBar" class="statusBar">
+    <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
+    <button id="wellBtn" type="button">Findings</button>
+    <p id="keys" class="hint"></p>
+  </footer>
   <dialog id="roomsBox" class="rooms">
     <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
     <p id="roomsWhere" class="hint"></p>
@@ -1411,19 +1468,30 @@ const { $, canvas, g, portrait } = m12;
 
 
 
-// On a wide screen the tool options and the hint sit under the room, so the tool column
-// never grows past the screen; on a phone they stay under the tools.
-function placeOptions(wide) {
-  const home = wide ? $('stage') : $('tools');
-  for (const id of ['options', 'placeHint']) if ($(id).parentElement !== home) home.append($(id));
+// A wide screen is a frame: the tool's options in a bar under the header, the verdict and
+// keys in a bar at the bottom, the play buttons in that bar too. Only the room flexes. A phone
+// keeps the options under the tools and the bar and buttons under the room.
+function place(wide) {
+  const after = (el, ref) => { if (ref.nextElementSibling !== el) ref.after(el); };
+  const inside = (el, parent) => { if (el.parentElement !== parent) parent.append(el); };
+  if (wide) {
+    inside($('options'), $('ctx')); inside($('placeHint'), $('ctx'));
+    after($('statusBar'), document.querySelector('main'));
+    if ($('pad').nextElementSibling !== $('keys')) $('keys').before($('pad'));
+  } else {
+    inside($('options'), $('tools')); inside($('placeHint'), $('tools'));
+    after($('pad'), $('roomArea'));
+    after($('statusBar'), $('pad'));
+  }
 }
 
 function fit() {
   const level = S.level, wide = innerWidth > 700;
-  placeOptions(wide);
-  const stage = $('stage').clientWidth || level.w * T;
-  const room = wide ? roomHeight() : portrait() ? innerHeight * 0.62 : innerHeight - 140;
-  const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));
+  place(wide);
+  const area = $('roomArea');
+  const stage = (wide ? area.clientWidth - 8 : $('stage').clientWidth) || level.w * T;
+  const room = wide ? area.clientHeight - 8 : portrait() ? innerHeight * 0.62 : innerHeight - 140;
+  const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
   const k = (window.devicePixelRatio || 1) * zoom;
   // Setting a canvas size clears it, even to the same size, so only a real change is written.
   const cw = Math.round(level.w * T * k), ch = Math.round(level.h * T * k), css = Math.round(level.w * T * zoom) + 'px';
@@ -1434,24 +1502,9 @@ function fit() {
   S.redraw = true;
 }
 
-// On a wide screen the room takes the height left over by everything under it (hints, the
-// Check line, design notes, the play pad), but never less than 40% of the column.
-const MIN_SHARE = 0.4;
-function roomHeight() {
-  const stage = $('stage'), top = canvas.getBoundingClientRect().top, bottom = canvas.getBoundingClientRect().bottom;
-  let below = 0;
-  for (const el of stage.children) {
-    if (el === canvas || el.tagName === 'DIALOG' || !el.offsetParent) continue;
-    below = Math.max(below, el.getBoundingClientRect().bottom + parseFloat(getComputedStyle(el).marginBottom) - bottom);
-  }
-  const main = stage.parentElement, space = main.getBoundingClientRect().bottom - parseFloat(getComputedStyle(main).paddingBottom) - top - 4;
-  return Math.max(space - below, space * MIN_SHARE);
-}
-
-// Fits again whenever something under the room appears, goes or changes size.
+// Fits again whenever the room's area changes size: the well opening, a window resize.
 function watchStage() {
-  const ro = new ResizeObserver(() => requestAnimationFrame(fit));
-  for (const el of [...$('stage').children, $('options'), $('placeHint')]) if (el !== canvas) ro.observe(el);
+  new ResizeObserver(() => requestAnimationFrame(fit)).observe($('roomArea'));
 }
 return { fit, watchStage };
 })();
@@ -2450,11 +2503,11 @@ function clearDesign() {
 // Called with a finished check of a solvable room.
 function runDesign(par) {
   const level = JSON.parse(JSON.stringify(S.level)), stamp = JSON.stringify(level), list = $('designList');
-  S.design = { stamp, unused: [], traps: null };
+  S.design = { stamp, unused: [], traps: null, working: true };
   list.replaceChildren(line('Working out the design notes...'));
   $('designBox').hidden = false;
   const lines = [];
-  const show = () => list.replaceChildren(...lines);
+  const show = () => { S.design.working = false; list.replaceChildren(...lines); };
   sliced(routes(level), stamp, r => {
     if (r) {
       S.design.traps = r.traps;
@@ -3262,8 +3315,55 @@ function* lensData(level, max = MAX_STATES) {
 }
 return { lensData };
 })();
-// ---- src/app/lenses.js
+// ---- src/app/well.js
 const m35 = (() => {
+const { S } = m11;
+const { $ } = m12;
+// The well: a fixed-height drawer under the room, with a tab for findings (warnings and
+// design notes) and one for lenses. It never pushes anything off the screen, it only takes
+// height from the room. All copy is draft.
+
+
+const WELL = { open: false, tab: 'findings' };
+
+function openWell(tab) { WELL.open = true; if (tab) WELL.tab = tab; syncWell(); }
+function closeWell() { WELL.open = false; syncWell(); }
+
+// Warnings plus design notes, not counting the line that says they are being worked out.
+function findings() {
+  const lint = $('lintBox').hidden ? 0 : $('lintList').children.length;
+  const design = $('designBox').hidden || S.design?.working ? 0 : $('designList').children.length;
+  return lint + design;
+}
+
+let shown = '';
+function syncWell() {
+  const edit = S.mode === 'edit', open = WELL.open && edit, n = findings();
+  const label = n ? `Findings ${n}` : 'Findings';
+  const key = [open, WELL.tab, label, edit, $('lensBox').hidden, n].join();
+  if (key === shown) return;
+  shown = key;
+  $('well').hidden = !open;
+  // With nothing found and the well shut there is nothing to open: the button goes.
+  $('wellBtn').hidden = !edit || (!n && !open);
+  $('wellBtn').textContent = label;
+  $('wellBtn').setAttribute('aria-expanded', String(open));
+  $('wellBtn').classList.toggle('on', open);
+  document.querySelectorAll('[data-well]').forEach(b => { const on = b.dataset.well === WELL.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+  document.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== WELL.tab; });
+  $('wellEmpty').hidden = n > 0;
+  $('lensOff').hidden = !$('lensBox').hidden;
+}
+
+function buildWell() {
+  document.querySelectorAll('[data-well]').forEach(b => b.onclick = () => openWell(b.dataset.well));
+  $('wellClose').onclick = closeWell;
+  $('wellBtn').onclick = () => (WELL.open && WELL.tab === 'findings' ? closeWell() : openWell('findings'));
+}
+return { WELL, openWell, closeWell, syncWell, buildWell };
+})();
+// ---- src/app/lenses.js
+const m36 = (() => {
 const { reach } = m20;
 const { routes } = m22;
 const { lensData } = m34;
@@ -3271,10 +3371,12 @@ const { INK } = m13;
 const { S } = m11;
 const { $ } = m12;
 const { sliced } = m23;
+const { WELL, openWell, closeWell } = m35;
 // Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
 // you pick one in that group. Data comes from searches run a slice at a time, again whenever
 // the room changes. All copy is draft.
+
 
 
 
@@ -3308,6 +3410,8 @@ function toggleLenses() {
   l.open = !l.open;
   // Opening the first time shows what Stops used to: every stop, and the traps among them.
   if (l.open && !l.opened) { l.opened = true; l.pick.dots = 'stops'; l.pick.frames = 'traps'; }
+  // Turning lenses on shows their tab; turning them off closes it if it was showing.
+  if (l.open) openWell('lenses'); else if (WELL.tab === 'lenses') closeWell();
   syncLenses();
 }
 function pickLens(group, id) { L().pick[group] = id; syncLenses(); }
@@ -3428,7 +3532,7 @@ function buildLenses() {
 return { LENS_GROUPS, AUTO, lensOn, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, lensBusy, syncLenses, buildLenses };
 })();
 // ---- src/level/region.js
-const m36 = (() => {
+const m37 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -3493,8 +3597,8 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m37 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m36;
+const m38 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m37;
 const { S } = m11;
 const { change } = m33;
 const { $ } = m12;
@@ -3617,7 +3721,7 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/panels.js
-const m38 = (() => {
+const m39 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel, resizeSide, wallBorder } = m9;
 const { T, INK } = m13;
@@ -3628,11 +3732,13 @@ const { S } = m11;
 const { $, canvas, touch } = m12;
 const { change, step: undoStep, syncUndo } = m33;
 const { runCheck, syncCheck, syncLint } = m24;
-const { buildLenses, syncLenses } = m35;
+const { buildLenses, syncLenses } = m36;
+const { buildWell, openWell } = m35;
 const { syncRoomsButton } = m32;
-const { buildSelect, syncSelect } = m37;
+const { buildSelect, syncSelect } = m38;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -3745,7 +3851,9 @@ function buildPanels(actions) {
   $('respawnBtn').onclick = $('stuckReset').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
-  $('checkBtn').onclick = () => runCheck();
+  $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
+  buildWell();
+  document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
   buildLenses();
   $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };
@@ -3814,7 +3922,7 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/editor/edit.js
-const m39 = (() => {
+const m40 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
 const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m19;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
@@ -3937,7 +4045,7 @@ function place(level, ui, x, y, how) {
 return { holds, describe, place };
 })();
 // ---- src/app/stuck.js
-const m40 = (() => {
+const m41 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m20;
 const { S } = m11;
 const { $ } = m12;
@@ -3972,19 +4080,21 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m41 = (() => {
+const m42 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m18;
 const { S } = m11;
 const { $, g, now } = m12;
-const { syncPanel, keysText } = m38;
+const { syncPanel, keysText } = m39;
 const { feedDemo } = m24;
-const { selectOverlay } = m37;
-const { watchStuck, resetStuck } = m40;
-const { lensMarks, lensBusy } = m35;
+const { selectOverlay } = m38;
+const { watchStuck, resetStuck } = m41;
+const { lensMarks, lensBusy } = m36;
+const { syncWell } = m35;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
 
 
 
@@ -4061,6 +4171,7 @@ function frame(t) {
     while (S.acc >= TICK_MS) { tick(); S.acc -= TICK_MS; }
   }
   if (S.mode === 'play' || editNeedsDraw(t)) { render(); S.redraw = false; S.drawnAt = t; }
+  syncWell();
   requestAnimationFrame(frame);
 }
 
@@ -4093,16 +4204,16 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m42 = (() => {
-const { describe, holds, place } = m39;
+const m43 = (() => {
+const { describe, holds, place } = m40;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m41;
+const { setMode, aim } = m42;
 const { begin, end, step: undoStep } = m33;
 const { save } = m32;
-const { selectDown, selectMove, selectUp, selectKey } = m37;
-const { LENS_GROUPS, cycleLens, lensesOff } = m35;
-const { syncPanel } = m38;
+const { selectDown, selectMove, selectUp, selectKey } = m38;
+const { LENS_GROUPS, cycleLens, lensesOff } = m36;
+const { syncPanel } = m39;
 const { fit } = m14;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
@@ -4203,7 +4314,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m43 = (() => {
+const m44 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -4311,10 +4422,10 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m44 = (() => {
+const m45 = (() => {
 const { search } = m20;
 const { contains } = m30;
-const { ING, variants } = m43;
+const { ING, variants } = m44;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -4359,7 +4470,7 @@ function* judge(level, recipe, max = 3000) {
 return { offFound, missing, judge };
 })();
 // ---- src/gen/random.js
-const m45 = (() => {
+const m46 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -4376,12 +4487,12 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m46 = (() => {
+const m47 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
-const { INGREDIENTS, ING, spot } = m43;
-const { judge } = m44;
-const { rng } = m45;
+const { INGREDIENTS, ING, spot } = m44;
+const { judge } = m45;
+const { rng } = m46;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -4490,9 +4601,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m47 = (() => {
-const { INGREDIENTS } = m43;
-const { generate, normalize, recipeLabel, LIMITS } = m46;
+const m48 = (() => {
+const { INGREDIENTS } = m44;
+const { generate, normalize, recipeLabel, LIMITS } = m47;
 const { stampOf } = m27;
 const { S } = m11;
 const { thumbURL } = m28;
@@ -4656,7 +4767,7 @@ function buildGenerator(actions) {
 return { shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m48 = (() => {
+const m49 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -4664,11 +4775,11 @@ const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { portrait } = m12;
 const { fit, watchStage } = m14;
-const { buildPanels, syncPanel } = m38;
-const { bindInput } = m42;
-const { setMode, frame, render, tick, report, copyReport } = m41;
+const { buildPanels, syncPanel } = m39;
+const { bindInput } = m43;
+const { setMode, frame, render, tick, report, copyReport } = m42;
 const { buildRooms, bootRooms } = m32;
-const { buildGenerator } = m47;
+const { buildGenerator } = m48;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 

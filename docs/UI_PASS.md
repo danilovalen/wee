@@ -1,6 +1,6 @@
 # UI pass: diagnosis and proposal
 
-Status: **diagnosis, 2026-10-10. Nothing built.** Owner: "these options seem like something that will
+Status: **diagnosis, 2026-10-10. U1 (the frame) built the same day; U2 to U5 not built.** Owner: "these options seem like something that will
 be cut on the page end due to our no-scrolling-allowed rule. We need a UI pass on this tool.
 Diagnose how other similar tools work so we can improve ours. Do it thoroughly and carefully."
 
@@ -189,11 +189,38 @@ ones the sources agreed on; uncertain ones are marked (unconfirmed).
 
 | Phase | Ships | Rough size |
 |---|---|---|
-| U1 | the frame: context bar, status bar, design notes drawer, only the room flexes, the "everything open" gate | a day |
+| U1 | the frame: context bar, status bar, design notes drawer, only the room flexes, the "everything open" gate | **built 2026-10-10** |
 | U2 | lens chips on the room's edge, short legends, automatic look, hover Info line | half a day |
 | U3 | right column tabs or edge handles; icon-only tools when narrow | half a day |
 | U4 | Tab hides chrome, `?` key list, keys on buttons | a few hours |
+| U5 | the Manga theme, per bag-crawler's `docs/MANGA_THEME.md` (below) | half a day |
 | later | a command palette; recent tools; options in a bubble on a placed piece | open |
+
+## 5a. U5: the Manga theme
+
+Owner, 2026-10-10: *"include somewhere, applying manga design patterns, hopefully we have a doc."*
+
+There is one: **bag-crawler `docs/MANGA_THEME.md`**. Its values come from manga-engine's
+`public/core-ui.css`; manga-tools' `web/css/palette.css` copies them too, because a standalone page
+cannot link the platform's stylesheet. wee is a fourth repo in the same position, so it takes the
+same approach: copy that token table into wee as its own canonical table and gate the stylesheet
+against it, the way bag-crawler's `tests/manga.mjs` does.
+
+What carries over is the **form**, not only the palette, which is why it took four prompts last time:
+
+1. No strokes: surfaces separate by tone, never a 1px border on a panel, field or button.
+2. The sticker shadow, hard and unblurred: 4px at rest, 6px on hover (lifted 2px), 1px on press.
+3. A recess is an inset shadow in a lighter rim, not the outer shadow's ink.
+4. State is an inset 2px ring, never a border, so nothing moves when it lights.
+5. Four radii: 16 modal, 10 panel, 8 field, 999 pill.
+6. One accent, for attention only.
+
+**What the theme does not touch: the room.** Tiles, pieces and lens marks are the game's own
+language; a colour on them is a rule the player reads. The theme takes the shell: header, bars,
+columns, well, buttons, fields and dialogs.
+
+Open before building: wee's cyan accent (`#5ee0e6`) is also the player's colour and the "on" state.
+Manga's accent is `#ff2a5f`. Which one wins for the shell is the owner's call.
 
 ## 6. Decisions (owner, 2026-10-10)
 

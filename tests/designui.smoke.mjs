@@ -25,6 +25,10 @@ try {
   check('the powers that change nothing are named together', n.includes('Without Dive, Laser, Cycle: no change.'), n);
   check('routes and dead ends are counted', n.includes('2 shortest routes.') && n.includes('103 of 186 positions can no longer reach the goal.'), n);
   check('a piece a plain wall could replace is named', n.includes('As a wall, these do the same job: box at 3, 1.'), n);
+  // Check opens the well on its findings, and the status bar counts the five notes.
+  check('Check opens the well on the design notes', await page.locator('#designList').isVisible());
+  await page.waitForTimeout(100);
+  check('the status bar counts the notes', (await page.textContent('#wellBtn')) === 'Findings 5', await page.textContent('#wellBtn'));
 
   await page.click('#stopsBtn');
   await page.waitForFunction(() => /Frames: \d+/.test(document.getElementById('lensLegend').textContent), null, { timeout: 30000 });
