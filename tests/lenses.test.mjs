@@ -42,6 +42,16 @@ const hp = run(lensData(hall));
 check('a slide passes the tiles between its stops', [...hp.passes].join() === '7' && [...hp.stops].sort().join() === '6,8', JSON.stringify([[...hp.passes], [...hp.stops]]));
 const pit = room(['######', '#P..X#', '######'], { powers: OFF });
 check('a move that kills you passes nothing', run(lensData(pit)).passes.size === 0);
+// Moves: every stop-to-stop move, counted by how many positions make it.
+check('the moves between stops are listed with how many positions make them', hp.moves.get('6>8') === 1 && hp.moves.get('8>6') === 1 && hp.moves.size === 2, JSON.stringify([...hp.moves]));
+// With a box that can sit in several places, one move between two tiles is made from several
+// positions: from the top-left corner down to the start row, once per place the box can be.
+const shove = room(['#######', '#.....#', '#P.B..#', '#######'], { powers: OFF }), sv = run(lensData(shove));
+check('a move made from several positions counts each of them', sv.moves.get('8>12') === 3, JSON.stringify([...sv.moves]));
+// Danger: the tile where a move kills you.
+const dz = run(lensData(pit));
+check('sliding into a death block marks the tile you die on, beside it', [...dz.danger].join() === String(1 * 6 + 3), JSON.stringify([...dz.danger]));
+check('a room with no way to die has no danger', hp.danger.size === 0);
 check('a search past its cap says so', run(lensData(oneWay, 1)).capped === true);
 const rt = room(['#####', '#P.E#', '#####'], { mode: 'realtime' });
 check('a room with real-time pieces gives no answer', run(lensData(rt)) === null);

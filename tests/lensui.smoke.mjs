@@ -14,6 +14,7 @@ const OFF = { boomerang: false, dive: false, laser: false, cycle: false };
 const lit = room(['#######', '#T....#', '#P.B..#', '#######'], { powers: OFF });
 const oneWay = room(['########', '#...P>.#', '########'], { powers: OFF });
 oneWay.cells[1 * 8 + 1] = 'goal';
+const deadly = room(['######', '#P..X#', '######'], { powers: OFF });
 const legend = () => page.textContent('#lensLegend');
 const on = group => page.$eval(`[data-lens-group=${group}].on`, b => b.dataset.lens).catch(() => null);
 const pixel = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round((x + 0.5) * t), Math.round((y + 0.5) * t), 1, 1).data]; }, [x, y]);
@@ -56,6 +57,18 @@ try {
   await settle();
   const big = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'); const at = (x, y, dx) => g.getImageData(Math.round((x + 0.5) * t + dx * t / 32), Math.round((y + 0.5) * t), 1, 1).data[2]; return { stopEdge: at(4, 1, 3), passEdge: at(3, 1, 3), passCentre: at(3, 1, 0) }; });
   check('Passes draws a big dot on a stop and a small one where you slide through', (await legend()).includes('small where you only pass') && big.stopEdge > 150 && big.passEdge < 100 && big.passCentre > 80, JSON.stringify(big) + await legend());
+  // Moves: arrows between stops; Danger: where a move kills you, framed and crossed.
+    await page.click('[data-lens-group=dots][data-lens=off]');
+  await page.click('[data-lens-group=lines][data-lens=moves]');
+  await settle();
+  // The arrows sit a little to each side of the row's centre line, so look across a band.
+  const mv = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'); let best = 0; for (let dy = -6; dy <= 6; dy++) { const d = g.getImageData(Math.round(2.5 * t), Math.round(1.5 * t + dy * t / 32), 1, 1).data; best = Math.max(best, Math.min(d[1], d[2])); } return best; });
+  check('Moves draws arrows between stops', (await legend()).includes('every move from stop to stop') && mv > 100, String(mv));
+  await page.evaluate(l => window.wee.loadLevel(l), deadly);
+  await page.click('[data-lens-group=frames][data-lens=danger]');
+  await settle();
+  const dz = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round(3 * t + 2.5 * t / 32), Math.round(1.5 * t), 1, 1).data]; });
+  check('Danger frames the tile where a move kills you', (await legend()).includes('1 tile where a move kills you') && dz[0] > 200 && dz[1] > 100 && dz[2] < 120, JSON.stringify(dz) + await legend());
   await page.keyboard.press('0');
   check('key 0 turns every lens off', !(await legend()).trim() && await on('dots') === 'off');
   await page.click('#stopsBtn');

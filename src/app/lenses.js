@@ -14,13 +14,13 @@ const STOPS_BUDGET_MS = 2000;
 export const LENS_GROUPS = [
   { id: 'colour', label: 'Colour', key: '1', lenses: [['distance', 'Distance'], ['beams', 'Beams'], ['pieces', 'Pieces']] },
   { id: 'dots', label: 'Dots', key: '2', lenses: [['stops', 'Stops'], ['passes', 'Passes']] },
-  { id: 'lines', label: 'Lines', key: '3', lenses: [['solution', 'Solution']] },
-  { id: 'frames', label: 'Frames', key: '4', lenses: [['traps', 'Traps']] },
+  { id: 'lines', label: 'Lines', key: '3', lenses: [['solution', 'Solution'], ['moves', 'Moves']] },
+  { id: 'frames', label: 'Frames', key: '4', lenses: [['traps', 'Traps'], ['danger', 'Danger']] },
 ];
 // The lens a tool opens by itself, while it is in hand.
 const PIECE = { colour: 'pieces' }, BEAM = { colour: 'beams' }, AIM = { colour: 'distance', lines: 'solution' };
 export const AUTO = { turret: BEAM, receiver: BEAM, sensor: BEAM, box: PIECE, heavy: PIECE, mover: PIECE, enemy: PIECE, strong: PIECE, goal: AIM, start: AIM };
-const SEARCHED = ['distance', 'beams', 'pieces', 'solution', 'passes'];
+const SEARCHED = ['distance', 'beams', 'pieces', 'solution', 'passes', 'moves', 'danger'];
 
 const L = () => S.lens;
 // What is on in a group: your pick, else what the tool opens, else nothing.
@@ -96,6 +96,8 @@ export function lensMarks() {
     if (st && lensOn('dots') === 'stops') out.dots = st.list || [...(st.out.stops || [])];
     if (d && lensOn('dots') === 'passes') { out.dots = [...d.stops]; out.small = [...d.passes]; }
     if (d && lensOn('lines') === 'solution') out.lines = d.solution;
+    if (d && lensOn('lines') === 'moves') out.moves = [...d.moves].map(([k, n]) => { const [a, b] = k.split('>').map(Number); return { a, b, n }; }).filter(m => m.a !== m.b);
+    if (d && lensOn('frames') === 'danger') out.crosses = d.danger;
     if (st && st.traps && lensOn('frames') === 'traps') out.frames = new Set(st.traps);
   }
   return out;
@@ -110,6 +112,8 @@ function line(id) {
   switch (id) {
     case 'stops': return st && st.list ? `Dots: ${tiles(st.list.length)} you can stop on${st.capped ? ', maybe more' : ''}.` : wait;
     case 'passes': return !d ? wait : `Dots: big where you stop (${d.stops.size}), small where you only pass (${d.passes.size}).${part}`;
+    case 'moves': return !d ? wait : `Lines: every move from stop to stop, thicker where more positions make it.${part}`;
+    case 'danger': return !d ? wait : d.danger.size ? `Frames: ${tiles(d.danger.size)} where a move kills you.${part}` : `Frames: no move kills you.${part}`;
     case 'traps': return !S.level.cells.includes('goal') ? 'Frames: place a Goal to find traps.' : st && st.traps ? `Frames: ${tiles(st.traps.length)} where the goal is out of reach for good.` : wait;
     case 'distance': return !d ? wait : !S.level.cells.includes('goal') ? 'Colour: place a Goal to see how far each tile is.' : `Colour: green is near the goal, red is far, grey can no longer win.${part}`;
     case 'beams': return !d ? wait : `Colour: red where a laser can ever reach.${part}`;

@@ -1,7 +1,7 @@
 // What the editor's lenses draw, from every position the room can reach: how far each tile
 // is from winning, a shortest way there, every tile you pass through on the way to a stop,
-// and every tile a beam or a piece ever covers. A
-// generator, so the page can run it a slice at a time.
+// every tile a beam or a piece ever covers, the moves between stops, and where a move kills
+// you. A generator, so the page can run it a slice at a time.
 import { createGame } from '../rules/game.js';
 import { computeBeams } from '../rules/beams.js';
 import { successors, stateKey, unsearchable, MAX_STATES } from './solve.js';
@@ -13,7 +13,8 @@ const PIECES = ['box', 'heavy', 'mover', 'enemy', 'strong'];
 // { distance: Map tile -> fewest moves to win from a stop there, hopeless: tiles where no stop
 // can win, solution: the tiles a shortest way stops on, start first, beams and pieces: Sets of
 // tiles, passes: a Set of every tile you cross in a move that works, stops: every tile a move
-// ends on, capped }. Null for a room with real-time pieces.
+// ends on, moves: Map 'from>to' -> how many positions make that move, danger: a Set of tiles
+// where some move kills you, capped }. Null for a room with real-time pieces.
 export function* lensData(level, max = MAX_STATES) {
   if (unsearchable({ ...level, cells: [...level.cells, 'goal'] })) return null;
   const start = createGame(level), keys = [...KEYS, ...(level.powers.cycle || level.powers.swim ? ['hide'] : [])];
@@ -21,7 +22,11 @@ export function* lensData(level, max = MAX_STATES) {
   const beams = new Set(), pieces = new Set(), passes = new Set(), stops = new Set([tileOf(start)]);
   // The tiles of the move being tried; kept only when the move works.
   let crossed = [];
-  const onTick = s => { crossed.push(tileOf(s)); };
+  const moves = new Map(), danger = new Set();
+  const onTick = s => {
+    crossed.push(tileOf(s));
+    for (const e of s.events) if (e.type === 'die') danger.add(e.y * s.w + e.x);
+  };
   const record = s => {
     computeBeams(s, false);
     for (const b of s.beams) for (const [x, y] of b.path.slice(1)) beams.add(y * s.w + x);
@@ -40,6 +45,8 @@ export function* lensData(level, max = MAX_STATES) {
       if (pair) {
         const t = pair[1];
         stops.add(tileOf(t));
+        const edge = `${node.tile}>${tileOf(t)}`;
+        moves.set(edge, (moves.get(edge) || 0) + 1);
         if (t.won) { node.next.add(WIN); if (!win) win = { from: k, tile: tileOf(t) }; }
         else {
           const tk = stateKey(t);
@@ -68,5 +75,5 @@ export function* lensData(level, max = MAX_STATES) {
   const solution = [];
   if (win) { solution.push(win.tile); for (let k = win.from; k; k = nodes.get(k).parent) solution.unshift(nodes.get(k).tile); }
   for (const i of stops) passes.delete(i);
-  return { distance, hopeless: [...seen].filter(t => !distance.has(t)), solution, beams, pieces, passes, stops, capped, positions: nodes.size };
+  return { distance, hopeless: [...seen].filter(t => !distance.has(t)), solution, beams, pieces, passes, stops, moves, danger, capped, positions: nodes.size };
 }
