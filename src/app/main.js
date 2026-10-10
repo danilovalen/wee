@@ -6,7 +6,7 @@ import { parseLevel, emptyLevel } from '../level/format.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { portrait } from './dom.js';
-import { fit } from './fit.js';
+import { fit, watchStage } from './fit.js';
 import { buildPanels, syncPanel } from './panels.js';
 import { bindInput } from './input.js';
 import { setMode, frame, render, tick, report, copyReport } from './play.js';
@@ -29,6 +29,7 @@ buildGenerator({ setMode, syncPanel, fit });
 bindInput();
 syncPanel();
 addEventListener('resize', fit);
+watchStage();
 // Any input may change what the room looks like; the next frame redraws it.
 for (const t of ['pointerdown', 'pointermove', 'pointerup', 'keydown', 'click', 'input', 'change', 'resize']) addEventListener(t, () => { S.redraw = true; }, true);
 fit();

@@ -5,7 +5,6 @@ import { $, canvas, g, portrait } from './dom.js';
 
 // On a wide screen the tool options and the hint sit under the room, so the tool column
 // never grows past the screen; on a phone they stay under the tools.
-const UNDER_ROOM = 170;
 function placeOptions(wide) {
   const home = wide ? $('stage') : $('tools');
   for (const id of ['options', 'placeHint']) if ($(id).parentElement !== home) home.append($(id));
@@ -15,7 +14,7 @@ export function fit() {
   const level = S.level, wide = innerWidth > 900;
   placeOptions(wide);
   const stage = $('stage').clientWidth || level.w * T;
-  const room = portrait() ? innerHeight * 0.62 : wide ? innerHeight - canvas.getBoundingClientRect().top - UNDER_ROOM : innerHeight - 140;
+  const room = portrait() ? innerHeight * 0.62 : wide ? roomHeight() : innerHeight - 140;
   const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));
   const k = (window.devicePixelRatio || 1) * zoom;
   canvas.width = Math.round(level.w * T * k); canvas.height = Math.round(level.h * T * k);
@@ -23,4 +22,24 @@ export function fit() {
   g.setTransform(canvas.width / (level.w * T), 0, 0, canvas.height / (level.h * T), 0, 0);
   $('w').value = level.w; $('h').value = level.h;
   S.redraw = true;
+}
+
+// On a wide screen the room takes the height left over by everything under it (hints, the
+// Check line, design notes, the play pad), but never less than 40% of the column.
+const MIN_SHARE = 0.4;
+function roomHeight() {
+  const stage = $('stage'), top = canvas.getBoundingClientRect().top, bottom = canvas.getBoundingClientRect().bottom;
+  let below = 0;
+  for (const el of stage.children) {
+    if (el === canvas || el.tagName === 'DIALOG' || !el.offsetParent) continue;
+    below = Math.max(below, el.getBoundingClientRect().bottom + parseFloat(getComputedStyle(el).marginBottom) - bottom);
+  }
+  const main = stage.parentElement, space = main.getBoundingClientRect().bottom - parseFloat(getComputedStyle(main).paddingBottom) - top - 4;
+  return Math.max(space - below, space * MIN_SHARE);
+}
+
+// Fits again whenever something under the room appears, goes or changes size.
+export function watchStage() {
+  const ro = new ResizeObserver(() => requestAnimationFrame(fit));
+  for (const el of [...$('stage').children, $('options'), $('placeHint')]) if (el !== canvas) ro.observe(el);
 }

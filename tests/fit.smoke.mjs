@@ -1,5 +1,6 @@
 // A wide screen never scrolls: not the page, and not a column, whatever tool is picked.
 import { chromium } from 'playwright-core';
+import { readFileSync } from 'node:fs';
 import { serve } from '../tools/serve.mjs';
 import { suite } from './lib.mjs';
 
@@ -21,6 +22,21 @@ try {
     check(`${w}x${h}: nothing scrolls, with any tool picked`, !bad.length, bad.join(' '));
     const tall = await page.evaluate(() => { window.wee.loadLevel(window.wee.blank(12, 30)); return new Promise(r => requestAnimationFrame(() => r())); }).then(over);
     check(`${w}x${h}: a tall room still fits`, !tall);
+    // With design notes under the room, in edit mode and in play mode, nothing is cut.
+    const first = JSON.parse(readFileSync('rooms/first-room.wee', 'utf8'));
+    await page.evaluate(l => window.wee.loadLevel(l), first);
+    await page.click('#checkBtn');
+    await page.waitForFunction(() => /changes the answer|nothing changes/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
+    const settle = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    await settle();
+    const lastShown = () => page.evaluate(() => { const li = [...document.querySelectorAll('#designList li')].pop(); return li.getBoundingClientRect().bottom <= document.getElementById('stage').getBoundingClientRect().bottom; });
+    // The room takes the room it is given: it reaches the column's width, or nearly its height.
+    const fills = () => page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), s = document.getElementById('stage'), r = s.getBoundingClientRect(); const under = Math.max(...[...s.children].filter(e => e.id !== 'game' && e.tagName !== 'DIALOG' && e.offsetParent).map(e => e.getBoundingClientRect().bottom)); return c.width >= s.clientWidth - 2 || r.bottom - under < 40; });
+    check(`${w}x${h}: design notes fit under the room`, !(await over()) && await lastShown() && await fills());
+    await page.click('#mode');
+    await settle();
+    check(`${w}x${h}: and still fit in play mode`, !(await over()) && await lastShown() && await fills());
+    await page.click('#mode');
     await page.click('#genBtn');
     await page.locator('.genIngBox summary').click();
     check(`${w}x${h}: the Generator opens from the header and fits without scrolling`, await page.locator('#genBox').isVisible() && await page.evaluate(() => { const d = document.getElementById('genBox'); return d.scrollHeight <= d.clientHeight; }));
