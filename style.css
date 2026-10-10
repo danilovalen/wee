@@ -268,3 +268,18 @@ body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
   .grid canvas { width: 22px; height: 22px; }
   .ghead { font-size: 10px; }
 }
+
+/* Keys: a letter on each tool that has one, Tab's bare room, and the ? list. */
+.grid .key { margin-left: auto; font: 600 10px ui-monospace, monospace; color: var(--dim); background: none; border: 0; padding: 0; }
+@media (max-width: 1100px) { .grid .key { display: none; } }
+@media (min-width: 701px) {
+  body.bare main { grid-template-columns: 0 minmax(0, 1fr) 0; gap: 0; }
+  body.bare #tools, body.bare #powers { visibility: hidden; padding: 0; border: 0; overflow: hidden; }
+}
+@media (pointer: coarse), (max-width: 700px) { #keysBtn { display: none; } }
+.keysList { columns: 2 220px; column-gap: 24px; }
+.keysList section { break-inside: avoid; margin-bottom: 10px; }
+.keysList h3 { margin: 6px 0 4px; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.keysList p { margin: 2px 0; font-size: 13px; }
+.keysList kbd { display: inline-block; min-width: 1.6em; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; font: 600 11.5px ui-monospace, monospace; text-align: center; }
+.rooms.keys { width: min(640px, 100vw - 16px); }

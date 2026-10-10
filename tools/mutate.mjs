@@ -462,6 +462,14 @@ const M = [
   ['style.css', "  .grid button .lbl { display: none; }\n", "", 'fit'],
   ['src', "    b.title = t.label;\n", "", 'fit'],
   ['style.css', ".roomWrap:hover .plus, .plus:focus-visible { opacity: 1; }", "", 'fit'],
+  // keys (U4)
+  ['src', "BY_KEY[ev.key.toUpperCase()] || null);", "null);", 'browser'],
+  ['src', "if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName) && !['checkbox', 'radio', 'button'].includes(ev.target.type)) return;", "if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;", 'browser'],
+  ['src', "  document.body.classList.toggle('bare');\n", "", 'browser'],
+  ['style.css', "  body.bare #tools, body.bare #powers { visibility: hidden;", "  body.bare #tools, body.bare #powers { visibility: visible;", 'browser'],
+  ['src', "    b.append(Object.assign(document.createElement('kbd'), { className: 'key', textContent: k }));\n", "", 'browser'],
+  ['src', "if (ev.key === '?' && !ev.ctrlKey && !ev.metaKey) { showKeys();", "if (ev.key === '?' && !ev.ctrlKey && !ev.metaKey) {", 'browser'],
+  ['src', "  if (f && f !== document.body && f.id !== 'game') return false;\n", "", 'browser'],
 ];
 
 let caught = 0, crashed = 0;

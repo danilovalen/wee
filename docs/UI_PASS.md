@@ -1,6 +1,6 @@
 # UI pass: diagnosis and proposal
 
-Status: **diagnosis, 2026-10-10. U1 to U3 built the same day; U4 and U5 not built.** Owner: "these options seem like something that will
+Status: **diagnosis, 2026-10-10. U1 to U4 built the same day; U5 not built.** Owner: "these options seem like something that will
 be cut on the page end due to our no-scrolling-allowed rule. We need a UI pass on this tool.
 Diagnose how other similar tools work so we can improve ours. Do it thoroughly and carefully."
 
@@ -192,7 +192,7 @@ ones the sources agreed on; uncertain ones are marked (unconfirmed).
 | U1 | the frame: context bar, status bar, design notes drawer, only the room flexes, the "everything open" gate | **built 2026-10-10** |
 | U2 | lens chips on the room's edge, short legends, automatic look, hover Info line | **built 2026-10-10** |
 | U3 | right column tabs or edge handles; icon-only tools when narrow | **built 2026-10-10**: edge handles plus a size readout; icons from 701 to 1100 px |
-| U4 | Tab hides chrome, `?` key list, keys on buttons | a few hours |
+| U4 | Tab hides chrome, `?` key list, keys on buttons | **built 2026-10-10** |
 | U5 | the Manga theme, per bag-crawler's `docs/MANGA_THEME.md` (below) | half a day |
 | later | a command palette; recent tools; options in a bubble on a placed piece | open |
 

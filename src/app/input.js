@@ -9,6 +9,8 @@ import { selectDown, selectMove, selectUp, selectKey } from './select.js';
 import { LENS_GROUPS, cycleLens, lensesOff } from './lenses.js';
 import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
+import { toolForKey, bareKey, showKeys } from './keys.js';
+import { TOOLS } from '../editor/palette.js';
 
 function cellFromEvent(ev) {
   const r = canvas.getBoundingClientRect(), level = S.level;
@@ -71,7 +73,8 @@ export function bindInput() {
   canvas.addEventListener('pointerleave', () => { S.hover = null; });
 
   window.addEventListener('keydown', ev => {
-    if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;
+    // Typing in a field is typing, not a shortcut.
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName) && !['checkbox', 'radio', 'button'].includes(ev.target.type)) return;
     if (S.mode === 'edit' && selectKey(ev)) return;
     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'z' || ev.key === 'Z' || ev.key === 'y')) {
       undoStep(ev.key === 'z' && !ev.shiftKey, () => { syncPanel(); fit(); });
@@ -82,6 +85,10 @@ export function bindInput() {
       save(false).then(ok => { if (!ok) $('roomsBtn').click(); });
       return;
     }
+    if (S.mode === 'edit' && bareKey(ev)) { ev.preventDefault(); return; }
+    if (ev.key === '?' && !ev.ctrlKey && !ev.metaKey) { showKeys(); ev.preventDefault(); return; }
+    const tool = S.mode === 'edit' ? toolForKey(ev) : null;
+    if (tool) { S.ui.tool = tool; S.ui.group = TOOLS.find(t => t.id === tool).group; syncPanel(); ev.preventDefault(); return; }
     // Keys 1 to 4 cycle a lens group, 0 turns every lens off.
     if (S.mode === 'edit' && !ev.ctrlKey && !ev.metaKey && /^[0-4]$/.test(ev.key)) {
       if (ev.key === '0') lensesOff(); else cycleLens(LENS_GROUPS[+ev.key - 1].id);

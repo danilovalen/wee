@@ -275,6 +275,21 @@ body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
   .grid canvas { width: 22px; height: 22px; }
   .ghead { font-size: 10px; }
 }
+
+/* Keys: a letter on each tool that has one, Tab's bare room, and the ? list. */
+.grid .key { margin-left: auto; font: 600 10px ui-monospace, monospace; color: var(--dim); background: none; border: 0; padding: 0; }
+@media (max-width: 1100px) { .grid .key { display: none; } }
+@media (min-width: 701px) {
+  body.bare main { grid-template-columns: 0 minmax(0, 1fr) 0; gap: 0; }
+  body.bare #tools, body.bare #powers { visibility: hidden; padding: 0; border: 0; overflow: hidden; }
+}
+@media (pointer: coarse), (max-width: 700px) { #keysBtn { display: none; } }
+.keysList { columns: 2 220px; column-gap: 24px; }
+.keysList section { break-inside: avoid; margin-bottom: 10px; }
+.keysList h3 { margin: 6px 0 4px; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.keysList p { margin: 2px 0; font-size: 13px; }
+.keysList kbd { display: inline-block; min-width: 1.6em; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; font: 600 11.5px ui-monospace, monospace; text-align: center; }
+.rooms.keys { width: min(640px, 100vw - 16px); }
 </style>
 </head>
 <body>
@@ -287,6 +302,7 @@ body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
     <button id="stopsBtn" type="button" aria-pressed="false" title="Lenses over the room: colour, dots, lines and frames. Keys 1 to 4 cycle them, 0 turns them off.">Lenses</button>
     <button id="genBtn" type="button" title="Generate a room">Generate</button>
     <span class="spacer"></span>
+    <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
     <button id="roomsBtn" type="button">Rooms</button>
   </header>
   <div id="ctx" class="ctx"></div>
@@ -454,6 +470,10 @@ body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
       </div>
         </div>
   </div>
+  <dialog id="keysBox" class="rooms keys">
+    <div class="roomsHead"><b>Keys</b><form method="dialog"><button>Close</button></form></div>
+    <div id="keysList" class="keysList"></div>
+  </dialog>
   <dialog id="roomsBox" class="rooms">
     <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
     <p id="roomsWhere" class="hint"></p>
@@ -3827,8 +3847,61 @@ function syncInfo() {
 }
 return { buildChips, syncChips };
 })();
-// ---- src/level/region.js
+// ---- src/app/keys.js
 const m40 = (() => {
+const { TOOLS } = m20;
+const { $ } = m12;
+// Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
+// every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
+
+
+const TOOL_KEYS = { look: 'L', erase: 'X', select: 'S', start: 'P', wall: 'B', checkpoint: 'C', goal: 'G', mover: 'M', turret: 'T', box: 'O', heavy: 'H', water: 'W', door: 'D' };
+const BY_KEY = Object.fromEntries(Object.entries(TOOL_KEYS).map(([t, k]) => [k, t]));
+const name = id => TOOLS.find(t => t.id === id).label;
+
+const LIST = [
+  ['Editing', [['E', 'Play this room, or go back to editing'], ['Ctrl+Z', 'Undo'], ['Ctrl+Shift+Z', 'Redo'], ['Ctrl+S', 'Save'], ['Tab', 'Hide or show both side columns'], ['?', 'This list']]],
+  ['Tools', Object.entries(TOOL_KEYS).map(([t, k]) => [k, name(t)])],
+  ['Lenses', [['1 to 4', 'Next lens in Colour, Dots, Lines or Frames'], ['0', 'Every lens off']]],
+  ['Select', [['Ctrl+C', 'Copy'], ['Ctrl+X', 'Cut'], ['Ctrl+V', 'Paste'], ['Delete', 'Delete'], ['R', 'Rotate'], ['Escape', 'Let go']]],
+  ['Playing', [['Arrows', 'Slide'], ['Space', 'Hide, or start or stop swimming, with those powers'], ['R', 'Reset the room'], ['E', 'Back to editing']]],
+];
+
+function buildKeys() {
+  document.querySelectorAll('[data-tool]').forEach(b => {
+    const k = TOOL_KEYS[b.dataset.tool];
+    if (!k) return;
+    b.title = `${b.title} (${k})`;
+    b.append(Object.assign(document.createElement('kbd'), { className: 'key', textContent: k }));
+  });
+  $('keysList').replaceChildren(...LIST.map(([head, rows]) => {
+    const sec = document.createElement('section');
+    sec.append(Object.assign(document.createElement('h3'), { textContent: head }), ...rows.map(([k, does]) => {
+      const row = document.createElement('p');
+      row.append(Object.assign(document.createElement('kbd'), { textContent: k }), ` ${does}`);
+      return row;
+    }));
+    return sec;
+  }));
+  $('keysBtn').onclick = () => $('keysBox').showModal();
+}
+
+// The tool a bare letter picks in edit mode, or null.
+const toolForKey = ev => (ev.ctrlKey || ev.metaKey || ev.altKey ? null : BY_KEY[ev.key.toUpperCase()] || null);
+
+// Tab hides both side columns, but only when no control has focus, so it still moves focus.
+function bareKey(ev) {
+  if (ev.key !== 'Tab' || ev.ctrlKey || ev.altKey || innerWidth <= 700) return false;
+  const f = document.activeElement;
+  if (f && f !== document.body && f.id !== 'game') return false;
+  document.body.classList.toggle('bare');
+  return true;
+}
+const showKeys = () => $('keysBox').showModal();
+return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
+})();
+// ---- src/level/region.js
+const m41 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -3893,8 +3966,8 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m41 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m40;
+const m42 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m41;
 const { S } = m11;
 const { change } = m34;
 const { $ } = m12;
@@ -4017,7 +4090,7 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/panels.js
-const m42 = (() => {
+const m43 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel, resizeSide, wallBorder } = m9;
 const { T, INK } = m13;
@@ -4032,10 +4105,12 @@ const { buildLenses, syncLenses } = m37;
 const { buildWell, openWell } = m36;
 const { buildChips } = m39;
 const { buildSize } = m14;
+const { buildKeys } = m40;
 const { syncRoomsButton } = m33;
-const { buildSelect, syncSelect } = m41;
+const { buildSelect, syncSelect } = m42;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -4055,7 +4130,7 @@ const { buildSelect, syncSelect } = m41;
 function keysText() {
   return touch
     ? (S.mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : '')
-    : (S.mode === 'play' ? `Arrows slide. ${tapText()}R resets the room. E goes back to editing.` : 'E plays this room.');
+    : (S.mode === 'play' ? `Arrows slide. ${tapText()}R resets the room. E goes back to editing.` : 'E plays this room. ? lists every key.');
 }
 
 function tapText() {
@@ -4156,6 +4231,7 @@ function buildPanels(actions) {
   buildWell();
   buildChips();
   buildSize();
+  buildKeys();
   document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
   buildLenses();
@@ -4225,7 +4301,7 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/app/stuck.js
-const m43 = (() => {
+const m44 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m21;
 const { S } = m11;
 const { $ } = m12;
@@ -4260,17 +4336,17 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m44 = (() => {
+const m45 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m19;
 const { S } = m11;
 const { $, g, now } = m12;
-const { syncPanel, keysText } = m42;
+const { syncPanel, keysText } = m43;
 const { feedDemo } = m25;
-const { selectOverlay } = m41;
-const { watchStuck, resetStuck } = m43;
+const { selectOverlay } = m42;
+const { watchStuck, resetStuck } = m44;
 const { lensMarks, lensBusy } = m37;
 const { syncWell } = m36;
 const { syncChips } = m39;
@@ -4387,18 +4463,22 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m45 = (() => {
+const m46 = (() => {
 const { describe, holds, place } = m38;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m44;
+const { setMode, aim } = m45;
 const { begin, end, step: undoStep } = m34;
 const { save } = m33;
-const { selectDown, selectMove, selectUp, selectKey } = m41;
+const { selectDown, selectMove, selectUp, selectKey } = m42;
 const { LENS_GROUPS, cycleLens, lensesOff } = m37;
-const { syncPanel } = m42;
+const { syncPanel } = m43;
 const { fit } = m15;
+const { toolForKey, bareKey, showKeys } = m40;
+const { TOOLS } = m20;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
+
+
 
 
 
@@ -4470,7 +4550,8 @@ function bindInput() {
   canvas.addEventListener('pointerleave', () => { S.hover = null; });
 
   window.addEventListener('keydown', ev => {
-    if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;
+    // Typing in a field is typing, not a shortcut.
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName) && !['checkbox', 'radio', 'button'].includes(ev.target.type)) return;
     if (S.mode === 'edit' && selectKey(ev)) return;
     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'z' || ev.key === 'Z' || ev.key === 'y')) {
       undoStep(ev.key === 'z' && !ev.shiftKey, () => { syncPanel(); fit(); });
@@ -4481,6 +4562,10 @@ function bindInput() {
       save(false).then(ok => { if (!ok) $('roomsBtn').click(); });
       return;
     }
+    if (S.mode === 'edit' && bareKey(ev)) { ev.preventDefault(); return; }
+    if (ev.key === '?' && !ev.ctrlKey && !ev.metaKey) { showKeys(); ev.preventDefault(); return; }
+    const tool = S.mode === 'edit' ? toolForKey(ev) : null;
+    if (tool) { S.ui.tool = tool; S.ui.group = TOOLS.find(t => t.id === tool).group; syncPanel(); ev.preventDefault(); return; }
     // Keys 1 to 4 cycle a lens group, 0 turns every lens off.
     if (S.mode === 'edit' && !ev.ctrlKey && !ev.metaKey && /^[0-4]$/.test(ev.key)) {
       if (ev.key === '0') lensesOff(); else cycleLens(LENS_GROUPS[+ev.key - 1].id);
@@ -4497,7 +4582,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m46 = (() => {
+const m47 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -4605,10 +4690,10 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m47 = (() => {
+const m48 = (() => {
 const { search } = m21;
 const { contains } = m31;
-const { ING, variants } = m46;
+const { ING, variants } = m47;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -4653,7 +4738,7 @@ function* judge(level, recipe, max = 3000) {
 return { offFound, missing, judge };
 })();
 // ---- src/gen/random.js
-const m48 = (() => {
+const m49 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -4670,12 +4755,12 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m49 = (() => {
+const m50 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
-const { INGREDIENTS, ING, spot } = m46;
-const { judge } = m47;
-const { rng } = m48;
+const { INGREDIENTS, ING, spot } = m47;
+const { judge } = m48;
+const { rng } = m49;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -4784,9 +4869,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m50 = (() => {
-const { INGREDIENTS } = m46;
-const { generate, normalize, recipeLabel, LIMITS } = m49;
+const m51 = (() => {
+const { INGREDIENTS } = m47;
+const { generate, normalize, recipeLabel, LIMITS } = m50;
 const { stampOf } = m28;
 const { S } = m11;
 const { thumbURL } = m29;
@@ -4950,7 +5035,7 @@ function buildGenerator(actions) {
 return { shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m51 = (() => {
+const m52 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -4958,11 +5043,11 @@ const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { portrait } = m12;
 const { fit, watchStage } = m15;
-const { buildPanels, syncPanel } = m42;
-const { bindInput } = m45;
-const { setMode, frame, render, tick, report, copyReport } = m44;
+const { buildPanels, syncPanel } = m43;
+const { bindInput } = m46;
+const { setMode, frame, render, tick, report, copyReport } = m45;
 const { buildRooms, bootRooms } = m33;
-const { buildGenerator } = m50;
+const { buildGenerator } = m51;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 

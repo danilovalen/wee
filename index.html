@@ -16,6 +16,7 @@
     <button id="stopsBtn" type="button" aria-pressed="false" title="Lenses over the room: colour, dots, lines and frames. Keys 1 to 4 cycle them, 0 turns them off.">Lenses</button>
     <button id="genBtn" type="button" title="Generate a room">Generate</button>
     <span class="spacer"></span>
+    <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
     <button id="roomsBtn" type="button">Rooms</button>
   </header>
   <div id="ctx" class="ctx"></div>
@@ -183,6 +184,10 @@
       </div>
         </div>
   </div>
+  <dialog id="keysBox" class="rooms keys">
+    <div class="roomsHead"><b>Keys</b><form method="dialog"><button>Close</button></form></div>
+    <div id="keysList" class="keysList"></div>
+  </dialog>
   <dialog id="roomsBox" class="rooms">
     <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
     <p id="roomsWhere" class="hint"></p>

@@ -517,6 +517,30 @@ try {
   // served with a rooms directory, the page saves to the server instead of the browser
   const roomsDir = mkdtempSync(join(tmpdir(), 'wee-rooms-'));
   const withApi = await serve(PORT + 1, { rooms: roomsDir });
+  // Keys: a letter picks a tool, but not while typing; Tab hides both side columns; ? lists every key.
+  await page.evaluate(() => { window.wee.setMode('edit'); document.activeElement.blur(); });
+  await page.keyboard.press('t');
+  const toolOn = () => page.$eval('[data-tool].on', b => b.dataset.tool);
+  check('a tool letter picks its tool', await toolOn() === 'turret', await toolOn());
+  await page.click('#roomsBtn');
+  await page.fill('#roomName', '');
+  await page.locator('#roomName').pressSequentially('bet');
+  check('typing in a field picks no tool and does not play', await toolOn() === 'turret' && (await text()).mode === 'edit');
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => document.activeElement.blur());
+  const shown = () => page.evaluate(() => getComputedStyle(document.getElementById('tools')).visibility === 'visible' && getComputedStyle(document.getElementById('powers')).visibility === 'visible');
+  await page.keyboard.press('Tab');
+  check('Tab hides both side columns', !(await shown()));
+  await page.keyboard.press('Tab');
+  check('and Tab again brings them back', await shown());
+  await page.focus('#mode');
+  await page.keyboard.press('Tab');
+  check('with a button focused, Tab moves focus and leaves the columns', await shown() && await page.evaluate(() => document.activeElement.id !== 'mode'));
+  await page.evaluate(() => document.activeElement.blur());
+  await page.keyboard.press('?');
+  const listed = await page.evaluate(() => { const list = document.getElementById('keysList').textContent; return [...document.querySelectorAll('[data-tool] kbd')].every(k => list.includes(k.textContent)) && document.querySelectorAll('[data-tool] kbd').length >= 10; });
+  check('? opens a list holding every tool key', await page.locator('#keysBox').isVisible() && listed);
+  await page.keyboard.press('Escape');
   const sp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   sp.on('pageerror', e => errors.push(e.message));
   await sp.goto(`http://localhost:${PORT + 1}/`);

@@ -14,13 +14,14 @@ import { buildLenses, syncLenses } from './lenses.js';
 import { buildWell, openWell } from './well.js';
 import { buildChips } from './chips.js';
 import { buildSize } from './size.js';
+import { buildKeys } from './keys.js';
 import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
 
 export function keysText() {
   return touch
     ? (S.mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : '')
-    : (S.mode === 'play' ? `Arrows slide. ${tapText()}R resets the room. E goes back to editing.` : 'E plays this room.');
+    : (S.mode === 'play' ? `Arrows slide. ${tapText()}R resets the room. E goes back to editing.` : 'E plays this room. ? lists every key.');
 }
 
 function tapText() {
@@ -121,6 +122,7 @@ export function buildPanels(actions) {
   buildWell();
   buildChips();
   buildSize();
+  buildKeys();
   document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
   buildLenses();
