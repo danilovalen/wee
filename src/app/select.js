@@ -1,5 +1,6 @@
-// The Select tool: drag a box, then Copy, Cut, Delete or Rotate it; Paste shows the copy
-// as a ghost under the pointer and stamps it on a click or tap. One undo step each.
+// The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
+// it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
+// undo step each.
 import { copyRegion, clearRegion, rotateClip, pasteRegion, norm } from '../level/region.js';
 import { S } from '../editor/state.js';
 import { change } from './undo.js';
@@ -24,13 +25,38 @@ export function syncSelect() {
   $('selPaste').textContent = S.paste ? 'Done' : 'Paste';
 }
 
-// Pointer: a press starts a box (or stamps, when pasting); a drag grows it.
+// Pointer: a press starts a box (or stamps, when pasting); a drag grows it. A press inside
+// the box picks it up instead, and letting go puts it down where it was dragged.
+const inside = (r, c) => c.x >= r.x0 && c.x <= r.x1 && c.y >= r.y0 && c.y <= r.y1;
 export function selectDown(c) {
   if (S.paste) { change(() => { S.level = pasteRegion(S.level, S.paste, c.x, c.y); }); A.syncPanel(); return; }
+  if (S.sel && inside(norm(S.sel), c)) { S.moving = { from: norm(S.sel), clip: copyRegion(S.level, S.sel), grab: c, at: c }; return; }
   S.sel = { x0: c.x, y0: c.y, x1: c.x, y1: c.y };
   syncSelect();
 }
-export function selectMove(c) { if (S.sel && !S.paste) { S.sel.x1 = c.x; S.sel.y1 = c.y; } }
+export function selectMove(c) {
+  if (S.moving) { S.moving.at = c; return; }
+  if (S.sel && !S.paste) { S.sel.x1 = c.x; S.sel.y1 = c.y; }
+}
+export function selectUp() {
+  const m = S.moving;
+  if (!m) return;
+  S.moving = null;
+  const dx = m.at.x - m.grab.x, dy = m.at.y - m.grab.y;
+  if (!dx && !dy) return;
+  const r = m.from, x0 = r.x0 + dx, y0 = r.y0 + dy;
+  change(() => {
+    const st = S.level.start, carried = inside(r, st);
+    S.level = pasteRegion(clearRegion(S.level, r), m.clip, x0, y0);
+    // The start rides along when it was inside the box and lands inside the room.
+    const to = { x: st.x + dx, y: st.y + dy };
+    if (carried && to.x >= 0 && to.y >= 0 && to.x < S.level.w && to.y < S.level.h) {
+      S.level = { ...S.level, start: to, entities: S.level.entities.filter(e => e.x !== to.x || e.y !== to.y) };
+    }
+  });
+  S.sel = { x0, y0, x1: x0 + m.clip.w - 1, y1: y0 + m.clip.h - 1 };
+  A.syncPanel();
+}
 
 function copy() {
   if (!S.sel) return;
@@ -76,7 +102,7 @@ export function selectKey(ev) {
   else if (ctrl && k === 'v') { if (!S.paste) startPaste(); }
   else if (!ctrl && (k === 'delete' || k === 'backspace')) del();
   else if (!ctrl && k === 'r') rotate();
-  else if (k === 'escape') { S.paste = null; S.sel = null; say(''); syncSelect(); }
+  else if (k === 'escape') { S.paste = null; S.sel = null; S.moving = null; say(''); syncSelect(); }
   else return false;
   ev.preventDefault();
   return true;
@@ -86,5 +112,6 @@ export function selectKey(ev) {
 export function selectOverlay() {
   if (S.ui.tool !== 'select') return null;
   if (S.paste) return S.hover ? { paste: S.paste, x: S.hover.x, y: S.hover.y } : null;
+  if (S.moving) { const m = S.moving; return { paste: m.clip, x: m.from.x0 + m.at.x - m.grab.x, y: m.from.y0 + m.at.y - m.grab.y }; }
   return S.sel ? { sel: norm(S.sel) } : null;
 }

@@ -117,6 +117,6 @@ Two lenses changed home while grouping:
 ## Open questions, for the owner, one at a time
 
 1. ~~One at a time, or all stack?~~ **Groups** (owner, 2026-10-10): one per group, groups stack.
-2. Should a lens open by itself for the tool in hand?
+2. ~~Should a lens open by itself for the tool in hand?~~ **Yes, to test** (owner, 2026-10-10).
 3. In play mode too, or only while editing?
 4. Plays (L4): store every play on the server, or only plays you send with Copy report?

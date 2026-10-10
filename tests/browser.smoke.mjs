@@ -239,6 +239,26 @@ try {
   await page.keyboard.press('Control+z'); await page.keyboard.press('Control+z');
   lv8 = (await text()).level;
   check('and both undo', lv8.entities.some(e => e.x === 2 && e.y === 2) && lv8.cells[3 * 8 + 2] === 'button:red');
+  // Drag inside the box to move it: one undo step, and the box goes with it.
+  await page.keyboard.press('Escape');
+  a8 = at8(2, 2); b8 = at8(2, 3);
+  await page.mouse.move(a8.x, a8.y); await page.mouse.down(); await page.mouse.move(b8.x, b8.y, { steps: 4 }); await page.mouse.up();
+  const c8 = at8(5, 2);
+  await page.mouse.move(a8.x, a8.y); await page.mouse.down(); await page.mouse.move(c8.x, c8.y, { steps: 6 }); await page.mouse.up();
+  lv8 = (await text()).level;
+  check('dragging inside the box moves it', lv8.entities.some(e => e.kind === 'box' && e.x === 5 && e.y === 2) && lv8.cells[3 * 8 + 5] === 'button:red' && !lv8.entities.some(e => e.x === 2 && e.y === 2) && lv8.cells[3 * 8 + 2] === '', JSON.stringify(lv8.entities));
+  await page.keyboard.press('Control+c');
+  check('and the box follows it', (await page.textContent('#placeHint')).startsWith('Copied 1x2'));
+  await page.keyboard.press('Control+z');
+  lv8 = (await text()).level;
+  check('the move is one undo step', lv8.entities.some(e => e.x === 2 && e.y === 2) && lv8.cells[3 * 8 + 2] === 'button:red' && !lv8.entities.some(e => e.x === 5));
+  const st8 = lv8.start, sa = at8(st8.x, st8.y), sb = at8(st8.x + 1, st8.y);
+  await page.keyboard.press('Escape');
+  await page.mouse.click(sa.x, sa.y);
+  await page.mouse.move(sa.x, sa.y); await page.mouse.down(); await page.mouse.move(sb.x, sb.y, { steps: 4 }); await page.mouse.up();
+  lv8 = (await text()).level;
+  check('the start rides along when it is inside the box', lv8.start.x === st8.x + 1 && lv8.start.y === st8.y, JSON.stringify([st8, lv8.start]));
+  await page.keyboard.press('Control+z');
   await page.keyboard.press('Escape');
   await page.evaluate(l => window.wee.loadLevel(l), JSON.parse(JSON.stringify(roomBeforePanel)));
   // the Look tool: Show stops marks the tiles you can stop on; Play from here starts there

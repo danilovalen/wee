@@ -5,7 +5,7 @@ import { $, canvas, touch, now } from './dom.js';
 import { setMode, aim } from './play.js';
 import { begin, end, step as undoStep } from './undo.js';
 import { save } from './rooms.js';
-import { selectDown, selectMove, selectKey } from './select.js';
+import { selectDown, selectMove, selectUp, selectKey } from './select.js';
 import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
 
@@ -64,7 +64,7 @@ export function bindInput() {
     if (c && S.ui.tool === 'select' && ev.buttons) selectMove(c);
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
-  const lift = () => { S.painting = 0; S.swipe = null; end(); };
+  const lift = () => { S.painting = 0; S.swipe = null; selectUp(); end(); };
   canvas.addEventListener('pointerup', lift);
   canvas.addEventListener('pointercancel', lift);
   canvas.addEventListener('pointerleave', () => { S.hover = null; });
