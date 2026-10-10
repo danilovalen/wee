@@ -194,7 +194,6 @@ const M = [
   ['src', "  clearDraft();\n  saved = [stored, ...saved.filter(o => o.id !== stored.id)];", "  saved = [stored, ...saved.filter(o => o.id !== stored.id)];", "browser"],
   ['src', "export function syncRoomsButton() {\n  noteChange(dirty());", "export function syncRoomsButton() {", "browser"],
   ['src', "  if (d && d.level) {", "  if (false) {", "browser"],
-  ['src', "g.fillStyle = traps && traps.has(i) ? INK.beam : INK.player;", "g.fillStyle = INK.player;", 'designui'],
   ['src', "  if (kind === 'spring') return 'spring:' + cw(v);", "  if (kind === 'spring') return c;", "region"],
   ['src', "  if (kind === 'tri') return 'tri:' + CORNER_CW[v];", "  if (kind === 'tri') return c;", "region"],
   ['src', "    t.dir = e.axis === 'h' ? (e.dir || 1) : -(e.dir || 1);", "    t.dir = e.dir || 1;", "region"],
@@ -218,8 +217,6 @@ const M = [
   ['src', "          if (seen.size >= max || performance.now() > until) { capped = true; break; }", "          if (performance.now() > until) { capped = true; break; }", "solve"],
   ['src', "      const open = !/^(wall|receiver:|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);", "      const open = true;", "browser"],
   ['src', "  const from = m === 'play' && S.playFrom ? { ...S.level, start: S.playFrom } : S.level;", "  const from = S.level;", "browser"],
-  ['src', "  if (stops) for (const i of stops) {", "  if (stops) for (const i of []) {", "browser"],
-  ['src', "  if (S.stops) { S.stops = null;", "  if (false) { S.stops = null;", "browser"],
   ['src', "  const dx = side === 'left' ? delta : 0, dy = side === 'top' ? delta : 0;", "  const dx = 0, dy = 0;", "sim"],
   ['src', "  if (w < 3 || h < 3 || w > 40 || h > 30) return null;", "  if (w > 40 || h > 30) return null;", "sim"],
   ['src', "  if (!inside(start.x, start.y)) return null;\n", "", "sim"],
@@ -287,7 +284,7 @@ const M = [
   ['src', "  h.future.push(JSON.stringify(level));\n  return JSON.parse(h.past.pop());", "  return JSON.parse(h.past.pop());", "sim"],
   ['src', "  h.past.push(JSON.stringify(level));\n  return JSON.parse(h.future.pop());", "  return JSON.parse(h.future.pop());", "sim"],
   ['src', "    begin();\n    S.painting", "    S.painting", "browser"],
-  ['src', "const lift = () => { S.painting = 0; S.swipe = null; end(); };", "const lift = () => { S.painting = 0; S.swipe = null; };", "browser"],
+  ['src', "const lift = () => { S.painting = 0; S.swipe = null; selectUp(); end(); };", "const lift = () => { S.painting = 0; S.swipe = null; };", "browser"],
   ['src', "undoStep(ev.key === 'z' && !ev.shiftKey,", "undoStep(true,", "browser"],
   ['src', "  $('undo').disabled = S.mode !== 'edit' || !S.history.past.length;", "  $('undo').disabled = !S.history.past.length;", "browser"],
   ['src', "S.level = parseLevel(JSON.stringify(l)); S.history = newHistory();", "S.level = parseLevel(JSON.stringify(l));", "browser"],
@@ -388,6 +385,19 @@ const M = [
   ['src', "S.swipe = null; selectUp(); end();", "S.swipe = null; end();", 'browser'],
   ['src', "S.level = pasteRegion(clearRegion(S.level, r), m.clip, x0, y0);", "S.level = pasteRegion(S.level, m.clip, x0, y0);", 'browser'],
   ['src', "    if (carried && to.x >= 0", "    if (false && to.x >= 0", 'browser'],
+  ['src', "for (const [x, y] of b.path.slice(1)) beams.add", "for (const [x, y] of b.path) beams.add", 'lenses'],
+  ['src', "if (toWin.has(k) && !(distance.get(n.tile) <= toWin.get(k)))", "if (toWin.has(k))", 'lenses'],
+  ['src', "for (let k = win.from; k; k = nodes.get(k).parent) solution.unshift", "for (let k = win.from; k && 0; k = nodes.get(k).parent) solution.unshift", 'lenses'],
+  ['src', "hopeless: [...seen].filter(t => !distance.has(t))", "hopeless: []", 'lenses'],
+  ['src', "if (nodes.size >= max) { capped = true; break; }", "if (nodes.size >= max) break;", 'lenses'],
+  ['src', "export const AUTO = { turret: BEAM,", "export const AUTO = { turret: PIECE,", 'lensui'],
+  ['src', "if (pick !== undefined) return pick === 'off' ? null : pick;", "if (pick !== undefined && pick !== 'off') return pick;", 'lensui'],
+  ['src', "if (ev.key === '0') lensesOff(); else", "if (ev.key === '0') {} else", 'lensui'],
+  ['src', "if (l.open && !l.opened) { l.opened = true; l.pick.dots = 'stops'; l.pick.frames = 'traps'; }", "", 'lensui'],
+  ['src', "    for (const i of heat.hopeless) fill(i, 'rgba(120, 128, 145, 0.55)');\n", "", 'lensui'],
+  ['src', "  for (const i of heat.tiles) fill(i, heat.colour);", "", 'lensui'],
+  ['src', "if (lines && lines.length > 1) {", "if (false) {", 'lensui'],
+  ['src', "    for (const i of frames) g.strokeRect(", "    for (const i of []) g.strokeRect(", 'designui'],
   ['src', "if (r.done) { $('stuck').hidden = r.value !== false; return; }", "if (r.done) return;", 'stuck'],
   ['src', "  watchStuck(game);\n", "", 'stuck'],
   ['src', "  $('win').hidden = true;\n  resetStuck();\n", "  $('win').hidden = true;\n", 'stuck'],
@@ -434,7 +444,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }

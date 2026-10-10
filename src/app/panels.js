@@ -9,7 +9,8 @@ import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch } from './dom.js';
 import { change, step as undoStep, syncUndo } from './undo.js';
-import { runCheck, syncCheck, syncLint, toggleStops } from './check.js';
+import { runCheck, syncCheck, syncLint } from './check.js';
+import { buildLenses, syncLenses } from './lenses.js';
 import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
 
@@ -114,7 +115,7 @@ export function buildPanels(actions) {
   $('again').onclick = () => setMode('play');
   $('checkBtn').onclick = () => runCheck();
   buildSelect({ syncPanel });
-  $('stopsBtn').onclick = toggleStops;
+  buildLenses();
   $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };
   $('showSolution').onclick = () => { const moves = S.check?.result?.moves; if (!moves) return; setMode('play'); S.demo = [...moves]; };
   const after = () => { syncPanel(); fit(); };
@@ -143,6 +144,7 @@ export function syncPanel() {
   syncCheck();
   syncLint();
   syncSelect();
+  syncLenses();
   syncRoomsButton();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });

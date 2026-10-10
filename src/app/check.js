@@ -1,16 +1,13 @@
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
-import { search, parseMove, reach } from '../solve/solve.js';
+import { search, parseMove } from '../solve/solve.js';
 import { lint, brokenAt } from '../solve/lint.js';
 import { now } from './dom.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
-import { runDesign, clearDesign, sliced } from './design.js';
-import { routes } from '../solve/design.js';
+import { runDesign, clearDesign } from './design.js';
 
 const SLICE_MS = 25;
-// The stop map searches this long, then shows what it found.
-const STOPS_BUDGET_MS = 2000;
 // While you edit, the room is solved this long after the last change, with a smaller cap.
 const LIVE_WAIT_MS = 300, LIVE_MAX = 5000;
 let liveTimer = null;
@@ -101,35 +98,4 @@ export function syncLint() {
     li.append(b);
     return li;
   }));
-}
-
-// The stop map, a toggle next to Check: computed a slice at a time, drawn while the
-// room is unchanged.
-export function toggleStops() {
-  if (S.stops) { S.stops = null; $('stopsBtn').setAttribute('aria-pressed', 'false'); $('stopsBtn').classList.remove('on'); return; }
-  const stamp = JSON.stringify(S.level), out = {}, it = reach(JSON.parse(stamp), { budgetMs: STOPS_BUDGET_MS, out });
-  S.stops = { stamp, list: null, out };
-  $('stopsBtn').setAttribute('aria-pressed', 'true'); $('stopsBtn').classList.add('on');
-  const slice = () => {
-    if (!S.stops || S.stops.stamp !== stamp) return;
-    const until = performance.now() + SLICE_MS;
-    for (;;) {
-      const r = it.next();
-      if (r.done) {
-        S.stops.list = r.value.stops;
-        const said = r.value.why ? 'Has real-time pieces, so stops cannot be mapped.' : `${r.value.stops.length} tiles you can stop on${r.value.capped ? ', maybe more' : ''}.`;
-        $('placeHint').textContent = said;
-        if (!r.value.why && S.level.cells.includes('goal')) sliced(routes(JSON.parse(stamp)), stamp, m => {
-          if (!S.stops || S.stops.stamp !== stamp) return;
-          S.stops.traps = m ? m.traps : null;
-          S.redraw = true;
-          $('placeHint').textContent = m ? `${said} Red: ${m.traps.length} where the goal is out of reach for good.` : said;
-        });
-        return;
-      }
-      if (performance.now() > until) break;
-    }
-    setTimeout(slice, 0);
-  };
-  slice();
 }

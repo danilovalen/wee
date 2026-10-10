@@ -58,7 +58,7 @@ try {
   check(`Check never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
   await page.click('[data-tool=look]');
   const t0 = Date.now();
-  w = await worst(async () => { await page.click('#stopsBtn'); await page.waitForFunction(() => document.getElementById('placeHint').textContent.includes('stop on'), null, { timeout: 30000 }); });
+  w = await worst(async () => { await page.click('#stopsBtn'); await page.waitForFunction(() => document.getElementById('lensLegend').textContent.includes('stop on'), null, { timeout: 30000 }); });
   check('Show stops answers within a few seconds', Date.now() - t0 < 8000, `${Date.now() - t0} ms`);
   check(`and never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
 

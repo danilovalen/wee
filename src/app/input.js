@@ -6,6 +6,7 @@ import { setMode, aim } from './play.js';
 import { begin, end, step as undoStep } from './undo.js';
 import { save } from './rooms.js';
 import { selectDown, selectMove, selectUp, selectKey } from './select.js';
+import { LENS_GROUPS, cycleLens, lensesOff } from './lenses.js';
 import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
 
@@ -80,6 +81,11 @@ export function bindInput() {
       ev.preventDefault();
       save(false).then(ok => { if (!ok) $('roomsBtn').click(); });
       return;
+    }
+    // Keys 1 to 4 cycle a lens group, 0 turns every lens off.
+    if (S.mode === 'edit' && !ev.ctrlKey && !ev.metaKey && /^[0-4]$/.test(ev.key)) {
+      if (ev.key === '0') lensesOff(); else cycleLens(LENS_GROUPS[+ev.key - 1].id);
+      ev.preventDefault(); return;
     }
     if (ev.key === 'e' || ev.key === 'E') { setMode(S.mode === 'play' ? 'edit' : 'play'); ev.preventDefault(); return; }
     if (S.mode !== 'play') return;

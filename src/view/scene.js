@@ -4,16 +4,17 @@ import { DIRS } from '../rules/base.js';
 import { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } from './ink.js';
 import { drawPiece, drawPlayer } from './pieces.js';
 import { drawCell, drawFloor } from './tiles.js';
+import { drawHeat, drawLensMarks } from './lenses.js';
 
 // fx: [{type, at(ms), ...}] effects started by game events or edits.
-// marks: stops (cell indexes you can come to rest on, drawn as dots), traps (a Set of those
-// where the goal is out of reach for good, drawn red) and unused (pieces or tiles the answer
-// does not depend on, framed red).
+// marks: lens ({ heat, dots, lines, frames }, see lenses.js) and unused (pieces or tiles the
+// answer does not depend on, framed red).
 // over: { sel: box } or { paste: clip, x, y } from the Select tool, or null.
 export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
-  const { stops = null, traps = null, unused = [] } = marks;
+  const { lens = {}, unused = [] } = marks;
   frame.clock = now;
   drawFloor(g, level.w, level.h);
+  drawHeat(g, level.w, lens.heat);
   const pop = (x, y) => {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
     return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
@@ -26,10 +27,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);
     if (f.piece) drawPiece(g, f.piece, f.x * T, f.y * T, 1 - ease(t) * 0.8, 1 - t);
   }
-  if (stops) for (const i of stops) {
-    g.fillStyle = traps && traps.has(i) ? INK.beam : INK.player;
-    g.beginPath(); g.arc((i % level.w) * T + T / 2, Math.floor(i / level.w) * T + T / 2, 4, 0, Math.PI * 2); g.fill();
-  }
+  drawLensMarks(g, level.w, lens);
   // A piece or tile the room's answer does not depend on gets a dashed red frame.
   if (unused.length) {
     g.strokeStyle = INK.beam; g.lineWidth = 2; g.setLineDash([5, 4]);

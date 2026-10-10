@@ -267,13 +267,13 @@ try {
   await page.evaluate(l => window.wee.loadLevel(l), box6);
   await pick('look');
   await page.click('#stopsBtn');
-  await page.waitForFunction(() => document.getElementById('placeHint').textContent.includes('tiles you can stop on'));
-  check('Show stops counts the tiles you can stop on', (await page.textContent('#placeHint')).startsWith('4 tiles'), await page.textContent('#placeHint'));
+  await page.waitForFunction(() => document.getElementById('lensLegend').textContent.includes('tiles you can stop on'));
+  check('Lenses open on Stops, counting the tiles you can stop on', (await page.textContent('#lensLegend')).includes('Dots: 4 tiles'), await page.textContent('#lensLegend'));
   const dot = async (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * t), Math.round((y + 0.5) * t), 1, 1).data; return d[1] > 150 && d[2] > 150; }, [x, y]);
   check('a stop gets a dot, a tile you only slide over does not', await dot(4, 2) && !(await dot(2, 2)));
   await page.click('#stopsBtn');
   await page.waitForTimeout(80);
-  check('Hide stops takes the dots away', !(await dot(4, 2)));
+  check('Closing the lenses takes the dots away', !(await dot(4, 2)));
   await page.evaluate(() => scrollTo(0, 0));
   const L6 = await page.locator('#game').boundingBox();
   const at6 = (x, y) => ({ x: L6.x + (x + 0.5) * L6.width / 6, y: L6.y + (y + 0.5) * L6.height / 4 });

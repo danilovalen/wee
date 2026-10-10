@@ -9,6 +9,7 @@ import { syncPanel, keysText } from './panels.js';
 import { feedDemo } from './check.js';
 import { selectOverlay } from './select.js';
 import { watchStuck, resetStuck } from './stuck.js';
+import { lensMarks, lensBusy } from './lenses.js';
 
 export function snapshot(s) {
   const ents = {};
@@ -65,7 +66,7 @@ const AMBIENT_MS = 100;
 const ANIMATED = /^(water|goal)$/;
 function editNeedsDraw(t) {
   if (S.redraw) return true;
-  if (S.fx.length || S.paste || (S.stops && !S.stops.list)) return true;
+  if (S.fx.length || S.paste || S.moving || lensBusy()) return true;
   return t - (S.drawnAt || 0) > AMBIENT_MS && S.level.cells.some(c => ANIMATED.test(c));
 }
 export function frame(t) {
@@ -86,15 +87,11 @@ export function render() {
   else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay());
 }
 
-// What the editor marks on the room: stops and traps while the stop map is on, and
-// pieces or tiles the design notes found change nothing.
+// What the editor marks on the room: the lenses on now, and pieces or tiles the design notes
+// found change nothing.
 function marks() {
-  const stamp = JSON.stringify(S.level), on = S.stops && S.stops.stamp === stamp;
-  return {
-    stops: on ? (S.stops.list || [...S.stops.out.stops || []]) : null,
-    traps: on && S.stops.traps ? new Set(S.stops.traps) : null,
-    unused: S.design && S.design.stamp === stamp ? S.design.unused : [],
-  };
+  const stamp = JSON.stringify(S.level);
+  return { lens: lensMarks(), unused: S.design && S.design.stamp === stamp ? S.design.unused : [] };
 }
 
 // A report is the room as it was when play began, every key with its tick, and the

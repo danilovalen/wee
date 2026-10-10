@@ -13,7 +13,7 @@
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
     <button id="checkBtn" type="button">Check</button>
-    <button id="stopsBtn" type="button" aria-pressed="false" title="Show every tile you can stop on">Stops</button>
+    <button id="stopsBtn" type="button" aria-pressed="false" title="Lenses over the room: colour, dots, lines and frames. Keys 1 to 4 cycle them, 0 turns them off.">Lenses</button>
     <button id="genBtn" type="button" title="Generate a room">Generate</button>
     <span class="spacer"></span>
     <button id="roomsBtn" type="button">Rooms</button>
@@ -116,6 +116,11 @@
       </dialog>
       <p id="keys" class="hint"></p>
       <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
+      <div id="lensBox" class="lensBox" hidden>
+        <div id="lensRows"></div>
+        <label class="lensFollow"><input type="checkbox" id="lensFollow" checked> Follow the tool</label>
+        <ul id="lensLegend"></ul>
+      </div>
       <details id="lintBox" class="lint" hidden><summary id="lintSum"></summary><ul id="lintList"></ul></details>
       <details id="designBox" class="lint design" hidden open><summary>Design notes</summary><ul id="designList"></ul></details>
     </section>

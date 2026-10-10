@@ -1,6 +1,6 @@
 # Lenses: seeing what a room does
 
-Status: **plan, 2026-10-10, groups decided. Nothing built beyond Stops.** Owner: "a proper lenses feature to see
+Status: **L1 built 2026-10-10** (rows, keys, legend, follow the tool; Distance, Beams, Pieces, Stops, Solution, Traps). Beams and Pieces came forward from L3 so the tool test had lenses to open. Unused stays drawn by the design notes, outside the rows. Owner: "a proper lenses feature to see
 the stuff we were discussing. Movements, movement lines, heatmaps, and such. Similar to how these
 grand strategy games have them too. Or these design tooling. Include diagnose from other
 software."

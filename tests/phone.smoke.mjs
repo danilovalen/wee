@@ -46,7 +46,7 @@ try {
     .filter(b => b.offsetParent).map(b => [b.textContent.trim() || b.title, b.getBoundingClientRect().height]).filter(([, h]) => h < 40));
   check('every control is thumb-sized', small.length === 0, JSON.stringify(small));
 
-  const box = await page.locator('#game').boundingBox();
+  let box = await page.locator('#game').boundingBox();
   const at = (x, y) => ({ x: box.x + (x + 0.5) * box.width / lv.w, y: box.y + (y + 0.5) * box.height / lv.h });
   let p = at(5, 6);
   await page.touchscreen.tap(p.x, p.y);
@@ -62,6 +62,9 @@ try {
     for (let i = 1; i <= 8; i++) await finger('touchMove', { x: from.x + (to.x - from.x) * i / 8, y: from.y + (to.y - from.y) * i / 8 });
     await finger('touchEnd');
   };
+  // A click on a tool can scroll the page, so the room is measured again before the drag.
+  await page.evaluate(() => scrollTo(0, 0));
+  box = await page.locator('#game').boundingBox();
   await drag(at(2, 9), at(8, 9));
   let row = (await text()).level.cells.slice(9 * lv.w + 2, 9 * lv.w + 9);
   check('a finger drag places on every tile it crosses', row.every(c => c === 'wall'), row.join(','));

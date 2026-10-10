@@ -27,11 +27,12 @@ try {
   check('a piece a plain wall could replace is named', n.includes('As a wall, these do the same job: box at 3, 1.'), n);
 
   await page.click('#stopsBtn');
-  await page.waitForFunction(() => /Red: \d+/.test(document.getElementById('placeHint').textContent), null, { timeout: 30000 });
-  check('the stop map counts its traps', (await page.textContent('#placeHint')).includes('Red: 3 where the goal is out of reach for good.'), await page.textContent('#placeHint'));
+  await page.waitForFunction(() => /Frames: \d+/.test(document.getElementById('lensLegend').textContent), null, { timeout: 30000 });
+  check('the Traps lens counts its traps', (await page.textContent('#lensLegend')).includes('Frames: 3 tiles where the goal is out of reach for good.'), await page.textContent('#lensLegend'));
   const pixel = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round((x + 0.5) * t), Math.round((y + 0.5) * t), 1, 1).data]; }, [x, y]);
-  const [r, gr] = await pixel(2, 8), [r2, g2, b2] = await pixel(1, 1);
-  check('a trap is a red dot, a stop that can still win is the usual dot', r > 200 && gr < 120 && g2 > 150 && b2 > 150, JSON.stringify([await pixel(2, 8), await pixel(1, 1)]));
+  const edge = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round(x * t + 2 * t / 32), Math.round((y + 0.5) * t), 1, 1).data]; }, [x, y]);
+  const [r, gr] = await edge(2, 8), [r2, g2, b2] = await pixel(1, 1), [r3] = await edge(1, 1);
+  check('a trap is framed red, a stop that can still win is the usual dot with no frame', r > 150 && gr < 80 && g2 > 150 && b2 > 150 && r3 < 150, JSON.stringify([await edge(2, 8), await pixel(1, 1), await edge(1, 1)]));
   await page.click('#stopsBtn');
 
   // A box where nothing ever needs it: named in the notes, and framed on the map.
