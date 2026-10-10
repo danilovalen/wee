@@ -441,10 +441,18 @@ const M = [
   ['src', "inside($('options'), $('ctx'));", "inside($('options'), $('tools'));", 'fit'],
   ['src', "closeWell() : openWell('findings'));", "closeWell() : openWell());", 'browser'],
   ['src', "|| (!n && !open);", ";", 'phone'],
-  ['src', "  if (l.open) openWell('lenses'); else if (WELL.tab === 'lenses') closeWell();", "", 'lensui'],
   ['src', "return lint + design;", "return lint;", 'designui'],
   ['src', "const show = () => { S.design.working = false;", "const show = () => {", 'designui'],
   ['src', "$('checkBtn').onclick = () => { runCheck(); openWell('findings'); };", "$('checkBtn').onclick = () => { runCheck(); };", 'designui'],
+  // lens chips and the hover line (U2)
+  ['src', "    b.classList.toggle('auto', isAuto(gr.id));", "", 'lensui'],
+  ['src', "export const isAuto = group => L().pick[group] === undefined && !!lensOn(group);", "export const isAuto = group => false;", 'lensui'],
+  ['src', "    b.onclick = () => cycleLens(gr.id);", "", 'lensui'],
+  ['src', "  return out;\n}\n// Whether a search", "  return [];\n}\n// Whether a search", 'lensui'],
+  ['style.css', "#info:not(:empty) ~ #keys { display: none; }", "", 'lensui'],
+  ['src', "  if (!l.open && WELL.open && WELL.tab === 'lenses') closeWell();", "", 'lensui'],
+  ['src', "const show = S.lens.open && S.mode === 'edit';", "const show = S.lens.open;", 'fit'],
+  ['src', "onclick: () => openWell('lenses') }", "onclick: () => {} }", 'lensui'],
 ];
 
 let caught = 0, crashed = 0;

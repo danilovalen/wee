@@ -31,13 +31,13 @@ try {
     await page.click('[data-tool=turret]');
     if (!(await page.locator('[data-aim=up]').getAttribute('class') || '').includes('on')) await page.click('[data-aim=up]');
     await page.click('#stopsBtn');
-    for (const g of ['colour', 'lines']) await page.click(`[data-lens-group=${g}]:not([data-lens=off])`);
+    for (const g of ['colour', 'lines']) await page.click(`[data-chip=${g}]`);
     await page.click('#checkBtn');
     await page.waitForFunction(() => /changes the answer|nothing changes|same job/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
     const settle = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     await settle();
     // A bar's control past the bar's edge, or with its own text cut, is cut off.
-    const cutOff = () => page.evaluate(() => ['ctx', 'statusBar', 'well'].flatMap(id => { const bar = document.getElementById(id), r = bar.getBoundingClientRect();
+    const cutOff = () => page.evaluate(() => ['ctx', 'statusBar', 'well', 'lensChips'].flatMap(id => { const bar = document.getElementById(id), r = bar.getBoundingClientRect();
       return [...bar.querySelectorAll('button, .opt > span')].filter(b => b.offsetParent && b.closest('.wellBody') === null).filter(b => { const q = b.getBoundingClientRect(); return q.right > r.right + 0.5 || q.bottom > r.bottom + 0.5 || b.scrollWidth > b.clientWidth + 1; }).map(b => `${id}:${b.textContent.trim().slice(0, 16)}`); }));
     const share = () => page.evaluate(() => document.getElementById('roomArea').clientHeight / innerHeight);
     // The room takes the area it is given, its width or its height nearly all of it, and no more.
@@ -45,7 +45,7 @@ try {
     const ctxOpts = await page.evaluate(() => [...document.querySelectorAll('#ctx .opt')].filter(o => !o.hidden).length);
     check(`${w}x${h}: the turret's options sit in the context bar`, ctxOpts >= 3, String(ctxOpts));
     const open = await share();
-    check(`${w}x${h}: everything open: nothing scrolls, nothing is cut, the room fills its area`, !(await over()) && !(await cutOff()).length && await page.locator('#well').isVisible() && await fills(), JSON.stringify({ cut: await cutOff(), over: await over() }));
+    check(`${w}x${h}: everything open: nothing scrolls, nothing is cut, the room fills its area`, !(await over()) && !(await cutOff()).length && await page.locator('#well').isVisible() && await page.locator('#lensChips').isVisible() && await fills(), JSON.stringify({ cut: await cutOff(), over: await over() }));
     check(`${w}x${h}: everything open, the room keeps at least 45% of the height`, open >= 0.45, open.toFixed(2));
     await page.click('#wellClose');
     await settle();
@@ -53,7 +53,7 @@ try {
     check(`${w}x${h}: with the well shut the room keeps at least 70%`, shut >= 0.7 && await fills(), shut.toFixed(2));
     await page.click('#mode');
     await settle();
-    check(`${w}x${h}: play mode: the play buttons sit in the status bar and nothing is cut`, !(await over()) && !(await cutOff()).length && await page.evaluate(() => document.getElementById('pad').parentElement.id === 'statusBar' && !!document.getElementById('pad').offsetParent), JSON.stringify(await cutOff()));
+    check(`${w}x${h}: play mode: the play buttons sit in the status bar, the lens chips go, and nothing is cut`, await page.locator('#lensChips').isHidden() && !(await over()) && !(await cutOff()).length && await page.evaluate(() => document.getElementById('pad').parentElement.id === 'statusBar' && !!document.getElementById('pad').offsetParent), JSON.stringify(await cutOff()));
     await page.click('#genBtn');
     await page.locator('.genIngBox summary').click();
     check(`${w}x${h}: the Generator opens from the header and fits without scrolling`, await page.locator('#genBox').isVisible() && await page.evaluate(() => { const d = document.getElementById('genBox'); return d.scrollHeight <= d.clientHeight; }));

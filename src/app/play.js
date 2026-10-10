@@ -11,6 +11,7 @@ import { selectOverlay } from './select.js';
 import { watchStuck, resetStuck } from './stuck.js';
 import { lensMarks, lensBusy } from './lenses.js';
 import { syncWell } from './well.js';
+import { syncChips } from './chips.js';
 
 export function snapshot(s) {
   const ents = {};
@@ -78,6 +79,7 @@ export function frame(t) {
   }
   if (S.mode === 'play' || editNeedsDraw(t)) { render(); S.redraw = false; S.drawnAt = t; }
   syncWell();
+  syncChips();
   requestAnimationFrame(frame);
 }
 

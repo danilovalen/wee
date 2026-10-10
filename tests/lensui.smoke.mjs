@@ -27,9 +27,19 @@ try {
   const floor = await pixel(4, 1);
   await page.click('#stopsBtn');
   check('Lenses open with Stops and Traps on', await on('dots') === 'stops' && await on('frames') === 'traps' && await on('colour') === 'off');
+  // The chips under the room carry the lenses; the well stays shut until More opens its rows.
+  const chip = g => page.$eval(`[data-chip=${g}]`, b => ({ text: b.querySelector('.n').textContent, auto: b.classList.contains('auto'), on: b.classList.contains('on') }));
+  check('four chips appear under the room and the well stays shut', await page.locator('[data-chip]').count() === 4 && await page.locator('#lensChips').isVisible() && await page.locator('#well').isHidden() && (await chip('dots')).text === 'Stops' && (await chip('colour')).text === 'Off');
+  await page.click('#chipsMore');
+  check('More opens the well on the lens rows', await page.locator('#lensRows').isVisible());
   await page.click('[data-tool=turret]');
   await settle();
   check('picking the turret opens Beams', await on('colour') === 'beams' && (await legend()).includes('red where a laser can ever reach'), await legend());
+  check('and its chip reads Beams, dashed as the tool\'s doing', (await chip('colour')).text === 'Beams' && (await chip('colour')).auto && !(await chip('dots')).auto);
+  const box = await page.locator('#game').boundingBox(), lv = await page.evaluate(() => window.wee.getLevel());
+  await page.mouse.move(box.x + 4.5 * box.width / lv.w, box.y + 1.5 * box.height / lv.h);
+  await page.waitForTimeout(120);
+  check('hovering a tile names it and what the lenses know', /^Tile 4, 1: Empty floor .*a laser reaches here/.test(await page.textContent('#info')) && await page.locator('#keys').isHidden(), await page.textContent('#info'));
   const beam = await pixel(4, 1);
   check('and the beam\'s tiles turn red', beam[0] > floor[0] + 40 && beam[0] > beam[1] + 30, JSON.stringify([floor, beam]));
   await page.click('[data-tool=box]');
@@ -37,7 +47,10 @@ try {
   check('picking a box opens Pieces instead', await on('colour') === 'pieces' && (await legend()).includes('box, block or enemy'), await legend());
   await page.click('[data-lens-group=colour][data-lens=off]');
   await page.click('[data-tool=turret]');
-  check('a lens you pick, Off included, beats the tool', await on('colour') === 'off');
+  check('a lens you pick, Off included, beats the tool', await on('colour') === 'off' && !(await chip('colour')).auto);
+  await page.click('[data-chip=colour]');
+  check('a chip click moves its group to the next lens', await on('colour') === 'distance' && (await chip('colour')).text === 'Distance');
+  await page.click('[data-lens-group=colour][data-lens=off]');
   await page.click('[data-tool=look]');
   await page.evaluate(l => window.wee.loadLevel(l), oneWay);
   await page.keyboard.press('3');
@@ -72,7 +85,7 @@ try {
   await page.keyboard.press('0');
   check('key 0 turns every lens off', !(await legend()).trim() && await on('dots') === 'off');
   await page.click('#stopsBtn');
-  check('the Lenses button hides the rows', await page.locator('#lensBox').isHidden());
+  check('the Lenses button hides the chips and the rows', await page.locator('#lensBox').isHidden() && await page.locator('#lensChips').isHidden() && await page.locator('#well').isHidden());
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the lens smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

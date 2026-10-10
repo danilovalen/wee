@@ -228,6 +228,28 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .statusBar .pad button { flex: none; min-height: 0; font-size: 12.5px; }
   .statusBar #keys { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 }
+
+/* Lens chips: one per group under the room, each carrying its own legend. Dashed means the
+   tool in hand opened it. */
+.chips { display: flex; gap: 6px; justify-content: center; flex: none; flex-wrap: wrap; }
+.chips[hidden] { display: none; }
+.chip { display: flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; white-space: nowrap; }
+.chip .g { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.chip svg { width: 26px; height: 12px; display: block; flex: none; }
+.chip.on { color: var(--accent); }
+.chip.auto { border-style: dashed; }
+.chip.more { color: var(--dim); }
+#info:empty { display: none; }
+.statusBar #info { margin: 0; color: var(--text); }
+#info:not(:empty) ~ #keys { display: none; }
+@media (min-width: 701px) { .statusBar #info { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; } }
+@media (max-width: 700px) {
+  /* A phone: four chips in one row, each a stacked label over its mark and lens. */
+  .chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 4px; width: 100%; margin-top: 6px; }
+  .chips[hidden] { display: none; }
+  .chip { flex-direction: column; justify-content: center; gap: 1px; padding: 3px 4px; min-height: 44px; border-radius: 10px; min-width: 0; }
+  .chip .n { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+}
 </style>
 </head>
 <body>
@@ -319,6 +341,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
     </aside>
     <section id="stage">
       <div id="roomArea" class="roomArea"><canvas id="game"></canvas></div>
+      <div id="lensChips" class="chips" hidden></div>
       <div id="pad" class="pad" hidden>
         <button id="hideBtn" type="button">Hide / Swim</button>
         <button id="respawnBtn" type="button">Reset</button>
@@ -398,6 +421,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   <footer id="statusBar" class="statusBar">
     <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
     <button id="wellBtn" type="button">Findings</button>
+    <p id="info" class="hint"></p>
     <p id="keys" class="hint"></p>
   </footer>
   <dialog id="roomsBox" class="rooms">
@@ -1480,7 +1504,7 @@ function place(wide) {
     if ($('pad').nextElementSibling !== $('keys')) $('keys').before($('pad'));
   } else {
     inside($('options'), $('tools')); inside($('placeHint'), $('tools'));
-    after($('pad'), $('roomArea'));
+    after($('pad'), $('lensChips'));
     after($('statusBar'), $('pad'));
   }
 }
@@ -3371,7 +3395,7 @@ const { INK } = m13;
 const { S } = m11;
 const { $ } = m12;
 const { sliced } = m23;
-const { WELL, openWell, closeWell } = m35;
+const { WELL, closeWell } = m35;
 // Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
 // you pick one in that group. Data comes from searches run a slice at a time, again whenever
@@ -3403,6 +3427,8 @@ function lensOn(group) {
   if (pick !== undefined) return pick === 'off' ? null : pick;
   return L().follow ? (AUTO[S.ui.tool] || {})[group] || null : null;
 }
+// Whether a group's lens is the tool's doing rather than your pick.
+const isAuto = group => L().pick[group] === undefined && !!lensOn(group);
 const onNow = () => L().open && S.mode === 'edit' ? LENS_GROUPS.map(gr => lensOn(gr.id)).filter(Boolean) : [];
 
 function toggleLenses() {
@@ -3410,8 +3436,8 @@ function toggleLenses() {
   l.open = !l.open;
   // Opening the first time shows what Stops used to: every stop, and the traps among them.
   if (l.open && !l.opened) { l.opened = true; l.pick.dots = 'stops'; l.pick.frames = 'traps'; }
-  // Turning lenses on shows their tab; turning them off closes it if it was showing.
-  if (l.open) openWell('lenses'); else if (WELL.tab === 'lenses') closeWell();
+  // The chips under the room carry the lenses; turning them off closes their tab if it shows.
+  if (!l.open && WELL.open && WELL.tab === 'lenses') closeWell();
   syncLenses();
 }
 function pickLens(group, id) { L().pick[group] = id; syncLenses(); }
@@ -3478,10 +3504,24 @@ function lensMarks() {
   }
   return out;
 }
+// What the searches already know about one tile, for the hover line. Nothing is searched for it.
+function tileFacts(i) {
+  const st = fresh(S.stops), ld = fresh(S.lensData), d = ld && ld.d, out = [], goal = S.level.cells.includes('goal');
+  if (d) {
+    if (d.distance.has(i)) out.push(`${d.distance.get(i)} ${d.distance.get(i) === 1 ? 'move' : 'moves'} to win from here`);
+    else if (goal && d.hopeless.includes(i)) out.push('no win from here');
+    if (d.stops.has(i)) out.push('you can stop here'); else if (d.passes.has(i)) out.push('you only slide through');
+    if (d.beams.has(i)) out.push('a laser reaches here');
+    if (d.pieces.has(i)) out.push('a piece can be here');
+    if (d.danger.has(i)) out.push('a move kills you here');
+  } else if (st && st.list && st.list.includes(i)) out.push('you can stop here');
+  if (st && st.traps && st.traps.includes(i)) out.push('the goal is out of reach for good from here');
+  return out;
+}
 // Whether a search the lenses wait on is still running, so the room keeps redrawing.
 const lensBusy = () => onNow().length > 0 && ((fresh(S.stops) && !S.stops.list) || (fresh(S.lensData) && S.lensData.d === undefined));
 
-function line(id) {
+function lensLine(id) {
   const st = fresh(S.stops), ld = fresh(S.lensData), d = ld ? ld.d : undefined, part = d && d.capped ? ' Partial: the room has more positions than were searched.' : '';
   if (['stops', 'traps'].includes(id) && st && st.why || SEARCHED.includes(id) && d === null) return 'Has real-time pieces, so lenses cannot map it.';
   const wait = 'Working it out...';
@@ -3500,7 +3540,7 @@ function line(id) {
 }
 function legend() {
   const on = onNow();
-  $('lensLegend').replaceChildren(...on.map(id => Object.assign(document.createElement('li'), { textContent: line(id) })));
+  $('lensLegend').replaceChildren(...on.map(id => Object.assign(document.createElement('li'), { textContent: lensLine(id) })));
 }
 
 function syncLenses() {
@@ -3529,10 +3569,202 @@ function buildLenses() {
   $('lensFollow').onchange = e => { L().follow = e.target.checked; syncLenses(); };
   $('stopsBtn').onclick = toggleLenses;
 }
-return { LENS_GROUPS, AUTO, lensOn, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, lensBusy, syncLenses, buildLenses };
+return { LENS_GROUPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
+})();
+// ---- src/editor/edit.js
+const m37 = (() => {
+const { CLOCKWISE, CARRIES_TURRET } = m0;
+const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m19;
+// Editing a level in place: what a tile holds, the Look line, and placing or removing
+// with the current tool. Returns what changed so the caller can animate it.
+
+
+const idx = (level, x, y) => y * level.w + x;
+const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');
+const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
+
+// Does (x, y) already hold the kind of thing this tool places?
+function holds(level, x, y, tool) {
+  const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'goal') return c === tool;
+  if (tool === 'spring') return c.startsWith('spring:');
+  if (tool === 'button' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
+  if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
+  return !!pc && pc.kind === tool;
+}
+
+
+// The Look tool's one line about a tile: what is on it and how it is set.
+function describe(level, x, y) {
+  const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)], parts = [];
+  if (pc) {
+    const name = TOOLS.find(t => t.id === pc.kind)?.label || pc.kind;
+    parts.push(['mover', 'enemy', 'strong'].includes(pc.kind)
+      ? `${name} \u00b7 ${pc.mode === 'follow' ? '' : (pc.axis === 'h' ? 'across \u00b7 ' : 'up and down \u00b7 ')}${CLOCK_NAME[pc.mode]}` : name);
+    if (pc.turret && pc.kind !== 'turret') parts.push('carries a turret');
+    if (pc.turret) parts.push(`fires ${pc.turret.dirs.map(d => ARROW[d]).join(' ')} \u00b7 ${CLOCK_NAME[pc.turret.mode]}`);
+  }
+  if (c) {
+    const [kind, v] = c.split(':');
+    if (kind === 'wall') parts.push('Block');
+    else if (kind === 'checkpoint') parts.push('Checkpoint');
+    else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
+    else if (kind === 'death') parts.push('Death block');
+    else if (kind === 'water') parts.push('Water');
+    else if (kind === 'sticky') parts.push('Sticky puddle');
+    else if (kind === 'goal') parts.push('Goal');
+    else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
+    else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
+    else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser relay`);
+    else if (kind === 'receiver') parts.push(`${COLOUR_NAME[v]} laser catcher`);
+    else if (kind === 'idoor') parts.push(`${COLOUR_NAME[v]} inverted door`);
+    else parts.push(`${COLOUR_NAME[v]} ${kind}`);
+  }
+  if (level.start.x === x && level.start.y === y) parts.push('Start');
+  return parts.length ? parts.join(' \u00b7 ') : 'Empty floor';
+}
+
+
+// how: 'place', 'remove' (only what this tool places) or 'erase' (anything).
+// Returns the effects to show: what was taken off the tile, and a pop where it placed.
+function place(level, ui, x, y, how) {
+  const out = [];
+  if (how === 'remove' && !holds(level, x, y, ui.tool)) return out;
+  if (how === 'place' && holds(level, x, y, ui.tool)) return out;
+  const t = how === 'erase' ? 'erase' : how === 'remove' ? 'remove' : ui.tool, i = idx(level, x, y), pi = pieceAt(level, x, y);
+  const gone = { type: 'erase', x, y };
+  const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
+  const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
+  const isStart = level.start.x === x && level.start.y === y;
+  if (t === 'erase') {
+    if (pi >= 0) removePiece(); else setCell('');
+  } else if (t === 'remove') {
+    const host = pi >= 0 ? level.entities[pi] : null;
+    if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
+    else if (['wall', 'checkpoint', 'button', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'goal'].includes(ui.tool)) setCell('');
+    else removePiece();
+  } else if (t === 'spring' || t === 'death') {
+    if (isStart) return out;
+    removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
+  } else if (t === 'water' || t === 'sticky' || t === 'goal') {
+    if (isStart) return out;
+    setCell(t);
+  } else if (t === 'gate') {
+    if (isStart) return out;
+    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
+  } else if (t === 'tri') {
+    if (isStart) return out;
+    removePiece(); setCell('tri:' + ui.corner);
+  } else if (t === 'start') {
+    if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
+    removePiece();
+    level.start = { x, y };
+  } else if (t === 'wall') {
+    if (isStart) return out;
+    removePiece(); setCell('wall');
+  } else if (t === 'checkpoint' || t === 'button' || t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor') {
+    const solid = t === 'door' || t === 'idoor' || t === 'receiver';
+    if (solid && isStart) return out;
+    if (solid) removePiece();
+    setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
+  } else if (t === 'turret') {
+    if (isStart) return out;
+    const dirs = CLOCKWISE.filter(d => ui.aim.includes(d));
+    const turret = { dirs, mode: ui.mode, ...(dirs.includes(ui.start) && ui.start !== dirs[0] ? { start: ui.start } : {}) };
+    const host = pi >= 0 ? level.entities[pi] : null;
+    if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
+      if (JSON.stringify(host.turret) === JSON.stringify(turret)) return out;
+      host.turret = turret;
+    } else {
+      removePiece();
+      if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
+      level.entities.push({ kind: 'turret', x, y, turret });
+    }
+  } else {
+    if (isStart) return out;
+    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: ui.dir, mode: ui.mode } : {}) };
+    if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return out;
+    removePiece();
+    if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
+    level.entities.push(want);
+  }
+  if (gone.cell || gone.piece) out.push(gone);
+  if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
+  return out;
+}
+return { holds, describe, place };
+})();
+// ---- src/app/chips.js
+const m38 = (() => {
+const { describe } = m37;
+const { S } = m11;
+const { INK } = m13;
+const { $, touch } = m12;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m36;
+const { openWell } = m35;
+// The lens chips under the room, one per group, each drawing its own small legend, and the
+// hover line in the status bar: what is on a tile and what the lenses know about it. All copy
+// is draft.
+
+
+
+
+
+
+// A 26 by 12 mark per lens, the same marks the room draws.
+const ARROW = (c, w = 1.6) => `<path d="M2 6H20" stroke="${c}" stroke-width="${w}"/><path d="M24 6l-5-3.5v7z" fill="${c}"/>`;
+const MARK = {
+  off: `<path d="M6 6H20" stroke="currentColor" stroke-opacity=".4" stroke-width="1.5"/>`,
+  distance: `<defs><linearGradient id="chipDist"><stop offset="0" stop-color="hsl(120,75%,45%)"/><stop offset="1" stop-color="hsl(0,75%,45%)"/></linearGradient></defs><rect x="1" y="2" width="24" height="8" rx="2" fill="url(#chipDist)"/>`,
+  beams: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.beam}" fill-opacity=".55"/>`,
+  pieces: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.box}" fill-opacity=".6"/>`,
+  stops: `<circle cx="13" cy="6" r="3.5" fill="${INK.player}"/>`,
+  passes: `<circle cx="7" cy="6" r="3.5" fill="${INK.player}"/><circle cx="15" cy="6" r="1.6" fill="${INK.player}"/><circle cx="21" cy="6" r="1.6" fill="${INK.player}"/>`,
+  solution: ARROW(INK.goal, 2.2),
+  moves: `<g opacity=".7">${ARROW(INK.player, 1.2)}</g>`,
+  traps: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="${INK.beam}" stroke-width="1.8"/>`,
+  danger: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="#ff9f43" stroke-width="1.8"/><path d="M10 3l6 6M16 3l-6 6" stroke="#ff9f43" stroke-width="1.6"/>`,
+};
+const NAME = Object.fromEntries(LENS_GROUPS.flatMap(g => g.lenses));
+
+function buildChips() {
+  $('lensChips').replaceChildren(...LENS_GROUPS.map(gr => {
+    const b = Object.assign(document.createElement('button'), { type: 'button', className: 'chip' });
+    b.dataset.chip = gr.id;
+    b.onclick = () => cycleLens(gr.id);
+    return b;
+  }), Object.assign(document.createElement('button'), { type: 'button', id: 'chipsMore', className: 'chip more', textContent: 'More', title: 'Every lens, Follow the tool, and the legends', onclick: () => openWell('lenses') }));
+}
+
+let shown = '';
+function syncChips() {
+  const show = S.lens.open && S.mode === 'edit';
+  const key = show + LENS_GROUPS.map(g => `${lensOn(g.id)}${isAuto(g.id)}${lensLine(lensOn(g.id) || '')}`).join();
+  if (key !== shown) {
+    shown = key;
+    $('lensChips').hidden = !show;
+    for (const gr of LENS_GROUPS) {
+      const b = document.querySelector(`[data-chip=${gr.id}]`), id = lensOn(gr.id);
+      b.classList.toggle('on', !!id);
+      b.classList.toggle('auto', isAuto(gr.id));
+      b.title = `${id ? lensLine(id) : `${gr.label} is off.`}${isAuto(gr.id) ? ' Opened by the tool in hand.' : ''} Key ${gr.key}.`;
+      b.innerHTML = `<span class="g">${gr.label}</span><svg viewBox="0 0 26 12" aria-hidden="true">${MARK[id || 'off']}</svg><span class="n">${id ? NAME[id] : 'Off'}</span>`;
+    }
+  }
+  syncInfo();
+}
+
+// The hover line: a mouse over a tile in edit mode. A finger has the Look tool for this.
+let info = '';
+function syncInfo() {
+  const h = S.mode === 'edit' && !touch ? S.hover : null;
+  const text = h ? `Tile ${h.x}, ${h.y}: ${[describe(S.level, h.x, h.y), ...tileFacts(h.y * S.level.w + h.x)].join(' · ')}` : '';
+  if (text !== info) $('info').textContent = info = text;
+}
+return { buildChips, syncChips };
 })();
 // ---- src/level/region.js
-const m37 = (() => {
+const m39 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -3597,8 +3829,8 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m38 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m37;
+const m40 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m39;
 const { S } = m11;
 const { change } = m33;
 const { $ } = m12;
@@ -3721,7 +3953,7 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/panels.js
-const m39 = (() => {
+const m41 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel, resizeSide, wallBorder } = m9;
 const { T, INK } = m13;
@@ -3734,10 +3966,12 @@ const { change, step: undoStep, syncUndo } = m33;
 const { runCheck, syncCheck, syncLint } = m24;
 const { buildLenses, syncLenses } = m36;
 const { buildWell, openWell } = m35;
+const { buildChips } = m38;
 const { syncRoomsButton } = m32;
-const { buildSelect, syncSelect } = m38;
+const { buildSelect, syncSelect } = m40;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -3853,6 +4087,7 @@ function buildPanels(actions) {
   $('again').onclick = () => setMode('play');
   $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
   buildWell();
+  buildChips();
   document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
   buildLenses();
@@ -3921,131 +4156,8 @@ function syncPanel() {
 }
 return { keysText, buildPanels, syncPanel };
 })();
-// ---- src/editor/edit.js
-const m40 = (() => {
-const { CLOCKWISE, CARRIES_TURRET } = m0;
-const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m19;
-// Editing a level in place: what a tile holds, the Look line, and placing or removing
-// with the current tool. Returns what changed so the caller can animate it.
-
-
-const idx = (level, x, y) => y * level.w + x;
-const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');
-const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
-
-// Does (x, y) already hold the kind of thing this tool places?
-function holds(level, x, y, tool) {
-  const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'goal') return c === tool;
-  if (tool === 'spring') return c.startsWith('spring:');
-  if (tool === 'button' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
-  if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
-  return !!pc && pc.kind === tool;
-}
-
-
-// The Look tool's one line about a tile: what is on it and how it is set.
-function describe(level, x, y) {
-  const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)], parts = [];
-  if (pc) {
-    const name = TOOLS.find(t => t.id === pc.kind)?.label || pc.kind;
-    parts.push(['mover', 'enemy', 'strong'].includes(pc.kind)
-      ? `${name} \u00b7 ${pc.mode === 'follow' ? '' : (pc.axis === 'h' ? 'across \u00b7 ' : 'up and down \u00b7 ')}${CLOCK_NAME[pc.mode]}` : name);
-    if (pc.turret && pc.kind !== 'turret') parts.push('carries a turret');
-    if (pc.turret) parts.push(`fires ${pc.turret.dirs.map(d => ARROW[d]).join(' ')} \u00b7 ${CLOCK_NAME[pc.turret.mode]}`);
-  }
-  if (c) {
-    const [kind, v] = c.split(':');
-    if (kind === 'wall') parts.push('Block');
-    else if (kind === 'checkpoint') parts.push('Checkpoint');
-    else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
-    else if (kind === 'death') parts.push('Death block');
-    else if (kind === 'water') parts.push('Water');
-    else if (kind === 'sticky') parts.push('Sticky puddle');
-    else if (kind === 'goal') parts.push('Goal');
-    else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
-    else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
-    else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser relay`);
-    else if (kind === 'receiver') parts.push(`${COLOUR_NAME[v]} laser catcher`);
-    else if (kind === 'idoor') parts.push(`${COLOUR_NAME[v]} inverted door`);
-    else parts.push(`${COLOUR_NAME[v]} ${kind}`);
-  }
-  if (level.start.x === x && level.start.y === y) parts.push('Start');
-  return parts.length ? parts.join(' \u00b7 ') : 'Empty floor';
-}
-
-
-// how: 'place', 'remove' (only what this tool places) or 'erase' (anything).
-// Returns the effects to show: what was taken off the tile, and a pop where it placed.
-function place(level, ui, x, y, how) {
-  const out = [];
-  if (how === 'remove' && !holds(level, x, y, ui.tool)) return out;
-  if (how === 'place' && holds(level, x, y, ui.tool)) return out;
-  const t = how === 'erase' ? 'erase' : how === 'remove' ? 'remove' : ui.tool, i = idx(level, x, y), pi = pieceAt(level, x, y);
-  const gone = { type: 'erase', x, y };
-  const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
-  const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
-  const isStart = level.start.x === x && level.start.y === y;
-  if (t === 'erase') {
-    if (pi >= 0) removePiece(); else setCell('');
-  } else if (t === 'remove') {
-    const host = pi >= 0 ? level.entities[pi] : null;
-    if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'goal'].includes(ui.tool)) setCell('');
-    else removePiece();
-  } else if (t === 'spring' || t === 'death') {
-    if (isStart) return out;
-    removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
-  } else if (t === 'water' || t === 'sticky' || t === 'goal') {
-    if (isStart) return out;
-    setCell(t);
-  } else if (t === 'gate') {
-    if (isStart) return out;
-    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
-  } else if (t === 'tri') {
-    if (isStart) return out;
-    removePiece(); setCell('tri:' + ui.corner);
-  } else if (t === 'start') {
-    if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
-    removePiece();
-    level.start = { x, y };
-  } else if (t === 'wall') {
-    if (isStart) return out;
-    removePiece(); setCell('wall');
-  } else if (t === 'checkpoint' || t === 'button' || t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor') {
-    const solid = t === 'door' || t === 'idoor' || t === 'receiver';
-    if (solid && isStart) return out;
-    if (solid) removePiece();
-    setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
-  } else if (t === 'turret') {
-    if (isStart) return out;
-    const dirs = CLOCKWISE.filter(d => ui.aim.includes(d));
-    const turret = { dirs, mode: ui.mode, ...(dirs.includes(ui.start) && ui.start !== dirs[0] ? { start: ui.start } : {}) };
-    const host = pi >= 0 ? level.entities[pi] : null;
-    if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
-      if (JSON.stringify(host.turret) === JSON.stringify(turret)) return out;
-      host.turret = turret;
-    } else {
-      removePiece();
-      if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
-      level.entities.push({ kind: 'turret', x, y, turret });
-    }
-  } else {
-    if (isStart) return out;
-    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: ui.dir, mode: ui.mode } : {}) };
-    if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return out;
-    removePiece();
-    if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
-    level.entities.push(want);
-  }
-  if (gone.cell || gone.piece) out.push(gone);
-  if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
-  return out;
-}
-return { holds, describe, place };
-})();
 // ---- src/app/stuck.js
-const m41 = (() => {
+const m42 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m20;
 const { S } = m11;
 const { $ } = m12;
@@ -4080,20 +4192,22 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m42 = (() => {
+const m43 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m18;
 const { S } = m11;
 const { $, g, now } = m12;
-const { syncPanel, keysText } = m39;
+const { syncPanel, keysText } = m41;
 const { feedDemo } = m24;
-const { selectOverlay } = m38;
-const { watchStuck, resetStuck } = m41;
+const { selectOverlay } = m40;
+const { watchStuck, resetStuck } = m42;
 const { lensMarks, lensBusy } = m36;
 const { syncWell } = m35;
+const { syncChips } = m38;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
 
 
 
@@ -4172,6 +4286,7 @@ function frame(t) {
   }
   if (S.mode === 'play' || editNeedsDraw(t)) { render(); S.redraw = false; S.drawnAt = t; }
   syncWell();
+  syncChips();
   requestAnimationFrame(frame);
 }
 
@@ -4204,16 +4319,16 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m43 = (() => {
-const { describe, holds, place } = m40;
+const m44 = (() => {
+const { describe, holds, place } = m37;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m42;
+const { setMode, aim } = m43;
 const { begin, end, step: undoStep } = m33;
 const { save } = m32;
-const { selectDown, selectMove, selectUp, selectKey } = m38;
+const { selectDown, selectMove, selectUp, selectKey } = m40;
 const { LENS_GROUPS, cycleLens, lensesOff } = m36;
-const { syncPanel } = m39;
+const { syncPanel } = m41;
 const { fit } = m14;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
@@ -4314,7 +4429,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m44 = (() => {
+const m45 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -4422,10 +4537,10 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m45 = (() => {
+const m46 = (() => {
 const { search } = m20;
 const { contains } = m30;
-const { ING, variants } = m44;
+const { ING, variants } = m45;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -4470,7 +4585,7 @@ function* judge(level, recipe, max = 3000) {
 return { offFound, missing, judge };
 })();
 // ---- src/gen/random.js
-const m46 = (() => {
+const m47 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -4487,12 +4602,12 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m47 = (() => {
+const m48 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
-const { INGREDIENTS, ING, spot } = m44;
-const { judge } = m45;
-const { rng } = m46;
+const { INGREDIENTS, ING, spot } = m45;
+const { judge } = m46;
+const { rng } = m47;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -4601,9 +4716,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m48 = (() => {
-const { INGREDIENTS } = m44;
-const { generate, normalize, recipeLabel, LIMITS } = m47;
+const m49 = (() => {
+const { INGREDIENTS } = m45;
+const { generate, normalize, recipeLabel, LIMITS } = m48;
 const { stampOf } = m27;
 const { S } = m11;
 const { thumbURL } = m28;
@@ -4767,7 +4882,7 @@ function buildGenerator(actions) {
 return { shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m49 = (() => {
+const m50 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -4775,11 +4890,11 @@ const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { portrait } = m12;
 const { fit, watchStage } = m14;
-const { buildPanels, syncPanel } = m39;
-const { bindInput } = m43;
-const { setMode, frame, render, tick, report, copyReport } = m42;
+const { buildPanels, syncPanel } = m41;
+const { bindInput } = m44;
+const { setMode, frame, render, tick, report, copyReport } = m43;
 const { buildRooms, bootRooms } = m32;
-const { buildGenerator } = m48;
+const { buildGenerator } = m49;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 

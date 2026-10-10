@@ -12,6 +12,7 @@ import { change, step as undoStep, syncUndo } from './undo.js';
 import { runCheck, syncCheck, syncLint } from './check.js';
 import { buildLenses, syncLenses } from './lenses.js';
 import { buildWell, openWell } from './well.js';
+import { buildChips } from './chips.js';
 import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
 
@@ -116,6 +117,7 @@ export function buildPanels(actions) {
   $('again').onclick = () => setMode('play');
   $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
   buildWell();
+  buildChips();
   document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
   buildLenses();

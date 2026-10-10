@@ -221,3 +221,25 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .statusBar .pad button { flex: none; min-height: 0; font-size: 12.5px; }
   .statusBar #keys { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 }
+
+/* Lens chips: one per group under the room, each carrying its own legend. Dashed means the
+   tool in hand opened it. */
+.chips { display: flex; gap: 6px; justify-content: center; flex: none; flex-wrap: wrap; }
+.chips[hidden] { display: none; }
+.chip { display: flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; white-space: nowrap; }
+.chip .g { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.chip svg { width: 26px; height: 12px; display: block; flex: none; }
+.chip.on { color: var(--accent); }
+.chip.auto { border-style: dashed; }
+.chip.more { color: var(--dim); }
+#info:empty { display: none; }
+.statusBar #info { margin: 0; color: var(--text); }
+#info:not(:empty) ~ #keys { display: none; }
+@media (min-width: 701px) { .statusBar #info { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; } }
+@media (max-width: 700px) {
+  /* A phone: four chips in one row, each a stacked label over its mark and lens. */
+  .chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 4px; width: 100%; margin-top: 6px; }
+  .chips[hidden] { display: none; }
+  .chip { flex-direction: column; justify-content: center; gap: 1px; padding: 3px 4px; min-height: 44px; border-radius: 10px; min-width: 0; }
+  .chip .n { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+}

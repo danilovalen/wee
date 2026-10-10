@@ -15,7 +15,7 @@ function place(wide) {
     if ($('pad').nextElementSibling !== $('keys')) $('keys').before($('pad'));
   } else {
     inside($('options'), $('tools')); inside($('placeHint'), $('tools'));
-    after($('pad'), $('roomArea'));
+    after($('pad'), $('lensChips'));
     after($('statusBar'), $('pad'));
   }
 }

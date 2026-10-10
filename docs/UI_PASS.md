@@ -1,6 +1,6 @@
 # UI pass: diagnosis and proposal
 
-Status: **diagnosis, 2026-10-10. U1 (the frame) built the same day; U2 to U5 not built.** Owner: "these options seem like something that will
+Status: **diagnosis, 2026-10-10. U1 (the frame) and U2 (lens chips, hover line) built the same day; U3 to U5 not built.** Owner: "these options seem like something that will
 be cut on the page end due to our no-scrolling-allowed rule. We need a UI pass on this tool.
 Diagnose how other similar tools work so we can improve ours. Do it thoroughly and carefully."
 
@@ -190,7 +190,7 @@ ones the sources agreed on; uncertain ones are marked (unconfirmed).
 | Phase | Ships | Rough size |
 |---|---|---|
 | U1 | the frame: context bar, status bar, design notes drawer, only the room flexes, the "everything open" gate | **built 2026-10-10** |
-| U2 | lens chips on the room's edge, short legends, automatic look, hover Info line | half a day |
+| U2 | lens chips on the room's edge, short legends, automatic look, hover Info line | **built 2026-10-10** |
 | U3 | right column tabs or edge handles; icon-only tools when narrow | half a day |
 | U4 | Tab hides chrome, `?` key list, keys on buttons | a few hours |
 | U5 | the Manga theme, per bag-crawler's `docs/MANGA_THEME.md` (below) | half a day |

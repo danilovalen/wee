@@ -9,7 +9,7 @@ import { INK } from '../view/ink.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 import { sliced } from './design.js';
-import { WELL, openWell, closeWell } from './well.js';
+import { WELL, closeWell } from './well.js';
 
 const STOPS_BUDGET_MS = 2000;
 export const LENS_GROUPS = [
@@ -30,6 +30,8 @@ export function lensOn(group) {
   if (pick !== undefined) return pick === 'off' ? null : pick;
   return L().follow ? (AUTO[S.ui.tool] || {})[group] || null : null;
 }
+// Whether a group's lens is the tool's doing rather than your pick.
+export const isAuto = group => L().pick[group] === undefined && !!lensOn(group);
 const onNow = () => L().open && S.mode === 'edit' ? LENS_GROUPS.map(gr => lensOn(gr.id)).filter(Boolean) : [];
 
 export function toggleLenses() {
@@ -37,8 +39,8 @@ export function toggleLenses() {
   l.open = !l.open;
   // Opening the first time shows what Stops used to: every stop, and the traps among them.
   if (l.open && !l.opened) { l.opened = true; l.pick.dots = 'stops'; l.pick.frames = 'traps'; }
-  // Turning lenses on shows their tab; turning them off closes it if it was showing.
-  if (l.open) openWell('lenses'); else if (WELL.tab === 'lenses') closeWell();
+  // The chips under the room carry the lenses; turning them off closes their tab if it shows.
+  if (!l.open && WELL.open && WELL.tab === 'lenses') closeWell();
   syncLenses();
 }
 export function pickLens(group, id) { L().pick[group] = id; syncLenses(); }
@@ -105,10 +107,24 @@ export function lensMarks() {
   }
   return out;
 }
+// What the searches already know about one tile, for the hover line. Nothing is searched for it.
+export function tileFacts(i) {
+  const st = fresh(S.stops), ld = fresh(S.lensData), d = ld && ld.d, out = [], goal = S.level.cells.includes('goal');
+  if (d) {
+    if (d.distance.has(i)) out.push(`${d.distance.get(i)} ${d.distance.get(i) === 1 ? 'move' : 'moves'} to win from here`);
+    else if (goal && d.hopeless.includes(i)) out.push('no win from here');
+    if (d.stops.has(i)) out.push('you can stop here'); else if (d.passes.has(i)) out.push('you only slide through');
+    if (d.beams.has(i)) out.push('a laser reaches here');
+    if (d.pieces.has(i)) out.push('a piece can be here');
+    if (d.danger.has(i)) out.push('a move kills you here');
+  } else if (st && st.list && st.list.includes(i)) out.push('you can stop here');
+  if (st && st.traps && st.traps.includes(i)) out.push('the goal is out of reach for good from here');
+  return out;
+}
 // Whether a search the lenses wait on is still running, so the room keeps redrawing.
 export const lensBusy = () => onNow().length > 0 && ((fresh(S.stops) && !S.stops.list) || (fresh(S.lensData) && S.lensData.d === undefined));
 
-function line(id) {
+export function lensLine(id) {
   const st = fresh(S.stops), ld = fresh(S.lensData), d = ld ? ld.d : undefined, part = d && d.capped ? ' Partial: the room has more positions than were searched.' : '';
   if (['stops', 'traps'].includes(id) && st && st.why || SEARCHED.includes(id) && d === null) return 'Has real-time pieces, so lenses cannot map it.';
   const wait = 'Working it out...';
@@ -127,7 +143,7 @@ function line(id) {
 }
 function legend() {
   const on = onNow();
-  $('lensLegend').replaceChildren(...on.map(id => Object.assign(document.createElement('li'), { textContent: line(id) })));
+  $('lensLegend').replaceChildren(...on.map(id => Object.assign(document.createElement('li'), { textContent: lensLine(id) })));
 }
 
 export function syncLenses() {
