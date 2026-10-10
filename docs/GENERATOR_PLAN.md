@@ -198,6 +198,9 @@ Planned, in order:
   shows as such, not only as a smaller number.
 - **The generator can then ask for it:** a recipe line like "unsolvable without Dive, and
   Boomerang makes it at least 4 moves shorter", judged with the same table.
-- Open: which combinations matter in his metroidbrainia. Every subset, or only the order he
-  unlocks powers in (a chain: none, +Dive, +Dive+Boomerang, ...). A chain is 6 solves instead
-  of 64 and reads as a story.
+- **Which combinations: an unlock tree** (owner, 2026-10-10: "A tree well defined together,
+  because I wish the game is not completely linear, but still have a choice of progression").
+  Each node is a set of powers the player can hold; each edge is one unlock. The table solves
+  the room at every node, and a branch shows where two progressions give the room different
+  answers. The tree is a game-wide file the owner and I write together; nothing is built
+  until it is defined.
