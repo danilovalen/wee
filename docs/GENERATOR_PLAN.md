@@ -155,3 +155,49 @@ A new folder, `src/gen/`, allowed to import `rules/`, `level/` and `solve/`, nev
    Box". No typing; a name of your own comes with Save.
 
 All open questions answered and built.
+
+## Next round (diagnosed 2026-10-10, not built)
+
+Owner: a generated room asked for 18+ moves came back at 11, and "completely linear, there is
+no dilemma, soft lock positions, almost there but lost". Measured before proposing anything:
+
+| | his example room | generated (8x8, box + door Must, 18 to 30 moves, 4 seeds) |
+|---|---|---|
+| fits | yes | no: the run ran out and kept the closest, par 13 / 14 / 17 / 20 |
+| positions reachable | 160 | 35 to 82 |
+| positions that can no longer win | 56% | 0 to 54% |
+| one wrong move off the solution traps you | 3 | 0, 0, 2, 4 |
+| dead positions past half the solution | 30 | 0 to 26 |
+
+Why: one-tile changes rarely lengthen a solution; small rooms have few positions; nothing in
+the score rewards a dilemma.
+
+Planned, in order:
+1. **Your powers** (owner: "always your powers"). A generated room has exactly the powers
+   checked in the editor; moves, Must use and feel are judged with them. Power rows leave the
+   ingredient list.
+2. **A feel score** for rooms already in the move range, from the full map of positions:
+   positions, dead share, traps one wrong move off the solution, dead positions past halfway,
+   one route, every piece needed. Default targets come from his example room.
+3. **Long solutions:** changes that add boxes and switches, restarts from the best room, and
+   climbing on after the first fit until time runs out.
+4. **An honest miss:** "Did not fit: 11 moves, wanted 18 to 30", not a quiet "Closest".
+
+## Power combinations (planned, owner 2026-10-10)
+
+> "I'd like to plan something more generic that reveals combinations for many power
+> combinations. If I'm doing a metroidbrainia, the same level could have different solutions
+> and different movement quantities according to the powers you unlocked."
+
+- **A power table in the design notes.** For the powers a room could use, solve every
+  combination (6 powers is 64 solves, each capped) and show moves per combination, marking the
+  **unlocks**: adding one power makes an unsolvable room solvable, or cuts it short. Example
+  line: "Unsolvable until Dive. Dive: 14 moves. Dive + Boomerang: 9."
+- **A different route, not just a shorter one:** for each combination, the mechanisms its
+  solution uses (the index's `use:` tags), so a combination that solves the room *another way*
+  shows as such, not only as a smaller number.
+- **The generator can then ask for it:** a recipe line like "unsolvable without Dive, and
+  Boomerang makes it at least 4 moves shorter", judged with the same table.
+- Open: which combinations matter in his metroidbrainia. Every subset, or only the order he
+  unlocks powers in (a chain: none, +Dive, +Dive+Boomerang, ...). A chain is 6 solves instead
+  of 64 and reads as a story.
