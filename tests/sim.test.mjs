@@ -58,6 +58,9 @@ const LONG = ['##########', '#..P....##', '##########'];
 { // per-slide clock: one world step however long the slide
   const s = slide(createGame(room(LONG, { clock: 'slide' })), 'right');
   check('per-slide clock steps once', s.worldSteps === 1, 'worldSteps ' + s.worldSteps);
+  const early = createGame(room(LONG, { clock: 'slide' }));
+  step(early, ['right']);
+  check('and steps when the slide starts, not when it ends', early.worldSteps === 1 && early.player.dir === 'right', JSON.stringify([early.worldSteps, early.player.dir]));
   const u = slide(createGame(room(['#####', '#P###', '#####'], { clock: 'slide' })), 'right');
   check('a blocked slide gives no world step', u.worldSteps === 0, 'worldSteps ' + u.worldSteps);
 }
@@ -251,10 +254,10 @@ const LONG = ['##########', '#..P....##', '##########'];
   s.player.x = 1;
   for (let i = 0; i < 3; i++) { step(s, ['hide']); for (let k = 0; k < 8; k++) step(s); aims.push(s.beams[0].d); }
   check('a turret turns clockwise and loops, once per move of yours', aims.join() === 'up,down,left,up' && s.deaths === 0, aims.join());
-  step(s, ['up']); step(s);
-  check('and holds its beam still while you slide', s.player.dir === 'up' && s.beams[0].d === 'up', s.beams[0].d);
+  step(s, ['up']);
+  check('and turns once as you leave your tile, when your move starts', s.player.dir === 'up' && s.player.y === 3 && s.beams[0].d === 'down', JSON.stringify([s.player.y, s.beams[0].d]));
   slide(s, 'up');
-  check('turning once when the slide ends', s.beams[0].d === 'down', s.beams[0].d);
+  check('then holds still for the rest of the slide', s.beams[0].d === 'down', s.beams[0].d);
   const w = createGame(room(['#######', '#T....#', '#.....#', '#..P..#', '#.....#', '#######']));
   w.checkpoint = { x: 5, y: 4 };
   slide(w, 'up');

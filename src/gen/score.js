@@ -3,7 +3,7 @@
 // search can climb toward one that fits.
 import { search } from '../solve/solve.js';
 import { contains } from '../solve/tags.js';
-import { ING, knock } from './ingredients.js';
+import { ING, variants } from './ingredients.js';
 
 // The Off ingredients whose tags the room holds.
 export const offFound = (level, recipe) => {
@@ -11,15 +11,19 @@ export const offFound = (level, recipe) => {
   return Object.keys(ING).filter(id => !recipe.ing[id] && ING[id].tags.some(t => have.has(t)));
 };
 
-// Must-use ingredients that do not change the answer: the room without them has the same
-// number of moves. A search that hits its cap proves nothing, so it counts as missing.
+// Must-use ingredients that do not change the answer: the room without them, or with their
+// plain stand-in (a wall where they are), has the same number of moves. A search that hits its
+// cap proves nothing, so it counts as missing.
 export function* missing(level, recipe, par, max) {
   const out = [];
   for (const id of Object.keys(recipe.ing)) {
     if (recipe.ing[id] !== 'must') continue;
-    const r = yield* search(knock(ING[id], level), max);
-    if (r.status === 'unsolvable' || (r.status === 'solved' && r.moves.length !== par)) continue;
-    out.push(id);
+    for (const v of variants(ING[id], level)) {
+      const r = yield* search(v, max);
+      if (r.status === 'unsolvable' || (r.status === 'solved' && r.moves.length !== par)) continue;
+      out.push(id);
+      break;
+    }
   }
   return out;
 }

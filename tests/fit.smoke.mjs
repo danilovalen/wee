@@ -26,7 +26,7 @@ try {
     const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'));
     await page.evaluate(l => window.wee.loadLevel(l), first);
     await page.click('#checkBtn');
-    await page.waitForFunction(() => /changes the answer|nothing changes/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
+    await page.waitForFunction(() => /changes the answer|nothing changes|same job/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
     const settle = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     await settle();
     const lastShown = () => page.evaluate(() => { const li = [...document.querySelectorAll('#designList li')].pop(); return li.getBoundingClientRect().bottom <= document.getElementById('stage').getBoundingClientRect().bottom; });

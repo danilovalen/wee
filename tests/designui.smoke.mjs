@@ -19,12 +19,12 @@ try {
   await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(l => window.wee.loadLevel(l), first);
   await page.click('#checkBtn');
-  await page.waitForFunction(() => /changes the answer|nothing changes/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
+  await page.waitForFunction(() => /changes the answer|nothing changes|same job/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
   const n = await notes();
   check('a power the room needs says what it saves', n.includes('Without Boomerang: 19 moves instead of 9.'), n);
   check('the powers that change nothing are named together', n.includes('Without Dive, Laser, Cycle: no change.'), n);
   check('routes and dead ends are counted', n.includes('2 shortest routes.') && n.includes('103 of 186 positions can no longer reach the goal.'), n);
-  check('a room where everything matters says so', n.includes('Each piece and tile changes the answer.'), n);
+  check('a piece a plain wall could replace is named', n.includes('As a wall, these do the same job: box at 3, 1.'), n);
 
   await page.click('#stopsBtn');
   await page.waitForFunction(() => /Red: \d+/.test(document.getElementById('placeHint').textContent), null, { timeout: 30000 });
@@ -38,9 +38,9 @@ try {
   const extra = { ...first, entities: [...first.entities, { kind: 'box', x: 4, y: 6, dir: 1, mode: 'input' }] };
   await page.evaluate(l => window.wee.loadLevel(l), extra);
   await page.click('#checkBtn');
-  await page.waitForFunction(() => /changes the answer|nothing changes/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
+  await page.waitForFunction(() => /changes the answer|nothing changes|same job/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
   check('a piece the answer does not depend on is named', (await notes()).includes('Without these, nothing changes: box at 4, 6.'), await notes());
-  const red = await page.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), k = c.width / window.wee.getLevel().w; const d = g.getImageData(Math.round(4 * k + 3 * k / 32), Math.round(6 * k + k / 2), 2, 2).data; return d[0] > 200 && d[1] < 120; });
+  const red = await page.waitForFunction(() => { const c = document.getElementById('game'), g = c.getContext('2d'), k = c.width / window.wee.getLevel().w; const d = g.getImageData(Math.round(4 * k + 3 * k / 32), Math.round(6 * k + k / 2), 2, 2).data; return d[0] > 200 && d[1] < 120; }, null, { timeout: 3000 }).then(() => true, () => false);
   check('and framed in red on the map', red);
   // Any edit makes the notes stale, and they go.
   await page.click('[data-tool=wall]').catch(() => {});

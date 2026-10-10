@@ -50,18 +50,19 @@ export function playerStep(s, d, diving) {
 }
 
 export function endSlide(s) {
-  const moved = s.player.moved, d = s.player.dir;
   s.player.dir = null; s.player.moved = 0;
-  if (moved > 0 && s.clock === 'slide') worldStep(s, d);
-  // An on-your-move turret turns once per slide, when it ends, so its beam holds still
-  // while you slide.
-  if (moved > 0) turnTurrets(s, 'input');
 }
 
-// A slide that moved the player gives the world its step, per the clock.
+// A slide that moved the player gives the world its step, per the clock. Things that act on
+// your move start when you leave your tile, not when you stop: an on-your-move turret turns
+// once, and with the slide clock the world takes its one step then.
 export function slideOnce(s, diving) {
   const d = s.player.dir, r = playerStep(s, d, diving);
-  if (r === 'moved') { if (s.clock === 'tile') worldStep(s, d); return true; }
+  if (r === 'moved') {
+    if (s.player.moved === 1) { turnTurrets(s, 'input'); if (s.clock === 'slide') worldStep(s, d); }
+    if (s.clock === 'tile') worldStep(s, d);
+    return true;
+  }
   if (r === 'blocked') endSlide(s);
   return false;
 }

@@ -39,10 +39,24 @@ const es = run(elementCheck(boxed)), at = (x, y) => es.find(e => e.x === x && e.
 check('a piece the answer does not depend on keeps the same answer without it', solve(boxed).status === 'unsolvable' && at(4, 1).without === 'unsolvable', JSON.stringify(es));
 check('a piece in the way changes the answer without it', at(1, 2).without === 1, JSON.stringify(es));
 check('tiles are tested too, but never walls or the goal', at(2, 1) && at(2, 1).what === 'gate' && !es.some(e => e.what === 'wall' || e.what === 'goal'), JSON.stringify(es));
+// A box you only stop against does a wall's job: needed, but not as a box.
+const stop = goal(room(['#######', '#P...B#', '#.....#', '#######']), 4, 2);
+const sb = run(elementCheck(stop)).find(e => e.what === 'box');
+check('a piece that only acts as a wall has the same answer as a wall', sb.without !== solve(stop).moves.length && sb.standIn === solve(stop).moves.length && sb.as === 'wall', JSON.stringify(sb));
+const mt = structuredClone(stop); mt.entities.push({ kind: 'box', x: 1, y: 2, dir: 1, mode: 'input', turret: { dirs: ['up'], mode: 'input' } });
+check('a turret riding a box stands in as a fixed turret', run(elementCheck(mt)).find(e => e.x === 1 && e.y === 2).as === 'turret');
+const held = goal(room(['######', '#P...#', '######']), 4, 1);
+held.cells[1 * held.w + 3] = 'button:red'; held.entities.push({ kind: 'box', x: 3, y: 1, dir: 1, mode: 'input' });
+check('a tile with a piece on it gets no wall stand-in', run(elementCheck(held)).find(e => e.what === 'button').standIn === null);
+const lone = goal(room(['######', '#P...#', '#....#', '######']), 4, 1);
+lone.entities.push({ kind: 'turret', x: 2, y: 2, turret: { dirs: ['down'], mode: 'input' } });
+const lt = run(elementCheck(lone)).find(e => e.what === 'turret');
+check('a lone turret whose beam does nothing stands in as a wall', lt.as === 'wall' && lt.standIn === lt.without, JSON.stringify(lt));
+
 // The example room (owner, 2026-10-10): what makes it good must survive any rule change.
 const example = splitRoom(JSON.parse(readFileSync('rooms/first-room.wee', 'utf8'))).level;
 const ex = run(routes(example)), exs = run(elementCheck(example));
 check('the example room takes 21 moves, by one route', ex.par === 21 && ex.routes === 1, JSON.stringify(ex));
-check('every piece and tile in it changes the answer', exs.every(e => e.without !== 21), JSON.stringify(exs));
+check('every piece and tile in it changes the answer, and none could be a plain wall', exs.every(e => e.without !== 21 && e.standIn !== 21), JSON.stringify(exs));
 check('and it has a tile that traps you for good', ex.traps.length > 0, JSON.stringify(ex));
 done();

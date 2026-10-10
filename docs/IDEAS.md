@@ -58,3 +58,16 @@ So the gap is likely how it looks and how it is found, not the rules:
 - Water has one question the others do not: a piece that cannot wade (box, weak enemy, lone
   turret) starting **in** water. The rules only stop such a piece from entering water, so today
   it could leave but never come back. Allow it, or refuse it in the editor?
+
+## Lenses on the map (2026-10-10)
+
+> Would be good besides the "stop" having a "passes by" dots too. So you can see places you
+> don't stop but you actually use for motion. And similar "lenses" for checking other things
+> like lasers, boxes, enemies moving... we can diagnose this later.
+
+Notes (mine):
+- **Passes by** falls out of the same position map the Stops lens and the trap count already
+  build (`routes()`): record every tile a slide crosses, not only where it ends.
+- Candidate lenses: tiles you pass, tiles a beam ever covers, tiles a box can ever reach, an
+  enemy's whole path. Each is "every tile X ever occupies, over every reachable position".
+- One toggle that cycles lenses, or one button per lens: to decide.

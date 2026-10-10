@@ -93,20 +93,27 @@ const cut = run(judge(slope, normalize({ ing: { tri: 'must' }, min: 1, max: 9 })
 const around = solve(knock(ING.tri, slope));
 check('a triangle that saves moves counts', cut.status === 'solved' && cut.par === 1 && around.moves.length === 3 && !cut.missing.length, JSON.stringify({ cut, around: around.moves }));
 
-// An obstacle counts when the room is shorter without it.
+// Water you only stop against does a wall's job, so it is not being used as water.
 const pond = goal(room(['#########', '#P......#', '#w#####.#', '#.......#', '#########']), 1, 3);
 const used = run(judge(pond, normalize({ ing: { water: 'must' }, min: 1, max: 9 })));
-check('water that makes you go the long way counts', used.status === 'solved' && used.par === 3 && !used.missing.length, JSON.stringify(used));
-const stopper = goal(room(['#########', '#PB...w.#', '#########']), 4, 1);
-const held = run(judge(stopper, normalize({ ing: { water: 'must', box: 'allowed' }, min: 1, max: 9 })));
-check('water the room cannot be solved without counts', held.status === 'solved' && !held.missing.length, JSON.stringify(held));
+check('water that only acts as a wall is missing', used.status === 'solved' && used.par === 3 && used.missing.includes('water'), JSON.stringify(used));
+const swim = goal(room(['#######', '#P.w.##', '#######'], { powers: { swim: true } }), 4, 1);
+swim.powers.swim = true;
+const swum = run(judge(swim, normalize({ ing: { water: 'must', swim: 'must' }, min: 1, max: 9 })));
+check('water you swim through counts: as floor it is shorter, as wall it is unsolvable', swum.status === 'solved' && !swum.missing.length, JSON.stringify(swum));
 const idle = goal(room(['#########', '#P......#', '#.#w###.#', '#.......#', '#########']), 1, 3);
 idle.cells[2 * 9 + 1] = 'wall';
 const unused = run(judge(idle, normalize({ ing: { water: 'must' }, min: 1, max: 9 })));
 check('water out of the way is missing', unused.status === 'solved' && unused.missing.includes('water'), JSON.stringify(unused));
+// A box that never moves does a wall's job.
+const still = goal(room(['#######', '#P...B#', '#.....#', '#######']), 4, 2);
+const st = run(judge(still, normalize({ ing: { box: 'must' }, min: 1, max: 9 })));
+check('a box you only stop against is missing', st.status === 'solved' && st.missing.includes('box'), JSON.stringify(st));
+const pushed = run(judge(doorRoom, normalize({ ing: { box: 'must', door: 'allowed' }, min: 1, max: 9 })));
+check('a box you push onto a button counts', pushed.status === 'solved' && !pushed.missing.length, JSON.stringify(pushed));
 
 // The walk: same recipe, same room; each fit verified on its own.
-const easy = [{ box: 'must' }, { door: 'must' }, { tri: 'must', box: 'allowed' }, { spring: 'must' }, { water: 'must', sticky: 'must' }, { receiver: 'must' }, { enemy: 'must' }, { laser: 'must' }];
+const easy = [{ box: 'must' }, { door: 'must' }, { tri: 'must', box: 'allowed' }, { spring: 'must' }, { water: 'must', swim: 'allowed' }, { sticky: 'must' }, { receiver: 'must' }, { enemy: 'must' }, { laser: 'must' }];
 const fails = [], unfit = [], again = [];
 for (const ing of easy) for (const seed of [1, 2]) {
   const recipe = { ing, min: 3, max: 12, seed };

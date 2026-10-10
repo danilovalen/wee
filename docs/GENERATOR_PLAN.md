@@ -204,3 +204,33 @@ Planned, in order:
   the room at every node, and a branch shows where two progressions give the room different
   answers. The tree is a game-wide file the owner and I write together; nothing is built
   until it is defined.
+
+### The tree (owner, 2026-10-10)
+
+> "Dive first. Then, Boomerang, cycle, light. Then, Swim, hook. Laser and armor as last."
+
+| Tier | Powers |
+|---|---|
+| 1 | Dive |
+| 2 | Boomerang, Cycle, Light |
+| 3 | Swim, Hook |
+| 4 | Laser, Armored |
+
+Open: within a tier, is any order allowed (the "choice of progression"), and must a whole tier
+be held before the next opens? The answer decides which nodes the table solves.
+
+## Generate on top (planned, owner 2026-10-10)
+
+> "An option that takes what I built then generates above it."
+
+The hill climb starts from the open room instead of an empty frame, and the pieces and tiles
+already there are locked: changes only add or move what the generator placed. The same judge
+applies, so Must use and the wall stand-in hold for the added parts.
+
+## Solvable while you edit (proposed, 2026-10-10)
+
+Asked: is the "solvable" line too expensive after every change? Measured: First room solves in
+about 40 ms, the old 7x12 room in about 200 ms, in Node. Proposal: after each edit, wait for a
+pause (about 300 ms), then solve in 25 ms slices with a smaller cap, cancelled by the next edit,
+and show "Solvable in N moves", "No solution" or "Too big to tell yet" under the room. Design
+notes stay behind Check, since they are about 20 solves.

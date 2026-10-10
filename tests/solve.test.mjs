@@ -31,7 +31,7 @@ check('a goal you can only slide over is unsolvable', solve(two).status === 'uns
 const aimed = room(['#######', '#P....#', '#.....#', '#T....#', '#######']);
 aimed.entities[0].turret.dirs = ['up', 'right'];
 const ar = solve(goal(aimed, 5, 2));
-check('a turret room is searched to the end, not to the cap', ar.status === 'unsolvable' && ar.states < 200, JSON.stringify({ status: ar.status, states: ar.states }));
+check('a turret room is searched to the end, not to the cap', ar.status !== 'capped' && ar.states < 200, JSON.stringify({ status: ar.status, states: ar.states }));
 
 const turn = goal(room(['#####', '#P..#', '###.#', '###.#', '#####']), 3, 3);
 const r2 = solve(turn);

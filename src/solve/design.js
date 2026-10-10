@@ -19,18 +19,28 @@ export function* powerCheck(level, max) {
   return out;
 }
 
-// The answer with each piece, and each tile other than a wall or the goal, taken out.
+// The answer with each piece, and each tile other than a wall or the goal, taken out, and with
+// its plainest stand-in where it is: a wall (a lone turret too, so a beam that does no more
+// than its body shows), or for a turret riding a box, a fixed turret. A stand-in is skipped
+// where something stands on the tile.
 export function* elementCheck(level, max) {
-  const out = [];
+  const out = [], held = new Set([level.start.y * level.w + level.start.x, ...level.entities.map(e => e.y * level.w + e.x)]);
+  const walled = i => { const cells = [...level.cells]; cells[i] = 'wall'; return cells; };
   for (let i = 0; i < level.entities.length; i++) {
-    const e = level.entities[i];
-    out.push({ x: e.x, y: e.y, what: e.kind, without: answer(yield* search({ ...level, entities: level.entities.filter((_, j) => j !== i) }, max)) });
+    const e = level.entities[i], rest = level.entities.filter((_, j) => j !== i);
+    const without = answer(yield* search({ ...level, entities: rest }, max));
+    const stand = e.turret && e.kind !== 'turret'
+      ? { ...level, entities: [...rest, { kind: 'turret', x: e.x, y: e.y, turret: e.turret }] }
+      : { ...level, cells: walled(e.y * level.w + e.x), entities: rest };
+    out.push({ x: e.x, y: e.y, what: e.kind, without, standIn: stand ? answer(yield* search(stand, max)) : null, as: e.turret && e.kind !== 'turret' ? 'turret' : 'wall' });
   }
   for (let i = 0; i < level.cells.length; i++) {
     const c = level.cells[i];
     if (!c || c === 'wall' || c === 'goal') continue;
     const cells = [...level.cells]; cells[i] = '';
-    out.push({ x: i % level.w, y: Math.floor(i / level.w), what: c.split(':')[0], without: answer(yield* search({ ...level, cells }, max)) });
+    const without = answer(yield* search({ ...level, cells }, max));
+    const stand = held.has(i) || c.startsWith('receiver:') ? null : answer(yield* search({ ...level, cells: walled(i) }, max));
+    out.push({ x: i % level.w, y: Math.floor(i / level.w), what: c.split(':')[0], without, standIn: stand, as: 'wall' });
   }
   return out;
 }
