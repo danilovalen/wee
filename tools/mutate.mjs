@@ -373,6 +373,7 @@ const M = [
   ['src', "const unused = es.filter(e => e.without === par);", "const unused = [];", 'designui'],
   ['src', "wide ? roomHeight() :", "wide ? innerHeight - canvas.getBoundingClientRect().top - 170 :", 'fit'],
   ['src', "const ro = new ResizeObserver(() => requestAnimationFrame(fit));", "const ro = { observe() {} };", 'fit'],
+  ['src', "if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }", "canvas.width = cw; canvas.height = ch;", 'designui'],
   ['src', "e.turret ? e.turret.aim % e.turret.dirs.length : -1", "e.turret ? e.turret.aim : -1", 'solve'],
   ['src', "    if (!confirm('This room has changes. Open the generated room instead?')) return false;\n", "", 'genui'],
   ['src', "    if (!confirm(`Replace ${name}? Its unsaved changes go. Undo brings them back.`)) return false;\n", "", 'genui'],

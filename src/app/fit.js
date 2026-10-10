@@ -17,8 +17,10 @@ export function fit() {
   const room = portrait() ? innerHeight * 0.62 : wide ? roomHeight() : innerHeight - 140;
   const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));
   const k = (window.devicePixelRatio || 1) * zoom;
-  canvas.width = Math.round(level.w * T * k); canvas.height = Math.round(level.h * T * k);
-  canvas.style.width = Math.round(level.w * T * zoom) + 'px';
+  // Setting a canvas size clears it, even to the same size, so only a real change is written.
+  const cw = Math.round(level.w * T * k), ch = Math.round(level.h * T * k), css = Math.round(level.w * T * zoom) + 'px';
+  if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+  if (canvas.style.width !== css) canvas.style.width = css;
   g.setTransform(canvas.width / (level.w * T), 0, 0, canvas.height / (level.h * T), 0, 0);
   $('w').value = level.w; $('h').value = level.h;
   S.redraw = true;
