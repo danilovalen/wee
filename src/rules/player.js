@@ -1,6 +1,6 @@
 // You: one slide step at a time, dive, hide, and what each key does.
 import { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } from './base.js';
-import { laser, turnTurrets } from './beams.js';
+import { inBeam, laser, turnTurrets } from './beams.js';
 import { cellAt, crushes, entAt, inWater, pushTo, shift, solidCell, stepTo } from './grid.js';
 import { die, kill, land, refreshDoors, respawn } from './life.js';
 import { hideCycle, worldStep } from './pieces.js';
@@ -71,6 +71,7 @@ export function dive(s) {
   for (let i = 0; i < s.w * s.h && s.player.dir; i++) {
     const before = s.deaths;
     if (!slideOnce(s, true) || s.deaths !== before) break;
+    if (inBeam(s)) { die(s); break; }
   }
   if (s.player.dir) endSlide(s);
   s.player.snap = true;

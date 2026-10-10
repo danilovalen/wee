@@ -88,13 +88,13 @@ export function syncLint() {
   }));
 }
 
-// The stop map, toggled from the Look tool: computed a slice at a time, drawn while the
+// The stop map, a toggle next to Check: computed a slice at a time, drawn while the
 // room is unchanged.
 export function toggleStops() {
-  if (S.stops) { S.stops = null; $('stopsBtn').setAttribute('aria-pressed', 'false'); $('stopsBtn').textContent = 'Show stops'; return; }
+  if (S.stops) { S.stops = null; $('stopsBtn').setAttribute('aria-pressed', 'false'); $('stopsBtn').classList.remove('on'); return; }
   const stamp = JSON.stringify(S.level), out = {}, it = reach(JSON.parse(stamp), { budgetMs: STOPS_BUDGET_MS, out });
   S.stops = { stamp, list: null, out };
-  $('stopsBtn').setAttribute('aria-pressed', 'true'); $('stopsBtn').textContent = 'Hide stops';
+  $('stopsBtn').setAttribute('aria-pressed', 'true'); $('stopsBtn').classList.add('on');
   const slice = () => {
     if (!S.stops || S.stops.stamp !== stamp) return;
     const until = performance.now() + SLICE_MS;

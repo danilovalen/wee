@@ -101,6 +101,7 @@ export function buildPanels(actions) {
     box.onchange = () => { change(() => { S.level.powers[p] = box.checked; }); if (S.game) S.pending.push(`power:${p}:${box.checked ? 1 : 0}`); syncPanel(); };
     const name = document.createElement('b'); name.textContent = NAMES[p];
     const say = document.createElement('small'); say.textContent = NEEDS[p] ? 'Needs ' + NEEDS[p] + '.' : POWER_TEXT[p];
+    row.title = say.textContent;
     row.append(box, name, say);
     $(p === 'armored' ? 'statusList' : 'powerList').append(row);
   }

@@ -259,6 +259,11 @@ const LONG = ['##########', '#..P....##', '##########'];
   w.checkpoint = { x: 5, y: 4 };
   slide(w, 'up');
   check('sliding into a beam kills you', w.deaths === 1, JSON.stringify(w.player));
+  // a dive crosses every tile it skips, so a beam on the way kills you as a slide would
+  const across = () => { const l = room(['#########', '#...T...#', '#P......#', '#########']); l.entities[0].turret.dirs = ['down']; return createGame(l); };
+  const dv = across(); step(dv, ['right']); step(dv, ['right']);
+  const sl = slide(across(), 'right');
+  check('diving through a beam kills you, as sliding through does', dv.deaths === 1 && sl.deaths === 1, `dive ${dv.deaths}, slide ${sl.deaths}`);
   const j = createGame(room(['#######', '#T..P.#', '#.....#', '#######']));
   j.checkpoint = { x: 5, y: 2 };
   step(j, ['hide']);

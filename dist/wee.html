@@ -107,8 +107,9 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .check:has(#checkText:empty) { display: none; }
 .check [hidden] { display: none; }
 @media (max-width: 600px) {
-  header { gap: 4px; padding: 8px 8px; }
-  header button { padding-left: 8px; padding-right: 8px; }
+  header { gap: 3px; padding: 8px 6px; }
+  header button { padding-left: 7px; padding-right: 7px; }
+  #mode { min-width: 0; }
   .logo { margin-right: 2px; }
 }
 
@@ -152,6 +153,27 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .genResult { display: flex; gap: 12px; align-items: flex-start; margin: 8px 0; }
 .genResult img { width: 120px; height: auto; image-rendering: pixelated; border-radius: 4px; flex: none; }
 .genResult p { margin: 0 0 6px; }
+
+/* A wide screen is one screen tall: nothing on the page scrolls. Power descriptions move to
+   their hover text; a column scrolls on its own only below about 700 px of height. */
+@media (min-width: 901px) {
+  body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+  header { flex: none; }
+  main { flex: 1; min-height: 0; padding: 10px 16px; gap: 14px; align-items: stretch; }
+  main > * { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  aside { padding: 10px 12px; }
+  .grid { gap: 4px; }
+  .grid button { padding: 3px 6px; }
+  .power small { display: none; }
+  .power { padding: 3px 0; }
+  h2 { margin-bottom: 4px; }
+  h2:not(:first-child) { margin-top: 10px; }
+  .hint { margin-top: 6px; }
+  .genIng { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .rooms.gen { width: min(940px, 100vw - 16px); }
+}
+/* On a phone the header has no room for Generate; it stays in Rooms. */
+@media (max-width: 900px) { #genBtn { display: none; } }
 </style>
 </head>
 <body>
@@ -161,6 +183,8 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
     <button id="checkBtn" type="button">Check</button>
+    <button id="stopsBtn" type="button" aria-pressed="false" title="Show every tile you can stop on">Stops</button>
+    <button id="genBtn" type="button" title="Generate a room">Generate</button>
     <span class="spacer"></span>
     <button id="roomsBtn" type="button">Rooms</button>
   </header>
@@ -178,7 +202,6 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
           <button id="selPaste" type="button">Paste</button>
         </div>
         <div class="opt" data-for="look">
-          <button id="stopsBtn" type="button" aria-pressed="false">Show stops</button>
           <button id="playHere" type="button" hidden>Play from here</button>
         </div>
         <div class="opt" data-for="mover enemy strong" id="axisOpt">
@@ -614,6 +637,9 @@ function shockHarms(s, pools, how) {
 
 const aimOf = t => t.dirs[t.aim % t.dirs.length];
 
+// Whether a turret beam reaches you where you stand now; a dive asks this on every tile it crosses.
+const inBeam = s => { computeBeams(s, false); return s.beams.some(b => b.player); };
+
 function turnTurrets(s, mode) {
   for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === mode) e.turret.aim++;
 }
@@ -636,7 +662,7 @@ function computeBeams(s, harm) {
   if (harm && shockHarms(s, s.shocked, 'turret')) hitYou = true;
   if (harm && hitYou) die(s);
 }
-return { trace, laserHit, laser, shockPools, shockHarms, aimOf, turnTurrets, computeBeams };
+return { trace, laserHit, laser, shockPools, shockHarms, aimOf, inBeam, turnTurrets, computeBeams };
 })();
 // ---- src/rules/sticky.js
 const m4 = (() => {
@@ -903,7 +929,7 @@ return { hideCycle, rushOnce, launch, worldStep, patrolDir, moveMover, slidePiec
 // ---- src/rules/player.js
 const m7 = (() => {
 const { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } = m0;
-const { laser, turnTurrets } = m3;
+const { inBeam, laser, turnTurrets } = m3;
 const { cellAt, crushes, entAt, inWater, pushTo, shift, solidCell, stepTo } = m1;
 const { die, kill, land, refreshDoors, respawn } = m2;
 const { hideCycle, worldStep } = m6;
@@ -981,6 +1007,7 @@ function dive(s) {
   for (let i = 0; i < s.w * s.h && s.player.dir; i++) {
     const before = s.deaths;
     if (!slideOnce(s, true) || s.deaths !== before) break;
+    if (inBeam(s)) { die(s); break; }
   }
   if (s.player.dir) endSlide(s);
   s.player.snap = true;
@@ -1342,10 +1369,19 @@ const { $, canvas, g, portrait } = m12;
 
 
 
+// On a wide screen the tool options and the hint sit under the room, so the tool column
+// never grows past the screen; on a phone they stay under the tools.
+const UNDER_ROOM = 170;
+function placeOptions(wide) {
+  const home = wide ? $('stage') : $('tools');
+  for (const id of ['options', 'placeHint']) if ($(id).parentElement !== home) home.append($(id));
+}
+
 function fit() {
-  const level = S.level;
+  const level = S.level, wide = innerWidth > 900;
+  placeOptions(wide);
   const stage = $('stage').clientWidth || level.w * T;
-  const room = portrait() ? innerHeight * 0.62 : innerHeight - 140;
+  const room = portrait() ? innerHeight * 0.62 : wide ? innerHeight - canvas.getBoundingClientRect().top - UNDER_ROOM : innerHeight - 140;
   const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));
   const k = (window.devicePixelRatio || 1) * zoom;
   canvas.width = Math.round(level.w * T * k); canvas.height = Math.round(level.h * T * k);
@@ -2202,13 +2238,13 @@ function syncLint() {
   }));
 }
 
-// The stop map, toggled from the Look tool: computed a slice at a time, drawn while the
+// The stop map, a toggle next to Check: computed a slice at a time, drawn while the
 // room is unchanged.
 function toggleStops() {
-  if (S.stops) { S.stops = null; $('stopsBtn').setAttribute('aria-pressed', 'false'); $('stopsBtn').textContent = 'Show stops'; return; }
+  if (S.stops) { S.stops = null; $('stopsBtn').setAttribute('aria-pressed', 'false'); $('stopsBtn').classList.remove('on'); return; }
   const stamp = JSON.stringify(S.level), out = {}, it = reach(JSON.parse(stamp), { budgetMs: STOPS_BUDGET_MS, out });
   S.stops = { stamp, list: null, out };
-  $('stopsBtn').setAttribute('aria-pressed', 'true'); $('stopsBtn').textContent = 'Hide stops';
+  $('stopsBtn').setAttribute('aria-pressed', 'true'); $('stopsBtn').classList.add('on');
   const slice = () => {
     if (!S.stops || S.stops.stamp !== stamp) return;
     const until = performance.now() + SLICE_MS;
@@ -3090,6 +3126,7 @@ function buildPanels(actions) {
     box.onchange = () => { change(() => { S.level.powers[p] = box.checked; }); if (S.game) S.pending.push(`power:${p}:${box.checked ? 1 : 0}`); syncPanel(); };
     const name = document.createElement('b'); name.textContent = NAMES[p];
     const say = document.createElement('small'); say.textContent = NEEDS[p] ? 'Needs ' + NEEDS[p] + '.' : POWER_TEXT[p];
+    row.title = say.textContent;
     row.append(box, name, say);
     $(p === 'armored' ? 'statusList' : 'powerList').append(row);
   }
@@ -3915,7 +3952,8 @@ function buildGenerator(actions) {
   const saved = read(FORM, null);
   fillForm(normalize(saved ? saved.recipe : { seed: newSeed() }));
   $('genTime').value = saved ? saved.seconds : 15;
-  $('roomGen').onclick = () => { $('roomsBox').close(); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
+  const open = () => { if ($('roomsBox').open) $('roomsBox').close(); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
+  $('roomGen').onclick = $('genBtn').onclick = open;
   $('genReroll').onclick = () => { $('genSeed').value = newSeed(); };
   const seconds = () => Math.max(5, Math.min(60, +$('genTime').value || 15));
   $('genGo').onclick = () => { const r = recipeFromForm(); fillForm(r); start(r, seconds()); };

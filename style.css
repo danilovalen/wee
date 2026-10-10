@@ -100,8 +100,9 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .check:has(#checkText:empty) { display: none; }
 .check [hidden] { display: none; }
 @media (max-width: 600px) {
-  header { gap: 4px; padding: 8px 8px; }
-  header button { padding-left: 8px; padding-right: 8px; }
+  header { gap: 3px; padding: 8px 6px; }
+  header button { padding-left: 7px; padding-right: 7px; }
+  #mode { min-width: 0; }
   .logo { margin-right: 2px; }
 }
 
@@ -145,3 +146,24 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .genResult { display: flex; gap: 12px; align-items: flex-start; margin: 8px 0; }
 .genResult img { width: 120px; height: auto; image-rendering: pixelated; border-radius: 4px; flex: none; }
 .genResult p { margin: 0 0 6px; }
+
+/* A wide screen is one screen tall: nothing on the page scrolls. Power descriptions move to
+   their hover text; a column scrolls on its own only below about 700 px of height. */
+@media (min-width: 901px) {
+  body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+  header { flex: none; }
+  main { flex: 1; min-height: 0; padding: 10px 16px; gap: 14px; align-items: stretch; }
+  main > * { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  aside { padding: 10px 12px; }
+  .grid { gap: 4px; }
+  .grid button { padding: 3px 6px; }
+  .power small { display: none; }
+  .power { padding: 3px 0; }
+  h2 { margin-bottom: 4px; }
+  h2:not(:first-child) { margin-top: 10px; }
+  .hint { margin-top: 6px; }
+  .genIng { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .rooms.gen { width: min(940px, 100vw - 16px); }
+}
+/* On a phone the header has no room for Generate; it stays in Rooms. */
+@media (max-width: 900px) { #genBtn { display: none; } }

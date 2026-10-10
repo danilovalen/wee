@@ -57,6 +57,9 @@ export function shockHarms(s, pools, how) {
 
 export const aimOf = t => t.dirs[t.aim % t.dirs.length];
 
+// Whether a turret beam reaches you where you stand now; a dive asks this on every tile it crosses.
+export const inBeam = s => { computeBeams(s, false); return s.beams.some(b => b.player); };
+
 export function turnTurrets(s, mode) {
   for (const e of s.entities) if (!e.dead && e.turret && e.turret.mode === mode) e.turret.aim++;
 }
