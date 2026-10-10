@@ -8,7 +8,7 @@ const { check, done } = suite('fit');
 const server = await serve(5191);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
 try {
-  for (const [w, h] of [[1280, 720], [1366, 768], [1920, 1080]]) {
+  for (const [w, h] of [[874, 900], [760, 900], [1280, 720], [1366, 768], [1920, 1080]]) {
     const page = await browser.newPage({ viewport: { width: w, height: h } });
     await page.goto('http://localhost:5191/');
     await page.waitForFunction(() => window.wee && window.wee.roomsReady);
@@ -20,6 +20,8 @@ try {
       if (await over()) bad.push(t);
     }
     check(`${w}x${h}: nothing scrolls, with any tool picked`, !bad.length, bad.join(' '));
+    const cut = await page.evaluate(() => [...document.querySelectorAll('#tools button')].filter(b => b.offsetParent && b.scrollWidth > b.clientWidth + 1).map(b => b.textContent.trim()));
+    check(`${w}x${h}: no tool's name is cut`, !cut.length, cut.join(', '));
     const tall = await page.evaluate(() => { window.wee.loadLevel(window.wee.blank(12, 30)); return new Promise(r => requestAnimationFrame(() => r())); }).then(over);
     check(`${w}x${h}: a tall room still fits`, !tall);
     // With design notes under the room, in edit mode and in play mode, nothing is cut.
@@ -32,7 +34,7 @@ try {
     const lastShown = () => page.evaluate(() => { const li = [...document.querySelectorAll('#designList li')].pop(); return li.getBoundingClientRect().bottom <= document.getElementById('stage').getBoundingClientRect().bottom; });
     // The room takes the room it is given: it reaches the column's width, or nearly its height.
     const fills = () => page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), s = document.getElementById('stage'), r = s.getBoundingClientRect(); const under = Math.max(...[...s.children].filter(e => e.id !== 'game' && e.tagName !== 'DIALOG' && e.offsetParent).map(e => e.getBoundingClientRect().bottom)); return c.width >= s.clientWidth - 2 || r.bottom - under < 40; });
-    check(`${w}x${h}: design notes fit under the room`, !(await over()) && await lastShown() && await fills());
+    check(`${w}x${h}: design notes fit under the room`, !(await over()) && await lastShown() && await fills(), JSON.stringify(await page.evaluate(() => [document.documentElement, ...document.querySelectorAll('main > *')].map(e => [e.id || e.tagName, e.scrollHeight - e.clientHeight, e.clientHeight]))));
     await page.click('#mode');
     await settle();
     check(`${w}x${h}: and still fit in play mode`, !(await over()) && await lastShown() && await fills());

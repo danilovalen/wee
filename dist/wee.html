@@ -34,7 +34,7 @@ h2:not(:first-child) { margin-top: 16px; }
 .ghead { display: none; grid-column: 1 / -1; margin: 8px 0 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
 .ghead:first-child { margin-top: 0; }
 /* Wide screens show every section at once; the tabs are for phones. */
-@media (min-width: 901px) {
+@media (min-width: 701px) {
   .tabs, #tools > h2:first-child { display: none; }
   .ghead { display: block; }
   .grid button[hidden] { display: flex; }
@@ -72,7 +72,7 @@ button { touch-action: manipulation; }
 .pad[hidden] { display: none; }
 .pad { flex-wrap: wrap; }
 .pad button { flex: 1 1 30%; min-height: 48px; font-size: 16px; }
-@media (max-width: 900px) { main { grid-template-columns: 1fr; } #stage { order: -1; } }
+@media (max-width: 700px) { main { grid-template-columns: 1fr; } #stage { order: -1; } }
 @media (max-width: 700px) {
   body { font-size: 15px; }
   header { padding: 8px 12px; }
@@ -137,12 +137,13 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .lint summary { cursor: pointer; color: #f2c14e; }
 .lint ul { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 4px; }
 .lint button { text-align: left; width: 100%; }
-.sides { display: grid; grid-template-columns: auto repeat(4, 1fr); gap: 4px; align-items: center; margin-top: 6px; }
+.sides { display: grid; grid-template-columns: auto repeat(4, minmax(0, 1fr)); gap: 4px; align-items: center; margin-top: 6px; }
+.sides button { min-width: 0; padding-left: 0; padding-right: 0; }
 .sides span { font-size: 0.85em; color: var(--muted, #8e98ad); }
 .sides #border { grid-column: 1 / -1; }
 .roomBox { margin-bottom: 10px; }
 #codeIn { flex: 1; min-width: 0; }
-@media (min-width: 901px) {
+@media (min-width: 701px) {
   /* The room stays in view while the tool list scrolls past it. */
   #stage { position: sticky; top: 0; align-self: start; }
 }
@@ -159,7 +160,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 
 /* A wide screen is one screen tall: nothing on the page scrolls. Power descriptions move to
    their hover text; a column scrolls on its own only below about 700 px of height. */
-@media (min-width: 901px) {
+@media (min-width: 701px) {
   body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
   header { flex: none; }
   main { flex: 1; min-height: 0; padding: 10px 16px; gap: 14px; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
@@ -176,7 +177,12 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .rooms.gen { width: min(940px, 100vw - 16px); }
 }
 /* On a phone the header has no room for Generate; it stays in Rooms. */
-@media (max-width: 900px) { #genBtn { display: none; } }
+@media (max-width: 700px) { #genBtn { display: none; } }
+/* Between a phone and a desktop the side columns narrow, so the room keeps its share. */
+@media (min-width: 701px) and (max-width: 1100px) {
+  main { grid-template-columns: 200px minmax(0, 1fr) 200px; gap: 10px; padding: 8px 10px; }
+  .grid button { flex-direction: column; justify-content: center; text-align: center; gap: 1px; padding: 3px 2px; font-size: 10.5px; line-height: 1.1; white-space: normal; }
+}
 </style>
 </head>
 <body>
@@ -1399,10 +1405,10 @@ function placeOptions(wide) {
 }
 
 function fit() {
-  const level = S.level, wide = innerWidth > 900;
+  const level = S.level, wide = innerWidth > 700;
   placeOptions(wide);
   const stage = $('stage').clientWidth || level.w * T;
-  const room = portrait() ? innerHeight * 0.62 : wide ? roomHeight() : innerHeight - 140;
+  const room = wide ? roomHeight() : portrait() ? innerHeight * 0.62 : innerHeight - 140;
   const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));
   const k = (window.devicePixelRatio || 1) * zoom;
   // Setting a canvas size clears it, even to the same size, so only a real change is written.

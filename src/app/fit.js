@@ -11,10 +11,10 @@ function placeOptions(wide) {
 }
 
 export function fit() {
-  const level = S.level, wide = innerWidth > 900;
+  const level = S.level, wide = innerWidth > 700;
   placeOptions(wide);
   const stage = $('stage').clientWidth || level.w * T;
-  const room = portrait() ? innerHeight * 0.62 : wide ? roomHeight() : innerHeight - 140;
+  const room = wide ? roomHeight() : portrait() ? innerHeight * 0.62 : innerHeight - 140;
   const zoom = Math.min(2.5, stage / (level.w * T), room / (level.h * T));
   const k = (window.devicePixelRatio || 1) * zoom;
   // Setting a canvas size clears it, even to the same size, so only a real change is written.
