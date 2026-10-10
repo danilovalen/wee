@@ -2,9 +2,10 @@
 
 The site is one page (`dist/wee.html`) plus a rooms API, both served by `tools/server.mjs`
 behind a password. Rooms are files in a git repo on the server, committed on every save.
-Needs Node 20 or newer, nginx and certbot (all already on the box that runs play.manganacarta.com).
+Needs Node 20 or newer and Caddy, both already on the box that runs play.manganacarta.com.
 
-Every step below runs as root on the server, except the DNS record.
+Every step below runs as root on the server, except the DNS record. Log in with the SSH
+shortcut the engine's deploy already uses: `ssh manga-vps` (SSH is not on port 22).
 
 ## Once
 
@@ -30,13 +31,15 @@ Every step below runs as root on the server, except the DNS record.
    systemctl daemon-reload && systemctl enable --now wee
    curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8040/   # 401 means it runs and wants the password
    ```
-5. **nginx and https.**
+5. **Caddy and https.** Caddy already serves play.manganacarta.com and gets certificates
+   by itself, so wee only needs its block added:
    ```sh
-   cp /opt/wee/deploy/nginx-wee.conf /etc/nginx/sites-available/wee
-   ln -s ../sites-available/wee /etc/nginx/sites-enabled/wee
-   nginx -t && systemctl reload nginx
-   certbot --nginx -d wee.manganacarta.com
+   cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.bak
+   cat /opt/wee/deploy/Caddyfile-wee >> /etc/caddy/Caddyfile
+   caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
    ```
+   The DNS record must already point at the server, or the certificate request fails; Caddy
+   retries by itself once it does. (`deploy/nginx-wee.conf` is for a box that uses nginx.)
 6. Open `https://wee.manganacarta.com`, type the user and password, and save a room. The
    Rooms panel should say "Saved on the server."
 

@@ -1,0 +1,6 @@
+# Append to /etc/caddy/Caddyfile on the box that serves play.manganacarta.com, then
+# reload Caddy. Caddy gets the certificate itself; wee asks for its own password.
+wee.manganacarta.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8040
+}
