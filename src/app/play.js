@@ -80,7 +80,18 @@ export function render() {
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t, S.stops && S.stops.stamp === JSON.stringify(S.level) ? (S.stops.list || [...S.stops.out.stops || []]) : null, selectOverlay());
+  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay());
+}
+
+// What the editor marks on the room: stops and traps while the stop map is on, and
+// pieces or tiles the design notes found change nothing.
+function marks() {
+  const stamp = JSON.stringify(S.level), on = S.stops && S.stops.stamp === stamp;
+  return {
+    stops: on ? (S.stops.list || [...S.stops.out.stops || []]) : null,
+    traps: on && S.stops.traps ? new Set(S.stops.traps) : null,
+    unused: S.design && S.design.stamp === stamp ? S.design.unused : [],
+  };
 }
 
 // A report is the room as it was when play began, every key with its tick, and the

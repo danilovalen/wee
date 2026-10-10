@@ -5,6 +5,8 @@ import { lint, brokenAt } from '../solve/lint.js';
 import { now } from './dom.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
+import { runDesign, clearDesign, sliced } from './design.js';
+import { routes } from '../solve/design.js';
 
 const SLICE_MS = 25;
 // The stop map searches this long, then shows what it found.
@@ -23,6 +25,7 @@ export function runCheck() {
   const level = JSON.parse(JSON.stringify(S.level)), stamp = JSON.stringify(level);
   const it = search(level);
   S.check = { stamp, result: null };
+  clearDesign();
   $('checkText').textContent = 'Checking...';
   $('showSolution').hidden = true;
   const slice = () => {
@@ -42,12 +45,14 @@ function finish(r) {
   S.check.result = r;
   $('checkText').textContent = checkText(r);
   $('showSolution').hidden = r.status !== 'solved';
+  if (r.status === 'solved') runDesign(r.moves.length);
 }
 
 // A check goes stale the moment the room changes.
 export function syncCheck() {
   if (!S.check || S.check.stamp === JSON.stringify(S.level)) return;
   S.check = null;
+  clearDesign();
   $('checkText').textContent = '';
   $('showSolution').hidden = true;
 }
@@ -102,8 +107,14 @@ export function toggleStops() {
       const r = it.next();
       if (r.done) {
         S.stops.list = r.value.stops;
-        S.redraw = true;
-        $('placeHint').textContent = r.value.why ? 'Has real-time pieces, so stops cannot be mapped.' : `${r.value.stops.length} tiles you can stop on${r.value.capped ? ', maybe more' : ''}.`;
+        const said = r.value.why ? 'Has real-time pieces, so stops cannot be mapped.' : `${r.value.stops.length} tiles you can stop on${r.value.capped ? ', maybe more' : ''}.`;
+        $('placeHint').textContent = said;
+        if (!r.value.why && S.level.cells.includes('goal')) sliced(routes(JSON.parse(stamp)), stamp, m => {
+          if (!S.stops || S.stops.stamp !== stamp) return;
+          S.stops.traps = m ? m.traps : null;
+          S.redraw = true;
+          $('placeHint').textContent = m ? `${said} Red: ${m.traps.length} where the goal is out of reach for good.` : said;
+        });
         return;
       }
       if (performance.now() > until) break;

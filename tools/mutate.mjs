@@ -190,7 +190,7 @@ const M = [
   ['src', "  clearDraft();\n  saved = [stored, ...saved.filter(o => o.id !== stored.id)];", "  saved = [stored, ...saved.filter(o => o.id !== stored.id)];", "browser"],
   ['src', "export function syncRoomsButton() {\n  noteChange(dirty());", "export function syncRoomsButton() {", "browser"],
   ['src', "  if (d && d.level) {", "  if (false) {", "browser"],
-  ['src', "        S.redraw = true;\n", "", "perf"],
+  ['src', "g.fillStyle = traps && traps.has(i) ? INK.beam : INK.player;", "g.fillStyle = INK.player;", 'designui'],
   ['src', "  if (kind === 'spring') return 'spring:' + cw(v);", "  if (kind === 'spring') return c;", "region"],
   ['src', "  if (kind === 'tri') return 'tri:' + CORNER_CW[v];", "  if (kind === 'tri') return c;", "region"],
   ['src', "    t.dir = e.axis === 'h' ? (e.dir || 1) : -(e.dir || 1);", "    t.dir = e.dir || 1;", "region"],
@@ -214,7 +214,7 @@ const M = [
   ['src', "          if (seen.size >= max || performance.now() > until) { capped = true; break; }", "          if (performance.now() > until) { capped = true; break; }", "solve"],
   ['src', "      const open = !/^(wall|receiver:|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);", "      const open = true;", "browser"],
   ['src', "  const from = m === 'play' && S.playFrom ? { ...S.level, start: S.playFrom } : S.level;", "  const from = S.level;", "browser"],
-  ['src', "    for (const i of stops) { g.beginPath();", "    for (const i of []) { g.beginPath();", "browser"],
+  ['src', "  if (stops) for (const i of stops) {", "  if (stops) for (const i of []) {", "browser"],
   ['src', "  if (S.stops) { S.stops = null;", "  if (false) { S.stops = null;", "browser"],
   ['src', "  const dx = side === 'left' ? delta : 0, dy = side === 'top' ? delta : 0;", "  const dx = 0, dy = 0;", "sim"],
   ['src', "  if (w < 3 || h < 3 || w > 40 || h > 30) return null;", "  if (w > 40 || h > 30) return null;", "sim"],
@@ -363,6 +363,14 @@ const M = [
   ['src', "    if (inBeam(s)) { die(s); break; }\n", "", 'sim'],
   ['src', "  placeOptions(wide);\n", "", 'fit'],
   ['style.css', "  main > * { min-height: 0; overflow-y: auto; scrollbar-width: thin; }", "  main > * { min-height: 0; overflow-y: visible; }", 'fit'],
+  ['src', "if (n.dist + 1 === par) count += w; }", "if (n.dist + 1 === par) count = 1; }", 'design'],
+  ['src', "    if (!level.powers[p] || NEEDS[p]) continue;", "    if (NEEDS[p]) continue;", 'design'],
+  ['src', "    if (!c || c === 'wall' || c === 'goal') continue;", "    if (!c) continue;", 'design'],
+  ['src', "if (!alive.has(k)) { alive.add(k); todo.push(k); }", "if (!alive.has(k)) alive.add(k);", 'designui'],
+  ['src', "if (nodes.size >= max) return null;", "", 'design'],
+  ['src', "const idle = ps.filter(p => p.without === par);", "const idle = [];", 'designui'],
+  ['src', "  S.check = null;\n  clearDesign();", "  S.check = null;", 'designui'],
+  ['src', "const unused = es.filter(e => e.without === par);", "const unused = [];", 'designui'],
   ['src', "e.turret ? e.turret.aim % e.turret.dirs.length : -1", "e.turret ? e.turret.aim : -1", 'solve'],
   ['src', "    if (!confirm('This room has changes. Open the generated room instead?')) return false;\n", "", 'genui'],
   ['src', "    if (!confirm(`Replace ${name}? Its unsaved changes go. Undo brings them back.`)) return false;\n", "", 'genui'],
@@ -394,7 +402,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }
