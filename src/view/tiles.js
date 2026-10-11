@@ -39,8 +39,8 @@ export function drawCell(g, c, x, y, s, scale = 1) {
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
   } else if (c === 'death') {
     // Spikes on a dark red slab.
-    g.fillStyle = '#3a0d14'; roundRect(g, 1, 1, T - 2, T - 2, 4); g.fill();
-    g.fillStyle = '#e8525c';
+    g.fillStyle = INK.deathBg; roundRect(g, 1, 1, T - 2, T - 2, 4); g.fill();
+    g.fillStyle = INK.deathSpike;
     for (const [cx, cy] of [[9, 9], [23, 9], [16, 16], [9, 23], [23, 23]]) {
       g.beginPath(); g.moveTo(cx, cy - 5); g.lineTo(cx + 4, cy + 4); g.lineTo(cx - 4, cy + 4); g.closePath(); g.fill();
     }
@@ -49,20 +49,20 @@ export function drawCell(g, c, x, y, s, scale = 1) {
     const d = c.slice(7);
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
-    g.strokeStyle = '#f2c94c'; g.lineWidth = 2;
+    g.strokeStyle = INK.spring; g.lineWidth = 2;
     g.beginPath(); g.moveTo(-8, 0);
     for (let i = 0; i < 4; i++) { g.lineTo(-6 + i * 4, -6); g.lineTo(-4 + i * 4, 6); }
     g.lineTo(9, 0); g.stroke();
-    g.fillStyle = '#f2c94c'; g.fillRect(10, -10, 4, 20);
+    g.fillStyle = INK.spring; g.fillRect(10, -10, 4, 20);
     g.restore();
   } else if (c.startsWith('gate:')) {
     // Rails along the sides it blocks, and a chevron for each way it lets through.
     const ds = c.slice(5).split(','), across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
-    g.fillStyle = '#141c50'; g.fillRect(1, 1, T - 2, T - 2);
+    g.fillStyle = INK.gateBg; g.fillRect(1, 1, T - 2, T - 2);
     g.fillStyle = INK.wall;
     if (!upDown) { g.fillRect(1, 1, T - 2, 5); g.fillRect(1, T - 6, T - 2, 5); }
     if (!across) { g.fillRect(1, 1, 5, T - 2); g.fillRect(T - 6, 1, 5, T - 2); }
-    g.strokeStyle = '#7fe3a0'; g.lineWidth = 2.6; g.lineJoin = 'round';
+    g.strokeStyle = INK.gateArrow; g.lineWidth = 2.6; g.lineJoin = 'round';
     for (const d of ds) {
       g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
       g.beginPath(); g.moveTo(2, -6); g.lineTo(8, 0); g.lineTo(2, 6); g.stroke();
@@ -79,7 +79,7 @@ export function drawCell(g, c, x, y, s, scale = 1) {
     // A catcher: a block with a coloured eye that glows while a beam holds it.
     const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
-    g.fillStyle = lit ? INK[col] : '#10163f';
+    g.fillStyle = lit ? INK[col] : INK.unlit;
     g.beginPath(); g.arc(16, 16, 8.5, 0, Math.PI * 2); g.fill();
     g.strokeStyle = INK[col]; g.lineWidth = 3; g.stroke();
     if (lit) { g.globalAlpha = 0.35; g.fillStyle = INK[col]; g.beginPath(); g.arc(16, 16, 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }

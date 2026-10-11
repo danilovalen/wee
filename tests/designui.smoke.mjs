@@ -36,7 +36,7 @@ try {
   const pixel = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round((x + 0.5) * t), Math.round((y + 0.5) * t), 1, 1).data]; }, [x, y]);
   const edge = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round(x * t + 2 * t / 32), Math.round((y + 0.5) * t), 1, 1).data]; }, [x, y]);
   const [r, gr] = await edge(2, 8), [r2, g2, b2] = await pixel(1, 1), [r3] = await edge(1, 1);
-  check('a trap is framed red, a stop that can still win is the usual dot with no frame', r > 150 && gr < 80 && g2 > 150 && b2 > 150 && r3 < 150, JSON.stringify([await edge(2, 8), await pixel(1, 1), await edge(1, 1)]));
+  check('a trap is framed red, a stop that can still win is the usual dot with no frame', r > 150 && gr < 80 && r2 < 150 && b2 > 200 && r3 - (await edge(1, 1))[1] < 40, JSON.stringify([await edge(2, 8), await pixel(1, 1), await edge(1, 1)]));
   await page.click('#stopsBtn');
 
   // A box where nothing ever needs it: named in the notes, and framed on the map.

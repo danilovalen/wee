@@ -23,7 +23,7 @@ export function startSnow(cv) {
     const w = innerWidth, h = innerHeight;
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     g.clearRect(0, 0, w, h);
-    g.fillStyle = 'rgba(234,246,255,.5)';
+    g.fillStyle = 'rgba(110,120,150,.32)';
     for (const f of flakes) {
       if (!reduce) {
         f.y = (f.y + 2 * f.fall + wind.y * f.r * 0.0016 + 1) % 1;

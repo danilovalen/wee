@@ -44,7 +44,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   }
   if (over && over.sel) {
     const r = over.sel;
-    g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.setLineDash([6, 4]);
+    g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([6, 4]);
     g.strokeRect(r.x0 * T + 1, r.y0 * T + 1, (r.x1 - r.x0 + 1) * T - 2, (r.y1 - r.y0 + 1) * T - 2); g.setLineDash([]);
   }
   if (over && over.paste) {
@@ -63,8 +63,8 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     }
   }
   if (hover) {
-    g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2;
-    g.strokeRect(hover.x * T + 1, hover.y * T + 1, T - 2, T - 2);
+    g.strokeStyle = INK.mark; g.globalAlpha = 0.5; g.lineWidth = 2;
+    g.strokeRect(hover.x * T + 1, hover.y * T + 1, T - 2, T - 2); g.globalAlpha = 1;
   }
 }
 
@@ -140,7 +140,7 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     };
     g.lineJoin = 'round'; g.lineCap = 'round';
     g.strokeStyle = INK.beam; g.globalAlpha = 0.25 + 0.08 * Math.sin(now / 90); g.lineWidth = 9; line();
-    g.globalAlpha = 1; g.lineWidth = 2.5; g.strokeStyle = '#ffd0d0'; line();
+    g.globalAlpha = 1; g.lineWidth = 2.5; g.strokeStyle = INK.beam; line();
     g.lineCap = 'butt';
   }
   // A boomerang kicks up a puff of cloud where you turned, blown the way you were going.

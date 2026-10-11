@@ -3,7 +3,7 @@
 import { INK } from './ink.js';
 
 const PX = 4;
-const CELL = { wall: INK.wall, water: INK.water, sticky: INK.goo, goal: INK.goal, death: '#000000', checkpoint: INK.flag };
+const CELL = { wall: INK.wall, water: INK.water, sticky: INK.goo, goal: INK.goal, death: INK.deathBg, checkpoint: INK.flag };
 const PIECE = { box: INK.box, heavy: INK.heavy, mover: INK.mover, enemy: INK.enemy, strong: INK.strong, turret: INK.barrel };
 
 export function thumbURL(level) {

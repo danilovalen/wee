@@ -277,7 +277,7 @@ try {
   await page.click('#stopsBtn');
   await page.waitForFunction(() => document.getElementById('lensLegend').textContent.includes('tiles you can stop on'));
   check('Lenses open on Stops, counting the tiles you can stop on', (await page.textContent('#lensLegend')).includes('Dots: 4 tiles'), await page.textContent('#lensLegend'));
-  const dot = async (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * t), Math.round((y + 0.5) * t), 1, 1).data; return d[1] > 150 && d[2] > 150; }, [x, y]);
+  const dot = async (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * t), Math.round((y + 0.5) * t), 1, 1).data; return d[0] < 150 && d[2] > 200; }, [x, y]); // the player's sky on a light gray floor
   // The legend can land a frame before the room draws the dots, so let two frames pass first.
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   check('a stop gets a dot, a tile you only slide over does not', await dot(4, 2) && !(await dot(2, 2)));
@@ -528,7 +528,7 @@ try {
 
   // Manga: "on" is an accent ring inside a sticker shadow, and no control draws a border.
   const onLook = await page.$eval('[data-tool].on', b => { const c = getComputedStyle(b); return { shadow: c.boxShadow, border: c.borderTopWidth, accent: c.color }; });
-  check('a picked tool wears the accent inset ring and no border', onLook.shadow.includes('inset') && onLook.shadow.includes(onLook.accent + ' 0px 0px 0px 2px inset') && onLook.accent === 'rgb(255, 201, 61)' && onLook.border === '0px', JSON.stringify(onLook));
+  check('a picked tool wears the accent inset ring and no border', onLook.shadow.includes('inset') && onLook.shadow.includes(onLook.accent + ' 0px 0px 0px 2px inset') && onLook.accent === 'rgb(123, 108, 255)' && onLook.border === '0px', JSON.stringify(onLook));
   // a disabled power reads as disabled and cannot be ticked
   const hook = page.locator('[data-power=hook]');
   check('a power that cannot act yet is disabled', await hook.isDisabled());

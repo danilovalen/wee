@@ -1,5 +1,5 @@
 :root {
-  --paper: #121a4a; --panel: #1c2766; --rule: #33418f; --ink: #fff8e8; --soft: #aab6ec; --accent: #ffc93d; --on-accent: #1a1f4a; --field: rgba(255,255,255,0.07); --field-rule: rgba(255,255,255,0.15); --sticker: #0a0f33; --inset-rim: rgba(200,210,255,0.16); --btn-mix: 60%; --selectable: #ffc93d; --r-s: 8px; --r-m: 10px; --r-l: 16px; --r-pill: 999px; --sticker-rest: 4px; --sticker-hover: 6px; --sticker-press: 1px; --ice: #8fdcff; --frost: 78%;
+  --paper: #eceef2; --panel: #f8f9fb; --rule: #dde0e6; --ink: #2a2730; --soft: #6f6876; --accent: #7b6cff; --on-accent: #fff; --field: rgba(0,0,0,0.05); --field-rule: rgba(0,0,0,0.12); --sticker: #c8ccd5; --inset-rim: rgba(0,0,0,0.08); --btn-mix: 60%; --selectable: #7b6cff; --r-s: 8px; --r-m: 10px; --r-l: 16px; --r-pill: 999px; --sticker-rest: 4px; --sticker-hover: 6px; --sticker-press: 1px; --ice: #4cc9ff; --frost: 78%;
   --text-face: 'Bitter', Georgia, serif; --label-face: 'Asap', 'Helvetica Neue', Arial, sans-serif; --wee-face: 'Comfortaa', 'Asap', sans-serif;
   /* The names the older rules use, mapped onto the tokens. */
   --bg: var(--paper); --text: var(--ink); --dim: var(--soft); --line: var(--rule); --radius: var(--r-m);
@@ -11,12 +11,12 @@ html, body { overscroll-behavior: none; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 var(--body); }
 header { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0; }
 /* Drift: a thin, spaced wordmark with a sheen passing over it. */
-.logo { font: 700 22px var(--wee-face); letter-spacing: .04em; margin-right: 8px; background: linear-gradient(100deg, var(--accent) 40%, var(--ink) 50%, var(--accent) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
+.logo { font: 700 22px var(--wee-face); letter-spacing: .04em; margin-right: 8px; background: linear-gradient(100deg, var(--accent) 40%, #c9c2ff 50%, var(--accent) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
 @keyframes sheen { to { background-position: -300% 0; } }
 .spacer { flex: 1; }
 /* The sticker shadow: hard, lifts on hover, sinks on press. "On" is a pink ring inside. */
 button {
-  font: inherit; color: var(--text); background: color-mix(in srgb, var(--panel) var(--btn-mix), #fff 8%); border: 0;
+  font: inherit; color: var(--text); background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 0;
   border-radius: var(--r-s); padding: 6px 12px; cursor: pointer;
   box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker);
   transition: transform .15s cubic-bezier(.4,0,.2,1), box-shadow .15s cubic-bezier(.4,0,.2,1), background .12s;
@@ -105,13 +105,13 @@ dialog { background: var(--panel); color: var(--text); border: 0; border-radius:
 dialog textarea { width: 100%; font: 12px monospace; background: var(--bg); color: var(--text); border: 0; border-radius: var(--r-s); }
 dialog::backdrop { background: rgba(0,0,0,.6); }
 
-.moves { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted, #8e98ad); align-self: center; }
+.moves { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--dim); align-self: center; }
 .win { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 8px; align-items: center;
-  background: #10131bee; box-shadow: inset 0 0 0 2px #f2c14e, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-l); padding: 16px 20px; z-index: 5; }
+  background: var(--panel); box-shadow: inset 0 0 0 2px #ffc23d, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-l); padding: 16px 20px; z-index: 5; }
 .win[hidden] { display: none; }
-.win b { color: #f2c14e; font-size: 1.15em; }
+.win b { color: #9a6a00; font-size: 1.15em; }
 .stuck { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; white-space: nowrap;
-  background: #10131bee; box-shadow: inset 0 0 0 2px #e5484d, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-m); padding: 6px 10px; z-index: 5; }
+  background: var(--panel); box-shadow: inset 0 0 0 2px #e5484d, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-m); padding: 6px 10px; z-index: 5; }
 .stuck[hidden] { display: none; }
 .check { display: flex; gap: 8px; align-items: center; margin: 4px 0 0; font-size: 0.9em; }
 .check:has(#checkText:empty) { display: none; }
@@ -123,37 +123,37 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .logo { margin-right: 2px; }
 }
 
-.rooms { width: min(560px, 100vw - 16px); max-height: calc(100vh - 16px); background: var(--panel, #161a24); color: inherit; border: 0; border-radius: var(--r-l); padding: 14px; }
+.rooms { width: min(560px, 100vw - 16px); max-height: calc(100vh - 16px); background: var(--panel); color: inherit; border: 0; border-radius: var(--r-l); padding: 14px; }
 .rooms::backdrop { background: #0008; }
 .roomsHead { display: flex; justify-content: space-between; align-items: center; font-size: 1.1em; }
 .rooms .field { display: grid; gap: 4px; margin: 8px 0; }
-.rooms input[type=text], .rooms textarea { width: 100%; box-sizing: border-box; background: var(--sticker); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px 8px; font: inherit; }
+.rooms input[type=text], .rooms textarea { width: 100%; box-sizing: border-box; background: var(--field); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px 8px; font: inherit; }
 .rooms .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-.rooms h3 { margin: 12px 0 6px; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; color: var(--muted, #8e98ad); }
+.rooms h3 { margin: 12px 0 6px; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
 .roomList { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.roomList .empty { color: var(--muted, #8e98ad); font-size: 0.9em; }
+.roomList .empty { color: var(--dim); font-size: 0.9em; }
 .roomRow { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; }
 .roomRow span { display: grid; }
-.roomRow small { color: var(--muted, #8e98ad); }
+.roomRow small { color: var(--dim); }
 .thumb { width: 56px; height: auto; max-height: 56px; object-fit: contain; border-radius: var(--r-s); flex: none; }
-.rooms select { background: var(--sticker); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px 8px; font: inherit; }
+.rooms select { background: var(--field); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px 8px; font: inherit; }
 .explored { margin: 6px 0 10px; }
-.explored summary { cursor: pointer; color: var(--muted, #8e98ad); }
+.explored summary { cursor: pointer; color: var(--dim); }
 .explored ul { columns: 2; margin: 4px 0; padding-left: 18px; font-size: 0.9em; }
 .lint { margin: 4px 0 0; font-size: 0.9em; max-width: 100%; }
-.lint summary { cursor: pointer; color: #f2c14e; }
+.lint summary { cursor: pointer; color: #9a6a00; }
 .lint ul { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 4px; }
 .lint button { text-align: left; width: 100%; }
 .sides { display: grid; grid-template-columns: auto repeat(4, minmax(0, 1fr)); gap: 4px; align-items: center; margin-top: 6px; }
 .sides button { min-width: 0; padding-left: 0; padding-right: 0; }
-.sides span { font-size: 0.85em; color: var(--muted, #8e98ad); }
+.sides span { font-size: 0.85em; color: var(--dim); }
 .sides #border { grid-column: 1 / -1; }
 .roomBox { margin-bottom: 10px; }
 #codeIn { flex: 1; min-width: 0; }
 
 .genNums { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: end; margin: 8px 0; }
 .genNums label { display: grid; gap: 2px; font-size: 0.9em; }
-.genNums input { width: 4.5em; box-sizing: border-box; background: var(--sticker); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px; font: inherit; }
+.genNums input { width: 4.5em; box-sizing: border-box; background: var(--field); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px; font: inherit; }
 .genNums #genSeed { width: 6.5em; }
 .genIng { list-style: none; margin: 6px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 12px; }
 .genIng label { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.9em; }
@@ -212,7 +212,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .wellBody .lensBox { max-width: none; }
 @media (max-width: 700px) {
   /* A phone: the well is a sheet over the bottom of the screen. */
-  .well { position: fixed; left: 0; right: 0; bottom: 0; max-height: 55vh; z-index: 30; box-shadow: 0 -8px 24px rgba(0,0,0,.45); }
+  .well { position: fixed; left: 0; right: 0; bottom: 0; max-height: 55vh; z-index: 30; box-shadow: 0 -8px 24px rgba(40,44,60,.18); }
   .statusBar { max-width: none; }
 }
 @media (min-width: 701px) {
@@ -274,7 +274,7 @@ body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
 .roomArea { padding: 0; }
 @media (max-width: 700px) { .roomArea { padding: 0 0 8px; } }
 #sizeBtn { font-variant-numeric: tabular-nums; }
-.sizePop { position: fixed; z-index: 40; background: var(--panel); border: 0; border-radius: var(--r-m); padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45); width: 260px; }
+.sizePop { position: fixed; z-index: 40; background: var(--panel); border: 0; border-radius: var(--r-m); padding: 10px 12px; box-shadow: 0 8px 24px rgba(40,44,60,.18); width: 260px; }
 .sizePop[hidden] { display: none; }
 /* Between a phone and a desktop the tools are icons, named on hover, so the room keeps the width. */
 @media (min-width: 701px) and (max-width: 1100px) {

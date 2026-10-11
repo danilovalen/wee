@@ -41,7 +41,7 @@ try {
   await page.waitForTimeout(120);
   check('hovering a tile names it and what the lenses know', /^Tile 4, 1: Empty floor .*a laser reaches here/.test(await page.textContent('#info')) && await page.locator('#keys').isHidden(), await page.textContent('#info'));
   const beam = await pixel(4, 1);
-  check('and the beam\'s tiles turn red', beam[0] > floor[0] + 40 && beam[0] > beam[1] + 30, JSON.stringify([floor, beam]));
+  check('and the beam\'s tiles turn red', beam[0] - beam[1] > floor[0] - floor[1] + 30, JSON.stringify([floor, beam]));
   await page.click('[data-tool=box]');
   await settle();
   check('picking a box opens Pieces instead', await on('colour') === 'pieces' && (await legend()).includes('box, block or enemy'), await legend());
@@ -69,8 +69,8 @@ try {
   await page.click('[data-lens-group=colour][data-lens=off]');
   await page.click('[data-lens-group=dots][data-lens=passes]');
   await settle();
-  const big = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'); const at = (x, y, dx) => g.getImageData(Math.round((x + 0.5) * t + dx * t / 32), Math.round((y + 0.5) * t), 1, 1).data[2]; return { stopEdge: at(4, 1, 3), passEdge: at(3, 1, 3), passCentre: at(3, 1, 0) }; });
-  check('Passes draws a big dot on a stop and a small one where you slide through', (await legend()).includes('small where you only pass') && big.stopEdge > 150 && big.passEdge < 100 && big.passCentre > 80, JSON.stringify(big) + await legend());
+  const big = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'); const at = (x, y, dx) => g.getImageData(Math.round((x + 0.5) * t + dx * t / 32), Math.round((y + 0.5) * t), 1, 1).data[0]; return { stopEdge: at(4, 1, 3), passEdge: at(3, 1, 3), passCentre: at(3, 1, 0) }; }); // red: low on a sky dot, high on the gray floor
+  check('Passes draws a big dot on a stop and a small one where you slide through', (await legend()).includes('small where you only pass') && big.stopEdge < 150 && big.passEdge > 180 && big.passCentre < 200, JSON.stringify(big) + await legend());
   // Moves: arrows between stops; Danger: where a move kills you, framed and crossed.
     await page.click('[data-lens-group=dots][data-lens=off]');
   await page.click('[data-lens-group=lines][data-lens=moves]');

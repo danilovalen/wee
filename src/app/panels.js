@@ -45,14 +45,14 @@ function icon(tool) {
     const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'select') {
-    x.strokeStyle = '#c3cad8'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
+    x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
   } else if (tool === 'look') {
-    x.strokeStyle = '#c3cad8'; x.lineWidth = 2.5;
+    x.strokeStyle = '#6f6876'; x.lineWidth = 2.5;
     x.beginPath(); x.arc(14, 14, 7, 0, Math.PI * 2); x.moveTo(19, 19); x.lineTo(26, 26); x.stroke();
   } else if (tool === 'receiver') {
     const l = emptyLevel(1, 1); l.cells[0] = 'receiver:red'; l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'erase') {
-    x.strokeStyle = '#8e98ad'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
+    x.strokeStyle = '#6f6876'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
   } else if (tool === 'start') {
     x.fillStyle = INK.player; x.beginPath(); x.arc(16, 16, 10, 0, Math.PI * 2); x.fill();
   } else if (tool === 'turret') drawPiece(x, { kind: 'turret', turret: { dirs: ['up', 'right'], mode: 'input' } }, 0, 0);
