@@ -1,6 +1,9 @@
 // The room's size: a "+" on each edge of the room adds a row or a column there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
-import { $ } from './dom.js';
+import { $, canvas } from './dom.js';
+import { S } from '../editor/state.js';
+import { moveSide } from '../level/format.js';
+import { change } from './undo.js';
 
 export function syncSize(level) {
   $('sizeBtn').textContent = `${level.w}×${level.h}`;
@@ -14,9 +17,46 @@ function place() {
 export function closeSize() { $('sizePop').hidden = true; $('sizeBtn').setAttribute('aria-expanded', 'false'); }
 function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('aria-expanded', 'true'); place(); }
 
-export function buildSize() {
-  // A handle does what the popover's Add arrow on that side does, so there is one way to add.
-  document.querySelectorAll('[data-plus]').forEach(b => b.onclick = () => document.querySelector(`[data-side=${b.dataset.plus}][data-delta="1"]`).click());
+// A grip on each edge: a tap adds a line, a drag outward adds as many as it covers and a drag
+// inward cuts them. While dragging, a band shows the lines that would come or go, red when the
+// cut would take something you placed (then letting go changes nothing).
+const OUT = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] };
+function grip(b, after) {
+  const side = b.dataset.plus, wrap = $('roomWrap');
+  let from = null, n = 0;
+  const band = document.createElement('div'); band.className = 'sizeBand'; band.hidden = true; wrap.append(band);
+  const tile = () => canvas.getBoundingClientRect().width / S.level.w;
+  const show = () => {
+    const t = tile(), c = canvas.getBoundingClientRect(), w = wrap.getBoundingClientRect(), ok = !!moveSide(S.level, side, n);
+    const len = Math.abs(n) * t, out = n > 0, x0 = c.left - w.left, y0 = c.top - w.top;
+    const box = { top: [x0, out ? y0 - len : y0, c.width, len], bottom: [x0, out ? y0 + c.height : y0 + c.height - len, c.width, len],
+      left: [out ? x0 - len : x0, y0, len, c.height], right: [out ? x0 + c.width : x0 + c.width - len, y0, len, c.height] }[side];
+    Object.assign(band.style, { left: box[0] + 'px', top: box[1] + 'px', width: box[2] + 'px', height: box[3] + 'px' });
+    band.classList.toggle('cut', n < 0); band.classList.toggle('no', !ok);
+    band.textContent = n > 0 ? '+' + n : '\u2212' + -n;
+    band.hidden = n === 0;
+  };
+  b.addEventListener('pointerdown', ev => { from = { x: ev.clientX, y: ev.clientY, moved: false }; n = 0; b.setPointerCapture(ev.pointerId); ev.preventDefault(); });
+  b.addEventListener('pointermove', ev => {
+    if (!from) return;
+    const [ux, uy] = OUT[side], d = (ev.clientX - from.x) * ux + (ev.clientY - from.y) * uy;
+    if (Math.abs(d) > 6) from.moved = true;
+    if (!from.moved) return;
+    n = Math.round(d / tile()); show();
+  });
+  const done = ev => {
+    if (!from) return;
+    const k = from.moved ? n : 1; from = null; band.hidden = true;
+    if (!k || ev.type === 'pointercancel') return;
+    const l = moveSide(S.level, side, k);
+    if (!l) { $('placeHint').textContent = k < 0 ? 'That cut would take something you placed.' : 'The room cannot grow that far.'; return; }
+    change(() => { S.level = l; }); after();
+  };
+  b.addEventListener('pointerup', done); b.addEventListener('pointercancel', done);
+}
+
+export function buildSize({ after }) {
+  document.querySelectorAll('[data-plus]').forEach(b => grip(b, after));
   $('sizeBtn').onclick = () => ($('sizePop').hidden ? openSize() : closeSize());
   document.addEventListener('pointerdown', ev => { if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize(); });
   addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSize(); });

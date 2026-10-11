@@ -7,7 +7,7 @@ export const T = 32;
 
 // Fog (docs/MANGA_THEME.md): a neutral gray room, and every thing in it its own saturated pastel.
 export const INK = {
-  puff: '#ffffff',
+  puff: '#9fd8ff',
   goo: '#9be15d', gooDark: '#5a9a2b', idoor: '#33363f', goal: '#ffc23d',
   water: '#5aa9ff', waterHi: '#c2e2ff', shock: '#fff3a8',
   armor: '#b9c7e6',

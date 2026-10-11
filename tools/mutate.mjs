@@ -84,7 +84,7 @@ const M = [
   ['src', "  for (const k of S.pending) S.keylog.push({ t: game.tick, k });\n", "", 'phone'],
   ['src', "S.played = JSON.parse(JSON.stringify(from)); S.keylog = [];", "S.played = from; S.keylog = [];", 'phone'],
   ['style.css', ".opt[hidden] { display: none; }", "", 'browser'],
-  ['src', "const room = wide ? area.clientHeight - 2 * EDGE : portrait() ? innerHeight * 0.62", "const room = portrait() ? innerHeight * 0.62 : wide ? area.clientHeight - 2 * EDGE", 'fit'],
+  ['src', "const room = wide ? area.clientHeight - 2 * EDGE\n", "const room = portrait() ? innerHeight * 0.62 : wide ? area.clientHeight - 2 * EDGE\n", 'fit'],
   ['style.css', "  .grid button { flex-direction: column; justify-content: center; text-align: center; gap: 1px; padding: 3px 2px; font-size: 10.5px; line-height: 1.1; white-space: normal; }\n}", "}", 'fit'],
   ['src', "wide = innerWidth > 700;", "wide = innerWidth > 900;", 'fit'],
   ['style.css', "grid-template-columns: 300px", "grid-template-columns: 200px", 'browser'],
@@ -418,7 +418,8 @@ const M = [
   ['src', ": { ...level, cells: walled(e.y * level.w + e.x), entities: rest };", ": null;", 'design'],
   ['src', "const stand = held.has(i) || c.startsWith('receiver:') ? null", "const stand = c.startsWith('receiver:') ? null", 'design'],
   ['src', "export const variants = (g, l) => [knock(g, l), standIn(g, l)].filter(Boolean);", "export const variants = (g, l) => [knock(g, l)];", 'gen'],
-  ['src', "wide ? area.clientHeight - 2 * EDGE :", "wide ? innerHeight - canvas.getBoundingClientRect().top - 170 :", 'fit'],
+  ['src', "const room = wide ? area.clientHeight - 2 * EDGE\n", "const room = wide ? innerHeight - canvas.getBoundingClientRect().top - 170\n", 'fit'],
+  ['src', "    : S.mode === 'play' ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE\n", "    : S.mode === 'play' ? innerHeight * 0.62\n", 'phone'],
   ['src', "  new ResizeObserver(() => requestAnimationFrame(fit)).observe($('roomArea'));", "", 'fit'],
   ['src', "if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }", "canvas.width = cw; canvas.height = ch;", 'designui'],
   ['src', "e.turret ? e.turret.aim % e.turret.dirs.length : -1", "e.turret ? e.turret.aim : -1", 'solve'],
@@ -454,7 +455,7 @@ const M = [
   ['src', "const show = S.lens.open && S.mode === 'edit';", "const show = S.lens.open;", 'fit'],
   ['src', "onclick: () => openWell('lenses') }", "onclick: () => {} }", 'lensui'],
   // room size on the edges and in the status bar; icon tools when narrow (U3)
-  ['src', "forEach(b => b.onclick = () => document.querySelector(`[data-side=${b.dataset.plus}][data-delta=\"1\"]`).click());", "forEach(b => b.onclick = () => {});", 'browser'],
+  ['src', "document.querySelectorAll('[data-plus]').forEach(b => grip(b, after));", "", 'browser'],
   ['src', "  syncSize(level);\n", "", 'browser'],
   ['src', "addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSize(); });", "", 'browser'],
   ['src', "if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize();", "", 'browser'],
@@ -495,6 +496,11 @@ const M = [
   ['src/rules/pieces.js', "if ((e.x === x && e.y === y) || onGravel(s, e))", "if (e.x === x && e.y === y)", 'sim'],
   ['src/rules/pieces.js', "e.slide = onGravel(s, e) ? null : t.d;", "e.slide = t.d;", 'sim'],
   ['src/view/masses.js', "for (const kind of ['gravel', 'water', 'sticky', 'death', 'wall']) {", "for (const kind of ['water', 'sticky', 'death', 'wall']) {", 'browser'],
+  ['src/level/format.js', "if (!clear || at(l.start) || l.entities.some(at)) return null;", "if (at(l.start)) return null;", 'size'],
+  ['src/level/format.js', "const wall = bordered(l, side), k = wall ?", "const wall = false, k = wall ?", 'size'],
+  ['src/level/format.js', "  if (!bordered(l, side)) return resizeSide(l, side, 1);", "  return resizeSide(l, side, 1);", 'size'],
+  ['src/app/size.js', "const k = from.moved ? n : 1;", "const k = 1;", 'browser'],
+  ['src/app/size.js', "band.classList.toggle('no', !ok);", "", 'browser'],
   ['src/view/ink.js', "player: '#4cc9ff'", "player: '#e4e7ec'", 'browser'],
   ['style.css', "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 0;", "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 1px solid var(--line);", 'manga'],
   ['style.css', "button.on { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest)", "button.on { color: var(--accent); box-shadow: var(--sticker-rest)", 'browser'],
@@ -519,7 +525,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses', 'size'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }

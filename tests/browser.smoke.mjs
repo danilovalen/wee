@@ -300,6 +300,25 @@ try {
   await page.click('[data-plus=right]');
   check('the + on an edge adds a column there, and the size readout follows', (await text()).level.w === 6 && (await page.textContent('#sizeBtn')) === '6\u00d73', await page.textContent('#sizeBtn'));
   await page.click('#undo');
+  // Dragging a grip: outward adds as many lines as it covers, inward cuts, one undo step each.
+  const drag = async (side, tiles) => {
+    const b = page.locator(`[data-plus=${side}]`); await page.hover('#game'); const r = await b.boundingBox();
+    const t = await page.evaluate(() => document.getElementById('game').getBoundingClientRect().width / window.wee.getLevel().w);
+    const [ux, uy] = { right: [1, 0], left: [-1, 0], top: [0, -1], bottom: [0, 1] }[side];
+    await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2); await page.mouse.down();
+    await page.mouse.move(r.x + r.width / 2 + ux * tiles * t, r.y + r.height / 2 + uy * tiles * t, { steps: 8 });
+    const band = await page.evaluate(() => { const b = document.querySelector('.sizeBand:not([hidden])'); return b && { text: b.textContent, no: b.classList.contains('no') }; });
+    await page.mouse.up();
+    return band;
+  };
+  const b2 = await drag('bottom', 2);
+  check('dragging the bottom grip down two tiles adds two rows, and shows +2 first', (await text()).level.h === 5 && b2 && b2.text === '+2', JSON.stringify(b2) + (await text()).level.h);
+  await drag('bottom', -1);
+  check('dragging it back up one cuts one', (await text()).level.h === 4);
+  await page.click('#undo'); await page.click('#undo');
+  check('each drag is one undo step', (await text()).level.h === 3);
+  const bad = await drag('top', -1);
+  check('a cut that would take the start shows red and changes nothing', bad && bad.no && (await text()).level.h === 3, JSON.stringify(bad));
   check('the size readout opens the size controls', await page.locator('#sizePop').isHidden() && await page.click('#sizeBtn').then(() => page.locator('#sizePop').isVisible()));
   await page.keyboard.press('Escape');
   check('Escape shuts them', await page.locator('#sizePop').isHidden());
@@ -398,15 +417,25 @@ try {
     for (let x = Math.ceil(tile); x < c.width - tile; x++) {
       if (Math.abs(x / tile - (px + 0.5)) < 1.2) continue;
       const i = x * 4, r = row[i], g = row[i + 1], b = row[i + 2];
-      if (Math.abs(r - b) < 40) best = Math.max(best, r + g + b);
+      best = Math.max(best, b - r);
     }
     return best;
   });
-  check('a boomerang leaves a cloud ahead of where you turned', puff > 200, String(puff));
+  check('a boomerang leaves a cloud ahead of where you turned', puff > 30, String(puff)); // a blue cloud on the gray floor (b - r = 8)
   // a side key pressed right after a tick is aimed from the tile you were drawn on
   await page.keyboard.press('ArrowRight'); await page.evaluate(() => window.advanceTime(60));
   await page.keyboard.press('ArrowUp'); await page.evaluate(() => window.advanceTime(60));
   check('an early side key goes in as an aimed-back shot', JSON.parse(await page.evaluate(() => window.wee.report())).keys.some(k => k.k === 'back:up'));
+  // a report replays to exactly the state the run ended in, including a power turned off mid-run
+  await page.locator('[data-power=boomerang]').setChecked(false);
+  await page.keyboard.press('ArrowDown'); await page.evaluate(() => window.advanceTime(1500));
+  const same = await page.evaluate(() => {
+    const r = JSON.parse(window.wee.report());
+    const again = JSON.parse(window.wee.gameText(window.wee.replay(r.level, r.keys, r.ticks)));
+    return JSON.stringify(again) === JSON.stringify(r.end) && r.level.powers.boomerang === true && r.keys.some(k => k.k === 'power:boomerang:0');
+  });
+  check('a copied report replays to the same end, with a power turned off mid-run', same);
+  await page.locator('[data-power=boomerang]').setChecked(true);
   await page.keyboard.press('e');
 
   // undo takes back a whole drag in one step, redo puts it back, and both keys work

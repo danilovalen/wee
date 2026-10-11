@@ -77,12 +77,22 @@ try {
   await page.click('#mode');
   await page.evaluate(() => { window.__manualClock = true; });
   check('the play buttons show in play', await page.locator('#hideBtn').isVisible());
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const full = await page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, h: innerHeight, tools: !!document.getElementById('tools').offsetParent, bottom: document.getElementById('pad').getBoundingClientRect().bottom, room: document.getElementById('game').getBoundingClientRect().height }));
+  check('play takes one screen: nothing scrolls, the editor is gone, the buttons are on screen', full.scroll <= full.h + 1 && !full.tools && full.bottom <= full.h, JSON.stringify(full));
   // a swipe right: the player starts at (1,1) and slides to the wall
   const s0 = at(3, 3), s1 = at(6, 3);
   await page.mouse.move(s0.x, s0.y); await page.mouse.down(); await page.mouse.move(s1.x, s1.y, { steps: 6 }); await page.mouse.up();
   await page.evaluate(() => window.advanceTime(1200));
   let s = await text();
   check('a swipe slides the player', s.player.x === lv.w - 2 && s.player.y === 1, JSON.stringify(s.player));
+  // A swipe that starts off the room still moves you.
+  await page.click('#respawnBtn'); await page.evaluate(() => window.advanceTime(60));
+  const off = await page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), p = document.getElementById('pad').getBoundingClientRect(); return { x: 30, y: Math.round((c.bottom + p.top) / 2), gap: p.top - c.bottom, inRoom: document.elementFromPoint(30, (c.bottom + p.top) / 2) === document.getElementById('game') }; });
+  await page.mouse.move(off.x, off.y); await page.mouse.down(); await page.mouse.move(off.x, off.y + 80, { steps: 6 }); await page.mouse.up();
+  await page.evaluate(() => window.advanceTime(1200));
+  s = await text();
+  check('a swipe that starts off the room moves you too', !off.inRoom && s.player.y > 1, JSON.stringify({ off, p: s.player }));
   await page.click('#respawnBtn');
   await page.evaluate(() => window.advanceTime(60));
   s = await text();
@@ -90,24 +100,25 @@ try {
   await page.click('#hideBtn');
   await page.evaluate(() => window.advanceTime(60));
   check('the hide button hides', (await text()).player.hidden);
+  // Powers are set in the editor, so leave play, set one, and come back.
+  const setPower = async (n, on) => { await page.click('#mode'); await page.locator(`[data-power=${n}]`).setChecked(on); await page.click('#mode'); };
   // the tap button names only what the tap does with the powers that are on
   const tapBtn = async () => page.evaluate(() => { const b = document.getElementById('hideBtn'); return b.offsetParent ? b.textContent : null; });
   check('with Cycle alone it says Hide', await tapBtn() === 'Hide', String(await tapBtn()));
-  await page.locator('[data-power=swim]').setChecked(true);
+  await setPower('swim', true);
   check('with Swim too it says Hide / Swim', await tapBtn() === 'Hide / Swim', String(await tapBtn()));
-  await page.locator('[data-power=cycle]').setChecked(false);
+  await setPower('cycle', false);
   check('with Swim alone it says Swim', await tapBtn() === 'Swim', String(await tapBtn()));
-  await page.locator('[data-power=swim]').setChecked(false);
+  await setPower('swim', false);
   check('with neither it is gone', await tapBtn() === null, String(await tapBtn()));
-  await page.locator('[data-power=cycle]').setChecked(true);
-  // a report replays to exactly the state the run ended in, including a power turned off mid-run
-  await page.locator('[data-power=boomerang]').setChecked(false);
+  await setPower('cycle', true);
+  // a report replays to exactly the state the run ended in
   await page.mouse.move(s0.x, s0.y); await page.mouse.down(); await page.mouse.move(s0.x, s0.y + 80, { steps: 6 }); await page.mouse.up();
   await page.evaluate(() => window.advanceTime(1500));
   const same = await page.evaluate(() => {
     const r = JSON.parse(window.wee.report());
     const again = JSON.parse(window.wee.gameText(window.wee.replay(r.level, r.keys, r.ticks)));
-    return JSON.stringify(again) === JSON.stringify(r.end) && r.keys.length >= 4 && r.level.powers.boomerang === true && r.keys.some(k => k.k === 'power:boomerang:0');
+    return JSON.stringify(again) === JSON.stringify(r.end) && r.keys.length >= 1;
   });
   check('a copied report replays to the same end', same);
   const cutPad = await page.evaluate(() => [...document.querySelectorAll('#pad button')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent));

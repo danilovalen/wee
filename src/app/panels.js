@@ -129,7 +129,7 @@ export function buildPanels(actions) {
   $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
   buildWell();
   buildChips();
-  buildSize();
+  buildSize({ after: () => { syncPanel(); fit(); } });
   buildKeys();
   document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });

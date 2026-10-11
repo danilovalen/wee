@@ -54,6 +54,8 @@ export function setMode(m, keep) {
   $('win').hidden = true;
   resetStuck();
   $('moves').textContent = m === 'play' ? 'Moves 0' : '';
+  // On a phone, play takes the whole screen: the room is sized again without the editor.
+  requestAnimationFrame(() => dispatchEvent(new Event('resize')));
   S.fx = [];
   if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }
   syncPanel();

@@ -30,12 +30,23 @@ const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 
 
 export function bindInput() {
   canvas.addEventListener('contextmenu', ev => ev.preventDefault());
+  // In play a swipe can start anywhere off the controls, so a thumb that misses the room
+  // still moves you instead of scrolling the page.
+  const control = t => t.closest && t.closest('button, input, select, textarea, a, dialog, label');
+  window.addEventListener('pointerdown', ev => {
+    if (S.mode === 'play' && !control(ev.target)) S.swipe = { x: ev.clientX, y: ev.clientY, last: null };
+  });
+  window.addEventListener('pointermove', ev => {
+    if (S.mode !== 'play' || !S.swipe) return;
+    const sw = S.swipe, dx = ev.clientX - sw.x, dy = ev.clientY - sw.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_PX) return;
+    const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    if (d !== sw.last) S.pending.push(aim(d));
+    Object.assign(sw, { x: ev.clientX, y: ev.clientY, last: d });
+  });
+  for (const t of ['pointerup', 'pointercancel']) window.addEventListener(t, () => { S.swipe = null; });
   canvas.addEventListener('pointerdown', ev => {
-    if (S.mode === 'play') {
-      S.swipe = { x: ev.clientX, y: ev.clientY, last: null };
-      canvas.setPointerCapture(ev.pointerId);
-      return;
-    }
+    if (S.mode === 'play') return;
     const c = cellFromEvent(ev); if (!c) return;
     if (S.ui.tool === 'look') {
       $('placeHint').textContent = describe(S.level, c.x, c.y);
@@ -53,14 +64,7 @@ export function bindInput() {
     paint(c.x, c.y, S.painting);
   });
   canvas.addEventListener('pointermove', ev => {
-    if (S.mode === 'play' && S.swipe) {
-      const sw = S.swipe, dx = ev.clientX - sw.x, dy = ev.clientY - sw.y;
-      if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_PX) return;
-      const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
-      if (d !== sw.last) S.pending.push(aim(d));
-      Object.assign(sw, { x: ev.clientX, y: ev.clientY, last: d });
-      return;
-    }
+    if (S.mode === 'play') return;
     const c = S.mode === 'edit' ? cellFromEvent(ev) : null;
     // The outline follows a mouse only; a finger would leave it behind on lift.
     S.hover = touch && S.ui.tool !== 'select' ? null : c;

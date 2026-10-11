@@ -75,6 +75,55 @@ export function resizeSide(level, side, delta) {
   return { ...level, w, h, cells, start, entities };
 }
 
+// A side's grip: n > 0 adds n lines, n < 0 cuts them. When that edge is a wall border, the
+// border moves with the grip, so a line goes in or out just inside it and the border stays
+// whole. A cut only takes lines that hold nothing you placed; otherwise it returns null.
+export function moveSide(level, side, n) {
+  let l = level;
+  for (let i = 0; i < Math.abs(n); i++) if (!(l = (n > 0 ? growOnce : cutOnce)(l, side))) return null;
+  return l;
+}
+
+const across = side => side === 'left' || side === 'right';
+// The cells of line k on that axis, as [x, y].
+const lineOf = (l, side, k) => across(side) ? [...Array(l.h).keys()].map(y => [k, y]) : [...Array(l.w).keys()].map(x => [x, k]);
+const edgeIndex = (l, side) => side === 'left' || side === 'top' ? 0 : (across(side) ? l.w : l.h) - 1;
+const bordered = (l, side) => lineOf(l, side, edgeIndex(l, side)).every(([x, y]) => l.cells[y * l.w + x] === 'wall');
+
+function cutOnce(l, side) {
+  const len = across(side) ? l.w : l.h;
+  if (len <= 3) return null;
+  const wall = bordered(l, side), k = wall ? (edgeIndex(l, side) === 0 ? 1 : len - 2) : edgeIndex(l, side);
+  // Inside a border, the line's two ends sit in the other borders, and those walls may go.
+  const end = ([x, y]) => across(side) ? y === 0 || y === l.h - 1 : x === 0 || x === l.w - 1;
+  const clear = lineOf(l, side, k).every(([x, y]) => { const c = l.cells[y * l.w + x]; return c === '' || (wall && c === 'wall' && end([x, y])); });
+  const at = o => (across(side) ? o.x : o.y) === k;
+  if (!clear || at(l.start) || l.entities.some(at)) return null;
+  const w = l.w - (across(side) ? 1 : 0), h = l.h - (across(side) ? 0 : 1);
+  const keep = (x, y) => (across(side) ? x : y) !== k;
+  const shift = o => ({ ...o, x: across(side) && o.x > k ? o.x - 1 : o.x, y: !across(side) && o.y > k ? o.y - 1 : o.y });
+  const cells = [];
+  for (let y = 0; y < l.h; y++) for (let x = 0; x < l.w; x++) if (keep(x, y)) cells.push(l.cells[y * l.w + x]);
+  return { ...l, w, h, cells, start: shift(l.start), entities: l.entities.map(shift) };
+}
+
+function growOnce(l, side) {
+  if (!bordered(l, side)) return resizeSide(l, side, 1);
+  const w = l.w + (across(side) ? 1 : 0), h = l.h + (across(side) ? 0 : 1);
+  if (w > 40 || h > 30) return null;
+  // The new line goes just inside the border; its ends join the other borders.
+  const k = edgeIndex(l, side) === 0 ? 1 : (across(side) ? l.w : l.h) - 1;
+  const shift = o => ({ ...o, x: across(side) && o.x >= k ? o.x + 1 : o.x, y: !across(side) && o.y >= k ? o.y + 1 : o.y });
+  const cells = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const isNew = (across(side) ? x : y) === k;
+    if (isNew) { const end = across(side) ? y === 0 || y === h - 1 : x === 0 || x === w - 1; cells.push(end && l.cells[0] === 'wall' ? 'wall' : ''); continue; }
+    const ox = across(side) && x > k ? x - 1 : x, oy = !across(side) && y > k ? y - 1 : y;
+    cells.push(l.cells[oy * l.w + ox]);
+  }
+  return { ...l, w, h, cells, start: shift(l.start), entities: l.entities.map(shift) };
+}
+
 // Walls on every edge tile, except where the start stands.
 export function wallBorder(level) {
   const cells = [...level.cells], { w, h } = level;

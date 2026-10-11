@@ -287,6 +287,10 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .plus[data-plus=right] { top: 50%; right: -12px; transform: translateY(-50%); }
 .roomWrap:hover .plus, .plus:focus-visible { opacity: 1; }
 @media (pointer: coarse) { .plus { opacity: .85; } }
+.plus { touch-action: none; cursor: grab; }
+.sizeBand { position: absolute; z-index: 1; pointer-events: none; display: grid; place-items: center; font: 800 13px var(--label-face); color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 0 0 0 2px var(--accent); border-radius: var(--r-s); }
+.sizeBand.cut { background: color-mix(in srgb, var(--paper) 70%, transparent); }
+.sizeBand.no { color: #c8283c; background: color-mix(in srgb, #ff4d6d 22%, transparent); box-shadow: inset 0 0 0 2px #ff4d6d; }
 body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
 .roomArea { padding: 0; }
 @media (max-width: 700px) { .roomArea { padding: 0 0 8px; } }
@@ -330,6 +334,13 @@ button, .chip, .wellTabs, .statusBar { font-family: var(--label-face); font-weig
 h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); font-weight: 800; }
 .roomsHead b { font-family: var(--wee-face); font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .logo { animation: none; } }
+
+/* A phone in play: one screen, nothing scrolls, every swipe moves you (register 103). */
+@media (max-width: 700px) {
+  body.play { height: 100dvh; overflow: hidden; touch-action: none; }
+  body.play #tools, body.play #powers, body.play #lensChips, body.play #statusBar, body.play .plus { display: none !important; }
+}
+
 </style>
 </head>
 <body>
@@ -1465,6 +1476,55 @@ function resizeSide(level, side, delta) {
   return { ...level, w, h, cells, start, entities };
 }
 
+// A side's grip: n > 0 adds n lines, n < 0 cuts them. When that edge is a wall border, the
+// border moves with the grip, so a line goes in or out just inside it and the border stays
+// whole. A cut only takes lines that hold nothing you placed; otherwise it returns null.
+function moveSide(level, side, n) {
+  let l = level;
+  for (let i = 0; i < Math.abs(n); i++) if (!(l = (n > 0 ? growOnce : cutOnce)(l, side))) return null;
+  return l;
+}
+
+const across = side => side === 'left' || side === 'right';
+// The cells of line k on that axis, as [x, y].
+const lineOf = (l, side, k) => across(side) ? [...Array(l.h).keys()].map(y => [k, y]) : [...Array(l.w).keys()].map(x => [x, k]);
+const edgeIndex = (l, side) => side === 'left' || side === 'top' ? 0 : (across(side) ? l.w : l.h) - 1;
+const bordered = (l, side) => lineOf(l, side, edgeIndex(l, side)).every(([x, y]) => l.cells[y * l.w + x] === 'wall');
+
+function cutOnce(l, side) {
+  const len = across(side) ? l.w : l.h;
+  if (len <= 3) return null;
+  const wall = bordered(l, side), k = wall ? (edgeIndex(l, side) === 0 ? 1 : len - 2) : edgeIndex(l, side);
+  // Inside a border, the line's two ends sit in the other borders, and those walls may go.
+  const end = ([x, y]) => across(side) ? y === 0 || y === l.h - 1 : x === 0 || x === l.w - 1;
+  const clear = lineOf(l, side, k).every(([x, y]) => { const c = l.cells[y * l.w + x]; return c === '' || (wall && c === 'wall' && end([x, y])); });
+  const at = o => (across(side) ? o.x : o.y) === k;
+  if (!clear || at(l.start) || l.entities.some(at)) return null;
+  const w = l.w - (across(side) ? 1 : 0), h = l.h - (across(side) ? 0 : 1);
+  const keep = (x, y) => (across(side) ? x : y) !== k;
+  const shift = o => ({ ...o, x: across(side) && o.x > k ? o.x - 1 : o.x, y: !across(side) && o.y > k ? o.y - 1 : o.y });
+  const cells = [];
+  for (let y = 0; y < l.h; y++) for (let x = 0; x < l.w; x++) if (keep(x, y)) cells.push(l.cells[y * l.w + x]);
+  return { ...l, w, h, cells, start: shift(l.start), entities: l.entities.map(shift) };
+}
+
+function growOnce(l, side) {
+  if (!bordered(l, side)) return resizeSide(l, side, 1);
+  const w = l.w + (across(side) ? 1 : 0), h = l.h + (across(side) ? 0 : 1);
+  if (w > 40 || h > 30) return null;
+  // The new line goes just inside the border; its ends join the other borders.
+  const k = edgeIndex(l, side) === 0 ? 1 : (across(side) ? l.w : l.h) - 1;
+  const shift = o => ({ ...o, x: across(side) && o.x >= k ? o.x + 1 : o.x, y: !across(side) && o.y >= k ? o.y + 1 : o.y });
+  const cells = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const isNew = (across(side) ? x : y) === k;
+    if (isNew) { const end = across(side) ? y === 0 || y === h - 1 : x === 0 || x === w - 1; cells.push(end && l.cells[0] === 'wall' ? 'wall' : ''); continue; }
+    const ox = across(side) && x > k ? x - 1 : x, oy = !across(side) && y > k ? y - 1 : y;
+    cells.push(l.cells[oy * l.w + ox]);
+  }
+  return { ...l, w, h, cells, start: shift(l.start), entities: l.entities.map(shift) };
+}
+
 // Walls on every edge tile, except where the start stands.
 function wallBorder(level) {
   const cells = [...level.cells], { w, h } = level;
@@ -1475,7 +1535,7 @@ function wallBorder(level) {
   const edge = e => e.x === 0 || e.y === 0 || e.x === w - 1 || e.y === h - 1;
   return { ...level, cells, entities: level.entities.filter(e => !edge(e)) };
 }
-return { checkTurret, emptyLevel, resizeLevel, parseLevel, isCell, resizeSide, wallBorder };
+return { checkTurret, emptyLevel, resizeLevel, parseLevel, isCell, resizeSide, moveSide, wallBorder };
 })();
 // ---- src/editor/history.js
 const m10 = (() => {
@@ -1598,7 +1658,7 @@ const T = 32;
 
 // Fog (docs/MANGA_THEME.md): a neutral gray room, and every thing in it its own saturated pastel.
 const INK = {
-  puff: '#ffffff',
+  puff: '#9fd8ff',
   goo: '#9be15d', gooDark: '#5a9a2b', idoor: '#33363f', goal: '#ffc23d',
   water: '#5aa9ff', waterHi: '#c2e2ff', shock: '#fff3a8',
   armor: '#b9c7e6',
@@ -1627,834 +1687,8 @@ const PUFF_MS = 380;
 const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9, 5], [0.1, -0.9, 5], [1.3, 0.35, 4.5], [1.3, -0.35, 4.5]];
 return { AIM, T, INK, ease, lerp, frame, roundRect, LASER_MS, PUFF_MS, PUFFS };
 })();
-// ---- src/app/size.js
-const m15 = (() => {
-const { $ } = m12;
-// The room's size: a "+" on each edge of the room adds a row or a column there, and the size
-// readout in the status bar opens the rest (width and height, add or cut a side, Border).
-
-function syncSize(level) {
-  $('sizeBtn').textContent = `${level.w}×${level.h}`;
-}
-
-function place() {
-  const pop = $('sizePop'), r = $('sizeBtn').getBoundingClientRect();
-  pop.style.bottom = `${innerHeight - r.top + 6}px`;
-  pop.style.left = `${Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8))}px`;
-}
-function closeSize() { $('sizePop').hidden = true; $('sizeBtn').setAttribute('aria-expanded', 'false'); }
-function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('aria-expanded', 'true'); place(); }
-
-function buildSize() {
-  // A handle does what the popover's Add arrow on that side does, so there is one way to add.
-  document.querySelectorAll('[data-plus]').forEach(b => b.onclick = () => document.querySelector(`[data-side=${b.dataset.plus}][data-delta="1"]`).click());
-  $('sizeBtn').onclick = () => ($('sizePop').hidden ? openSize() : closeSize());
-  document.addEventListener('pointerdown', ev => { if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize(); });
-  addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSize(); });
-  addEventListener('resize', () => { if (!$('sizePop').hidden) place(); });
-}
-return { syncSize, closeSize, buildSize };
-})();
-// ---- src/app/fit.js
-const m16 = (() => {
-const { T } = m14;
-const { S } = m11;
-const { $, canvas, g, portrait } = m12;
-const { syncSize } = m15;
-// Sizes the canvas to the room and the screen, sharp on high-density displays.
-
-
-
-
-// A wide screen is a frame: the tool's options in a bar under the header, the verdict and
-// keys in a bar at the bottom, the play buttons in that bar too. Only the room flexes. A phone
-// keeps the options under the tools and the bar and buttons under the room.
-function place(wide) {
-  const after = (el, ref) => { if (ref.nextElementSibling !== el) ref.after(el); };
-  const inside = (el, parent) => { if (el.parentElement !== parent) parent.append(el); };
-  if (wide) {
-    inside($('options'), $('ctx')); inside($('placeHint'), $('ctx'));
-    after($('statusBar'), document.querySelector('main'));
-    if ($('pad').nextElementSibling !== $('keys')) $('keys').before($('pad'));
-  } else {
-    inside($('options'), $('tools')); inside($('placeHint'), $('tools'));
-    after($('pad'), $('lensChips'));
-    after($('statusBar'), $('pad'));
-  }
-}
-
-const EDGE = 14;
-
-function fit() {
-  const level = S.level, wide = innerWidth > 700;
-  place(wide);
-  const area = $('roomArea');
-  // The room keeps a margin for the "+" on each of its edges.
-  const stage = (wide ? area.clientWidth - 2 * EDGE : $('stage').clientWidth - 2 * EDGE) || level.w * T;
-  const room = wide ? area.clientHeight - 2 * EDGE : portrait() ? innerHeight * 0.62 : innerHeight - 140;
-  const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
-  const k = (window.devicePixelRatio || 1) * zoom;
-  // Setting a canvas size clears it, even to the same size, so only a real change is written.
-  const cw = Math.round(level.w * T * k), ch = Math.round(level.h * T * k), css = Math.round(level.w * T * zoom) + 'px';
-  if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
-  if (canvas.style.width !== css) canvas.style.width = css;
-  g.setTransform(canvas.width / (level.w * T), 0, 0, canvas.height / (level.h * T), 0, 0);
-  $('w').value = level.w; $('h').value = level.h;
-  syncSize(level);
-  S.redraw = true;
-}
-
-// Fits again whenever the room's area changes size: the well opening, a window resize.
-function watchStage() {
-  new ResizeObserver(() => requestAnimationFrame(fit)).observe($('roomArea'));
-}
-return { fit, watchStage };
-})();
-// ---- src/view/pieces.js
-const m17 = (() => {
-const { AIM, INK, T, frame, roundRect } = m14;
-// Pieces and the player.
-
-// The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
-function modeBadge(g, mode, bx = 24, by = 8) {
-  g.save(); g.translate(bx, by);
-  g.fillStyle = '#0b0d12'; g.beginPath(); g.arc(0, 0, 5.5, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = '#e9edf5'; g.fillStyle = '#e9edf5'; g.lineWidth = 1.4;
-  if (mode === 'realtime') {
-    g.beginPath(); g.arc(0, 0, 3.6, 0, Math.PI * 2); g.stroke();
-    g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -2.4); g.moveTo(0, 0); g.lineTo(1.8, 0.8); g.stroke();
-  } else if (mode === 'follow') {
-    g.beginPath(); g.moveTo(-3, -2.5); g.lineTo(-0.5, 0); g.lineTo(-3, 2.5); g.moveTo(0.5, -2.5); g.lineTo(3, 0); g.lineTo(0.5, 2.5); g.stroke();
-  } else {
-    g.beginPath(); g.moveTo(-2.5, 2); g.lineTo(0, -2.5); g.lineTo(2.5, 2); g.closePath(); g.fill();
-  }
-  g.restore();
-}
-
-// A turret head: one barrel per direction it fires; the next to fire is lit.
-function drawTurret(g, t, badge, mounted) {
-  const next = t.aim === undefined ? (t.start || t.dirs[0]) : t.dirs[t.aim % t.dirs.length];
-  g.save();
-  if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
-  for (const d of t.dirs) {
-    g.save(); g.translate(16, 16); g.rotate(AIM[d]);
-    g.fillStyle = d === next ? INK.beam : INK.barrel;
-    roundRect(g, 4, -3, 11, 6, 2); g.fill();
-    g.restore();
-  }
-  g.fillStyle = '#20242f'; g.beginPath(); g.arc(16, 16, 7, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = INK.beam; g.lineWidth = 1.5; g.stroke();
-  g.fillStyle = INK.beam; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
-  g.restore();
-  if (badge) modeBadge(g, t.mode, badge[0], badge[1]);
-}
-
-function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
-  g.save();
-  g.globalAlpha = alpha;
-  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
-  if (e.kind === 'mover') {
-    g.fillStyle = INK.mover; roundRect(g, 2, 2, T - 4, T - 4, 6); g.fill();
-    g.strokeStyle = INK.moverEdge; g.lineWidth = 2; g.stroke();
-    g.strokeStyle = '#3b4252'; g.lineWidth = 2.5;
-    g.beginPath();
-    if (e.axis === 'h') { g.moveTo(10, 12); g.lineTo(6, 16); g.lineTo(10, 20); g.moveTo(22, 12); g.lineTo(26, 16); g.lineTo(22, 20); }
-    else { g.moveTo(12, 10); g.lineTo(16, 6); g.lineTo(20, 10); g.moveTo(12, 22); g.lineTo(16, 26); g.lineTo(20, 22); }
-    g.stroke();
-    modeBadge(g, e.mode);
-  } else if (e.kind === 'enemy') {
-    g.fillStyle = INK.enemy;
-    g.beginPath(); g.moveTo(16, 3); g.lineTo(29, 16); g.lineTo(16, 29); g.lineTo(3, 16); g.closePath(); g.fill();
-    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
-    g.fillStyle = '#fff';
-    g.beginPath(); g.arc(12 + lx, 15 + ly, 3, 0, Math.PI * 2); g.arc(20 + lx, 15 + ly, 3, 0, Math.PI * 2); g.fill();
-    modeBadge(g, e.mode);
-  } else if (e.kind === 'strong') {
-    g.fillStyle = INK.strong; roundRect(g, 2, 3, T - 4, T - 5, 7); g.fill();
-    g.strokeStyle = INK.strongEdge; g.lineWidth = 2; g.stroke();
-    g.fillStyle = INK.strongEdge;
-    g.beginPath(); g.moveTo(6, 6); g.lineTo(9, 0); g.lineTo(12, 5); g.moveTo(20, 5); g.lineTo(23, 0); g.lineTo(26, 6); g.fill();
-    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
-    g.fillStyle = '#ffd34d';
-    g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
-    modeBadge(g, e.mode);
-  } else if (e.kind === 'turret') {
-    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
-    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
-  } else if (e.kind === 'box') {
-    g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
-    g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();
-    g.beginPath(); g.moveTo(7, 7); g.lineTo(25, 25); g.moveTo(25, 7); g.lineTo(7, 25); g.stroke();
-  } else if (e.kind === 'heavy') {
-    g.fillStyle = INK.heavy; roundRect(g, 2, 2, T - 4, T - 4, 3); g.fill();
-    g.strokeStyle = INK.heavyEdge; g.lineWidth = 3; g.stroke();
-    g.fillStyle = INK.rivet;
-    for (const [rx, ry] of [[7, 7], [25, 7], [7, 25], [25, 25]]) { g.beginPath(); g.arc(rx, ry, 2, 0, Math.PI * 2); g.fill(); }
-  }
-  if (e.turret) drawTurret(g, e.turret, e.kind === 'turret' ? [24, 8] : [8, 24], e.kind !== 'turret');
-  g.restore();
-}
-
-// Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
-// on top of you, so you can still be found. Swimming on land you wear a blue drop;
-// under water you waver, tinted, with a ripple.
-function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim = null, sticky = false) {
-  g.save(); g.globalAlpha = alpha;
-  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale);
-  const under = swim === 'under';
-  if (under) {
-    const w = Math.sin(frame.clock / 170);
-    g.strokeStyle = INK.waterHi; g.lineWidth = 1.5;
-    const rp = (frame.clock % 1100) / 1100;
-    g.globalAlpha = alpha * 0.6 * (1 - rp); g.beginPath(); g.arc(0, 0, 11 + 6 * rp, 0, Math.PI * 2); g.stroke();
-    g.globalAlpha = alpha * 0.8;
-    g.translate(w * 1.5, 0); g.scale(1 + 0.07 * w, 1 - 0.07 * w);
-  }
-  if (hidden) {
-    g.strokeStyle = INK.player; g.lineWidth = 2; g.setLineDash([3, 3]);
-    g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
-  } else { g.fillStyle = INK.player; g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill(); }
-  if (armored) {
-    // A steel rim with four rivets.
-    g.strokeStyle = INK.armor; g.lineWidth = 3.5;
-    g.beginPath(); g.arc(0, 0, 11.5, 0, Math.PI * 2); g.stroke();
-    g.fillStyle = '#e8eef6';
-    for (const a of [0.25, 0.75, 1.25, 1.75]) { g.beginPath(); g.arc(Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6, 0, Math.PI * 2); g.fill(); }
-  }
-  g.fillStyle = '#0b2a2c'; g.beginPath(); g.arc(-3.5, -2, 2.2, 0, Math.PI * 2); g.arc(3.5, -2, 2.2, 0, Math.PI * 2); g.fill();
-  if (sticky) {
-    // Goo on top, dripping from the bottom.
-    g.fillStyle = INK.goo;
-    g.beginPath(); g.ellipse(0, -8, 7, 3, 0, 0, Math.PI * 2); g.fill();
-    const k = (frame.clock % 900) / 900;
-    g.beginPath(); g.ellipse(-4, 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.ellipse(5, 9, 1.6, 2.4, 0, 0, Math.PI * 2); g.fill();
-  }
-  if (under) {
-    g.globalAlpha = alpha * 0.45; g.fillStyle = INK.waterHi;
-    g.beginPath(); g.arc(0, 0, 10.5, 0, Math.PI * 2); g.fill();
-  } else if (swim === 'on') {
-    g.fillStyle = INK.waterHi;
-    g.beginPath(); g.moveTo(9, -16); g.quadraticCurveTo(14, -9, 9, -7); g.quadraticCurveTo(4, -9, 9, -16); g.fill();
-  }
-  g.restore();
-}
-return { modeBadge, drawTurret, drawPiece, drawPlayer };
-})();
-// ---- src/view/tiles.js
-const m18 = (() => {
-const { INK, T, frame, roundRect } = m14;
-// Tiles: floor, walls and every cell type, drawn in place.
-
-// bare: a block in the wall mass, so only what sits on it is drawn.
-// Gravel's grit: the same scatter of dark and light stones on every tile, at (X, Y).
-function grit(g, X, Y) {
-  for (const [x, y, r, hi] of [[7, 8, 1.6, 0], [18, 6, 1.3, 1], [25, 12, 1.7, 0], [11, 17, 1.2, 1], [21, 21, 1.6, 0], [6, 25, 1.4, 0], [15, 27, 1.2, 1], [27, 26, 1.3, 0]]) {
-    g.fillStyle = hi ? INK.gravelHi : INK.gravelDot; g.beginPath(); g.arc(X + x, Y + y, r, 0, Math.PI * 2); g.fill();
-  }
-}
-
-function drawCell(g, c, x, y, s, scale = 1, bare = false) {
-  if (!c) return;
-  const px = x * T, py = y * T;
-  g.save();
-  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
-  if (c === 'sticky') {
-    // A lumpy green puddle with a couple of bubbles.
-    g.fillStyle = INK.gooDark;
-    g.beginPath(); g.ellipse(16, 17, 12, 9, 0, 0, Math.PI * 2); g.ellipse(9, 13, 5, 4, 0, 0, Math.PI * 2); g.ellipse(23, 21, 5, 4, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = INK.goo;
-    g.beginPath(); g.ellipse(16, 16, 10, 7, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = 'rgba(255,255,255,0.55)';
-    g.beginPath(); g.arc(12, 14, 1.8, 0, Math.PI * 2); g.arc(20, 18, 1.2, 0, Math.PI * 2); g.fill();
-  } else if (c === 'gravel') {
-    g.fillStyle = INK.gravel; roundRect(g, 1, 1, T - 2, T - 2, 6); g.fill();
-    grit(g, 0, 0);
-  } else if (c === 'water') {
-    // A full tile, so a pool reads as one body; two waves drift across it.
-    g.fillStyle = INK.water; g.fillRect(0, 0, T, T);
-    g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
-    const k = (frame.clock / 900 + x * 0.37 + y * 0.53) % 1;
-    for (const wy of [10, 22]) {
-      g.beginPath();
-      for (let wx = 0; wx <= T; wx += 4) g.lineTo(wx, wy + Math.sin((wx / T + k) * Math.PI * 2) * 2);
-      g.stroke();
-    }
-    g.globalAlpha = 1;
-  } else if (c.startsWith('tri:')) {
-    // The solid half sits in the named corner; the slope is the bright edge.
-    const k = c.slice(4), pts = { nw: [[1, 1], [T - 1, 1], [1, T - 1]], ne: [[1, 1], [T - 1, 1], [T - 1, T - 1]], sw: [[1, 1], [1, T - 1], [T - 1, T - 1]], se: [[T - 1, 1], [T - 1, T - 1], [1, T - 1]] }[k];
-    g.fillStyle = INK.wall; g.beginPath(); g.moveTo(...pts[0]); g.lineTo(...pts[1]); g.lineTo(...pts[2]); g.closePath(); g.fill();
-    g.strokeStyle = INK.wallTop; g.lineWidth = 3; g.beginPath();
-    if (k === 'nw') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
-    else if (k === 'se') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
-    else { g.moveTo(1, 1); g.lineTo(T - 1, T - 1); }
-    g.stroke();
-  } else if (c === 'wall') {
-    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
-    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
-  } else if (c === 'death') {
-    // Spikes on a dark red slab.
-    g.fillStyle = INK.deathBg; roundRect(g, 1, 1, T - 2, T - 2, 4); g.fill();
-    g.fillStyle = INK.deathSpike;
-    for (const [cx, cy] of [[9, 9], [23, 9], [16, 16], [9, 23], [23, 23]]) {
-      g.beginPath(); g.moveTo(cx, cy - 5); g.lineTo(cx + 4, cy + 4); g.lineTo(cx - 4, cy + 4); g.closePath(); g.fill();
-    }
-  } else if (c.startsWith('spring:')) {
-    // A block with a coil and a plate on the side it faces.
-    const d = c.slice(7);
-    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
-    g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
-    g.strokeStyle = INK.spring; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(-8, 0);
-    for (let i = 0; i < 4; i++) { g.lineTo(-6 + i * 4, -6); g.lineTo(-4 + i * 4, 6); }
-    g.lineTo(9, 0); g.stroke();
-    g.fillStyle = INK.spring; g.fillRect(10, -10, 4, 20);
-    g.restore();
-  } else if (c.startsWith('gate:')) {
-    // Rails along the sides it blocks, and a chevron for each way it lets through.
-    const ds = c.slice(5).split(','), across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
-    g.fillStyle = INK.gateBg; g.fillRect(1, 1, T - 2, T - 2);
-    g.fillStyle = INK.wall;
-    if (!upDown) { g.fillRect(1, 1, T - 2, 5); g.fillRect(1, T - 6, T - 2, 5); }
-    if (!across) { g.fillRect(1, 1, 5, T - 2); g.fillRect(T - 6, 1, 5, T - 2); }
-    g.strokeStyle = INK.gateArrow; g.lineWidth = 2.6; g.lineJoin = 'round';
-    for (const d of ds) {
-      g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
-      g.beginPath(); g.moveTo(2, -6); g.lineTo(8, 0); g.lineTo(2, 6); g.stroke();
-      g.restore();
-    }
-  } else if (c.startsWith('sensor:')) {
-    // A floor plate a beam lights as it crosses: a coloured diamond that glows while lit.
-    const col = c.slice(7), lit = s && s.lit.has(y * s.w + x);
-    g.translate(16, 16); g.rotate(Math.PI / 4);
-    g.strokeStyle = INK[col]; g.lineWidth = 2.5; g.strokeRect(-8, -8, 16, 16);
-    g.fillStyle = INK[col]; g.globalAlpha = lit ? 1 : 0.25; g.fillRect(-4, -4, 8, 8); g.globalAlpha = 1;
-    if (lit) { g.globalAlpha = 0.3; g.fillRect(-12, -12, 24, 24); g.globalAlpha = 1; }
-  } else if (c.startsWith('receiver:')) {
-    // A catcher: a block with a coloured eye that glows while a beam holds it.
-    const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
-    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
-    g.fillStyle = lit ? INK[col] : INK.unlit;
-    g.beginPath(); g.arc(16, 16, 8.5, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = INK[col]; g.lineWidth = 3; g.stroke();
-    if (lit) { g.globalAlpha = 0.35; g.fillStyle = INK[col]; g.beginPath(); g.arc(16, 16, 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
-  } else if (c === 'goal') {
-    // A gold ring with a star in it, pulsing slowly.
-    const k = 0.5 + 0.5 * Math.sin(frame.clock / 400);
-    g.strokeStyle = INK.goal; g.lineWidth = 2.5; g.globalAlpha = 0.55 + 0.45 * k;
-    g.beginPath(); g.arc(16, 16, 12, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
-    g.fillStyle = INK.goal; g.beginPath();
-    for (let i = 0; i < 10; i++) { const r = i % 2 ? 3.2 : 7.5, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(16 + Math.cos(a) * r, 16 + Math.sin(a) * r); }
-    g.fill();
-  } else if (c === 'checkpoint') {
-    const active = s && s.checkpoint.x === x && s.checkpoint.y === y;
-    g.strokeStyle = INK.moverEdge; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(11, 26); g.lineTo(11, 6); g.stroke();
-    g.fillStyle = active ? INK.flag : '#6b6150';
-    g.beginPath(); g.moveTo(12, 6); g.lineTo(25, 10.5); g.lineTo(12, 15); g.fill();
-  } else {
-    const [kind, col] = c.split(':');
-    g.fillStyle = INK[col]; g.strokeStyle = INK[col]; g.lineWidth = 2.5;
-    if (kind === 'button') {
-      const down = s && pressedAt(s, x, y);
-      g.globalAlpha = 0.35; g.beginPath(); g.arc(16, 16, 11, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
-      g.beginPath(); g.arc(16, down ? 17 : 15, down ? 6 : 8, 0, Math.PI * 2); g.fill();
-    } else if (kind === 'idoor') {
-      // The negative of a door: dark inside, the colour on the rim and the bars. Open,
-      // a dashed rim around a minus sign.
-      const open = s && !s.open[col];
-      if (open) {
-        g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]);
-        roundRect(g, 11, 14, 10, 4, 1.5); g.fill();
-      } else {
-        g.fillStyle = INK.idoor; roundRect(g, 2, 2, T - 4, T - 4, 4); g.fill(); g.stroke();
-        g.fillStyle = INK[col];
-        for (const bx of [9, 15, 21]) g.fillRect(bx, 5, 2, T - 10);
-      }
-    } else {
-      const open = s && s.open[col];
-      if (open) { g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]); }
-      else {
-        roundRect(g, 2, 2, T - 4, T - 4, 4); g.fill();
-        g.fillStyle = 'rgba(0,0,0,0.3)';
-        for (const bx of [9, 15, 21]) g.fillRect(bx, 4, 2, T - 8);
-      }
-    }
-  }
-  g.restore();
-}
-
-function pressedAt(s, x, y) {
-  return (s.player.x === x && s.player.y === y && !s.player.hidden) ||
-    s.entities.some(e => !e.dead && e.x === x && e.y === y);
-}
-
-function drawFloor(g, w, h) {
-  g.fillStyle = INK.floor; g.fillRect(0, 0, w * T, h * T);
-  g.strokeStyle = INK.grid; g.lineWidth = 1;
-  g.beginPath();
-  for (let x = 1; x < w; x++) { g.moveTo(x * T + 0.5, 0); g.lineTo(x * T + 0.5, h * T); }
-  for (let y = 1; y < h; y++) { g.moveTo(0, y * T + 0.5); g.lineTo(w * T, y * T + 0.5); }
-  g.stroke();
-}
-return { grit, drawCell, pressedAt, drawFloor };
-})();
-// ---- src/view/masses.js
-const m19 = (() => {
-const { INK, T, frame } = m14;
-const { grit } = m18;
-// Joined-up tiles: neighbouring walls, water, sticky puddles and death blocks are drawn as
-// one mass each. Every cell is four quarters; a quarter reads its two side neighbours and
-// the diagonal between them, so outer corners round, inner corners get a fillet and a
-// solid block has no seams. Doors, switches and the rest stay one tile each (tiles.js).
-
-
-const MASSES = ['wall', 'water', 'sticky', 'gravel', 'death'];
-// Corner radius per kind, in pixels of a 32 px tile.
-const RADIUS = { wall: 6, water: 8, sticky: 10, gravel: 6, death: 6 };
-const LIP = 6;
-
-// Blocks with something on them (a spring, a laser catcher) are still walls, and a
-// triangle is a wall along its two straight sides.
-const BLOCK = /^(spring|receiver):/;
-const OPPOSITE = { nw: 'se', ne: 'sw', sw: 'ne', se: 'nw' };
-const member = (c, kind) => kind === 'wall' ? c === 'wall' || BLOCK.test(c) || /^tri:/.test(c) : c === kind;
-// Does cell c belong to the mass on its side (n, e, s, w) or corner (nw ...) facing the asker?
-function joins(c, kind, side) {
-  if (!member(c, kind)) return false;
-  if (!c.startsWith('tri:')) return true;
-  const k = c.slice(4);
-  return side.length === 1 ? k.includes(side) : side !== OPPOSITE[k];
-}
-const inMass = c => !!c && (MASSES.includes(c) || BLOCK.test(c) || c.startsWith('tri:'));
-// The ones that keep a drawing of their own on top of the mass.
-const overlay = c => BLOCK.test(c);
-
-// What one quarter of cell (x, y) draws, toward (dx, dy): 'round' (an outer corner),
-// 'full', 'tri' for a triangle (drawn whole), or for a cell outside the mass, 'fillet' when
-// both sides and the diagonal belong to it, else null. Outside the room counts as wall.
-function quarter(kindAt, kind, x, y, dx, dy) {
-  const self = kindAt(x, y), h = dx > 0 ? 'w' : 'e', v = dy > 0 ? 'n' : 's';
-  const A = joins(kindAt(x + dx, y), kind, h), B = joins(kindAt(x, y + dy), kind, v), D = joins(kindAt(x + dx, y + dy), kind, v + h);
-  if (member(self, kind)) return self.startsWith('tri:') ? 'tri' : !A && !B ? 'round' : 'full';
-  return A && B && D ? 'fillet' : null;
-}
-
-function path(kindAt, kind, w, h) {
-  const p = new Path2D(), r = RADIUS[kind], q = T / 2, f = r;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-      const how = quarter(kindAt, kind, x, y, dx, dy);
-      if (!how) continue;
-      const qx = x * T + (dx > 0 ? q : 0), qy = y * T + (dy > 0 ? q : 0);
-      if (how === 'full') { p.rect(qx, qy, q, q); continue; }
-      if (how === 'tri') {
-        if (dx > 0 || dy > 0) continue;
-        const X = x * T, Y = y * T, pts = { nw: [[0, 0], [T, 0], [0, T]], ne: [[0, 0], [T, 0], [T, T]], sw: [[0, 0], [0, T], [T, T]], se: [[T, 0], [T, T], [0, T]] }[kindAt(x, y).slice(4)];
-        p.moveTo(X + pts[0][0], Y + pts[0][1]); p.lineTo(X + pts[1][0], Y + pts[1][1]); p.lineTo(X + pts[2][0], Y + pts[2][1]); p.closePath(); continue;
-      }
-      if (how === 'round') {
-        const radii = [0, 0, 0, 0]; radii[dy < 0 ? (dx < 0 ? 0 : 1) : (dx < 0 ? 3 : 2)] = r;
-        p.roundRect(qx, qy, q, q, radii); continue;
-      }
-      // The fillet sits in this empty cell's corner, curving between the two walls beside it.
-      const cx = dx > 0 ? qx + q : qx, cy = dy > 0 ? qy + q : qy;
-      p.moveTo(cx, cy); p.lineTo(cx - dx * f, cy);
-      p.arcTo(cx, cy, cx, cy - dy * f, f);
-      p.closePath();
-    }
-  }
-  return p;
-}
-
-// cells: the room's cells; skip(x, y): a cell drawn on its own this frame (one popping in).
-// The kind at (x, y), with everything outside the room counting as wall, so the border
-// joins the room's own walls.
-const kindIn = (cells, w, h) => (x, y) => x < 0 || y < 0 || x >= w || y >= h ? 'wall' : cells[y * w + x];
-
-function drawMasses(g, cells, w, h, skip = () => false) {
-  const kindAt = kindIn(cells, w, h);
-  const held = (x, y) => skip(x, y) && kindAt(x, y) !== '';
-  const at = (x, y) => held(x, y) ? '' : kindAt(x, y);
-  for (const kind of ['gravel', 'water', 'sticky', 'death', 'wall']) {
-    if (kind !== 'wall' && !cells.includes(kind)) continue;
-    const p = path(at, kind, w, h);
-    g.save();
-    if (kind === 'wall') {
-      // A light lip on every edge that faces up, then the face.
-      g.fillStyle = INK.wallTop; g.fill(p); g.clip(p); g.translate(0, LIP); g.fillStyle = INK.wall; g.fill(p);
-    } else if (kind === 'gravel') {
-      g.fillStyle = INK.gravel; g.fill(p);
-      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'gravel') grit(g, (i % w) * T, Math.floor(i / w) * T);
-    } else if (kind === 'water') {
-      g.fillStyle = INK.water; g.fill(p); g.clip(p);
-      // Waves run across the whole pool, not tile by tile.
-      g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
-      const k = (frame.clock / 900) % 1;
-      for (let y = 0; y < h; y++) for (const wy of [10, 22]) {
-        g.beginPath();
-        for (let wx = 0; wx <= w * T; wx += 4) g.lineTo(wx, y * T + wy + Math.sin((wx / T + k + y * 0.53) * Math.PI * 2) * 2);
-        g.stroke();
-      }
-    } else if (kind === 'sticky') {
-      g.fillStyle = INK.gooDark; g.fill(p); g.clip(p); g.translate(0, -3); g.fillStyle = INK.goo; g.fill(p); g.translate(0, 3);
-      g.fillStyle = 'rgba(255,255,255,0.55)'; g.beginPath();
-      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'sticky') {
-        const X = (i % w) * T, Y = Math.floor(i / w) * T;
-        g.moveTo(X + 13.8, Y + 13); g.arc(X + 12, Y + 13, 1.8, 0, Math.PI * 2); g.moveTo(X + 21.2, Y + 17); g.arc(X + 20, Y + 17, 1.2, 0, Math.PI * 2);
-      }
-      g.fill();
-    } else {
-      g.fillStyle = INK.deathBg; g.fill(p);
-      g.fillStyle = INK.deathSpike; g.beginPath();
-      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'death') {
-        const X = (i % w) * T, Y = Math.floor(i / w) * T;
-        for (const [cx, cy] of [[9, 9], [23, 9], [16, 16], [9, 23], [23, 23]]) { g.moveTo(X + cx, Y + cy - 5); g.lineTo(X + cx + 4, Y + cy + 4); g.lineTo(X + cx - 4, Y + cy + 4); g.closePath(); }
-      }
-      g.fill();
-    }
-    g.restore();
-  }
-}
-return { MASSES, RADIUS, joins, inMass, overlay, quarter, kindIn, drawMasses };
-})();
-// ---- src/view/lenses.js
-const m20 = (() => {
-const { INK, T } = m14;
-// The editor's lenses, drawn over the room. A heat lens recolours tiles under the pieces; dots,
-// lines and frames are marks on top. One lens per group, so nothing here paints over its own kind.
-
-const centre = (i, w) => [(i % w) * T + T / 2, Math.floor(i / w) * T + T / 2];
-
-// heat: { distance: Map, hopeless: [] } or { tiles: Set, colour }.
-function drawHeat(g, w, heat) {
-  if (!heat) return;
-  const fill = (i, colour) => { g.fillStyle = colour; g.fillRect((i % w) * T, Math.floor(i / w) * T, T, T); };
-  if (heat.distance) {
-    const max = Math.max(1, ...heat.distance.values());
-    // Near the goal is green, far is red; a tile no stop on can still win is grey.
-    for (const [i, d] of heat.distance) fill(i, `hsla(${Math.round(120 * (1 - d / max))}, 75%, 45%, 0.5)`);
-    for (const i of heat.hopeless) fill(i, 'rgba(120, 128, 145, 0.55)');
-    return;
-  }
-  g.globalAlpha = 0.35;
-  for (const i of heat.tiles) fill(i, heat.colour);
-  g.globalAlpha = 1;
-}
-
-// marks: { dots: [tiles], small: [tiles], lines: [tiles in order], moves: [{ a, b, n }],
-// frames: Set of tiles, crosses: Set of tiles }.
-function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses } = {}) {
-  if (dots) {
-    g.fillStyle = INK.player;
-    for (const i of dots) { const [x, y] = centre(i, w); g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill(); }
-  }
-  if (small) {
-    g.fillStyle = INK.player; g.globalAlpha = 0.6;
-    for (const i of small) { const [x, y] = centre(i, w); g.beginPath(); g.arc(x, y, 1.8, 0, Math.PI * 2); g.fill(); }
-    g.globalAlpha = 1;
-  }
-  if (moves && moves.length) {
-    // One arrow per move between two stops, wider the more positions make it.
-    const max = Math.max(...moves.map(m => m.n));
-    g.strokeStyle = INK.player; g.fillStyle = INK.player; g.globalAlpha = 0.55; g.lineCap = 'round';
-    for (const { a, b, n } of moves) {
-      const [ax, ay] = centre(a, w), [bx, by] = centre(b, w), t = Math.atan2(by - ay, bx - ax);
-      // Each direction sits a little to its own side, so a move and its way back do not overlap.
-      const ox = -Math.sin(t) * 2.5, oy = Math.cos(t) * 2.5, ex = bx + ox - Math.cos(t) * 6, ey = by + oy - Math.sin(t) * 6;
-      g.lineWidth = 1 + 3 * n / max;
-      g.beginPath(); g.moveTo(ax + ox, ay + oy); g.lineTo(ex, ey); g.stroke();
-      g.beginPath(); g.moveTo(ex + Math.cos(t) * 4, ey + Math.sin(t) * 4); g.lineTo(ex - Math.cos(t - 0.6) * 4, ey - Math.sin(t - 0.6) * 4); g.lineTo(ex - Math.cos(t + 0.6) * 4, ey - Math.sin(t + 0.6) * 4); g.closePath(); g.fill();
-    }
-    g.globalAlpha = 1;
-  }
-  if (lines && lines.length > 1) {
-    g.strokeStyle = INK.goal; g.fillStyle = INK.goal; g.lineWidth = 2.5; g.lineCap = 'round';
-    for (let n = 1; n < lines.length; n++) {
-      const [ax, ay] = centre(lines[n - 1], w), [bx, by] = centre(lines[n], w), a = Math.atan2(by - ay, bx - ax);
-      g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx - Math.cos(a) * 7, by - Math.sin(a) * 7); g.stroke();
-      g.beginPath(); g.moveTo(bx, by); g.lineTo(bx - Math.cos(a - 0.5) * 9, by - Math.sin(a - 0.5) * 9); g.lineTo(bx - Math.cos(a + 0.5) * 9, by - Math.sin(a + 0.5) * 9); g.closePath(); g.fill();
-      // Each move's number sits at the middle of its arrow.
-      const mx = (ax + bx) / 2, my = (ay + by) / 2;
-      g.fillStyle = INK.mark; g.beginPath(); g.arc(mx, my, 6, 0, Math.PI * 2); g.fill();
-      g.fillStyle = INK.goal; g.font = 'bold 8px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText(String(n), mx, my + 0.5);
-    }
-  }
-  if (crosses) {
-    g.strokeStyle = '#ff9f43'; g.lineWidth = 2.5; g.lineCap = 'round';
-    for (const i of crosses) {
-      const x = (i % w) * T, y = Math.floor(i / w) * T;
-      g.strokeRect(x + 2, y + 2, T - 4, T - 4);
-      g.beginPath(); g.moveTo(x + 9, y + 9); g.lineTo(x + T - 9, y + T - 9); g.moveTo(x + T - 9, y + 9); g.lineTo(x + 9, y + T - 9); g.stroke();
-    }
-  }
-  if (frames) {
-    g.strokeStyle = INK.beam; g.lineWidth = 2;
-    for (const i of frames) g.strokeRect((i % w) * T + 2, Math.floor(i / w) * T + 2, T - 4, T - 4);
-  }
-}
-return { drawHeat, drawLensMarks };
-})();
-// ---- src/view/scene.js
-const m21 = (() => {
-const { DIRS } = m0;
-const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m14;
-const { drawPiece, drawPlayer } = m17;
-const { drawCell, drawFloor } = m18;
-const { drawMasses, inMass, overlay } = m19;
-const { drawHeat, drawLensMarks } = m20;
-// A whole frame: the level in edit mode, or a running game in play mode, with motion
-// drawn between the previous tick and this one. Nothing here changes state.
-
-
-
-
-
-
-const GHOST_MS = 360;
-
-// fx: [{type, at(ms), ...}] effects started by game events or edits.
-// marks: lens ({ heat, dots, lines, frames }, see lenses.js) and unused (pieces or tiles the
-// answer does not depend on, framed red).
-// over: { sel: box } or { paste: clip, x, y } from the Select tool, or null.
-function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
-  const { lens = {}, unused = [] } = marks;
-  frame.clock = now;
-  drawFloor(g, level.w, level.h);
-  drawHeat(g, level.w, lens.heat);
-  const pop = (x, y) => {
-    const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
-    return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
-  };
-  drawMasses(g, level.cells, level.w, level.h, (x, y) => pop(x, y) < 1);
-  level.cells.forEach((c, i) => {
-    const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
-    if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);
-    else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
-  });
-  for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
-  drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9, level.powers.armored);
-  for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {
-    const t = (now - f.at) / 160;
-    if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);
-    if (f.piece) drawPiece(g, f.piece, f.x * T, f.y * T, 1 - ease(t) * 0.8, 1 - t);
-  }
-  drawLensMarks(g, level.w, lens);
-  // A piece or tile the room's answer does not depend on gets a dashed red frame.
-  if (unused.length) {
-    g.strokeStyle = INK.beam; g.lineWidth = 2; g.setLineDash([5, 4]);
-    for (const u of unused) g.strokeRect(u.x * T + 3, u.y * T + 3, T - 6, T - 6);
-    g.setLineDash([]);
-  }
-  // A tile a warning points at gets a gold ring that fades.
-  for (const f of fx) if (f.type === 'flash' && now - f.at < 900) {
-    const t = (now - f.at) / 900;
-    g.strokeStyle = INK.goal; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
-    g.strokeRect(f.x * T + 2, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
-  }
-  if (over && over.sel) {
-    const r = over.sel;
-    g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([6, 4]);
-    g.strokeRect(r.x0 * T + 1, r.y0 * T + 1, (r.x1 - r.x0 + 1) * T - 2, (r.y1 - r.y0 + 1) * T - 2); g.setLineDash([]);
-  }
-  if (over && over.paste) {
-    // The ghost: the copy at half strength, red where it would cover something.
-    const { paste: p, x: ox, y: oy } = over;
-    g.globalAlpha = 0.55;
-    p.cells.forEach((c, i) => { const x = ox + i % p.w, y = oy + Math.floor(i / p.w); if (x < level.w && y < level.h) drawCell(g, c, x, y, null); });
-    for (const e of p.entities) if (ox + e.x < level.w && oy + e.y < level.h) drawPiece(g, e, (ox + e.x) * T, (oy + e.y) * T);
-    g.globalAlpha = 1;
-    for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) {
-      const x = ox + i, y = oy + j;
-      if (x >= level.w || y >= level.h) continue;
-      const busy = level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y);
-      g.fillStyle = busy ? 'rgba(230,80,80,0.25)' : 'rgba(80,220,140,0.18)';
-      g.fillRect(x * T, y * T, T, T);
-    }
-  }
-  if (hover) {
-    g.strokeStyle = INK.mark; g.globalAlpha = 0.5; g.lineWidth = 2;
-    g.strokeRect(hover.x * T + 1, hover.y * T + 1, T - 2, T - 2); g.globalAlpha = 1;
-  }
-}
-
-// prev: positions before the last tick; alpha: 0..1 progress into the next tick.
-function drawPlay(g, s, prev, alpha, fx, now) {
-  frame.clock = now;
-  const shake = fx.find(f => f.type === 'crash' && now - f.at < 180);
-  g.save();
-  if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
-  drawFloor(g, s.w, s.h);
-  drawMasses(g, s.cells, s.w, s.h);
-  s.cells.forEach((c, i) => { if (!inMass(c) || overlay(c)) drawCell(g, c, i % s.w, Math.floor(i / s.w), s, 1, overlay(c)); });
-  // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
-  // as its beam touches, yours for a moment.
-  const crackle = (cells, k) => {
-    g.strokeStyle = INK.shock; g.lineWidth = 1.5;
-    for (const i of cells) {
-      const x = (i % s.w) * T, y = Math.floor(i / s.w) * T, j = Math.floor(now / 70) + i;
-      g.globalAlpha = k * (0.35 + 0.35 * ((j * 7) % 3) / 2);
-      g.beginPath(); g.moveTo(x + 4, y + 8 + (j % 3) * 4); g.lineTo(x + 12, y + 14); g.lineTo(x + 18, y + 9 + (j % 2) * 6); g.lineTo(x + 28, y + 18); g.stroke();
-    }
-    g.globalAlpha = 1;
-  };
-  crackle(s.shocked, 1);
-  for (const f of fx) if (f.type === 'laser' && f.shocked && now - f.at < LASER_MS) crackle(f.shocked, 1 - (now - f.at) / LASER_MS);
-  const a = ease(alpha);
-  const pos = (id, x, y) => {
-    const p = prev.ents[id];
-    if (!p || Math.abs(p.x - x) + Math.abs(p.y - y) > 1) return [x * T, y * T];
-    return [lerp(p.x, x, a) * T, lerp(p.y, y, a) * T];
-  };
-  for (const e of s.entities) {
-    if (!e.dead) { const [px, py] = pos(e.id, e.x, e.y); drawPiece(g, e, px, py); continue; }
-    const f = fx.find(f => f.type === 'kill' && f.id === e.id);
-    if (f && now - f.at < 260) {
-      const t = (now - f.at) / 260;
-      drawPiece(g, e, e.x * T, e.y * T, 1 + 0.3 * t, 1 - t);
-    }
-  }
-  // A sticky piece wears goo on top; a glued pair is joined by a goo bridge.
-  g.fillStyle = INK.goo; g.strokeStyle = INK.goo; g.lineCap = 'round';
-  for (const e of s.entities) {
-    if (e.dead) continue;
-    const [px, py] = pos(e.id, e.x, e.y), k = (now % 900) / 900;
-    if (e.sticky) {
-      g.beginPath(); g.ellipse(px + 16, py + 7, 8, 3, 0, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.ellipse(px + 11, py + 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.fill();
-    }
-    const o = e.glue > e.id && s.entities.find(q => q.id === e.glue && !q.dead);
-    if (o) {
-      const [ox, oy] = pos(o.id, o.x, o.y);
-      const ux = Math.sign(o.x - e.x), uy = Math.sign(o.y - e.y);
-      g.lineWidth = 7; g.beginPath(); g.moveTo(px + 16 + ux * 11, py + 16 + uy * 11); g.lineTo(ox + 16 - ux * 11, oy + 16 - uy * 11); g.stroke();
-    }
-  }
-  g.lineCap = 'butt';
-  for (const f of fx) if (f.type === 'laser' && now - f.at < LASER_MS) {
-    const t = (now - f.at) / LASER_MS, c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
-    g.strokeStyle = INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
-    g.lineJoin = 'round';
-    g.beginPath();
-    f.path.forEach((p, i) => { const [x, y] = c(p); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
-    if (f.wall) { const [x, y] = c(f.path[f.path.length - 1]), [dx, dy] = DIRS[f.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
-    g.stroke(); g.globalAlpha = 1;
-  }
-  // Turret beams are on all the time: a core line with a soft glow and a slow flicker.
-  for (const b of s.beams) {
-    const c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
-    const line = () => {
-      g.beginPath();
-      b.path.forEach((p, i) => { const [x, y] = c(p); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
-      if (b.wall || b.stop) { const [x, y] = c(b.path[b.path.length - 1]), [dx, dy] = DIRS[b.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
-      g.stroke();
-    };
-    g.lineJoin = 'round'; g.lineCap = 'round';
-    g.strokeStyle = INK.beam; g.globalAlpha = 0.25 + 0.08 * Math.sin(now / 90); g.lineWidth = 9; line();
-    g.globalAlpha = 1; g.lineWidth = 2.5; g.strokeStyle = INK.beam; line();
-    g.lineCap = 'butt';
-  }
-  // A boomerang kicks up a puff of cloud where you turned, blown the way you were going.
-  for (const f of fx) if (f.type === 'boomerang' && f.from && now - f.at < PUFF_MS) {
-    const t = (now - f.at) / PUFF_MS, [fx0, fy0] = DIRS[f.from], cx = f.x * T + T / 2, cy = f.y * T + T / 2;
-    // One path for the whole cloud, so overlapping puffs read as one soft shape.
-    const k = ease(t);
-    g.fillStyle = INK.puff; g.globalAlpha = 0.65 * (1 - t);
-    g.beginPath();
-    for (const [along, side, r0] of PUFFS) {
-      const x = cx + (fx0 * along + -fy0 * side) * (6 + 10 * k), y = cy + (fy0 * along + fx0 * side) * (6 + 10 * k), r = r0 * (0.7 + 0.6 * k);
-      g.moveTo(x + r, y); g.arc(x, y, r, 0, Math.PI * 2);
-    }
-    g.fill('nonzero');
-    g.globalAlpha = 1;
-  }
-  for (const f of fx) if (f.type === 'dive' && now - f.at < 200) {
-    const t = (now - f.at) / 200;
-    g.strokeStyle = INK.player; g.globalAlpha = 0.6 * (1 - t); g.lineWidth = 14 * (1 - t) + 2; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(f.fromX * T + T / 2, f.fromY * T + T / 2); g.lineTo(f.toX * T + T / 2, f.toY * T + T / 2); g.stroke();
-    g.globalAlpha = 1; g.lineCap = 'butt';
-  }
-  // Drift: a fading ghost of the player on each tile it just left.
-  for (const f of fx) if (f.type === 'ghost' && now - f.at < GHOST_MS) drawPlayer(g, f.x * T, f.y * T, false, 1 - 0.4 * (now - f.at) / GHOST_MS, 0.35 * (1 - (now - f.at) / GHOST_MS));
-  const p = s.player, pp = prev.player;
-  let px = p.x * T, py = p.y * T;
-  if (pp && !p.snap && Math.abs(pp.x - p.x) + Math.abs(pp.y - p.y) <= 1) { px = lerp(pp.x, p.x, a) * T; py = lerp(pp.y, p.y, a) * T; }
-  const born = fx.find(f => (f.type === 'die' || f.type === 'respawn') && now - f.at < 220);
-  const scale = born ? 0.3 + 0.7 * ease((now - born.at) / 220) : 1;
-  for (const f of fx) if (f.type === 'die' && now - f.at < 300) {
-    const t = (now - f.at) / 300;
-    g.strokeStyle = INK.player; g.globalAlpha = 1 - t; g.lineWidth = 2;
-    g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
-  }
-  const swim = !p.swimming ? null : s.cells[p.y * s.w + p.x] === 'water' ? 'under' : 'on';
-  // Stuck, a goo strand ties you to what you ride or drag.
-  const st = p.stuck && s.entities.find(e => e.id === p.stuck.id && !e.dead);
-  if (st) {
-    const [ex, ey] = pos(st.id, st.x, st.y);
-    g.strokeStyle = INK.goo; g.lineWidth = 5; g.lineCap = 'round';
-    const ux = Math.sign(ex - px), uy = Math.sign(ey - py);
-    g.beginPath(); g.moveTo(px + T / 2 + ux * 9, py + T / 2 + uy * 9); g.lineTo(ex + T / 2 - ux * 13, ey + T / 2 - uy * 13); g.stroke(); g.lineCap = 'butt';
-  }
-  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);
-  g.restore();
-}
-return { drawEdit, drawPlay };
-})();
-// ---- src/editor/palette.js
-const m22 = (() => {
-
-// The palette: every tool, its group and label, and the words the editor uses for
-// powers, colours, clocks and directions. Draft copy throughout.
-const TOOLS = [
-  { id: 'look', label: 'Look', group: 'basic' },
-  { id: 'erase', label: 'Erase', group: 'basic' },
-  { id: 'select', label: 'Select', group: 'basic' },
-  { id: 'start', label: 'Start', group: 'basic' },
-  { id: 'wall', label: 'Block', group: 'basic' },
-  { id: 'checkpoint', label: 'Checkpoint', group: 'basic' },
-  { id: 'goal', label: 'Goal', group: 'basic' },
-  { id: 'mover', label: 'Moving block', group: 'pieces' },
-  { id: 'enemy', label: 'Weak enemy', group: 'pieces' },
-  { id: 'strong', label: 'Strong enemy', group: 'pieces' },
-  { id: 'turret', label: 'Laser turret', group: 'pieces' },
-  { id: 'box', label: 'Box', group: 'pieces' },
-  { id: 'heavy', label: 'Heavy box', group: 'pieces' },
-  { id: 'tri', label: 'Triangle', group: 'tiles' },
-  { id: 'gate', label: 'One-way', group: 'tiles' },
-  { id: 'spring', label: 'Spring', group: 'tiles' },
-  { id: 'death', label: 'Death block', group: 'tiles' },
-  { id: 'water', label: 'Water', group: 'tiles' },
-  { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },
-  { id: 'gravel', label: 'Gravel', group: 'tiles' },
-  { id: 'button', label: 'Button', group: 'switches' },
-  { id: 'door', label: 'Door', group: 'switches' },
-  { id: 'idoor', label: 'Inverted door', group: 'switches' },
-  { id: 'receiver', label: 'Laser catcher', group: 'switches' },
-  { id: 'sensor', label: 'Laser relay', group: 'switches' },
-];
-const POWER_TEXT = {
-  boomerang: 'While sliding, press back to slide the other way.',
-  dive: 'While sliding, press the same arrow to land at once and crash.',
-  laser: 'While sliding, press a side arrow to fire a beam that way.',
-  cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed. With Swim too, the same press does both.',
-  swim: 'When standing on land, press Space to start or stop swimming. The world takes a step. While swimming, you can go into water, at half speed.',
-  light: 'When standing still, light up dark rooms.',
-  armored: 'Weak enemies, blocks and closing doors cannot crush you. Strong enemies, heavy boxes, beams and death blocks still can.',
-};
-const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', light: 'Light', armored: 'Armored' };
-
-
-// The palette shows one group at a time on a phone, so it fits without scrolling.
-const GROUPS = [['basic', 'Basics'], ['pieces', 'Pieces'], ['tiles', 'Tiles'], ['switches', 'Switches']];
-const COLOUR_NAME = { red: 'Red', blue: 'Blue', yellow: 'Yellow', green: 'Green' };
-const CLOCK_NAME = { realtime: 'real time', input: 'on your move', follow: 'same way as you' };
-const ARROW = { up: '\u2191', right: '\u2192', down: '\u2193', left: '\u2190' };
-const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'bottom right' };
-return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
-})();
 // ---- src/solve/solve.js
-const m23 = (() => {
+const m15 = (() => {
 const { createGame, step } = m8;
 const { MOVES, OPPOSITE } = m0;
 // The solver: a breadth-first search over the room's states, one move of yours per
@@ -2650,10 +1884,10 @@ function solve(level, max) {
 return { MAX_STATES, stateKey, settled, parseMove, move, powerMoves, successors, unsearchable, search, canWin, reach, solve };
 })();
 // ---- src/solve/lint.js
-const m24 = (() => {
+const m16 = (() => {
 const { DIRS } = m0;
 const { createGame, step } = m8;
-const { parseMove } = m23;
+const { parseMove } = m15;
 // Lint: warnings about a room that the rules allow but that are almost always a
 // mistake, each with the tile it is about. Read-only over the level.
 
@@ -2702,10 +1936,10 @@ function brokenAt(level, moves) {
 return { lint, brokenAt };
 })();
 // ---- src/solve/design.js
-const m25 = (() => {
+const m17 = (() => {
 const { createGame } = m8;
 const { NEEDS, POWERS } = m0;
-const { search, successors, stateKey, unsearchable, MAX_STATES } = m23;
+const { search, successors, stateKey, unsearchable, MAX_STATES } = m15;
 // Design notes: what each power, piece and tile does to a room's answer, where the room
 // traps you, and how many shortest routes it has. Each is a generator, so the page can run
 // it a slice at a time. An answer is a number of moves, or 'unsolvable' or 'capped'.
@@ -2802,8 +2036,8 @@ function* routes(level, max = MAX_STATES) {
 return { powerCheck, elementCheck, routes };
 })();
 // ---- src/app/design.js
-const m26 = (() => {
-const { powerCheck, elementCheck, routes } = m25;
+const m18 = (() => {
+const { powerCheck, elementCheck, routes } = m17;
 const { S } = m11;
 const { $, now } = m12;
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
@@ -2881,13 +2115,13 @@ function runDesign(par) {
 return { sliced, clearDesign, runDesign };
 })();
 // ---- src/app/check.js
-const m27 = (() => {
-const { search, parseMove } = m23;
-const { lint, brokenAt } = m24;
+const m19 = (() => {
+const { search, parseMove } = m15;
+const { lint, brokenAt } = m16;
 const { now } = m12;
 const { S } = m11;
 const { $ } = m12;
-const { runDesign, clearDesign } = m26;
+const { runDesign, clearDesign } = m18;
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
 
@@ -2991,14 +2225,14 @@ function syncLint() {
 return { checkText, runCheck, syncCheck, feedDemo, syncLint };
 })();
 // ---- src/level/templates.js
-const m28 = (() => {
+const m20 = (() => {
 
 // Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.
 const TEMPLATES = [{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"swim":false,"light":false},"clock":"tile"}}];
 return { TEMPLATES };
 })();
 // ---- src/level/code.js
-const m29 = (() => {
+const m21 = (() => {
 const { parseLevel } = m9;
 // A share code: the level as compressed, URL-safe text, so a room fits in a message or
 // a link (#room=<code>). Uses the platform's own deflate, in the page and in Node.
@@ -3029,7 +2263,7 @@ async function decodeRoom(code) {
 return { encodeRoom, decodeRoom };
 })();
 // ---- src/level/room.js
-const m30 = (() => {
+const m22 = (() => {
 const { parseLevel } = m9;
 // A room is a level plus what the person wrote about it. These split and join the two.
 
@@ -3062,7 +2296,7 @@ function unpack(text) {
 return { META, splitRoom, joinRoom, stampOf, pack, unpack };
 })();
 // ---- src/view/thumb.js
-const m31 = (() => {
+const m23 = (() => {
 const { INK } = m14;
 // A room's thumbnail: one small square per tile in the tile's main colour, so a list of
 // many rooms costs little to draw. Returns a data URL.
@@ -3090,7 +2324,7 @@ function thumbURL(level) {
 return { thumbURL };
 })();
 // ---- src/app/store.js
-const m32 = (() => {
+const m24 = (() => {
 
 // Where rooms are kept: on the server when the page is served by one, otherwise in this
 // browser's local storage. A room is a level file with id, name, note and updated added.
@@ -3146,9 +2380,9 @@ async function remove(id) {
 return { where, detect, newId, list, put, remove };
 })();
 // ---- src/solve/tags.js
-const m33 = (() => {
+const m25 = (() => {
 const { createGame, step } = m8;
-const { parseMove } = m23;
+const { parseMove } = m15;
 // The mechanism index: what a room contains, and what its solution actually does.
 // Both come from the room and the rules, never typed by hand, so the counts stay true.
 
@@ -3230,7 +2464,7 @@ function uses(level, moves) {
 return { MECHANISMS, LABEL, contains, uses };
 })();
 // ---- src/app/draft.js
-const m34 = (() => {
+const m26 = (() => {
 const { S } = m11;
 // Autosave: the room being edited, with its name and note, kept in this browser after
 // every change, so a closed tab or a phone that drops the page loses nothing. Saving the
@@ -3263,18 +2497,18 @@ function flushDraft(dirty) { if (dirty && timer) { clearTimeout(timer); write();
 return { readDraft, clearDraft, noteChange, flushDraft };
 })();
 // ---- src/app/rooms.js
-const m35 = (() => {
-const { TEMPLATES } = m28;
-const { encodeRoom, decodeRoom } = m29;
-const { splitRoom, joinRoom, stampOf, pack, unpack } = m30;
+const m27 = (() => {
+const { TEMPLATES } = m20;
+const { encodeRoom, decodeRoom } = m21;
+const { splitRoom, joinRoom, stampOf, pack, unpack } = m22;
 const { starterLevel } = m11;
 const { newHistory } = m10;
 const { S } = m11;
-const { thumbURL } = m31;
-const { list, put, remove, where, newId, detect } = m32;
-const { contains, uses, MECHANISMS } = m33;
+const { thumbURL } = m23;
+const { list, put, remove, where, newId, detect } = m24;
+const { contains, uses, MECHANISMS } = m25;
 const { $ } = m12;
-const { readDraft, noteChange, flushDraft, clearDraft } = m34;
+const { readDraft, noteChange, flushDraft, clearDraft } = m26;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
 
@@ -3531,12 +2765,12 @@ async function bootRooms() {
 return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m36 = (() => {
+const m28 = (() => {
 const { record, undo, redo } = m10;
 const { S } = m11;
 const { $ } = m12;
-const { syncCheck, syncLint } = m27;
-const { syncRoomsButton, followUndo } = m35;
+const { syncCheck, syncLint } = m19;
+const { syncRoomsButton, followUndo } = m27;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -3574,11 +2808,884 @@ function step(back, after) {
 }
 return { syncUndo, begin, end, change, step };
 })();
+// ---- src/app/size.js
+const m29 = (() => {
+const { $, canvas } = m12;
+const { S } = m11;
+const { moveSide } = m9;
+const { change } = m28;
+// The room's size: a "+" on each edge of the room adds a row or a column there, and the size
+// readout in the status bar opens the rest (width and height, add or cut a side, Border).
+
+
+
+
+function syncSize(level) {
+  $('sizeBtn').textContent = `${level.w}×${level.h}`;
+}
+
+function place() {
+  const pop = $('sizePop'), r = $('sizeBtn').getBoundingClientRect();
+  pop.style.bottom = `${innerHeight - r.top + 6}px`;
+  pop.style.left = `${Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8))}px`;
+}
+function closeSize() { $('sizePop').hidden = true; $('sizeBtn').setAttribute('aria-expanded', 'false'); }
+function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('aria-expanded', 'true'); place(); }
+
+// A grip on each edge: a tap adds a line, a drag outward adds as many as it covers and a drag
+// inward cuts them. While dragging, a band shows the lines that would come or go, red when the
+// cut would take something you placed (then letting go changes nothing).
+const OUT = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] };
+function grip(b, after) {
+  const side = b.dataset.plus, wrap = $('roomWrap');
+  let from = null, n = 0;
+  const band = document.createElement('div'); band.className = 'sizeBand'; band.hidden = true; wrap.append(band);
+  const tile = () => canvas.getBoundingClientRect().width / S.level.w;
+  const show = () => {
+    const t = tile(), c = canvas.getBoundingClientRect(), w = wrap.getBoundingClientRect(), ok = !!moveSide(S.level, side, n);
+    const len = Math.abs(n) * t, out = n > 0, x0 = c.left - w.left, y0 = c.top - w.top;
+    const box = { top: [x0, out ? y0 - len : y0, c.width, len], bottom: [x0, out ? y0 + c.height : y0 + c.height - len, c.width, len],
+      left: [out ? x0 - len : x0, y0, len, c.height], right: [out ? x0 + c.width : x0 + c.width - len, y0, len, c.height] }[side];
+    Object.assign(band.style, { left: box[0] + 'px', top: box[1] + 'px', width: box[2] + 'px', height: box[3] + 'px' });
+    band.classList.toggle('cut', n < 0); band.classList.toggle('no', !ok);
+    band.textContent = n > 0 ? '+' + n : '\u2212' + -n;
+    band.hidden = n === 0;
+  };
+  b.addEventListener('pointerdown', ev => { from = { x: ev.clientX, y: ev.clientY, moved: false }; n = 0; b.setPointerCapture(ev.pointerId); ev.preventDefault(); });
+  b.addEventListener('pointermove', ev => {
+    if (!from) return;
+    const [ux, uy] = OUT[side], d = (ev.clientX - from.x) * ux + (ev.clientY - from.y) * uy;
+    if (Math.abs(d) > 6) from.moved = true;
+    if (!from.moved) return;
+    n = Math.round(d / tile()); show();
+  });
+  const done = ev => {
+    if (!from) return;
+    const k = from.moved ? n : 1; from = null; band.hidden = true;
+    if (!k || ev.type === 'pointercancel') return;
+    const l = moveSide(S.level, side, k);
+    if (!l) { $('placeHint').textContent = k < 0 ? 'That cut would take something you placed.' : 'The room cannot grow that far.'; return; }
+    change(() => { S.level = l; }); after();
+  };
+  b.addEventListener('pointerup', done); b.addEventListener('pointercancel', done);
+}
+
+function buildSize({ after }) {
+  document.querySelectorAll('[data-plus]').forEach(b => grip(b, after));
+  $('sizeBtn').onclick = () => ($('sizePop').hidden ? openSize() : closeSize());
+  document.addEventListener('pointerdown', ev => { if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize(); });
+  addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSize(); });
+  addEventListener('resize', () => { if (!$('sizePop').hidden) place(); });
+}
+return { syncSize, closeSize, buildSize };
+})();
+// ---- src/app/fit.js
+const m30 = (() => {
+const { T } = m14;
+const { S } = m11;
+const { $, canvas, g, portrait } = m12;
+const { syncSize } = m29;
+// Sizes the canvas to the room and the screen, sharp on high-density displays.
+
+
+
+
+// A wide screen is a frame: the tool's options in a bar under the header, the verdict and
+// keys in a bar at the bottom, the play buttons in that bar too. Only the room flexes. A phone
+// keeps the options under the tools and the bar and buttons under the room.
+function place(wide) {
+  const after = (el, ref) => { if (ref.nextElementSibling !== el) ref.after(el); };
+  const inside = (el, parent) => { if (el.parentElement !== parent) parent.append(el); };
+  if (wide) {
+    inside($('options'), $('ctx')); inside($('placeHint'), $('ctx'));
+    after($('statusBar'), document.querySelector('main'));
+    if ($('pad').nextElementSibling !== $('keys')) $('keys').before($('pad'));
+  } else {
+    inside($('options'), $('tools')); inside($('placeHint'), $('tools'));
+    after($('pad'), $('lensChips'));
+    after($('statusBar'), $('pad'));
+  }
+}
+
+const EDGE = 14;
+
+function fit() {
+  const level = S.level, wide = innerWidth > 700;
+  place(wide);
+  const area = $('roomArea');
+  // The room keeps a margin for the "+" on each of its edges.
+  const stage = (wide ? area.clientWidth - 2 * EDGE : $('stage').clientWidth - 2 * EDGE) || level.w * T;
+  // A phone in play gives the room everything between the header and the play buttons.
+  const below = $('pad').hidden ? 0 : $('pad').offsetHeight + 16;
+  const room = wide ? area.clientHeight - 2 * EDGE
+    : S.mode === 'play' ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
+      : portrait() ? innerHeight * 0.62 : innerHeight - 140;
+  const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
+  const k = (window.devicePixelRatio || 1) * zoom;
+  // Setting a canvas size clears it, even to the same size, so only a real change is written.
+  const cw = Math.round(level.w * T * k), ch = Math.round(level.h * T * k), css = Math.round(level.w * T * zoom) + 'px';
+  if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+  if (canvas.style.width !== css) canvas.style.width = css;
+  g.setTransform(canvas.width / (level.w * T), 0, 0, canvas.height / (level.h * T), 0, 0);
+  $('w').value = level.w; $('h').value = level.h;
+  syncSize(level);
+  S.redraw = true;
+}
+
+// Fits again whenever the room's area changes size: the well opening, a window resize.
+function watchStage() {
+  new ResizeObserver(() => requestAnimationFrame(fit)).observe($('roomArea'));
+}
+return { fit, watchStage };
+})();
+// ---- src/view/pieces.js
+const m31 = (() => {
+const { AIM, INK, T, frame, roundRect } = m14;
+// Pieces and the player.
+
+// The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
+function modeBadge(g, mode, bx = 24, by = 8) {
+  g.save(); g.translate(bx, by);
+  g.fillStyle = '#0b0d12'; g.beginPath(); g.arc(0, 0, 5.5, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#e9edf5'; g.fillStyle = '#e9edf5'; g.lineWidth = 1.4;
+  if (mode === 'realtime') {
+    g.beginPath(); g.arc(0, 0, 3.6, 0, Math.PI * 2); g.stroke();
+    g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -2.4); g.moveTo(0, 0); g.lineTo(1.8, 0.8); g.stroke();
+  } else if (mode === 'follow') {
+    g.beginPath(); g.moveTo(-3, -2.5); g.lineTo(-0.5, 0); g.lineTo(-3, 2.5); g.moveTo(0.5, -2.5); g.lineTo(3, 0); g.lineTo(0.5, 2.5); g.stroke();
+  } else {
+    g.beginPath(); g.moveTo(-2.5, 2); g.lineTo(0, -2.5); g.lineTo(2.5, 2); g.closePath(); g.fill();
+  }
+  g.restore();
+}
+
+// A turret head: one barrel per direction it fires; the next to fire is lit.
+function drawTurret(g, t, badge, mounted) {
+  const next = t.aim === undefined ? (t.start || t.dirs[0]) : t.dirs[t.aim % t.dirs.length];
+  g.save();
+  if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
+  for (const d of t.dirs) {
+    g.save(); g.translate(16, 16); g.rotate(AIM[d]);
+    g.fillStyle = d === next ? INK.beam : INK.barrel;
+    roundRect(g, 4, -3, 11, 6, 2); g.fill();
+    g.restore();
+  }
+  g.fillStyle = '#20242f'; g.beginPath(); g.arc(16, 16, 7, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = INK.beam; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = INK.beam; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
+  g.restore();
+  if (badge) modeBadge(g, t.mode, badge[0], badge[1]);
+}
+
+function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
+  g.save();
+  g.globalAlpha = alpha;
+  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
+  if (e.kind === 'mover') {
+    g.fillStyle = INK.mover; roundRect(g, 2, 2, T - 4, T - 4, 6); g.fill();
+    g.strokeStyle = INK.moverEdge; g.lineWidth = 2; g.stroke();
+    g.strokeStyle = '#3b4252'; g.lineWidth = 2.5;
+    g.beginPath();
+    if (e.axis === 'h') { g.moveTo(10, 12); g.lineTo(6, 16); g.lineTo(10, 20); g.moveTo(22, 12); g.lineTo(26, 16); g.lineTo(22, 20); }
+    else { g.moveTo(12, 10); g.lineTo(16, 6); g.lineTo(20, 10); g.moveTo(12, 22); g.lineTo(16, 26); g.lineTo(20, 22); }
+    g.stroke();
+    modeBadge(g, e.mode);
+  } else if (e.kind === 'enemy') {
+    g.fillStyle = INK.enemy;
+    g.beginPath(); g.moveTo(16, 3); g.lineTo(29, 16); g.lineTo(16, 29); g.lineTo(3, 16); g.closePath(); g.fill();
+    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
+    g.fillStyle = '#fff';
+    g.beginPath(); g.arc(12 + lx, 15 + ly, 3, 0, Math.PI * 2); g.arc(20 + lx, 15 + ly, 3, 0, Math.PI * 2); g.fill();
+    modeBadge(g, e.mode);
+  } else if (e.kind === 'strong') {
+    g.fillStyle = INK.strong; roundRect(g, 2, 3, T - 4, T - 5, 7); g.fill();
+    g.strokeStyle = INK.strongEdge; g.lineWidth = 2; g.stroke();
+    g.fillStyle = INK.strongEdge;
+    g.beginPath(); g.moveTo(6, 6); g.lineTo(9, 0); g.lineTo(12, 5); g.moveTo(20, 5); g.lineTo(23, 0); g.lineTo(26, 6); g.fill();
+    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
+    g.fillStyle = '#ffd34d';
+    g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
+    modeBadge(g, e.mode);
+  } else if (e.kind === 'turret') {
+    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+  } else if (e.kind === 'box') {
+    g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
+    g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();
+    g.beginPath(); g.moveTo(7, 7); g.lineTo(25, 25); g.moveTo(25, 7); g.lineTo(7, 25); g.stroke();
+  } else if (e.kind === 'heavy') {
+    g.fillStyle = INK.heavy; roundRect(g, 2, 2, T - 4, T - 4, 3); g.fill();
+    g.strokeStyle = INK.heavyEdge; g.lineWidth = 3; g.stroke();
+    g.fillStyle = INK.rivet;
+    for (const [rx, ry] of [[7, 7], [25, 7], [7, 25], [25, 25]]) { g.beginPath(); g.arc(rx, ry, 2, 0, Math.PI * 2); g.fill(); }
+  }
+  if (e.turret) drawTurret(g, e.turret, e.kind === 'turret' ? [24, 8] : [8, 24], e.kind !== 'turret');
+  g.restore();
+}
+
+// Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
+// on top of you, so you can still be found. Swimming on land you wear a blue drop;
+// under water you waver, tinted, with a ripple.
+function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim = null, sticky = false) {
+  g.save(); g.globalAlpha = alpha;
+  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale);
+  const under = swim === 'under';
+  if (under) {
+    const w = Math.sin(frame.clock / 170);
+    g.strokeStyle = INK.waterHi; g.lineWidth = 1.5;
+    const rp = (frame.clock % 1100) / 1100;
+    g.globalAlpha = alpha * 0.6 * (1 - rp); g.beginPath(); g.arc(0, 0, 11 + 6 * rp, 0, Math.PI * 2); g.stroke();
+    g.globalAlpha = alpha * 0.8;
+    g.translate(w * 1.5, 0); g.scale(1 + 0.07 * w, 1 - 0.07 * w);
+  }
+  if (hidden) {
+    g.strokeStyle = INK.player; g.lineWidth = 2; g.setLineDash([3, 3]);
+    g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+  } else { g.fillStyle = INK.player; g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill(); }
+  if (armored) {
+    // A steel rim with four rivets.
+    g.strokeStyle = INK.armor; g.lineWidth = 3.5;
+    g.beginPath(); g.arc(0, 0, 11.5, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = '#e8eef6';
+    for (const a of [0.25, 0.75, 1.25, 1.75]) { g.beginPath(); g.arc(Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6, 0, Math.PI * 2); g.fill(); }
+  }
+  g.fillStyle = '#0b2a2c'; g.beginPath(); g.arc(-3.5, -2, 2.2, 0, Math.PI * 2); g.arc(3.5, -2, 2.2, 0, Math.PI * 2); g.fill();
+  if (sticky) {
+    // Goo on top, dripping from the bottom.
+    g.fillStyle = INK.goo;
+    g.beginPath(); g.ellipse(0, -8, 7, 3, 0, 0, Math.PI * 2); g.fill();
+    const k = (frame.clock % 900) / 900;
+    g.beginPath(); g.ellipse(-4, 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.ellipse(5, 9, 1.6, 2.4, 0, 0, Math.PI * 2); g.fill();
+  }
+  if (under) {
+    g.globalAlpha = alpha * 0.45; g.fillStyle = INK.waterHi;
+    g.beginPath(); g.arc(0, 0, 10.5, 0, Math.PI * 2); g.fill();
+  } else if (swim === 'on') {
+    g.fillStyle = INK.waterHi;
+    g.beginPath(); g.moveTo(9, -16); g.quadraticCurveTo(14, -9, 9, -7); g.quadraticCurveTo(4, -9, 9, -16); g.fill();
+  }
+  g.restore();
+}
+return { modeBadge, drawTurret, drawPiece, drawPlayer };
+})();
+// ---- src/view/tiles.js
+const m32 = (() => {
+const { INK, T, frame, roundRect } = m14;
+// Tiles: floor, walls and every cell type, drawn in place.
+
+// bare: a block in the wall mass, so only what sits on it is drawn.
+// Gravel's grit: the same scatter of dark and light stones on every tile, at (X, Y).
+function grit(g, X, Y) {
+  for (const [x, y, r, hi] of [[7, 8, 1.6, 0], [18, 6, 1.3, 1], [25, 12, 1.7, 0], [11, 17, 1.2, 1], [21, 21, 1.6, 0], [6, 25, 1.4, 0], [15, 27, 1.2, 1], [27, 26, 1.3, 0]]) {
+    g.fillStyle = hi ? INK.gravelHi : INK.gravelDot; g.beginPath(); g.arc(X + x, Y + y, r, 0, Math.PI * 2); g.fill();
+  }
+}
+
+function drawCell(g, c, x, y, s, scale = 1, bare = false) {
+  if (!c) return;
+  const px = x * T, py = y * T;
+  g.save();
+  g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
+  if (c === 'sticky') {
+    // A lumpy green puddle with a couple of bubbles.
+    g.fillStyle = INK.gooDark;
+    g.beginPath(); g.ellipse(16, 17, 12, 9, 0, 0, Math.PI * 2); g.ellipse(9, 13, 5, 4, 0, 0, Math.PI * 2); g.ellipse(23, 21, 5, 4, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = INK.goo;
+    g.beginPath(); g.ellipse(16, 16, 10, 7, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    g.beginPath(); g.arc(12, 14, 1.8, 0, Math.PI * 2); g.arc(20, 18, 1.2, 0, Math.PI * 2); g.fill();
+  } else if (c === 'gravel') {
+    g.fillStyle = INK.gravel; roundRect(g, 1, 1, T - 2, T - 2, 6); g.fill();
+    grit(g, 0, 0);
+  } else if (c === 'water') {
+    // A full tile, so a pool reads as one body; two waves drift across it.
+    g.fillStyle = INK.water; g.fillRect(0, 0, T, T);
+    g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
+    const k = (frame.clock / 900 + x * 0.37 + y * 0.53) % 1;
+    for (const wy of [10, 22]) {
+      g.beginPath();
+      for (let wx = 0; wx <= T; wx += 4) g.lineTo(wx, wy + Math.sin((wx / T + k) * Math.PI * 2) * 2);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+  } else if (c.startsWith('tri:')) {
+    // The solid half sits in the named corner; the slope is the bright edge.
+    const k = c.slice(4), pts = { nw: [[1, 1], [T - 1, 1], [1, T - 1]], ne: [[1, 1], [T - 1, 1], [T - 1, T - 1]], sw: [[1, 1], [1, T - 1], [T - 1, T - 1]], se: [[T - 1, 1], [T - 1, T - 1], [1, T - 1]] }[k];
+    g.fillStyle = INK.wall; g.beginPath(); g.moveTo(...pts[0]); g.lineTo(...pts[1]); g.lineTo(...pts[2]); g.closePath(); g.fill();
+    g.strokeStyle = INK.wallTop; g.lineWidth = 3; g.beginPath();
+    if (k === 'nw') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
+    else if (k === 'se') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
+    else { g.moveTo(1, 1); g.lineTo(T - 1, T - 1); }
+    g.stroke();
+  } else if (c === 'wall') {
+    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+  } else if (c === 'death') {
+    // Spikes on a dark red slab.
+    g.fillStyle = INK.deathBg; roundRect(g, 1, 1, T - 2, T - 2, 4); g.fill();
+    g.fillStyle = INK.deathSpike;
+    for (const [cx, cy] of [[9, 9], [23, 9], [16, 16], [9, 23], [23, 23]]) {
+      g.beginPath(); g.moveTo(cx, cy - 5); g.lineTo(cx + 4, cy + 4); g.lineTo(cx - 4, cy + 4); g.closePath(); g.fill();
+    }
+  } else if (c.startsWith('spring:')) {
+    // A block with a coil and a plate on the side it faces.
+    const d = c.slice(7);
+    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
+    g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
+    g.strokeStyle = INK.spring; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(-8, 0);
+    for (let i = 0; i < 4; i++) { g.lineTo(-6 + i * 4, -6); g.lineTo(-4 + i * 4, 6); }
+    g.lineTo(9, 0); g.stroke();
+    g.fillStyle = INK.spring; g.fillRect(10, -10, 4, 20);
+    g.restore();
+  } else if (c.startsWith('gate:')) {
+    // Rails along the sides it blocks, and a chevron for each way it lets through.
+    const ds = c.slice(5).split(','), across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
+    g.fillStyle = INK.gateBg; g.fillRect(1, 1, T - 2, T - 2);
+    g.fillStyle = INK.wall;
+    if (!upDown) { g.fillRect(1, 1, T - 2, 5); g.fillRect(1, T - 6, T - 2, 5); }
+    if (!across) { g.fillRect(1, 1, 5, T - 2); g.fillRect(T - 6, 1, 5, T - 2); }
+    g.strokeStyle = INK.gateArrow; g.lineWidth = 2.6; g.lineJoin = 'round';
+    for (const d of ds) {
+      g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
+      g.beginPath(); g.moveTo(2, -6); g.lineTo(8, 0); g.lineTo(2, 6); g.stroke();
+      g.restore();
+    }
+  } else if (c.startsWith('sensor:')) {
+    // A floor plate a beam lights as it crosses: a coloured diamond that glows while lit.
+    const col = c.slice(7), lit = s && s.lit.has(y * s.w + x);
+    g.translate(16, 16); g.rotate(Math.PI / 4);
+    g.strokeStyle = INK[col]; g.lineWidth = 2.5; g.strokeRect(-8, -8, 16, 16);
+    g.fillStyle = INK[col]; g.globalAlpha = lit ? 1 : 0.25; g.fillRect(-4, -4, 8, 8); g.globalAlpha = 1;
+    if (lit) { g.globalAlpha = 0.3; g.fillRect(-12, -12, 24, 24); g.globalAlpha = 1; }
+  } else if (c.startsWith('receiver:')) {
+    // A catcher: a block with a coloured eye that glows while a beam holds it.
+    const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
+    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
+    g.fillStyle = lit ? INK[col] : INK.unlit;
+    g.beginPath(); g.arc(16, 16, 8.5, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = INK[col]; g.lineWidth = 3; g.stroke();
+    if (lit) { g.globalAlpha = 0.35; g.fillStyle = INK[col]; g.beginPath(); g.arc(16, 16, 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
+  } else if (c === 'goal') {
+    // A gold ring with a star in it, pulsing slowly.
+    const k = 0.5 + 0.5 * Math.sin(frame.clock / 400);
+    g.strokeStyle = INK.goal; g.lineWidth = 2.5; g.globalAlpha = 0.55 + 0.45 * k;
+    g.beginPath(); g.arc(16, 16, 12, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
+    g.fillStyle = INK.goal; g.beginPath();
+    for (let i = 0; i < 10; i++) { const r = i % 2 ? 3.2 : 7.5, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(16 + Math.cos(a) * r, 16 + Math.sin(a) * r); }
+    g.fill();
+  } else if (c === 'checkpoint') {
+    const active = s && s.checkpoint.x === x && s.checkpoint.y === y;
+    g.strokeStyle = INK.moverEdge; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(11, 26); g.lineTo(11, 6); g.stroke();
+    g.fillStyle = active ? INK.flag : '#6b6150';
+    g.beginPath(); g.moveTo(12, 6); g.lineTo(25, 10.5); g.lineTo(12, 15); g.fill();
+  } else {
+    const [kind, col] = c.split(':');
+    g.fillStyle = INK[col]; g.strokeStyle = INK[col]; g.lineWidth = 2.5;
+    if (kind === 'button') {
+      const down = s && pressedAt(s, x, y);
+      g.globalAlpha = 0.35; g.beginPath(); g.arc(16, 16, 11, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
+      g.beginPath(); g.arc(16, down ? 17 : 15, down ? 6 : 8, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'idoor') {
+      // The negative of a door: dark inside, the colour on the rim and the bars. Open,
+      // a dashed rim around a minus sign.
+      const open = s && !s.open[col];
+      if (open) {
+        g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]);
+        roundRect(g, 11, 14, 10, 4, 1.5); g.fill();
+      } else {
+        g.fillStyle = INK.idoor; roundRect(g, 2, 2, T - 4, T - 4, 4); g.fill(); g.stroke();
+        g.fillStyle = INK[col];
+        for (const bx of [9, 15, 21]) g.fillRect(bx, 5, 2, T - 10);
+      }
+    } else {
+      const open = s && s.open[col];
+      if (open) { g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]); }
+      else {
+        roundRect(g, 2, 2, T - 4, T - 4, 4); g.fill();
+        g.fillStyle = 'rgba(0,0,0,0.3)';
+        for (const bx of [9, 15, 21]) g.fillRect(bx, 4, 2, T - 8);
+      }
+    }
+  }
+  g.restore();
+}
+
+function pressedAt(s, x, y) {
+  return (s.player.x === x && s.player.y === y && !s.player.hidden) ||
+    s.entities.some(e => !e.dead && e.x === x && e.y === y);
+}
+
+function drawFloor(g, w, h) {
+  g.fillStyle = INK.floor; g.fillRect(0, 0, w * T, h * T);
+  g.strokeStyle = INK.grid; g.lineWidth = 1;
+  g.beginPath();
+  for (let x = 1; x < w; x++) { g.moveTo(x * T + 0.5, 0); g.lineTo(x * T + 0.5, h * T); }
+  for (let y = 1; y < h; y++) { g.moveTo(0, y * T + 0.5); g.lineTo(w * T, y * T + 0.5); }
+  g.stroke();
+}
+return { grit, drawCell, pressedAt, drawFloor };
+})();
+// ---- src/view/masses.js
+const m33 = (() => {
+const { INK, T, frame } = m14;
+const { grit } = m32;
+// Joined-up tiles: neighbouring walls, water, sticky puddles and death blocks are drawn as
+// one mass each. Every cell is four quarters; a quarter reads its two side neighbours and
+// the diagonal between them, so outer corners round, inner corners get a fillet and a
+// solid block has no seams. Doors, switches and the rest stay one tile each (tiles.js).
+
+
+const MASSES = ['wall', 'water', 'sticky', 'gravel', 'death'];
+// Corner radius per kind, in pixels of a 32 px tile.
+const RADIUS = { wall: 6, water: 8, sticky: 10, gravel: 6, death: 6 };
+const LIP = 6;
+
+// Blocks with something on them (a spring, a laser catcher) are still walls, and a
+// triangle is a wall along its two straight sides.
+const BLOCK = /^(spring|receiver):/;
+const OPPOSITE = { nw: 'se', ne: 'sw', sw: 'ne', se: 'nw' };
+const member = (c, kind) => kind === 'wall' ? c === 'wall' || BLOCK.test(c) || /^tri:/.test(c) : c === kind;
+// Does cell c belong to the mass on its side (n, e, s, w) or corner (nw ...) facing the asker?
+function joins(c, kind, side) {
+  if (!member(c, kind)) return false;
+  if (!c.startsWith('tri:')) return true;
+  const k = c.slice(4);
+  return side.length === 1 ? k.includes(side) : side !== OPPOSITE[k];
+}
+const inMass = c => !!c && (MASSES.includes(c) || BLOCK.test(c) || c.startsWith('tri:'));
+// The ones that keep a drawing of their own on top of the mass.
+const overlay = c => BLOCK.test(c);
+
+// What one quarter of cell (x, y) draws, toward (dx, dy): 'round' (an outer corner),
+// 'full', 'tri' for a triangle (drawn whole), or for a cell outside the mass, 'fillet' when
+// both sides and the diagonal belong to it, else null. Outside the room counts as wall.
+function quarter(kindAt, kind, x, y, dx, dy) {
+  const self = kindAt(x, y), h = dx > 0 ? 'w' : 'e', v = dy > 0 ? 'n' : 's';
+  const A = joins(kindAt(x + dx, y), kind, h), B = joins(kindAt(x, y + dy), kind, v), D = joins(kindAt(x + dx, y + dy), kind, v + h);
+  if (member(self, kind)) return self.startsWith('tri:') ? 'tri' : !A && !B ? 'round' : 'full';
+  return A && B && D ? 'fillet' : null;
+}
+
+function path(kindAt, kind, w, h) {
+  const p = new Path2D(), r = RADIUS[kind], q = T / 2, f = r;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      const how = quarter(kindAt, kind, x, y, dx, dy);
+      if (!how) continue;
+      const qx = x * T + (dx > 0 ? q : 0), qy = y * T + (dy > 0 ? q : 0);
+      if (how === 'full') { p.rect(qx, qy, q, q); continue; }
+      if (how === 'tri') {
+        if (dx > 0 || dy > 0) continue;
+        const X = x * T, Y = y * T, pts = { nw: [[0, 0], [T, 0], [0, T]], ne: [[0, 0], [T, 0], [T, T]], sw: [[0, 0], [0, T], [T, T]], se: [[T, 0], [T, T], [0, T]] }[kindAt(x, y).slice(4)];
+        p.moveTo(X + pts[0][0], Y + pts[0][1]); p.lineTo(X + pts[1][0], Y + pts[1][1]); p.lineTo(X + pts[2][0], Y + pts[2][1]); p.closePath(); continue;
+      }
+      if (how === 'round') {
+        const radii = [0, 0, 0, 0]; radii[dy < 0 ? (dx < 0 ? 0 : 1) : (dx < 0 ? 3 : 2)] = r;
+        p.roundRect(qx, qy, q, q, radii); continue;
+      }
+      // The fillet sits in this empty cell's corner, curving between the two walls beside it.
+      const cx = dx > 0 ? qx + q : qx, cy = dy > 0 ? qy + q : qy;
+      p.moveTo(cx, cy); p.lineTo(cx - dx * f, cy);
+      p.arcTo(cx, cy, cx, cy - dy * f, f);
+      p.closePath();
+    }
+  }
+  return p;
+}
+
+// cells: the room's cells; skip(x, y): a cell drawn on its own this frame (one popping in).
+// The kind at (x, y), with everything outside the room counting as wall, so the border
+// joins the room's own walls.
+const kindIn = (cells, w, h) => (x, y) => x < 0 || y < 0 || x >= w || y >= h ? 'wall' : cells[y * w + x];
+
+function drawMasses(g, cells, w, h, skip = () => false) {
+  const kindAt = kindIn(cells, w, h);
+  const held = (x, y) => skip(x, y) && kindAt(x, y) !== '';
+  const at = (x, y) => held(x, y) ? '' : kindAt(x, y);
+  for (const kind of ['gravel', 'water', 'sticky', 'death', 'wall']) {
+    if (kind !== 'wall' && !cells.includes(kind)) continue;
+    const p = path(at, kind, w, h);
+    g.save();
+    if (kind === 'wall') {
+      // A light lip on every edge that faces up, then the face.
+      g.fillStyle = INK.wallTop; g.fill(p); g.clip(p); g.translate(0, LIP); g.fillStyle = INK.wall; g.fill(p);
+    } else if (kind === 'gravel') {
+      g.fillStyle = INK.gravel; g.fill(p);
+      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'gravel') grit(g, (i % w) * T, Math.floor(i / w) * T);
+    } else if (kind === 'water') {
+      g.fillStyle = INK.water; g.fill(p); g.clip(p);
+      // Waves run across the whole pool, not tile by tile.
+      g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
+      const k = (frame.clock / 900) % 1;
+      for (let y = 0; y < h; y++) for (const wy of [10, 22]) {
+        g.beginPath();
+        for (let wx = 0; wx <= w * T; wx += 4) g.lineTo(wx, y * T + wy + Math.sin((wx / T + k + y * 0.53) * Math.PI * 2) * 2);
+        g.stroke();
+      }
+    } else if (kind === 'sticky') {
+      g.fillStyle = INK.gooDark; g.fill(p); g.clip(p); g.translate(0, -3); g.fillStyle = INK.goo; g.fill(p); g.translate(0, 3);
+      g.fillStyle = 'rgba(255,255,255,0.55)'; g.beginPath();
+      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'sticky') {
+        const X = (i % w) * T, Y = Math.floor(i / w) * T;
+        g.moveTo(X + 13.8, Y + 13); g.arc(X + 12, Y + 13, 1.8, 0, Math.PI * 2); g.moveTo(X + 21.2, Y + 17); g.arc(X + 20, Y + 17, 1.2, 0, Math.PI * 2);
+      }
+      g.fill();
+    } else {
+      g.fillStyle = INK.deathBg; g.fill(p);
+      g.fillStyle = INK.deathSpike; g.beginPath();
+      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'death') {
+        const X = (i % w) * T, Y = Math.floor(i / w) * T;
+        for (const [cx, cy] of [[9, 9], [23, 9], [16, 16], [9, 23], [23, 23]]) { g.moveTo(X + cx, Y + cy - 5); g.lineTo(X + cx + 4, Y + cy + 4); g.lineTo(X + cx - 4, Y + cy + 4); g.closePath(); }
+      }
+      g.fill();
+    }
+    g.restore();
+  }
+}
+return { MASSES, RADIUS, joins, inMass, overlay, quarter, kindIn, drawMasses };
+})();
+// ---- src/view/lenses.js
+const m34 = (() => {
+const { INK, T } = m14;
+// The editor's lenses, drawn over the room. A heat lens recolours tiles under the pieces; dots,
+// lines and frames are marks on top. One lens per group, so nothing here paints over its own kind.
+
+const centre = (i, w) => [(i % w) * T + T / 2, Math.floor(i / w) * T + T / 2];
+
+// heat: { distance: Map, hopeless: [] } or { tiles: Set, colour }.
+function drawHeat(g, w, heat) {
+  if (!heat) return;
+  const fill = (i, colour) => { g.fillStyle = colour; g.fillRect((i % w) * T, Math.floor(i / w) * T, T, T); };
+  if (heat.distance) {
+    const max = Math.max(1, ...heat.distance.values());
+    // Near the goal is green, far is red; a tile no stop on can still win is grey.
+    for (const [i, d] of heat.distance) fill(i, `hsla(${Math.round(120 * (1 - d / max))}, 75%, 45%, 0.5)`);
+    for (const i of heat.hopeless) fill(i, 'rgba(120, 128, 145, 0.55)');
+    return;
+  }
+  g.globalAlpha = 0.35;
+  for (const i of heat.tiles) fill(i, heat.colour);
+  g.globalAlpha = 1;
+}
+
+// marks: { dots: [tiles], small: [tiles], lines: [tiles in order], moves: [{ a, b, n }],
+// frames: Set of tiles, crosses: Set of tiles }.
+function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses } = {}) {
+  if (dots) {
+    g.fillStyle = INK.player;
+    for (const i of dots) { const [x, y] = centre(i, w); g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill(); }
+  }
+  if (small) {
+    g.fillStyle = INK.player; g.globalAlpha = 0.6;
+    for (const i of small) { const [x, y] = centre(i, w); g.beginPath(); g.arc(x, y, 1.8, 0, Math.PI * 2); g.fill(); }
+    g.globalAlpha = 1;
+  }
+  if (moves && moves.length) {
+    // One arrow per move between two stops, wider the more positions make it.
+    const max = Math.max(...moves.map(m => m.n));
+    g.strokeStyle = INK.player; g.fillStyle = INK.player; g.globalAlpha = 0.55; g.lineCap = 'round';
+    for (const { a, b, n } of moves) {
+      const [ax, ay] = centre(a, w), [bx, by] = centre(b, w), t = Math.atan2(by - ay, bx - ax);
+      // Each direction sits a little to its own side, so a move and its way back do not overlap.
+      const ox = -Math.sin(t) * 2.5, oy = Math.cos(t) * 2.5, ex = bx + ox - Math.cos(t) * 6, ey = by + oy - Math.sin(t) * 6;
+      g.lineWidth = 1 + 3 * n / max;
+      g.beginPath(); g.moveTo(ax + ox, ay + oy); g.lineTo(ex, ey); g.stroke();
+      g.beginPath(); g.moveTo(ex + Math.cos(t) * 4, ey + Math.sin(t) * 4); g.lineTo(ex - Math.cos(t - 0.6) * 4, ey - Math.sin(t - 0.6) * 4); g.lineTo(ex - Math.cos(t + 0.6) * 4, ey - Math.sin(t + 0.6) * 4); g.closePath(); g.fill();
+    }
+    g.globalAlpha = 1;
+  }
+  if (lines && lines.length > 1) {
+    g.strokeStyle = INK.goal; g.fillStyle = INK.goal; g.lineWidth = 2.5; g.lineCap = 'round';
+    for (let n = 1; n < lines.length; n++) {
+      const [ax, ay] = centre(lines[n - 1], w), [bx, by] = centre(lines[n], w), a = Math.atan2(by - ay, bx - ax);
+      g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx - Math.cos(a) * 7, by - Math.sin(a) * 7); g.stroke();
+      g.beginPath(); g.moveTo(bx, by); g.lineTo(bx - Math.cos(a - 0.5) * 9, by - Math.sin(a - 0.5) * 9); g.lineTo(bx - Math.cos(a + 0.5) * 9, by - Math.sin(a + 0.5) * 9); g.closePath(); g.fill();
+      // Each move's number sits at the middle of its arrow.
+      const mx = (ax + bx) / 2, my = (ay + by) / 2;
+      g.fillStyle = INK.mark; g.beginPath(); g.arc(mx, my, 6, 0, Math.PI * 2); g.fill();
+      g.fillStyle = INK.goal; g.font = 'bold 8px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(String(n), mx, my + 0.5);
+    }
+  }
+  if (crosses) {
+    g.strokeStyle = '#ff9f43'; g.lineWidth = 2.5; g.lineCap = 'round';
+    for (const i of crosses) {
+      const x = (i % w) * T, y = Math.floor(i / w) * T;
+      g.strokeRect(x + 2, y + 2, T - 4, T - 4);
+      g.beginPath(); g.moveTo(x + 9, y + 9); g.lineTo(x + T - 9, y + T - 9); g.moveTo(x + T - 9, y + 9); g.lineTo(x + 9, y + T - 9); g.stroke();
+    }
+  }
+  if (frames) {
+    g.strokeStyle = INK.beam; g.lineWidth = 2;
+    for (const i of frames) g.strokeRect((i % w) * T + 2, Math.floor(i / w) * T + 2, T - 4, T - 4);
+  }
+}
+return { drawHeat, drawLensMarks };
+})();
+// ---- src/view/scene.js
+const m35 = (() => {
+const { DIRS } = m0;
+const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m14;
+const { drawPiece, drawPlayer } = m31;
+const { drawCell, drawFloor } = m32;
+const { drawMasses, inMass, overlay } = m33;
+const { drawHeat, drawLensMarks } = m34;
+// A whole frame: the level in edit mode, or a running game in play mode, with motion
+// drawn between the previous tick and this one. Nothing here changes state.
+
+
+
+
+
+
+const GHOST_MS = 360;
+
+// fx: [{type, at(ms), ...}] effects started by game events or edits.
+// marks: lens ({ heat, dots, lines, frames }, see lenses.js) and unused (pieces or tiles the
+// answer does not depend on, framed red).
+// over: { sel: box } or { paste: clip, x, y } from the Select tool, or null.
+function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
+  const { lens = {}, unused = [] } = marks;
+  frame.clock = now;
+  drawFloor(g, level.w, level.h);
+  drawHeat(g, level.w, lens.heat);
+  const pop = (x, y) => {
+    const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
+    return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
+  };
+  drawMasses(g, level.cells, level.w, level.h, (x, y) => pop(x, y) < 1);
+  level.cells.forEach((c, i) => {
+    const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
+    if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);
+    else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
+  });
+  for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
+  drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9, level.powers.armored);
+  for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {
+    const t = (now - f.at) / 160;
+    if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);
+    if (f.piece) drawPiece(g, f.piece, f.x * T, f.y * T, 1 - ease(t) * 0.8, 1 - t);
+  }
+  drawLensMarks(g, level.w, lens);
+  // A piece or tile the room's answer does not depend on gets a dashed red frame.
+  if (unused.length) {
+    g.strokeStyle = INK.beam; g.lineWidth = 2; g.setLineDash([5, 4]);
+    for (const u of unused) g.strokeRect(u.x * T + 3, u.y * T + 3, T - 6, T - 6);
+    g.setLineDash([]);
+  }
+  // A tile a warning points at gets a gold ring that fades.
+  for (const f of fx) if (f.type === 'flash' && now - f.at < 900) {
+    const t = (now - f.at) / 900;
+    g.strokeStyle = INK.goal; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
+    g.strokeRect(f.x * T + 2, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
+  }
+  if (over && over.sel) {
+    const r = over.sel;
+    g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([6, 4]);
+    g.strokeRect(r.x0 * T + 1, r.y0 * T + 1, (r.x1 - r.x0 + 1) * T - 2, (r.y1 - r.y0 + 1) * T - 2); g.setLineDash([]);
+  }
+  if (over && over.paste) {
+    // The ghost: the copy at half strength, red where it would cover something.
+    const { paste: p, x: ox, y: oy } = over;
+    g.globalAlpha = 0.55;
+    p.cells.forEach((c, i) => { const x = ox + i % p.w, y = oy + Math.floor(i / p.w); if (x < level.w && y < level.h) drawCell(g, c, x, y, null); });
+    for (const e of p.entities) if (ox + e.x < level.w && oy + e.y < level.h) drawPiece(g, e, (ox + e.x) * T, (oy + e.y) * T);
+    g.globalAlpha = 1;
+    for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) {
+      const x = ox + i, y = oy + j;
+      if (x >= level.w || y >= level.h) continue;
+      const busy = level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y);
+      g.fillStyle = busy ? 'rgba(230,80,80,0.25)' : 'rgba(80,220,140,0.18)';
+      g.fillRect(x * T, y * T, T, T);
+    }
+  }
+  if (hover) {
+    g.strokeStyle = INK.mark; g.globalAlpha = 0.5; g.lineWidth = 2;
+    g.strokeRect(hover.x * T + 1, hover.y * T + 1, T - 2, T - 2); g.globalAlpha = 1;
+  }
+}
+
+// prev: positions before the last tick; alpha: 0..1 progress into the next tick.
+function drawPlay(g, s, prev, alpha, fx, now) {
+  frame.clock = now;
+  const shake = fx.find(f => f.type === 'crash' && now - f.at < 180);
+  g.save();
+  if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
+  drawFloor(g, s.w, s.h);
+  drawMasses(g, s.cells, s.w, s.h);
+  s.cells.forEach((c, i) => { if (!inMass(c) || overlay(c)) drawCell(g, c, i % s.w, Math.floor(i / s.w), s, 1, overlay(c)); });
+  // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
+  // as its beam touches, yours for a moment.
+  const crackle = (cells, k) => {
+    g.strokeStyle = INK.shock; g.lineWidth = 1.5;
+    for (const i of cells) {
+      const x = (i % s.w) * T, y = Math.floor(i / s.w) * T, j = Math.floor(now / 70) + i;
+      g.globalAlpha = k * (0.35 + 0.35 * ((j * 7) % 3) / 2);
+      g.beginPath(); g.moveTo(x + 4, y + 8 + (j % 3) * 4); g.lineTo(x + 12, y + 14); g.lineTo(x + 18, y + 9 + (j % 2) * 6); g.lineTo(x + 28, y + 18); g.stroke();
+    }
+    g.globalAlpha = 1;
+  };
+  crackle(s.shocked, 1);
+  for (const f of fx) if (f.type === 'laser' && f.shocked && now - f.at < LASER_MS) crackle(f.shocked, 1 - (now - f.at) / LASER_MS);
+  const a = ease(alpha);
+  const pos = (id, x, y) => {
+    const p = prev.ents[id];
+    if (!p || Math.abs(p.x - x) + Math.abs(p.y - y) > 1) return [x * T, y * T];
+    return [lerp(p.x, x, a) * T, lerp(p.y, y, a) * T];
+  };
+  for (const e of s.entities) {
+    if (!e.dead) { const [px, py] = pos(e.id, e.x, e.y); drawPiece(g, e, px, py); continue; }
+    const f = fx.find(f => f.type === 'kill' && f.id === e.id);
+    if (f && now - f.at < 260) {
+      const t = (now - f.at) / 260;
+      drawPiece(g, e, e.x * T, e.y * T, 1 + 0.3 * t, 1 - t);
+    }
+  }
+  // A sticky piece wears goo on top; a glued pair is joined by a goo bridge.
+  g.fillStyle = INK.goo; g.strokeStyle = INK.goo; g.lineCap = 'round';
+  for (const e of s.entities) {
+    if (e.dead) continue;
+    const [px, py] = pos(e.id, e.x, e.y), k = (now % 900) / 900;
+    if (e.sticky) {
+      g.beginPath(); g.ellipse(px + 16, py + 7, 8, 3, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(px + 11, py + 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.fill();
+    }
+    const o = e.glue > e.id && s.entities.find(q => q.id === e.glue && !q.dead);
+    if (o) {
+      const [ox, oy] = pos(o.id, o.x, o.y);
+      const ux = Math.sign(o.x - e.x), uy = Math.sign(o.y - e.y);
+      g.lineWidth = 7; g.beginPath(); g.moveTo(px + 16 + ux * 11, py + 16 + uy * 11); g.lineTo(ox + 16 - ux * 11, oy + 16 - uy * 11); g.stroke();
+    }
+  }
+  g.lineCap = 'butt';
+  for (const f of fx) if (f.type === 'laser' && now - f.at < LASER_MS) {
+    const t = (now - f.at) / LASER_MS, c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
+    g.strokeStyle = INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
+    g.lineJoin = 'round';
+    g.beginPath();
+    f.path.forEach((p, i) => { const [x, y] = c(p); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
+    if (f.wall) { const [x, y] = c(f.path[f.path.length - 1]), [dx, dy] = DIRS[f.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
+    g.stroke(); g.globalAlpha = 1;
+  }
+  // Turret beams are on all the time: a core line with a soft glow and a slow flicker.
+  for (const b of s.beams) {
+    const c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
+    const line = () => {
+      g.beginPath();
+      b.path.forEach((p, i) => { const [x, y] = c(p); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
+      if (b.wall || b.stop) { const [x, y] = c(b.path[b.path.length - 1]), [dx, dy] = DIRS[b.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
+      g.stroke();
+    };
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    g.strokeStyle = INK.beam; g.globalAlpha = 0.25 + 0.08 * Math.sin(now / 90); g.lineWidth = 9; line();
+    g.globalAlpha = 1; g.lineWidth = 2.5; g.strokeStyle = INK.beam; line();
+    g.lineCap = 'butt';
+  }
+  // A boomerang kicks up a puff of cloud where you turned, blown the way you were going.
+  for (const f of fx) if (f.type === 'boomerang' && f.from && now - f.at < PUFF_MS) {
+    const t = (now - f.at) / PUFF_MS, [fx0, fy0] = DIRS[f.from], cx = f.x * T + T / 2, cy = f.y * T + T / 2;
+    // One path for the whole cloud, so overlapping puffs read as one soft shape.
+    const k = ease(t);
+    g.fillStyle = INK.puff; g.globalAlpha = 0.65 * (1 - t);
+    g.beginPath();
+    for (const [along, side, r0] of PUFFS) {
+      const x = cx + (fx0 * along + -fy0 * side) * (6 + 10 * k), y = cy + (fy0 * along + fx0 * side) * (6 + 10 * k), r = r0 * (0.7 + 0.6 * k);
+      g.moveTo(x + r, y); g.arc(x, y, r, 0, Math.PI * 2);
+    }
+    g.fill('nonzero');
+    g.globalAlpha = 1;
+  }
+  for (const f of fx) if (f.type === 'dive' && now - f.at < 200) {
+    const t = (now - f.at) / 200;
+    g.strokeStyle = INK.player; g.globalAlpha = 0.6 * (1 - t); g.lineWidth = 14 * (1 - t) + 2; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(f.fromX * T + T / 2, f.fromY * T + T / 2); g.lineTo(f.toX * T + T / 2, f.toY * T + T / 2); g.stroke();
+    g.globalAlpha = 1; g.lineCap = 'butt';
+  }
+  // Drift: a fading ghost of the player on each tile it just left.
+  for (const f of fx) if (f.type === 'ghost' && now - f.at < GHOST_MS) drawPlayer(g, f.x * T, f.y * T, false, 1 - 0.4 * (now - f.at) / GHOST_MS, 0.35 * (1 - (now - f.at) / GHOST_MS));
+  const p = s.player, pp = prev.player;
+  let px = p.x * T, py = p.y * T;
+  if (pp && !p.snap && Math.abs(pp.x - p.x) + Math.abs(pp.y - p.y) <= 1) { px = lerp(pp.x, p.x, a) * T; py = lerp(pp.y, p.y, a) * T; }
+  const born = fx.find(f => (f.type === 'die' || f.type === 'respawn') && now - f.at < 220);
+  const scale = born ? 0.3 + 0.7 * ease((now - born.at) / 220) : 1;
+  for (const f of fx) if (f.type === 'die' && now - f.at < 300) {
+    const t = (now - f.at) / 300;
+    g.strokeStyle = INK.player; g.globalAlpha = 1 - t; g.lineWidth = 2;
+    g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
+  }
+  const swim = !p.swimming ? null : s.cells[p.y * s.w + p.x] === 'water' ? 'under' : 'on';
+  // Stuck, a goo strand ties you to what you ride or drag.
+  const st = p.stuck && s.entities.find(e => e.id === p.stuck.id && !e.dead);
+  if (st) {
+    const [ex, ey] = pos(st.id, st.x, st.y);
+    g.strokeStyle = INK.goo; g.lineWidth = 5; g.lineCap = 'round';
+    const ux = Math.sign(ex - px), uy = Math.sign(ey - py);
+    g.beginPath(); g.moveTo(px + T / 2 + ux * 9, py + T / 2 + uy * 9); g.lineTo(ex + T / 2 - ux * 13, ey + T / 2 - uy * 13); g.stroke(); g.lineCap = 'butt';
+  }
+  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);
+  g.restore();
+}
+return { drawEdit, drawPlay };
+})();
+// ---- src/editor/palette.js
+const m36 = (() => {
+
+// The palette: every tool, its group and label, and the words the editor uses for
+// powers, colours, clocks and directions. Draft copy throughout.
+const TOOLS = [
+  { id: 'look', label: 'Look', group: 'basic' },
+  { id: 'erase', label: 'Erase', group: 'basic' },
+  { id: 'select', label: 'Select', group: 'basic' },
+  { id: 'start', label: 'Start', group: 'basic' },
+  { id: 'wall', label: 'Block', group: 'basic' },
+  { id: 'checkpoint', label: 'Checkpoint', group: 'basic' },
+  { id: 'goal', label: 'Goal', group: 'basic' },
+  { id: 'mover', label: 'Moving block', group: 'pieces' },
+  { id: 'enemy', label: 'Weak enemy', group: 'pieces' },
+  { id: 'strong', label: 'Strong enemy', group: 'pieces' },
+  { id: 'turret', label: 'Laser turret', group: 'pieces' },
+  { id: 'box', label: 'Box', group: 'pieces' },
+  { id: 'heavy', label: 'Heavy box', group: 'pieces' },
+  { id: 'tri', label: 'Triangle', group: 'tiles' },
+  { id: 'gate', label: 'One-way', group: 'tiles' },
+  { id: 'spring', label: 'Spring', group: 'tiles' },
+  { id: 'death', label: 'Death block', group: 'tiles' },
+  { id: 'water', label: 'Water', group: 'tiles' },
+  { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },
+  { id: 'gravel', label: 'Gravel', group: 'tiles' },
+  { id: 'button', label: 'Button', group: 'switches' },
+  { id: 'door', label: 'Door', group: 'switches' },
+  { id: 'idoor', label: 'Inverted door', group: 'switches' },
+  { id: 'receiver', label: 'Laser catcher', group: 'switches' },
+  { id: 'sensor', label: 'Laser relay', group: 'switches' },
+];
+const POWER_TEXT = {
+  boomerang: 'While sliding, press back to slide the other way.',
+  dive: 'While sliding, press the same arrow to land at once and crash.',
+  laser: 'While sliding, press a side arrow to fire a beam that way.',
+  cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed. With Swim too, the same press does both.',
+  swim: 'When standing on land, press Space to start or stop swimming. The world takes a step. While swimming, you can go into water, at half speed.',
+  light: 'When standing still, light up dark rooms.',
+  armored: 'Weak enemies, blocks and closing doors cannot crush you. Strong enemies, heavy boxes, beams and death blocks still can.',
+};
+const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', light: 'Light', armored: 'Armored' };
+
+
+// The palette shows one group at a time on a phone, so it fits without scrolling.
+const GROUPS = [['basic', 'Basics'], ['pieces', 'Pieces'], ['tiles', 'Tiles'], ['switches', 'Switches']];
+const COLOUR_NAME = { red: 'Red', blue: 'Blue', yellow: 'Yellow', green: 'Green' };
+const CLOCK_NAME = { realtime: 'real time', input: 'on your move', follow: 'same way as you' };
+const ARROW = { up: '\u2191', right: '\u2192', down: '\u2193', left: '\u2190' };
+const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'bottom right' };
+return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
+})();
 // ---- src/solve/lenses.js
 const m37 = (() => {
 const { createGame } = m8;
 const { computeBeams } = m3;
-const { successors, stateKey, unsearchable, MAX_STATES } = m23;
+const { successors, stateKey, unsearchable, MAX_STATES } = m15;
 // What the editor's lenses draw, from every position the room can reach: how far each tile
 // is from winning, a shortest way there, every tile you pass through on the way to a stop,
 // every tile a beam or a piece ever covers, the moves between stops, and where a move kills
@@ -3708,13 +3815,13 @@ return { WELL, openWell, closeWell, syncWell, buildWell };
 })();
 // ---- src/app/lenses.js
 const m39 = (() => {
-const { reach } = m23;
-const { routes } = m25;
+const { reach } = m15;
+const { routes } = m17;
 const { lensData } = m37;
 const { INK } = m14;
 const { S } = m11;
 const { $ } = m12;
-const { sliced } = m26;
+const { sliced } = m18;
 const { WELL, closeWell } = m38;
 // Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
@@ -3894,7 +4001,7 @@ return { LENS_GROUPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, l
 // ---- src/editor/edit.js
 const m40 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
-const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m22;
+const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m36;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -4086,7 +4193,7 @@ return { buildChips, syncChips };
 })();
 // ---- src/app/keys.js
 const m42 = (() => {
-const { TOOLS } = m22;
+const { TOOLS } = m36;
 const { $ } = m12;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
 // every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
@@ -4206,7 +4313,7 @@ return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 const m44 = (() => {
 const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m43;
 const { S } = m11;
-const { change } = m36;
+const { change } = m28;
 const { $ } = m12;
 // The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
 // it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
@@ -4331,19 +4438,19 @@ const m45 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel, resizeSide, wallBorder } = m9;
 const { T, INK } = m14;
-const { drawPiece } = m17;
-const { drawEdit } = m21;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m22;
+const { drawPiece } = m31;
+const { drawEdit } = m35;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m36;
 const { S } = m11;
 const { $, canvas, touch } = m12;
-const { change, step: undoStep, syncUndo } = m36;
-const { runCheck, syncCheck, syncLint } = m27;
+const { change, step: undoStep, syncUndo } = m28;
+const { runCheck, syncCheck, syncLint } = m19;
 const { buildLenses, syncLenses } = m39;
 const { buildWell, openWell } = m38;
 const { buildChips } = m41;
-const { buildSize } = m15;
+const { buildSize } = m29;
 const { buildKeys } = m42;
-const { syncRoomsButton } = m35;
+const { syncRoomsButton } = m27;
 const { buildSelect, syncSelect } = m44;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
@@ -4475,7 +4582,7 @@ function buildPanels(actions) {
   $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
   buildWell();
   buildChips();
-  buildSize();
+  buildSize({ after: () => { syncPanel(); fit(); } });
   buildKeys();
   document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
@@ -4550,7 +4657,7 @@ return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/app/stuck.js
 const m46 = (() => {
-const { canWin, settled, stateKey, unsearchable } = m23;
+const { canWin, settled, stateKey, unsearchable } = m15;
 const { S } = m11;
 const { $ } = m12;
 // While you play: once everything has come to rest, a search in the background asks whether
@@ -4588,11 +4695,11 @@ const m47 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
-const { drawEdit, drawPlay } = m21;
+const { drawEdit, drawPlay } = m35;
 const { S } = m11;
 const { $, g, now } = m12;
 const { syncPanel, keysText } = m45;
-const { feedDemo } = m27;
+const { feedDemo } = m19;
 const { selectOverlay } = m44;
 const { watchStuck, resetStuck } = m46;
 const { lensMarks, lensBusy } = m39;
@@ -4654,6 +4761,8 @@ function setMode(m, keep) {
   $('win').hidden = true;
   resetStuck();
   $('moves').textContent = m === 'play' ? 'Moves 0' : '';
+  // On a phone, play takes the whole screen: the room is sized again without the editor.
+  requestAnimationFrame(() => dispatchEvent(new Event('resize')));
   S.fx = [];
   if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }
   syncPanel();
@@ -4721,14 +4830,14 @@ const { describe, holds, place } = m40;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
 const { setMode, aim } = m47;
-const { begin, end, step: undoStep } = m36;
-const { save } = m35;
+const { begin, end, step: undoStep } = m28;
+const { save } = m27;
 const { selectDown, selectMove, selectUp, selectKey } = m44;
 const { LENS_GROUPS, cycleLens, lensesOff } = m39;
 const { syncPanel } = m45;
-const { fit } = m16;
+const { fit } = m30;
 const { toolForKey, bareKey, showKeys } = m42;
-const { TOOLS } = m22;
+const { TOOLS } = m36;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -4760,12 +4869,23 @@ const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 
 
 function bindInput() {
   canvas.addEventListener('contextmenu', ev => ev.preventDefault());
+  // In play a swipe can start anywhere off the controls, so a thumb that misses the room
+  // still moves you instead of scrolling the page.
+  const control = t => t.closest && t.closest('button, input, select, textarea, a, dialog, label');
+  window.addEventListener('pointerdown', ev => {
+    if (S.mode === 'play' && !control(ev.target)) S.swipe = { x: ev.clientX, y: ev.clientY, last: null };
+  });
+  window.addEventListener('pointermove', ev => {
+    if (S.mode !== 'play' || !S.swipe) return;
+    const sw = S.swipe, dx = ev.clientX - sw.x, dy = ev.clientY - sw.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_PX) return;
+    const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    if (d !== sw.last) S.pending.push(aim(d));
+    Object.assign(sw, { x: ev.clientX, y: ev.clientY, last: d });
+  });
+  for (const t of ['pointerup', 'pointercancel']) window.addEventListener(t, () => { S.swipe = null; });
   canvas.addEventListener('pointerdown', ev => {
-    if (S.mode === 'play') {
-      S.swipe = { x: ev.clientX, y: ev.clientY, last: null };
-      canvas.setPointerCapture(ev.pointerId);
-      return;
-    }
+    if (S.mode === 'play') return;
     const c = cellFromEvent(ev); if (!c) return;
     if (S.ui.tool === 'look') {
       $('placeHint').textContent = describe(S.level, c.x, c.y);
@@ -4783,14 +4903,7 @@ function bindInput() {
     paint(c.x, c.y, S.painting);
   });
   canvas.addEventListener('pointermove', ev => {
-    if (S.mode === 'play' && S.swipe) {
-      const sw = S.swipe, dx = ev.clientX - sw.x, dy = ev.clientY - sw.y;
-      if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_PX) return;
-      const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
-      if (d !== sw.last) S.pending.push(aim(d));
-      Object.assign(sw, { x: ev.clientX, y: ev.clientY, last: d });
-      return;
-    }
+    if (S.mode === 'play') return;
     const c = S.mode === 'edit' ? cellFromEvent(ev) : null;
     // The outline follows a mouse only; a finger would leave it behind on lift.
     S.hover = touch && S.ui.tool !== 'select' ? null : c;
@@ -4945,8 +5058,8 @@ return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
 const m50 = (() => {
-const { search } = m23;
-const { contains } = m33;
+const { search } = m15;
+const { contains } = m25;
 const { ING, variants } = m49;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
@@ -5126,12 +5239,12 @@ return { LIMITS, normalize, recipeLabel, build, mutate, generate, generateNow };
 const m53 = (() => {
 const { INGREDIENTS } = m49;
 const { generate, normalize, recipeLabel, LIMITS } = m52;
-const { stampOf } = m30;
+const { stampOf } = m22;
 const { S } = m11;
-const { thumbURL } = m31;
+const { thumbURL } = m23;
 const { $ } = m12;
-const { change } = m36;
-const { dirty, remember, syncRoomsButton } = m35;
+const { change } = m28;
+const { dirty, remember, syncRoomsButton } = m27;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
@@ -5297,11 +5410,11 @@ const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { portrait, $ } = m12;
 const { startSnow, windNow } = m13;
-const { fit, watchStage } = m16;
+const { fit, watchStage } = m30;
 const { buildPanels, syncPanel } = m45;
 const { bindInput } = m48;
 const { setMode, frame, render, tick, report, copyReport } = m47;
-const { buildRooms, bootRooms } = m35;
+const { buildRooms, bootRooms } = m27;
 const { buildGenerator } = m53;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
