@@ -31,12 +31,12 @@ export const POWER_TEXT = {
   dive: 'While sliding, press the same arrow to land at once and crash.',
   laser: 'While sliding, press a side arrow to fire a beam that way.',
   cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed. With Swim too, the same press does both.',
-  hook: 'Stop on grapple tiles.',
+  boots: 'When you slide onto gravel, stop there.',
   swim: 'When standing on land, press Space to start or stop swimming. The world takes a step. While swimming, you can go into water, at half speed.',
   light: 'When standing still, light up dark rooms.',
   armored: 'Weak enemies, blocks and closing doors cannot crush you. Strong enemies, heavy boxes, beams and death blocks still can.',
 };
-export const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', hook: 'Hook', swim: 'Swim', light: 'Light', armored: 'Armored' };
+export const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', boots: 'High adherence boots', swim: 'Swim', light: 'Light', armored: 'Armored' };
 
 
 // The palette shows one group at a time on a phone, so it fits without scrolling.

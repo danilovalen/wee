@@ -530,7 +530,7 @@ try {
   const onLook = await page.$eval('[data-tool].on', b => { const c = getComputedStyle(b); return { shadow: c.boxShadow, border: c.borderTopWidth, accent: c.color }; });
   check('a picked tool wears the accent inset ring and no border', onLook.shadow.includes('inset') && onLook.shadow.includes(onLook.accent + ' 0px 0px 0px 2px inset') && onLook.accent === 'rgb(123, 108, 255)' && onLook.border === '0px', JSON.stringify(onLook));
   // a disabled power reads as disabled and cannot be ticked
-  const hook = page.locator('[data-power=hook]');
+  const hook = page.locator('[data-power=boots]');
   check('a power that cannot act yet is disabled', await hook.isDisabled());
   // served with a rooms directory, the page saves to the server instead of the browser
   const roomsDir = mkdtempSync(join(tmpdir(), 'wee-rooms-'));

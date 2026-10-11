@@ -14,7 +14,7 @@ export function emptyLevel(w = 20, h = 12) {
     cells: Array(w * h).fill(''),
     start: { x: 1, y: 1 },
     entities: [],
-    powers: { boomerang: true, dive: true, laser: true, cycle: true, hook: false, swim: false, light: false, armored: false },
+    powers: { boomerang: true, dive: true, laser: true, cycle: true, boots: false, swim: false, light: false, armored: false },
     clock: 'tile',
   };
 }
@@ -43,7 +43,10 @@ export function parseLevel(text) {
     if (MOVES.includes(e.kind) && e.mode && !MODES.includes(e.mode)) throw new Error('Unknown clock: ' + e.mode);
   }
   if (!['tile', 'slide'].includes(l.clock)) throw new Error('Unknown clock: ' + l.clock);
-  return { ...emptyLevel(l.w, l.h), ...l, powers: { ...emptyLevel().powers, ...l.powers } };
+  // Rooms saved before the boots were called Hook keep their setting.
+  const { hook, ...powers } = l.powers || {};
+  if (hook !== undefined && powers.boots === undefined) powers.boots = hook;
+  return { ...emptyLevel(l.w, l.h), ...l, powers: { ...emptyLevel().powers, ...powers } };
 }
 
 export function isCell(c) {

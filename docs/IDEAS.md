@@ -174,7 +174,9 @@ Notes (mine):
 - **Sticky**: it can stop in a sticky puddle like any box (and still blows up there?).
 - **Water**: touching water puts the fuse out, and it will not light while submerged. Open: once
   out of the water, can it be lit again by another push?
-- **Open:** does a blast light another bomb in range (a chain)? Does a beam light it?
+- **A laser beam does not light it, it sets it off at once** (owner, 2026-10-11: *"lasers don't lit
+  bombs they insta explode bombs"*). So a beam crossing a bomb is the same as its fuse running out.
+- **Open:** does a blast set off another bomb in range (a chain)?
 
 ## Paint mode: a win by painting every tile (2026-10-11)
 
@@ -192,3 +194,23 @@ Notes (mine):
 - **Open:** do boxes and moving blocks paint, erase, or do nothing? Does a tile under a piece
   that never moves still need painting? Does the solver count a painted room as a different
   state (it multiplies the state space by every paint pattern, so it may need limits)?
+
+## Gravel, and the boots that stop on it (2026-10-11)
+
+> the "climbable" power up becomes high adherence boots. and the thing that you stopped when you
+> had that (now boots) is gravel. it's also a type of terrain where you pass through if you
+> don't have boots but you stop there if you do so. telling you that because that also is
+> influenced by your tileset rework
+
+Done the same day: the power once called **Hook** is now **High adherence boots** (`boots`), and
+its missing tile is **gravel** instead of "grapple tiles". Rooms saved with Hook load with the
+boots. The power stays greyed out ("Needs gravel.") until gravel exists.
+
+Notes (mine), for when gravel is built:
+- **Terrain, not a block**: without boots you slide over it like floor; with boots, a slide that
+  reaches it stops there.
+- **It joins like water** (the joined-up tiles in `src/view/masses.js`): one patch per area, a
+  rough speckled texture so it reads as grip, a sand or stone pastel distinct from the floor.
+- **Open:** do enemies and boxes slide over it, or do some of them stop too? Does it stop you on
+  the first gravel tile, or only where a patch ends?
+

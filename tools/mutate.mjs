@@ -490,6 +490,7 @@ const M = [
   ['src/view/masses.js', "return side.length === 1 ? k.includes(side) : side !== OPPOSITE[k];", "return true;", 'masses'],
   ['src/view/masses.js', "const BLOCK = /^(spring|receiver):/;", "const BLOCK = /^(spring):/;", 'masses'],
   ['src/view/masses.js', "if (how === 'full') { p.rect(qx, qy, q, q); continue; }", "if (how === 'full') { p.rect(qx + 1, qy + 1, q - 2, q - 2); continue; }", 'browser'],
+  ['src/level/format.js', "if (hook !== undefined && powers.boots === undefined) powers.boots = hook;", "", 'code'],
   ['src/view/ink.js', "player: '#4cc9ff'", "player: '#e4e7ec'", 'browser'],
   ['style.css', "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 0;", "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 1px solid var(--line);", 'manga'],
   ['style.css', "button.on { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest)", "button.on { color: var(--accent); box-shadow: var(--sticker-rest)", 'browser'],
