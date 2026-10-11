@@ -36,7 +36,7 @@ export const MODES = ['realtime', 'input', 'follow'];
 export const CARRIES_TURRET = ['box', 'heavy', 'enemy', 'strong'];
 
 // A power listed in NEEDS cannot act until its block type exists.
-export const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'boots', 'swim', 'light', 'armored'];
+export const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'light', 'armored'];
 export const NEEDS = { light: 'dark levels' };
 
 // Water stops you unless you are swimming, and stops weak enemies, light boxes and

@@ -1,5 +1,5 @@
 // The level file: an empty room, resizing, and parsing that refuses what it does not know.
-import { CLOCKWISE, COLOURS, CORNERS, KINDS, MODES, MOVES } from '../rules/base.js';
+import { CLOCKWISE, COLOURS, CORNERS, KINDS, MODES, MOVES, POWERS } from '../rules/base.js';
 
 export function checkTurret(t) {
   if (!Array.isArray(t.dirs) || t.dirs.length < 1 || t.dirs.length > 4 || t.dirs.some(d => !CLOCKWISE.includes(d)) || new Set(t.dirs).size !== t.dirs.length)
@@ -14,7 +14,7 @@ export function emptyLevel(w = 20, h = 12) {
     cells: Array(w * h).fill(''),
     start: { x: 1, y: 1 },
     entities: [],
-    powers: { boomerang: true, dive: true, laser: true, cycle: true, boots: false, swim: false, light: false, armored: false },
+    powers: { boomerang: true, dive: true, laser: true, cycle: true, swim: false, light: false, armored: false },
     clock: 'tile',
   };
 }
@@ -43,9 +43,8 @@ export function parseLevel(text) {
     if (MOVES.includes(e.kind) && e.mode && !MODES.includes(e.mode)) throw new Error('Unknown clock: ' + e.mode);
   }
   if (!['tile', 'slide'].includes(l.clock)) throw new Error('Unknown clock: ' + l.clock);
-  // Rooms saved before the boots were called Hook keep their setting.
-  const { hook, ...powers } = l.powers || {};
-  if (hook !== undefined && powers.boots === undefined) powers.boots = hook;
+  // Powers that no longer exist (Hook, the boots) are dropped from old rooms.
+  const powers = Object.fromEntries(Object.entries(l.powers || {}).filter(([p]) => POWERS.includes(p)));
   return { ...emptyLevel(l.w, l.h), ...l, powers: { ...emptyLevel().powers, ...powers } };
 }
 

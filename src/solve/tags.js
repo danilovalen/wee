@@ -12,7 +12,7 @@ export const MECHANISMS = [
   ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'],
   ['clock:input', 'On your move'], ['clock:follow', 'Same way as you'], ['clock:realtime', 'Real time'],
   ['power:boomerang', 'Boomerang'], ['power:dive', 'Dive'], ['power:laser', 'Laser'], ['power:cycle', 'Cycle (hide)'],
-  ['power:swim', 'Swim'], ['power:boots', 'High adherence boots'], ['power:armored', 'Armored'],
+  ['power:swim', 'Swim'], ['power:armored', 'Armored'],
   ['wiring:and', 'Two switches, one colour'], ['wiring:colours', 'Two or more colours'],
   ['use:push', 'You push a box'], ['use:pushed', 'A block pushes you'], ['use:spring', 'A spring launches'],
   ['use:door-opens', 'A door opens'], ['use:idoor-closes', 'An inverted door closes'], ['use:lit', 'A beam lights a switch'],
@@ -40,7 +40,7 @@ export function contains(level) {
     const clock = e.turret ? e.turret.mode : e.mode;
     if (clock && ['mover', 'enemy', 'strong', 'turret'].includes(e.kind) || e.turret) tags.add('clock:' + (clock || 'input'));
   }
-  for (const p of ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'boots', 'armored']) if (level.powers[p]) tags.add('power:' + p);
+  for (const p of ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'armored']) if (level.powers[p]) tags.add('power:' + p);
   if (Object.values(colours).some(n => n > 1)) tags.add('wiring:and');
   if (Object.keys(colours).length > 1) tags.add('wiring:colours');
   return [...tags];

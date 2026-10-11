@@ -1104,14 +1104,20 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('the editor lights the barrel a turret fires first', lit.length === 1 && Math.abs(lit[0] - Math.PI / 2) < 1e-9, JSON.stringify(lit));
 }
 
-{ // gravel: you slide over it, unless you wear the boots, which stop you on it
+{ // gravel stops what slides onto it
   const r = room(['#######', '#P.g..#', '#######']);
-  check('without boots you slide over gravel', at(slide(createGame(r), 'right').player, 5, 1));
-  const b = room(['#######', '#P.g..#', '#######'], { powers: { boots: true } });
-  check('with boots you stop on the gravel', at(slide(createGame(b), 'right').player, 3, 1));
-  const d = room(['#######', '#P.g..#', '#######'], { powers: { boots: true, dive: true } });
+  check('a slide stops on gravel', at(slide(createGame(r), 'right').player, 3, 1));
+  const d = room(['#######', '#P.g..#', '#######'], { powers: { dive: true } });
   const ds = createGame(d); step(ds, ['right']); step(ds, ['right']); for (let i = 0; i < 50 && ds.player.dir; i++) step(ds);
-  check('a dive with boots stops on gravel too', at(ds.player, 3, 1), JSON.stringify(ds.player));
+  check('a dive stops on gravel too', at(ds.player, 3, 1), JSON.stringify(ds.player));
+  const m = createGame(room(['########', '#P.....#', '#M.g...#', '########']));
+  settle(worldStep(m, 'right'));
+  check('a moving block stops on gravel', at(m.entities[0], 3, 2), JSON.stringify(m.entities[0]));
+  worldStep(m, 'right');
+  check('and goes on the same way at its next move', at(m.entities[0], 6, 2), JSON.stringify(m.entities[0]));
+  const h = createGame(room(['#########', '#P.H.g..#', '#########'], { powers: { dive: true } }));
+  step(h, ['right']); step(h, ['right']); for (let i = 0; i < 60 && (h.player.dir || h.entities.some(e => e.slide)); i++) step(h);
+  check('a heavy box sent sliding stops on gravel', at(h.entities[0], 5, 1), JSON.stringify(h.entities[0]));
   check('gravel is a tile a room can hold', isCell('gravel'));
 }
 done();

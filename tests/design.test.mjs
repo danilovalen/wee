@@ -14,7 +14,7 @@ const goal = (l, x, y) => { l.cells[y * l.w + x] = 'goal'; l.powers = { ...l.pow
 const first = splitRoom(JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'))).level;
 const ps = Object.fromEntries(run(powerCheck(first)).map(p => [p.power, p.without]));
 check('a power is tested with only it switched off', ps.boomerang === 19 && ps.dive === 9 && ps.laser === 9 && ps.cycle === 9, JSON.stringify(ps));
-check('a power that is off, or needs a block that does not exist, is not tested', !('swim' in ps) && !('boots' in ps) && !('light' in ps));
+check('a power that is off, or needs a block that does not exist, is not tested', !('swim' in ps) && !('light' in ps));
 
 // Two corners, two ways round: right then down, or down then right.
 const square = goal(room(['#####', '#P..#', '#...#', '#...#', '#####']), 3, 3);

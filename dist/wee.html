@@ -619,7 +619,7 @@ const MODES = ['realtime', 'input', 'follow'];
 const CARRIES_TURRET = ['box', 'heavy', 'enemy', 'strong'];
 
 // A power listed in NEEDS cannot act until its block type exists.
-const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'boots', 'swim', 'light', 'armored'];
+const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'light', 'armored'];
 const NEEDS = { light: 'dark levels' };
 
 // Water stops you unless you are swimming, and stops weak enemies, light boxes and
@@ -640,6 +640,9 @@ const { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, openFaces, turn } = m0;
 
 const inb = (s, x, y) => x >= 0 && y >= 0 && x < s.w && y < s.h;
 const cellAt = (s, x, y) => s.cells[y * s.w + x];
+
+// Gravel stops anything sliding onto it, you included.
+const onGravel = (s, o) => cellAt(s, o.x, o.y) === 'gravel';
 
 function solidCell(s, x, y) {
   if (!inb(s, x, y)) return true;
@@ -699,7 +702,7 @@ function shift(s, x, y, dx, dy, wet, not) {
   if (!t.death && entAt(s, t.x, t.y, not)) return null;
   return t;
 }
-return { inb, cellAt, solidCell, triAt, facing, gateAt, stepTo, pushTo, inWater, entAt, playerAt, crushes, shift };
+return { inb, cellAt, onGravel, solidCell, triAt, facing, gateAt, stepTo, pushTo, inWater, entAt, playerAt, crushes, shift };
 })();
 // ---- src/rules/life.js
 const m2 = (() => {
@@ -995,7 +998,7 @@ return { partnerOf, meet, unglue, lead, follow, partnerAt, checkGlue };
 const m6 = (() => {
 const { DIRS, ENEMY, MOVES, wades } = m0;
 const { turnTurrets } = m3;
-const { crushes, entAt, inb, playerAt, pushTo, stepTo } = m1;
+const { crushes, entAt, inb, onGravel, playerAt, pushTo, stepTo } = m1;
 const { die, kill, land, refreshDoors } = m2;
 const { carry, entered, stick, stuckTo } = m4;
 const { follow, lead, meet, partnerAt, partnerOf } = m5;
@@ -1021,7 +1024,8 @@ function hideCycle(s) {
 function rushOnce(s, e) {
   const x = e.x, y = e.y;
   moveMover(s, e, e.rushDir);
-  if (e.x === x && e.y === y) { e.rush = false; e.rushDir = null; }
+  // Stopped by gravel, a patrol keeps its way and goes on at its next move.
+  if ((e.x === x && e.y === y) || onGravel(s, e)) { e.rush = false; e.rushDir = null; }
 }
 
 // Starts a piece's slide, at most once per move of yours (s.move), and not while one is going.
@@ -1110,7 +1114,7 @@ function slidePiece(s, e) {
     }
   }
   if (playerAt(s, t.x, t.y) && (!crushes(s, e) || (e.kind !== 'heavy' && !ENEMY.includes(e.kind)))) { e.slide = null; return; }
-  land(s, e, t); e.slide = t.d;
+  land(s, e, t); e.slide = onGravel(s, e) ? null : t.d;
   if (!ahead) follow(s, e, mx, my);
   if (playerAt(s, t.x, t.y)) die(s);
   else if (ridden && stuckTo(s) === e) carry(s, mx, my);
@@ -1142,7 +1146,7 @@ return { hideCycle, rushOnce, launch, worldStep, patrolDir, moveMover, slidePiec
 const m7 = (() => {
 const { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } = m0;
 const { inBeam, laser, turnTurrets } = m3;
-const { cellAt, crushes, entAt, inWater, pushTo, shift, solidCell, stepTo } = m1;
+const { cellAt, crushes, entAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } = m1;
 const { die, kill, land, refreshDoors, respawn } = m2;
 const { hideCycle, worldStep } = m6;
 const { STICKS, drag, entered, stick, stuckTo, unstick } = m4;
@@ -1209,8 +1213,8 @@ function slideOnce(s, diving) {
   if (r === 'moved') {
     if (s.player.moved === 1) { turnTurrets(s, 'input'); if (s.clock === 'slide') worldStep(s, d); }
     if (s.clock === 'tile') worldStep(s, d);
-    // With the boots, gravel holds you where you land on it.
-    if (s.powers.boots && s.player.dir && cellAt(s, s.player.x, s.player.y) === 'gravel') { endSlide(s); s.events.push({ type: 'grip' }); }
+    // Gravel stops a slide on it.
+    if (s.player.dir && onGravel(s, s.player)) { endSlide(s); s.events.push({ type: 'grip' }); }
     return true;
   }
   if (r === 'blocked') endSlide(s);
@@ -1384,7 +1388,7 @@ return { createGame, step, gameText, replay };
 })();
 // ---- src/level/format.js
 const m9 = (() => {
-const { CLOCKWISE, COLOURS, CORNERS, KINDS, MODES, MOVES } = m0;
+const { CLOCKWISE, COLOURS, CORNERS, KINDS, MODES, MOVES, POWERS } = m0;
 // The level file: an empty room, resizing, and parsing that refuses what it does not know.
 
 function checkTurret(t) {
@@ -1400,7 +1404,7 @@ function emptyLevel(w = 20, h = 12) {
     cells: Array(w * h).fill(''),
     start: { x: 1, y: 1 },
     entities: [],
-    powers: { boomerang: true, dive: true, laser: true, cycle: true, boots: false, swim: false, light: false, armored: false },
+    powers: { boomerang: true, dive: true, laser: true, cycle: true, swim: false, light: false, armored: false },
     clock: 'tile',
   };
 }
@@ -1429,9 +1433,8 @@ function parseLevel(text) {
     if (MOVES.includes(e.kind) && e.mode && !MODES.includes(e.mode)) throw new Error('Unknown clock: ' + e.mode);
   }
   if (!['tile', 'slide'].includes(l.clock)) throw new Error('Unknown clock: ' + l.clock);
-  // Rooms saved before the boots were called Hook keep their setting.
-  const { hook, ...powers } = l.powers || {};
-  if (hook !== undefined && powers.boots === undefined) powers.boots = hook;
+  // Powers that no longer exist (Hook, the boots) are dropped from old rooms.
+  const powers = Object.fromEntries(Object.entries(l.powers || {}).filter(([p]) => POWERS.includes(p)));
   return { ...emptyLevel(l.w, l.h), ...l, powers: { ...emptyLevel().powers, ...powers } };
 }
 
@@ -2435,12 +2438,11 @@ const POWER_TEXT = {
   dive: 'While sliding, press the same arrow to land at once and crash.',
   laser: 'While sliding, press a side arrow to fire a beam that way.',
   cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed. With Swim too, the same press does both.',
-  boots: 'When you slide onto gravel, stop there.',
   swim: 'When standing on land, press Space to start or stop swimming. The world takes a step. While swimming, you can go into water, at half speed.',
   light: 'When standing still, light up dark rooms.',
   armored: 'Weak enemies, blocks and closing doors cannot crush you. Strong enemies, heavy boxes, beams and death blocks still can.',
 };
-const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', boots: 'High adherence boots', swim: 'Swim', light: 'Light', armored: 'Armored' };
+const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', light: 'Light', armored: 'Armored' };
 
 
 // The palette shows one group at a time on a phone, so it fits without scrolling.
@@ -2992,7 +2994,7 @@ return { checkText, runCheck, syncCheck, feedDemo, syncLint };
 const m28 = (() => {
 
 // Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.
-const TEMPLATES = [{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"boots":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"boots":false,"swim":false,"light":false},"clock":"tile"}}];
+const TEMPLATES = [{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"swim":false,"light":false},"clock":"tile"}}];
 return { TEMPLATES };
 })();
 // ---- src/level/code.js
@@ -3160,7 +3162,7 @@ const MECHANISMS = [
   ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'],
   ['clock:input', 'On your move'], ['clock:follow', 'Same way as you'], ['clock:realtime', 'Real time'],
   ['power:boomerang', 'Boomerang'], ['power:dive', 'Dive'], ['power:laser', 'Laser'], ['power:cycle', 'Cycle (hide)'],
-  ['power:swim', 'Swim'], ['power:boots', 'High adherence boots'], ['power:armored', 'Armored'],
+  ['power:swim', 'Swim'], ['power:armored', 'Armored'],
   ['wiring:and', 'Two switches, one colour'], ['wiring:colours', 'Two or more colours'],
   ['use:push', 'You push a box'], ['use:pushed', 'A block pushes you'], ['use:spring', 'A spring launches'],
   ['use:door-opens', 'A door opens'], ['use:idoor-closes', 'An inverted door closes'], ['use:lit', 'A beam lights a switch'],
@@ -3188,7 +3190,7 @@ function contains(level) {
     const clock = e.turret ? e.turret.mode : e.mode;
     if (clock && ['mover', 'enemy', 'strong', 'turret'].includes(e.kind) || e.turret) tags.add('clock:' + (clock || 'input'));
   }
-  for (const p of ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'boots', 'armored']) if (level.powers[p]) tags.add('power:' + p);
+  for (const p of ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'armored']) if (level.powers[p]) tags.add('power:' + p);
   if (Object.values(colours).some(n => n > 1)) tags.add('wiring:and');
   if (Object.keys(colours).length > 1) tags.add('wiring:colours');
   return [...tags];
@@ -4922,7 +4924,7 @@ const INGREDIENTS = [
   { id: 'death', label: 'Death block', tags: ['tile:death'], with: ['box'], place: (l, r) => { tile(l, r, 'death'); piece(l, r, { kind: 'box' }); } },
   { id: 'water', label: 'Water', tags: ['tile:water'], with: ['mover'], place: (l, r) => { const i = tile(l, r, 'water'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'water'; } },
   { id: 'sticky', label: 'Sticky puddle', tags: ['tile:sticky'], with: ['box'], place: (l, r) => { tile(l, r, 'sticky'); piece(l, r, { kind: 'box' }); } },
-  { id: 'gravel', label: 'Gravel', tags: ['tile:gravel'], with: ['boots'], place: (l, r) => { const i = tile(l, r, 'gravel'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'gravel'; } },
+  { id: 'gravel', label: 'Gravel', tags: ['tile:gravel'], place: (l, r) => { const i = tile(l, r, 'gravel'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'gravel'; } },
   { id: 'checkpoint', label: 'Checkpoint', tags: ['tile:checkpoint'], allowedOnly: 'A solution never dies, so a checkpoint cannot change it.', place: (l, r) => tile(l, r, 'checkpoint') },
   { id: 'mover', label: 'Moving block', tags: ['piece:mover'], place: (l, r) => piece(l, r, { kind: 'mover', axis: r.pick(['h', 'v']) }) },
   { id: 'follow', label: 'Moves the same way as you', tags: ['clock:follow'], with: ['mover'], standIn: null, knock: l => ({ ...l, entities: l.entities.map(e => e.mode === 'follow' ? { ...e, mode: 'input' } : e) }), place: (l, r) => piece(l, r, { kind: 'mover', axis: 'h', mode: 'follow' }) },
@@ -4935,7 +4937,6 @@ const INGREDIENTS = [
   { id: 'laser', label: 'Laser', tags: ['power:laser'], with: ['enemy'], power: 'laser' },
   { id: 'cycle', label: 'Cycle (hide)', tags: ['power:cycle'], with: ['mover'], power: 'cycle' },
   { id: 'swim', label: 'Swim', tags: ['power:swim'], with: ['water'], power: 'swim' },
-  { id: 'boots', label: 'High adherence boots', tags: ['power:boots'], power: 'boots' },
   { id: 'armored', label: 'Armored', tags: ['power:armored'], with: ['enemy'], power: 'armored' },
 ];
 

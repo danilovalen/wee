@@ -1,7 +1,7 @@
 // You: one slide step at a time, dive, hide, and what each key does.
 import { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } from './base.js';
 import { inBeam, laser, turnTurrets } from './beams.js';
-import { cellAt, crushes, entAt, inWater, pushTo, shift, solidCell, stepTo } from './grid.js';
+import { cellAt, crushes, entAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } from './grid.js';
 import { die, kill, land, refreshDoors, respawn } from './life.js';
 import { hideCycle, worldStep } from './pieces.js';
 import { STICKS, drag, entered, stick, stuckTo, unstick } from './sticky.js';
@@ -61,8 +61,8 @@ export function slideOnce(s, diving) {
   if (r === 'moved') {
     if (s.player.moved === 1) { turnTurrets(s, 'input'); if (s.clock === 'slide') worldStep(s, d); }
     if (s.clock === 'tile') worldStep(s, d);
-    // With the boots, gravel holds you where you land on it.
-    if (s.powers.boots && s.player.dir && cellAt(s, s.player.x, s.player.y) === 'gravel') { endSlide(s); s.events.push({ type: 'grip' }); }
+    // Gravel stops a slide on it.
+    if (s.player.dir && onGravel(s, s.player)) { endSlide(s); s.events.push({ type: 'grip' }); }
     return true;
   }
   if (r === 'blocked') endSlide(s);

@@ -328,7 +328,6 @@
   "dive": true,
   "laser": true,
   "cycle": true,
-  "boots": false,
   "swim": false,
   "light": false
  },

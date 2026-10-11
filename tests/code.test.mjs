@@ -25,7 +25,7 @@ check('a code from somewhere else says so', err.includes('Not a wee room code'),
 err = '';
 try { await decodeRoom(await encodeRoom({ ...first, cells: first.cells.map(() => 'lava') })); } catch (e) { err = e.message; }
 check('a code for a room the game cannot read is refused', err.includes('Unknown tile'), err);
-// The boots were called Hook; a room saved then keeps its setting under the new name.
-const old = parseLevel(JSON.stringify({ ...first, powers: { ...first.powers, hook: true } }));
-check('a room saved with Hook on loads with the boots on', old.powers.boots === true && !('hook' in old.powers), JSON.stringify(old.powers));
+// Hook and the boots are gone; a room saved with either loads without it.
+const old = parseLevel(JSON.stringify({ ...first, powers: { ...first.powers, hook: true, boots: true } }));
+check('a room saved with Hook or the boots loads without them', !('hook' in old.powers) && !('boots' in old.powers) && old.powers.dive === first.powers.dive, JSON.stringify(old.powers));
 done();

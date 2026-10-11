@@ -195,22 +195,25 @@ Notes (mine):
   that never moves still need painting? Does the solver count a painted room as a different
   state (it multiplies the state space by every paint pattern, so it may need limits)?
 
-## Gravel, and the boots that stop on it (2026-10-11)
+## Gravel (2026-10-11)
 
 > the "climbable" power up becomes high adherence boots. and the thing that you stopped when you
-> had that (now boots) is gravel. it's also a type of terrain where you pass through if you
-> don't have boots but you stop there if you do so. telling you that because that also is
-> influenced by your tileset rework
+> had that (now boots) is gravel ... telling you that because that also is influenced by your
+> tileset rework
 
-Done the same day: the power once called **Hook** is now **High adherence boots** (`boots`), and
-its missing tile is **gravel** instead of "grapple tiles". Rooms saved with Hook load with the
-boots.
+Then, the same day: *"gravel is better if it interacts by default with stuff"*, for patrols
+*"they stop on gravel, then on next movement keep their movement"*, and finally *"just remove
+the boots and have gravel have that behavior by default"*.
 
-**Built the same day** (register 100). Notes (mine) kept for the open questions:
-- **Terrain, not a block**: without boots you slide over it like floor; with boots, a slide that
-  reaches it stops there.
-- **It joins like water** (the joined-up tiles in `src/view/masses.js`): one patch per area, a
-  rough speckled texture so it reads as grip, a sand or stone pastel distinct from the floor.
-- **Open:** do enemies and boxes slide over it, or do some of them stop too? Does it stop you on
-  the first gravel tile, or only where a patch ends?
+**Built** (register 100, 101, 102). The Hook power is gone, and so are the boots: rooms saved
+with either load without it. Gravel joins into patches like water.
 
+| what slides onto gravel | what happens |
+|---|---|
+| you, or a dive | you stop on it |
+| a moving block or enemy on patrol | stops on it, and at its next move goes on the same way |
+| a heavy box sent sliding, anything a spring launches | stops on it |
+| a box you are pushing | moves with you, since you are the one moving it |
+| a bomb (idea) | stops on it, like a box |
+
+Open: does a beam care about gravel (no, for now)?

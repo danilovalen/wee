@@ -146,7 +146,7 @@ box or a block in it holds that colour's doors open.
 | Boomerang | Mid-slide, press the reverse arrow to slide back. You stop at the far wall, past where you started. | nothing |
 | Dive | Mid-slide, press the same arrow again to arrive at the stopping tile at once and crash. Skipped tiles still give the world its steps, all at once. The crash moves a heavy box. It damages nothing for now; breaking blocks comes later. | heavy box; breakable block later |
 | Laser | Mid-slide, press the clockwise or counterclockwise arrow to fire a beam perpendicular to you. You keep sliding. Kills an enemy it hits. | laser targets for puzzles |
-| High adherence boots (was Hook) | You stop when arriving on gravel instead of sliding over it. | gravel |
+| ~~Hook~~ | Removed 2026-10-11: gravel stops everything by default, so no power is needed. | |
 | Light | You emit light in dark levels, only while you are not moving. | a dark-level setting |
 | Swim | The tap starts or stops swimming; swimming, you can go into water, at half speed. See Water. | water tile (built) |
 | Cycle | Space **hides** you: you stay on your tile and the world takes one step, its on-your-move pieces sliding until they stop. Meanwhile nothing meets you and beams pass over. You come back when they have stopped (at least 4 ticks); anything on your tile then, or a door closed on it, squashes you. Hidden, you are a dashed outline. | movers to show it |
@@ -172,7 +172,7 @@ the chosen tool's options fit without scrolling.
 3. Moving block and enemy, each horizontal or vertical, each real time or on input.
 4. Box, heavy box, button, door.
 5. Water (Swim passes it, a beam shocks it). Built.
-6. Gravel (the boots stop on it; was Grapple).
+6. Gravel (stops anything that slides onto it; was Grapple).
 7. Breakable (Dive breaks it).
 8. Laser target, dark level: later.
 

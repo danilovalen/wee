@@ -1,7 +1,7 @@
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
 import { DIRS, ENEMY, MOVES, wades } from './base.js';
 import { turnTurrets } from './beams.js';
-import { crushes, entAt, inb, playerAt, pushTo, stepTo } from './grid.js';
+import { crushes, entAt, inb, onGravel, playerAt, pushTo, stepTo } from './grid.js';
 import { die, kill, land, refreshDoors } from './life.js';
 import { carry, entered, stick, stuckTo } from './sticky.js';
 import { follow, lead, meet, partnerAt, partnerOf } from './glue.js';
@@ -21,7 +21,8 @@ export function hideCycle(s) {
 export function rushOnce(s, e) {
   const x = e.x, y = e.y;
   moveMover(s, e, e.rushDir);
-  if (e.x === x && e.y === y) { e.rush = false; e.rushDir = null; }
+  // Stopped by gravel, a patrol keeps its way and goes on at its next move.
+  if ((e.x === x && e.y === y) || onGravel(s, e)) { e.rush = false; e.rushDir = null; }
 }
 
 // Starts a piece's slide, at most once per move of yours (s.move), and not while one is going.
@@ -110,7 +111,7 @@ export function slidePiece(s, e) {
     }
   }
   if (playerAt(s, t.x, t.y) && (!crushes(s, e) || (e.kind !== 'heavy' && !ENEMY.includes(e.kind)))) { e.slide = null; return; }
-  land(s, e, t); e.slide = t.d;
+  land(s, e, t); e.slide = onGravel(s, e) ? null : t.d;
   if (!ahead) follow(s, e, mx, my);
   if (playerAt(s, t.x, t.y)) die(s);
   else if (ridden && stuckTo(s) === e) carry(s, mx, my);

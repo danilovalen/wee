@@ -5,6 +5,9 @@ import { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, openFaces, turn } from './base.js'
 export const inb = (s, x, y) => x >= 0 && y >= 0 && x < s.w && y < s.h;
 export const cellAt = (s, x, y) => s.cells[y * s.w + x];
 
+// Gravel stops anything sliding onto it, you included.
+export const onGravel = (s, o) => cellAt(s, o.x, o.y) === 'gravel';
+
 export function solidCell(s, x, y) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
