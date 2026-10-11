@@ -1980,8 +1980,101 @@ function drawFloor(g, w, h) {
 }
 return { drawCell, pressedAt, drawFloor };
 })();
-// ---- src/view/lenses.js
+// ---- src/view/masses.js
 const m19 = (() => {
+const { INK, T, frame } = m14;
+// Joined-up tiles: neighbouring walls, water, sticky puddles and death blocks are drawn as
+// one mass each. Every cell is four quarters; a quarter reads its two side neighbours and
+// the diagonal between them, so outer corners round, inner corners get a fillet and a
+// solid block has no seams. Doors, switches and the rest stay one tile each (tiles.js).
+
+const MASSES = ['wall', 'water', 'sticky', 'death'];
+// Corner radius per kind, in pixels of a 32 px tile.
+const RADIUS = { wall: 6, water: 8, sticky: 10, death: 6 };
+const LIP = 6;
+
+// What one quarter of cell (x, y) draws, toward (dx, dy): 'round' (an outer corner),
+// 'full', or for a cell of another kind, 'fillet' when both sides belong to the mass and
+// so does the diagonal, else null. Outside the room counts as wall and nothing else.
+function quarter(kindAt, kind, x, y, dx, dy) {
+  const same = (i, j) => kindAt(i, j) === kind;
+  const A = same(x + dx, y), B = same(x, y + dy), D = same(x + dx, y + dy);
+  if (same(x, y)) return !A && !B ? 'round' : 'full';
+  return A && B && D ? 'fillet' : null;
+}
+
+function path(kindAt, kind, w, h) {
+  const p = new Path2D(), r = RADIUS[kind], q = T / 2, f = r;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      const how = quarter(kindAt, kind, x, y, dx, dy);
+      if (!how) continue;
+      const qx = x * T + (dx > 0 ? q : 0), qy = y * T + (dy > 0 ? q : 0);
+      if (how === 'full') { p.rect(qx, qy, q, q); continue; }
+      if (how === 'round') {
+        const radii = [0, 0, 0, 0]; radii[dy < 0 ? (dx < 0 ? 0 : 1) : (dx < 0 ? 3 : 2)] = r;
+        p.roundRect(qx, qy, q, q, radii); continue;
+      }
+      // The fillet sits in this empty cell's corner, curving between the two walls beside it.
+      const cx = dx > 0 ? qx + q : qx, cy = dy > 0 ? qy + q : qy;
+      p.moveTo(cx, cy); p.lineTo(cx - dx * f, cy);
+      p.arcTo(cx, cy, cx, cy - dy * f, f);
+      p.closePath();
+    }
+  }
+  return p;
+}
+
+// cells: the room's cells; skip(x, y): a cell drawn on its own this frame (one popping in).
+// The kind at (x, y), with everything outside the room counting as wall, so the border
+// joins the room's own walls.
+const kindIn = (cells, w, h) => (x, y) => x < 0 || y < 0 || x >= w || y >= h ? 'wall' : cells[y * w + x];
+
+function drawMasses(g, cells, w, h, skip = () => false) {
+  const kindAt = kindIn(cells, w, h);
+  const held = (x, y) => skip(x, y) && kindAt(x, y) !== '';
+  const at = (x, y) => held(x, y) ? '' : kindAt(x, y);
+  for (const kind of ['water', 'sticky', 'death', 'wall']) {
+    if (kind !== 'wall' && !cells.includes(kind)) continue;
+    const p = path(at, kind, w, h);
+    g.save();
+    if (kind === 'wall') {
+      // A light lip on every edge that faces up, then the face.
+      g.fillStyle = INK.wallTop; g.fill(p); g.clip(p); g.translate(0, LIP); g.fillStyle = INK.wall; g.fill(p);
+    } else if (kind === 'water') {
+      g.fillStyle = INK.water; g.fill(p); g.clip(p);
+      // Waves run across the whole pool, not tile by tile.
+      g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
+      const k = (frame.clock / 900) % 1;
+      for (let y = 0; y < h; y++) for (const wy of [10, 22]) {
+        g.beginPath();
+        for (let wx = 0; wx <= w * T; wx += 4) g.lineTo(wx, y * T + wy + Math.sin((wx / T + k + y * 0.53) * Math.PI * 2) * 2);
+        g.stroke();
+      }
+    } else if (kind === 'sticky') {
+      g.fillStyle = INK.gooDark; g.fill(p); g.clip(p); g.translate(0, -3); g.fillStyle = INK.goo; g.fill(p); g.translate(0, 3);
+      g.fillStyle = 'rgba(255,255,255,0.55)'; g.beginPath();
+      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'sticky') {
+        const X = (i % w) * T, Y = Math.floor(i / w) * T;
+        g.moveTo(X + 13.8, Y + 13); g.arc(X + 12, Y + 13, 1.8, 0, Math.PI * 2); g.moveTo(X + 21.2, Y + 17); g.arc(X + 20, Y + 17, 1.2, 0, Math.PI * 2);
+      }
+      g.fill();
+    } else {
+      g.fillStyle = INK.deathBg; g.fill(p);
+      g.fillStyle = INK.deathSpike; g.beginPath();
+      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'death') {
+        const X = (i % w) * T, Y = Math.floor(i / w) * T;
+        for (const [cx, cy] of [[9, 9], [23, 9], [16, 16], [9, 23], [23, 23]]) { g.moveTo(X + cx, Y + cy - 5); g.lineTo(X + cx + 4, Y + cy + 4); g.lineTo(X + cx - 4, Y + cy + 4); g.closePath(); }
+      }
+      g.fill();
+    }
+    g.restore();
+  }
+}
+return { MASSES, RADIUS, quarter, kindIn, drawMasses };
+})();
+// ---- src/view/lenses.js
+const m20 = (() => {
 const { INK, T } = m14;
 // The editor's lenses, drawn over the room. A heat lens recolours tiles under the pieces; dots,
 // lines and frames are marks on top. One lens per group, so nothing here paints over its own kind.
@@ -2059,14 +2152,16 @@ function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses } = {}
 return { drawHeat, drawLensMarks };
 })();
 // ---- src/view/scene.js
-const m20 = (() => {
+const m21 = (() => {
 const { DIRS } = m0;
 const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m14;
 const { drawPiece, drawPlayer } = m17;
 const { drawCell, drawFloor } = m18;
-const { drawHeat, drawLensMarks } = m19;
+const { MASSES, drawMasses } = m19;
+const { drawHeat, drawLensMarks } = m20;
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
+
 
 
 
@@ -2087,7 +2182,11 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
     return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
   };
-  level.cells.forEach((c, i) => drawCell(g, c, i % level.w, Math.floor(i / level.w), null, pop(i % level.w, Math.floor(i / level.w))));
+  drawMasses(g, level.cells, level.w, level.h, (x, y) => pop(x, y) < 1);
+  level.cells.forEach((c, i) => {
+    const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
+    if (!MASSES.includes(c) || k < 1) drawCell(g, c, x, y, null, k);
+  });
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
   drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9, level.powers.armored);
   for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {
@@ -2141,7 +2240,8 @@ function drawPlay(g, s, prev, alpha, fx, now) {
   g.save();
   if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
   drawFloor(g, s.w, s.h);
-  s.cells.forEach((c, i) => drawCell(g, c, i % s.w, Math.floor(i / s.w), s));
+  drawMasses(g, s.cells, s.w, s.h);
+  s.cells.forEach((c, i) => { if (!MASSES.includes(c)) drawCell(g, c, i % s.w, Math.floor(i / s.w), s); });
   // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
   // as its beam touches, yours for a moment.
   const crackle = (cells, k) => {
@@ -2256,7 +2356,7 @@ function drawPlay(g, s, prev, alpha, fx, now) {
 return { drawEdit, drawPlay };
 })();
 // ---- src/editor/palette.js
-const m21 = (() => {
+const m22 = (() => {
 
 // The palette: every tool, its group and label, and the words the editor uses for
 // powers, colours, clocks and directions. Draft copy throughout.
@@ -2308,7 +2408,7 @@ const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'b
 return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/solve/solve.js
-const m22 = (() => {
+const m23 = (() => {
 const { createGame, step } = m8;
 const { MOVES, OPPOSITE } = m0;
 // The solver: a breadth-first search over the room's states, one move of yours per
@@ -2504,10 +2604,10 @@ function solve(level, max) {
 return { MAX_STATES, stateKey, settled, parseMove, move, powerMoves, successors, unsearchable, search, canWin, reach, solve };
 })();
 // ---- src/solve/lint.js
-const m23 = (() => {
+const m24 = (() => {
 const { DIRS } = m0;
 const { createGame, step } = m8;
-const { parseMove } = m22;
+const { parseMove } = m23;
 // Lint: warnings about a room that the rules allow but that are almost always a
 // mistake, each with the tile it is about. Read-only over the level.
 
@@ -2556,10 +2656,10 @@ function brokenAt(level, moves) {
 return { lint, brokenAt };
 })();
 // ---- src/solve/design.js
-const m24 = (() => {
+const m25 = (() => {
 const { createGame } = m8;
 const { NEEDS, POWERS } = m0;
-const { search, successors, stateKey, unsearchable, MAX_STATES } = m22;
+const { search, successors, stateKey, unsearchable, MAX_STATES } = m23;
 // Design notes: what each power, piece and tile does to a room's answer, where the room
 // traps you, and how many shortest routes it has. Each is a generator, so the page can run
 // it a slice at a time. An answer is a number of moves, or 'unsolvable' or 'capped'.
@@ -2656,8 +2756,8 @@ function* routes(level, max = MAX_STATES) {
 return { powerCheck, elementCheck, routes };
 })();
 // ---- src/app/design.js
-const m25 = (() => {
-const { powerCheck, elementCheck, routes } = m24;
+const m26 = (() => {
+const { powerCheck, elementCheck, routes } = m25;
 const { S } = m11;
 const { $, now } = m12;
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
@@ -2735,13 +2835,13 @@ function runDesign(par) {
 return { sliced, clearDesign, runDesign };
 })();
 // ---- src/app/check.js
-const m26 = (() => {
-const { search, parseMove } = m22;
-const { lint, brokenAt } = m23;
+const m27 = (() => {
+const { search, parseMove } = m23;
+const { lint, brokenAt } = m24;
 const { now } = m12;
 const { S } = m11;
 const { $ } = m12;
-const { runDesign, clearDesign } = m25;
+const { runDesign, clearDesign } = m26;
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
 
@@ -2845,14 +2945,14 @@ function syncLint() {
 return { checkText, runCheck, syncCheck, feedDemo, syncLint };
 })();
 // ---- src/level/templates.js
-const m27 = (() => {
+const m28 = (() => {
 
 // Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.
 const TEMPLATES = [{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"hook":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"}}];
 return { TEMPLATES };
 })();
 // ---- src/level/code.js
-const m28 = (() => {
+const m29 = (() => {
 const { parseLevel } = m9;
 // A share code: the level as compressed, URL-safe text, so a room fits in a message or
 // a link (#room=<code>). Uses the platform's own deflate, in the page and in Node.
@@ -2883,7 +2983,7 @@ async function decodeRoom(code) {
 return { encodeRoom, decodeRoom };
 })();
 // ---- src/level/room.js
-const m29 = (() => {
+const m30 = (() => {
 const { parseLevel } = m9;
 // A room is a level plus what the person wrote about it. These split and join the two.
 
@@ -2916,7 +3016,7 @@ function unpack(text) {
 return { META, splitRoom, joinRoom, stampOf, pack, unpack };
 })();
 // ---- src/view/thumb.js
-const m30 = (() => {
+const m31 = (() => {
 const { INK } = m14;
 // A room's thumbnail: one small square per tile in the tile's main colour, so a list of
 // many rooms costs little to draw. Returns a data URL.
@@ -2944,7 +3044,7 @@ function thumbURL(level) {
 return { thumbURL };
 })();
 // ---- src/app/store.js
-const m31 = (() => {
+const m32 = (() => {
 
 // Where rooms are kept: on the server when the page is served by one, otherwise in this
 // browser's local storage. A room is a level file with id, name, note and updated added.
@@ -3000,9 +3100,9 @@ async function remove(id) {
 return { where, detect, newId, list, put, remove };
 })();
 // ---- src/solve/tags.js
-const m32 = (() => {
+const m33 = (() => {
 const { createGame, step } = m8;
-const { parseMove } = m22;
+const { parseMove } = m23;
 // The mechanism index: what a room contains, and what its solution actually does.
 // Both come from the room and the rules, never typed by hand, so the counts stay true.
 
@@ -3084,7 +3184,7 @@ function uses(level, moves) {
 return { MECHANISMS, LABEL, contains, uses };
 })();
 // ---- src/app/draft.js
-const m33 = (() => {
+const m34 = (() => {
 const { S } = m11;
 // Autosave: the room being edited, with its name and note, kept in this browser after
 // every change, so a closed tab or a phone that drops the page loses nothing. Saving the
@@ -3117,18 +3217,18 @@ function flushDraft(dirty) { if (dirty && timer) { clearTimeout(timer); write();
 return { readDraft, clearDraft, noteChange, flushDraft };
 })();
 // ---- src/app/rooms.js
-const m34 = (() => {
-const { TEMPLATES } = m27;
-const { encodeRoom, decodeRoom } = m28;
-const { splitRoom, joinRoom, stampOf, pack, unpack } = m29;
+const m35 = (() => {
+const { TEMPLATES } = m28;
+const { encodeRoom, decodeRoom } = m29;
+const { splitRoom, joinRoom, stampOf, pack, unpack } = m30;
 const { starterLevel } = m11;
 const { newHistory } = m10;
 const { S } = m11;
-const { thumbURL } = m30;
-const { list, put, remove, where, newId, detect } = m31;
-const { contains, uses, MECHANISMS } = m32;
+const { thumbURL } = m31;
+const { list, put, remove, where, newId, detect } = m32;
+const { contains, uses, MECHANISMS } = m33;
 const { $ } = m12;
-const { readDraft, noteChange, flushDraft, clearDraft } = m33;
+const { readDraft, noteChange, flushDraft, clearDraft } = m34;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
 
@@ -3385,12 +3485,12 @@ async function bootRooms() {
 return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m35 = (() => {
+const m36 = (() => {
 const { record, undo, redo } = m10;
 const { S } = m11;
 const { $ } = m12;
-const { syncCheck, syncLint } = m26;
-const { syncRoomsButton, followUndo } = m34;
+const { syncCheck, syncLint } = m27;
+const { syncRoomsButton, followUndo } = m35;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -3429,10 +3529,10 @@ function step(back, after) {
 return { syncUndo, begin, end, change, step };
 })();
 // ---- src/solve/lenses.js
-const m36 = (() => {
+const m37 = (() => {
 const { createGame } = m8;
 const { computeBeams } = m3;
-const { successors, stateKey, unsearchable, MAX_STATES } = m22;
+const { successors, stateKey, unsearchable, MAX_STATES } = m23;
 // What the editor's lenses draw, from every position the room can reach: how far each tile
 // is from winning, a shortest way there, every tile you pass through on the way to a stop,
 // every tile a beam or a piece ever covers, the moves between stops, and where a move kills
@@ -3514,7 +3614,7 @@ function* lensData(level, max = MAX_STATES) {
 return { lensData };
 })();
 // ---- src/app/well.js
-const m37 = (() => {
+const m38 = (() => {
 const { S } = m11;
 const { $ } = m12;
 // The well: a fixed-height drawer under the room, with a tab for findings (warnings and
@@ -3561,15 +3661,15 @@ function buildWell() {
 return { WELL, openWell, closeWell, syncWell, buildWell };
 })();
 // ---- src/app/lenses.js
-const m38 = (() => {
-const { reach } = m22;
-const { routes } = m24;
-const { lensData } = m36;
+const m39 = (() => {
+const { reach } = m23;
+const { routes } = m25;
+const { lensData } = m37;
 const { INK } = m14;
 const { S } = m11;
 const { $ } = m12;
-const { sliced } = m25;
-const { WELL, closeWell } = m37;
+const { sliced } = m26;
+const { WELL, closeWell } = m38;
 // Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
 // you pick one in that group. Data comes from searches run a slice at a time, again whenever
@@ -3746,9 +3846,9 @@ function buildLenses() {
 return { LENS_GROUPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
 // ---- src/editor/edit.js
-const m39 = (() => {
+const m40 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
-const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m21;
+const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m22;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -3869,13 +3969,13 @@ function place(level, ui, x, y, how) {
 return { holds, describe, place };
 })();
 // ---- src/app/chips.js
-const m40 = (() => {
-const { describe } = m39;
+const m41 = (() => {
+const { describe } = m40;
 const { S } = m11;
 const { INK } = m14;
 const { $, touch } = m12;
-const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m38;
-const { openWell } = m37;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m39;
+const { openWell } = m38;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
@@ -3938,8 +4038,8 @@ function syncInfo() {
 return { buildChips, syncChips };
 })();
 // ---- src/app/keys.js
-const m41 = (() => {
-const { TOOLS } = m21;
+const m42 = (() => {
+const { TOOLS } = m22;
 const { $ } = m12;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
 // every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
@@ -3991,7 +4091,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m42 = (() => {
+const m43 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -4056,10 +4156,10 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m43 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m42;
+const m44 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m43;
 const { S } = m11;
-const { change } = m35;
+const { change } = m36;
 const { $ } = m12;
 // The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
 // it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
@@ -4180,24 +4280,24 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/panels.js
-const m44 = (() => {
+const m45 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel, resizeSide, wallBorder } = m9;
 const { T, INK } = m14;
 const { drawPiece } = m17;
-const { drawEdit } = m20;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m21;
+const { drawEdit } = m21;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m22;
 const { S } = m11;
 const { $, canvas, touch } = m12;
-const { change, step: undoStep, syncUndo } = m35;
-const { runCheck, syncCheck, syncLint } = m26;
-const { buildLenses, syncLenses } = m38;
-const { buildWell, openWell } = m37;
-const { buildChips } = m40;
+const { change, step: undoStep, syncUndo } = m36;
+const { runCheck, syncCheck, syncLint } = m27;
+const { buildLenses, syncLenses } = m39;
+const { buildWell, openWell } = m38;
+const { buildChips } = m41;
 const { buildSize } = m15;
-const { buildKeys } = m41;
-const { syncRoomsButton } = m34;
-const { buildSelect, syncSelect } = m43;
+const { buildKeys } = m42;
+const { syncRoomsButton } = m35;
+const { buildSelect, syncSelect } = m44;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -4402,8 +4502,8 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/app/stuck.js
-const m45 = (() => {
-const { canWin, settled, stateKey, unsearchable } = m22;
+const m46 = (() => {
+const { canWin, settled, stateKey, unsearchable } = m23;
 const { S } = m11;
 const { $ } = m12;
 // While you play: once everything has come to rest, a search in the background asks whether
@@ -4437,20 +4537,20 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m46 = (() => {
+const m47 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
-const { drawEdit, drawPlay } = m20;
+const { drawEdit, drawPlay } = m21;
 const { S } = m11;
 const { $, g, now } = m12;
-const { syncPanel, keysText } = m44;
-const { feedDemo } = m26;
-const { selectOverlay } = m43;
-const { watchStuck, resetStuck } = m45;
-const { lensMarks, lensBusy } = m38;
-const { syncWell } = m37;
-const { syncChips } = m40;
+const { syncPanel, keysText } = m45;
+const { feedDemo } = m27;
+const { selectOverlay } = m44;
+const { watchStuck, resetStuck } = m46;
+const { lensMarks, lensBusy } = m39;
+const { syncWell } = m38;
+const { syncChips } = m41;
 const { gust } = m13;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
@@ -4569,19 +4669,19 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m47 = (() => {
-const { describe, holds, place } = m39;
+const m48 = (() => {
+const { describe, holds, place } = m40;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m46;
-const { begin, end, step: undoStep } = m35;
-const { save } = m34;
-const { selectDown, selectMove, selectUp, selectKey } = m43;
-const { LENS_GROUPS, cycleLens, lensesOff } = m38;
-const { syncPanel } = m44;
+const { setMode, aim } = m47;
+const { begin, end, step: undoStep } = m36;
+const { save } = m35;
+const { selectDown, selectMove, selectUp, selectKey } = m44;
+const { LENS_GROUPS, cycleLens, lensesOff } = m39;
+const { syncPanel } = m45;
 const { fit } = m16;
-const { toolForKey, bareKey, showKeys } = m41;
-const { TOOLS } = m21;
+const { toolForKey, bareKey, showKeys } = m42;
+const { TOOLS } = m22;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -4688,7 +4788,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m48 = (() => {
+const m49 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -4796,10 +4896,10 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m49 = (() => {
-const { search } = m22;
-const { contains } = m32;
-const { ING, variants } = m48;
+const m50 = (() => {
+const { search } = m23;
+const { contains } = m33;
+const { ING, variants } = m49;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -4844,7 +4944,7 @@ function* judge(level, recipe, max = 3000) {
 return { offFound, missing, judge };
 })();
 // ---- src/gen/random.js
-const m50 = (() => {
+const m51 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -4861,12 +4961,12 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m51 = (() => {
+const m52 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
-const { INGREDIENTS, ING, spot } = m48;
-const { judge } = m49;
-const { rng } = m50;
+const { INGREDIENTS, ING, spot } = m49;
+const { judge } = m50;
+const { rng } = m51;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -4975,15 +5075,15 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m52 = (() => {
-const { INGREDIENTS } = m48;
-const { generate, normalize, recipeLabel, LIMITS } = m51;
-const { stampOf } = m29;
+const m53 = (() => {
+const { INGREDIENTS } = m49;
+const { generate, normalize, recipeLabel, LIMITS } = m52;
+const { stampOf } = m30;
 const { S } = m11;
-const { thumbURL } = m30;
+const { thumbURL } = m31;
 const { $ } = m12;
-const { change } = m35;
-const { dirty, remember, syncRoomsButton } = m34;
+const { change } = m36;
+const { dirty, remember, syncRoomsButton } = m35;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
@@ -5141,7 +5241,7 @@ function buildGenerator(actions) {
 return { shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m53 = (() => {
+const m54 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -5150,11 +5250,11 @@ const { S, starterLevel } = m11;
 const { portrait, $ } = m12;
 const { startSnow, windNow } = m13;
 const { fit, watchStage } = m16;
-const { buildPanels, syncPanel } = m44;
-const { bindInput } = m47;
-const { setMode, frame, render, tick, report, copyReport } = m46;
-const { buildRooms, bootRooms } = m34;
-const { buildGenerator } = m52;
+const { buildPanels, syncPanel } = m45;
+const { bindInput } = m48;
+const { setMode, frame, render, tick, report, copyReport } = m47;
+const { buildRooms, bootRooms } = m35;
+const { buildGenerator } = m53;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 

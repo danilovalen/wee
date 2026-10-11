@@ -572,6 +572,12 @@ try {
   check('a saved room lands in the directory as a file', readdirSync(roomsDir).some(f => f.endsWith('.wee')));
   await sp.close(); withApi.close();
 
+  // Joined-up tiles: two walls side by side have no seam; a lone wall has round corners.
+  await page.evaluate(l => window.wee.loadLevel(l), room(['.......', '.##....', '.....#.', '.......', '.......']));
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const red = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return c.getContext('2d').getImageData(Math.round(x * t), Math.round(y * t), 1, 1).data[0]; }, [x, y]);
+  const [seam, corner, face] = [await red(2, 1.6), await red(5.03, 2.03), await red(5.5, 2.6)];
+  check('walls side by side are one mass, a lone wall rounds its corners', seam < 210 && face < 210 && corner > face + 30, JSON.stringify({ seam, corner, face }));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) {
   check('the smoke ran to the end', false, err.message);

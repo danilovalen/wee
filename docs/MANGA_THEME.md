@@ -64,6 +64,14 @@ A to D and four in-between variants (images, real wee renders); he picked **B, F
   Switch colours (red, blue, yellow, green) are the same four pastels. The values live in
   `src/view/ink.js`; the room's colours are rules the player reads, so they stay out of this table.
 
+## Joined-up tiles (owner, 2026-10-11)
+
+Walls, water, sticky puddles and death blocks draw as one mass each (`src/view/masses.js`):
+rounded outer corners, filleted inner corners, no seams, a light lip on walls' upward edges,
+waves across the whole pool. Radii are deliberately small (he asked for "a bit less" than the
+sketch): walls 6, water 8, sticky 10, death 6, on a 32 px tile. Anything with a direction or a
+state stays one tile, so the player can still count it.
+
 ## The tokens
 
 Read by `tests/manga.test.mjs`. `name | value`, one per row, values verbatim.

@@ -4,6 +4,7 @@ import { DIRS } from '../rules/base.js';
 import { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } from './ink.js';
 import { drawPiece, drawPlayer } from './pieces.js';
 import { drawCell, drawFloor } from './tiles.js';
+import { MASSES, drawMasses } from './masses.js';
 import { drawHeat, drawLensMarks } from './lenses.js';
 
 const GHOST_MS = 360;
@@ -21,7 +22,11 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
     return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
   };
-  level.cells.forEach((c, i) => drawCell(g, c, i % level.w, Math.floor(i / level.w), null, pop(i % level.w, Math.floor(i / level.w))));
+  drawMasses(g, level.cells, level.w, level.h, (x, y) => pop(x, y) < 1);
+  level.cells.forEach((c, i) => {
+    const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
+    if (!MASSES.includes(c) || k < 1) drawCell(g, c, x, y, null, k);
+  });
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
   drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9, level.powers.armored);
   for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {
@@ -75,7 +80,8 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
   g.save();
   if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
   drawFloor(g, s.w, s.h);
-  s.cells.forEach((c, i) => drawCell(g, c, i % s.w, Math.floor(i / s.w), s));
+  drawMasses(g, s.cells, s.w, s.h);
+  s.cells.forEach((c, i) => { if (!MASSES.includes(c)) drawCell(g, c, i % s.w, Math.floor(i / s.w), s); });
   // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
   // as its beam touches, yours for a moment.
   const crackle = (cells, k) => {

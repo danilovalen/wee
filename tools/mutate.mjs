@@ -483,6 +483,11 @@ const M = [
   ['style.css', ".logo { font: 700 22px var(--wee-face);", ".logo { font: 700 22px var(--head);", 'manga'],
   ['fonts.css', "comfortaa-latin-700-normal.woff2", "comfortaa-latin-700-normal.woff", 'browser'],
   ['index.html', '<link rel="stylesheet" href="fonts.css">', '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Asap">', 'manga'],
+  ['src/view/masses.js', "return !A && !B ? 'round' : 'full';", "return 'full';", 'masses'],
+  ['src/view/masses.js', "return A && B && D ? 'fillet' : null;", "return A && B ? 'fillet' : null;", 'masses'],
+  ['src/view/masses.js', "x < 0 || y < 0 || x >= w || y >= h ? 'wall' :", "x < 0 || y < 0 || x >= w || y >= h ? '' :", 'masses'],
+  ['src/view/scene.js', "if (!MASSES.includes(c) || k < 1) drawCell(g, c, x, y, null, k);", "drawCell(g, c, x, y, null, k);", 'browser'],
+  ['src/view/masses.js', "if (how === 'full') { p.rect(qx, qy, q, q); continue; }", "if (how === 'full') { p.rect(qx + 1, qy + 1, q - 2, q - 2); continue; }", 'browser'],
   ['src/view/ink.js', "player: '#4cc9ff'", "player: '#e4e7ec'", 'browser'],
   ['style.css', "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 0;", "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 1px solid var(--line);", 'manga'],
   ['style.css', "button.on { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest)", "button.on { color: var(--accent); box-shadow: var(--sticker-rest)", 'browser'],
@@ -507,7 +512,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }
