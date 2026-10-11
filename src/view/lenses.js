@@ -54,7 +54,7 @@ export function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses
       g.beginPath(); g.moveTo(bx, by); g.lineTo(bx - Math.cos(a - 0.5) * 9, by - Math.sin(a - 0.5) * 9); g.lineTo(bx - Math.cos(a + 0.5) * 9, by - Math.sin(a + 0.5) * 9); g.closePath(); g.fill();
       // Each move's number sits at the middle of its arrow.
       const mx = (ax + bx) / 2, my = (ay + by) / 2;
-      g.fillStyle = '#10131b'; g.beginPath(); g.arc(mx, my, 6, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#0f1640'; g.beginPath(); g.arc(mx, my, 6, 0, Math.PI * 2); g.fill();
       g.fillStyle = INK.goal; g.font = 'bold 8px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText(String(n), mx, my + 0.5);
     }

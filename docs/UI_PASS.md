@@ -1,6 +1,6 @@
 # UI pass: diagnosis and proposal
 
-Status: **diagnosis, 2026-10-10. U1 to U4 built the same day; U5 (the Manga theme with Drift) built 2026-10-11. The pass is done.** Owner: "these options seem like something that will
+Status: **diagnosis, 2026-10-10. U1 to U4 built the same day; U5 (the Manga theme with Drift) built 2026-10-11, then corrected to Manga's type roles with Comfortaa and the Blueberry gold palette (register 94). The pass is done.** Owner: "these options seem like something that will
 be cut on the page end due to our no-scrolling-allowed rule. We need a UI pass on this tool.
 Diagnose how other similar tools work so we can improve ours. Do it thoroughly and carefully."
 

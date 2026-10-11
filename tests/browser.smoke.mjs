@@ -32,6 +32,14 @@ try {
   const wide = await page.evaluate(() => ({ tabs: !!document.getElementById('groups').offsetParent, hidden: [...document.querySelectorAll('[data-tool]')].filter(b => !b.offsetParent).length, heads: [...document.querySelectorAll('.ghead')].filter(h => h.offsetParent).length }));
   check('on desktop the tools are sections, all visible, no tabs', !wide.tabs && wide.hidden === 0 && wide.heads === 4, JSON.stringify(wide));
   // nothing in a panel is cut by its panel: every control sits inside its box
+  const type = await page.evaluate(async () => {
+    await document.fonts.ready;
+    const fam = sel => getComputedStyle(document.querySelector(sel)).fontFamily.split(',')[0].replace(/["']/g, '');
+    return { body: fam('body'), button: fam('#mode'), head: fam('.ghead'), logo: fam('.logo'),
+      loaded: ['400 14px Bitter', '600 13px Asap', '800 11px Asap', '700 22px Comfortaa'].filter(f => !document.fonts.check(f)) };
+  });
+  check('text is Bitter, controls and heads Asap, the wordmark Comfortaa', type.body === 'Bitter' && type.button === 'Asap' && type.head === 'Asap' && type.logo === 'Comfortaa', JSON.stringify(type));
+  check('and all four faces actually loaded', !type.loaded.length, type.loaded.join(' | '));
   const cut = await page.evaluate(() => {
     const out = [];
     for (const panel of document.querySelectorAll('aside, header')) {
@@ -186,7 +194,7 @@ try {
     const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * tile), Math.round((y + 0.75) * tile), 1, 1).data;
     return [d[0], d[1], d[2]];
   }, s.player);
-  check('the player is painted on its tile', px[1] > 180 && px[2] > 180 && px[0] < 140, px.join(','));
+  check('the player is painted on its tile', px[1] > 180 && px[2] > 200 && px[0] < px[2] - 60, px.join(','));
   await page.locator('#statusList [data-power=armored]').setChecked(true);
   await page.evaluate(() => window.advanceTime(60));
   const rim = await page.evaluate(({ x, y }) => {
@@ -518,9 +526,9 @@ try {
   check('Play again starts the room over', !(await page.locator('#win').isVisible()) && (await text()).player.x === 1);
   await page.keyboard.press('e');
 
-  // Manga: "on" is a pink ring inside a sticker shadow, and no control draws a border.
-  const onLook = await page.$eval('[data-tool].on', b => { const c = getComputedStyle(b); return { shadow: c.boxShadow, border: c.borderTopWidth }; });
-  check('a picked tool wears the pink inset ring and no border', onLook.shadow.includes('inset') && onLook.shadow.includes('rgb(255, 42, 95)') && onLook.border === '0px', JSON.stringify(onLook));
+  // Manga: "on" is an accent ring inside a sticker shadow, and no control draws a border.
+  const onLook = await page.$eval('[data-tool].on', b => { const c = getComputedStyle(b); return { shadow: c.boxShadow, border: c.borderTopWidth, accent: c.color }; });
+  check('a picked tool wears the accent inset ring and no border', onLook.shadow.includes('inset') && onLook.shadow.includes(onLook.accent + ' 0px 0px 0px 2px inset') && onLook.accent === 'rgb(255, 201, 61)' && onLook.border === '0px', JSON.stringify(onLook));
   // a disabled power reads as disabled and cannot be ticked
   const hook = page.locator('[data-power=hook]');
   check('a power that cannot act yet is disabled', await hook.isDisabled());

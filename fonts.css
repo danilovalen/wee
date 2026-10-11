@@ -1,0 +1,8 @@
+/* wee's three faces, served from fonts/ and inlined as data URIs by the single-file build.
+   Asap and Bitter are Manga's; Comfortaa is wee's own, for the wordmark and titles only. */
+@font-face { font-family: 'Asap'; font-weight: 600; font-display: swap; src: url('fonts/asap-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Asap'; font-weight: 800; font-display: swap; src: url('fonts/asap-latin-800-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Bitter'; font-weight: 400; font-display: swap; src: url('fonts/bitter-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Bitter'; font-weight: 600; font-display: swap; src: url('fonts/bitter-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Comfortaa'; font-weight: 300; font-display: swap; src: url('fonts/comfortaa-latin-300-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Comfortaa'; font-weight: 700; font-display: swap; src: url('fonts/comfortaa-latin-700-normal.woff2') format('woff2'); }

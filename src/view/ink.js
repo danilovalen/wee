@@ -7,11 +7,11 @@ export const T = 32;
 
 export const INK = {
   puff: '#e3e8f2',
-  goo: '#a6d62f', gooDark: '#5f7d16', idoor: '#0b0d12', goal: '#f2c14e',
+  goo: '#a6d62f', gooDark: '#5f7d16', idoor: '#0a0f33', goal: '#f2c14e',
   water: '#1c4d7a', waterHi: '#5fa8e0', shock: '#fff1a8',
   armor: '#8fa3bb',
-  floor: '#14171f', grid: '#1c2130', wall: '#3a4256', wallTop: '#4d5770',
-  player: '#5ee0e6', start: '#5ee0e6', shadow: 'rgba(0,0,0,0.45)',
+  floor: '#19245f', grid: '#222f78', wall: '#3b4aa8', wallTop: '#6070c8',
+  player: '#8fdcff', start: '#8fdcff', shadow: 'rgba(0,0,0,0.45)',
   mover: '#8e98ad', moverEdge: '#c3cad8', enemy: '#e8525c', strong: '#7a1626', strongEdge: '#ff8a93', beam: '#ff3b3b', barrel: '#5b6274', box: '#c79552', boxEdge: '#8a6232',
   heavy: '#5d6474', heavyEdge: '#2b2f39', rivet: '#9aa2b3', flag: '#f2c94c', laser: '#ff6bd6',
   red: '#e8525c', blue: '#4f8cff', yellow: '#f2c94c', green: '#46c37b',

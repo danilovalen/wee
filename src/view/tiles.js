@@ -58,7 +58,7 @@ export function drawCell(g, c, x, y, s, scale = 1) {
   } else if (c.startsWith('gate:')) {
     // Rails along the sides it blocks, and a chevron for each way it lets through.
     const ds = c.slice(5).split(','), across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
-    g.fillStyle = '#1d2230'; g.fillRect(1, 1, T - 2, T - 2);
+    g.fillStyle = '#141c50'; g.fillRect(1, 1, T - 2, T - 2);
     g.fillStyle = INK.wall;
     if (!upDown) { g.fillRect(1, 1, T - 2, 5); g.fillRect(1, T - 6, T - 2, 5); }
     if (!across) { g.fillRect(1, 1, 5, T - 2); g.fillRect(T - 6, 1, 5, T - 2); }
@@ -79,7 +79,7 @@ export function drawCell(g, c, x, y, s, scale = 1) {
     // A catcher: a block with a coloured eye that glows while a beam holds it.
     const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
-    g.fillStyle = lit ? INK[col] : '#11141b';
+    g.fillStyle = lit ? INK[col] : '#10163f';
     g.beginPath(); g.arc(16, 16, 8.5, 0, Math.PI * 2); g.fill();
     g.strokeStyle = INK[col]; g.lineWidth = 3; g.stroke();
     if (lit) { g.globalAlpha = 0.35; g.fillStyle = INK[col]; g.beginPath(); g.arc(16, 16, 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }

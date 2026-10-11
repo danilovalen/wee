@@ -5,7 +5,7 @@ import { extname, join, normalize } from 'node:path';
 import { roomsApi } from './api.mjs';
 
 const root = new URL('..', import.meta.url).pathname;
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 
 // opts.rooms: a directory to keep rooms in, which turns on the rooms API.
 export function serve(port = 5173, opts = {}) {

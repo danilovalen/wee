@@ -49,7 +49,10 @@ if (process.argv[1] && process.argv[1].endsWith('build-single.mjs')) {
   if (readFileSync('src/level/templates.js', 'utf8') !== templatesSource())
     throw new Error('src/level/templates.js is out of step with rooms/: run node tools/templates.mjs');
   const js = bundle();
+  const fonts = readFileSync('fonts.css', 'utf8')
+    .replace(/url\('(fonts\/[^']+\.woff2)'\)/g, (_, f) => `url(data:font/woff2;base64,${readFileSync(f).toString('base64')})`);
   const html = readFileSync('index.html', 'utf8')
+    .replace('<link rel="stylesheet" href="fonts.css">', () => `<style>\n${fonts}</style>`)
     .replace('<link rel="stylesheet" href="style.css">', () => `<style>\n${readFileSync('style.css', 'utf8')}</style>`)
     .replace(`<script type="module" src="${ENTRY}"></script>`, () => `<script type="module">\n${js}\n</script>`);
   if (!html.includes('const m0 = ')) throw new Error('index.html no longer loads ' + ENTRY);
