@@ -61,6 +61,8 @@ export function slideOnce(s, diving) {
   if (r === 'moved') {
     if (s.player.moved === 1) { turnTurrets(s, 'input'); if (s.clock === 'slide') worldStep(s, d); }
     if (s.clock === 'tile') worldStep(s, d);
+    // With the boots, gravel holds you where you land on it.
+    if (s.powers.boots && s.player.dir && cellAt(s, s.player.x, s.player.y) === 'gravel') { endSlide(s); s.events.push({ type: 'grip' }); }
     return true;
   }
   if (r === 'blocked') endSlide(s);

@@ -7,7 +7,7 @@ import { $, now } from './dom.js';
 
 const SLICE_MS = 25, MAX = 5000;
 const NAME = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', armored: 'Armored' };
-const PIECE = { box: 'box', heavy: 'heavy box', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', door: 'door', idoor: 'inverted door', receiver: 'laser catcher', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', checkpoint: 'checkpoint' };
+const PIECE = { box: 'box', heavy: 'heavy box', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', door: 'door', idoor: 'inverted door', receiver: 'laser catcher', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', gravel: 'gravel', checkpoint: 'checkpoint' };
 const moves = n => typeof n === 'number' ? `${n} ${n === 1 ? 'move' : 'moves'}` : n === 'unsolvable' ? 'no solution' : 'too many positions to tell';
 
 // Runs one generator to the end in slices, then calls done; gives up when the room changes.

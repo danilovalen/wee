@@ -620,7 +620,7 @@ const CARRIES_TURRET = ['box', 'heavy', 'enemy', 'strong'];
 
 // A power listed in NEEDS cannot act until its block type exists.
 const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'boots', 'swim', 'light', 'armored'];
-const NEEDS = { boots: 'gravel', light: 'dark levels' };
+const NEEDS = { light: 'dark levels' };
 
 // Water stops you unless you are swimming, and stops weak enemies, light boxes and
 // lone turrets. Strong enemies, heavy boxes and blocks go through it.
@@ -1209,6 +1209,8 @@ function slideOnce(s, diving) {
   if (r === 'moved') {
     if (s.player.moved === 1) { turnTurrets(s, 'input'); if (s.clock === 'slide') worldStep(s, d); }
     if (s.clock === 'tile') worldStep(s, d);
+    // With the boots, gravel holds you where you land on it.
+    if (s.powers.boots && s.player.dir && cellAt(s, s.player.x, s.player.y) === 'gravel') { endSlide(s); s.events.push({ type: 'grip' }); }
     return true;
   }
   if (r === 'blocked') endSlide(s);
@@ -1437,7 +1439,7 @@ function isCell(c) {
   if (c === '' || c === 'wall' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
   if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
-  if (c === 'death' || c === 'water' || c === 'sticky' || c === 'goal') return true;
+  if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
   if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
@@ -1602,7 +1604,7 @@ const INK = {
   mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff4d6d', barrel: '#8f86d9', box: '#ffa94d', boxEdge: '#c97326',
   heavy: '#9b8cff', heavyEdge: '#5b4fc8', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
   red: '#ff6b81', blue: '#5aa9ff', yellow: '#ffd84d', green: '#5edc9a',
-  mark: '#3a3f4c', deathBg: '#7a2747', deathSpike: '#ffb0c0', gateBg: '#3a3f4c', gateArrow: '#5edc9a', unlit: '#5b6070', spring: '#ffc23d',
+  mark: '#3a3f4c', deathBg: '#7a2747', deathSpike: '#ffb0c0', gateBg: '#3a3f4c', gateArrow: '#5edc9a', unlit: '#5b6070', spring: '#ffc23d', gravel: '#dcb88f', gravelDot: '#a98058', gravelHi: '#f4e1c6',
 };
 
 const ease = t => 1 - Math.pow(1 - t, 3);
@@ -1841,6 +1843,13 @@ const { INK, T, frame, roundRect } = m14;
 // Tiles: floor, walls and every cell type, drawn in place.
 
 // bare: a block in the wall mass, so only what sits on it is drawn.
+// Gravel's grit: the same scatter of dark and light stones on every tile, at (X, Y).
+function grit(g, X, Y) {
+  for (const [x, y, r, hi] of [[7, 8, 1.6, 0], [18, 6, 1.3, 1], [25, 12, 1.7, 0], [11, 17, 1.2, 1], [21, 21, 1.6, 0], [6, 25, 1.4, 0], [15, 27, 1.2, 1], [27, 26, 1.3, 0]]) {
+    g.fillStyle = hi ? INK.gravelHi : INK.gravelDot; g.beginPath(); g.arc(X + x, Y + y, r, 0, Math.PI * 2); g.fill();
+  }
+}
+
 function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   if (!c) return;
   const px = x * T, py = y * T;
@@ -1854,6 +1863,9 @@ function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     g.beginPath(); g.ellipse(16, 16, 10, 7, 0, 0, Math.PI * 2); g.fill();
     g.fillStyle = 'rgba(255,255,255,0.55)';
     g.beginPath(); g.arc(12, 14, 1.8, 0, Math.PI * 2); g.arc(20, 18, 1.2, 0, Math.PI * 2); g.fill();
+  } else if (c === 'gravel') {
+    g.fillStyle = INK.gravel; roundRect(g, 1, 1, T - 2, T - 2, 6); g.fill();
+    grit(g, 0, 0);
   } else if (c === 'water') {
     // A full tile, so a pool reads as one body; two waves drift across it.
     g.fillStyle = INK.water; g.fillRect(0, 0, T, T);
@@ -1982,19 +1994,21 @@ function drawFloor(g, w, h) {
   for (let y = 1; y < h; y++) { g.moveTo(0, y * T + 0.5); g.lineTo(w * T, y * T + 0.5); }
   g.stroke();
 }
-return { drawCell, pressedAt, drawFloor };
+return { grit, drawCell, pressedAt, drawFloor };
 })();
 // ---- src/view/masses.js
 const m19 = (() => {
 const { INK, T, frame } = m14;
+const { grit } = m18;
 // Joined-up tiles: neighbouring walls, water, sticky puddles and death blocks are drawn as
 // one mass each. Every cell is four quarters; a quarter reads its two side neighbours and
 // the diagonal between them, so outer corners round, inner corners get a fillet and a
 // solid block has no seams. Doors, switches and the rest stay one tile each (tiles.js).
 
-const MASSES = ['wall', 'water', 'sticky', 'death'];
+
+const MASSES = ['wall', 'water', 'sticky', 'gravel', 'death'];
 // Corner radius per kind, in pixels of a 32 px tile.
-const RADIUS = { wall: 6, water: 8, sticky: 10, death: 6 };
+const RADIUS = { wall: 6, water: 8, sticky: 10, gravel: 6, death: 6 };
 const LIP = 6;
 
 // Blocks with something on them (a spring, a laser catcher) are still walls, and a
@@ -2059,13 +2073,16 @@ function drawMasses(g, cells, w, h, skip = () => false) {
   const kindAt = kindIn(cells, w, h);
   const held = (x, y) => skip(x, y) && kindAt(x, y) !== '';
   const at = (x, y) => held(x, y) ? '' : kindAt(x, y);
-  for (const kind of ['water', 'sticky', 'death', 'wall']) {
+  for (const kind of ['gravel', 'water', 'sticky', 'death', 'wall']) {
     if (kind !== 'wall' && !cells.includes(kind)) continue;
     const p = path(at, kind, w, h);
     g.save();
     if (kind === 'wall') {
       // A light lip on every edge that faces up, then the face.
       g.fillStyle = INK.wallTop; g.fill(p); g.clip(p); g.translate(0, LIP); g.fillStyle = INK.wall; g.fill(p);
+    } else if (kind === 'gravel') {
+      g.fillStyle = INK.gravel; g.fill(p);
+      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'gravel') grit(g, (i % w) * T, Math.floor(i / w) * T);
     } else if (kind === 'water') {
       g.fillStyle = INK.water; g.fill(p); g.clip(p);
       // Waves run across the whole pool, not tile by tile.
@@ -2406,6 +2423,7 @@ const TOOLS = [
   { id: 'death', label: 'Death block', group: 'tiles' },
   { id: 'water', label: 'Water', group: 'tiles' },
   { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },
+  { id: 'gravel', label: 'Gravel', group: 'tiles' },
   { id: 'button', label: 'Button', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'idoor', label: 'Inverted door', group: 'switches' },
@@ -2794,7 +2812,7 @@ const { $, now } = m12;
 
 const SLICE_MS = 25, MAX = 5000;
 const NAME = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', armored: 'Armored' };
-const PIECE = { box: 'box', heavy: 'heavy box', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', door: 'door', idoor: 'inverted door', receiver: 'laser catcher', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', checkpoint: 'checkpoint' };
+const PIECE = { box: 'box', heavy: 'heavy box', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', door: 'door', idoor: 'inverted door', receiver: 'laser catcher', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', gravel: 'gravel', checkpoint: 'checkpoint' };
 const moves = n => typeof n === 'number' ? `${n} ${n === 1 ? 'move' : 'moves'}` : n === 'unsolvable' ? 'no solution' : 'too many positions to tell';
 
 // Runs one generator to the end in slices, then calls done; gives up when the room changes.
@@ -3048,7 +3066,7 @@ const { INK } = m14;
 // many rooms costs little to draw. Returns a data URL.
 
 const PX = 4;
-const CELL = { wall: INK.wall, water: INK.water, sticky: INK.goo, goal: INK.goal, death: INK.deathBg, checkpoint: INK.flag };
+const CELL = { wall: INK.wall, water: INK.water, sticky: INK.goo, gravel: INK.gravel, goal: INK.goal, death: INK.deathBg, checkpoint: INK.flag };
 const PIECE = { box: INK.box, heavy: INK.heavy, mover: INK.mover, enemy: INK.enemy, strong: INK.strong, turret: INK.barrel };
 
 function thumbURL(level) {
@@ -3136,13 +3154,13 @@ const { parseMove } = m23;
 // Every tag, in the order the index lists them, with its label. Draft copy.
 const MECHANISMS = [
   ['tile:goal', 'Goal'], ['tile:checkpoint', 'Checkpoint'], ['tile:tri', 'Triangle'], ['tile:gate', 'One-way'],
-  ['tile:spring', 'Spring'], ['tile:death', 'Death block'], ['tile:water', 'Water'], ['tile:sticky', 'Sticky puddle'],
+  ['tile:spring', 'Spring'], ['tile:death', 'Death block'], ['tile:water', 'Water'], ['tile:sticky', 'Sticky puddle'], ['tile:gravel', 'Gravel'],
   ['tile:button', 'Button'], ['tile:door', 'Door'], ['tile:idoor', 'Inverted door'], ['tile:receiver', 'Laser catcher'], ['tile:sensor', 'Laser relay'],
   ['piece:mover', 'Moving block'], ['piece:enemy', 'Weak enemy'], ['piece:strong', 'Strong enemy'], ['piece:turret', 'Laser turret'],
   ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'],
   ['clock:input', 'On your move'], ['clock:follow', 'Same way as you'], ['clock:realtime', 'Real time'],
   ['power:boomerang', 'Boomerang'], ['power:dive', 'Dive'], ['power:laser', 'Laser'], ['power:cycle', 'Cycle (hide)'],
-  ['power:swim', 'Swim'], ['power:armored', 'Armored'],
+  ['power:swim', 'Swim'], ['power:boots', 'High adherence boots'], ['power:armored', 'Armored'],
   ['wiring:and', 'Two switches, one colour'], ['wiring:colours', 'Two or more colours'],
   ['use:push', 'You push a box'], ['use:pushed', 'A block pushes you'], ['use:spring', 'A spring launches'],
   ['use:door-opens', 'A door opens'], ['use:idoor-closes', 'An inverted door closes'], ['use:lit', 'A beam lights a switch'],
@@ -3170,7 +3188,7 @@ function contains(level) {
     const clock = e.turret ? e.turret.mode : e.mode;
     if (clock && ['mover', 'enemy', 'strong', 'turret'].includes(e.kind) || e.turret) tags.add('clock:' + (clock || 'input'));
   }
-  for (const p of ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'armored']) if (level.powers[p]) tags.add('power:' + p);
+  for (const p of ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'boots', 'armored']) if (level.powers[p]) tags.add('power:' + p);
   if (Object.values(colours).some(n => n > 1)) tags.add('wiring:and');
   if (Object.keys(colours).length > 1) tags.add('wiring:colours');
   return [...tags];
@@ -3886,7 +3904,7 @@ const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y 
 // Does (x, y) already hold the kind of thing this tool places?
 function holds(level, x, y, tool) {
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'goal') return c === tool;
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
   if (tool === 'button' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
@@ -3912,6 +3930,7 @@ function describe(level, x, y) {
     else if (kind === 'death') parts.push('Death block');
     else if (kind === 'water') parts.push('Water');
     else if (kind === 'sticky') parts.push('Sticky puddle');
+    else if (kind === 'gravel') parts.push('Gravel');
     else if (kind === 'goal') parts.push('Goal');
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
@@ -3941,12 +3960,12 @@ function place(level, ui, x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'goal'].includes(ui.tool)) setCell('');
+    else if (['wall', 'checkpoint', 'button', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
     if (isStart) return out;
     removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
-  } else if (t === 'water' || t === 'sticky' || t === 'goal') {
+  } else if (t === 'water' || t === 'sticky' || t === 'gravel' || t === 'goal') {
     if (isStart) return out;
     setCell(t);
   } else if (t === 'gate') {
@@ -4366,8 +4385,8 @@ function icon(tool) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky' || tool === 'goal') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':red';
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'select') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
@@ -4903,6 +4922,7 @@ const INGREDIENTS = [
   { id: 'death', label: 'Death block', tags: ['tile:death'], with: ['box'], place: (l, r) => { tile(l, r, 'death'); piece(l, r, { kind: 'box' }); } },
   { id: 'water', label: 'Water', tags: ['tile:water'], with: ['mover'], place: (l, r) => { const i = tile(l, r, 'water'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'water'; } },
   { id: 'sticky', label: 'Sticky puddle', tags: ['tile:sticky'], with: ['box'], place: (l, r) => { tile(l, r, 'sticky'); piece(l, r, { kind: 'box' }); } },
+  { id: 'gravel', label: 'Gravel', tags: ['tile:gravel'], with: ['boots'], place: (l, r) => { const i = tile(l, r, 'gravel'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'gravel'; } },
   { id: 'checkpoint', label: 'Checkpoint', tags: ['tile:checkpoint'], allowedOnly: 'A solution never dies, so a checkpoint cannot change it.', place: (l, r) => tile(l, r, 'checkpoint') },
   { id: 'mover', label: 'Moving block', tags: ['piece:mover'], place: (l, r) => piece(l, r, { kind: 'mover', axis: r.pick(['h', 'v']) }) },
   { id: 'follow', label: 'Moves the same way as you', tags: ['clock:follow'], with: ['mover'], standIn: null, knock: l => ({ ...l, entities: l.entities.map(e => e.mode === 'follow' ? { ...e, mode: 'input' } : e) }), place: (l, r) => piece(l, r, { kind: 'mover', axis: 'h', mode: 'follow' }) },
@@ -4915,6 +4935,7 @@ const INGREDIENTS = [
   { id: 'laser', label: 'Laser', tags: ['power:laser'], with: ['enemy'], power: 'laser' },
   { id: 'cycle', label: 'Cycle (hide)', tags: ['power:cycle'], with: ['mover'], power: 'cycle' },
   { id: 'swim', label: 'Swim', tags: ['power:swim'], with: ['water'], power: 'swim' },
+  { id: 'boots', label: 'High adherence boots', tags: ['power:boots'], power: 'boots' },
   { id: 'armored', label: 'Armored', tags: ['power:armored'], with: ['enemy'], power: 'armored' },
 ];
 

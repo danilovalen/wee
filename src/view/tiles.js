@@ -2,6 +2,13 @@
 import { INK, T, frame, roundRect } from './ink.js';
 
 // bare: a block in the wall mass, so only what sits on it is drawn.
+// Gravel's grit: the same scatter of dark and light stones on every tile, at (X, Y).
+export function grit(g, X, Y) {
+  for (const [x, y, r, hi] of [[7, 8, 1.6, 0], [18, 6, 1.3, 1], [25, 12, 1.7, 0], [11, 17, 1.2, 1], [21, 21, 1.6, 0], [6, 25, 1.4, 0], [15, 27, 1.2, 1], [27, 26, 1.3, 0]]) {
+    g.fillStyle = hi ? INK.gravelHi : INK.gravelDot; g.beginPath(); g.arc(X + x, Y + y, r, 0, Math.PI * 2); g.fill();
+  }
+}
+
 export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   if (!c) return;
   const px = x * T, py = y * T;
@@ -15,6 +22,9 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     g.beginPath(); g.ellipse(16, 16, 10, 7, 0, 0, Math.PI * 2); g.fill();
     g.fillStyle = 'rgba(255,255,255,0.55)';
     g.beginPath(); g.arc(12, 14, 1.8, 0, Math.PI * 2); g.arc(20, 18, 1.2, 0, Math.PI * 2); g.fill();
+  } else if (c === 'gravel') {
+    g.fillStyle = INK.gravel; roundRect(g, 1, 1, T - 2, T - 2, 6); g.fill();
+    grit(g, 0, 0);
   } else if (c === 'water') {
     // A full tile, so a pool reads as one body; two waves drift across it.
     g.fillStyle = INK.water; g.fillRect(0, 0, T, T);

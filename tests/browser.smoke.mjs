@@ -530,7 +530,7 @@ try {
   const onLook = await page.$eval('[data-tool].on', b => { const c = getComputedStyle(b); return { shadow: c.boxShadow, border: c.borderTopWidth, accent: c.color }; });
   check('a picked tool wears the accent inset ring and no border', onLook.shadow.includes('inset') && onLook.shadow.includes(onLook.accent + ' 0px 0px 0px 2px inset') && onLook.accent === 'rgb(123, 108, 255)' && onLook.border === '0px', JSON.stringify(onLook));
   // a disabled power reads as disabled and cannot be ticked
-  const hook = page.locator('[data-power=boots]');
+  const hook = page.locator('[data-power=light]');
   check('a power that cannot act yet is disabled', await hook.isDisabled());
   // served with a rooms directory, the page saves to the server instead of the browser
   const roomsDir = mkdtempSync(join(tmpdir(), 'wee-rooms-'));
@@ -573,11 +573,13 @@ try {
   await sp.close(); withApi.close();
 
   // Joined-up tiles: two walls side by side have no seam; a lone wall has round corners.
-  await page.evaluate(l => window.wee.loadLevel(l), room(['.......', '.##....', '.....#.', '.......', '.......']));
+  await page.evaluate(l => window.wee.loadLevel(l), room(['.......', '.##....', '.....#.', '...gg..', '.......']));
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const red = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return c.getContext('2d').getImageData(Math.round(x * t), Math.round(y * t), 1, 1).data[0]; }, [x, y]);
   const [seam, corner, face] = [await red(2, 1.6), await red(5.03, 2.03), await red(5.5, 2.6)];
   check('walls side by side are one mass, a lone wall rounds its corners', seam < 210 && face < 210 && corner > face + 30, JSON.stringify({ seam, corner, face }));
+  const grav = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round((3 + 15 / 32) * t), Math.round((3 + 12 / 32) * t), 1, 1).data]; });
+  check('gravel is drawn in its sand colour', Math.abs(grav[0] - 220) < 12 && Math.abs(grav[1] - 184) < 12 && Math.abs(grav[2] - 143) < 12, JSON.stringify(grav));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) {
   check('the smoke ran to the end', false, err.message);

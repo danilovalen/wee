@@ -204,9 +204,9 @@ Notes (mine):
 
 Done the same day: the power once called **Hook** is now **High adherence boots** (`boots`), and
 its missing tile is **gravel** instead of "grapple tiles". Rooms saved with Hook load with the
-boots. The power stays greyed out ("Needs gravel.") until gravel exists.
+boots.
 
-Notes (mine), for when gravel is built:
+**Built the same day** (register 100). Notes (mine) kept for the open questions:
 - **Terrain, not a block**: without boots you slide over it like floor; with boots, a slide that
   reaches it stops there.
 - **It joins like water** (the joined-up tiles in `src/view/masses.js`): one patch per area, a

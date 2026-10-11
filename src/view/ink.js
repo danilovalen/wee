@@ -16,7 +16,7 @@ export const INK = {
   mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff4d6d', barrel: '#8f86d9', box: '#ffa94d', boxEdge: '#c97326',
   heavy: '#9b8cff', heavyEdge: '#5b4fc8', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
   red: '#ff6b81', blue: '#5aa9ff', yellow: '#ffd84d', green: '#5edc9a',
-  mark: '#3a3f4c', deathBg: '#7a2747', deathSpike: '#ffb0c0', gateBg: '#3a3f4c', gateArrow: '#5edc9a', unlit: '#5b6070', spring: '#ffc23d',
+  mark: '#3a3f4c', deathBg: '#7a2747', deathSpike: '#ffb0c0', gateBg: '#3a3f4c', gateArrow: '#5edc9a', unlit: '#5b6070', spring: '#ffc23d', gravel: '#dcb88f', gravelDot: '#a98058', gravelHi: '#f4e1c6',
 };
 
 export const ease = t => 1 - Math.pow(1 - t, 3);

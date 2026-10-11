@@ -20,6 +20,7 @@ export const TOOLS = [
   { id: 'death', label: 'Death block', group: 'tiles' },
   { id: 'water', label: 'Water', group: 'tiles' },
   { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },
+  { id: 'gravel', label: 'Gravel', group: 'tiles' },
   { id: 'button', label: 'Button', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'idoor', label: 'Inverted door', group: 'switches' },

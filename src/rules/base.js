@@ -37,7 +37,7 @@ export const CARRIES_TURRET = ['box', 'heavy', 'enemy', 'strong'];
 
 // A power listed in NEEDS cannot act until its block type exists.
 export const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'boots', 'swim', 'light', 'armored'];
-export const NEEDS = { boots: 'gravel', light: 'dark levels' };
+export const NEEDS = { light: 'dark levels' };
 
 // Water stops you unless you are swimming, and stops weak enemies, light boxes and
 // lone turrets. Strong enemies, heavy boxes and blocks go through it.

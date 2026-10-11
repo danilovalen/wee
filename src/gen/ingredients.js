@@ -86,6 +86,7 @@ export const INGREDIENTS = [
   { id: 'death', label: 'Death block', tags: ['tile:death'], with: ['box'], place: (l, r) => { tile(l, r, 'death'); piece(l, r, { kind: 'box' }); } },
   { id: 'water', label: 'Water', tags: ['tile:water'], with: ['mover'], place: (l, r) => { const i = tile(l, r, 'water'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'water'; } },
   { id: 'sticky', label: 'Sticky puddle', tags: ['tile:sticky'], with: ['box'], place: (l, r) => { tile(l, r, 'sticky'); piece(l, r, { kind: 'box' }); } },
+  { id: 'gravel', label: 'Gravel', tags: ['tile:gravel'], with: ['boots'], place: (l, r) => { const i = tile(l, r, 'gravel'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'gravel'; } },
   { id: 'checkpoint', label: 'Checkpoint', tags: ['tile:checkpoint'], allowedOnly: 'A solution never dies, so a checkpoint cannot change it.', place: (l, r) => tile(l, r, 'checkpoint') },
   { id: 'mover', label: 'Moving block', tags: ['piece:mover'], place: (l, r) => piece(l, r, { kind: 'mover', axis: r.pick(['h', 'v']) }) },
   { id: 'follow', label: 'Moves the same way as you', tags: ['clock:follow'], with: ['mover'], standIn: null, knock: l => ({ ...l, entities: l.entities.map(e => e.mode === 'follow' ? { ...e, mode: 'input' } : e) }), place: (l, r) => piece(l, r, { kind: 'mover', axis: 'h', mode: 'follow' }) },
@@ -98,6 +99,7 @@ export const INGREDIENTS = [
   { id: 'laser', label: 'Laser', tags: ['power:laser'], with: ['enemy'], power: 'laser' },
   { id: 'cycle', label: 'Cycle (hide)', tags: ['power:cycle'], with: ['mover'], power: 'cycle' },
   { id: 'swim', label: 'Swim', tags: ['power:swim'], with: ['water'], power: 'swim' },
+  { id: 'boots', label: 'High adherence boots', tags: ['power:boots'], power: 'boots' },
   { id: 'armored', label: 'Armored', tags: ['power:armored'], with: ['enemy'], power: 'armored' },
 ];
 

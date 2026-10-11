@@ -3,10 +3,11 @@
 // the diagonal between them, so outer corners round, inner corners get a fillet and a
 // solid block has no seams. Doors, switches and the rest stay one tile each (tiles.js).
 import { INK, T, frame } from './ink.js';
+import { grit } from './tiles.js';
 
-export const MASSES = ['wall', 'water', 'sticky', 'death'];
+export const MASSES = ['wall', 'water', 'sticky', 'gravel', 'death'];
 // Corner radius per kind, in pixels of a 32 px tile.
-export const RADIUS = { wall: 6, water: 8, sticky: 10, death: 6 };
+export const RADIUS = { wall: 6, water: 8, sticky: 10, gravel: 6, death: 6 };
 const LIP = 6;
 
 // Blocks with something on them (a spring, a laser catcher) are still walls, and a
@@ -71,13 +72,16 @@ export function drawMasses(g, cells, w, h, skip = () => false) {
   const kindAt = kindIn(cells, w, h);
   const held = (x, y) => skip(x, y) && kindAt(x, y) !== '';
   const at = (x, y) => held(x, y) ? '' : kindAt(x, y);
-  for (const kind of ['water', 'sticky', 'death', 'wall']) {
+  for (const kind of ['gravel', 'water', 'sticky', 'death', 'wall']) {
     if (kind !== 'wall' && !cells.includes(kind)) continue;
     const p = path(at, kind, w, h);
     g.save();
     if (kind === 'wall') {
       // A light lip on every edge that faces up, then the face.
       g.fillStyle = INK.wallTop; g.fill(p); g.clip(p); g.translate(0, LIP); g.fillStyle = INK.wall; g.fill(p);
+    } else if (kind === 'gravel') {
+      g.fillStyle = INK.gravel; g.fill(p);
+      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'gravel') grit(g, (i % w) * T, Math.floor(i / w) * T);
     } else if (kind === 'water') {
       g.fillStyle = INK.water; g.fill(p); g.clip(p);
       // Waves run across the whole pool, not tile by tile.
