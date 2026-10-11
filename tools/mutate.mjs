@@ -476,6 +476,13 @@ const M = [
   ['style.css', "  .ctx .opt .note { display: none; }\n", "", 'fit'],
   ['src', "  $('placeHint').classList.toggle('quiet', !message && !!note);", "", 'fit'],
   ['style.css', "  .ctx #options { gap: 4px 10px; flex-wrap: wrap; }", "  .ctx #options { gap: 4px 10px; }", 'fit'],
+  // the Manga theme and Drift (U5)
+  ['style.css', "--accent: #ff2a5f;", "--accent: #5ee0e6;", 'manga'],
+  ['style.css', "background: color-mix(in srgb, var(--panel) var(--btn-mix), #fff 8%); border: 0;", "background: color-mix(in srgb, var(--panel) var(--btn-mix), #fff 8%); border: 1px solid var(--line);", 'manga'],
+  ['style.css', "button.on { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest)", "button.on { color: var(--accent); box-shadow: var(--sticker-rest)", 'browser'],
+  ['src', "  if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);\n", "", 'browser'],
+  ['src', "  if (d) wind = { x: d[0] * GUST, y: d[1] * GUST };", "  if (d) wind = { x: -d[0] * GUST, y: -d[1] * GUST };", 'browser'],
+  ['src', "=== 1) S.fx.push({ type: 'ghost', x: before.x, y: before.y, at: t });", "=== 1) {}", 'browser'],
 ];
 
 let caught = 0, crashed = 0;
@@ -494,7 +501,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }

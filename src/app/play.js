@@ -12,6 +12,7 @@ import { watchStuck, resetStuck } from './stuck.js';
 import { lensMarks, lensBusy } from './lenses.js';
 import { syncWell } from './well.js';
 import { syncChips } from './chips.js';
+import { gust } from './snow.js';
 
 export function snapshot(s) {
   const ents = {};
@@ -24,11 +25,14 @@ export function tick() {
   feedDemo(game);
   for (const k of S.pending) S.keylog.push({ t: game.tick, k });
   S.prev = snapshot(game);
-  const before = { x: game.player.x, y: game.player.y };
+  const before = { x: game.player.x, y: game.player.y }, wasDir = game.player.dir;
   step(game, S.pending);
   S.pending = [];
   const t = now();
   $('moves').textContent = `Moves ${game.move}`;
+  // Drift: a slide starting gusts the snow; each tile the player leaves holds a fading ghost.
+  if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);
+  if ((game.player.x !== before.x || game.player.y !== before.y) && Math.abs(game.player.x - before.x) + Math.abs(game.player.y - before.y) === 1) S.fx.push({ type: 'ghost', x: before.x, y: before.y, at: t });
   for (const e of game.events) {
     if (e.type === 'win') { $('winText').textContent = `Solved in ${e.moves} ${e.moves === 1 ? 'move' : 'moves'}.`; $('win').hidden = false; }
     if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });

@@ -6,6 +6,8 @@ import { drawPiece, drawPlayer } from './pieces.js';
 import { drawCell, drawFloor } from './tiles.js';
 import { drawHeat, drawLensMarks } from './lenses.js';
 
+const GHOST_MS = 360;
+
 // fx: [{type, at(ms), ...}] effects started by game events or edits.
 // marks: lens ({ heat, dots, lines, frames }, see lenses.js) and unused (pieces or tiles the
 // answer does not depend on, framed red).
@@ -161,6 +163,8 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     g.beginPath(); g.moveTo(f.fromX * T + T / 2, f.fromY * T + T / 2); g.lineTo(f.toX * T + T / 2, f.toY * T + T / 2); g.stroke();
     g.globalAlpha = 1; g.lineCap = 'butt';
   }
+  // Drift: a fading ghost of the player on each tile it just left.
+  for (const f of fx) if (f.type === 'ghost' && now - f.at < GHOST_MS) drawPlayer(g, f.x * T, f.y * T, false, 1 - 0.4 * (now - f.at) / GHOST_MS, 0.35 * (1 - (now - f.at) / GHOST_MS));
   const p = s.player, pp = prev.player;
   let px = p.x * T, py = p.y * T;
   if (pp && !p.snap && Math.abs(pp.x - p.x) + Math.abs(pp.y - p.y) <= 1) { px = lerp(pp.x, p.x, a) * T; py = lerp(pp.y, p.y, a) * T; }

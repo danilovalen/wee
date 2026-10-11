@@ -1,6 +1,6 @@
 # UI pass: diagnosis and proposal
 
-Status: **diagnosis, 2026-10-10. U1 to U4 built the same day; U5 not built.** Owner: "these options seem like something that will
+Status: **diagnosis, 2026-10-10. U1 to U4 built the same day; U5 (the Manga theme with Drift) built 2026-10-11. The pass is done.** Owner: "these options seem like something that will
 be cut on the page end due to our no-scrolling-allowed rule. We need a UI pass on this tool.
 Diagnose how other similar tools work so we can improve ours. Do it thoroughly and carefully."
 
@@ -193,7 +193,7 @@ ones the sources agreed on; uncertain ones are marked (unconfirmed).
 | U2 | lens chips on the room's edge, short legends, automatic look, hover Info line | **built 2026-10-10** |
 | U3 | right column tabs or edge handles; icon-only tools when narrow | **built 2026-10-10**: edge handles plus a size readout; icons from 701 to 1100 px |
 | U4 | Tab hides chrome, `?` key list, keys on buttons | **built 2026-10-10** |
-| U5 | the Manga theme, per bag-crawler's `docs/MANGA_THEME.md` (below) | half a day |
+| U5 | the Manga theme, per bag-crawler's `docs/MANGA_THEME.md` (below) | **built 2026-10-11**, with the Drift layer; see `docs/MANGA_THEME.md` |
 | later | a command palette; recent tools; options in a bubble on a placed piece | open |
 
 ## 5a. U5: the Manga theme
@@ -219,8 +219,7 @@ What carries over is the **form**, not only the palette, which is why it took fo
 language; a colour on them is a rule the player reads. The theme takes the shell: header, bars,
 columns, well, buttons, fields and dialogs.
 
-Open before building: wee's cyan accent (`#5ee0e6`) is also the player's colour and the "on" state.
-Manga's accent is `#ff2a5f`. Which one wins for the shell is the owner's call.
+Decided: Manga pink for the shell; the player stays cyan. The wee layer is Drift (C1 in `docs/wee-look.html`).
 
 ## 6. Decisions (owner, 2026-10-10)
 

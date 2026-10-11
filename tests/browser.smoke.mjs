@@ -270,6 +270,8 @@ try {
   await page.waitForFunction(() => document.getElementById('lensLegend').textContent.includes('tiles you can stop on'));
   check('Lenses open on Stops, counting the tiles you can stop on', (await page.textContent('#lensLegend')).includes('Dots: 4 tiles'), await page.textContent('#lensLegend'));
   const dot = async (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * t), Math.round((y + 0.5) * t), 1, 1).data; return d[1] > 150 && d[2] > 150; }, [x, y]);
+  // The legend can land a frame before the room draws the dots, so let two frames pass first.
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   check('a stop gets a dot, a tile you only slide over does not', await dot(4, 2) && !(await dot(2, 2)));
   await page.click('#stopsBtn');
   await page.waitForTimeout(80);
@@ -485,6 +487,8 @@ try {
   await page.evaluate(l => window.wee.loadLevel(l), lone);
   check('a door with no switch is a warning', (await page.textContent('#lintSum')) === '2 warnings' && (await page.textContent('#lintList')).includes('red door with no red switch'), await page.textContent('#lintList'));
   // Warnings live in the well: the status bar's Findings button counts them and opens it.
+  // The label follows on the next frame, so wait for it rather than race it.
+  await page.waitForFunction(() => document.getElementById('wellBtn').textContent === 'Findings 2', null, { timeout: 3000 }).catch(() => {});
   check('the status bar counts the warnings', (await page.textContent('#wellBtn')) === 'Findings 2', await page.textContent('#wellBtn'));
   if (await page.locator('#well').isHidden()) await page.click('#wellBtn');
   await page.click('[data-well=lenses]');
@@ -507,10 +511,16 @@ try {
   await page.keyboard.press('ArrowRight'); await page.evaluate(() => window.advanceTime(600));
   check('stopping on the goal shows the win', await page.locator('#win').isVisible() && (await page.textContent('#winText')) === 'Solved in 1 move.', await page.textContent('#winText'));
   check('the counter counts the slide', (await page.textContent('#moves')) === 'Moves 1');
+  // Drift: the slide gusts the snow its way and leaves a fading ghost behind.
+  check('a slide to the right gusts the snow to the right', (await page.evaluate(() => window.wee.wind())).x > 0.3, JSON.stringify(await page.evaluate(() => window.wee.wind())));
+  check('and leaves a ghost on the tile it left', (await page.evaluate(() => window.wee.fxTypes())).includes('ghost'));
   await page.click('#again');
   check('Play again starts the room over', !(await page.locator('#win').isVisible()) && (await text()).player.x === 1);
   await page.keyboard.press('e');
 
+  // Manga: "on" is a pink ring inside a sticker shadow, and no control draws a border.
+  const onLook = await page.$eval('[data-tool].on', b => { const c = getComputedStyle(b); return { shadow: c.boxShadow, border: c.borderTopWidth }; });
+  check('a picked tool wears the pink inset ring and no border', onLook.shadow.includes('inset') && onLook.shadow.includes('rgb(255, 42, 95)') && onLook.border === '0px', JSON.stringify(onLook));
   // a disabled power reads as disabled and cannot be ticked
   const hook = page.locator('[data-power=hook]');
   check('a power that cannot act yet is disabled', await hook.isDisabled());

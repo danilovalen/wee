@@ -5,7 +5,8 @@ import { replay, gameText } from '../rules/game.js';
 import { parseLevel, emptyLevel } from '../level/format.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
-import { portrait } from './dom.js';
+import { portrait, $ } from './dom.js';
+import { startSnow, windNow } from './snow.js';
 import { fit, watchStage } from './fit.js';
 import { buildPanels, syncPanel } from './panels.js';
 import { bindInput } from './input.js';
@@ -21,7 +22,7 @@ window.advanceTime = ms => {
   for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
   S.acc = 0; render();
 };
-window.wee = { draws: () => S.draws, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
+window.wee = { draws: () => S.draws, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, wind: () => windNow(), fxTypes: () => S.fx.map(f => f.type), loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
 
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
@@ -34,5 +35,6 @@ watchStage();
 for (const t of ['pointerdown', 'pointermove', 'pointerup', 'keydown', 'click', 'input', 'change', 'resize']) addEventListener(t, () => { S.redraw = true; }, true);
 fit();
 setMode('edit');
+startSnow($('snow'));
 requestAnimationFrame(frame);
 window.wee.roomsReady = bootRooms();

@@ -4,27 +4,41 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>wee</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Asap:wght@400;600;700&family=Outfit:wght@300;600;800&display=swap">
   <style>
 :root {
-  --bg: #0d0f15; --panel: #161a24; --line: #262c3b; --text: #e9edf5; --dim: #8e98ad;
-  --accent: #5ee0e6; --radius: 8px;
+  --paper: #050508; --panel: #151518; --rule: #35353d; --ink: #f8fafc; --soft: #a1a1aa; --accent: #ff2a5f; --on-accent: #fff; --field: rgba(255,255,255,0.07); --field-rule: rgba(255,255,255,0.15); --sticker: #0b0b0e; --inset-rim: rgba(210,210,220,0.15); --btn-mix: 60%; --selectable: #ff2a5f; --r-s: 8px; --r-m: 10px; --r-l: 16px; --r-pill: 999px; --sticker-rest: 4px; --sticker-hover: 6px; --sticker-press: 1px; --ice: #5ee0e6; --frost: 78%;
+  /* The names the older rules use, mapped onto the Manga tokens. */
+  --bg: var(--paper); --text: var(--ink); --dim: var(--soft); --line: var(--rule); --radius: var(--r-m);
+  --body: 'Asap', 'Helvetica Neue', Arial, sans-serif; --head: 'Outfit', 'Asap', sans-serif;
 }
 * { box-sizing: border-box; }
 html, body { overscroll-behavior: none; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
-header { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
-.logo { font-size: 18px; letter-spacing: 1px; margin-right: 8px; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 var(--body); }
+header { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0; }
+/* Drift: a thin, spaced wordmark with a sheen passing over it. */
+.logo { font: 300 21px var(--head); letter-spacing: .14em; margin-right: 8px; background: linear-gradient(100deg, var(--ink) 40%, var(--ice) 50%, var(--ink) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
+@keyframes sheen { to { background-position: -300% 0; } }
 .spacer { flex: 1; }
+/* The sticker shadow: hard, lifts on hover, sinks on press. "On" is a pink ring inside. */
 button {
-  font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line);
-  border-radius: var(--radius); padding: 6px 12px; cursor: pointer; transition: background .12s, border-color .12s;
+  font: inherit; color: var(--text); background: color-mix(in srgb, var(--panel) var(--btn-mix), #fff 8%); border: 0;
+  border-radius: var(--r-s); padding: 6px 12px; cursor: pointer;
+  box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker);
+  transition: transform .15s cubic-bezier(.4,0,.2,1), box-shadow .15s cubic-bezier(.4,0,.2,1), background .12s;
 }
-button:hover { border-color: var(--dim); }
-button.on { border-color: var(--accent); background: #183238; }
+button:hover:not(:disabled) { transform: translate(-2px, -2px); box-shadow: var(--sticker-hover) var(--sticker-hover) 0 0 var(--sticker); }
+button:active:not(:disabled) { transform: none; box-shadow: var(--sticker-press) var(--sticker-press) 0 0 var(--sticker); }
+button.on { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
+button.on:hover:not(:disabled) { box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-hover) var(--sticker-hover) 0 0 var(--sticker); }
+button:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
+/* A field is a recess: an inset shadow in a lighter rim. */
+input[type=number], input[type=text], textarea, select { background: var(--field) !important; border: 0 !important; border-radius: var(--r-s); box-shadow: inset 3px 3px 0 0 var(--inset-rim); color: var(--ink); }
 button:disabled { opacity: .4; cursor: default; }
 #mode { min-width: 72px; }
 main { display: grid; grid-template-columns: 300px minmax(0, 1fr) 260px; gap: 16px; padding: 16px; align-items: start; }
-aside { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
+aside { background: var(--panel); border: 0; border-radius: var(--r-m); padding: 12px; }
 h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin: 4px 0 8px; }
 h2:not(:first-child) { margin-top: 16px; }
 .tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-bottom: 8px; }
@@ -55,14 +69,14 @@ h2:not(:first-child) { margin-top: 16px; }
 #colours button { width: 26px; height: 26px; padding: 0; border-radius: 50%; border-width: 2px; }
 .size { display: flex; gap: 8px; }
 .size label { display: flex; flex-direction: column; gap: 2px; color: var(--dim); font-size: 12px; }
-.size input { width: 64px; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+.size input { width: 64px; font: inherit; color: var(--text); background: var(--bg); border: 0; border-radius: var(--r-s); padding: 4px 6px; }
 #keys:empty { display: none; }
 .hint { color: var(--dim); font-size: 12px; margin: 10px 0 0; }
 #stage { display: flex; flex-direction: column; align-items: center; min-width: 0; position: relative; }
-#game { display: block; border-radius: var(--radius); border: 1px solid var(--line); image-rendering: auto; touch-action: none; }
+#game { display: block; border-radius: var(--r-m); border: 0; image-rendering: auto; touch-action: none; }
 body.play #tools { opacity: .45; pointer-events: none; }
-.power { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; padding: 6px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
-.power:last-child { border-bottom: 0; }
+.power { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; padding: 6px 0; box-shadow: inset 0 -1px 0 var(--rule); cursor: pointer; }
+.power:last-child { box-shadow: none; }
 .power b { font-weight: 600; }
 .power small { grid-column: 2; color: var(--dim); }
 .power.off { cursor: default; opacity: .45; }
@@ -94,17 +108,17 @@ button { touch-action: manipulation; }
   .radio { padding: 8px 0; }
 }
 button.on:disabled { opacity: 1; }
-dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); width: min(92vw, 520px); }
-dialog textarea { width: 100%; font: 12px monospace; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; }
+dialog { background: var(--panel); color: var(--text); border: 0; border-radius: var(--r-m); width: min(92vw, 520px); }
+dialog textarea { width: 100%; font: 12px monospace; background: var(--bg); color: var(--text); border: 0; border-radius: var(--r-s); }
 dialog::backdrop { background: rgba(0,0,0,.6); }
 
 .moves { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted, #8e98ad); align-self: center; }
 .win { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 8px; align-items: center;
-  background: #10131bee; border: 2px solid #f2c14e; border-radius: 12px; padding: 16px 20px; z-index: 5; }
+  background: #10131bee; box-shadow: inset 0 0 0 2px #f2c14e, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-l); padding: 16px 20px; z-index: 5; }
 .win[hidden] { display: none; }
 .win b { color: #f2c14e; font-size: 1.15em; }
 .stuck { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; white-space: nowrap;
-  background: #10131bee; border: 2px solid #e5484d; border-radius: 10px; padding: 6px 10px; z-index: 5; }
+  background: #10131bee; box-shadow: inset 0 0 0 2px #e5484d, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-m); padding: 6px 10px; z-index: 5; }
 .stuck[hidden] { display: none; }
 .check { display: flex; gap: 8px; align-items: center; margin: 4px 0 0; font-size: 0.9em; }
 .check:has(#checkText:empty) { display: none; }
@@ -116,11 +130,11 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .logo { margin-right: 2px; }
 }
 
-.rooms { width: min(560px, 100vw - 16px); max-height: calc(100vh - 16px); background: var(--panel, #161a24); color: inherit; border: 1px solid var(--line, #2a3142); border-radius: 12px; padding: 14px; }
+.rooms { width: min(560px, 100vw - 16px); max-height: calc(100vh - 16px); background: var(--panel, #161a24); color: inherit; border: 0; border-radius: var(--r-l); padding: 14px; }
 .rooms::backdrop { background: #0008; }
 .roomsHead { display: flex; justify-content: space-between; align-items: center; font-size: 1.1em; }
 .rooms .field { display: grid; gap: 4px; margin: 8px 0; }
-.rooms input[type=text], .rooms textarea { width: 100%; box-sizing: border-box; background: #0d1017; color: inherit; border: 1px solid var(--line, #2a3142); border-radius: 6px; padding: 6px 8px; font: inherit; }
+.rooms input[type=text], .rooms textarea { width: 100%; box-sizing: border-box; background: #0d1017; color: inherit; border: 0; border-radius: var(--r-s); padding: 6px 8px; font: inherit; }
 .rooms .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .rooms h3 { margin: 12px 0 6px; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; color: var(--muted, #8e98ad); }
 .roomList { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -128,8 +142,8 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .roomRow { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; }
 .roomRow span { display: grid; }
 .roomRow small { color: var(--muted, #8e98ad); }
-.thumb { width: 56px; height: auto; max-height: 56px; object-fit: contain; border-radius: 4px; flex: none; }
-.rooms select { background: #0d1017; color: inherit; border: 1px solid var(--line, #2a3142); border-radius: 6px; padding: 6px 8px; font: inherit; }
+.thumb { width: 56px; height: auto; max-height: 56px; object-fit: contain; border-radius: var(--r-s); flex: none; }
+.rooms select { background: #0d1017; color: inherit; border: 0; border-radius: var(--r-s); padding: 6px 8px; font: inherit; }
 .explored { margin: 6px 0 10px; }
 .explored summary { cursor: pointer; color: var(--muted, #8e98ad); }
 .explored ul { columns: 2; margin: 4px 0; padding-left: 18px; font-size: 0.9em; }
@@ -146,12 +160,12 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 
 .genNums { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: end; margin: 8px 0; }
 .genNums label { display: grid; gap: 2px; font-size: 0.9em; }
-.genNums input { width: 4.5em; box-sizing: border-box; background: #0d1017; color: inherit; border: 1px solid var(--line, #2a3142); border-radius: 6px; padding: 6px; font: inherit; }
+.genNums input { width: 4.5em; box-sizing: border-box; background: #0d1017; color: inherit; border: 0; border-radius: var(--r-s); padding: 6px; font: inherit; }
 .genNums #genSeed { width: 6.5em; }
 .genIng { list-style: none; margin: 6px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 12px; }
 .genIng label { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.9em; }
 .genResult { display: flex; gap: 12px; align-items: flex-start; margin: 8px 0; }
-.genResult img { width: 120px; height: auto; image-rendering: pixelated; border-radius: 4px; flex: none; }
+.genResult img { width: 120px; height: auto; image-rendering: pixelated; border-radius: var(--r-s); flex: none; }
 .genResult p { margin: 0 0 6px; }
 
 /* A wide screen is one screen tall: nothing on the page scrolls. Power descriptions move to
@@ -196,9 +210,9 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .statusBar .check { margin: 0; }
 .statusBar #keys { margin: 0; }
 .statusBar > [hidden] { display: none; }
-.well { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius) var(--radius) 0 0; }
+.well { display: flex; flex-direction: column; background: var(--panel); border: 0; border-radius: var(--r-m) var(--r-m) 0 0; }
 .well[hidden] { display: none; }
-.wellTabs { display: flex; gap: 4px; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.wellTabs { display: flex; gap: 4px; align-items: center; padding: 6px 8px; border-bottom: 0; }
 .wellTabs button { padding: 3px 10px; font-size: 12.5px; }
 .wellBody { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 10px 8px; scrollbar-width: thin; }
 .wellBody [data-pane][hidden], .wellBody .hint[hidden] { display: none; }
@@ -210,7 +224,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 }
 @media (min-width: 701px) {
   /* Two fixed rows: the tool's controls, then one line of text. Nothing is shortened. */
-  .ctx { flex: none; display: grid; align-content: center; row-gap: 4px; min-height: 62px; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
+  .ctx { flex: none; display: grid; align-content: center; row-gap: 4px; min-height: 62px; padding: 6px 12px; background: var(--panel); border-bottom: 0; white-space: nowrap; overflow: hidden; }
   .ctx #options { display: flex; gap: 16px; }
   .ctx #options:not(:has(.opt:not([hidden]))) { display: none; }
   .ctx .opt { margin: 0; flex-wrap: nowrap; flex: none; }
@@ -225,8 +239,8 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .ctx #ctxNote:empty, .ctx #placeHint.quiet { display: none; }
   #stage { overflow: hidden; display: flex; flex-direction: column; gap: 8px; }
   .roomArea { flex: 1; min-height: 0; align-items: center; overflow: hidden; }
-  .well { flex: none; height: 170px; width: 100%; border-radius: var(--radius); }
-  .statusBar { flex: none; flex-wrap: nowrap; max-width: none; height: 36px; margin: 0; padding: 0 16px; background: var(--panel); border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; }
+  .well { flex: none; height: 170px; width: 100%; border-radius: var(--r-m); }
+  .statusBar { flex: none; flex-wrap: nowrap; max-width: none; height: 36px; margin: 0; padding: 0 16px; background: var(--panel); border-top: 0; white-space: nowrap; overflow: hidden; }
   .statusBar button { padding: 3px 10px; font-size: 12.5px; }
   .statusBar .pad { flex: none; width: auto; max-width: none; margin: 0; flex-wrap: nowrap; }
   .statusBar .pad button { flex: none; min-height: 0; font-size: 12.5px; }
@@ -237,11 +251,10 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
    tool in hand opened it. */
 .chips { display: flex; gap: 6px; justify-content: center; flex: none; flex-wrap: wrap; }
 .chips[hidden] { display: none; }
-.chip { display: flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; white-space: nowrap; }
+.chip { display: flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: var(--r-pill); font-size: 12.5px; white-space: nowrap; }
 .chip .g { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
 .chip svg { width: 26px; height: 12px; display: block; flex: none; }
 .chip.on { color: var(--accent); }
-.chip.auto { border-style: dashed; }
 .chip.more { color: var(--dim); }
 #info:empty { display: none; }
 .statusBar #info { margin: 0; color: var(--text); }
@@ -251,7 +264,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   /* A phone: four chips in one row, each a stacked label over its mark and lens. */
   .chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 4px; width: 100%; margin-top: 6px; }
   .chips[hidden] { display: none; }
-  .chip { flex-direction: column; justify-content: center; gap: 1px; padding: 3px 4px; min-height: 44px; border-radius: 10px; min-width: 0; }
+  .chip { flex-direction: column; justify-content: center; gap: 1px; padding: 3px 4px; min-height: 44px; border-radius: var(--r-m); min-width: 0; }
   .chip .n { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 }
 
@@ -268,7 +281,7 @@ body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
 .roomArea { padding: 0; }
 @media (max-width: 700px) { .roomArea { padding: 0 0 8px; } }
 #sizeBtn { font-variant-numeric: tabular-nums; }
-.sizePop { position: fixed; z-index: 40; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45); width: 260px; }
+.sizePop { position: fixed; z-index: 40; background: var(--panel); border: 0; border-radius: var(--r-m); padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.45); width: 260px; }
 .sizePop[hidden] { display: none; }
 /* Between a phone and a desktop the tools are icons, named on hover, so the room keeps the width. */
 @media (min-width: 701px) and (max-width: 1100px) {
@@ -292,11 +305,22 @@ body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
 .keysList section { break-inside: avoid; margin-bottom: 10px; }
 .keysList h3 { margin: 6px 0 4px; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
 .keysList p { margin: 2px 0; font-size: 13px; }
-.keysList kbd { display: inline-block; min-width: 1.6em; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; font: 600 11.5px ui-monospace, monospace; text-align: center; }
+.keysList kbd { display: inline-block; min-width: 1.6em; padding: 0 4px; border: 0; border-radius: var(--r-s); font: 600 11.5px ui-monospace, monospace; text-align: center; }
 .rooms.keys { width: min(640px, 100vw - 16px); }
+
+/* Drift: snow falls behind the shell; the bars and columns are frosted so it shows faintly through. */
+#snow { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+header, .ctx, main, .statusBar { position: relative; z-index: 1; }
+aside, .ctx, .statusBar, .well, header { background: color-mix(in srgb, var(--panel) var(--frost), transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+aside, .well { border-radius: var(--r-m); }
+.chip.auto { outline: 1.5px dashed currentColor; outline-offset: -4px; }
+.chip.on { box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
+h2, .ghead, .wellTabs, .roomsHead b { font-family: var(--head); }
+@media (prefers-reduced-motion: reduce) { .logo { animation: none; } }
 </style>
 </head>
 <body>
+  <canvas id="snow" aria-hidden="true"></canvas>
   <header>
     <b class="logo">wee</b>
     <button id="mode" type="button" title="E">Play</button>
@@ -1499,8 +1523,51 @@ const portrait = () => innerHeight > innerWidth;
 const now = () => performance.now();
 return { $, canvas, g, touch, portrait, now };
 })();
-// ---- src/view/ink.js
+// ---- src/app/snow.js
 const m13 = (() => {
+
+// Drift: snow behind the shell. It falls slowly, and when the player starts a slide it rushes the
+// same way for a moment, then settles. Still under reduced motion.
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FLAKES = 60, GUST = 1.2, SETTLE = 0.94;
+let wind = { x: 0, y: 0 }, flakes = [];
+
+// A slide starting: push the snow that way. dir is 'up', 'down', 'left' or 'right'.
+function gust(dir) {
+  if (reduce) return;
+  const d = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
+  if (d) wind = { x: d[0] * GUST, y: d[1] * GUST };
+}
+const windNow = () => ({ ...wind });
+
+function startSnow(cv) {
+  const g = cv.getContext('2d');
+  flakes = Array.from({ length: FLAKES }, () => ({ x: Math.random(), y: Math.random(), r: 0.4 + Math.random() * 1.6, fall: 0.0003 + Math.random() * 0.0008, sway: Math.random() * 6 }));
+  // Cheap on purpose: one pixel per CSS pixel and every other frame, so it never slows a search.
+  let odd = false;
+  const draw = t => {
+    odd = !odd;
+    if (odd) { requestAnimationFrame(draw); return; }
+    const w = innerWidth, h = innerHeight;
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    g.clearRect(0, 0, w, h);
+    g.fillStyle = 'rgba(234,246,255,.5)';
+    for (const f of flakes) {
+      if (!reduce) {
+        f.y = (f.y + 2 * f.fall + wind.y * f.r * 0.0016 + 1) % 1;
+        f.x = (f.x + Math.sin(t / 1400 + f.sway) * 0.0006 + wind.x * f.r * 0.0016 + 1) % 1;
+      }
+      g.beginPath(); g.arc(f.x * w, f.y * h, f.r, 0, Math.PI * 2); g.fill();
+    }
+    wind = { x: wind.x * SETTLE, y: wind.y * SETTLE };
+    if (!reduce) requestAnimationFrame(draw);
+  };
+  requestAnimationFrame(draw);
+}
+return { gust, windNow, startSnow };
+})();
+// ---- src/view/ink.js
+const m14 = (() => {
 const { TICK_MS } = m0;
 // The palette, the tile size and the small drawing helpers every view file shares.
 
@@ -1538,7 +1605,7 @@ const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9, 5], [0
 return { AIM, T, INK, ease, lerp, frame, roundRect, LASER_MS, PUFF_MS, PUFFS };
 })();
 // ---- src/app/size.js
-const m14 = (() => {
+const m15 = (() => {
 const { $ } = m12;
 // The room's size: a "+" on each edge of the room adds a row or a column there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
@@ -1566,11 +1633,11 @@ function buildSize() {
 return { syncSize, closeSize, buildSize };
 })();
 // ---- src/app/fit.js
-const m15 = (() => {
-const { T } = m13;
+const m16 = (() => {
+const { T } = m14;
 const { S } = m11;
 const { $, canvas, g, portrait } = m12;
-const { syncSize } = m14;
+const { syncSize } = m15;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 
 
@@ -1621,8 +1688,8 @@ function watchStage() {
 return { fit, watchStage };
 })();
 // ---- src/view/pieces.js
-const m16 = (() => {
-const { AIM, INK, T, frame, roundRect } = m13;
+const m17 = (() => {
+const { AIM, INK, T, frame, roundRect } = m14;
 // Pieces and the player.
 
 // The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
@@ -1751,8 +1818,8 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
 return { modeBadge, drawTurret, drawPiece, drawPlayer };
 })();
 // ---- src/view/tiles.js
-const m17 = (() => {
-const { INK, T, frame, roundRect } = m13;
+const m18 = (() => {
+const { INK, T, frame, roundRect } = m14;
 // Tiles: floor, walls and every cell type, drawn in place.
 
 function drawCell(g, c, x, y, s, scale = 1) {
@@ -1899,8 +1966,8 @@ function drawFloor(g, w, h) {
 return { drawCell, pressedAt, drawFloor };
 })();
 // ---- src/view/lenses.js
-const m18 = (() => {
-const { INK, T } = m13;
+const m19 = (() => {
+const { INK, T } = m14;
 // The editor's lenses, drawn over the room. A heat lens recolours tiles under the pieces; dots,
 // lines and frames are marks on top. One lens per group, so nothing here paints over its own kind.
 
@@ -1977,18 +2044,20 @@ function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses } = {}
 return { drawHeat, drawLensMarks };
 })();
 // ---- src/view/scene.js
-const m19 = (() => {
+const m20 = (() => {
 const { DIRS } = m0;
-const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m13;
-const { drawPiece, drawPlayer } = m16;
-const { drawCell, drawFloor } = m17;
-const { drawHeat, drawLensMarks } = m18;
+const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m14;
+const { drawPiece, drawPlayer } = m17;
+const { drawCell, drawFloor } = m18;
+const { drawHeat, drawLensMarks } = m19;
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
 
 
 
 
+
+const GHOST_MS = 360;
 
 // fx: [{type, at(ms), ...}] effects started by game events or edits.
 // marks: lens ({ heat, dots, lines, frames }, see lenses.js) and unused (pieces or tiles the
@@ -2145,6 +2214,8 @@ function drawPlay(g, s, prev, alpha, fx, now) {
     g.beginPath(); g.moveTo(f.fromX * T + T / 2, f.fromY * T + T / 2); g.lineTo(f.toX * T + T / 2, f.toY * T + T / 2); g.stroke();
     g.globalAlpha = 1; g.lineCap = 'butt';
   }
+  // Drift: a fading ghost of the player on each tile it just left.
+  for (const f of fx) if (f.type === 'ghost' && now - f.at < GHOST_MS) drawPlayer(g, f.x * T, f.y * T, false, 1 - 0.4 * (now - f.at) / GHOST_MS, 0.35 * (1 - (now - f.at) / GHOST_MS));
   const p = s.player, pp = prev.player;
   let px = p.x * T, py = p.y * T;
   if (pp && !p.snap && Math.abs(pp.x - p.x) + Math.abs(pp.y - p.y) <= 1) { px = lerp(pp.x, p.x, a) * T; py = lerp(pp.y, p.y, a) * T; }
@@ -2170,7 +2241,7 @@ function drawPlay(g, s, prev, alpha, fx, now) {
 return { drawEdit, drawPlay };
 })();
 // ---- src/editor/palette.js
-const m20 = (() => {
+const m21 = (() => {
 
 // The palette: every tool, its group and label, and the words the editor uses for
 // powers, colours, clocks and directions. Draft copy throughout.
@@ -2222,7 +2293,7 @@ const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'b
 return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/solve/solve.js
-const m21 = (() => {
+const m22 = (() => {
 const { createGame, step } = m8;
 const { MOVES, OPPOSITE } = m0;
 // The solver: a breadth-first search over the room's states, one move of yours per
@@ -2418,10 +2489,10 @@ function solve(level, max) {
 return { MAX_STATES, stateKey, settled, parseMove, move, powerMoves, successors, unsearchable, search, canWin, reach, solve };
 })();
 // ---- src/solve/lint.js
-const m22 = (() => {
+const m23 = (() => {
 const { DIRS } = m0;
 const { createGame, step } = m8;
-const { parseMove } = m21;
+const { parseMove } = m22;
 // Lint: warnings about a room that the rules allow but that are almost always a
 // mistake, each with the tile it is about. Read-only over the level.
 
@@ -2470,10 +2541,10 @@ function brokenAt(level, moves) {
 return { lint, brokenAt };
 })();
 // ---- src/solve/design.js
-const m23 = (() => {
+const m24 = (() => {
 const { createGame } = m8;
 const { NEEDS, POWERS } = m0;
-const { search, successors, stateKey, unsearchable, MAX_STATES } = m21;
+const { search, successors, stateKey, unsearchable, MAX_STATES } = m22;
 // Design notes: what each power, piece and tile does to a room's answer, where the room
 // traps you, and how many shortest routes it has. Each is a generator, so the page can run
 // it a slice at a time. An answer is a number of moves, or 'unsolvable' or 'capped'.
@@ -2570,8 +2641,8 @@ function* routes(level, max = MAX_STATES) {
 return { powerCheck, elementCheck, routes };
 })();
 // ---- src/app/design.js
-const m24 = (() => {
-const { powerCheck, elementCheck, routes } = m23;
+const m25 = (() => {
+const { powerCheck, elementCheck, routes } = m24;
 const { S } = m11;
 const { $, now } = m12;
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
@@ -2649,13 +2720,13 @@ function runDesign(par) {
 return { sliced, clearDesign, runDesign };
 })();
 // ---- src/app/check.js
-const m25 = (() => {
-const { search, parseMove } = m21;
-const { lint, brokenAt } = m22;
+const m26 = (() => {
+const { search, parseMove } = m22;
+const { lint, brokenAt } = m23;
 const { now } = m12;
 const { S } = m11;
 const { $ } = m12;
-const { runDesign, clearDesign } = m24;
+const { runDesign, clearDesign } = m25;
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
 
@@ -2759,14 +2830,14 @@ function syncLint() {
 return { checkText, runCheck, syncCheck, feedDemo, syncLint };
 })();
 // ---- src/level/templates.js
-const m26 = (() => {
+const m27 = (() => {
 
 // Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.
 const TEMPLATES = [{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"hook":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"hook":false,"swim":false,"light":false},"clock":"tile"}}];
 return { TEMPLATES };
 })();
 // ---- src/level/code.js
-const m27 = (() => {
+const m28 = (() => {
 const { parseLevel } = m9;
 // A share code: the level as compressed, URL-safe text, so a room fits in a message or
 // a link (#room=<code>). Uses the platform's own deflate, in the page and in Node.
@@ -2797,7 +2868,7 @@ async function decodeRoom(code) {
 return { encodeRoom, decodeRoom };
 })();
 // ---- src/level/room.js
-const m28 = (() => {
+const m29 = (() => {
 const { parseLevel } = m9;
 // A room is a level plus what the person wrote about it. These split and join the two.
 
@@ -2830,8 +2901,8 @@ function unpack(text) {
 return { META, splitRoom, joinRoom, stampOf, pack, unpack };
 })();
 // ---- src/view/thumb.js
-const m29 = (() => {
-const { INK } = m13;
+const m30 = (() => {
+const { INK } = m14;
 // A room's thumbnail: one small square per tile in the tile's main colour, so a list of
 // many rooms costs little to draw. Returns a data URL.
 
@@ -2858,7 +2929,7 @@ function thumbURL(level) {
 return { thumbURL };
 })();
 // ---- src/app/store.js
-const m30 = (() => {
+const m31 = (() => {
 
 // Where rooms are kept: on the server when the page is served by one, otherwise in this
 // browser's local storage. A room is a level file with id, name, note and updated added.
@@ -2914,9 +2985,9 @@ async function remove(id) {
 return { where, detect, newId, list, put, remove };
 })();
 // ---- src/solve/tags.js
-const m31 = (() => {
+const m32 = (() => {
 const { createGame, step } = m8;
-const { parseMove } = m21;
+const { parseMove } = m22;
 // The mechanism index: what a room contains, and what its solution actually does.
 // Both come from the room and the rules, never typed by hand, so the counts stay true.
 
@@ -2998,7 +3069,7 @@ function uses(level, moves) {
 return { MECHANISMS, LABEL, contains, uses };
 })();
 // ---- src/app/draft.js
-const m32 = (() => {
+const m33 = (() => {
 const { S } = m11;
 // Autosave: the room being edited, with its name and note, kept in this browser after
 // every change, so a closed tab or a phone that drops the page loses nothing. Saving the
@@ -3031,18 +3102,18 @@ function flushDraft(dirty) { if (dirty && timer) { clearTimeout(timer); write();
 return { readDraft, clearDraft, noteChange, flushDraft };
 })();
 // ---- src/app/rooms.js
-const m33 = (() => {
-const { TEMPLATES } = m26;
-const { encodeRoom, decodeRoom } = m27;
-const { splitRoom, joinRoom, stampOf, pack, unpack } = m28;
+const m34 = (() => {
+const { TEMPLATES } = m27;
+const { encodeRoom, decodeRoom } = m28;
+const { splitRoom, joinRoom, stampOf, pack, unpack } = m29;
 const { starterLevel } = m11;
 const { newHistory } = m10;
 const { S } = m11;
-const { thumbURL } = m29;
-const { list, put, remove, where, newId, detect } = m30;
-const { contains, uses, MECHANISMS } = m31;
+const { thumbURL } = m30;
+const { list, put, remove, where, newId, detect } = m31;
+const { contains, uses, MECHANISMS } = m32;
 const { $ } = m12;
-const { readDraft, noteChange, flushDraft, clearDraft } = m32;
+const { readDraft, noteChange, flushDraft, clearDraft } = m33;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
 
@@ -3299,12 +3370,12 @@ async function bootRooms() {
 return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m34 = (() => {
+const m35 = (() => {
 const { record, undo, redo } = m10;
 const { S } = m11;
 const { $ } = m12;
-const { syncCheck, syncLint } = m25;
-const { syncRoomsButton, followUndo } = m33;
+const { syncCheck, syncLint } = m26;
+const { syncRoomsButton, followUndo } = m34;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -3343,10 +3414,10 @@ function step(back, after) {
 return { syncUndo, begin, end, change, step };
 })();
 // ---- src/solve/lenses.js
-const m35 = (() => {
+const m36 = (() => {
 const { createGame } = m8;
 const { computeBeams } = m3;
-const { successors, stateKey, unsearchable, MAX_STATES } = m21;
+const { successors, stateKey, unsearchable, MAX_STATES } = m22;
 // What the editor's lenses draw, from every position the room can reach: how far each tile
 // is from winning, a shortest way there, every tile you pass through on the way to a stop,
 // every tile a beam or a piece ever covers, the moves between stops, and where a move kills
@@ -3428,7 +3499,7 @@ function* lensData(level, max = MAX_STATES) {
 return { lensData };
 })();
 // ---- src/app/well.js
-const m36 = (() => {
+const m37 = (() => {
 const { S } = m11;
 const { $ } = m12;
 // The well: a fixed-height drawer under the room, with a tab for findings (warnings and
@@ -3475,15 +3546,15 @@ function buildWell() {
 return { WELL, openWell, closeWell, syncWell, buildWell };
 })();
 // ---- src/app/lenses.js
-const m37 = (() => {
-const { reach } = m21;
-const { routes } = m23;
-const { lensData } = m35;
-const { INK } = m13;
+const m38 = (() => {
+const { reach } = m22;
+const { routes } = m24;
+const { lensData } = m36;
+const { INK } = m14;
 const { S } = m11;
 const { $ } = m12;
-const { sliced } = m24;
-const { WELL, closeWell } = m36;
+const { sliced } = m25;
+const { WELL, closeWell } = m37;
 // Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
 // you pick one in that group. Data comes from searches run a slice at a time, again whenever
@@ -3660,9 +3731,9 @@ function buildLenses() {
 return { LENS_GROUPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
 // ---- src/editor/edit.js
-const m38 = (() => {
+const m39 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
-const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m20;
+const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m21;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -3783,13 +3854,13 @@ function place(level, ui, x, y, how) {
 return { holds, describe, place };
 })();
 // ---- src/app/chips.js
-const m39 = (() => {
-const { describe } = m38;
+const m40 = (() => {
+const { describe } = m39;
 const { S } = m11;
-const { INK } = m13;
+const { INK } = m14;
 const { $, touch } = m12;
-const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m37;
-const { openWell } = m36;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m38;
+const { openWell } = m37;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
@@ -3852,8 +3923,8 @@ function syncInfo() {
 return { buildChips, syncChips };
 })();
 // ---- src/app/keys.js
-const m40 = (() => {
-const { TOOLS } = m20;
+const m41 = (() => {
+const { TOOLS } = m21;
 const { $ } = m12;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
 // every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
@@ -3905,7 +3976,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m41 = (() => {
+const m42 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -3970,10 +4041,10 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m42 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m41;
+const m43 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m42;
 const { S } = m11;
-const { change } = m34;
+const { change } = m35;
 const { $ } = m12;
 // The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
 // it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
@@ -4094,24 +4165,24 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/panels.js
-const m43 = (() => {
+const m44 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel, resizeSide, wallBorder } = m9;
-const { T, INK } = m13;
-const { drawPiece } = m16;
-const { drawEdit } = m19;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m20;
+const { T, INK } = m14;
+const { drawPiece } = m17;
+const { drawEdit } = m20;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m21;
 const { S } = m11;
 const { $, canvas, touch } = m12;
-const { change, step: undoStep, syncUndo } = m34;
-const { runCheck, syncCheck, syncLint } = m25;
-const { buildLenses, syncLenses } = m37;
-const { buildWell, openWell } = m36;
-const { buildChips } = m39;
-const { buildSize } = m14;
-const { buildKeys } = m40;
-const { syncRoomsButton } = m33;
-const { buildSelect, syncSelect } = m42;
+const { change, step: undoStep, syncUndo } = m35;
+const { runCheck, syncCheck, syncLint } = m26;
+const { buildLenses, syncLenses } = m38;
+const { buildWell, openWell } = m37;
+const { buildChips } = m40;
+const { buildSize } = m15;
+const { buildKeys } = m41;
+const { syncRoomsButton } = m34;
+const { buildSelect, syncSelect } = m43;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -4316,8 +4387,8 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/app/stuck.js
-const m44 = (() => {
-const { canWin, settled, stateKey, unsearchable } = m21;
+const m45 = (() => {
+const { canWin, settled, stateKey, unsearchable } = m22;
 const { S } = m11;
 const { $ } = m12;
 // While you play: once everything has come to rest, a search in the background asks whether
@@ -4351,21 +4422,23 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m45 = (() => {
+const m46 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
-const { drawEdit, drawPlay } = m19;
+const { drawEdit, drawPlay } = m20;
 const { S } = m11;
 const { $, g, now } = m12;
-const { syncPanel, keysText } = m43;
-const { feedDemo } = m25;
-const { selectOverlay } = m42;
-const { watchStuck, resetStuck } = m44;
-const { lensMarks, lensBusy } = m37;
-const { syncWell } = m36;
-const { syncChips } = m39;
+const { syncPanel, keysText } = m44;
+const { feedDemo } = m26;
+const { selectOverlay } = m43;
+const { watchStuck, resetStuck } = m45;
+const { lensMarks, lensBusy } = m38;
+const { syncWell } = m37;
+const { syncChips } = m40;
+const { gust } = m13;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
 
 
 
@@ -4390,11 +4463,14 @@ function tick() {
   feedDemo(game);
   for (const k of S.pending) S.keylog.push({ t: game.tick, k });
   S.prev = snapshot(game);
-  const before = { x: game.player.x, y: game.player.y };
+  const before = { x: game.player.x, y: game.player.y }, wasDir = game.player.dir;
   step(game, S.pending);
   S.pending = [];
   const t = now();
   $('moves').textContent = `Moves ${game.move}`;
+  // Drift: a slide starting gusts the snow; each tile the player leaves holds a fading ghost.
+  if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);
+  if ((game.player.x !== before.x || game.player.y !== before.y) && Math.abs(game.player.x - before.x) + Math.abs(game.player.y - before.y) === 1) S.fx.push({ type: 'ghost', x: before.x, y: before.y, at: t });
   for (const e of game.events) {
     if (e.type === 'win') { $('winText').textContent = `Solved in ${e.moves} ${e.moves === 1 ? 'move' : 'moves'}.`; $('win').hidden = false; }
     if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
@@ -4478,19 +4554,19 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m46 = (() => {
-const { describe, holds, place } = m38;
+const m47 = (() => {
+const { describe, holds, place } = m39;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m45;
-const { begin, end, step: undoStep } = m34;
-const { save } = m33;
-const { selectDown, selectMove, selectUp, selectKey } = m42;
-const { LENS_GROUPS, cycleLens, lensesOff } = m37;
-const { syncPanel } = m43;
-const { fit } = m15;
-const { toolForKey, bareKey, showKeys } = m40;
-const { TOOLS } = m20;
+const { setMode, aim } = m46;
+const { begin, end, step: undoStep } = m35;
+const { save } = m34;
+const { selectDown, selectMove, selectUp, selectKey } = m43;
+const { LENS_GROUPS, cycleLens, lensesOff } = m38;
+const { syncPanel } = m44;
+const { fit } = m16;
+const { toolForKey, bareKey, showKeys } = m41;
+const { TOOLS } = m21;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -4597,7 +4673,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m47 = (() => {
+const m48 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -4705,10 +4781,10 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m48 = (() => {
-const { search } = m21;
-const { contains } = m31;
-const { ING, variants } = m47;
+const m49 = (() => {
+const { search } = m22;
+const { contains } = m32;
+const { ING, variants } = m48;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -4753,7 +4829,7 @@ function* judge(level, recipe, max = 3000) {
 return { offFound, missing, judge };
 })();
 // ---- src/gen/random.js
-const m49 = (() => {
+const m50 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -4770,12 +4846,12 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m50 = (() => {
+const m51 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
-const { INGREDIENTS, ING, spot } = m47;
-const { judge } = m48;
-const { rng } = m49;
+const { INGREDIENTS, ING, spot } = m48;
+const { judge } = m49;
+const { rng } = m50;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -4884,15 +4960,15 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m51 = (() => {
-const { INGREDIENTS } = m47;
-const { generate, normalize, recipeLabel, LIMITS } = m50;
-const { stampOf } = m28;
+const m52 = (() => {
+const { INGREDIENTS } = m48;
+const { generate, normalize, recipeLabel, LIMITS } = m51;
+const { stampOf } = m29;
 const { S } = m11;
-const { thumbURL } = m29;
+const { thumbURL } = m30;
 const { $ } = m12;
-const { change } = m34;
-const { dirty, remember, syncRoomsButton } = m33;
+const { change } = m35;
+const { dirty, remember, syncRoomsButton } = m34;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
@@ -5050,21 +5126,23 @@ function buildGenerator(actions) {
 return { shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m52 = (() => {
+const m53 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
 const { newHistory } = m10;
 const { S, starterLevel } = m11;
-const { portrait } = m12;
-const { fit, watchStage } = m15;
-const { buildPanels, syncPanel } = m43;
-const { bindInput } = m46;
-const { setMode, frame, render, tick, report, copyReport } = m45;
-const { buildRooms, bootRooms } = m33;
-const { buildGenerator } = m51;
+const { portrait, $ } = m12;
+const { startSnow, windNow } = m13;
+const { fit, watchStage } = m16;
+const { buildPanels, syncPanel } = m44;
+const { bindInput } = m47;
+const { setMode, frame, render, tick, report, copyReport } = m46;
+const { buildRooms, bootRooms } = m34;
+const { buildGenerator } = m52;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
+
 
 
 
@@ -5085,7 +5163,7 @@ window.advanceTime = ms => {
   for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
   S.acc = 0; render();
 };
-window.wee = { draws: () => S.draws, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
+window.wee = { draws: () => S.draws, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, wind: () => windNow(), fxTypes: () => S.fx.map(f => f.type), loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
 
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
@@ -5098,6 +5176,7 @@ watchStage();
 for (const t of ['pointerdown', 'pointermove', 'pointerup', 'keydown', 'click', 'input', 'change', 'resize']) addEventListener(t, () => { S.redraw = true; }, true);
 fit();
 setMode('edit');
+startSnow($('snow'));
 requestAnimationFrame(frame);
 window.wee.roomsReady = bootRooms();
 return {  };

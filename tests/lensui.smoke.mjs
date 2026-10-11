@@ -49,6 +49,7 @@ try {
   await page.click('[data-tool=turret]');
   check('a lens you pick, Off included, beats the tool', await on('colour') === 'off' && !(await chip('colour')).auto);
   await page.click('[data-chip=colour]');
+  await page.waitForFunction(() => document.querySelector('[data-chip=colour] .n').textContent === 'Distance', null, { timeout: 3000 }).catch(() => {});
   check('a chip click moves its group to the next lens', await on('colour') === 'distance' && (await chip('colour')).text === 'Distance');
   await page.click('[data-lens-group=colour][data-lens=off]');
   await page.click('[data-tool=look]');
