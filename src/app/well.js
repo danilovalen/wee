@@ -6,7 +6,11 @@ import { $ } from './dom.js';
 
 export const WELL = { open: false, tab: 'findings' };
 
-export function openWell(tab) { WELL.open = true; if (tab) WELL.tab = tab; syncWell(); }
+export function openWell(tab) {
+  WELL.open = true; if (tab) WELL.tab = tab; syncWell();
+  // On a phone the well and a sheet share the bottom, so the well puts the sheet away.
+  $('sheet').hidden = true; document.querySelectorAll('[data-sheet]').forEach(b => b.classList.toggle('on', b.dataset.sheet === 'build'));
+}
 export function closeWell() { WELL.open = false; syncWell(); }
 
 // Warnings plus design notes, not counting the line that says they are being worked out.

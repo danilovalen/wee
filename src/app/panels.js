@@ -14,6 +14,7 @@ import { buildLenses, syncLenses } from './lenses.js';
 import { buildWell, openWell } from './well.js';
 import { buildChips } from './chips.js';
 import { buildSize } from './size.js';
+import { buildSheets } from './sheets.js';
 import { buildKeys } from './keys.js';
 import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
@@ -24,6 +25,7 @@ function syncCtxText() {
   const message = $('placeHint').textContent !== DEFAULT_HINT;
   $('ctxNote').textContent = message ? '' : note;
   $('placeHint').classList.toggle('quiet', !message && !!note);
+  $('placeHint').classList.toggle('msg', message);
 }
 
 export function keysText() {
@@ -130,6 +132,7 @@ export function buildPanels(actions) {
   buildWell();
   buildChips();
   buildSize({ after: () => { syncPanel(); fit(); } });
+  buildSheets();
   buildKeys();
   document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
@@ -170,6 +173,7 @@ export function syncPanel() {
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
+  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label;
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);

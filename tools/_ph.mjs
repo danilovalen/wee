@@ -1,0 +1,18 @@
+import { chromium } from 'playwright-core';
+import { spawn } from 'node:child_process';
+const OUT = process.argv[2];
+const srv = spawn('node', ['tools/serve.mjs', '4381'], { stdio: 'ignore' });
+await new Promise(r => setTimeout(r, 800));
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const p = await b.newPage({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+const errs = []; p.on('pageerror', e => errs.push(e.message));
+await p.goto('http://localhost:4381/'); await p.waitForTimeout(800);
+await p.screenshot({ path: `${OUT}/ph-edit.png` }); console.log(JSON.stringify(await p.evaluate(() => { const r = id => { const b = document.getElementById(id).getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)]; }; return { main: r('stage'), area: r('roomArea'), wrap: r('roomWrap'), game: r('game'), disp: getComputedStyle(document.querySelector('main')).display, ra: getComputedStyle(document.getElementById('roomArea')).cssText }; })));
+await p.click('[data-group=pieces]'); await p.click('[data-tool=mover]'); await p.waitForTimeout(200);
+await p.screenshot({ path: `${OUT}/ph-mover.png` });
+await p.click('[data-sheet=powers]'); await p.waitForTimeout(200); await p.click('#powerList .power >> nth=1'); await p.waitForTimeout(200);
+await p.screenshot({ path: `${OUT}/ph-powers.png` });
+await p.click('[data-sheet=room]'); await p.waitForTimeout(200);
+await p.screenshot({ path: `${OUT}/ph-room.png` });
+console.log(JSON.stringify({ errs, scroll: await p.evaluate(() => document.documentElement.scrollHeight) }));
+await b.close(); srv.kill();

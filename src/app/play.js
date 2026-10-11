@@ -5,6 +5,7 @@ import { aimKey } from '../rules/player.js';
 import { drawEdit, drawPlay } from '../view/scene.js';
 import { S } from '../editor/state.js';
 import { $, g, now } from './dom.js';
+import { openSheet } from './sheets.js';
 import { syncPanel, keysText } from './panels.js';
 import { feedDemo } from './check.js';
 import { selectOverlay } from './select.js';
@@ -54,6 +55,7 @@ export function setMode(m, keep) {
   $('win').hidden = true;
   resetStuck();
   $('moves').textContent = m === 'play' ? 'Moves 0' : '';
+  if (m === 'play') openSheet('build');
   // On a phone, play takes the whole screen: the room is sized again without the editor.
   requestAnimationFrame(() => dispatchEvent(new Event('resize')));
   S.fx = [];

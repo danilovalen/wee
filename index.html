@@ -25,6 +25,7 @@
   <main>
     <aside id="tools">
       <h2>Build</h2>
+      <p id="toolName" class="toolName"></p>
       <div id="groups" class="tabs" role="tablist"></div>
       <div id="palette" class="grid"></div>
       <div id="options">
@@ -153,9 +154,11 @@
       <div id="powerList"></div>
       <h2>Status</h2>
       <div id="statusList"></div>
-      <h2>World moves</h2>
-      <label class="radio"><input type="radio" name="clock" value="tile"> Each tile you slide</label>
-      <label class="radio"><input type="radio" name="clock" value="slide"> Each slide</label>
+      <div id="worldMoves">
+        <h2>World moves</h2>
+        <label class="radio"><input type="radio" name="clock" value="tile"> Each tile you slide</label>
+        <label class="radio"><input type="radio" name="clock" value="slide"> Each slide</label>
+      </div>
     </aside>
   </main>
   <footer id="statusBar" class="statusBar">
@@ -165,6 +168,17 @@
     <p id="info" class="hint"></p>
     <p id="keys" class="hint"></p>
   </footer>
+  <div id="sheet" class="sheet" hidden>
+    <div class="grab"></div>
+    <div id="sheetRoom" class="sheetPane" data-pane="room"><h2>Room</h2></div>
+    <div id="sheetPowers" class="sheetPane" data-pane="powers"></div>
+  </div>
+  <nav id="phoneNav" class="phoneNav">
+    <button type="button" data-sheet="build" class="on"><i>&#9998;</i>Build</button>
+    <button type="button" data-sheet="room"><i>&#9638;</i>Room</button>
+    <button type="button" data-sheet="powers"><i>&#9889;</i>Powers</button>
+    <button type="button" id="navRooms"><i>&#9776;</i>Rooms</button>
+  </nav>
   <div id="sizePop" class="sizePop" hidden role="dialog" aria-label="Room size">
         <div class="roomBody">
       <div class="size">

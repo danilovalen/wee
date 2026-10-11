@@ -197,7 +197,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .rooms.gen { width: min(940px, 100vw - 16px); }
 }
 /* On a phone the header has no room for Generate; it stays in Rooms. */
-@media (max-width: 700px) { #genBtn { display: none; } }
+/* On a phone Generate lives in the Room sheet. */
 /* Between a phone and a desktop the side columns narrow, so the room keeps its share. */
 @media (min-width: 701px) and (max-width: 1100px) {
   main { grid-template-columns: 200px minmax(0, 1fr) 200px; gap: 10px; padding: 8px 10px; }
@@ -229,7 +229,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .wellBody .lensBox { max-width: none; }
 @media (max-width: 700px) {
   /* A phone: the well is a sheet over the bottom of the screen. */
-  .well { position: fixed; left: 0; right: 0; bottom: 0; max-height: 55vh; z-index: 30; box-shadow: 0 -8px 24px rgba(40,44,60,.18); }
+  .well { position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); max-height: 55vh; z-index: 30; box-shadow: 0 -8px 24px rgba(40,44,60,.18); }
   .statusBar { max-width: none; }
 }
 @media (min-width: 701px) {
@@ -341,6 +341,59 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   body.play #tools, body.play #powers, body.play #lensChips, body.play #statusBar, body.play .plus { display: none !important; }
 }
 
+/* A phone editor is one screen (register 105): header, the room, a check line, the tool's name
+   and options, the group tabs, one row of icon tools, and the bottom tabs. Room settings and
+   powers live in sheets that slide up over the tools. */
+.toolName, .phoneNav, .sheet { display: none; }
+@media (max-width: 700px) {
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+  header { flex: none; gap: 6px; padding: 8px 12px; }
+  header .logo { margin-right: 2px; }
+  #undo { order: 1; } #redo { order: 2; } header .spacer { order: 3; } #checkBtn { order: 4; } #mode { order: 5; } #roomsBtn { display: none; }
+  header button { min-height: 44px; padding: 6px 12px; }
+  #mode { background: var(--accent); color: var(--on-accent); }
+  main { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: stretch; padding: 0 10px; gap: 4px; }
+  #stage { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; }
+  .roomArea { flex: 1; min-height: 0; align-items: center; padding: 0; }
+  .statusBar { margin: 0; padding: 2px 4px; gap: 6px; font-size: 12.5px; flex-wrap: nowrap; }
+  .statusBar #sizeBtn, .statusBar #info, .statusBar #keys { display: none; }
+  .statusBar .check { flex: 1; min-width: 0; }
+  #tools { flex: none; padding: 6px 8px 8px; }
+  .toolName { display: block; margin: 0 0 4px; font: 800 11px var(--label-face); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+  #tools #options { order: 0; }
+  .tabs { margin: 0 0 6px; gap: 4px; }
+  .tabs button { min-height: 30px; font-size: 12.5px; padding: 3px 0; }
+  .grid { display: flex; gap: 6px; flex-wrap: nowrap; }
+  .grid .ghead { display: none !important; }
+  .grid button { flex: none; width: 46px; height: 46px; padding: 0; justify-content: center; align-items: center; }
+  .grid button .lbl { display: none; }
+  .grid canvas { width: 28px; height: 28px; }
+  .opt { margin: 0 0 6px; gap: 4px; flex-wrap: wrap; }
+  .opt .note { display: none; }
+  .opt button { min-height: 36px; }
+  #placeHint:not(.msg) { display: none; }
+  .phoneNav button:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+  .phoneNav button:focus:not(:focus-visible) { outline: none; }
+  #tools .hint { margin: 0 0 4px; font-size: 12.5px; }
+  .phoneNav { display: flex; flex: none; background: var(--panel); box-shadow: 0 -1px 0 var(--rule); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .phoneNav button { flex: 1; display: grid; justify-items: center; gap: 1px; padding: 6px 0 7px; background: none; box-shadow: none; border-radius: 0; font-size: 11.5px; color: var(--dim); }
+  .phoneNav button i { font-style: normal; font-size: 18px; line-height: 1.1; font-family: Arial, sans-serif; }
+  .phoneNav button.on { color: var(--accent); box-shadow: none; }
+  .sheet:not([hidden]) { display: block; position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); z-index: 35; max-height: 70dvh; overflow-y: auto; background: var(--panel); border-radius: var(--r-l) var(--r-l) 0 0; box-shadow: 0 -8px 24px rgba(40,44,60,.18); padding: 8px 14px 14px; }
+  .sheet .grab { width: 40px; height: 4px; border-radius: var(--r-pill); background: var(--sticker); margin: 0 auto 8px; }
+  .sheetPane[hidden] { display: none; }
+  .sheet #powers { display: block; padding: 0; background: none; box-shadow: none; }
+  .sheet #powerList, .sheet #statusList { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .sheet .power { grid-template-columns: auto 1fr; padding: 8px; border-radius: var(--r-m); background: var(--bg); box-shadow: none; }
+  .sheet .power small { display: none; }
+  .sheet .power.show { grid-column: 1 / -1; }
+  .sheet .power.show small { display: block; }
+  .sheet .roomBody { margin-bottom: 8px; }
+  .sheet #stopsBtn, .sheet #genBtn { display: inline-flex; margin: 8px 8px 0 0; }
+  body.play .phoneNav, body.play .sheet { display: none !important; }
+}
+
 </style>
 </head>
 <body>
@@ -361,6 +414,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   <main>
     <aside id="tools">
       <h2>Build</h2>
+      <p id="toolName" class="toolName"></p>
       <div id="groups" class="tabs" role="tablist"></div>
       <div id="palette" class="grid"></div>
       <div id="options">
@@ -489,9 +543,11 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
       <div id="powerList"></div>
       <h2>Status</h2>
       <div id="statusList"></div>
-      <h2>World moves</h2>
-      <label class="radio"><input type="radio" name="clock" value="tile"> Each tile you slide</label>
-      <label class="radio"><input type="radio" name="clock" value="slide"> Each slide</label>
+      <div id="worldMoves">
+        <h2>World moves</h2>
+        <label class="radio"><input type="radio" name="clock" value="tile"> Each tile you slide</label>
+        <label class="radio"><input type="radio" name="clock" value="slide"> Each slide</label>
+      </div>
     </aside>
   </main>
   <footer id="statusBar" class="statusBar">
@@ -501,6 +557,17 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
     <p id="info" class="hint"></p>
     <p id="keys" class="hint"></p>
   </footer>
+  <div id="sheet" class="sheet" hidden>
+    <div class="grab"></div>
+    <div id="sheetRoom" class="sheetPane" data-pane="room"><h2>Room</h2></div>
+    <div id="sheetPowers" class="sheetPane" data-pane="powers"></div>
+  </div>
+  <nav id="phoneNav" class="phoneNav">
+    <button type="button" data-sheet="build" class="on"><i>&#9998;</i>Build</button>
+    <button type="button" data-sheet="room"><i>&#9638;</i>Room</button>
+    <button type="button" data-sheet="powers"><i>&#9889;</i>Powers</button>
+    <button type="button" id="navRooms"><i>&#9776;</i>Rooms</button>
+  </nav>
   <div id="sizePop" class="sizePop" hidden role="dialog" aria-label="Room size">
         <div class="roomBody">
       <div class="size">
@@ -2883,7 +2950,7 @@ return { syncSize, closeSize, buildSize };
 const m30 = (() => {
 const { T } = m14;
 const { S } = m11;
-const { $, canvas, g, portrait } = m12;
+const { $, canvas, g } = m12;
 const { syncSize } = m29;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 
@@ -2893,9 +2960,20 @@ const { syncSize } = m29;
 // A wide screen is a frame: the tool's options in a bar under the header, the verdict and
 // keys in a bar at the bottom, the play buttons in that bar too. Only the room flexes. A phone
 // keeps the options under the tools and the bar and buttons under the room.
+// Pieces a phone moves into its sheets, and where each lives on a wide screen.
+const HOMES = new Map();
+const home = el => { if (!HOMES.has(el)) HOMES.set(el, { parent: el.parentElement, next: el.nextElementSibling }); return HOMES.get(el); };
+let sheeted;
+const SHEETED = () => sheeted || (sheeted = [[$('powers'), $('sheetPowers')], [document.querySelector('#sizePop .roomBody'), $('sheetRoom')], [$('worldMoves'), $('sheetRoom')], [$('stopsBtn'), $('sheetRoom')], [$('genBtn'), $('sheetRoom')]]);
+
 function place(wide) {
   const after = (el, ref) => { if (ref.nextElementSibling !== el) ref.after(el); };
   const inside = (el, parent) => { if (el.parentElement !== parent) parent.append(el); };
+  for (const [el, sheet] of SHEETED()) {
+    const h = home(el);
+    if (!wide) inside(el, sheet);
+    else if (el.parentElement !== h.parent) h.parent.insertBefore(el, h.next && h.next.parentElement === h.parent ? h.next : null);
+  }
   if (wide) {
     inside($('options'), $('ctx')); inside($('placeHint'), $('ctx'));
     after($('statusBar'), document.querySelector('main'));
@@ -2919,7 +2997,7 @@ function fit() {
   const below = $('pad').hidden ? 0 : $('pad').offsetHeight + 16;
   const room = wide ? area.clientHeight - 2 * EDGE
     : S.mode === 'play' ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
-      : portrait() ? innerHeight * 0.62 : innerHeight - 140;
+      : area.clientHeight - 2 * EDGE;
   const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
   const k = (window.devicePixelRatio || 1) * zoom;
   // Setting a canvas size clears it, even to the same size, so only a real change is written.
@@ -3777,7 +3855,11 @@ const { $ } = m12;
 
 const WELL = { open: false, tab: 'findings' };
 
-function openWell(tab) { WELL.open = true; if (tab) WELL.tab = tab; syncWell(); }
+function openWell(tab) {
+  WELL.open = true; if (tab) WELL.tab = tab; syncWell();
+  // On a phone the well and a sheet share the bottom, so the well puts the sheet away.
+  $('sheet').hidden = true; document.querySelectorAll('[data-sheet]').forEach(b => b.classList.toggle('on', b.dataset.sheet === 'build'));
+}
 function closeWell() { WELL.open = false; syncWell(); }
 
 // Warnings plus design notes, not counting the line that says they are being worked out.
@@ -4191,8 +4273,36 @@ function syncInfo() {
 }
 return { buildChips, syncChips };
 })();
-// ---- src/app/keys.js
+// ---- src/app/sheets.js
 const m42 = (() => {
+const { $ } = m12;
+const { closeWell } = m38;
+// A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
+// Rooms opens the rooms list. One sheet at a time; Build, Escape or play closes it.
+
+
+function openSheet(name) {
+  const sheet = $('sheet');
+  if (name && name !== 'build') closeWell();
+  sheet.hidden = !name || name === 'build';
+  document.querySelectorAll('#sheet [data-pane]').forEach(p => { p.hidden = p.dataset.pane !== name; });
+  document.querySelectorAll('[data-sheet]').forEach(b => b.classList.toggle('on', b.dataset.sheet === (sheet.hidden ? 'build' : name)));
+}
+
+function buildSheets() {
+  document.querySelectorAll('[data-sheet]').forEach(b => b.onclick = () => openSheet($('sheet').hidden || !b.classList.contains('on') ? b.dataset.sheet : 'build'));
+  $('navRooms').onclick = () => $('roomsBtn').click();
+  addEventListener('keydown', ev => { if (ev.key === 'Escape') openSheet('build'); });
+  // A tapped power shows what it does, under its name; the rest stay one line.
+  $('powers').addEventListener('click', ev => {
+    const row = ev.target.closest('.power'); if (!row) return;
+    document.querySelectorAll('#powers .power').forEach(r => r.classList.toggle('show', r === row));
+  });
+}
+return { openSheet, buildSheets };
+})();
+// ---- src/app/keys.js
+const m43 = (() => {
 const { TOOLS } = m36;
 const { $ } = m12;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
@@ -4245,7 +4355,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m43 = (() => {
+const m44 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -4310,8 +4420,8 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m44 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m43;
+const m45 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m44;
 const { S } = m11;
 const { change } = m28;
 const { $ } = m12;
@@ -4434,7 +4544,7 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/panels.js
-const m45 = (() => {
+const m46 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { emptyLevel, resizeLevel, resizeSide, wallBorder } = m9;
 const { T, INK } = m14;
@@ -4449,11 +4559,13 @@ const { buildLenses, syncLenses } = m39;
 const { buildWell, openWell } = m38;
 const { buildChips } = m41;
 const { buildSize } = m29;
-const { buildKeys } = m42;
+const { buildSheets } = m42;
+const { buildKeys } = m43;
 const { syncRoomsButton } = m27;
-const { buildSelect, syncSelect } = m44;
+const { buildSelect, syncSelect } = m45;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -4477,6 +4589,7 @@ function syncCtxText() {
   const message = $('placeHint').textContent !== DEFAULT_HINT;
   $('ctxNote').textContent = message ? '' : note;
   $('placeHint').classList.toggle('quiet', !message && !!note);
+  $('placeHint').classList.toggle('msg', message);
 }
 
 function keysText() {
@@ -4583,6 +4696,7 @@ function buildPanels(actions) {
   buildWell();
   buildChips();
   buildSize({ after: () => { syncPanel(); fit(); } });
+  buildSheets();
   buildKeys();
   document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
@@ -4623,6 +4737,7 @@ function syncPanel() {
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
+  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label;
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
@@ -4656,7 +4771,7 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/app/stuck.js
-const m46 = (() => {
+const m47 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m15;
 const { S } = m11;
 const { $ } = m12;
@@ -4691,22 +4806,24 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m47 = (() => {
+const m48 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m35;
 const { S } = m11;
 const { $, g, now } = m12;
-const { syncPanel, keysText } = m45;
+const { openSheet } = m42;
+const { syncPanel, keysText } = m46;
 const { feedDemo } = m19;
-const { selectOverlay } = m44;
-const { watchStuck, resetStuck } = m46;
+const { selectOverlay } = m45;
+const { watchStuck, resetStuck } = m47;
 const { lensMarks, lensBusy } = m39;
 const { syncWell } = m38;
 const { syncChips } = m41;
 const { gust } = m13;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
 
 
 
@@ -4761,6 +4878,7 @@ function setMode(m, keep) {
   $('win').hidden = true;
   resetStuck();
   $('moves').textContent = m === 'play' ? 'Moves 0' : '';
+  if (m === 'play') openSheet('build');
   // On a phone, play takes the whole screen: the room is sized again without the editor.
   requestAnimationFrame(() => dispatchEvent(new Event('resize')));
   S.fx = [];
@@ -4825,18 +4943,18 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m48 = (() => {
+const m49 = (() => {
 const { describe, holds, place } = m40;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m47;
+const { setMode, aim } = m48;
 const { begin, end, step: undoStep } = m28;
 const { save } = m27;
-const { selectDown, selectMove, selectUp, selectKey } = m44;
+const { selectDown, selectMove, selectUp, selectKey } = m45;
 const { LENS_GROUPS, cycleLens, lensesOff } = m39;
-const { syncPanel } = m45;
+const { syncPanel } = m46;
 const { fit } = m30;
-const { toolForKey, bareKey, showKeys } = m42;
+const { toolForKey, bareKey, showKeys } = m43;
 const { TOOLS } = m36;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
@@ -4948,7 +5066,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m49 = (() => {
+const m50 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -5057,10 +5175,10 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m50 = (() => {
+const m51 = (() => {
 const { search } = m15;
 const { contains } = m25;
-const { ING, variants } = m49;
+const { ING, variants } = m50;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -5105,7 +5223,7 @@ function* judge(level, recipe, max = 3000) {
 return { offFound, missing, judge };
 })();
 // ---- src/gen/random.js
-const m51 = (() => {
+const m52 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -5122,12 +5240,12 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m52 = (() => {
+const m53 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
-const { INGREDIENTS, ING, spot } = m49;
-const { judge } = m50;
-const { rng } = m51;
+const { INGREDIENTS, ING, spot } = m50;
+const { judge } = m51;
+const { rng } = m52;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -5236,9 +5354,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m53 = (() => {
-const { INGREDIENTS } = m49;
-const { generate, normalize, recipeLabel, LIMITS } = m52;
+const m54 = (() => {
+const { INGREDIENTS } = m50;
+const { generate, normalize, recipeLabel, LIMITS } = m53;
 const { stampOf } = m22;
 const { S } = m11;
 const { thumbURL } = m23;
@@ -5402,7 +5520,7 @@ function buildGenerator(actions) {
 return { shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m54 = (() => {
+const m55 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -5411,11 +5529,11 @@ const { S, starterLevel } = m11;
 const { portrait, $ } = m12;
 const { startSnow, windNow } = m13;
 const { fit, watchStage } = m30;
-const { buildPanels, syncPanel } = m45;
-const { bindInput } = m48;
-const { setMode, frame, render, tick, report, copyReport } = m47;
+const { buildPanels, syncPanel } = m46;
+const { bindInput } = m49;
+const { setMode, frame, render, tick, report, copyReport } = m48;
 const { buildRooms, bootRooms } = m27;
-const { buildGenerator } = m53;
+const { buildGenerator } = m54;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 

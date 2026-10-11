@@ -180,7 +180,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .rooms.gen { width: min(940px, 100vw - 16px); }
 }
 /* On a phone the header has no room for Generate; it stays in Rooms. */
-@media (max-width: 700px) { #genBtn { display: none; } }
+/* On a phone Generate lives in the Room sheet. */
 /* Between a phone and a desktop the side columns narrow, so the room keeps its share. */
 @media (min-width: 701px) and (max-width: 1100px) {
   main { grid-template-columns: 200px minmax(0, 1fr) 200px; gap: 10px; padding: 8px 10px; }
@@ -212,7 +212,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .wellBody .lensBox { max-width: none; }
 @media (max-width: 700px) {
   /* A phone: the well is a sheet over the bottom of the screen. */
-  .well { position: fixed; left: 0; right: 0; bottom: 0; max-height: 55vh; z-index: 30; box-shadow: 0 -8px 24px rgba(40,44,60,.18); }
+  .well { position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); max-height: 55vh; z-index: 30; box-shadow: 0 -8px 24px rgba(40,44,60,.18); }
   .statusBar { max-width: none; }
 }
 @media (min-width: 701px) {
@@ -322,5 +322,58 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 @media (max-width: 700px) {
   body.play { height: 100dvh; overflow: hidden; touch-action: none; }
   body.play #tools, body.play #powers, body.play #lensChips, body.play #statusBar, body.play .plus { display: none !important; }
+}
+
+/* A phone editor is one screen (register 105): header, the room, a check line, the tool's name
+   and options, the group tabs, one row of icon tools, and the bottom tabs. Room settings and
+   powers live in sheets that slide up over the tools. */
+.toolName, .phoneNav, .sheet { display: none; }
+@media (max-width: 700px) {
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+  header { flex: none; gap: 6px; padding: 8px 12px; }
+  header .logo { margin-right: 2px; }
+  #undo { order: 1; } #redo { order: 2; } header .spacer { order: 3; } #checkBtn { order: 4; } #mode { order: 5; } #roomsBtn { display: none; }
+  header button { min-height: 44px; padding: 6px 12px; }
+  #mode { background: var(--accent); color: var(--on-accent); }
+  main { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: stretch; padding: 0 10px; gap: 4px; }
+  #stage { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; }
+  .roomArea { flex: 1; min-height: 0; align-items: center; padding: 0; }
+  .statusBar { margin: 0; padding: 2px 4px; gap: 6px; font-size: 12.5px; flex-wrap: nowrap; }
+  .statusBar #sizeBtn, .statusBar #info, .statusBar #keys { display: none; }
+  .statusBar .check { flex: 1; min-width: 0; }
+  #tools { flex: none; padding: 6px 8px 8px; }
+  .toolName { display: block; margin: 0 0 4px; font: 800 11px var(--label-face); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+  #tools #options { order: 0; }
+  .tabs { margin: 0 0 6px; gap: 4px; }
+  .tabs button { min-height: 30px; font-size: 12.5px; padding: 3px 0; }
+  .grid { display: flex; gap: 6px; flex-wrap: nowrap; }
+  .grid .ghead { display: none !important; }
+  .grid button { flex: none; width: 46px; height: 46px; padding: 0; justify-content: center; align-items: center; }
+  .grid button .lbl { display: none; }
+  .grid canvas { width: 28px; height: 28px; }
+  .opt { margin: 0 0 6px; gap: 4px; flex-wrap: wrap; }
+  .opt .note { display: none; }
+  .opt button { min-height: 36px; }
+  #placeHint:not(.msg) { display: none; }
+  .phoneNav button:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+  .phoneNav button:focus:not(:focus-visible) { outline: none; }
+  #tools .hint { margin: 0 0 4px; font-size: 12.5px; }
+  .phoneNav { display: flex; flex: none; background: var(--panel); box-shadow: 0 -1px 0 var(--rule); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .phoneNav button { flex: 1; display: grid; justify-items: center; gap: 1px; padding: 6px 0 7px; background: none; box-shadow: none; border-radius: 0; font-size: 11.5px; color: var(--dim); }
+  .phoneNav button i { font-style: normal; font-size: 18px; line-height: 1.1; font-family: Arial, sans-serif; }
+  .phoneNav button.on { color: var(--accent); box-shadow: none; }
+  .sheet:not([hidden]) { display: block; position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); z-index: 35; max-height: 70dvh; overflow-y: auto; background: var(--panel); border-radius: var(--r-l) var(--r-l) 0 0; box-shadow: 0 -8px 24px rgba(40,44,60,.18); padding: 8px 14px 14px; }
+  .sheet .grab { width: 40px; height: 4px; border-radius: var(--r-pill); background: var(--sticker); margin: 0 auto 8px; }
+  .sheetPane[hidden] { display: none; }
+  .sheet #powers { display: block; padding: 0; background: none; box-shadow: none; }
+  .sheet #powerList, .sheet #statusList { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .sheet .power { grid-template-columns: auto 1fr; padding: 8px; border-radius: var(--r-m); background: var(--bg); box-shadow: none; }
+  .sheet .power small { display: none; }
+  .sheet .power.show { grid-column: 1 / -1; }
+  .sheet .power.show small { display: block; }
+  .sheet .roomBody { margin-bottom: 8px; }
+  .sheet #stopsBtn, .sheet #genBtn { display: inline-flex; margin: 8px 8px 0 0; }
+  body.play .phoneNav, body.play .sheet { display: none !important; }
 }
 

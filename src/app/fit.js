@@ -1,15 +1,26 @@
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 import { T } from '../view/ink.js';
 import { S } from '../editor/state.js';
-import { $, canvas, g, portrait } from './dom.js';
+import { $, canvas, g } from './dom.js';
 import { syncSize } from './size.js';
 
 // A wide screen is a frame: the tool's options in a bar under the header, the verdict and
 // keys in a bar at the bottom, the play buttons in that bar too. Only the room flexes. A phone
 // keeps the options under the tools and the bar and buttons under the room.
+// Pieces a phone moves into its sheets, and where each lives on a wide screen.
+const HOMES = new Map();
+const home = el => { if (!HOMES.has(el)) HOMES.set(el, { parent: el.parentElement, next: el.nextElementSibling }); return HOMES.get(el); };
+let sheeted;
+const SHEETED = () => sheeted || (sheeted = [[$('powers'), $('sheetPowers')], [document.querySelector('#sizePop .roomBody'), $('sheetRoom')], [$('worldMoves'), $('sheetRoom')], [$('stopsBtn'), $('sheetRoom')], [$('genBtn'), $('sheetRoom')]]);
+
 function place(wide) {
   const after = (el, ref) => { if (ref.nextElementSibling !== el) ref.after(el); };
   const inside = (el, parent) => { if (el.parentElement !== parent) parent.append(el); };
+  for (const [el, sheet] of SHEETED()) {
+    const h = home(el);
+    if (!wide) inside(el, sheet);
+    else if (el.parentElement !== h.parent) h.parent.insertBefore(el, h.next && h.next.parentElement === h.parent ? h.next : null);
+  }
   if (wide) {
     inside($('options'), $('ctx')); inside($('placeHint'), $('ctx'));
     after($('statusBar'), document.querySelector('main'));
@@ -33,7 +44,7 @@ export function fit() {
   const below = $('pad').hidden ? 0 : $('pad').offsetHeight + 16;
   const room = wide ? area.clientHeight - 2 * EDGE
     : S.mode === 'play' ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
-      : portrait() ? innerHeight * 0.62 : innerHeight - 140;
+      : area.clientHeight - 2 * EDGE;
   const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
   const k = (window.devicePixelRatio || 1) * zoom;
   // Setting a canvas size clears it, even to the same size, so only a real change is written.
