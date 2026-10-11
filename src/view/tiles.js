@@ -1,7 +1,8 @@
 // Tiles: floor, walls and every cell type, drawn in place.
 import { INK, T, frame, roundRect } from './ink.js';
 
-export function drawCell(g, c, x, y, s, scale = 1) {
+// bare: a block in the wall mass, so only what sits on it is drawn.
+export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   if (!c) return;
   const px = x * T, py = y * T;
   g.save();
@@ -47,7 +48,7 @@ export function drawCell(g, c, x, y, s, scale = 1) {
   } else if (c.startsWith('spring:')) {
     // A block with a coil and a plate on the side it faces.
     const d = c.slice(7);
-    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
     g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
     g.strokeStyle = INK.spring; g.lineWidth = 2;
     g.beginPath(); g.moveTo(-8, 0);
@@ -78,7 +79,7 @@ export function drawCell(g, c, x, y, s, scale = 1) {
   } else if (c.startsWith('receiver:')) {
     // A catcher: a block with a coloured eye that glows while a beam holds it.
     const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
-    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
     g.fillStyle = lit ? INK[col] : INK.unlit;
     g.beginPath(); g.arc(16, 16, 8.5, 0, Math.PI * 2); g.fill();
     g.strokeStyle = INK[col]; g.lineWidth = 3; g.stroke();

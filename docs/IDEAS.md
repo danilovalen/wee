@@ -140,3 +140,55 @@ Open questions he names or that follow (mine):
 - Solver: the layer joins the state, so positions multiply by the layer count.
 
 **Parked by the owner** ("that's why I won't start this again"). Recorded, not planned.
+
+## Breakable wall (2026-10-11)
+
+> breakable wall. wall which seems breakable. breaks by dive, strong enemies and heavy boxes (yeah
+> them again)
+
+Notes (mine):
+- **Looks cracked**, so it reads as a wall that will not last: same mass as walls, with cracks.
+- **Breaks on impact from the heavy set**: your dive, a strong enemy, a heavy box. That is the
+  third time this list appears (magnets, doors held open), which argues again for one named
+  "heavy things" rule.
+- **Open:** does the breaker stop where the wall was, or keep sliding through the gap? Does a
+  plain slide into it just stop you, like any wall? Does a turret beam break it?
+- **Open:** gone for good, or does it come back on Retry only (rooms reset anyway)?
+
+## Bomb (2026-10-11)
+
+> a bomb is a block ie it is pushed, like a light block. after it does so, on the end of the
+> second movement after it is pushed it blows up and breaks all boxes, enemies, breakable walls
+> (things that can be destroyed in general including you) in a 3x3 radius. its animation shows
+> it being prepared for blowing up. and of course it can become sticky. and will lose its fuse
+> when on contact with water, it won't light up while submerged
+
+Notes (mine):
+- **A box that is pushed like a light box**, and a push lights it.
+- **"The end of the second movement after it is pushed"**: I read it as two moves (ticks of the
+  room's clock) after the push that lit it, counted at the end of the second. Needs confirming:
+  it could also mean the end of its second slide.
+- **Blast: the 3x3 around it.** Destroys boxes, enemies, breakable walls and you; anything else
+  that can be destroyed later joins the list. Walls, water, doors and switches survive.
+- **The fuse shows**: a lit fuse that burns down over the two moves, so the countdown is visible.
+- **Sticky**: it can stop in a sticky puddle like any box (and still blows up there?).
+- **Water**: touching water puts the fuse out, and it will not light while submerged. Open: once
+  out of the water, can it be lit again by another push?
+- **Open:** does a blast light another bomb in range (a chain)? Does a beam light it?
+
+## Paint mode: a win by painting every tile (2026-10-11)
+
+> alternative win condition where instead of reaching a goal you are paint and you have to paint
+> every tile. enemies paint with their enemy color so yeah you'll have to defeat them to paint
+> with your color. water and puddle and death you don't need to paint
+
+Notes (mine):
+- **A room setting, not a tile**: the win is "every paintable tile is your colour" instead of
+  "reach the goal". Paintable means floor and the floor-like tiles; water, sticky puddles and
+  death blocks are left out.
+- **Every tile you pass paints**, not only where you stop, so a slide paints its whole line.
+- **Enemies paint their colour** over yours as they move, so a moving enemy can undo your work
+  until it is defeated.
+- **Open:** do boxes and moving blocks paint, erase, or do nothing? Does a tile under a piece
+  that never moves still need painting? Does the solver count a painted room as a different
+  state (it multiplies the state space by every paint pattern, so it may need limits)?

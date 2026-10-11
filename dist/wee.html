@@ -1837,7 +1837,8 @@ const m18 = (() => {
 const { INK, T, frame, roundRect } = m14;
 // Tiles: floor, walls and every cell type, drawn in place.
 
-function drawCell(g, c, x, y, s, scale = 1) {
+// bare: a block in the wall mass, so only what sits on it is drawn.
+function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   if (!c) return;
   const px = x * T, py = y * T;
   g.save();
@@ -1883,7 +1884,7 @@ function drawCell(g, c, x, y, s, scale = 1) {
   } else if (c.startsWith('spring:')) {
     // A block with a coil and a plate on the side it faces.
     const d = c.slice(7);
-    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
     g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
     g.strokeStyle = INK.spring; g.lineWidth = 2;
     g.beginPath(); g.moveTo(-8, 0);
@@ -1914,7 +1915,7 @@ function drawCell(g, c, x, y, s, scale = 1) {
   } else if (c.startsWith('receiver:')) {
     // A catcher: a block with a coloured eye that glows while a beam holds it.
     const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
-    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
+    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
     g.fillStyle = lit ? INK[col] : INK.unlit;
     g.beginPath(); g.arc(16, 16, 8.5, 0, Math.PI * 2); g.fill();
     g.strokeStyle = INK[col]; g.lineWidth = 3; g.stroke();
@@ -1993,13 +1994,29 @@ const MASSES = ['wall', 'water', 'sticky', 'death'];
 const RADIUS = { wall: 6, water: 8, sticky: 10, death: 6 };
 const LIP = 6;
 
+// Blocks with something on them (a spring, a laser catcher) are still walls, and a
+// triangle is a wall along its two straight sides.
+const BLOCK = /^(spring|receiver):/;
+const OPPOSITE = { nw: 'se', ne: 'sw', sw: 'ne', se: 'nw' };
+const member = (c, kind) => kind === 'wall' ? c === 'wall' || BLOCK.test(c) || /^tri:/.test(c) : c === kind;
+// Does cell c belong to the mass on its side (n, e, s, w) or corner (nw ...) facing the asker?
+function joins(c, kind, side) {
+  if (!member(c, kind)) return false;
+  if (!c.startsWith('tri:')) return true;
+  const k = c.slice(4);
+  return side.length === 1 ? k.includes(side) : side !== OPPOSITE[k];
+}
+const inMass = c => !!c && (MASSES.includes(c) || BLOCK.test(c) || c.startsWith('tri:'));
+// The ones that keep a drawing of their own on top of the mass.
+const overlay = c => BLOCK.test(c);
+
 // What one quarter of cell (x, y) draws, toward (dx, dy): 'round' (an outer corner),
-// 'full', or for a cell of another kind, 'fillet' when both sides belong to the mass and
-// so does the diagonal, else null. Outside the room counts as wall and nothing else.
+// 'full', 'tri' for a triangle (drawn whole), or for a cell outside the mass, 'fillet' when
+// both sides and the diagonal belong to it, else null. Outside the room counts as wall.
 function quarter(kindAt, kind, x, y, dx, dy) {
-  const same = (i, j) => kindAt(i, j) === kind;
-  const A = same(x + dx, y), B = same(x, y + dy), D = same(x + dx, y + dy);
-  if (same(x, y)) return !A && !B ? 'round' : 'full';
+  const self = kindAt(x, y), h = dx > 0 ? 'w' : 'e', v = dy > 0 ? 'n' : 's';
+  const A = joins(kindAt(x + dx, y), kind, h), B = joins(kindAt(x, y + dy), kind, v), D = joins(kindAt(x + dx, y + dy), kind, v + h);
+  if (member(self, kind)) return self.startsWith('tri:') ? 'tri' : !A && !B ? 'round' : 'full';
   return A && B && D ? 'fillet' : null;
 }
 
@@ -2011,6 +2028,11 @@ function path(kindAt, kind, w, h) {
       if (!how) continue;
       const qx = x * T + (dx > 0 ? q : 0), qy = y * T + (dy > 0 ? q : 0);
       if (how === 'full') { p.rect(qx, qy, q, q); continue; }
+      if (how === 'tri') {
+        if (dx > 0 || dy > 0) continue;
+        const X = x * T, Y = y * T, pts = { nw: [[0, 0], [T, 0], [0, T]], ne: [[0, 0], [T, 0], [T, T]], sw: [[0, 0], [0, T], [T, T]], se: [[T, 0], [T, T], [0, T]] }[kindAt(x, y).slice(4)];
+        p.moveTo(X + pts[0][0], Y + pts[0][1]); p.lineTo(X + pts[1][0], Y + pts[1][1]); p.lineTo(X + pts[2][0], Y + pts[2][1]); p.closePath(); continue;
+      }
       if (how === 'round') {
         const radii = [0, 0, 0, 0]; radii[dy < 0 ? (dx < 0 ? 0 : 1) : (dx < 0 ? 3 : 2)] = r;
         p.roundRect(qx, qy, q, q, radii); continue;
@@ -2071,7 +2093,7 @@ function drawMasses(g, cells, w, h, skip = () => false) {
     g.restore();
   }
 }
-return { MASSES, RADIUS, quarter, kindIn, drawMasses };
+return { MASSES, RADIUS, joins, inMass, overlay, quarter, kindIn, drawMasses };
 })();
 // ---- src/view/lenses.js
 const m20 = (() => {
@@ -2157,7 +2179,7 @@ const { DIRS } = m0;
 const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m14;
 const { drawPiece, drawPlayer } = m17;
 const { drawCell, drawFloor } = m18;
-const { MASSES, drawMasses } = m19;
+const { drawMasses, inMass, overlay } = m19;
 const { drawHeat, drawLensMarks } = m20;
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
@@ -2185,7 +2207,8 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   drawMasses(g, level.cells, level.w, level.h, (x, y) => pop(x, y) < 1);
   level.cells.forEach((c, i) => {
     const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
-    if (!MASSES.includes(c) || k < 1) drawCell(g, c, x, y, null, k);
+    if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);
+    else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
   });
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
   drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9, level.powers.armored);
@@ -2241,7 +2264,7 @@ function drawPlay(g, s, prev, alpha, fx, now) {
   if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
   drawFloor(g, s.w, s.h);
   drawMasses(g, s.cells, s.w, s.h);
-  s.cells.forEach((c, i) => { if (!MASSES.includes(c)) drawCell(g, c, i % s.w, Math.floor(i / s.w), s); });
+  s.cells.forEach((c, i) => { if (!inMass(c) || overlay(c)) drawCell(g, c, i % s.w, Math.floor(i / s.w), s, 1, overlay(c)); });
   // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
   // as its beam touches, yours for a moment.
   const crackle = (cells, k) => {

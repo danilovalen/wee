@@ -9,13 +9,29 @@ export const MASSES = ['wall', 'water', 'sticky', 'death'];
 export const RADIUS = { wall: 6, water: 8, sticky: 10, death: 6 };
 const LIP = 6;
 
+// Blocks with something on them (a spring, a laser catcher) are still walls, and a
+// triangle is a wall along its two straight sides.
+const BLOCK = /^(spring|receiver):/;
+const OPPOSITE = { nw: 'se', ne: 'sw', sw: 'ne', se: 'nw' };
+const member = (c, kind) => kind === 'wall' ? c === 'wall' || BLOCK.test(c) || /^tri:/.test(c) : c === kind;
+// Does cell c belong to the mass on its side (n, e, s, w) or corner (nw ...) facing the asker?
+export function joins(c, kind, side) {
+  if (!member(c, kind)) return false;
+  if (!c.startsWith('tri:')) return true;
+  const k = c.slice(4);
+  return side.length === 1 ? k.includes(side) : side !== OPPOSITE[k];
+}
+export const inMass = c => !!c && (MASSES.includes(c) || BLOCK.test(c) || c.startsWith('tri:'));
+// The ones that keep a drawing of their own on top of the mass.
+export const overlay = c => BLOCK.test(c);
+
 // What one quarter of cell (x, y) draws, toward (dx, dy): 'round' (an outer corner),
-// 'full', or for a cell of another kind, 'fillet' when both sides belong to the mass and
-// so does the diagonal, else null. Outside the room counts as wall and nothing else.
+// 'full', 'tri' for a triangle (drawn whole), or for a cell outside the mass, 'fillet' when
+// both sides and the diagonal belong to it, else null. Outside the room counts as wall.
 export function quarter(kindAt, kind, x, y, dx, dy) {
-  const same = (i, j) => kindAt(i, j) === kind;
-  const A = same(x + dx, y), B = same(x, y + dy), D = same(x + dx, y + dy);
-  if (same(x, y)) return !A && !B ? 'round' : 'full';
+  const self = kindAt(x, y), h = dx > 0 ? 'w' : 'e', v = dy > 0 ? 'n' : 's';
+  const A = joins(kindAt(x + dx, y), kind, h), B = joins(kindAt(x, y + dy), kind, v), D = joins(kindAt(x + dx, y + dy), kind, v + h);
+  if (member(self, kind)) return self.startsWith('tri:') ? 'tri' : !A && !B ? 'round' : 'full';
   return A && B && D ? 'fillet' : null;
 }
 
@@ -27,6 +43,11 @@ function path(kindAt, kind, w, h) {
       if (!how) continue;
       const qx = x * T + (dx > 0 ? q : 0), qy = y * T + (dy > 0 ? q : 0);
       if (how === 'full') { p.rect(qx, qy, q, q); continue; }
+      if (how === 'tri') {
+        if (dx > 0 || dy > 0) continue;
+        const X = x * T, Y = y * T, pts = { nw: [[0, 0], [T, 0], [0, T]], ne: [[0, 0], [T, 0], [T, T]], sw: [[0, 0], [0, T], [T, T]], se: [[T, 0], [T, T], [0, T]] }[kindAt(x, y).slice(4)];
+        p.moveTo(X + pts[0][0], Y + pts[0][1]); p.lineTo(X + pts[1][0], Y + pts[1][1]); p.lineTo(X + pts[2][0], Y + pts[2][1]); p.closePath(); continue;
+      }
       if (how === 'round') {
         const radii = [0, 0, 0, 0]; radii[dy < 0 ? (dx < 0 ? 0 : 1) : (dx < 0 ? 3 : 2)] = r;
         p.roundRect(qx, qy, q, q, radii); continue;

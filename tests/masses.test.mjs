@@ -3,7 +3,7 @@ import { quarter, kindIn } from '../src/view/masses.js';
 import { suite } from './suite.mjs';
 
 const { check, done } = suite('masses');
-const map = rows => kindIn(rows.join('').split('').map(c => ({ '#': 'wall', w: 'water', '.': '' })[c]), rows[0].length, rows.length);
+const map = rows => kindIn(rows.join('').split('').map(c => ({ '#': 'wall', w: 'water', '.': '', '/': 'tri:se', '7': 'tri:nw', '^': 'spring:up', 'r': 'receiver:red' })[c]), rows[0].length, rows.length);
 const all = (k, kind, x, y) => [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([dx, dy]) => quarter(k, kind, x, y, dx, dy));
 
 const alone = map(['.....', '.....', '..#..', '.....', '.....']);
@@ -20,4 +20,10 @@ const edge = map(['#....', '.....']);
 check('so a wall on the border joins it', quarter(edge, 'wall', 0, 0, -1, -1) === 'full');
 const pool = map(['ww.', 'w..']);
 check('water joins water and not the border', quarter(pool, 'water', 0, 0, -1, -1) === 'round' && quarter(pool, 'water', 1, 1, -1, -1) === 'fillet');
+const slope = map(['.....', '.#7..', '.....']);
+check('a triangle joins a wall along its straight side', quarter(slope, 'wall', 1, 1, 1, 1) === 'full' && quarter(slope, 'wall', 2, 1, -1, -1) === 'tri');
+const away = map(['.....', '.#/..', '.....']);
+check('but not along its slope', quarter(away, 'wall', 1, 1, 1, 1) === 'round');
+const blocks = map(['.....', '.#^r.', '.....']);
+check('a spring and a laser catcher are blocks in the wall', quarter(blocks, 'wall', 1, 1, 1, 1) === 'full' && quarter(blocks, 'wall', 2, 1, 1, -1) === 'full' && quarter(blocks, 'wall', 3, 1, 1, 1) === 'round');
 done();
