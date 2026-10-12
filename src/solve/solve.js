@@ -3,18 +3,22 @@
 // until you and every piece have stopped. Mid-slide powers (Boomerang, Dive, Laser)
 // are tried once per move: 'right@3:left' starts a slide right and presses left on the
 // third tick after (here a boomerang).
-import { createGame, step } from '../rules/game.js';
+import { createGame, step, cloneGame } from '../rules/game.js';
 import { MOVES, OPPOSITE } from '../rules/base.js';
 
 export const MAX_STATES = 20000;
 const KEYS = ['up', 'right', 'down', 'left'];
 
 // What makes two states the same for the search: everything the next move depends on.
+// Built as a plain string (it is made for every position searched): fields joined by ',',
+// pieces by ';', parts by '|', none of which a field can contain.
 export function stateKey(s) {
-  const p = s.player;
-  return JSON.stringify([p.x, p.y, p.swimming, p.sticky, p.stuck && [p.stuck.id, p.stuck.ride], s.checkpoint.x, s.checkpoint.y,
-    s.entities.filter(e => !e.dead).map(e => [e.id, e.x, e.y, e.dir, e.axis, e.sticky ? 1 : 0, e.glue || 0, e.turret ? e.turret.aim % e.turret.dirs.length : -1]),
-    Object.keys(s.open).filter(c => s.open[c]).sort()]);
+  const p = s.player, st = p.stuck;
+  let k = `${p.x},${p.y},${p.swimming ? 1 : 0},${p.sticky ? 1 : 0},${st ? st.id + (st.ride ? 'r' : 'g') : '-'},${s.checkpoint.x},${s.checkpoint.y}|`;
+  for (const e of s.entities) if (!e.dead) k += `${e.id},${e.x},${e.y},${e.dir},${e.axis},${e.sticky ? 1 : 0},${e.glue || 0},${e.turret ? e.turret.aim % e.turret.dirs.length : -1};`;
+  k += '|';
+  for (const c of Object.keys(s.open).sort()) if (s.open[c]) k += c + ',';
+  return k;
 }
 
 export const settled = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => !e.dead && (e.rush || e.slide));
@@ -31,9 +35,10 @@ export function parseMove(m) {
 const limit = s => 4 * s.w * s.h + 40;
 
 // onTick, when given, sees the state after every tick, for a caller that maps where moves go.
-export function move(s, m, onTick) {
+// before is s's key, passed in by a caller that tries several moves from one position.
+export function move(s, m, onTick, before = stateKey(s)) {
   const { k, at, then } = parseMove(m);
-  const t = structuredClone(s), deaths = t.deaths, before = stateKey(s);
+  const t = cloneGame(s), deaths = t.deaths;
   step(t, [k]); if (onTick) onTick(t);
   for (let i = 1; i <= limit(t) && !settled(t); i++) { step(t, i === at ? [then] : []); if (onTick) onTick(t); }
   if (t.deaths !== deaths || !settled(t)) return null;
@@ -46,7 +51,7 @@ export function move(s, m, onTick) {
 export function powerMoves(s) {
   const pw = s.powers, out = [];
   for (const d of KEYS) {
-    const t = structuredClone(s);
+    const t = cloneGame(s);
     step(t, [d]);
     for (let i = 1; i <= limit(t) && t.player.dir && !t.won; i++) {
       const pd = t.player.dir;
@@ -78,10 +83,10 @@ function settleFrom(t, deaths, before, at = 0, then = null, from = 1) {
 // onTick sees the plain moves only: a power branches off a slide on the line it already covers.
 export function* successors(s, keys, powers = true, onTick = null) {
   const before = stateKey(s), pw = s.powers, laser = pw.laser && laserMatters(s);
-  for (const k of keys) { const t = move(s, k, onTick); yield t ? [k, t] : null; }
+  for (const k of keys) { const t = move(s, k, onTick, before); yield t ? [k, t] : null; }
   if (!powers || (!pw.boomerang && !pw.dive && !laser)) return;
   for (const d of KEYS) {
-    const t = structuredClone(s);
+    const t = cloneGame(s);
     step(t, [d]);
     for (let i = 1; i <= limit(t) && t.player.dir && !t.won; i++) {
       const pd = t.player.dir, thens = [];
@@ -89,7 +94,7 @@ export function* successors(s, keys, powers = true, onTick = null) {
       if (pw.dive) thens.push(pd);
       if (laser) for (const side of KEYS) if (side !== pd && side !== OPPOSITE[pd]) thens.push(side);
       for (const then of thens) {
-        const b = structuredClone(t);
+        const b = cloneGame(t);
         step(b, [then]);
         const r = settleFrom(b, s.deaths, before, 0, null, i + 1);
         yield r ? [`${d}@${i}:${then}`, r] : null;
@@ -118,7 +123,7 @@ export function* search(level, max = MAX_STATES) {
 // null when the search hits its cap.
 export function* canWin(s, max = MAX_STATES) {
   if (s.won) return true;
-  const r = yield* searchFrom(structuredClone(s), max);
+  const r = yield* searchFrom(cloneGame(s), max);
   return r.status === 'solved' ? true : r.status === 'unsolvable' ? false : null;
 }
 

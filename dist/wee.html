@@ -858,25 +858,43 @@ const freshPieces = list => list.map((e, i) => ({
 // is held; its inverted doors close then. A closing door of either kind squashes you,
 // weak enemies, boxes and lone turrets, unless a strong enemy, a heavy box or a block
 // stands in it (or you, armored): then the colour keeps its state, so both kinds hold.
+// A room's cells never change during a run, so where its switches are is worked out once.
+const SWITCHES = new WeakMap();
+function switchesOf(s) {
+  let list = SWITCHES.get(s.cells);
+  if (!list) {
+    list = [];
+    s.cells.forEach((c, i) => {
+      const x = i % s.w, y = (i - x) / s.w;
+      if (c.startsWith('button:')) list.push({ i, x, y, col: c.slice(7), button: true });
+      else if (c.startsWith('receiver:')) list.push({ i, x, y, col: c.slice(9), button: false });
+      else if (c.startsWith('sensor:')) list.push({ i, x, y, col: c.slice(7), button: false });
+    });
+    SWITCHES.set(s.cells, list);
+  }
+  return list;
+}
+
+const DOORS = new WeakMap();
+function doorsOf(s, cell) {
+  let by = DOORS.get(s.cells);
+  if (!by) { by = {}; s.cells.forEach((c, i) => { if (/^i?door:/.test(c)) (by[c] ||= []).push([i % s.w, Math.floor(i / s.w)]); }); DOORS.set(s.cells, by); }
+  return by[cell] || [];
+}
+
 function refreshDoors(s) {
   const pressed = {}, any = {};
   // A receiver or a sensor is a button that a turret beam holds down.
-  s.cells.forEach((c, i) => {
-    const x = i % s.w, y = (i - x) / s.w;
-    let col, down;
-    if (c.startsWith('button:')) { col = c.slice(7); down = playerAt(s, x, y) || !!entAt(s, x, y); }
-    else if (c.startsWith('receiver:')) { col = c.slice(9); down = s.lit.has(i); }
-    else if (c.startsWith('sensor:')) { col = c.slice(7); down = s.lit.has(i); }
-    else return;
+  for (const { i, x, y, col, button } of switchesOf(s)) {
+    const down = button ? playerAt(s, x, y) || !!entAt(s, x, y) : s.lit.has(i);
     any[col] = true;
     pressed[col] = (pressed[col] ?? true) && down;
-  });
+  }
   let squashed = false;
   for (const col of COLOURS) {
     const want = !!(any[col] && pressed[col]);
     if (want !== !!s.open[col]) {
-      const closing = (want ? 'idoor:' : 'door:') + col, doors = [];
-      s.cells.forEach((c, i) => { if (c === closing) doors.push([i % s.w, Math.floor(i / s.w)]); });
+      const doors = doorsOf(s, (want ? 'idoor:' : 'door:') + col);
       const inside = ([x, y]) => s.entities.filter(e => !e.dead && e.x === x && e.y === y);
       const youIn = ([x, y]) => s.player.x === x && s.player.y === y;
       if (doors.some(d => inside(d).some(e => HOLDS_DOOR.includes(e.kind)) || (youIn(d) && s.powers.armored))) continue;
@@ -920,7 +938,7 @@ function land(s, e, t) {
   if (c === 'water') e.sticky = false;
   return true;
 }
-return { startAim, freshPieces, refreshDoors, respawn, die, kill, land };
+return { startAim, freshPieces, switchesOf, refreshDoors, respawn, die, kill, land };
 })();
 // ---- src/rules/beams.js
 const m3 = (() => {
@@ -1257,11 +1275,20 @@ function slidePiece(s, e) {
 
 // A spring launches whatever stands on the tile its face looks at, when that piece
 // can move on that way.
+// The cells never change during a run, so where the springs are is worked out once.
+const SPRINGS = new WeakMap();
+function springsOf(s) {
+  let list = SPRINGS.get(s.cells);
+  if (!list) {
+    list = [];
+    s.cells.forEach((c, i) => { if (c.startsWith('spring:')) { const d = c.slice(7); list.push({ d, x: i % s.w + DIRS[d][0], y: Math.floor(i / s.w) + DIRS[d][1] }); } });
+    SPRINGS.set(s.cells, list);
+  }
+  return list;
+}
 function fireSprings(s) {
-  s.cells.forEach((c, i) => {
-    if (!c.startsWith('spring:')) return;
-    const d = c.slice(7), x = i % s.w + DIRS[d][0], y = Math.floor(i / s.w) + DIRS[d][1];
-    if (!inb(s, x, y)) return;
+  for (const { d, x, y } of springsOf(s)) {
+    if (!inb(s, x, y)) continue;
     const p = s.player;
     if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d, p.swimming)) {
       if (!p.dir) p.moved = 0;
@@ -1273,9 +1300,9 @@ function fireSprings(s) {
       e.slide = d; e.rush = false; e.rushDir = null;
       s.events.push({ type: 'spring', x, y, d });
     }
-  });
+  }
 }
-return { hideCycle, rushOnce, launch, worldStep, patrolDir, moveMover, slidePiece, fireSprings };
+return { hideCycle, rushOnce, launch, worldStep, patrolDir, moveMover, slidePiece, springsOf, fireSprings };
 })();
 // ---- src/rules/player.js
 const m7 = (() => {
@@ -1460,6 +1487,19 @@ function createGame(level) {
   return s;
 }
 
+// A copy of a run to try a move on. What a run never changes is shared (the cells, the
+// room as it started, the start); the checkpoint, beams, lit and shocked are replaced,
+// never edited in place, so they are shared too. Everything a tick can edit is copied.
+function cloneGame(s) {
+  const p = s.player;
+  return {
+    ...s,
+    powers: { ...s.powers }, open: { ...s.open }, events: [...s.events],
+    player: { ...p, stuck: p.stuck && { ...p.stuck }, from: p.from && { ...p.from }, pushing: p.pushing && { ...p.pushing } },
+    entities: s.entities.map(e => e.turret ? { ...e, turret: { ...e.turret } } : { ...e }),
+  };
+}
+
 function step(s, inputs = []) {
   s.events = [];
   s.player.snap = false;
@@ -1520,7 +1560,7 @@ function replay(level, log, ticks) {
   for (let t = 0; t < ticks; t++) step(s, log.filter(i => i.t === t).map(i => i.k));
   return s;
 }
-return { createGame, step, gameText, replay };
+return { createGame, cloneGame, step, gameText, replay };
 })();
 // ---- src/level/format.js
 const m9 = (() => {
@@ -1817,7 +1857,7 @@ return { AIM, T, INK, ease, lerp, frame, roundRect, LASER_MS, PUFF_MS, PUFFS };
 })();
 // ---- src/solve/solve.js
 const m15 = (() => {
-const { createGame, step } = m8;
+const { createGame, step, cloneGame } = m8;
 const { MOVES, OPPOSITE } = m0;
 // The solver: a breadth-first search over the room's states, one move of yours per
 // edge, using the real rules. A move is a slide you start from rest (or a hide), run
@@ -1830,11 +1870,15 @@ const MAX_STATES = 20000;
 const KEYS = ['up', 'right', 'down', 'left'];
 
 // What makes two states the same for the search: everything the next move depends on.
+// Built as a plain string (it is made for every position searched): fields joined by ',',
+// pieces by ';', parts by '|', none of which a field can contain.
 function stateKey(s) {
-  const p = s.player;
-  return JSON.stringify([p.x, p.y, p.swimming, p.sticky, p.stuck && [p.stuck.id, p.stuck.ride], s.checkpoint.x, s.checkpoint.y,
-    s.entities.filter(e => !e.dead).map(e => [e.id, e.x, e.y, e.dir, e.axis, e.sticky ? 1 : 0, e.glue || 0, e.turret ? e.turret.aim % e.turret.dirs.length : -1]),
-    Object.keys(s.open).filter(c => s.open[c]).sort()]);
+  const p = s.player, st = p.stuck;
+  let k = `${p.x},${p.y},${p.swimming ? 1 : 0},${p.sticky ? 1 : 0},${st ? st.id + (st.ride ? 'r' : 'g') : '-'},${s.checkpoint.x},${s.checkpoint.y}|`;
+  for (const e of s.entities) if (!e.dead) k += `${e.id},${e.x},${e.y},${e.dir},${e.axis},${e.sticky ? 1 : 0},${e.glue || 0},${e.turret ? e.turret.aim % e.turret.dirs.length : -1};`;
+  k += '|';
+  for (const c of Object.keys(s.open).sort()) if (s.open[c]) k += c + ',';
+  return k;
 }
 
 const settled = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => !e.dead && (e.rush || e.slide));
@@ -1851,9 +1895,10 @@ function parseMove(m) {
 const limit = s => 4 * s.w * s.h + 40;
 
 // onTick, when given, sees the state after every tick, for a caller that maps where moves go.
-function move(s, m, onTick) {
+// before is s's key, passed in by a caller that tries several moves from one position.
+function move(s, m, onTick, before = stateKey(s)) {
   const { k, at, then } = parseMove(m);
-  const t = structuredClone(s), deaths = t.deaths, before = stateKey(s);
+  const t = cloneGame(s), deaths = t.deaths;
   step(t, [k]); if (onTick) onTick(t);
   for (let i = 1; i <= limit(t) && !settled(t); i++) { step(t, i === at ? [then] : []); if (onTick) onTick(t); }
   if (t.deaths !== deaths || !settled(t)) return null;
@@ -1866,7 +1911,7 @@ function move(s, m, onTick) {
 function powerMoves(s) {
   const pw = s.powers, out = [];
   for (const d of KEYS) {
-    const t = structuredClone(s);
+    const t = cloneGame(s);
     step(t, [d]);
     for (let i = 1; i <= limit(t) && t.player.dir && !t.won; i++) {
       const pd = t.player.dir;
@@ -1898,10 +1943,10 @@ function settleFrom(t, deaths, before, at = 0, then = null, from = 1) {
 // onTick sees the plain moves only: a power branches off a slide on the line it already covers.
 function* successors(s, keys, powers = true, onTick = null) {
   const before = stateKey(s), pw = s.powers, laser = pw.laser && laserMatters(s);
-  for (const k of keys) { const t = move(s, k, onTick); yield t ? [k, t] : null; }
+  for (const k of keys) { const t = move(s, k, onTick, before); yield t ? [k, t] : null; }
   if (!powers || (!pw.boomerang && !pw.dive && !laser)) return;
   for (const d of KEYS) {
-    const t = structuredClone(s);
+    const t = cloneGame(s);
     step(t, [d]);
     for (let i = 1; i <= limit(t) && t.player.dir && !t.won; i++) {
       const pd = t.player.dir, thens = [];
@@ -1909,7 +1954,7 @@ function* successors(s, keys, powers = true, onTick = null) {
       if (pw.dive) thens.push(pd);
       if (laser) for (const side of KEYS) if (side !== pd && side !== OPPOSITE[pd]) thens.push(side);
       for (const then of thens) {
-        const b = structuredClone(t);
+        const b = cloneGame(t);
         step(b, [then]);
         const r = settleFrom(b, s.deaths, before, 0, null, i + 1);
         yield r ? [`${d}@${i}:${then}`, r] : null;
@@ -1938,7 +1983,7 @@ function* search(level, max = MAX_STATES) {
 // null when the search hits its cap.
 function* canWin(s, max = MAX_STATES) {
   if (s.won) return true;
-  const r = yield* searchFrom(structuredClone(s), max);
+  const r = yield* searchFrom(cloneGame(s), max);
   return r.status === 'solved' ? true : r.status === 'unsolvable' ? false : null;
 }
 

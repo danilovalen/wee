@@ -119,11 +119,20 @@ export function slidePiece(s, e) {
 
 // A spring launches whatever stands on the tile its face looks at, when that piece
 // can move on that way.
+// The cells never change during a run, so where the springs are is worked out once.
+const SPRINGS = new WeakMap();
+export function springsOf(s) {
+  let list = SPRINGS.get(s.cells);
+  if (!list) {
+    list = [];
+    s.cells.forEach((c, i) => { if (c.startsWith('spring:')) { const d = c.slice(7); list.push({ d, x: i % s.w + DIRS[d][0], y: Math.floor(i / s.w) + DIRS[d][1] }); } });
+    SPRINGS.set(s.cells, list);
+  }
+  return list;
+}
 export function fireSprings(s) {
-  s.cells.forEach((c, i) => {
-    if (!c.startsWith('spring:')) return;
-    const d = c.slice(7), x = i % s.w + DIRS[d][0], y = Math.floor(i / s.w) + DIRS[d][1];
-    if (!inb(s, x, y)) return;
+  for (const { d, x, y } of springsOf(s)) {
+    if (!inb(s, x, y)) continue;
     const p = s.player;
     if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d, p.swimming)) {
       if (!p.dir) p.moved = 0;
@@ -135,5 +144,5 @@ export function fireSprings(s) {
       e.slide = d; e.rush = false; e.rushDir = null;
       s.events.push({ type: 'spring', x, y, d });
     }
-  });
+  }
 }

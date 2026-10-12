@@ -16,25 +16,43 @@ export const freshPieces = list => list.map((e, i) => ({
 // is held; its inverted doors close then. A closing door of either kind squashes you,
 // weak enemies, boxes and lone turrets, unless a strong enemy, a heavy box or a block
 // stands in it (or you, armored): then the colour keeps its state, so both kinds hold.
+// A room's cells never change during a run, so where its switches are is worked out once.
+const SWITCHES = new WeakMap();
+export function switchesOf(s) {
+  let list = SWITCHES.get(s.cells);
+  if (!list) {
+    list = [];
+    s.cells.forEach((c, i) => {
+      const x = i % s.w, y = (i - x) / s.w;
+      if (c.startsWith('button:')) list.push({ i, x, y, col: c.slice(7), button: true });
+      else if (c.startsWith('receiver:')) list.push({ i, x, y, col: c.slice(9), button: false });
+      else if (c.startsWith('sensor:')) list.push({ i, x, y, col: c.slice(7), button: false });
+    });
+    SWITCHES.set(s.cells, list);
+  }
+  return list;
+}
+
+const DOORS = new WeakMap();
+function doorsOf(s, cell) {
+  let by = DOORS.get(s.cells);
+  if (!by) { by = {}; s.cells.forEach((c, i) => { if (/^i?door:/.test(c)) (by[c] ||= []).push([i % s.w, Math.floor(i / s.w)]); }); DOORS.set(s.cells, by); }
+  return by[cell] || [];
+}
+
 export function refreshDoors(s) {
   const pressed = {}, any = {};
   // A receiver or a sensor is a button that a turret beam holds down.
-  s.cells.forEach((c, i) => {
-    const x = i % s.w, y = (i - x) / s.w;
-    let col, down;
-    if (c.startsWith('button:')) { col = c.slice(7); down = playerAt(s, x, y) || !!entAt(s, x, y); }
-    else if (c.startsWith('receiver:')) { col = c.slice(9); down = s.lit.has(i); }
-    else if (c.startsWith('sensor:')) { col = c.slice(7); down = s.lit.has(i); }
-    else return;
+  for (const { i, x, y, col, button } of switchesOf(s)) {
+    const down = button ? playerAt(s, x, y) || !!entAt(s, x, y) : s.lit.has(i);
     any[col] = true;
     pressed[col] = (pressed[col] ?? true) && down;
-  });
+  }
   let squashed = false;
   for (const col of COLOURS) {
     const want = !!(any[col] && pressed[col]);
     if (want !== !!s.open[col]) {
-      const closing = (want ? 'idoor:' : 'door:') + col, doors = [];
-      s.cells.forEach((c, i) => { if (c === closing) doors.push([i % s.w, Math.floor(i / s.w)]); });
+      const doors = doorsOf(s, (want ? 'idoor:' : 'door:') + col);
       const inside = ([x, y]) => s.entities.filter(e => !e.dead && e.x === x && e.y === y);
       const youIn = ([x, y]) => s.player.x === x && s.player.y === y;
       if (doors.some(d => inside(d).some(e => HOLDS_DOOR.includes(e.kind)) || (youIn(d) && s.powers.armored))) continue;

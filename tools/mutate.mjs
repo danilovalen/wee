@@ -21,8 +21,8 @@ const M = [
   ['src', "if (p.dir || p.hidden) return;", "if (p.dir) return;", 'sim'],
   ['src', "if (cellAt(s, x, y).startsWith('sensor:') && !entAt(s, x, y) && !playerAt(s, x, y)) s.lit.add(y * s.w + x);", "if (cellAt(s, x, y).startsWith('sensor:') && !playerAt(s, x, y)) s.lit.add(y * s.w + x);", 'sim'],
   ['src', "if (cellAt(s, x, y).startsWith('sensor:') && !entAt(s, x, y) && !playerAt(s, x, y)) s.lit.add(y * s.w + x);", "", 'sim'],
-  ['src', "else if (c.startsWith('sensor:')) { col = c.slice(7); down = s.lit.has(i); }", "", 'sim'],
-  ['src', "else if (c.startsWith('sensor:')) { col = c.slice(7); down = s.lit.has(i); }", "else if (c.startsWith('sensor:')) { col = c.slice(7); down = true; }", 'sim'],
+  ['src', "      else if (c.startsWith('sensor:')) list.push({ i, x, y, col: c.slice(7), button: false });", "", 'sim'],
+  ['src', "const down = button ? playerAt(s, x, y) || !!entAt(s, x, y) : s.lit.has(i);", "const down = button ? playerAt(s, x, y) || !!entAt(s, x, y) : true;", 'sim'],
   ['src', "if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));", "", 'sim'],
   ['src', "if (s.tick % RT_PERIOD === RT_PERIOD - 1)", "if (false)", 'sim'],
   ['src', "    s.checkpoint = { x: nx, y: ny };\n", "", 'sim'],
@@ -49,7 +49,7 @@ const M = [
   ['src', "  computeBeams(s, true);\n", "", 'sim'],
   ['src', "if (harm && hitYou) die(s);", "", 'sim'],
   ['src', "if (r.stop && inb(s, ...r.stop) && cellAt(s, ...r.stop).startsWith('receiver:')) s.lit.add(r.stop[1] * s.w + r.stop[0]);", "", 'sim'],
-  ['src', "else if (c.startsWith('receiver:')) { col = c.slice(9); down = s.lit.has(i); }", "else if (c.startsWith('receiver:')) { col = c.slice(9); down = true; }", 'sim'],
+  ['src', "else if (c.startsWith('receiver:')) list.push({ i, x, y, col: c.slice(9), button: false });", "else if (c.startsWith('receiver:')) list.push({ i, x, y, col: c.slice(9), button: true });", 'sim'],
   ['src', "if (c === 'wall' || c.startsWith('receiver:') || c.startsWith('spring:')) return true;", "if (c === 'wall' || c.startsWith('spring:')) return true;", 'sim'],
   ['src', "if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));", "if (c.startsWith('receiver:')) return true;", 'sim'],
   ['src', "      $('placeHint').textContent = describe(S.level, c.x, c.y);\n", "", 'browser'],
@@ -257,7 +257,7 @@ const M = [
   ["src", "        if (seen.has(key)) continue;\n", "", "solve"],
   ["src", "        if (seen.size >= max) return { status: 'capped', moves: null, states: seen.size };\n", "", "solve"],
   ["src", "        if (t.won) return { status: 'solved', moves: [...path, k], states: seen.size };", "        if (t.won) return { status: 'solved', moves: [k], states: seen.size };", "solve"],
-  ["src", "  return JSON.stringify([p.x, p.y, p.swimming", "  return JSON.stringify([p.y, p.swimming", "solve"],
+  ["src", "  let k = `${p.x},${p.y},", "  let k = `${p.y},", "solve"],
   ["src", "  if (busy) return;\n", "", "browser"],
   ["src", "  if (S.check && S.check.stamp === stamp) return;", "  if (S.check) return;", "browser"],
   ["src", "  $('showSolution').hidden = r.status !== 'solved';", "  $('showSolution').hidden = true;", "browser"],
@@ -325,7 +325,7 @@ const M = [
   ['src', "  if (c.startsWith('idoor:')) return !!s.open[c.slice(6)];\n", "", 'sim'],
   ['src', "if (c.startsWith('idoor:')) return !!s.open[c.slice(6)];", "if (c.startsWith('idoor:')) return !s.open[c.slice(6)];", 'sim'],
   ['src', "if (want !== !!s.open[col]) {", "if (!want && s.open[col]) {", 'sim'],
-  ['src', "const closing = (want ? 'idoor:' : 'door:') + col, doors = [];", "const closing = 'door:' + col, doors = [];", 'sim'],
+  ['src', "      const doors = doorsOf(s, (want ? 'idoor:' : 'door:') + col);", "      const doors = doorsOf(s, 'door:' + col);", 'sim'],
   ['src', "(kind === 'button' || kind === 'door' || kind === 'idoor')", "(kind === 'button' || kind === 'door')", 'sim'],
   ['src', "const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');", "const isDoor = c => c.startsWith('door:');", 'sim'],
   ['src', "const solid = t === 'door' || t === 'idoor' || t === 'receiver';", "const solid = t === 'door' || t === 'receiver';", 'sim'],
@@ -406,7 +406,7 @@ const M = [
   ['src', "if (r.done) { $('stuck').hidden = r.value !== false; return; }", "if (r.done) return;", 'stuck'],
   ['src', "  watchStuck(game);\n", "", 'stuck'],
   ['src', "  $('win').hidden = true;\n  resetStuck();\n", "  $('win').hidden = true;\n", 'stuck'],
-  ['src', "const r = yield* searchFrom(structuredClone(s), max);", "const r = yield* searchFrom(s, max);", 'solve'],
+  ['src', "const r = yield* searchFrom(cloneGame(s), max);", "const r = yield* searchFrom(s, max);", 'solve'],
   ['src', "return r.status === 'solved' ? true : r.status === 'unsolvable' ? false : null;", "return r.status === 'solved';", 'solve'],
   ['src', "liveTimer = setTimeout(() => { if (!S.check && JSON.stringify(S.level) === stamp) runCheck(true); }, LIVE_WAIT_MS);", "", 'designui'],
   ['src', "if (r.status === 'solved' && !S.check.live) runDesign", "if (r.status === 'solved') runDesign", 'designui'],
@@ -565,6 +565,16 @@ const M = [
   ['src/app/check.js', "  if (!prior) $('checkText').textContent = 'Checking...';", "  $('checkText').textContent = 'Checking...';", 'flicker'],
   ['src/app/well.js', " || $('designBox').classList.contains('stale') ? 0", " ? 0", 'flicker'],
   ['src/app/check.js', "    const fresh = !S.history.past.length && !S.history.future.length;", "    const fresh = false;", 'flicker'],
+  // The lean copy the solver tries moves on (register 120)
+  ['src/rules/game.js', "entities: s.entities.map(e => e.turret ? { ...e, turret: { ...e.turret } } : { ...e }),", "entities: s.entities.map(e => ({ ...e })),", 'clone'],
+  ['src/rules/game.js', "entities: s.entities.map(e => e.turret ? { ...e, turret: { ...e.turret } } : { ...e }),", "entities: s.entities,", 'clone'],
+  ['src/rules/game.js', "stuck: p.stuck && { ...p.stuck },", "", 'clone'],
+  ['src/rules/game.js', "open: { ...s.open }, events", "events", 'clone'],
+  ['src/rules/game.js', "    player: { ...p, stuck:", "    player: p, _x: {stuck:", 'clone'],
+  ['src/rules/life.js', "    SWITCHES.set(s.cells, list);\n", "", 'clone'],
+  // Solver and generator speed (register 120)
+  ['src/solve/solve.js', "  for (const c of Object.keys(s.open).sort()) if (s.open[c]) k += c + ',';", "", 'clone'],
+  ['src/solve/solve.js', "${e.glue || 0},", "", 'clone'],
 ];
 
 let caught = 0, crashed = 0;
@@ -583,7 +593,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses', 'size'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses', 'size', 'clone'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }

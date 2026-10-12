@@ -25,6 +25,19 @@ export function createGame(level) {
   return s;
 }
 
+// A copy of a run to try a move on. What a run never changes is shared (the cells, the
+// room as it started, the start); the checkpoint, beams, lit and shocked are replaced,
+// never edited in place, so they are shared too. Everything a tick can edit is copied.
+export function cloneGame(s) {
+  const p = s.player;
+  return {
+    ...s,
+    powers: { ...s.powers }, open: { ...s.open }, events: [...s.events],
+    player: { ...p, stuck: p.stuck && { ...p.stuck }, from: p.from && { ...p.from }, pushing: p.pushing && { ...p.pushing } },
+    entities: s.entities.map(e => e.turret ? { ...e, turret: { ...e.turret } } : { ...e }),
+  };
+}
+
 export function step(s, inputs = []) {
   s.events = [];
   s.player.snap = false;
