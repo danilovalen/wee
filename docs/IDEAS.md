@@ -181,11 +181,12 @@ His answers, 2026-10-11 and 2026-10-12:
 | pushing a bomb that is already burning | keeps burning, the fuse does not restart |
 | a sliding heavy box, a closing door, a death block | sets it off |
 | armored | a blast does not hurt you |
+| lone turrets, moving blocks | survive a blast |
 
 Built as the `bomb` piece (Pieces). Pushed like a light box, it can stick and glue, and it can be
 pushed into water (it sinks rather than stopping at the edge). The timer is the fuse: a full cord
 before it is lit, a spark that burns one length off per move, and no cord and a glowing body on the
-move it goes off. My reading, not his: a lone turret and a moving block survive a blast. In the generator its stand-in is a plain box, so
+move it goes off. In the generator its stand-in is a plain box, so
 Must use means it has to go off.
 
 ## Paint mode: a win by painting every tile (2026-10-11)
