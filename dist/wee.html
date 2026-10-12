@@ -64,7 +64,7 @@ h2:not(:first-child) { margin-top: 16px; }
   .grid button[hidden] { display: flex; }
   .grid button { white-space: nowrap; padding: 4px 6px; font-size: 12.5px; }
   .grid canvas { width: 18px; height: 18px; }
-  .ghead { margin-top: 6px; }
+  .ghead { margin-top: 4px; }
 }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .grid button { min-width: 0; text-align: left; display: flex; align-items: center; gap: 6px; padding: 5px 6px; font-size: 13px; }
@@ -3844,9 +3844,9 @@ const TOOLS = [
   { id: 'gate', label: 'One-way', group: 'tiles' },
   { id: 'spring', label: 'Spring', group: 'tiles' },
   { id: 'death', label: 'Death block', group: 'tiles' },
-  { id: 'water', label: 'Water', group: 'tiles' },
-  { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },
-  { id: 'gravel', label: 'Gravel', group: 'tiles' },
+  { id: 'water', label: 'Water', group: 'floors' },
+  { id: 'sticky', label: 'Sticky puddle', group: 'floors' },
+  { id: 'gravel', label: 'Gravel', group: 'floors' },
   { id: 'button', label: 'Button', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'idoor', label: 'Inverted door', group: 'switches' },
@@ -3866,7 +3866,7 @@ const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cy
 
 
 // The palette shows one group at a time on a phone, so it fits without scrolling.
-const GROUPS = [['basic', 'Basics'], ['pieces', 'Pieces'], ['tiles', 'Tiles'], ['switches', 'Switches']];
+const GROUPS = [['basic', 'Basics'], ['pieces', 'Pieces'], ['tiles', 'Tiles'], ['floors', 'Floors'], ['switches', 'Switches']];
 const COLOUR_NAME = { red: 'Red', blue: 'Blue', yellow: 'Yellow', green: 'Green' };
 const CLOCK_NAME = { realtime: 'real time', input: 'on your move', follow: 'same way as you' };
 const ARROW = { up: '\u2191', right: '\u2192', down: '\u2193', left: '\u2190' };

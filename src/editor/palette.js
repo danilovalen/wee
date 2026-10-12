@@ -18,9 +18,9 @@ export const TOOLS = [
   { id: 'gate', label: 'One-way', group: 'tiles' },
   { id: 'spring', label: 'Spring', group: 'tiles' },
   { id: 'death', label: 'Death block', group: 'tiles' },
-  { id: 'water', label: 'Water', group: 'tiles' },
-  { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },
-  { id: 'gravel', label: 'Gravel', group: 'tiles' },
+  { id: 'water', label: 'Water', group: 'floors' },
+  { id: 'sticky', label: 'Sticky puddle', group: 'floors' },
+  { id: 'gravel', label: 'Gravel', group: 'floors' },
   { id: 'button', label: 'Button', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'idoor', label: 'Inverted door', group: 'switches' },
@@ -40,7 +40,7 @@ export const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cyc
 
 
 // The palette shows one group at a time on a phone, so it fits without scrolling.
-export const GROUPS = [['basic', 'Basics'], ['pieces', 'Pieces'], ['tiles', 'Tiles'], ['switches', 'Switches']];
+export const GROUPS = [['basic', 'Basics'], ['pieces', 'Pieces'], ['tiles', 'Tiles'], ['floors', 'Floors'], ['switches', 'Switches']];
 export const COLOUR_NAME = { red: 'Red', blue: 'Blue', yellow: 'Yellow', green: 'Green' };
 export const CLOCK_NAME = { realtime: 'real time', input: 'on your move', follow: 'same way as you' };
 export const ARROW = { up: '\u2191', right: '\u2192', down: '\u2193', left: '\u2190' };

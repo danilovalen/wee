@@ -543,6 +543,7 @@ const M = [
   ['src/app/check.js', "  if (sol && S.level.start && !rechecked) {", "  if (sol && S.level.start) {", 'browser'],
   ['src/app/check.js', "  $('showSolution').hidden = r.status !== 'solved';\n  syncLint();\n", "  $('showSolution').hidden = r.status !== 'solved';\n", 'browser'],
   ['src/rules/player.js', "    if (!b) return 'blocked';\n    land(s, g, b);", "    if (!b) { unstick(s); return 'blocked'; }\n    land(s, g, b);", 'sim'],
+  ['src/editor/palette.js', "{ id: 'gravel', label: 'Gravel', group: 'floors' }", "{ id: 'gravel', label: 'Gravel', group: 'tiles' }", 'browser'],
 ];
 
 let caught = 0, crashed = 0;

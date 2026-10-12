@@ -47,7 +47,7 @@ h2:not(:first-child) { margin-top: 16px; }
   .grid button[hidden] { display: flex; }
   .grid button { white-space: nowrap; padding: 4px 6px; font-size: 12.5px; }
   .grid canvas { width: 18px; height: 18px; }
-  .ghead { margin-top: 6px; }
+  .ghead { margin-top: 4px; }
 }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .grid button { min-width: 0; text-align: left; display: flex; align-items: center; gap: 6px; padding: 5px 6px; font-size: 13px; }

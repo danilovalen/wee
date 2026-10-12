@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { serve } from '../tools/serve.mjs';
 import { room, suite } from './lib.mjs';
+import { GROUPS } from '../src/editor/palette.js';
+const GROUP_COUNT = GROUPS.length;
 
 const { check, done } = suite('browser');
 const FIRST_W = JSON.parse(readFileSync('rooms/first-room.wee', 'utf8')).w;
@@ -24,6 +26,7 @@ try {
   await page.evaluate(() => window.wee.roomsReady);
   check('wee starts on the library', await page.locator('#roomsBox').isVisible());
   check('a fresh start has no unsaved tile', await page.locator('#openNow').isHidden());
+  check('floors are their own section: water, sticky puddle and gravel', (await page.$$eval('[data-tool][data-in=floors]', bs => bs.map(b => b.dataset.tool).join())) === 'water,sticky,gravel' && await page.locator('[data-group=floors]').count() === 1);
   await page.click('#roomsBox .roomsHead button');
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
@@ -35,7 +38,7 @@ try {
 
   // on a wide screen every tool shows at once, in sections, with no tabs
   const wide = await page.evaluate(() => ({ tabs: !!document.getElementById('groups').offsetParent, hidden: [...document.querySelectorAll('[data-tool]')].filter(b => !b.offsetParent).length, heads: [...document.querySelectorAll('.ghead')].filter(h => h.offsetParent).length }));
-  check('on desktop the tools are sections, all visible, no tabs', !wide.tabs && wide.hidden === 0 && wide.heads === 4, JSON.stringify(wide));
+  check('on desktop the tools are sections, all visible, no tabs', !wide.tabs && wide.hidden === 0 && wide.heads === GROUP_COUNT, JSON.stringify(wide));
   // nothing in a panel is cut by its panel: every control sits inside its box
   const type = await page.evaluate(async () => {
     await document.fonts.ready;
