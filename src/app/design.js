@@ -1,11 +1,11 @@
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
 // how many shortest routes there are, and how many positions trap you. Runs a slice at a
 // time and stops when the room changes. All copy is draft.
-import { powerCheck, elementCheck, routes } from '../solve/design.js';
+import { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } from '../solve/design.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
 
-const SLICE_MS = 25, MAX = 5000;
+const SLICE_MS = 25, MAX = NOTES_MAX;
 const NAME = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', armored: 'Armored' };
 const PIECE = { box: 'box', heavy: 'heavy box', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', door: 'door', idoor: 'inverted door', receiver: 'laser catcher', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', gravel: 'gravel', checkpoint: 'checkpoint' };
 const moves = n => typeof n === 'number' ? `${n} ${n === 1 ? 'move' : 'moves'}` : n === 'unsolvable' ? 'no solution' : 'too many positions to tell';
@@ -58,7 +58,7 @@ export function runDesign(par) {
       show();
       sliced(elementCheck(level, MAX), stamp, es => {
         const name = e => `${PIECE[e.what] || e.what} at ${e.x}, ${e.y}`;
-        const unused = es.filter(e => e.without === par), plain = es.filter(e => e.without !== par && e.standIn === par);
+        const { unused, plain } = idleElements(es, par);
         S.design.unused = [...unused, ...plain];
         S.redraw = true;
         if (unused.length) lines.push(line(`Without these, nothing changes: ${unused.map(name).join('; ')}.`, unused));

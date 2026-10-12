@@ -2085,7 +2085,7 @@ function* elementCheck(level, max) {
     const stand = e.turret && e.kind !== 'turret'
       ? { ...level, entities: [...rest, { kind: 'turret', x: e.x, y: e.y, turret: e.turret }] }
       : { ...level, cells: walled(e.y * level.w + e.x), entities: rest };
-    out.push({ x: e.x, y: e.y, what: e.kind, without, standIn: stand ? answer(yield* search(stand, max)) : null, as: e.turret && e.kind !== 'turret' ? 'turret' : 'wall' });
+    out.push({ piece: true, x: e.x, y: e.y, what: e.kind, without, standIn: stand ? answer(yield* search(stand, max)) : null, as: e.turret && e.kind !== 'turret' ? 'turret' : 'wall' });
   }
   for (let i = 0; i < level.cells.length; i++) {
     const c = level.cells[i];
@@ -2096,6 +2096,16 @@ function* elementCheck(level, max) {
     out.push({ x: i % level.w, y: Math.floor(i / level.w), what: c.split(':')[0], without, standIn: stand, as: 'wall' });
   }
   return out;
+}
+
+// The pieces and tiles a room could do without: taking one out leaves the answer as it was
+// (unused), or its stand-in does the same job (plain). The editor's notes and the generator's
+// judge both read this, so a generated room never holds what the notes would flag.
+// How far the design notes search; the generator's judge searches as far, so they agree.
+const NOTES_MAX = 5000;
+function idleElements(checked, par) {
+  const unused = checked.filter(e => e.without === par), plain = checked.filter(e => e.without !== par && e.standIn === par);
+  return { unused, plain };
 }
 
 // Every position the room can reach, as a graph: how many can no longer reach the goal,
@@ -2145,11 +2155,11 @@ function* routes(level, max = MAX_STATES) {
     routes: count,
   };
 }
-return { powerCheck, elementCheck, routes };
+return { powerCheck, elementCheck, NOTES_MAX, idleElements, routes };
 })();
 // ---- src/app/design.js
 const m18 = (() => {
-const { powerCheck, elementCheck, routes } = m17;
+const { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } = m17;
 const { S } = m11;
 const { $, now } = m12;
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
@@ -2158,7 +2168,7 @@ const { $, now } = m12;
 
 
 
-const SLICE_MS = 25, MAX = 5000;
+const SLICE_MS = 25, MAX = NOTES_MAX;
 const NAME = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', armored: 'Armored' };
 const PIECE = { box: 'box', heavy: 'heavy box', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', door: 'door', idoor: 'inverted door', receiver: 'laser catcher', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', gravel: 'gravel', checkpoint: 'checkpoint' };
 const moves = n => typeof n === 'number' ? `${n} ${n === 1 ? 'move' : 'moves'}` : n === 'unsolvable' ? 'no solution' : 'too many positions to tell';
@@ -2211,7 +2221,7 @@ function runDesign(par) {
       show();
       sliced(elementCheck(level, MAX), stamp, es => {
         const name = e => `${PIECE[e.what] || e.what} at ${e.x}, ${e.y}`;
-        const unused = es.filter(e => e.without === par), plain = es.filter(e => e.without !== par && e.standIn === par);
+        const { unused, plain } = idleElements(es, par);
         S.design.unused = [...unused, ...plain];
         S.redraw = true;
         if (unused.length) lines.push(line(`Without these, nothing changes: ${unused.map(name).join('; ')}.`, unused));
@@ -5288,11 +5298,13 @@ return { spot, knock, standIn, variants, INGREDIENTS, ING };
 // ---- src/gen/score.js
 const m52 = (() => {
 const { search } = m15;
+const { elementCheck, idleElements, NOTES_MAX } = m17;
 const { contains } = m25;
 const { ING, variants } = m51;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
+
 
 
 
@@ -5329,7 +5341,12 @@ function* judge(level, recipe, max = 3000) {
   const out = par < recipe.min ? recipe.min - par : par > recipe.max ? par - recipe.max : 0;
   const mid = (recipe.min + recipe.max) / 2;
   const score = -100 * miss.length - 10 * out - Math.abs(par - mid) / 10;
-  return { fit: !miss.length && !out, score, status: 'solved', par, moves: r.moves, missing: miss };
+  if (miss.length || out) return { fit: false, score, status: 'solved', par, moves: r.moves, missing: miss };
+  // Last, and only for a room that fits otherwise (it is the costly part): every piece and tile
+  // must change the answer, as the editor's design notes would judge it.
+  const { unused, plain } = idleElements(yield* elementCheck(level, NOTES_MAX), par);
+  const idle = [...unused, ...plain];
+  return { fit: !idle.length, score: score - 30 * idle.length, status: 'solved', par, moves: r.moves, missing: miss, unused, plain };
 }
 return { offFound, missing, judge };
 })();
@@ -5369,6 +5386,8 @@ const { rng } = m53;
 const LIMITS = { size: [5, 14], moves: [1, 40] };
 const clamp = (v, [a, b]) => Math.max(a, Math.min(b, Math.round(+v || a)));
 const STALE = 40;
+// How many times in a row a room's idle parts are tidied away before it is judged as it is.
+const TIDY = 4;
 
 // Fills in defaults, keeps the numbers in range, and turns on what a Must or Allowed
 // ingredient brings with it (a laser catcher needs a turret). One that can never change the
@@ -5433,6 +5452,20 @@ function mutate(level, recipe, r) {
   return l;
 }
 
+// A room with its idle parts dealt with: an unused piece or tile taken out, one whose stand-in
+// does the same job turned into that stand-in.
+function tidy(level, { unused = [], plain = [] }) {
+  const l = structuredClone(level), at = e => x => x.x === e.x && x.y === e.y;
+  for (const e of unused) { if (e.piece) l.entities = l.entities.filter(x => !at(e)(x)); else l.cells[e.y * l.w + e.x] = ''; }
+  for (const e of plain) {
+    const p = e.piece && l.entities.find(at(e));
+    if (e.as === 'turret' && p) { l.entities = l.entities.filter(x => x !== p); l.entities.push({ kind: 'turret', x: e.x, y: e.y, turret: p.turret }); continue; }
+    if (p) l.entities = l.entities.filter(x => x !== p);
+    l.cells[e.y * l.w + e.x] = 'wall';
+  }
+  return l;
+}
+
 // A generator over a recipe. Yields while it works; out.best and out.tries say how far it
 // got. Returns { fit, level, verdict, tries } with the first room that fits, or the closest
 // one when maxTries runs out.
@@ -5441,12 +5474,21 @@ function* generate(recipe, { maxTries = Infinity, out = {} } = {}) {
   const r = rng(recipe.seed);
   out.tries = 0; out.best = null;
   const keep = (level, v) => { out.tries++; if (!out.best || v.score > out.best.verdict.score) out.best = { level, verdict: v }; };
+  // Judges a room, and while it fits but for idle parts, tidies them away and judges again.
+  function* settle(level) {
+    let v = yield* judge(level, recipe);
+    for (let n = 0; n < TIDY && !v.fit && (v.unused?.length || v.plain?.length) && out.tries < maxTries; n++) {
+      keep(level, v);
+      level = tidy(level, v); v = yield* judge(level, recipe);
+    }
+    return [level, v];
+  }
   while (out.tries < maxTries) {
-    let cur = build(recipe, r), cv = yield* judge(cur, recipe);
+    let [cur, cv] = yield* settle(build(recipe, r));
     keep(cur, cv);
     if (cv.fit) return { fit: true, level: cur, verdict: cv, tries: out.tries };
     for (let stale = 0; stale < STALE && out.tries < maxTries;) {
-      const next = mutate(cur, recipe, r), nv = yield* judge(next, recipe);
+      const [next, nv] = yield* settle(mutate(cur, recipe, r));
       keep(next, nv);
       if (nv.fit) return { fit: true, level: next, verdict: nv, tries: out.tries };
       if (nv.score > cv.score) stale = 0; else stale++;
@@ -5462,7 +5504,7 @@ function generateNow(recipe, opts) {
   const it = generate(recipe, opts);
   for (;;) { const r = it.next(); if (r.done) return r.value; }
 }
-return { LIMITS, normalize, recipeLabel, build, mutate, generate, generateNow };
+return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
 const m55 = (() => {

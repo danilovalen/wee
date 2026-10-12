@@ -2,6 +2,7 @@
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
 import { search } from '../solve/solve.js';
+import { elementCheck, idleElements, NOTES_MAX } from '../solve/design.js';
 import { contains } from '../solve/tags.js';
 import { ING, variants } from './ingredients.js';
 
@@ -38,5 +39,10 @@ export function* judge(level, recipe, max = 3000) {
   const out = par < recipe.min ? recipe.min - par : par > recipe.max ? par - recipe.max : 0;
   const mid = (recipe.min + recipe.max) / 2;
   const score = -100 * miss.length - 10 * out - Math.abs(par - mid) / 10;
-  return { fit: !miss.length && !out, score, status: 'solved', par, moves: r.moves, missing: miss };
+  if (miss.length || out) return { fit: false, score, status: 'solved', par, moves: r.moves, missing: miss };
+  // Last, and only for a room that fits otherwise (it is the costly part): every piece and tile
+  // must change the answer, as the editor's design notes would judge it.
+  const { unused, plain } = idleElements(yield* elementCheck(level, NOTES_MAX), par);
+  const idle = [...unused, ...plain];
+  return { fit: !idle.length, score: score - 30 * idle.length, status: 'solved', par, moves: r.moves, missing: miss, unused, plain };
 }

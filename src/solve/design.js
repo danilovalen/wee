@@ -32,7 +32,7 @@ export function* elementCheck(level, max) {
     const stand = e.turret && e.kind !== 'turret'
       ? { ...level, entities: [...rest, { kind: 'turret', x: e.x, y: e.y, turret: e.turret }] }
       : { ...level, cells: walled(e.y * level.w + e.x), entities: rest };
-    out.push({ x: e.x, y: e.y, what: e.kind, without, standIn: stand ? answer(yield* search(stand, max)) : null, as: e.turret && e.kind !== 'turret' ? 'turret' : 'wall' });
+    out.push({ piece: true, x: e.x, y: e.y, what: e.kind, without, standIn: stand ? answer(yield* search(stand, max)) : null, as: e.turret && e.kind !== 'turret' ? 'turret' : 'wall' });
   }
   for (let i = 0; i < level.cells.length; i++) {
     const c = level.cells[i];
@@ -43,6 +43,16 @@ export function* elementCheck(level, max) {
     out.push({ x: i % level.w, y: Math.floor(i / level.w), what: c.split(':')[0], without, standIn: stand, as: 'wall' });
   }
   return out;
+}
+
+// The pieces and tiles a room could do without: taking one out leaves the answer as it was
+// (unused), or its stand-in does the same job (plain). The editor's notes and the generator's
+// judge both read this, so a generated room never holds what the notes would flag.
+// How far the design notes search; the generator's judge searches as far, so they agree.
+export const NOTES_MAX = 5000;
+export function idleElements(checked, par) {
+  const unused = checked.filter(e => e.without === par), plain = checked.filter(e => e.without !== par && e.standIn === par);
+  return { unused, plain };
 }
 
 // Every position the room can reach, as a graph: how many can no longer reach the goal,

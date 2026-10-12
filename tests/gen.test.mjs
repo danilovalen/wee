@@ -7,7 +7,8 @@ import { contains, MECHANISMS } from '../src/solve/tags.js';
 import { rng } from '../src/gen/random.js';
 import { INGREDIENTS, ING, knock } from '../src/gen/ingredients.js';
 import { offFound, judge } from '../src/gen/score.js';
-import { normalize, recipeLabel, build, mutate, generateNow } from '../src/gen/generate.js';
+import { normalize, recipeLabel, build, mutate, generateNow, tidy } from '../src/gen/generate.js';
+import { elementCheck, idleElements, NOTES_MAX } from '../src/solve/design.js';
 import { room, suite } from './lib.mjs';
 
 const { check, done } = suite('gen');
@@ -112,6 +113,17 @@ check('a box you only stop against is missing', st.status === 'solved' && st.mis
 const pushed = run(judge(doorRoom, normalize({ ing: { box: 'must', door: 'allowed' }, min: 1, max: 9 })));
 check('a box you push onto a button counts', pushed.status === 'solved' && !pushed.missing.length, JSON.stringify(pushed));
 
+// A room that fits but for an idle part is not a fit, and tidying deals with the part.
+const spare = goal(room(['#########', '#P......#', '#......B#', '#########']), 7, 1);
+const sv = run(judge(spare, normalize({ ing: { box: 'allowed' }, min: 1, max: 9 })));
+check('a room with a piece the answer does not need is not a fit', sv.status === 'solved' && !sv.fit && sv.unused.some(e => e.what === 'box'), JSON.stringify(sv));
+const tidied = tidy(spare, sv);
+check('tidying takes an unused piece out', !tidied.entities.some(e => e.kind === 'box') && run(judge(tidied, normalize({ ing: { box: 'allowed' }, min: 1, max: 9 }))).fit);
+const sp = run(judge(still, normalize({ ing: { box: 'allowed' }, min: 1, max: 9 })));
+check('a box that only does a wall\'s job is not a fit either', !sp.fit && sp.plain.some(e => e.what === 'box'), JSON.stringify(sp));
+const lean = tidy(still, { plain: [{ piece: true, x: 5, y: 1, as: 'wall' }] });
+check('tidying turns a piece that does a wall\'s job into a wall', !lean.entities.length && lean.cells[1 * 7 + 5] === 'wall');
+
 // The walk: same recipe, same room; each fit verified on its own.
 const easy = [{ box: 'must' }, { door: 'must' }, { tri: 'must', box: 'allowed' }, { spring: 'must' }, { water: 'must', swim: 'allowed' }, { sticky: 'must' }, { receiver: 'must' }, { enemy: 'must' }, { laser: 'must' }];
 const fails = [], unfit = [], again = [];
@@ -123,10 +135,12 @@ for (const ing of easy) for (const seed of [1, 2]) {
   const nr = normalize(recipe), s = solve(r.level);
   const notUsed = Object.keys(ing).filter(id => { const k = solve(knock(ING[id], r.level)); return ing[id] === 'must' && k.status === 'solved' && k.moves.length === s.moves.length; });
   const off = MECHANISMS.map(m => m[0]).filter(t => contains(r.level).includes(t) && INGREDIENTS.some(g => !nr.ing[g.id] && g.tags.includes(t)));
-  if (s.status !== 'solved' || s.moves.length < 3 || s.moves.length > 12 || notUsed.length || off.length) fails.push(`${Object.keys(ing)}/${seed}: ${s.status} ${s.moves?.length} ${notUsed} ${off}`);
+  const { unused: u, plain: pl } = idleElements(run(elementCheck(r.level, NOTES_MAX)), s.moves.length);
+  const idleNames = [...u, ...pl].map(e => `${e.what}@${e.x},${e.y}`);
+  if (s.status !== 'solved' || s.moves.length < 3 || s.moves.length > 12 || notUsed.length || off.length || idleNames.length) fails.push(`${Object.keys(ing)}/${seed}: ${s.status} ${s.moves?.length} ${notUsed} ${off} idle:${idleNames}`);
 }
 check('these recipes find a room within 800 tries', !unfit.length, unfit.join());
-check('every room called a fit solves in range, needs its Must and holds nothing Off', !fails.length, fails.join(' | '));
+check('every room called a fit solves in range, needs its Must, holds nothing Off, and nothing the design notes would call idle', !fails.length, fails.join(' | '));
 check('the same recipe gives the same room', !again.length, again.join());
 check('another seed gives another room', JSON.stringify(generateNow({ ing: { box: 'must' }, seed: 1 }, { maxTries: 800 }).level) !== JSON.stringify(generateNow({ ing: { box: 'must' }, seed: 2 }, { maxTries: 800 }).level));
 const hopeless = generateNow({ w: 5, h: 5, min: 40, max: 40, seed: 1 }, { maxTries: 30 });

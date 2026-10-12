@@ -11,6 +11,8 @@ import { rng } from './random.js';
 export const LIMITS = { size: [5, 14], moves: [1, 40] };
 const clamp = (v, [a, b]) => Math.max(a, Math.min(b, Math.round(+v || a)));
 const STALE = 40;
+// How many times in a row a room's idle parts are tidied away before it is judged as it is.
+const TIDY = 4;
 
 // Fills in defaults, keeps the numbers in range, and turns on what a Must or Allowed
 // ingredient brings with it (a laser catcher needs a turret). One that can never change the
@@ -75,6 +77,20 @@ export function mutate(level, recipe, r) {
   return l;
 }
 
+// A room with its idle parts dealt with: an unused piece or tile taken out, one whose stand-in
+// does the same job turned into that stand-in.
+export function tidy(level, { unused = [], plain = [] }) {
+  const l = structuredClone(level), at = e => x => x.x === e.x && x.y === e.y;
+  for (const e of unused) { if (e.piece) l.entities = l.entities.filter(x => !at(e)(x)); else l.cells[e.y * l.w + e.x] = ''; }
+  for (const e of plain) {
+    const p = e.piece && l.entities.find(at(e));
+    if (e.as === 'turret' && p) { l.entities = l.entities.filter(x => x !== p); l.entities.push({ kind: 'turret', x: e.x, y: e.y, turret: p.turret }); continue; }
+    if (p) l.entities = l.entities.filter(x => x !== p);
+    l.cells[e.y * l.w + e.x] = 'wall';
+  }
+  return l;
+}
+
 // A generator over a recipe. Yields while it works; out.best and out.tries say how far it
 // got. Returns { fit, level, verdict, tries } with the first room that fits, or the closest
 // one when maxTries runs out.
@@ -83,12 +99,21 @@ export function* generate(recipe, { maxTries = Infinity, out = {} } = {}) {
   const r = rng(recipe.seed);
   out.tries = 0; out.best = null;
   const keep = (level, v) => { out.tries++; if (!out.best || v.score > out.best.verdict.score) out.best = { level, verdict: v }; };
+  // Judges a room, and while it fits but for idle parts, tidies them away and judges again.
+  function* settle(level) {
+    let v = yield* judge(level, recipe);
+    for (let n = 0; n < TIDY && !v.fit && (v.unused?.length || v.plain?.length) && out.tries < maxTries; n++) {
+      keep(level, v);
+      level = tidy(level, v); v = yield* judge(level, recipe);
+    }
+    return [level, v];
+  }
   while (out.tries < maxTries) {
-    let cur = build(recipe, r), cv = yield* judge(cur, recipe);
+    let [cur, cv] = yield* settle(build(recipe, r));
     keep(cur, cv);
     if (cv.fit) return { fit: true, level: cur, verdict: cv, tries: out.tries };
     for (let stale = 0; stale < STALE && out.tries < maxTries;) {
-      const next = mutate(cur, recipe, r), nv = yield* judge(next, recipe);
+      const [next, nv] = yield* settle(mutate(cur, recipe, r));
       keep(next, nv);
       if (nv.fit) return { fit: true, level: next, verdict: nv, tries: out.tries };
       if (nv.score > cv.score) stale = 0; else stale++;

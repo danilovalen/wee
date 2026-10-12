@@ -411,8 +411,7 @@ const M = [
   ['src', "return r.status === 'solved' ? true : r.status === 'unsolvable' ? false : null;", "return r.status === 'solved';", 'solve'],
   ['src', "liveTimer = setTimeout(() => { if (!S.check && JSON.stringify(S.level) === stamp) runCheck(true); }, LIVE_WAIT_MS);", "", 'designui'],
   ['src', "if (r.status === 'solved' && !S.check.live) runDesign", "if (r.status === 'solved') runDesign", 'designui'],
-  ['src', "const unused = es.filter(e => e.without === par), plain", "const unused = [], plain", 'designui'],
-  ['src', "plain = es.filter(e => e.without !== par && e.standIn === par);", "plain = [];", 'designui'],
+  ['src', "const unused = checked.filter(e => e.without === par), plain", "const unused = [], plain", 'designui'],
   ['src', ": { ...level, cells: walled(e.y * level.w + e.x), entities: rest };", ": null;", 'design'],
   ['src', "const stand = held.has(i) || c.startsWith('receiver:') ? null", "const stand = c.startsWith('receiver:') ? null", 'design'],
   ['src', "export const variants = (g, l) => [knock(g, l), standIn(g, l)].filter(Boolean);", "export const variants = (g, l) => [knock(g, l)];", 'gen'],
@@ -535,6 +534,12 @@ const M = [
   ['src/app/lenses.js', "textContent: label, title: LENS_TIPS[id] });", "textContent: label });", 'lensui'],
   ['style.css', "  .wellBody .lensBox:not([hidden]) { display: grid;", "  .wellBody .lensBox:not([hidden]) { display: block;", 'lensui'],
   ['src/view/ink.js', "player: '#7b6cff', start:", "player: '#4cc9ff', start:", 'manga'],
+  // The generator never keeps what the design notes would call idle (register 112)
+  ['src/gen/score.js', "  return { fit: !idle.length, score:", "  return { fit: true, score:", 'gen'],
+  ['src/gen/generate.js', "      level = tidy(level, v); v = yield* judge(level, recipe);", "      v = yield* judge(level, recipe);", 'gen'],
+  ['src/gen/generate.js', "  for (const e of unused) { if (e.piece) l.entities", "  for (const e of []) { if (e.piece) l.entities", 'gen'],
+  ['src/gen/generate.js', "    l.cells[e.y * l.w + e.x] = 'wall';\n  }", "  }", 'gen'],
+  ['src/solve/design.js', "plain = checked.filter(e => e.without !== par && e.standIn === par);", "plain = [];", 'gen'],
 ];
 
 let caught = 0, crashed = 0;
