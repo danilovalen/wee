@@ -53,6 +53,7 @@ function finish(r) {
 // A check goes stale the moment the room changes, and a live one starts after a pause.
 export function syncCheck() {
   const stamp = JSON.stringify(S.level);
+  if (!S.level.start) { S.check = null; clearDesign(); clearTimeout(liveTimer); $('checkText').textContent = 'To check or play, place the start.'; $('showSolution').hidden = true; return; }
   if (S.check && S.check.stamp === stamp) return;
   if (S.check) {
     S.check = null;
@@ -85,7 +86,7 @@ export function syncLint() {
   if (stamp === lintStamp) return;
   lintStamp = stamp;
   const warns = lint(S.level), sol = S.room && S.room.solution;
-  if (sol) {
+  if (sol && S.level.start) {
     const n = brokenAt(S.level, sol);
     if (n) warns.unshift({ x: S.level.start.x, y: S.level.start.y, msg: `The saved solution no longer wins: it breaks at move ${n} of ${sol.length}. Check again and save.` });
   }

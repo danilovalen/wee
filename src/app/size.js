@@ -18,8 +18,8 @@ export function closeSize() { $('sizePop').hidden = true; $('sizeBtn').setAttrib
 function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('aria-expanded', 'true'); place(); }
 
 // A grip on each edge: a tap adds a line, a drag outward adds as many as it covers and a drag
-// inward cuts them. While dragging, a band shows the lines that would come or go, red when the
-// cut would take something you placed (then letting go changes nothing).
+// inward cuts them. While dragging, a band shows the lines that will come or go; it stops at
+// the last line that can go (a placed thing, 2x2 inside) or come (40x30), so no drag fails.
 const OUT = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] };
 function grip(b, after) {
   const side = b.dataset.plus, wrap = $('roomWrap');
@@ -27,12 +27,12 @@ function grip(b, after) {
   const band = document.createElement('div'); band.className = 'sizeBand'; band.hidden = true; wrap.append(band);
   const tile = () => canvas.getBoundingClientRect().width / S.level.w;
   const show = () => {
-    const t = tile(), c = canvas.getBoundingClientRect(), w = wrap.getBoundingClientRect(), ok = !!moveSide(S.level, side, n);
+    const t = tile(), c = canvas.getBoundingClientRect(), w = wrap.getBoundingClientRect();
     const len = Math.abs(n) * t, out = n > 0, x0 = c.left - w.left, y0 = c.top - w.top;
     const box = { top: [x0, out ? y0 - len : y0, c.width, len], bottom: [x0, out ? y0 + c.height : y0 + c.height - len, c.width, len],
       left: [out ? x0 - len : x0, y0, len, c.height], right: [out ? x0 + c.width : x0 + c.width - len, y0, len, c.height] }[side];
     Object.assign(band.style, { left: box[0] + 'px', top: box[1] + 'px', width: box[2] + 'px', height: box[3] + 'px' });
-    band.classList.toggle('cut', n < 0); band.classList.toggle('no', !ok);
+    band.classList.toggle('cut', n < 0);
     band.textContent = n > 0 ? '+' + n : '\u2212' + -n;
     band.hidden = n === 0;
   };
@@ -42,17 +42,23 @@ function grip(b, after) {
     const [ux, uy] = OUT[side], d = (ev.clientX - from.x) * ux + (ev.clientY - from.y) * uy;
     if (Math.abs(d) > 6) from.moved = true;
     if (!from.moved) return;
-    n = Math.round(d / tile()); show();
+    n = Math.round(d / tile()) || 0;
+    while (n && !moveSide(S.level, side, n)) n -= Math.sign(n);
+    show();
   });
   const done = ev => {
     if (!from) return;
     const k = from.moved ? n : 1; from = null; band.hidden = true;
     if (!k || ev.type === 'pointercancel') return;
     const l = moveSide(S.level, side, k);
-    if (!l) { $('placeHint').textContent = k < 0 ? 'That cut would take something you placed.' : 'The room cannot grow that far.'; return; }
+    if (!l) return;
+    const lost = S.level.start && !l.start;
     change(() => { S.level = l; }); after();
+    if (lost) $('placeHint').textContent = 'The cut took the start. To play, place it again.';
   };
-  b.addEventListener('pointerup', done); b.addEventListener('pointercancel', done);
+  // A release anywhere ends the drag, even off the grip or outside the window.
+  b.addEventListener('pointerup', done); b.addEventListener('pointercancel', done); b.addEventListener('lostpointercapture', done);
+  addEventListener('pointerdown', ev => { if (!from && !band.hidden && ev.target !== b) band.hidden = true; });
 }
 
 export function buildSize({ after }) {

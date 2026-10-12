@@ -46,7 +46,7 @@ export function selectUp() {
   if (!dx && !dy) return;
   const r = m.from, x0 = r.x0 + dx, y0 = r.y0 + dy;
   change(() => {
-    const st = S.level.start, carried = inside(r, st);
+    const st = S.level.start, carried = !!st && inside(r, st);
     S.level = pasteRegion(clearRegion(S.level, r), m.clip, x0, y0);
     // The start rides along when it was inside the box and lands inside the room.
     const to = { x: st.x + dx, y: st.y + dy };

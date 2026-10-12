@@ -26,7 +26,7 @@ export function lint(level) {
       out.push({ x: e.x, y: e.y, msg: 'A piece is walled in on every side.' });
   }
   const s = level.start;
-  if (Object.values(DIRS).every(([dx, dy]) => fixed(level, s.x + dx, s.y + dy))) out.push({ ...s, msg: 'The start is walled in on every side.' });
+  if (s && Object.values(DIRS).every(([dx, dy]) => fixed(level, s.x + dx, s.y + dy))) out.push({ ...s, msg: 'The start is walled in on every side.' });
   return out;
 }
 

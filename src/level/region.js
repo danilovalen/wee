@@ -49,7 +49,7 @@ export function rotateClip(clip) {
 // Stamps a clip with its top-left at (x, y). What falls outside the room is dropped; a
 // piece in the clip replaces one already there; the start's tile stays free.
 export function pasteRegion(level, clip, x, y) {
-  const cells = [...level.cells], isStart = (cx, cy) => cx === level.start.x && cy === level.start.y;
+  const cells = [...level.cells], isStart = (cx, cy) => !!level.start && cx === level.start.x && cy === level.start.y;
   const inside = (cx, cy) => cx >= 0 && cy >= 0 && cx < level.w && cy < level.h;
   for (let j = 0; j < clip.h; j++) for (let i = 0; i < clip.w; i++) {
     const cx = x + i, cy = y + j;

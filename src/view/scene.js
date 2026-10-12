@@ -29,7 +29,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
   });
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
-  drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9, level.powers.armored);
+  if (level.start) drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9, level.powers.armored);
   for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {
     const t = (now - f.at) / 160;
     if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);

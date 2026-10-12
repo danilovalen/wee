@@ -19,6 +19,6 @@ export function thumbURL(level) {
     g.fillRect((i % level.w) * PX, Math.floor(i / level.w) * PX, PX, PX);
   });
   for (const e of level.entities) { g.fillStyle = PIECE[e.kind] || INK.mover; g.fillRect(e.x * PX + 1, e.y * PX + 1, PX - 2, PX - 2); }
-  g.fillStyle = INK.player; g.fillRect(level.start.x * PX + 1, level.start.y * PX + 1, PX - 2, PX - 2);
+  if (level.start) { g.fillStyle = INK.player; g.fillRect(level.start.x * PX + 1, level.start.y * PX + 1, PX - 2, PX - 2); }
   return c.toDataURL();
 }

@@ -25,7 +25,7 @@ export function resizeLevel(level, w, h) {
     for (let x = 0; x < Math.min(w, level.w); x++) cells[y * w + x] = level.cells[y * level.w + x];
   return {
     ...level, w, h, cells,
-    start: { x: Math.min(level.start.x, w - 1), y: Math.min(level.start.y, h - 1) },
+    start: level.start && { x: Math.min(level.start.x, w - 1), y: Math.min(level.start.y, h - 1) },
     entities: level.entities.filter(e => e.x < w && e.y < h),
   };
 }
@@ -61,14 +61,14 @@ export function isCell(c) {
 }
 
 // Adds (delta 1) or cuts (delta -1) one row or column on a side, moving everything with
-// it. Returns null when the cut would remove the start or go below 3 tiles.
+// it. A cut through the start takes it off. Returns null below 2 tiles or past 40x30.
 export function resizeSide(level, side, delta) {
   const dx = side === 'left' ? delta : 0, dy = side === 'top' ? delta : 0;
   const w = level.w + (side === 'left' || side === 'right' ? delta : 0), h = level.h + (side === 'top' || side === 'bottom' ? delta : 0);
-  if (w < 3 || h < 3 || w > 40 || h > 30) return null;
+  if (w < 2 || h < 2 || w > 40 || h > 30) return null;
   const inside = (x, y) => x >= 0 && y >= 0 && x < w && y < h;
-  const start = { x: level.start.x + dx, y: level.start.y + dy };
-  if (!inside(start.x, start.y)) return null;
+  const moved = level.start && { x: level.start.x + dx, y: level.start.y + dy };
+  const start = moved && inside(moved.x, moved.y) ? moved : null;
   const cells = Array(w * h).fill('');
   for (let y = 0; y < level.h; y++) for (let x = 0; x < level.w; x++) if (inside(x + dx, y + dy)) cells[(y + dy) * w + x + dx] = level.cells[y * level.w + x];
   const entities = level.entities.map(e => ({ ...e, x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y));
@@ -77,7 +77,9 @@ export function resizeSide(level, side, delta) {
 
 // A side's grip: n > 0 adds n lines, n < 0 cuts them. When that edge is a wall border, the
 // border moves with the grip, so a line goes in or out just inside it and the border stays
-// whole. A cut only takes lines that hold nothing you placed; otherwise it returns null.
+// whole. A cut only takes lines that hold nothing you placed but the start (which it takes
+// off), and never leaves less than 2x2 inside the border; otherwise it returns null.
+export const MIN_INSIDE = 2;
 export function moveSide(level, side, n) {
   let l = level;
   for (let i = 0; i < Math.abs(n); i++) if (!(l = (n > 0 ? growOnce : cutOnce)(l, side))) return null;
@@ -92,19 +94,20 @@ const bordered = (l, side) => lineOf(l, side, edgeIndex(l, side)).every(([x, y])
 
 function cutOnce(l, side) {
   const len = across(side) ? l.w : l.h;
-  if (len <= 3) return null;
+  const far = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' }[side];
+  if (len - 1 < MIN_INSIDE + (bordered(l, side) ? 1 : 0) + (bordered(l, far) ? 1 : 0)) return null;
   const wall = bordered(l, side), k = wall ? (edgeIndex(l, side) === 0 ? 1 : len - 2) : edgeIndex(l, side);
   // Inside a border, the line's two ends sit in the other borders, and those walls may go.
   const end = ([x, y]) => across(side) ? y === 0 || y === l.h - 1 : x === 0 || x === l.w - 1;
   const clear = lineOf(l, side, k).every(([x, y]) => { const c = l.cells[y * l.w + x]; return c === '' || (wall && c === 'wall' && end([x, y])); });
   const at = o => (across(side) ? o.x : o.y) === k;
-  if (!clear || at(l.start) || l.entities.some(at)) return null;
+  if (!clear || l.entities.some(at)) return null;
   const w = l.w - (across(side) ? 1 : 0), h = l.h - (across(side) ? 0 : 1);
   const keep = (x, y) => (across(side) ? x : y) !== k;
   const shift = o => ({ ...o, x: across(side) && o.x > k ? o.x - 1 : o.x, y: !across(side) && o.y > k ? o.y - 1 : o.y });
   const cells = [];
   for (let y = 0; y < l.h; y++) for (let x = 0; x < l.w; x++) if (keep(x, y)) cells.push(l.cells[y * l.w + x]);
-  return { ...l, w, h, cells, start: shift(l.start), entities: l.entities.map(shift) };
+  return { ...l, w, h, cells, start: l.start && !at(l.start) ? shift(l.start) : null, entities: l.entities.map(shift) };
 }
 
 function growOnce(l, side) {
@@ -121,7 +124,7 @@ function growOnce(l, side) {
     const ox = across(side) && x > k ? x - 1 : x, oy = !across(side) && y > k ? y - 1 : y;
     cells.push(l.cells[oy * l.w + ox]);
   }
-  return { ...l, w, h, cells, start: shift(l.start), entities: l.entities.map(shift) };
+  return { ...l, w, h, cells, start: l.start && shift(l.start), entities: l.entities.map(shift) };
 }
 
 // Walls on every edge tile, except where the start stands.
@@ -129,7 +132,7 @@ export function wallBorder(level) {
   const cells = [...level.cells], { w, h } = level;
   for (let i = 0; i < w * h; i++) {
     const x = i % w, y = (i - x) / w;
-    if ((x === 0 || y === 0 || x === w - 1 || y === h - 1) && !(x === level.start.x && y === level.start.y)) cells[i] = 'wall';
+    if ((x === 0 || y === 0 || x === w - 1 || y === h - 1) && !(level.start && x === level.start.x && y === level.start.y)) cells[i] = 'wall';
   }
   const edge = e => e.x === 0 || e.y === 0 || e.x === w - 1 || e.y === h - 1;
   return { ...level, cells, entities: level.entities.filter(e => !edge(e)) };

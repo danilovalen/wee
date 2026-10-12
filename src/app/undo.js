@@ -4,10 +4,12 @@ import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 import { syncCheck, syncLint } from './check.js';
 import { syncRoomsButton, followUndo } from './rooms.js';
+import { syncEnabled } from './enabled.js';
 
 export function syncUndo() {
   $('undo').disabled = S.mode !== 'edit' || !S.history.past.length;
   $('redo').disabled = S.mode !== 'edit' || !S.history.future.length;
+  syncEnabled();
 }
 
 // A drag is one step: begin() at pointer down, end() at pointer up.

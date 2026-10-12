@@ -47,6 +47,7 @@ export const aim = k => S.game ? aimKey(S.game, k, S.acc / TICK_MS) : k;
 
 export function setMode(m, keep) {
   if (keep) { $('keys').textContent = keysText(); return; }
+  if (m === 'play' && !S.playFrom && !S.level.start) return;
   S.mode = m;
   document.body.classList.toggle('play', m === 'play');
   $('mode').textContent = m === 'play' ? 'Edit' : 'Play';

@@ -24,7 +24,7 @@ export function* powerCheck(level, max) {
 // than its body shows), or for a turret riding a box, a fixed turret. A stand-in is skipped
 // where something stands on the tile.
 export function* elementCheck(level, max) {
-  const out = [], held = new Set([level.start.y * level.w + level.start.x, ...level.entities.map(e => e.y * level.w + e.x)]);
+  const out = [], held = new Set([...(level.start ? [level.start.y * level.w + level.start.x] : []), ...level.entities.map(e => e.y * level.w + e.x)]);
   const walled = i => { const cells = [...level.cells]; cells[i] = 'wall'; return cells; };
   for (let i = 0; i < level.entities.length; i++) {
     const e = level.entities[i], rest = level.entities.filter((_, j) => j !== i);

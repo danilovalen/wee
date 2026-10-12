@@ -53,6 +53,7 @@ export function lensesOff() { for (const gr of LENS_GROUPS) L().pick[gr.id] = 'o
 
 // Starts whatever search the lenses on now need and the room does not have yet.
 function ensure() {
+  if (!S.level.start) return;
   const on = onNow(), stamp = JSON.stringify(S.level);
   if ((on.includes('stops') || on.includes('traps')) && (!S.stops || S.stops.stamp !== stamp)) runStops(stamp);
   if (on.some(id => SEARCHED.includes(id)) && (!S.lensData || S.lensData.stamp !== stamp)) {

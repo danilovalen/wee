@@ -273,7 +273,6 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .plus { touch-action: none; cursor: grab; }
 .sizeBand { position: absolute; z-index: 1; pointer-events: none; display: grid; place-items: center; font: 800 13px var(--label-face); color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 0 0 0 2px var(--accent); border-radius: var(--r-s); }
 .sizeBand.cut { background: color-mix(in srgb, var(--paper) 70%, transparent); }
-.sizeBand.no { color: #c8283c; background: color-mix(in srgb, #ff4d6d 22%, transparent); box-shadow: inset 0 0 0 2px #ff4d6d; }
 body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
 .roomArea { padding: 0; }
 @media (max-width: 700px) { .roomArea { padding: 0 0 8px; } }

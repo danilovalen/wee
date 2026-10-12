@@ -45,7 +45,7 @@ export function describe(level, x, y) {
     else if (kind === 'idoor') parts.push(`${COLOUR_NAME[v]} inverted door`);
     else parts.push(`${COLOUR_NAME[v]} ${kind}`);
   }
-  if (level.start.x === x && level.start.y === y) parts.push('Start');
+  if (level.start && level.start.x === x && level.start.y === y) parts.push('Start');
   return parts.length ? parts.join(' \u00b7 ') : 'Empty floor';
 }
 
@@ -60,7 +60,7 @@ export function place(level, ui, x, y, how) {
   const gone = { type: 'erase', x, y };
   const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
   const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
-  const isStart = level.start.x === x && level.start.y === y;
+  const isStart = !!level.start && level.start.x === x && level.start.y === y;
   if (t === 'erase') {
     if (pi >= 0) removePiece(); else setCell('');
   } else if (t === 'remove') {
