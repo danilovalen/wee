@@ -17,6 +17,7 @@ try {
   await page.goto('http://localhost:5211/');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
+  await page.evaluate(() => document.getElementById('roomsBox').close());
   await page.evaluate(l => window.wee.loadLevel(l), oneWay);
   await page.keyboard.press('e');
   await page.waitForTimeout(300);

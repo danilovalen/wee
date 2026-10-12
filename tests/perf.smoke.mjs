@@ -20,6 +20,7 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
+  await page.evaluate(() => document.getElementById('roomsBox').close());
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
 

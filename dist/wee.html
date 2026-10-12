@@ -398,6 +398,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 .roomTitle { max-width: 14em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .roomList.tiles { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
 .roomList.tiles .empty { grid-column: 1 / -1; }
+#openNow:empty { display: none; }
 .tiles .roomRow { flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; height: 100%; }
 .tiles .thumb { width: 100%; height: 96px; max-height: none; background: var(--bg); }
 .tiles .roomRow span { gap: 1px; }
@@ -630,6 +631,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
       <button id="openCode" type="button">Open</button>
     </div>
     <p id="roomsSay" class="hint"></p>
+    <ul id="openNow" class="roomList tiles"></ul>
     <div id="libTools">
       <label class="field">Mechanism <select id="tagFilter"></select></label>
       <details class="explored"><summary id="exploredSum"></summary><p class="hint">Not in any room yet:</p><ul id="unexplored"></ul></details>
@@ -2724,6 +2726,16 @@ async function refresh() {
   return saved;
 }
 
+// The library is where wee starts. The room open behind it, when it has unsaved changes,
+// leads the page as its own tile, so a launch never hides work in progress.
+async function openLibrary() {
+  say('');
+  const now = $('openNow'), live = dirty();
+  now.replaceChildren(...(live ? [row(S.level, (S.room && S.room.name) || 'Untitled', 'Unsaved changes', closeAll)] : []));
+  if (!$('roomsBox').open) $('roomsBox').showModal();
+  await refresh();
+}
+
 // A room's tags: what it holds, what its saved solution does, and whether it started generated.
 const GENERATED = 'from:generated';
 function tagsOf(r) {
@@ -2785,7 +2797,7 @@ function buildRooms(actions) {
   }));
   // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
   // generate, templates) and This room (name, note, save, share, delete), from the header title.
-  $('roomsBtn').onclick = async () => { say(''); $('roomsBox').showModal(); await refresh(); };
+  $('roomsBtn').onclick = openLibrary;
   $('roomTitle').onclick = () => { fillCurrent(); say(''); $('shareOut').hidden = true; $('infoBox').showModal(); };
   $('codeBtn').onclick = () => { const open = $('codeRow').hidden; $('codeRow').hidden = !open; $('codeBtn').setAttribute('aria-expanded', String(open)); if (open) $('codeIn').focus(); };
   $('tagFilter').onchange = renderList;
@@ -2869,12 +2881,14 @@ async function bootRooms() {
       S.room.edited = true;
       syncRoomsButton();
       $('placeHint').textContent = 'Your unsaved changes are back. Save to keep them.';
+      await openLibrary();
       return;
     } catch { clearDraft(); }
   }
   const r = last && rooms.find(o => o.id === last);
   if (r) { const { meta, level } = splitRoom(r); openRoom(level, meta); }
   else { S.room = { id: null, name: '', note: '', saved: stampOf(S.level), edited: false }; syncRoomsButton(); }
+  await openLibrary();
 }
 return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, save, refresh, buildRooms, bootRooms };
 })();

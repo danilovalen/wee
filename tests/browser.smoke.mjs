@@ -20,6 +20,11 @@ mkdirSync('shots', { recursive: true });
 try {
   await page.goto(`http://localhost:${PORT}/`);
   await page.waitForFunction(() => window.wee);
+  await page.waitForFunction(() => window.wee.roomsReady);
+  await page.evaluate(() => window.wee.roomsReady);
+  check('wee starts on the library', await page.locator('#roomsBox').isVisible());
+  check('a fresh start has no unsaved tile', await page.locator('#openNow').isHidden());
+  await page.click('#roomsBox .roomsHead button');
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
   const pick = async t => { const tab = page.locator(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); if (await tab.isVisible()) await tab.click(); await page.click(`[data-tool=${t}]`); };
@@ -376,6 +381,9 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
+  check('a reload starts on the library', await page.locator('#roomsBox').isVisible());
+  check('a saved room behind it gets no unsaved tile', await page.locator('#openNow').isHidden());
+  await page.click('#roomsBox .roomsHead button');
   check('a reload reopens the room you were on', (await text()).level.cells.filter(c => c === 'wall').length === wallsBefore && (await page.getAttribute('#roomsBtn', 'title')) === 'Smoke room');
   // autosave: an unsaved edit survives a reload, and saving clears the draft
   await page.keyboard.press('Escape').catch(() => {});
@@ -388,6 +396,9 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
+  check('unsaved work leads the library as its own tile', await page.locator('#openNow').isVisible() && (await page.textContent('#openNow')).includes('Smoke room') && (await page.textContent('#openNow')).includes('Unsaved changes'));
+  await page.click('#openNow .roomRow');
+  check('and tapping it goes back to that room', !(await page.locator('#roomsBox').isVisible()));
   check('an unsaved edit comes back after a reload', (await text()).level.cells[ay * lvA.w + ax] === 'wall' && (await page.textContent('#roomsBtn')).includes('\u2022') && (await page.textContent('#placeHint')).includes('unsaved changes are back'));
   await page.keyboard.press('Control+s');
   await page.waitForFunction(() => !document.getElementById('roomsBtn').textContent.includes('\u2022'));
@@ -415,6 +426,7 @@ try {
   await linkPage.goto(`http://localhost:${PORT}/#room=${code}`);
   await linkPage.waitForFunction(() => window.wee && window.wee.roomsReady);
   await linkPage.evaluate(() => window.wee.roomsReady);
+  check('a #room= link skips the library', !(await linkPage.locator('#roomsBox').isVisible()));
   check('a #room= link opens that room, unsaved', (await linkPage.evaluate(() => window.wee.getLevel().w)) === FIRST_W && (await linkPage.textContent('#roomsBtn')).includes('\u2022') && !(await linkPage.evaluate(() => location.hash)));
   await linkPage.close();
   await page.locator('#importFile').setInputFiles({ name: 'two.weepack', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ format: 'wee-pack', version: 1, rooms: [{ ...room(['#####', '#P..#', '#####']), id: 'ra', name: 'A' }, { ...room(['#####', '#P..#', '#####']), id: 'rb', name: 'B' }] })) });
@@ -615,6 +627,7 @@ try {
   await sp.goto(`http://localhost:${PORT + 1}/`);
   await sp.waitForFunction(() => window.wee && window.wee.roomsReady);
   await sp.evaluate(() => window.wee.roomsReady);
+  await sp.evaluate(() => document.getElementById('roomsBox').close());
   await sp.click('#roomsBtn');
   check('served with a rooms directory, rooms are kept on the server', (await sp.textContent('#roomsWhere')).includes('server'));
   await sp.keyboard.press('Escape');

@@ -17,6 +17,7 @@ try {
   await page.goto('http://localhost:5189/');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
+  await page.evaluate(() => document.getElementById('roomsBox').close());
   await page.evaluate(l => window.wee.loadLevel(l), first);
   await page.click('#checkBtn');
   await page.waitForFunction(() => /changes the answer|nothing changes|same job/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });

@@ -16,7 +16,10 @@ mkdirSync('shots', { recursive: true });
 
 try {
   await page.goto(`http://localhost:${PORT}/`);
-  await page.waitForFunction(() => window.wee);
+  await page.waitForFunction(() => window.wee && window.wee.roomsReady);
+  await page.evaluate(() => window.wee.roomsReady);
+  check('wee starts on the library, full screen', await page.evaluate(() => { const r = document.getElementById('roomsBox').getBoundingClientRect(); return document.getElementById('roomsBox').open && r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }));
+  await page.click('#roomsBox .roomsHead button');
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
   const pick = async t => { const tab = page.locator(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); if (await tab.isVisible()) await tab.click(); await page.click(`[data-tool=${t}]`); };

@@ -516,9 +516,14 @@ const M = [
   ['src/app/rooms.js', "((S.room && S.room.name) || 'Untitled')", "'Untitled'", 'browser'],
   ['src/app/rooms.js', "openRoom(starterLevel(innerHeight > innerWidth), {}); closeAll();", "openRoom(starterLevel(innerHeight > innerWidth), {});", 'browser'],
   ['src/app/rooms.js', "syncRoomsButton(); closeAll(); } });\n  }));", "syncRoomsButton(); } });\n  }));", 'browser'],
-  ['src/app/rooms.js', "say(''); sayWhere(); $('roomsBox')", "say(''); $('roomsBox')", 'single'],
+  ['src/app/rooms.js', "  say(''); sayWhere();\n", "  say('');\n", 'single'],
   ['index.html', '<div id="codeRow" class="row" hidden>', '<div id="codeRow" class="row">', 'browser'],
   ['index.html', '<div class="danger"><button id="roomDelete"', '<div><button id="roomDelete"', 'browser'],
+  // wee starts on the library (register 108)
+  ['src/app/rooms.js', "syncRoomsButton(); }\n  await openLibrary();\n}", "syncRoomsButton(); }\n}", 'browser'],
+  ['src/app/rooms.js', "Save to keep them.';\n      await openLibrary();", "Save to keep them.';", 'browser'],
+  ['src/app/rooms.js', "'Unsaved changes', closeAll)", "'Unsaved changes', () => {})", 'browser'],
+  ['src/app/rooms.js', "      history.replaceState(null, '', location.pathname + location.search);\n      return;", "      history.replaceState(null, '', location.pathname + location.search);\n      await openLibrary();\n      return;", 'browser'],
 ];
 
 let caught = 0, crashed = 0;

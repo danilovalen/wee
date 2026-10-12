@@ -21,6 +21,7 @@ try {
   await page.goto(`http://localhost:${PORT}/`);
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
+  await page.evaluate(() => document.getElementById('roomsBox').close());
   await openPanel();
   check('Generate a room opens its own panel', await page.locator('#genBox').isVisible() && !(await page.locator('#roomsBox').isVisible()));
   check('a checkpoint cannot be Must use, and says why', await page.evaluate(() => { const s = document.querySelector('#genIng select[data-id=checkpoint]'); return ![...s.options].some(o => o.value === 'must') && /never dies/.test(s.closest('label').title); }));
@@ -109,6 +110,7 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
+  await page.evaluate(() => document.getElementById('roomsBox').close());
   await openPanel();
   check('the shelf and the last recipe survive a reload', await page.locator('#genShelf .roomRow').count() === 3 && await page.inputValue('#genW') === '7');
   check('no page errors', !errors.length, errors.join(' | '));

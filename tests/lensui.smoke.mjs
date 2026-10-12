@@ -23,6 +23,7 @@ try {
   await page.goto('http://localhost:5213/');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
+  await page.evaluate(() => document.getElementById('roomsBox').close());
   await page.evaluate(l => window.wee.loadLevel(l), lit);
   const floor = await pixel(4, 1);
   await page.click('#stopsBtn');

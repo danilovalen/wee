@@ -13,6 +13,7 @@ try {
     await page.goto('http://localhost:5191/');
     await page.waitForFunction(() => window.wee && window.wee.roomsReady);
     await page.evaluate(() => window.wee.roomsReady);
+    await page.evaluate(() => document.getElementById('roomsBox').close());
     const over = () => page.evaluate(() => [document.documentElement, ...document.querySelectorAll('main > *')].map(e => e.scrollHeight - e.clientHeight).filter(n => n > 0).length);
     const bad = [];
     // The context bar shows every tool whole: its controls on top, one line of text under them.
@@ -85,6 +86,7 @@ try {
   await low.goto('http://localhost:5191/');
   await low.waitForFunction(() => window.wee && window.wee.roomsReady);
   await low.evaluate(() => window.wee.roomsReady);
+  await low.evaluate(() => document.getElementById('roomsBox').close());
   const reach = [];
   for (const [col, last] of [['#tools', '#palette button:last-child'], ['#powers', 'input[name=clock]:last-of-type']]) {
     const b = await low.locator(col).boundingBox();

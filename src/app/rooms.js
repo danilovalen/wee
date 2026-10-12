@@ -111,6 +111,16 @@ export async function refresh() {
   return saved;
 }
 
+// The library is where wee starts. The room open behind it, when it has unsaved changes,
+// leads the page as its own tile, so a launch never hides work in progress.
+async function openLibrary() {
+  say(''); sayWhere();
+  const now = $('openNow'), live = dirty();
+  now.replaceChildren(...(live ? [row(S.level, (S.room && S.room.name) || 'Untitled', 'Unsaved changes', closeAll)] : []));
+  if (!$('roomsBox').open) $('roomsBox').showModal();
+  await refresh();
+}
+
 // A room's tags: what it holds, what its saved solution does, and whether it started generated.
 const GENERATED = 'from:generated';
 function tagsOf(r) {
@@ -172,7 +182,7 @@ export function buildRooms(actions) {
   }));
   // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
   // generate, templates) and This room (name, note, save, share, delete), from the header title.
-  $('roomsBtn').onclick = async () => { say(''); sayWhere(); $('roomsBox').showModal(); await refresh(); };
+  $('roomsBtn').onclick = openLibrary;
   $('roomTitle').onclick = () => { fillCurrent(); say(''); $('shareOut').hidden = true; $('infoBox').showModal(); };
   $('codeBtn').onclick = () => { const open = $('codeRow').hidden; $('codeRow').hidden = !open; $('codeBtn').setAttribute('aria-expanded', String(open)); if (open) $('codeIn').focus(); };
   $('tagFilter').onchange = renderList;
@@ -256,10 +266,12 @@ export async function bootRooms() {
       S.room.edited = true;
       syncRoomsButton();
       $('placeHint').textContent = 'Your unsaved changes are back. Save to keep them.';
+      await openLibrary();
       return;
     } catch { clearDraft(); }
   }
   const r = last && rooms.find(o => o.id === last);
   if (r) { const { meta, level } = splitRoom(r); openRoom(level, meta); }
   else { S.room = { id: null, name: '', note: '', saved: stampOf(S.level), edited: false }; syncRoomsButton(); }
+  await openLibrary();
 }

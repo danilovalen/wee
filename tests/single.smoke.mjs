@@ -15,6 +15,7 @@ try {
   check('the file opens from disk', true);
   check('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.evaluate(() => window.wee.roomsReady);
+  await page.evaluate(() => document.getElementById('roomsBox').close());
   await page.click('#navRooms');
   check('from a file, rooms are kept in this browser', (await page.textContent('#roomsWhere')).includes('this browser'));
   await page.click('#roomNew');
