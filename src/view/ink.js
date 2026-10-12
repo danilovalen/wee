@@ -12,7 +12,7 @@ export const INK = {
   water: '#5aa9ff', waterHi: '#c2e2ff', shock: '#fff3a8',
   armor: '#b9c7e6',
   floor: '#e4e7ec', grid: '#d6dae2', wall: '#a9b0bf', wallTop: '#c3c9d5',
-  player: '#4cc9ff', start: '#4cc9ff', shadow: 'rgba(40,44,60,0.22)',
+  player: '#7b6cff', start: '#7b6cff', shadow: 'rgba(40,44,60,0.22)',
   mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff4d6d', barrel: '#8f86d9', box: '#ffa94d', boxEdge: '#c97326',
   heavy: '#9b8cff', heavyEdge: '#5b4fc8', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
   red: '#ff6b81', blue: '#5aa9ff', yellow: '#ffd84d', green: '#5edc9a',

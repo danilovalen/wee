@@ -199,7 +199,7 @@ try {
     const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * tile), Math.round((y + 0.75) * tile), 1, 1).data;
     return [d[0], d[1], d[2]];
   }, s.player);
-  check('the player is painted on its tile', px[1] > 180 && px[2] > 200 && px[0] < px[2] - 60, px.join(','));
+  check('the player is painted on its tile', px[2] > 200 && px[2] - px[1] > 80 && px[0] < px[2] - 60, px.join(','));
   await page.locator('#statusList [data-power=armored]').setChecked(true);
   await page.evaluate(() => window.advanceTime(60));
   const rim = await page.evaluate(({ x, y }) => {

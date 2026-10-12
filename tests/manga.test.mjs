@@ -32,4 +32,10 @@ check('text is Bitter', /--text-face: 'Bitter'/.test(root) && /--body: var\(--te
 check('controls are Asap', /--label-face: 'Asap'/.test(root) && /var\(--label-face\)/.test(rule('button, .chip, .wellTabs, .statusBar')));
 check('heads are Asap 800', /var\(--label-face\)[^}]*800/.test(rule('h2, .ghead, .rooms h3, .keysList h3, .chip .g')));
 check('the wordmark is Comfortaa', /--wee-face: 'Comfortaa'/.test(root) && /var\(--wee-face\)/.test(rule('.logo')));
+// The player wears the wordmark's colour: wee is the player.
+{
+  const ink = readFileSync('src/view/ink.js', 'utf8').match(/player: '(#[0-9a-f]{6})'/)[1];
+  const accent = css.match(/--accent: (#[0-9a-f]{6})/)[1];
+  check('the player is drawn in the logo\'s colour', ink === accent, `${ink} vs ${accent}`);
+}
 done();

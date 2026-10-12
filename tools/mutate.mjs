@@ -501,7 +501,7 @@ const M = [
   ['src/app/fit.js', "    if (!wide) inside(el, sheet);\n", "", 'phone'],
   ['src/app/sheets.js', "  sheet.hidden = !name || name === 'build';", "  sheet.hidden = false;", 'phone'],
   ['src/app/well.js', "  $('sheet').hidden = true; document", "  document", 'phone'],
-  ['src/view/ink.js', "player: '#4cc9ff'", "player: '#e4e7ec'", 'browser'],
+  ['src/view/ink.js', "player: '#7b6cff'", "player: '#e4e7ec'", 'browser'],
   ['style.css', "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 0;", "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 1px solid var(--line);", 'manga'],
   ['style.css', "button.on { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest)", "button.on { color: var(--accent); box-shadow: var(--sticker-rest)", 'browser'],
   ['src', "  if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);\n", "", 'browser'],
@@ -534,6 +534,7 @@ const M = [
   // Lenses tab: hover text, two columns, no More (register 110)
   ['src/app/lenses.js', "textContent: label, title: LENS_TIPS[id] });", "textContent: label });", 'lensui'],
   ['style.css', "  .wellBody .lensBox:not([hidden]) { display: grid;", "  .wellBody .lensBox:not([hidden]) { display: block;", 'lensui'],
+  ['src/view/ink.js', "player: '#7b6cff', start:", "player: '#4cc9ff', start:", 'manga'],
 ];
 
 let caught = 0, crashed = 0;
