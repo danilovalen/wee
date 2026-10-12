@@ -182,6 +182,7 @@ His answers, 2026-10-11 and 2026-10-12:
 | a sliding heavy box, a closing door, a death block | sets it off |
 | armored | a blast does not hurt you |
 | lone turrets, moving blocks | survive a blast |
+| a turret on a light box | destroyed with the box (one on a heavy box or strong enemy survives with it) |
 
 Built as the `bomb` piece (Pieces). Pushed like a light box, it can stick and glue, and it can be
 pushed into water (it sinks rather than stopping at the edge). The timer is the fuse: a full cord

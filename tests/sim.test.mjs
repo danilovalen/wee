@@ -1198,6 +1198,10 @@ const LONG = ['##########', '#..P....##', '##########'];
   const ar = createGame(room(['#######', '#POX..#', '#######'], { powers: { armored: true } }));
   step(ar, ['right']);
   check('armored, a blast does not hurt you', !ar.deaths && ar.events.some(e => e.type === 'blast'), JSON.stringify(ar.events));
+  const mt = createGame(room(['########', '#.OB..P#', '#..H...#', '########']));
+  mt.entities[1].turret = { dirs: ['up'], mode: 'input', aim: 0 }; mt.entities[2].turret = { dirs: ['up'], mode: 'input', aim: 0 };
+  explode(mt, mt.entities[0]);
+  check('a turret riding a light box goes with the box; one on a heavy box stays', mt.entities[1].dead && !mt.entities[2].dead && !mt.beams.some(b => b.id === mt.entities[1].id), JSON.stringify(mt.entities.map(e => [e.kind, e.dead])));
   check('a bomb is a piece a level can hold', parseLevel(JSON.stringify(room(['#####', '#PO.#', '#####']))).entities[0].kind === 'bomb');
 }
 done();
