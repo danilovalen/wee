@@ -71,8 +71,17 @@ export function refreshDoors(s) {
 export function respawn(s) {
   for (const e of s.entities) e.dead = true;
   s.entities = freshPieces(s.origin);
+  s.broken = [];
   Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, pushing: null, snap: true });
   refreshDoors(s);
+}
+
+// A heavy step that reached a breakable block breaks it. The list is replaced, never edited,
+// so a copy of a run can share it.
+export function smash(s, t) {
+  if (!t.crack) return;
+  s.broken = [...s.broken, t.y * s.w + t.x];
+  s.events.push({ type: 'break', x: t.x, y: t.y });
 }
 
 export function die(s) {

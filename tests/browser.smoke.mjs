@@ -709,6 +709,20 @@ try {
   check('walls side by side are one mass, a lone wall rounds its corners', seam < 210 && face < 210 && corner > face + 30, JSON.stringify({ seam, corner, face }));
   const grav = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round((3 + 15 / 32) * t), Math.round((3 + 12 / 32) * t), 1, 1).data]; });
   check('gravel is drawn in its sand colour', Math.abs(grav[0] - 220) < 12 && Math.abs(grav[1] - 184) < 12 && Math.abs(grav[2] - 143) < 12, JSON.stringify(grav));
+
+  // A breakable block wears dark cracks; broken by a dive, it is floor for the rest of the run.
+  const kr = room(['#######', '#P.k..#', '#######']); kr.powers.dive = true;
+  await page.evaluate(l => window.wee.loadLevel(l), kr);
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const crackInk = await red(3 + 13 / 32, 1 + 19 / 32), crackFace = await red(3 + 26 / 32, 1 + 16 / 32);
+  check('a breakable block wears dark cracks on the wall face', crackInk < 120 && crackFace > 150 && crackFace < 200, JSON.stringify({ crackInk, crackFace }));
+  await page.evaluate(() => { window.__manualClock = true; });
+  await page.keyboard.press('e');
+  await page.evaluate(() => { window.wee.press('right'); window.advanceTime(60); window.wee.press('right'); window.advanceTime(1500); });
+  const broke = JSON.parse(await page.evaluate(() => window.renderGameToText()));
+  const gone = await red(3 + 6 / 32, 1 + 26 / 32);
+  check('a dive breaks it, and it is drawn as floor', broke.broken?.[0]?.join() === '3,1' && broke.player.x === 5 && gone > 215, JSON.stringify({ broken: broke.broken, x: broke.player.x, gone }));
+  await page.keyboard.press('e');
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) {
   check('the smoke ran to the end', false, err.message);

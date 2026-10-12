@@ -12,6 +12,7 @@ export function solidCell(s, x, y) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
   if (c === 'wall' || c.startsWith('receiver:') || c.startsWith('spring:')) return true;
+  if (c === 'crack') return !s.broken.includes(y * s.w + x);
   if (c.startsWith('door:')) return !s.open[c.slice(5)];
   if (c.startsWith('idoor:')) return !!s.open[c.slice(6)];
   return false;
@@ -31,12 +32,14 @@ export function facing(s, x, y, d) {
 // it only along its listed directions; any other way, it is a wall.
 export const gateAt = (s, x, y) => { const c = inb(s, x, y) && cellAt(s, x, y); return c && c.startsWith('gate:') ? c.slice(5).split(',') : null; };
 
-// wet: whether this mover may enter water (beams always may).
-export function stepTo(s, x, y, d, wet = true) {
+// wet: whether this mover may enter water (beams always may). heavy: whether it breaks a
+// breakable block; the step then lands on it, marked crack, and the mover breaks it on arrival.
+export function stepTo(s, x, y, d, wet = true, heavy = false) {
   d = facing(s, x, y, d);
   const [dx, dy] = DIRS[d], nx = x + dx, ny = y + dy;
   const from = gateAt(s, x, y), to = gateAt(s, nx, ny);
   if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;
+  if (heavy && inb(s, nx, ny) && cellAt(s, nx, ny) === 'crack' && solidCell(s, nx, ny)) return { x: nx, y: ny, d, crack: true };
   if (solidCell(s, nx, ny)) return null;
   if (!wet && cellAt(s, nx, ny) === 'water') return null;
   if (cellAt(s, nx, ny) === 'death') return { x: nx, y: ny, d, death: true };

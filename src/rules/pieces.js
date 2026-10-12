@@ -1,8 +1,8 @@
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
-import { DIRS, ENEMY, MOVES, wades } from './base.js';
+import { DIRS, ENEMY, MOVES, breaks, wades } from './base.js';
 import { turnTurrets } from './beams.js';
 import { crushes, entAt, inb, onGravel, playerAt, pushTo, stepTo } from './grid.js';
-import { die, kill, land, refreshDoors } from './life.js';
+import { die, kill, land, refreshDoors, smash } from './life.js';
 import { carry, entered, stick, stuckTo } from './sticky.js';
 import { follow, lead, meet, partnerAt, partnerOf } from './glue.js';
 
@@ -49,11 +49,12 @@ export const patrolDir = e => e.axis === 'h' ? (e.dir > 0 ? 'right' : 'left') : 
 // Moves one tile along its patrol, or the given way. Blocked, it stays and turns its
 // patrol. A triangle turns a patrol onto the other axis.
 export function moveMover(s, e, d) {
-  const t = stepTo(s, e.x, e.y, d || patrolDir(e), wades(e)), ridden = stuckTo(s) === e;
+  const t = stepTo(s, e.x, e.y, d || patrolDir(e), wades(e), breaks(e)), ridden = stuckTo(s) === e;
   let pushed = false;
   // Blocked, the slide ends there; a patrol turns, so its next slide goes the other way.
   const blocked = () => { e.dir = -e.dir; };
   if (!t) { blocked(); return; }
+  smash(s, t);
   const mx = t.x - e.x, my = t.y - e.y, ahead = partnerAt(s, e, t.x, t.y);
   if (ahead && !lead(s, e, mx, my)) { blocked(); return; }
   const o = entAt(s, t.x, t.y, e);
@@ -88,8 +89,9 @@ const CRUSHABLE = ['enemy', 'strong', 'box'];
 // tile per tick until something stops it. A heavy box squashes enemies, light boxes and you; an
 // enemy that reaches you kills you; anything else just stops.
 export function slidePiece(s, e) {
-  const t = stepTo(s, e.x, e.y, e.slide, wades(e));
+  const t = stepTo(s, e.x, e.y, e.slide, wades(e), breaks(e));
   if (!t) { e.slide = null; return; }
+  smash(s, t);
   const mx = t.x - e.x, my = t.y - e.y, ahead = partnerAt(s, e, t.x, t.y);
   if (ahead && !lead(s, e, mx, my)) { e.slide = null; return; }
   const o = entAt(s, t.x, t.y, e);
@@ -140,7 +142,7 @@ export function fireSprings(s) {
       s.events.push({ type: 'spring', x, y, d });
     }
     const e = entAt(s, x, y);
-    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e))) {
+    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e), breaks(e))) {
       e.slide = d; e.rush = false; e.rushDir = null;
       s.events.push({ type: 'spring', x, y, d });
     }

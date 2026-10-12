@@ -18,6 +18,7 @@ export const TOOLS = [
   { id: 'gate', label: 'One-way', group: 'tiles' },
   { id: 'spring', label: 'Spring', group: 'tiles' },
   { id: 'death', label: 'Death block', group: 'tiles' },
+  { id: 'crack', label: 'Breakable block', group: 'tiles' },
   { id: 'water', label: 'Water', group: 'floors' },
   { id: 'sticky', label: 'Sticky puddle', group: 'floors' },
   { id: 'gravel', label: 'Gravel', group: 'floors' },

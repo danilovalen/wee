@@ -45,5 +45,9 @@ export const WADES = ['strong', 'heavy', 'mover'];
 export const wades = e => WADES.includes(e.kind);
 // A closing door squashes what is in it, unless one of these holds it open.
 export const HOLDS_DOOR = ['strong', 'heavy', 'mover'];
+// A breakable block stops everything but these, which break it and go on through: a strong
+// enemy, a heavy box, and you diving.
+export const BREAKS = ['strong', 'heavy'];
+export const breaks = e => BREAKS.includes(e.kind);
 
 export const DIR_OF = (dx, dy) => Object.keys(DIRS).find(k => DIRS[k][0] === dx && DIRS[k][1] === dy);

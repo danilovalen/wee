@@ -18,7 +18,7 @@ export function createGame(level) {
     checkpoint: { ...l.start },
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
     entities: freshPieces(l.entities),
-    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
+    open: {}, broken: [], lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };
   computeBeams(s, false);
   refreshDoors(s);
@@ -26,7 +26,7 @@ export function createGame(level) {
 }
 
 // A copy of a run to try a move on. What a run never changes is shared (the cells, the
-// room as it started, the start); the checkpoint, beams, lit and shocked are replaced,
+// room as it started, the start); the checkpoint, broken blocks, beams, lit and shocked are replaced,
 // never edited in place, so they are shared too. Everything a tick can edit is copied.
 export function cloneGame(s) {
   const p = s.player;
@@ -87,6 +87,7 @@ export function gameText(s, mode = 'play') {
       ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, aim: aimOf(e.turret) } } : {}),
     })),
     open: COLOURS.filter(c => s.open[c]),
+    ...(s.broken.length ? { broken: s.broken.map(i => [i % s.w, Math.floor(i / s.w)]) } : {}),
     beams: s.beams.map(b => ({ from: b.path[0], to: b.path[b.path.length - 1] })),
     powers: POWERS.filter(p => s.powers[p] && !NEEDS[p]),
   });

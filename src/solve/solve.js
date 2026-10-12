@@ -18,6 +18,7 @@ export function stateKey(s) {
   for (const e of s.entities) if (!e.dead) k += `${e.id},${e.x},${e.y},${e.dir},${e.axis},${e.sticky ? 1 : 0},${e.glue || 0},${e.turret ? e.turret.aim % e.turret.dirs.length : -1};`;
   k += '|';
   for (const c of Object.keys(s.open).sort()) if (s.open[c]) k += c + ',';
+  if (s.broken.length) k += '|' + [...s.broken].sort((a, b) => a - b).join(',');
   return k;
 }
 

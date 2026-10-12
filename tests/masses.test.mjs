@@ -3,7 +3,7 @@ import { quarter, kindIn } from '../src/view/masses.js';
 import { suite } from './suite.mjs';
 
 const { check, done } = suite('masses');
-const map = rows => kindIn(rows.join('').split('').map(c => ({ '#': 'wall', w: 'water', '.': '', '/': 'tri:se', '7': 'tri:nw', '^': 'spring:up', 'r': 'receiver:red' })[c]), rows[0].length, rows.length);
+const map = rows => kindIn(rows.join('').split('').map(c => ({ '#': 'wall', w: 'water', '.': '', '/': 'tri:se', '7': 'tri:nw', '^': 'spring:up', 'r': 'receiver:red', k: 'crack' })[c]), rows[0].length, rows.length);
 const all = (k, kind, x, y) => [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([dx, dy]) => quarter(k, kind, x, y, dx, dy));
 
 const alone = map(['.....', '.....', '..#..', '.....', '.....']);
@@ -26,4 +26,6 @@ const away = map(['.....', '.#/..', '.....']);
 check('but not along its slope', quarter(away, 'wall', 1, 1, 1, 1) === 'round');
 const blocks = map(['.....', '.#^r.', '.....']);
 check('a spring and a laser catcher are blocks in the wall', quarter(blocks, 'wall', 1, 1, 1, 1) === 'full' && quarter(blocks, 'wall', 2, 1, 1, -1) === 'full' && quarter(blocks, 'wall', 3, 1, 1, 1) === 'round');
+const kb = map(['.....', '.#k..', '.....']);
+check('a breakable block is part of the wall mass', quarter(kb, 'wall', 1, 1, 1, -1) === 'full' && quarter(kb, 'wall', 2, 1, -1, 1) === 'full');
 done();

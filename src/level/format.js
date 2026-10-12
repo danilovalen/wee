@@ -49,7 +49,7 @@ export function parseLevel(text) {
 }
 
 export function isCell(c) {
-  if (c === '' || c === 'wall' || c === 'checkpoint') return true;
+  if (c === '' || c === 'wall' || c === 'crack' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
   if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
   if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;

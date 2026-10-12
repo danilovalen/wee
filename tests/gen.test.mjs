@@ -3,7 +3,7 @@
 // set to Off ever reaches a room.
 import { parseLevel } from '../src/level/format.js';
 import { solve } from '../src/solve/solve.js';
-import { contains, MECHANISMS } from '../src/solve/tags.js';
+import { contains, uses, MECHANISMS } from '../src/solve/tags.js';
 import { rng } from '../src/gen/random.js';
 import { INGREDIENTS, ING, knock } from '../src/gen/ingredients.js';
 import { offFound, judge } from '../src/gen/score.js';
@@ -145,4 +145,7 @@ check('the same recipe gives the same room', !again.length, again.join());
 check('another seed gives another room', JSON.stringify(generateNow({ ing: { box: 'must' }, seed: 1 }, { maxTries: 800 }).level) !== JSON.stringify(generateNow({ ing: { box: 'must' }, seed: 2 }, { maxTries: 800 }).level));
 const hopeless = generateNow({ w: 5, h: 5, min: 40, max: 40, seed: 1 }, { maxTries: 30 });
 check('when nothing fits, the closest room comes back with its verdict', !hopeless.fit && hopeless.tries === 30 && hopeless.level && hopeless.verdict, JSON.stringify(hopeless.verdict));
+// A breakable block brings Dive, so a room that must use one can be made, and its answer breaks it.
+const kfit = [1, 4].map(seed => generateNow({ ing: { crack: 'must' }, seed, w: 8, h: 8, min: 3, max: 12 }, { maxTries: 400 }));
+check('a room that must use a breakable block is made, and its answer breaks the block', kfit.every(r => r.fit && uses(r.level, solve(r.level).moves).includes('use:break')), kfit.map(r => r.fit).join());
 done();

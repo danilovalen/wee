@@ -141,19 +141,25 @@ Open questions he names or that follow (mine):
 
 **Parked by the owner** ("that's why I won't start this again"). Recorded, not planned.
 
-## Breakable wall (2026-10-11)
+## Breakable wall (2026-10-11) -- built 2026-10-12
 
 > breakable wall. wall which seems breakable. breaks by dive, strong enemies and heavy boxes (yeah
 > them again)
 
-Notes (mine):
-- **Looks cracked**, so it reads as a wall that will not last: same mass as walls, with cracks.
-- **Breaks on impact from the heavy set**: your dive, a strong enemy, a heavy box. That is the
-  third time this list appears (magnets, doors held open), which argues again for one named
-  "heavy things" rule.
-- **Open:** does the breaker stop where the wall was, or keep sliding through the gap? Does a
-  plain slide into it just stop you, like any wall? Does a turret beam break it?
-- **Open:** gone for good, or does it come back on Retry only (rooms reset anyway)?
+His answers, 2026-10-12:
+
+| question | answer |
+|---|---|
+| where does the breaker end up | it slides on through the gap |
+| a plain slide, a light box, a weak enemy | stops against it, like any wall |
+| a turret beam | stops at it, does not break it |
+| how long it stays broken | for the run; Reset and a death put it back |
+
+Built as the `crack` cell ("Breakable block", in Tiles). It joins the wall mass
+with dark cracks drawn on top; broken, it is floor for the rest of the run, with a short burst and
+a shake. The heavy set is `BREAKS` in `src/rules/base.js` (strong enemy, heavy box) plus your
+dive. In the generator it brings Dive, because a heavy box needs a spring to reach it and almost
+never made a room that fits.
 
 ## Bomb (2026-10-11)
 

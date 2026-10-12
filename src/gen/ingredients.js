@@ -87,6 +87,7 @@ export const INGREDIENTS = [
   { id: 'water', label: 'Water', tags: ['tile:water'], with: ['mover'], place: (l, r) => { const i = tile(l, r, 'water'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'water'; } },
   { id: 'sticky', label: 'Sticky puddle', tags: ['tile:sticky'], with: ['box'], place: (l, r) => { tile(l, r, 'sticky'); piece(l, r, { kind: 'box' }); } },
   { id: 'gravel', label: 'Gravel', tags: ['tile:gravel'], place: (l, r) => { const i = tile(l, r, 'gravel'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'gravel'; } },
+  { id: 'crack', label: 'Breakable block', tags: ['tile:crack'], with: ['dive'], place: (l, r) => tile(l, r, 'crack') },
   { id: 'checkpoint', label: 'Checkpoint', tags: ['tile:checkpoint'], allowedOnly: 'A solution never dies, so a checkpoint cannot change it.', place: (l, r) => tile(l, r, 'checkpoint') },
   { id: 'mover', label: 'Moving block', tags: ['piece:mover'], place: (l, r) => piece(l, r, { kind: 'mover', axis: r.pick(['h', 'v']) }) },
   { id: 'follow', label: 'Moves the same way as you', tags: ['clock:follow'], with: ['mover'], standIn: null, knock: l => ({ ...l, entities: l.entities.map(e => e.mode === 'follow' ? { ...e, mode: 'input' } : e) }), place: (l, r) => piece(l, r, { kind: 'mover', axis: 'h', mode: 'follow' }) },

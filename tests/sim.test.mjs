@@ -1,4 +1,4 @@
-import { createGame, step, gameText, replay } from '../src/rules/game.js';
+import { createGame, step, gameText, replay, cloneGame } from "../src/rules/game.js";
 import { worldStep as rawWorldStep } from '../src/rules/pieces.js';
 import { aimKey } from '../src/rules/player.js';
 import { parseLevel, emptyLevel, isCell, resizeSide, wallBorder } from '../src/level/format.js';
@@ -1121,5 +1121,38 @@ const LONG = ['##########', '#..P....##', '##########'];
   step(h, ['right']); step(h, ['right']); for (let i = 0; i < 60 && (h.player.dir || h.entities.some(e => e.slide)); i++) step(h);
   check('a heavy box sent sliding stops on gravel', at(h.entities[0], 5, 1), JSON.stringify(h.entities[0]));
   check('gravel is a tile a room can hold', isCell('gravel'));
+}
+{ // a breakable block: a wall to light things, broken by a dive, a heavy box or a strong enemy
+  const kAt = (s, x, y) => s.broken.includes(y * s.w + x);
+  const run = s => { for (let i = 0; i < 80 && (s.player.dir || s.entities.some(e => !e.dead && (e.slide || e.rush))); i++) step(s); return s; };
+  const p = slide(createGame(room(['########', '#P..k..#', '########'])), 'right');
+  check('a plain slide stops against a breakable block', at(p.player, 3, 1) && !p.broken.length, JSON.stringify(p.player));
+  const d = createGame(room(['########', '#P..k..#', '########'], { powers: { dive: true } }));
+  step(d, ['right']); step(d, ['right']); run(d);
+  check('a dive breaks it and slides on through', at(d.player, 6, 1) && kAt(d, 4, 1), JSON.stringify([d.player, d.broken]));
+  check('the run text lists the broken block', JSON.parse(gameText(d)).broken?.[0]?.join() === '4,1', gameText(d));
+  step(d, ['respawn']);
+  check('Reset puts the block back', !d.broken.length && solidCell(d, 4, 1));
+  const b = slide(createGame(room(['########', '#PB..k.#', '########'])), 'right');
+  check('a pushed box stops against it', at(b.entities[0], 4, 1) && !b.broken.length, JSON.stringify(b.entities[0]));
+  const h = run((s => { step(s, ['right']); step(s, ['right']); return s; })(createGame(room(['##########', '#P.H.k...#', '##########'], { powers: { dive: true } }))));
+  check('a heavy box sent sliding breaks it and slides on through', at(h.entities[0], 8, 1) && kAt(h, 5, 1), JSON.stringify([h.entities[0], h.broken]));
+  const st = createGame(room(['########', '#P.....#', '#S..k..#', '########']));
+  settle(worldStep(st, 'right'));
+  check('a strong enemy on patrol breaks it and goes on through', at(st.entities[0], 6, 2) && kAt(st, 4, 2), JSON.stringify([st.entities[0], st.broken]));
+  const we = createGame(room(['########', '#P.....#', '#E..k..#', '########']));
+  settle(worldStep(we, 'right'));
+  check('a weak enemy stops against it', at(we.entities[0], 3, 2) && !we.broken.length, JSON.stringify(we.entities[0]));
+  const sp = run((s => { step(s); return s; })(createGame(room(['#######', '#6Hk..#', '#P....#', '#######']))));
+  check('a spring launches a heavy box into it, and the box breaks it', kAt(sp, 3, 1) && sp.entities[0].x === 5, JSON.stringify([sp.entities[0], sp.broken]));
+  const t = createGame(room(['########', '#T.k..P#', '########'])); step(t);
+  check('a turret beam stops at it and does not break it', !t.deaths && !t.broken.length && t.beams[0].path.at(-1)[0] === 2, JSON.stringify([t.deaths, t.beams[0]?.path]));
+  const c = createGame(room(['########', '#P..k..#', '########'], { powers: { dive: true } })), copy = cloneGame(c);
+  step(copy, ['right']); step(copy, ['right']); run(copy);
+  check('breaking it in a copy leaves the original whole', kAt(copy, 4, 1) && !c.broken.length);
+  check('a breakable block is a tile a room can hold', isCell('crack'));
+  const ed = room(['#####', '#P..#', '#####']);
+  place(ed, { tool: 'crack' }, 3, 1, 'place');
+  check('the tool places a breakable block, and Look names it', ed.cells[8] === 'crack' && describe(ed, 3, 1) === 'Breakable block', ed.cells[8]);
 }
 done();

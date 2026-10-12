@@ -74,15 +74,19 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   }
 }
 
+const BREAK_MS = 300;
+
 // prev: positions before the last tick; alpha: 0..1 progress into the next tick.
 export function drawPlay(g, s, prev, alpha, fx, now) {
   frame.clock = now;
-  const shake = fx.find(f => f.type === 'crash' && now - f.at < 180);
+  const shake = fx.find(f => (f.type === 'crash' || f.type === 'break') && now - f.at < 180);
   g.save();
   if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
   drawFloor(g, s.w, s.h);
-  drawMasses(g, s.cells, s.w, s.h);
-  s.cells.forEach((c, i) => { if (!inMass(c) || overlay(c)) drawCell(g, c, i % s.w, Math.floor(i / s.w), s, 1, overlay(c)); });
+  // A broken block is floor for the rest of the run.
+  const cells = s.broken.length ? s.cells.map((c, i) => s.broken.includes(i) ? '' : c) : s.cells;
+  drawMasses(g, cells, s.w, s.h);
+  cells.forEach((c, i) => { if (!inMass(c) || overlay(c)) drawCell(g, c, i % s.w, Math.floor(i / s.w), s, 1, overlay(c)); });
   // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
   // as its beam touches, yours for a moment.
   const crackle = (cells, k) => {
@@ -94,6 +98,13 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     }
     g.globalAlpha = 1;
   };
+  // A block breaking throws its pieces out and fades.
+  for (const f of fx) if (f.type === 'break' && now - f.at < BREAK_MS) {
+    const t = (now - f.at) / BREAK_MS, X = f.x * T + T / 2, Y = f.y * T + T / 2;
+    g.fillStyle = INK.wall; g.globalAlpha = 1 - t;
+    for (let k = 0; k < 6; k++) { const a = k * 1.047 + 0.4, r = 4 + 14 * t; g.fillRect(X + Math.cos(a) * r - 3, Y + Math.sin(a) * r - 3 + 8 * t * t, 6, 6); }
+    g.globalAlpha = 1;
+  }
   crackle(s.shocked, 1);
   for (const f of fx) if (f.type === 'laser' && f.shocked && now - f.at < LASER_MS) crackle(f.shocked, 1 - (now - f.at) / LASER_MS);
   const a = ease(alpha);

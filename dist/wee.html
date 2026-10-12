@@ -195,7 +195,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   main > * { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
   aside { padding: 10px 12px; }
   .grid { gap: 4px; }
-  .grid button { padding: 3px 6px; }
+  .grid button { padding: 2px 6px; }
   .power small { display: none; }
   .power { padding: 3px 0; }
   h2 { margin-bottom: 4px; }
@@ -776,9 +776,13 @@ const WADES = ['strong', 'heavy', 'mover'];
 const wades = e => WADES.includes(e.kind);
 // A closing door squashes what is in it, unless one of these holds it open.
 const HOLDS_DOOR = ['strong', 'heavy', 'mover'];
+// A breakable block stops everything but these, which break it and go on through: a strong
+// enemy, a heavy box, and you diving.
+const BREAKS = ['strong', 'heavy'];
+const breaks = e => BREAKS.includes(e.kind);
 
 const DIR_OF = (dx, dy) => Object.keys(DIRS).find(k => DIRS[k][0] === dx && DIRS[k][1] === dy);
-return { TICK_MS, RT_PERIOD, HIDE_TICKS, LASER_TICKS, DIRS, OPPOSITE, COLOURS, CORNERS, EXIT_FACE, ENTRY_FACE, OUT, OPP, openFaces, turn, CLOCKWISE, KINDS, MOVES, ENEMY, MODES, CARRIES_TURRET, POWERS, NEEDS, WADES, wades, HOLDS_DOOR, DIR_OF };
+return { TICK_MS, RT_PERIOD, HIDE_TICKS, LASER_TICKS, DIRS, OPPOSITE, COLOURS, CORNERS, EXIT_FACE, ENTRY_FACE, OUT, OPP, openFaces, turn, CLOCKWISE, KINDS, MOVES, ENEMY, MODES, CARRIES_TURRET, POWERS, NEEDS, WADES, wades, HOLDS_DOOR, BREAKS, breaks, DIR_OF };
 })();
 // ---- src/rules/grid.js
 const m1 = (() => {
@@ -796,6 +800,7 @@ function solidCell(s, x, y) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
   if (c === 'wall' || c.startsWith('receiver:') || c.startsWith('spring:')) return true;
+  if (c === 'crack') return !s.broken.includes(y * s.w + x);
   if (c.startsWith('door:')) return !s.open[c.slice(5)];
   if (c.startsWith('idoor:')) return !!s.open[c.slice(6)];
   return false;
@@ -815,12 +820,14 @@ function facing(s, x, y, d) {
 // it only along its listed directions; any other way, it is a wall.
 const gateAt = (s, x, y) => { const c = inb(s, x, y) && cellAt(s, x, y); return c && c.startsWith('gate:') ? c.slice(5).split(',') : null; };
 
-// wet: whether this mover may enter water (beams always may).
-function stepTo(s, x, y, d, wet = true) {
+// wet: whether this mover may enter water (beams always may). heavy: whether it breaks a
+// breakable block; the step then lands on it, marked crack, and the mover breaks it on arrival.
+function stepTo(s, x, y, d, wet = true, heavy = false) {
   d = facing(s, x, y, d);
   const [dx, dy] = DIRS[d], nx = x + dx, ny = y + dy;
   const from = gateAt(s, x, y), to = gateAt(s, nx, ny);
   if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;
+  if (heavy && inb(s, nx, ny) && cellAt(s, nx, ny) === 'crack' && solidCell(s, nx, ny)) return { x: nx, y: ny, d, crack: true };
   if (solidCell(s, nx, ny)) return null;
   if (!wet && cellAt(s, nx, ny) === 'water') return null;
   if (cellAt(s, nx, ny) === 'death') return { x: nx, y: ny, d, death: true };
@@ -928,8 +935,17 @@ function refreshDoors(s) {
 function respawn(s) {
   for (const e of s.entities) e.dead = true;
   s.entities = freshPieces(s.origin);
+  s.broken = [];
   Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, pushing: null, snap: true });
   refreshDoors(s);
+}
+
+// A heavy step that reached a breakable block breaks it. The list is replaced, never edited,
+// so a copy of a run can share it.
+function smash(s, t) {
+  if (!t.crack) return;
+  s.broken = [...s.broken, t.y * s.w + t.x];
+  s.events.push({ type: 'break', x: t.x, y: t.y });
 }
 
 function die(s) {
@@ -953,7 +969,7 @@ function land(s, e, t) {
   if (c === 'water') e.sticky = false;
   return true;
 }
-return { startAim, freshPieces, switchesOf, refreshDoors, respawn, die, kill, land };
+return { startAim, freshPieces, switchesOf, refreshDoors, respawn, smash, die, kill, land };
 })();
 // ---- src/rules/beams.js
 const m3 = (() => {
@@ -1164,10 +1180,10 @@ return { partnerOf, meet, unglue, lead, follow, partnerAt, checkGlue };
 })();
 // ---- src/rules/pieces.js
 const m6 = (() => {
-const { DIRS, ENEMY, MOVES, wades } = m0;
+const { DIRS, ENEMY, MOVES, breaks, wades } = m0;
 const { turnTurrets } = m3;
 const { crushes, entAt, inb, onGravel, playerAt, pushTo, stepTo } = m1;
-const { die, kill, land, refreshDoors } = m2;
+const { die, kill, land, refreshDoors, smash } = m2;
 const { carry, entered, stick, stuckTo } = m4;
 const { follow, lead, meet, partnerAt, partnerOf } = m5;
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
@@ -1220,11 +1236,12 @@ const patrolDir = e => e.axis === 'h' ? (e.dir > 0 ? 'right' : 'left') : (e.dir 
 // Moves one tile along its patrol, or the given way. Blocked, it stays and turns its
 // patrol. A triangle turns a patrol onto the other axis.
 function moveMover(s, e, d) {
-  const t = stepTo(s, e.x, e.y, d || patrolDir(e), wades(e)), ridden = stuckTo(s) === e;
+  const t = stepTo(s, e.x, e.y, d || patrolDir(e), wades(e), breaks(e)), ridden = stuckTo(s) === e;
   let pushed = false;
   // Blocked, the slide ends there; a patrol turns, so its next slide goes the other way.
   const blocked = () => { e.dir = -e.dir; };
   if (!t) { blocked(); return; }
+  smash(s, t);
   const mx = t.x - e.x, my = t.y - e.y, ahead = partnerAt(s, e, t.x, t.y);
   if (ahead && !lead(s, e, mx, my)) { blocked(); return; }
   const o = entAt(s, t.x, t.y, e);
@@ -1259,8 +1276,9 @@ const CRUSHABLE = ['enemy', 'strong', 'box'];
 // tile per tick until something stops it. A heavy box squashes enemies, light boxes and you; an
 // enemy that reaches you kills you; anything else just stops.
 function slidePiece(s, e) {
-  const t = stepTo(s, e.x, e.y, e.slide, wades(e));
+  const t = stepTo(s, e.x, e.y, e.slide, wades(e), breaks(e));
   if (!t) { e.slide = null; return; }
+  smash(s, t);
   const mx = t.x - e.x, my = t.y - e.y, ahead = partnerAt(s, e, t.x, t.y);
   if (ahead && !lead(s, e, mx, my)) { e.slide = null; return; }
   const o = entAt(s, t.x, t.y, e);
@@ -1311,7 +1329,7 @@ function fireSprings(s) {
       s.events.push({ type: 'spring', x, y, d });
     }
     const e = entAt(s, x, y);
-    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e))) {
+    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e), breaks(e))) {
       e.slide = d; e.rush = false; e.rushDir = null;
       s.events.push({ type: 'spring', x, y, d });
     }
@@ -1324,7 +1342,7 @@ const m7 = (() => {
 const { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } = m0;
 const { inBeam, laser, turnTurrets } = m3;
 const { cellAt, crushes, entAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } = m1;
-const { die, kill, land, refreshDoors, respawn } = m2;
+const { die, kill, land, refreshDoors, respawn, smash } = m2;
 const { hideCycle, worldStep } = m6;
 const { STICKS, drag, entered, stick, stuckTo, unstick } = m4;
 const { follow, lead, meet, partnerAt } = m5;
@@ -1338,9 +1356,10 @@ const { follow, lead, meet, partnerAt } = m5;
 
 // One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
 function playerStep(s, d, diving) {
-  const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming);
+  const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming, diving);
   if (!t) return 'blocked';
   if (t.death) { die(s); return 'died'; }
+  smash(s, t);
   const nx = t.x, ny = t.y, e = entAt(s, nx, ny), g = p.stuck && !p.stuck.ride ? stuckTo(s) : null;
   const dx = nx - p.x, dy = ny - p.y, ahead = !!e && e === g;
   let pushed = null;
@@ -1495,7 +1514,7 @@ function createGame(level) {
     checkpoint: { ...l.start },
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
     entities: freshPieces(l.entities),
-    open: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
+    open: {}, broken: [], lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };
   computeBeams(s, false);
   refreshDoors(s);
@@ -1503,7 +1522,7 @@ function createGame(level) {
 }
 
 // A copy of a run to try a move on. What a run never changes is shared (the cells, the
-// room as it started, the start); the checkpoint, beams, lit and shocked are replaced,
+// room as it started, the start); the checkpoint, broken blocks, beams, lit and shocked are replaced,
 // never edited in place, so they are shared too. Everything a tick can edit is copied.
 function cloneGame(s) {
   const p = s.player;
@@ -1564,6 +1583,7 @@ function gameText(s, mode = 'play') {
       ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, aim: aimOf(e.turret) } } : {}),
     })),
     open: COLOURS.filter(c => s.open[c]),
+    ...(s.broken.length ? { broken: s.broken.map(i => [i % s.w, Math.floor(i / s.w)]) } : {}),
     beams: s.beams.map(b => ({ from: b.path[0], to: b.path[b.path.length - 1] })),
     powers: POWERS.filter(p => s.powers[p] && !NEEDS[p]),
   });
@@ -1630,7 +1650,7 @@ function parseLevel(text) {
 }
 
 function isCell(c) {
-  if (c === '' || c === 'wall' || c === 'checkpoint') return true;
+  if (c === '' || c === 'wall' || c === 'crack' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
   if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
   if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;
@@ -1845,7 +1865,7 @@ const INK = {
   goo: '#9be15d', gooDark: '#5a9a2b', idoor: '#33363f', goal: '#ffc23d',
   water: '#5aa9ff', waterHi: '#c2e2ff', shock: '#fff3a8',
   armor: '#b9c7e6',
-  floor: '#e4e7ec', grid: '#d6dae2', wall: '#a9b0bf', wallTop: '#c3c9d5',
+  floor: '#e4e7ec', grid: '#d6dae2', wall: '#a9b0bf', wallTop: '#c3c9d5', crack: '#5b6070',
   player: '#7b6cff', start: '#7b6cff', shadow: 'rgba(40,44,60,0.22)',
   mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff4d6d', barrel: '#8f86d9', box: '#ffa94d', boxEdge: '#c97326',
   heavy: '#9b8cff', heavyEdge: '#5b4fc8', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
@@ -1893,6 +1913,7 @@ function stateKey(s) {
   for (const e of s.entities) if (!e.dead) k += `${e.id},${e.x},${e.y},${e.dir},${e.axis},${e.sticky ? 1 : 0},${e.glue || 0},${e.turret ? e.turret.aim % e.turret.dirs.length : -1};`;
   k += '|';
   for (const c of Object.keys(s.open).sort()) if (s.open[c]) k += c + ',';
+  if (s.broken.length) k += '|' + [...s.broken].sort((a, b) => a - b).join(',');
   return k;
 }
 
@@ -2611,7 +2632,7 @@ const { INK } = m14;
 // many rooms costs little to draw. Returns a data URL.
 
 const PX = 4;
-const CELL = { wall: INK.wall, water: INK.water, sticky: INK.goo, gravel: INK.gravel, goal: INK.goal, death: INK.deathBg, checkpoint: INK.flag };
+const CELL = { wall: INK.wall, crack: INK.wall, water: INK.water, sticky: INK.goo, gravel: INK.gravel, goal: INK.goal, death: INK.deathBg, checkpoint: INK.flag };
 const PIECE = { box: INK.box, heavy: INK.heavy, mover: INK.mover, enemy: INK.enemy, strong: INK.strong, turret: INK.barrel };
 
 function thumbURL(level) {
@@ -2699,7 +2720,7 @@ const { parseMove } = m15;
 // Every tag, in the order the index lists them, with its label. Draft copy.
 const MECHANISMS = [
   ['tile:goal', 'Goal'], ['tile:checkpoint', 'Checkpoint'], ['tile:tri', 'Triangle'], ['tile:gate', 'One-way'],
-  ['tile:spring', 'Spring'], ['tile:death', 'Death block'], ['tile:water', 'Water'], ['tile:sticky', 'Sticky puddle'], ['tile:gravel', 'Gravel'],
+  ['tile:spring', 'Spring'], ['tile:death', 'Death block'], ['tile:water', 'Water'], ['tile:sticky', 'Sticky puddle'], ['tile:gravel', 'Gravel'], ['tile:crack', 'Breakable block'],
   ['tile:button', 'Button'], ['tile:door', 'Door'], ['tile:idoor', 'Inverted door'], ['tile:receiver', 'Laser catcher'], ['tile:sensor', 'Laser relay'],
   ['piece:mover', 'Moving block'], ['piece:enemy', 'Weak enemy'], ['piece:strong', 'Strong enemy'], ['piece:turret', 'Laser turret'],
   ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'],
@@ -2713,7 +2734,7 @@ const MECHANISMS = [
   ['use:beam-kill', 'A beam kills an enemy'], ['use:stick', 'You stick to something'], ['use:glue', 'Pieces glue together'],
   ['use:boomerang', 'You turn back mid-slide'], ['use:dive', 'You dive'], ['use:laser', 'You fire the laser'],
   ['use:hide', 'You hide'], ['use:swim', 'You swim'], ['use:checkpoint', 'You reach a checkpoint'],
-  ['use:tri', 'A triangle turns you'], ['use:gate', 'You pass a one-way'],
+  ['use:break', 'A breakable block breaks'], ['use:tri', 'A triangle turns you'], ['use:gate', 'You pass a one-way'],
 ];
 const LABEL = Object.fromEntries(MECHANISMS);
 
@@ -2739,7 +2760,7 @@ function contains(level) {
   return [...tags];
 }
 
-const EVENT_TAG = { boomerang: 'use:boomerang', dive: 'use:dive', laser: 'use:laser', pushed: 'use:pushed', spring: 'use:spring', stick: 'use:stick', glue: 'use:glue', hide: 'use:hide', checkpoint: 'use:checkpoint' };
+const EVENT_TAG = { boomerang: 'use:boomerang', dive: 'use:dive', laser: 'use:laser', pushed: 'use:pushed', spring: 'use:spring', stick: 'use:stick', glue: 'use:glue', hide: 'use:hide', checkpoint: 'use:checkpoint', break: 'use:break' };
 const KILL_TAG = { door: 'use:door-kill', squash: 'use:squash', death: 'use:death', turret: 'use:beam-kill', laser: 'use:beam-kill' };
 
 // What the solution does: the room replayed move by move, watching events and state.
@@ -3403,6 +3424,7 @@ const TOOLS = [
   { id: 'gate', label: 'One-way', group: 'tiles' },
   { id: 'spring', label: 'Spring', group: 'tiles' },
   { id: 'death', label: 'Death block', group: 'tiles' },
+  { id: 'crack', label: 'Breakable block', group: 'tiles' },
   { id: 'water', label: 'Water', group: 'floors' },
   { id: 'sticky', label: 'Sticky puddle', group: 'floors' },
   { id: 'gravel', label: 'Gravel', group: 'floors' },
@@ -3731,7 +3753,7 @@ const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y 
 // Does (x, y) already hold the kind of thing this tool places?
 function holds(level, x, y, tool) {
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
+  if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
   if (tool === 'button' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
@@ -3752,6 +3774,7 @@ function describe(level, x, y) {
   if (c) {
     const [kind, v] = c.split(':');
     if (kind === 'wall') parts.push('Block');
+    else if (kind === 'crack') parts.push('Breakable block');
     else if (kind === 'checkpoint') parts.push('Checkpoint');
     else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
     else if (kind === 'death') parts.push('Death block');
@@ -3787,7 +3810,7 @@ function place(level, ui, x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'checkpoint', 'button', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
+    else if (['wall', 'crack', 'checkpoint', 'button', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
     if (isStart) return out;
@@ -3802,12 +3825,12 @@ function place(level, ui, x, y, how) {
     if (isStart) return out;
     removePiece(); setCell('tri:' + ui.corner);
   } else if (t === 'start') {
-    if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
+    if (level.cells[i] === 'wall' || level.cells[i] === 'crack' || isDoor(level.cells[i])) setCell('');
     removePiece();
     level.start = { x, y };
-  } else if (t === 'wall') {
+  } else if (t === 'wall' || t === 'crack') {
     if (isStart) return out;
-    removePiece(); setCell('wall');
+    removePiece(); setCell(t);
   } else if (t === 'checkpoint' || t === 'button' || t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor') {
     const solid = t === 'door' || t === 'idoor' || t === 'receiver';
     if (solid && isStart) return out;
@@ -4356,6 +4379,13 @@ function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     else if (k === 'se') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
     else { g.moveTo(1, 1); g.lineTo(T - 1, T - 1); }
     g.stroke();
+  } else if (c === 'crack') {
+    // A block that will not last: cracks across its face.
+    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
+    g.strokeStyle = INK.crack; g.lineWidth = 2; g.lineJoin = 'round'; g.beginPath();
+    g.moveTo(5, 12); g.lineTo(12, 15); g.lineTo(15, 9); g.lineTo(22, 13); g.lineTo(27, 10);
+    g.moveTo(12, 15); g.lineTo(14, 23); g.lineTo(9, 28); g.moveTo(14, 23); g.lineTo(21, 21); g.lineTo(26, 27);
+    g.stroke();
   } else if (c === 'wall') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
@@ -4481,9 +4511,9 @@ const MASSES = ['wall', 'water', 'sticky', 'gravel', 'death'];
 const RADIUS = { wall: 6, water: 8, sticky: 10, gravel: 6, death: 6 };
 const LIP = 6;
 
-// Blocks with something on them (a spring, a laser catcher) are still walls, and a
+// Blocks with something on them (a spring, a laser catcher, cracks) are still walls, and a
 // triangle is a wall along its two straight sides.
-const BLOCK = /^(spring|receiver):/;
+const BLOCK = /^(spring:|receiver:|crack$)/;
 const OPPOSITE = { nw: 'se', ne: 'sw', sw: 'ne', se: 'nw' };
 const member = (c, kind) => kind === 'wall' ? c === 'wall' || BLOCK.test(c) || /^tri:/.test(c) : c === kind;
 // Does cell c belong to the mass on its side (n, e, s, w) or corner (nw ...) facing the asker?
@@ -4746,15 +4776,19 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   }
 }
 
+const BREAK_MS = 300;
+
 // prev: positions before the last tick; alpha: 0..1 progress into the next tick.
 function drawPlay(g, s, prev, alpha, fx, now) {
   frame.clock = now;
-  const shake = fx.find(f => f.type === 'crash' && now - f.at < 180);
+  const shake = fx.find(f => (f.type === 'crash' || f.type === 'break') && now - f.at < 180);
   g.save();
   if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
   drawFloor(g, s.w, s.h);
-  drawMasses(g, s.cells, s.w, s.h);
-  s.cells.forEach((c, i) => { if (!inMass(c) || overlay(c)) drawCell(g, c, i % s.w, Math.floor(i / s.w), s, 1, overlay(c)); });
+  // A broken block is floor for the rest of the run.
+  const cells = s.broken.length ? s.cells.map((c, i) => s.broken.includes(i) ? '' : c) : s.cells;
+  drawMasses(g, cells, s.w, s.h);
+  cells.forEach((c, i) => { if (!inMass(c) || overlay(c)) drawCell(g, c, i % s.w, Math.floor(i / s.w), s, 1, overlay(c)); });
   // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
   // as its beam touches, yours for a moment.
   const crackle = (cells, k) => {
@@ -4766,6 +4800,13 @@ function drawPlay(g, s, prev, alpha, fx, now) {
     }
     g.globalAlpha = 1;
   };
+  // A block breaking throws its pieces out and fades.
+  for (const f of fx) if (f.type === 'break' && now - f.at < BREAK_MS) {
+    const t = (now - f.at) / BREAK_MS, X = f.x * T + T / 2, Y = f.y * T + T / 2;
+    g.fillStyle = INK.wall; g.globalAlpha = 1 - t;
+    for (let k = 0; k < 6; k++) { const a = k * 1.047 + 0.4, r = 4 + 14 * t; g.fillRect(X + Math.cos(a) * r - 3, Y + Math.sin(a) * r - 3 + 8 * t * t, 6, 6); }
+    g.globalAlpha = 1;
+  }
   crackle(s.shocked, 1);
   for (const f of fx) if (f.type === 'laser' && f.shocked && now - f.at < LASER_MS) crackle(f.shocked, 1 - (now - f.at) / LASER_MS);
   const a = ease(alpha);
@@ -4884,8 +4925,8 @@ function icon(tool, colour = 'red') {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':' + colour;
+  if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':' + colour;
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'select') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
@@ -5509,6 +5550,7 @@ const INGREDIENTS = [
   { id: 'water', label: 'Water', tags: ['tile:water'], with: ['mover'], place: (l, r) => { const i = tile(l, r, 'water'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'water'; } },
   { id: 'sticky', label: 'Sticky puddle', tags: ['tile:sticky'], with: ['box'], place: (l, r) => { tile(l, r, 'sticky'); piece(l, r, { kind: 'box' }); } },
   { id: 'gravel', label: 'Gravel', tags: ['tile:gravel'], place: (l, r) => { const i = tile(l, r, 'gravel'); if (i >= 0 && l.cells[i + 1] === '' && inside(l, i + 1) && r.next() < 0.5) l.cells[i + 1] = 'gravel'; } },
+  { id: 'crack', label: 'Breakable block', tags: ['tile:crack'], with: ['dive'], place: (l, r) => tile(l, r, 'crack') },
   { id: 'checkpoint', label: 'Checkpoint', tags: ['tile:checkpoint'], allowedOnly: 'A solution never dies, so a checkpoint cannot change it.', place: (l, r) => tile(l, r, 'checkpoint') },
   { id: 'mover', label: 'Moving block', tags: ['piece:mover'], place: (l, r) => piece(l, r, { kind: 'mover', axis: r.pick(['h', 'v']) }) },
   { id: 'follow', label: 'Moves the same way as you', tags: ['clock:follow'], with: ['mover'], standIn: null, knock: l => ({ ...l, entities: l.entities.map(e => e.mode === 'follow' ? { ...e, mode: 'input' } : e) }), place: (l, r) => piece(l, r, { kind: 'mover', axis: 'h', mode: 'follow' }) },

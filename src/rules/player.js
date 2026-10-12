@@ -2,16 +2,17 @@
 import { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } from './base.js';
 import { inBeam, laser, turnTurrets } from './beams.js';
 import { cellAt, crushes, entAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } from './grid.js';
-import { die, kill, land, refreshDoors, respawn } from './life.js';
+import { die, kill, land, refreshDoors, respawn, smash } from './life.js';
 import { hideCycle, worldStep } from './pieces.js';
 import { STICKS, drag, entered, stick, stuckTo, unstick } from './sticky.js';
 import { follow, lead, meet, partnerAt } from './glue.js';
 
 // One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
 export function playerStep(s, d, diving) {
-  const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming);
+  const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming, diving);
   if (!t) return 'blocked';
   if (t.death) { die(s); return 'died'; }
+  smash(s, t);
   const nx = t.x, ny = t.y, e = entAt(s, nx, ny), g = p.stuck && !p.stuck.ride ? stuckTo(s) : null;
   const dx = nx - p.x, dy = ny - p.y, ahead = !!e && e === g;
   let pushed = null;

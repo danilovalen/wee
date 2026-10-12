@@ -45,6 +45,13 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     else if (k === 'se') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
     else { g.moveTo(1, 1); g.lineTo(T - 1, T - 1); }
     g.stroke();
+  } else if (c === 'crack') {
+    // A block that will not last: cracks across its face.
+    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
+    g.strokeStyle = INK.crack; g.lineWidth = 2; g.lineJoin = 'round'; g.beginPath();
+    g.moveTo(5, 12); g.lineTo(12, 15); g.lineTo(15, 9); g.lineTo(22, 13); g.lineTo(27, 10);
+    g.moveTo(12, 15); g.lineTo(14, 23); g.lineTo(9, 28); g.moveTo(14, 23); g.lineTo(21, 21); g.lineTo(26, 27);
+    g.stroke();
   } else if (c === 'wall') {
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
