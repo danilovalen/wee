@@ -1,0 +1,32 @@
+// A tool's icon, drawn the way the room draws the thing: the palette and the generator's
+// ingredients share it.
+import { emptyLevel } from '../level/format.js';
+import { T, INK } from '../view/ink.js';
+import { drawPiece } from '../view/pieces.js';
+import { drawEdit } from '../view/scene.js';
+
+export function icon(tool, colour = 'red') {
+  const c = document.createElement('canvas'), k = 20 / T;
+  c.width = 40; c.height = 40;
+  const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
+  if (tool === 'wall' || tool === 'checkpoint' || tool === 'button' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':' + colour;
+    l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
+  } else if (tool === 'select') {
+    x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
+  } else if (tool === 'look') {
+    x.strokeStyle = '#6f6876'; x.lineWidth = 2.5;
+    x.beginPath(); x.arc(14, 14, 7, 0, Math.PI * 2); x.moveTo(19, 19); x.lineTo(26, 26); x.stroke();
+  } else if (tool === 'receiver') {
+    const l = emptyLevel(1, 1); l.cells[0] = 'receiver:red'; l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
+  } else if (tool === 'erase') {
+    x.strokeStyle = '#6f6876'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
+  } else if (tool === 'start') {
+    x.fillStyle = INK.player; x.beginPath(); x.arc(16, 16, 10, 0, Math.PI * 2); x.fill();
+  } else if (tool === 'turret') drawPiece(x, { kind: 'turret', turret: { dirs: ['up', 'right'], mode: 'input' } }, 0, 0);
+  // Two ingredients that are a tool with a twist: a turret riding a box, a block that copies you.
+  else if (tool === 'mounted') drawPiece(x, { kind: 'box', turret: { dirs: ['up'], mode: 'input' } }, 0, 0);
+  else if (tool === 'follow') drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);
+  else drawPiece(x, { kind: tool, axis: 'h', dir: 1, mode: 'input' }, 0, 0);
+  return c;
+}

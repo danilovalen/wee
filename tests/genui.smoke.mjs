@@ -1,6 +1,7 @@
 // The Generator panel on the real page: a recipe makes a room that fits, nothing reaches
 // your rooms before Save, opening over an edited room asks twice, and Undo brings it back.
 import { chromium } from 'playwright-core';
+import { INGREDIENTS } from '../src/gen/ingredients.js';
 import { serve } from '../tools/serve.mjs';
 import { suite } from './lib.mjs';
 
@@ -23,6 +24,18 @@ try {
   await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => document.getElementById('roomsBox').close());
   await openPanel();
+  // Ingredients sit in the palette's sections with the palette's icons; powers are their own section, last.
+  await page.locator('.genIngBox summary').click();
+  const secs = await page.$$eval('#genIng .genSec', ss => ss.map(s => ({ name: s.dataset.section, n: s.querySelectorAll('select').length, icons: [...s.querySelectorAll('canvas')].map(c => c.toDataURL()) })));
+  const iconsAll = secs.filter(s => s.name !== 'Powers').flatMap(s => s.icons);
+  check('ingredients come in the palette\'s sections, then Powers last', secs.map(s => s.name).join() === 'Basics,Pieces,Tiles,Floors,Switches,Powers', secs.map(s => s.name).join());
+  check('every ingredient but a power wears an icon, and no two icons are the same', secs.filter(s => s.name !== 'Powers').every(s => s.icons.length === s.n) && new Set(iconsAll).size === iconsAll.length, `${iconsAll.length} icons, ${new Set(iconsAll).size} distinct`);
+  check('every icon draws something', await page.$$eval('#genIng canvas', cs => cs.every(c => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; for (let i = 3; i < d.length; i += 4) if (d[i]) return true; return false; })));
+  check('every ingredient fits its own cell, overlapping none', await page.$$eval('#genIng .genItems li', ls => ls.every(li => { const l = li.firstElementChild.getBoundingClientRect(), c = li.getBoundingClientRect(); return l.right <= c.right + 1 && li.firstElementChild.scrollWidth <= li.clientWidth + 1; })));
+  check('no ingredient choice is cut short', await page.$$eval('#genIng select', ss => ss.every(s => s.scrollWidth <= s.clientWidth + 1 && s.getBoundingClientRect().width >= 80)));
+  check('every ingredient is in exactly one section', secs.reduce((n, x) => n + x.n, 0) === INGREDIENTS.length, `${secs.reduce((n, x) => n + x.n, 0)} of ${INGREDIENTS.length}`);
+  check('powers sit only in Powers, named', secs.at(-1).n >= 5 && !secs.at(-1).icons.length && await page.$$eval('#genIng [data-section=Powers] .genName', ns => ns.length >= 5));
+  await page.locator('.genIngBox summary').click();
   check('Generate a room opens its own panel', await page.locator('#genBox').isVisible() && !(await page.locator('#roomsBox').isVisible()));
   check('a checkpoint cannot be Must use, and says why', await page.evaluate(() => { const s = document.querySelector('#genIng select[data-id=checkpoint]'); return ![...s.options].some(o => o.value === 'must') && /never dies/.test(s.closest('label').title); }));
   check('every ingredient starts Off', await page.evaluate(() => [...document.querySelectorAll('#genIng select')].every(s => s.value === '')));

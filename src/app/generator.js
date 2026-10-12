@@ -9,9 +9,16 @@ import { thumbURL } from '../view/thumb.js';
 import { $ } from './dom.js';
 import { change } from './undo.js';
 import { dirty, remember, syncRoomsButton } from './rooms.js';
+import { icon } from './icons.js';
+import { TOOLS, GROUPS } from '../editor/palette.js';
 
 const SHELF = 'wee.generated', FORM = 'wee.genForm', KEEP = 20, SLICE_MS = 25;
 const CHOICES = [['', 'Off'], ['allowed', 'Allowed'], ['must', 'Must use']];
+// Ingredients that are not a palette tool borrow the icon and section of the tool they are about.
+const ING_ICON = { door: 'door', and: 'button', colours: 'door' };
+const ING_GROUP = { follow: 'pieces', mounted: 'pieces' };
+const ING_COLOUR = { colours: 'blue' };
+export const ingGroup = g => ING_GROUP[g.id] || (TOOLS.find(t => t.id === (ING_ICON[g.id] || g.id)) || {}).group;
 let A = null, run = 0, shown = null;
 
 const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 'null') ?? d; } catch { return d; } };
@@ -131,15 +138,28 @@ export function openInEditor(entry) {
 export function buildGenerator(actions) {
   A = actions;
   for (const [id, [lo, hi]] of [['genW', LIMITS.size], ['genH', LIMITS.size], ['genMin', LIMITS.moves], ['genMax', LIMITS.moves]]) { $(id).min = lo; $(id).max = hi; }
-  $('genIng').replaceChildren(...INGREDIENTS.map(g => {
+  // Ingredients in the palette's own sections, each with the palette's icon, then the powers.
+  const item = g => {
     const li = document.createElement('li'), label = document.createElement('label'), sel = document.createElement('select');
     sel.dataset.id = g.id;
     sel.append(...CHOICES.filter(([v]) => !(g.allowedOnly && v === 'must')).map(([v, t]) => new Option(t, v)));
-    if (g.allowedOnly) label.title = g.allowedOnly;
+    sel.setAttribute('aria-label', g.label);
     sel.onchange = () => fillForm(recipeFromForm());
-    label.append(g.label, sel);
+    label.title = g.allowedOnly ? `${g.label}. ${g.allowedOnly}` : g.label;
+    if (g.power) label.append(Object.assign(document.createElement('span'), { className: 'genName', textContent: g.label }));
+    else label.append(icon(ING_ICON[g.id] || g.id, ING_COLOUR[g.id]));
+    label.append(sel);
     li.append(label);
     return li;
+  };
+  const sections = [...GROUPS.map(([id, name]) => [name, INGREDIENTS.filter(g => !g.power && ingGroup(g) === id)]), ['Powers', INGREDIENTS.filter(g => g.power)]];
+  $('genIng').replaceChildren(...sections.filter(([, gs]) => gs.length).map(([name, gs]) => {
+    const sec = document.createElement('li'), list = document.createElement('ul');
+    sec.className = 'genSec'; list.className = 'genItems';
+    sec.dataset.section = name;
+    list.append(...gs.map(item));
+    sec.append(Object.assign(document.createElement('h4'), { textContent: name }), list);
+    return sec;
   }));
   const saved = read(FORM, null);
   fillForm(normalize(saved ? saved.recipe : { seed: newSeed() }));
