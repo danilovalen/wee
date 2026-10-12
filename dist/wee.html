@@ -432,9 +432,9 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
     <button id="mode" type="button" title="E">Play</button>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
-    <button id="checkBtn" type="button">Check</button>
-    <button id="stopsBtn" type="button" aria-pressed="false" title="Lenses over the room: colour, dots, lines and frames. Keys 1 to 4 cycle them, 0 turns them off.">Lenses</button>
-    <button id="genBtn" type="button" title="Generate a room">Generate</button>
+    <button id="checkBtn" type="button" data-edit>Check</button>
+    <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room: colour, dots, lines and frames. Keys 1 to 4 cycle them, 0 turns them off.">Lenses</button>
+    <button id="genBtn" type="button" data-edit title="Generate a room">Generate</button>
     <span class="spacer"></span>
     <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
     <button id="roomsBtn" type="button">Rooms</button>
@@ -581,8 +581,8 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   </main>
   <footer id="statusBar" class="statusBar">
     <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
-    <button id="wellBtn" type="button">Findings</button>
-    <button id="sizeBtn" type="button" aria-label="Room size" aria-expanded="false"></button>
+    <button id="wellBtn" type="button" data-edit>Findings</button>
+    <button id="sizeBtn" type="button" data-edit aria-label="Room size" aria-expanded="false"></button>
     <p id="info" class="hint"></p>
     <p id="keys" class="hint"></p>
   </footer>
@@ -2921,15 +2921,25 @@ const m28 = (() => {
 const { S } = m11;
 const { $ } = m12;
 const { moveSide } = m9;
+const { stateKey } = m15;
 // A control that would do nothing right now is greyed out, never left to refuse a click.
-// Runs after every change to the room and every switch between editing and playing.
+// Runs after every change to the room, every switch between editing and playing, and each
+// tick of a run. Controls marked data-edit work on the room being edited, so a run greys them.
+
 
 
 
 function syncEnabled() {
-  const level = S.level;
+  const level = S.level, play = S.mode === 'play';
+  document.querySelectorAll('[data-edit]').forEach(b => { b.disabled = play; });
+  if (play) {
+    $('mode').disabled = false;
+    // Reset does nothing until the run has moved away from where it would put you.
+    $('respawnBtn').disabled = !!S.game && stateKey(S.game) === S.freshKey;
+    return;
+  }
   // With no start (a cut took it), there is nothing to play or check until one is placed.
-  $('mode').disabled = S.mode === 'edit' && !level.start;
+  $('mode').disabled = !level.start;
   $('checkBtn').disabled = !level.start;
   // A side's add or cut is greyed out when it cannot happen (a placed thing, 2x2, 40x30).
   document.querySelectorAll('[data-side][data-delta]').forEach(b => { b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta); });
@@ -4948,6 +4958,9 @@ const { lensMarks, lensBusy } = m40;
 const { syncWell } = m39;
 const { syncChips } = m42;
 const { gust } = m13;
+const { stateKey } = m15;
+const { respawn } = m2;
+const { syncEnabled } = m28;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
 
@@ -4963,6 +4976,11 @@ const { gust } = m13;
 
 
 
+
+
+
+// The run as Reset would leave it, to tell whether Reset would change anything.
+const resetKey = game => { const c = structuredClone(game); respawn(c); return stateKey(c); };
 
 function snapshot(s) {
   const ents = {};
@@ -4983,6 +5001,9 @@ function tick() {
   // Drift: a slide starting gusts the snow; each tile the player leaves holds a fading ghost.
   if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);
   if ((game.player.x !== before.x || game.player.y !== before.y) && Math.abs(game.player.x - before.x) + Math.abs(game.player.y - before.y) === 1) S.fx.push({ type: 'ghost', x: before.x, y: before.y, at: t });
+  // Where Reset would put you moves only when you reach a checkpoint.
+  if (game.events.some(e => e.type === 'checkpoint')) S.freshKey = resetKey(game);
+  syncEnabled();
   for (const e of game.events) {
     if (e.type === 'win') { $('winText').textContent = `Solved in ${e.moves} ${e.moves === 1 ? 'move' : 'moves'}.`; $('win').hidden = false; }
     if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
@@ -5015,8 +5036,9 @@ function setMode(m, keep) {
   // Play from here: the same room, starting on the tile you looked at.
   const from = m === 'play' && S.playFrom ? { ...S.level, start: S.playFrom } : S.level;
   S.playFrom = null;
-  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.game = createGame(from); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
+  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.game = createGame(from); S.freshKey = resetKey(S.game); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
   else S.game = null;
+  syncEnabled();
 }
 
 // Edit mode redraws when something may have changed (any input, an effect still

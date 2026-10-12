@@ -150,7 +150,7 @@ const M = [
   ['src', "if (!e || p.hidden || e.x !== p.x + st.dx || e.y !== p.y + st.dy) { unstick(s); return; }", "if (!e || e.x !== p.x + st.dx || e.y !== p.y + st.dy) { unstick(s); return; }", 'sim'],
   ['src', "if (!e || p.hidden || e.x !== p.x + st.dx || e.y !== p.y + st.dy) { unstick(s); return; }", "if (!e || p.hidden) { unstick(s); return; }", 'sim'],
   ['src', "if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;", "if (c === 'death' || c === 'water' || c === 'gravel' || c === 'goal') return true;", 'sim'],
-  ['src', "  { id: 'sticky', label: 'Sticky puddle', group: 'tiles' },\n", "", 'browser'],
+  ['src', "  { id: 'sticky', label: 'Sticky puddle', group: 'floors' },\n", "", 'browser'],
   ['style.css', "  .grid button[hidden] { display: flex; }\n", "", 'browser'],
   ['style.css', "  .tabs, #tools > h2:first-child { display: none; }\n", "", 'browser'],
   ['style.css', "  .ghead { display: block; }\n", "", 'browser'],
@@ -523,7 +523,7 @@ const M = [
   ['src/level/format.js', "start: l.start && !at(l.start) ? shift(l.start) : null,", "start: l.start && shift(l.start),", 'size'],
   ['src/level/format.js', "export const MIN_INSIDE = 2;", "export const MIN_INSIDE = 1;", 'size'],
   ['src/level/format.js', "  const start = moved && inside(moved.x, moved.y) ? moved : null;", "  const start = moved;", 'sim'],
-  ['src/app/enabled.js', "  $('mode').disabled = S.mode === 'edit' && !level.start;", "", 'browser'],
+  ['src/app/enabled.js', "  $('mode').disabled = !level.start;", "", 'browser'],
   ['src/app/enabled.js', "  $('checkBtn').disabled = !level.start;", "", 'browser'],
   ['src/app/enabled.js', "b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta);", "b.disabled = false;", 'browser'],
   ['src/app/play.js', "  if (m === 'play' && !S.playFrom && !S.level.start) return;\n", "", 'browser'],
@@ -544,6 +544,12 @@ const M = [
   ['src/app/check.js', "  $('showSolution').hidden = r.status !== 'solved';\n  syncLint();\n", "  $('showSolution').hidden = r.status !== 'solved';\n", 'browser'],
   ['src/rules/player.js', "    if (!b) return 'blocked';\n    land(s, g, b);", "    if (!b) { unstick(s); return 'blocked'; }\n    land(s, g, b);", 'sim'],
   ['src/editor/palette.js', "{ id: 'gravel', label: 'Gravel', group: 'floors' }", "{ id: 'gravel', label: 'Gravel', group: 'tiles' }", 'browser'],
+  // Nothing clickable does nothing (register 116)
+  ['src/app/enabled.js', "  document.querySelectorAll('[data-edit]').forEach(b => { b.disabled = play; });", "", 'useless'],
+  ['src/app/enabled.js', "    $('respawnBtn').disabled = !!S.game && stateKey(S.game) === S.freshKey;", "", 'useless'],
+  ['src/app/play.js', "  if (game.events.some(e => e.type === 'checkpoint')) S.freshKey = resetKey(game);\n", "", 'useless'],
+  ['src/app/play.js', "const resetKey = game => { const c = structuredClone(game); respawn(c); return stateKey(c); };", "const resetKey = game => stateKey(game);", 'useless'],
+  ['src/app/enabled.js', "    $('mode').disabled = false;\n", "", 'browser'],
 ];
 
 let caught = 0, crashed = 0;

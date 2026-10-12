@@ -76,6 +76,7 @@ try {
     await page.click('#mode');
     await settle();
     check(`${w}x${h}: play mode: the play buttons sit in the status bar, the lens chips go, and nothing is cut`, await page.locator('#lensChips').isHidden() && !(await over()) && !(await cutOff()).length && await page.evaluate(() => document.getElementById('pad').parentElement.id === 'statusBar' && !!document.getElementById('pad').offsetParent), JSON.stringify(await cutOff()));
+    await page.click('#mode');
     await page.click('#genBtn');
     await page.locator('.genIngBox summary').click();
     check(`${w}x${h}: the Generator opens from the header and fits without scrolling`, await page.locator('#genBox').isVisible() && await page.evaluate(() => { const d = document.getElementById('genBox'); return d.scrollHeight <= d.clientHeight; }));

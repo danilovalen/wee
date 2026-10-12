@@ -345,6 +345,12 @@ try {
   check('with no start, Play and Check are greyed out and the check line says why', await page.locator('#mode').isDisabled() && await page.locator('#checkBtn').isDisabled() && (await page.textContent('#checkText')).includes('place the start'));
   await page.keyboard.press('e');
   check('and E does not start a run', (await text()).mode === 'edit');
+  await page.keyboard.press('Escape');
+  { const gb = await page.locator('#game').boundingBox(), lw = (await text()).level;
+    await pick('look'); await page.mouse.click(gb.x + 1.5 * gb.width / lw.w, gb.y + 0.5 * gb.height / lw.h);
+    await page.click('#playHere');
+    check('Play from here works with no start, and Edit stays clickable', (await text()).mode === 'play' && !(await page.locator('#mode').isDisabled()));
+    await page.click('#mode'); await page.click('#sizeBtn'); }
   for (let i = 0; i < 3; i++) await page.click('[data-side=bottom][data-delta="-1"]', { force: true });
   check('a cut that would leave less than 2 tall is greyed out', (await text()).level.h === 2 && await page.locator('[data-side=bottom][data-delta="-1"]').isDisabled());
   await page.click('#undo');

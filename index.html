@@ -15,9 +15,9 @@
     <button id="mode" type="button" title="E">Play</button>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
-    <button id="checkBtn" type="button">Check</button>
-    <button id="stopsBtn" type="button" aria-pressed="false" title="Lenses over the room: colour, dots, lines and frames. Keys 1 to 4 cycle them, 0 turns them off.">Lenses</button>
-    <button id="genBtn" type="button" title="Generate a room">Generate</button>
+    <button id="checkBtn" type="button" data-edit>Check</button>
+    <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room: colour, dots, lines and frames. Keys 1 to 4 cycle them, 0 turns them off.">Lenses</button>
+    <button id="genBtn" type="button" data-edit title="Generate a room">Generate</button>
     <span class="spacer"></span>
     <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
     <button id="roomsBtn" type="button">Rooms</button>
@@ -164,8 +164,8 @@
   </main>
   <footer id="statusBar" class="statusBar">
     <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
-    <button id="wellBtn" type="button">Findings</button>
-    <button id="sizeBtn" type="button" aria-label="Room size" aria-expanded="false"></button>
+    <button id="wellBtn" type="button" data-edit>Findings</button>
+    <button id="sizeBtn" type="button" data-edit aria-label="Room size" aria-expanded="false"></button>
     <p id="info" class="hint"></p>
     <p id="keys" class="hint"></p>
   </footer>

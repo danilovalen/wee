@@ -14,6 +14,11 @@ import { lensMarks, lensBusy } from './lenses.js';
 import { syncWell } from './well.js';
 import { syncChips } from './chips.js';
 import { gust } from './snow.js';
+import { stateKey } from '../solve/solve.js';
+import { respawn } from '../rules/life.js';
+// The run as Reset would leave it, to tell whether Reset would change anything.
+const resetKey = game => { const c = structuredClone(game); respawn(c); return stateKey(c); };
+import { syncEnabled } from './enabled.js';
 
 export function snapshot(s) {
   const ents = {};
@@ -34,6 +39,9 @@ export function tick() {
   // Drift: a slide starting gusts the snow; each tile the player leaves holds a fading ghost.
   if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);
   if ((game.player.x !== before.x || game.player.y !== before.y) && Math.abs(game.player.x - before.x) + Math.abs(game.player.y - before.y) === 1) S.fx.push({ type: 'ghost', x: before.x, y: before.y, at: t });
+  // Where Reset would put you moves only when you reach a checkpoint.
+  if (game.events.some(e => e.type === 'checkpoint')) S.freshKey = resetKey(game);
+  syncEnabled();
   for (const e of game.events) {
     if (e.type === 'win') { $('winText').textContent = `Solved in ${e.moves} ${e.moves === 1 ? 'move' : 'moves'}.`; $('win').hidden = false; }
     if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
@@ -66,8 +74,9 @@ export function setMode(m, keep) {
   // Play from here: the same room, starting on the tile you looked at.
   const from = m === 'play' && S.playFrom ? { ...S.level, start: S.playFrom } : S.level;
   S.playFrom = null;
-  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.game = createGame(from); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
+  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.game = createGame(from); S.freshKey = resetKey(S.game); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
   else S.game = null;
+  syncEnabled();
 }
 
 // Edit mode redraws when something may have changed (any input, an effect still
