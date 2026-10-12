@@ -137,7 +137,6 @@ const M = [
   ['src', "const STICKS = e => e.kind === 'mover' || e.kind === 'box' || (e.kind === 'heavy' && !!e.slide);", "const STICKS = e => e.kind === 'box' || (e.kind === 'heavy' && !!e.slide);", 'sim'],
   ['src', "  p.sticky = false;\n  p.stuck = { id: e.id,", "  p.stuck = { id: e.id,", 'sim'],
   ['src', "ride: e.kind === 'mover' || !!e.slide,", "ride: e.kind === 'mover',", 'sim'],
-  ['src', "if (!b) { unstick(s); return 'blocked'; }", "if (!b) { return 'blocked'; }", 'sim'],
   ['src', "} else if (e && p.sticky && STICKS(e)) { stick(s, e); return 'blocked'; }", "}", 'sim'],
   ['src', "if (g && !ahead) drag(s, g, dx, dy);", "", 'sim'],
   ['src', "if (g && !ahead) drag(s, g, dx, dy);", "if (g) drag(s, g, dx, dy);", 'sim'],
@@ -543,6 +542,7 @@ const M = [
   // A successful recheck clears the stale-solution warning (register 113)
   ['src/app/check.js', "  if (sol && S.level.start && !rechecked) {", "  if (sol && S.level.start) {", 'browser'],
   ['src/app/check.js', "  $('showSolution').hidden = r.status !== 'solved';\n  syncLint();\n", "  $('showSolution').hidden = r.status !== 'solved';\n", 'browser'],
+  ['src/rules/player.js', "    if (!b) return 'blocked';\n    land(s, g, b);", "    if (!b) { unstick(s); return 'blocked'; }\n    land(s, g, b);", 'sim'],
 ];
 
 let caught = 0, crashed = 0;

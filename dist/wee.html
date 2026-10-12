@@ -1005,12 +1005,14 @@ const { cellAt, shift } = m1;
 const { die, land } = m2;
 // Sticky: a puddle makes you sticky until water washes it off or you stick to
 // something. You ride a moving block or a sliding box you meet until you move off; a
-// light box you meet glues to you and comes along until it cannot.
+// light box you meet glues to you and comes along; pushed into something it stays glued, and
+// it falls off only when it is left behind.
 
 
 // Sticky: a puddle makes you sticky until water washes it off or you stick to
 // something. You ride a moving block or a sliding box you meet until you move off; a
-// light box you meet glues to you and comes along until it cannot.
+// light box you meet glues to you and comes along; pushed into something it stays glued, and
+// it falls off only when it is left behind.
 const stuckTo = s => { const st = s.player.stuck; return st && s.entities.find(e => e.id === st.id && !e.dead); };
 const STICKS = e => e.kind === 'mover' || e.kind === 'box' || (e.kind === 'heavy' && !!e.slide);
 function stick(s, e) {
@@ -1288,9 +1290,10 @@ function playerStep(s, d, diving) {
   const dx = nx - p.x, dy = ny - p.y, ahead = !!e && e === g;
   let pushed = null;
   if (ahead) {
-    // The glued box is ahead: it goes first, or it falls off and stops you.
+    // The glued box is ahead: it goes first, or it is pushed against something and you both
+    // stop, still glued.
     const b = shift(s, g.x, g.y, dx, dy, false, g);
-    if (!b) { unstick(s); return 'blocked'; }
+    if (!b) return 'blocked';
     land(s, g, b);
   } else if (e && p.sticky && STICKS(e)) { stick(s, e); return 'blocked'; }
   else if (e) {

@@ -1,12 +1,14 @@
 // Sticky: a puddle makes you sticky until water washes it off or you stick to
 // something. You ride a moving block or a sliding box you meet until you move off; a
-// light box you meet glues to you and comes along until it cannot.
+// light box you meet glues to you and comes along; pushed into something it stays glued, and
+// it falls off only when it is left behind.
 import { cellAt, shift } from './grid.js';
 import { die, land } from './life.js';
 
 // Sticky: a puddle makes you sticky until water washes it off or you stick to
 // something. You ride a moving block or a sliding box you meet until you move off; a
-// light box you meet glues to you and comes along until it cannot.
+// light box you meet glues to you and comes along; pushed into something it stays glued, and
+// it falls off only when it is left behind.
 export const stuckTo = s => { const st = s.player.stuck; return st && s.entities.find(e => e.id === st.id && !e.dead); };
 export const STICKS = e => e.kind === 'mover' || e.kind === 'box' || (e.kind === 'heavy' && !!e.slide);
 export function stick(s, e) {

@@ -16,9 +16,10 @@ export function playerStep(s, d, diving) {
   const dx = nx - p.x, dy = ny - p.y, ahead = !!e && e === g;
   let pushed = null;
   if (ahead) {
-    // The glued box is ahead: it goes first, or it falls off and stops you.
+    // The glued box is ahead: it goes first, or it is pushed against something and you both
+    // stop, still glued.
     const b = shift(s, g.x, g.y, dx, dy, false, g);
-    if (!b) { unstick(s); return 'blocked'; }
+    if (!b) return 'blocked';
     land(s, g, b);
   } else if (e && p.sticky && STICKS(e)) { stick(s, e); return 'blocked'; }
   else if (e) {
