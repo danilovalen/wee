@@ -1189,6 +1189,15 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('pushed out of the water, it lights again', at(dry.entities[0], 6, 1) && dry.entities[0].fuse === 2, JSON.stringify(dry.entities[0]));
   step(dry, ['respawn']);
   check('Reset puts the bomb back, unlit', at(dry.entities[0], 2, 1) && dry.entities[0].fuse === null);
+  const hs = createGame(room(['#########', '#P.H.O..#', '#########'], { powers: { dive: true } }));
+  const hev = []; step(hs, ['right']); step(hs, ['right']); for (let i = 0; i < 60 && (hs.player.dir || hs.entities.some(e => !e.dead && e.slide)); i++) { hev.push(...hs.events.map(e => e.type)); step(hs); }
+  check('a heavy box sliding into a bomb sets it off', hs.entities[1].dead && hev.includes('blast') && !hs.entities[0].dead && !hs.deaths, JSON.stringify([hs.entities, hev]));
+  const dz = createGame(room(['#######', '#POX..#', '#######']));
+  step(dz, ['right']);
+  check('a bomb pushed into a death block goes off there, and you beside it die', dz.deaths === 1 && dz.events.some(e => e.type === 'blast'), JSON.stringify(dz.events));
+  const ar = createGame(room(['#######', '#POX..#', '#######'], { powers: { armored: true } }));
+  step(ar, ['right']);
+  check('armored, a blast does not hurt you', !ar.deaths && ar.events.some(e => e.type === 'blast'), JSON.stringify(ar.events));
   check('a bomb is a piece a level can hold', parseLevel(JSON.stringify(room(['#####', '#PO.#', '#####']))).entities[0].kind === 'bomb');
 }
 done();

@@ -36,7 +36,7 @@ export const POWER_TEXT = {
   cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed. With Swim too, the same press does both.',
   swim: 'When standing on land, press Space to start or stop swimming. The world takes a step. While swimming, you can go into water, at half speed.',
   light: 'When standing still, light up dark rooms.',
-  armored: 'Weak enemies, blocks and closing doors cannot crush you. Strong enemies, heavy boxes, beams and death blocks still can.',
+  armored: 'Weak enemies, blocks and closing doors cannot crush you, and bomb blasts cannot hurt you. Strong enemies, heavy boxes, beams and death blocks still can.',
 };
 export const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', light: 'Light', armored: 'Armored' };
 

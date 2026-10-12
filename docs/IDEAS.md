@@ -178,13 +178,14 @@ His answers, 2026-10-11 and 2026-10-12:
 | a blast reaching another bomb | it goes off in the same moment (a chain) |
 | what a blast destroys | you, light boxes, weak enemies, breakable blocks (not heavy boxes, strong enemies) |
 | water | puts the fuse out; out of the water, a push lights it again |
+| pushing a bomb that is already burning | keeps burning, the fuse does not restart |
+| a sliding heavy box, a closing door, a death block | sets it off |
+| armored | a blast does not hurt you |
 
 Built as the `bomb` piece (Pieces). Pushed like a light box, it can stick and glue, and it can be
 pushed into water (it sinks rather than stopping at the edge). The timer is the fuse: a full cord
 before it is lit, a spark that burns one length off per move, and no cord and a glowing body on the
-move it goes off. My readings, not his: pushing a bomb that is already burning does not restart its
-fuse; a heavy box sliding into a bomb, a closing door and a death block destroy it without a blast;
-a lone turret and a moving block survive a blast. In the generator its stand-in is a plain box, so
+move it goes off. My reading, not his: a lone turret and a moving block survive a blast. In the generator its stand-in is a plain box, so
 Must use means it has to go off.
 
 ## Paint mode: a win by painting every tile (2026-10-11)

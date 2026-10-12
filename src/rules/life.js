@@ -92,7 +92,8 @@ export function light(s, e) {
 }
 
 // A bomb going off: everything in the 3x3 around it that a blast destroys goes (light boxes,
-// weak enemies, breakable blocks), another bomb there goes off too, and you die if you are in it.
+// weak enemies, breakable blocks), another bomb there goes off too, and you die if you are in it
+// (unless armored).
 const BLASTED = ['box', 'enemy'];
 function blast(s, e) {
   kill(s, e, 'blast');
@@ -101,7 +102,7 @@ function blast(s, e) {
   for (let y = e.y - 1; y <= e.y + 1; y++) for (let x = e.x - 1; x <= e.x + 1; x++) {
     if (!inb(s, x, y)) continue;
     if (cellAt(s, x, y) === 'crack' && !s.broken.includes(y * s.w + x)) smash(s, { x, y, crack: true });
-    if (playerAt(s, x, y)) you = true;
+    if (playerAt(s, x, y) && !s.powers.armored) you = true;
     for (const o of s.entities) {
       if (o.dead || o.x !== x || o.y !== y) continue;
       if (o.kind === 'bomb') you = blast(s, o) || you;
@@ -118,7 +119,9 @@ export function die(s) {
   respawn(s);
 }
 
+// A bomb that is crushed, squashed or falls into death goes off instead of just breaking.
 export function kill(s, e, how) {
+  if (e.kind === 'bomb' && how !== 'blast') { explode(s, e); return; }
   e.dead = true;
   s.events.push({ type: 'kill', id: e.id, how });
 }

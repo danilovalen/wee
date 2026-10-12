@@ -613,7 +613,7 @@ const M = [
   ['src/rules/life.js', "const BLASTED = ['box', 'enemy'];", "const BLASTED = ['box', 'enemy', 'heavy', 'strong'];", 'sim'],
   ['src/rules/life.js', "const BLASTED = ['box', 'enemy'];", "const BLASTED = ['box'];", 'sim'],
   ['src/rules/life.js', "    if (cellAt(s, x, y) === 'crack' && !s.broken.includes(y * s.w + x)) smash(s, { x, y, crack: true });\n", "", 'sim'],
-  ['src/rules/life.js', "    if (playerAt(s, x, y)) you = true;\n", "", 'sim'],
+  ['src/rules/life.js', "    if (playerAt(s, x, y) && !s.powers.armored) you = true;\n", "", 'sim'],
   ['src/rules/life.js', "for (let y = e.y - 1; y <= e.y + 1; y++)", "for (let y = e.y; y <= e.y; y++)", 'sim'],
   ['src/rules/life.js', "...(e.kind === 'bomb' ? { fuse: null } : {}),", "...(e.kind === 'bomb' ? { fuse: 2 } : {}),", 'sim'],
   ['src/rules/game.js', "if (!s.player.dir && !s.player.hidden) for (const e of s.entities) if (!e.dead && e.fuse === 0) explode(s, e);", "for (const e of s.entities) if (!e.dead && e.fuse === 0) explode(s, e);", 'sim'],
@@ -629,6 +629,8 @@ const M = [
   ['src/gen/ingredients.js', "standIn: l => ({ ...l, entities: l.entities.map(e => e.kind === 'bomb' ? { ...e, kind: 'box' } : e) }), place", "place", 'gen'],
   ['style.css', "  .grid { gap: 3px 4px; }", "  .grid { gap: 4px; }", 'fit'],
   ['style.css', ".genSec h4 { margin: 5px 0 3px;", ".genSec h4 { margin: 8px 0 3px;", 'fit'],
+  ['src/rules/life.js', "  if (e.kind === 'bomb' && how !== 'blast') { explode(s, e); return; }\n", "", 'sim'],
+  ['src/rules/life.js', "if (playerAt(s, x, y) && !s.powers.armored) you = true;", "if (playerAt(s, x, y)) you = true;", 'sim'],
 ];
 
 let caught = 0, crashed = 0;

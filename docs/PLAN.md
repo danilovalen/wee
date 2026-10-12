@@ -120,8 +120,8 @@ colour, so it combines with that colour's buttons (all must be held).
 ## Armored (status, a toggle for now)
 
 Weak enemies, blocks and closing doors cannot crush you: an enemy turns back, a block that cannot
-push you stops, a door stays open. Strong enemies, heavy boxes, beams and death blocks still kill
-you. Drawn as a steel rim with rivets.
+push you stops, a door stays open. A bomb's blast cannot hurt you either. Strong enemies, heavy boxes, beams and death
+blocks still kill you. Drawn as a steel rim with rivets.
 
 ## Puzzle pieces: box, button, door
 
