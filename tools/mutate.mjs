@@ -209,7 +209,7 @@ const M = [
   ['src', "  if (!code.startsWith('w1')) throw new Error('Not a wee room code.');\n", "", "code"],
   ['src', "  return parseLevel(text);", "  return JSON.parse(text);", "code"],
   ['src', "  const { format, version, w, h, cells, start, entities, powers, clock } = level;\n  const text = JSON.stringify({ format, version, w, h, cells, start, entities, powers, clock });", "  const text = JSON.stringify(level);", "code"],
-  ['src', "    catch { $('codeIn').value = text; $('codeIn').select(); say('Copy it from the box.'); }", "    catch { say('Copy it from the box.'); }", "browser"],
+  ['src', "    catch { $('shareOut').hidden = false; $('shareOut').value = text; $('shareOut').select(); say('Copy it from the box.'); }", "    catch { say('Copy it from the box.'); }", "browser"],
   ['src', "      history.replaceState(null, '', location.pathname + location.search);\n", "", "browser"],
   ['src', "  if (location.hash.startsWith('#room=')) {", "  if (false) {", "browser"],
   ['src', "        stops.add(t.player.y * t.w + t.player.x);\n", "", "solve"],
@@ -511,6 +511,14 @@ const M = [
   ['src', "  if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);\n", "", 'browser'],
   ['src', "  if (d) wind = { x: d[0] * GUST, y: d[1] * GUST };", "  if (d) wind = { x: -d[0] * GUST, y: -d[1] * GUST };", 'browser'],
   ['src', "=== 1) S.fx.push({ type: 'ghost', x: before.x, y: before.y, at: t });", "=== 1) {}", 'browser'],
+  // Rooms as pages (register 107)
+  ['src/app/rooms.js', "    $('libTools').hidden = !saved.length;", "    $('libTools').hidden = false;", 'browser'],
+  ['src/app/rooms.js', "((S.room && S.room.name) || 'Untitled')", "'Untitled'", 'browser'],
+  ['src/app/rooms.js', "openRoom(starterLevel(innerHeight > innerWidth), {}); closeAll();", "openRoom(starterLevel(innerHeight > innerWidth), {});", 'browser'],
+  ['src/app/rooms.js', "syncRoomsButton(); closeAll(); } });\n  }));", "syncRoomsButton(); } });\n  }));", 'browser'],
+  ['src/app/rooms.js', "say(''); sayWhere(); $('roomsBox')", "say(''); $('roomsBox')", 'single'],
+  ['index.html', '<div id="codeRow" class="row" hidden>', '<div id="codeRow" class="row">', 'browser'],
+  ['index.html', '<div class="danger"><button id="roomDelete"', '<div><button id="roomDelete"', 'browser'],
 ];
 
 let caught = 0, crashed = 0;

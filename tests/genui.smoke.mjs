@@ -15,7 +15,7 @@ let dialogs = [], answers = [];
 page.on('dialog', d => { dialogs.push(d.message()); const a = answers.shift(); a ? d.accept() : d.dismiss(); });
 const level = async () => JSON.stringify(await page.evaluate(() => window.wee.getLevel()));
 const shelfLevel = async i => JSON.stringify(await page.evaluate(i => JSON.parse(localStorage.getItem('wee.generated'))[i].level, i));
-const openPanel = async () => { await page.click('#roomsBtn'); await page.click('#roomGen'); };
+const openPanel = async () => { await page.click('#roomsBtn'); await page.click('#roomNew'); await page.click('#roomGen'); };
 
 try {
   await page.goto(`http://localhost:${PORT}/`);
@@ -54,7 +54,7 @@ try {
 
   // Opening over an unedited saved room asks nothing and is one undo step that keeps its name.
   await page.keyboard.press('Escape');
-  await page.click('#roomsBtn');
+  await page.click('#roomTitle');
   await page.fill('#roomName', 'Mine');
   await page.click('#roomSave');
   await page.waitForFunction(() => document.getElementById('roomsSay').textContent.startsWith('Saved'));
@@ -96,10 +96,12 @@ try {
   check('undo brings the edited room back', await level() === edited);
 
   // Saving keeps the recipe, and the filter finds rooms that started generated.
-  await page.click('#roomsBtn');
+  await page.click('#roomTitle');
   await page.fill('#roomName', 'From the generator');
   await page.click('#roomSave');
   await page.waitForFunction(() => document.getElementById('roomsSay').textContent.startsWith('Saved'));
+  await page.keyboard.press('Escape');
+  await page.click('#roomsBtn');
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('wee.rooms')).find(r => r.name === 'From the generator'));
   check('a saved generated room keeps its recipe', stored.recipe && stored.recipe.seed === 1 && stored.recipe.ing.box === 'must', JSON.stringify(stored.recipe));
   await page.waitForFunction(() => /^Explored/.test(document.getElementById('exploredSum').textContent));

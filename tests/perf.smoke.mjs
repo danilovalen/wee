@@ -40,8 +40,12 @@ try {
   // the Rooms panel with 100 rooms, about three months of one a day
   let w = await worst(async () => { await page.click('#navRooms'); await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 100); });
   check(`opening Rooms with 100 rooms never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
+  await page.keyboard.press('Escape');
+  await page.click('#roomTitle');
   await page.fill('#roomName', 'Perf');
   w = await worst(async () => { await page.click('#roomSave'); await page.waitForFunction(() => document.getElementById('roomsSay').textContent.startsWith('Saved')); });
+  await page.keyboard.press('Escape');
+  await page.click('#navRooms');
   check(`saving with 100 rooms never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
   w = await worst(() => page.selectOption('#tagFilter', 'piece:box'));
   check(`the mechanism filter never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
@@ -64,7 +68,7 @@ try {
   check(`and never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
 
   // a generator run: turret rooms are the slowest to judge
-  await page.click('#navRooms'); await page.click('#roomGen');
+  await page.click('#navRooms'); await page.click('#roomNew'); await page.click('#roomGen');
   await page.locator('.genIngBox summary').click();
   for (const id of ['receiver', 'box', 'enemy']) await page.selectOption(`#genIng select[data-id=${id}]`, 'must');
   for (const [id, v] of [['genW', 12], ['genH', 12], ['genMin', 8], ['genMax', 14], ['genSeed', 4], ['genTime', 5]]) await page.fill('#' + id, String(v));

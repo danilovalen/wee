@@ -377,3 +377,26 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   body.play .phoneNav, body.play .sheet { display: none !important; }
 }
 
+/* Rooms as pages (register 107): a library of tiles, New room, and This room from the header. */
+.roomTitle { max-width: 14em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.roomList.tiles { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.roomList.tiles .empty { grid-column: 1 / -1; }
+.tiles .roomRow { flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; height: 100%; }
+.tiles .thumb { width: 100%; height: 96px; max-height: none; background: var(--bg); }
+.tiles .roomRow span { gap: 1px; }
+.tiles .roomRow b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.libBar { margin-top: 10px; }
+#libTools[hidden], #codeRow[hidden] { display: none; }
+.libFoot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; }
+.libFoot .hint { margin: 0; }
+.rooms button.primary { background: var(--accent); color: var(--on-accent); }
+.rooms .danger { margin-top: 16px; padding-top: 10px; box-shadow: inset 0 1px 0 var(--rule); }
+.rooms .danger button { color: #c8283c; }
+#shareOut[hidden] { display: none; }
+@media (max-width: 700px) {
+  .logo { display: none; }
+  .roomTitle { order: 0; max-width: 9em; min-height: 44px; }
+  .rooms.library { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; }
+  .roomList.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+

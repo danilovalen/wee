@@ -144,7 +144,7 @@ export function buildGenerator(actions) {
   const saved = read(FORM, null);
   fillForm(normalize(saved ? saved.recipe : { seed: newSeed() }));
   $('genTime').value = saved ? saved.seconds : 15;
-  const open = () => { if ($('roomsBox').open) $('roomsBox').close(); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
+  const open = () => { for (const id of ['roomsBox', 'newBox']) if ($(id).open) $(id).close(); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
   $('roomGen').onclick = $('genBtn').onclick = open;
   $('genReroll').onclick = () => { $('genSeed').value = newSeed(); };
   const seconds = () => Math.max(5, Math.min(60, +$('genTime').value || 15));

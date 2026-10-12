@@ -17,6 +17,7 @@ try {
   await page.evaluate(() => window.wee.roomsReady);
   await page.click('#navRooms');
   check('from a file, rooms are kept in this browser', (await page.textContent('#roomsWhere')).includes('this browser'));
+  await page.click('#roomNew');
   await page.locator('#templateList .roomRow', { hasText: 'Sample' }).click();
   const lv = await page.evaluate(() => window.wee.getLevel());
   check('the Sample template loads the sample room', lv.entities.length > 5 && lv.w === 20, `${lv.w}x${lv.h}`);

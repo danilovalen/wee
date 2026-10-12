@@ -23,6 +23,8 @@ export function syncRoomsButton() {
   noteChange(dirty());
   $('roomsBtn').textContent = dirty() ? 'Rooms •' : 'Rooms';
   $('roomsBtn').title = (S.room && S.room.name) || 'Unsaved room';
+  // The room's name in the header opens its page; a dot means changes not saved yet.
+  $('roomTitle').textContent = ((S.room && S.room.name) || 'Untitled') + (dirty() ? ' \u2022' : '');
 }
 
 export function remember(id) { try { if (id) localStorage.setItem(LAST, id); else localStorage.removeItem(LAST); } catch { /* storage off */ } }
@@ -50,10 +52,11 @@ function fillCurrent() {
   $('roomName').value = S.room ? S.room.name : '';
   $('roomNote').value = S.room ? S.room.note : '';
   $('roomDelete').disabled = !S.room || !S.room.id;
-  $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only. Export all to keep a copy.';
 }
 
-function say(msg) { $('roomsSay').textContent = msg; }
+const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only. Export all to keep a copy.'; };
+
+function say(msg) { $('roomsSay').textContent = msg; $('infoSay').textContent = msg; }
 
 export async function save(asNew) {
   if (!S.room) S.room = { id: null, name: '', note: '', saved: null, edited: false };
@@ -133,11 +136,12 @@ function renderList() {
       if (filter && !tags.has(filter)) continue;
       const { meta, level } = splitRoom(r);
       const par = meta.par ? ` · par ${meta.par}` : ' · not checked';
-      ul.append(row(level, meta.name || 'Untitled', `${level.w}x${level.h}${par} · ${when(meta.updated)}`, () => { if (leaveOk()) { openRoom(level, meta); $('roomsBox').close(); } }, versionOf(r)));
+      ul.append(row(level, meta.name || 'Untitled', `${level.w}x${level.h}${par} · ${when(meta.updated)}`, () => { if (leaveOk()) { openRoom(level, meta); closeAll(); } }, versionOf(r)));
       shown++;
     }
     if (i < saved.length) { setTimeout(slice, 0); return; }
-    if (!shown) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'No saved rooms yet.'; ul.append(li); }
+    if (!shown) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'No saved rooms yet. Make one with New room.'; ul.append(li); }
+    $('libTools').hidden = !saved.length;
     // The filter lists every mechanism with how many rooms have it; the tally shows the gaps.
     const opts = [new Option('All rooms', ''), new Option(`Started generated (${counts[GENERATED] || 0})`, GENERATED)];
     for (const [t, label] of MECHANISMS) opts.push(new Option(`${label} (${counts[t] || 0})`, t));
@@ -158,18 +162,25 @@ function download(name, data) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+const closeAll = () => { for (const id of ['roomsBox', 'newBox', 'infoBox']) if ($(id).open) $(id).close(); };
+
 export function buildRooms(actions) {
   A = actions;
   $('templateList').replaceChildren(...TEMPLATES.map(t => {
     const { level } = splitRoom(t.level);
-    return row(level, t.name, `Template · ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.saved = null; syncRoomsButton(); $('roomsBox').close(); } });
+    return row(level, t.name, `Template · ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.saved = null; syncRoomsButton(); closeAll(); } });
   }));
-  $('roomsBtn').onclick = async () => { fillCurrent(); say(''); $('roomsBox').showModal(); await refresh(); };
+  // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
+  // generate, templates) and This room (name, note, save, share, delete), from the header title.
+  $('roomsBtn').onclick = async () => { say(''); sayWhere(); $('roomsBox').showModal(); await refresh(); };
+  $('roomTitle').onclick = () => { fillCurrent(); say(''); $('shareOut').hidden = true; $('infoBox').showModal(); };
+  $('codeBtn').onclick = () => { const open = $('codeRow').hidden; $('codeRow').hidden = !open; $('codeBtn').setAttribute('aria-expanded', String(open)); if (open) $('codeIn').focus(); };
   $('tagFilter').onchange = renderList;
   $('roomSave').onclick = () => save(false);
   $('roomSaveAs').onclick = () => save(true);
   $('roomName').oninput = $('roomNote').oninput = () => { if (S.room) S.room.edited = true; else S.room = { id: null, name: '', note: '', saved: null, edited: true }; syncRoomsButton(); };
-  $('roomNew').onclick = () => { if (!leaveOk()) return; openRoom(starterLevel(innerHeight > innerWidth), {}); say('A new room. Name it and save.'); };
+  $('roomNew').onclick = () => $('newBox').showModal();
+  $('newBlank').onclick = () => { if (!leaveOk()) return; openRoom(starterLevel(innerHeight > innerWidth), {}); closeAll(); };
   $('roomDelete').onclick = async () => {
     if (!S.room || !S.room.id || !confirm(`Delete "${S.room.name}"? This cannot be undone.`)) return;
     try { await remove(S.room.id); } catch (e) { say(e.message); return; }
@@ -184,7 +195,7 @@ export function buildRooms(actions) {
     const code = await encodeRoom(S.level);
     const text = link ? location.href.replace(/#.*$/, '') + '#room=' + code : code;
     try { await navigator.clipboard.writeText(text); say(link ? 'Link copied.' : 'Code copied.'); }
-    catch { $('codeIn').value = text; $('codeIn').select(); say('Copy it from the box.'); }
+    catch { $('shareOut').hidden = false; $('shareOut').value = text; $('shareOut').select(); say('Copy it from the box.'); }
   };
   $('copyCode').onclick = () => share(false);
   $('copyLink').onclick = () => share(true);
@@ -194,7 +205,7 @@ export function buildRooms(actions) {
     if (!leaveOk()) return;
     openRoom(level, {}); S.room.saved = null; syncRoomsButton();
     $('codeIn').value = '';
-    say('Opened from a code. Name it and save to keep it.');
+    closeAll(); $('placeHint').textContent = 'Opened from a code. Name it and save to keep it.';
   };
   $('exportAll').onclick = async () => download('wee-rooms.weepack', pack(await refresh()));
   $('importBtn').onclick = () => $('importFile').click();
@@ -208,7 +219,7 @@ export function buildRooms(actions) {
       const { meta, level } = splitRoom(rooms[0]);
       openRoom(level, { name: meta.name || f.name.replace(/\.\w+$/, ''), note: meta.note });
       S.room.saved = null; syncRoomsButton();
-      say('Opened. Save it to keep it.');
+      closeAll(); $('placeHint').textContent = 'Opened. Save it to keep it.';
       return;
     }
     for (const r of rooms) await put({ ...r, id: r.id || newId() });

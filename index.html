@@ -11,6 +11,7 @@
   <canvas id="snow" aria-hidden="true"></canvas>
   <header>
     <b class="logo">wee</b>
+    <button id="roomTitle" class="roomTitle" type="button" title="This room">Untitled</button>
     <button id="mode" type="button" title="E">Play</button>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
@@ -204,40 +205,52 @@
     <div class="roomsHead"><b>Keys</b><form method="dialog"><button>Close</button></form></div>
     <div id="keysList" class="keysList"></div>
   </dialog>
-  <dialog id="roomsBox" class="rooms">
+  <dialog id="roomsBox" class="rooms library">
     <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
-    <p id="roomsWhere" class="hint"></p>
+    <div class="row libBar">
+      <button id="roomNew" type="button">New room</button>
+      <button id="codeBtn" type="button" aria-expanded="false">Open a code</button>
+      <button id="importBtn" type="button">Import</button>
+      <input id="importFile" type="file" accept=".weepack,.wee,.json" hidden>
+    </div>
+    <div id="codeRow" class="row" hidden>
+      <input id="codeIn" type="text" placeholder="Paste a room code or link" autocomplete="off">
+      <button id="openCode" type="button">Open</button>
+    </div>
+    <p id="roomsSay" class="hint"></p>
+    <div id="libTools">
+      <label class="field">Mechanism <select id="tagFilter"></select></label>
+      <details class="explored"><summary id="exploredSum"></summary><p class="hint">Not in any room yet:</p><ul id="unexplored"></ul></details>
+    </div>
+    <ul id="roomList" class="roomList tiles"></ul>
+    <div class="libFoot"><p id="roomsWhere" class="hint"></p><button id="exportAll" type="button">Export all</button></div>
+  </dialog>
+  <dialog id="newBox" class="rooms">
+    <div class="roomsHead"><b>New room</b><form method="dialog"><button>Close</button></form></div>
+    <div class="row">
+      <button id="newBlank" type="button">Empty room</button>
+      <button id="roomGen" type="button">Generate a room</button>
+    </div>
+    <h3>Templates</h3>
+    <ul id="templateList" class="roomList tiles"></ul>
+  </dialog>
+  <dialog id="infoBox" class="rooms">
+    <div class="roomsHead"><b>This room</b><form method="dialog"><button>Close</button></form></div>
     <label class="field">Name <input id="roomName" type="text" maxlength="60" placeholder="Name this room"></label>
     <label class="field">Note <textarea id="roomNote" rows="2" maxlength="400" placeholder="What is this room about?"></textarea></label>
     <div class="row">
-      <button id="roomSave" type="button">Save</button>
+      <button id="roomSave" type="button" class="primary">Save</button>
       <button id="roomSaveAs" type="button">Save as new</button>
-      <button id="roomNew" type="button">New room</button>
-      <button id="roomGen" type="button">Generate a room</button>
-      <button id="roomDelete" type="button">Delete</button>
     </div>
-    <p id="roomsSay" class="hint"></p>
-    <h3>Your rooms</h3>
-    <label class="field">Mechanism <select id="tagFilter"></select></label>
-    <details class="explored"><summary id="exploredSum"></summary><p class="hint">Not in any room yet:</p><ul id="unexplored"></ul></details>
-    <ul id="roomList" class="roomList"></ul>
-    <h3>Templates</h3>
-    <ul id="templateList" class="roomList"></ul>
+    <p id="infoSay" class="hint"></p>
     <h3>Share</h3>
     <div class="row">
       <button id="copyCode" type="button">Copy code</button>
       <button id="copyLink" type="button">Copy link</button>
+      <button id="roomDownload" type="button">Download</button>
     </div>
-    <div class="row">
-      <input id="codeIn" type="text" placeholder="Paste a room code or link" autocomplete="off">
-      <button id="openCode" type="button">Open</button>
-    </div>
-    <div class="row">
-      <button id="roomDownload" type="button">Download this room</button>
-      <button id="exportAll" type="button">Export all</button>
-      <button id="importBtn" type="button">Import</button>
-      <input id="importFile" type="file" accept=".weepack,.wee,.json" hidden>
-    </div>
+    <input id="shareOut" type="text" readonly hidden>
+    <div class="danger"><button id="roomDelete" type="button">Delete this room</button></div>
   </dialog>
   <dialog id="genBox" class="rooms gen">
     <div class="roomsHead"><b>Generate a room</b><form method="dialog"><button>Close</button></form></div>
