@@ -5,7 +5,7 @@ import { parseLevel } from '../src/level/format.js';
 import { solve } from '../src/solve/solve.js';
 import { contains, uses, MECHANISMS } from '../src/solve/tags.js';
 import { rng } from '../src/gen/random.js';
-import { INGREDIENTS, ING, knock } from '../src/gen/ingredients.js';
+import { INGREDIENTS, ING, knock, standIn } from '../src/gen/ingredients.js';
 import { offFound, judge } from '../src/gen/score.js';
 import { normalize, recipeLabel, build, mutate, generateNow, tidy } from '../src/gen/generate.js';
 import { elementCheck, idleElements, NOTES_MAX } from '../src/solve/design.js';
@@ -148,4 +148,8 @@ check('when nothing fits, the closest room comes back with its verdict', !hopele
 // A breakable block brings Dive, so a room that must use one can be made, and its answer breaks it.
 const kfit = [1, 4].map(seed => generateNow({ ing: { crack: 'must' }, seed, w: 8, h: 8, min: 3, max: 12 }, { maxTries: 400 }));
 check('a room that must use a breakable block is made, and its answer breaks the block', kfit.every(r => r.fit && uses(r.level, solve(r.level).moves).includes('use:break')), kfit.map(r => r.fit).join());
+const bl = room(['#####', '#PO.#', '#####']);
+check('a bomb\'s stand-in is a plain box, so pushing it like a box does not count as using it', standIn(ING.bomb, bl).entities[0]?.kind === 'box' && standIn(ING.bomb, bl).cells.join() === bl.cells.join());
+const bfit = [1, 4].map(seed => generateNow({ ing: { bomb: 'must' }, seed, w: 8, h: 8, min: 3, max: 12 }, { maxTries: 400 }));
+check('a room that must use a bomb is made, and its answer sets the bomb off', bfit.every(r => r.fit && uses(r.level, solve(r.level).moves).includes('use:blast')), bfit.map(r => r.fit).join());
 done();

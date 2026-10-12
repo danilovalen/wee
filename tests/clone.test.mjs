@@ -51,7 +51,7 @@ const FIELDS = {
   stuck: g => { g.player.stuck = { id: g.entities[1].id, ride: false }; }, riding: g => { g.player.stuck = { id: g.entities[1].id, ride: true }; },
   checkpoint: g => { g.checkpoint = { x: 3, y: 3 }; }, 'piece x': g => { g.entities[1].x++; }, 'piece y': g => { g.entities[1].y++; },
   'piece dir': g => { g.entities[4].dir = -g.entities[4].dir; }, 'piece axis': g => { g.entities[4].axis = 'v'; }, 'piece sticky': g => { g.entities[1].sticky = true; },
-  glue: g => { g.entities[1].glue = 99; }, 'turret aim': g => { g.entities[5].turret.aim++; }, 'a piece gone': g => { g.entities[1].dead = true; }, 'a door open': g => { g.open.blue = !g.open.blue; }, 'a block broken': g => { g.broken = [g.w + 1]; },
+  glue: g => { g.entities[1].glue = 99; }, 'turret aim': g => { g.entities[5].turret.aim++; }, 'a piece gone': g => { g.entities[1].dead = true; }, 'a door open': g => { g.open.blue = !g.open.blue; }, 'a block broken': g => { g.broken = [g.w + 1]; }, 'a fuse lit': g => { g.entities[1].fuse = 2; },
 };
 const same = Object.entries(FIELDS).filter(([, f]) => { const g = cloneGame(base); f(g); return stateKey(g) === k0; }).map(([n]) => n);
 check('the position key changes with every field it covers', !same.length, same.join(', '));

@@ -2,6 +2,7 @@
 // something. You ride a moving block or a sliding box you meet until you move off; a
 // light box you meet glues to you and comes along; pushed into something it stays glued, and
 // it falls off only when it is left behind.
+import { LIGHT } from './base.js';
 import { cellAt, shift } from './grid.js';
 import { die, land } from './life.js';
 
@@ -10,7 +11,7 @@ import { die, land } from './life.js';
 // light box you meet glues to you and comes along; pushed into something it stays glued, and
 // it falls off only when it is left behind.
 export const stuckTo = s => { const st = s.player.stuck; return st && s.entities.find(e => e.id === st.id && !e.dead); };
-export const STICKS = e => e.kind === 'mover' || e.kind === 'box' || (e.kind === 'heavy' && !!e.slide);
+export const STICKS = e => e.kind === 'mover' || LIGHT.includes(e.kind) || (e.kind === 'heavy' && !!e.slide);
 export function stick(s, e) {
   const p = s.player;
   p.sticky = false;
@@ -48,5 +49,5 @@ export function checkStuck(s) {
   if (!st) return;
   if (!e || p.hidden || e.x !== p.x + st.dx || e.y !== p.y + st.dy) { unstick(s); return; }
   // A sliding box you rode has stopped: a light one is glued to you now, a heavy one lets go.
-  if (st.ride && e.kind !== 'mover' && !e.slide) { if (e.kind === 'box') st.ride = false; else unstick(s); }
+  if (st.ride && e.kind !== 'mover' && !e.slide) { if (LIGHT.includes(e.kind)) st.ride = false; else unstick(s); }
 }

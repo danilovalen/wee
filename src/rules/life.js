@@ -1,13 +1,13 @@
 // Doors and switches, dying, and the room reset.
-import { CLOCKWISE, COLOURS, HOLDS_DOOR } from './base.js';
-import { cellAt, entAt, playerAt } from './grid.js';
+import { CLOCKWISE, COLOURS, FUSE, HOLDS_DOOR } from './base.js';
+import { cellAt, entAt, inb, playerAt } from './grid.js';
 
 // Which of its directions, in clockwise order, a turret aims first.
 export const startAim = t => Math.max(0, CLOCKWISE.filter(d => t.dirs.includes(d)).indexOf(t.start));
 
 // The room's pieces as the level places them; a reset builds them again from here.
 export const freshPieces = list => list.map((e, i) => ({
-  id: i + 1, kind: e.kind, x: e.x, y: e.y,
+  id: i + 1, kind: e.kind, x: e.x, y: e.y, ...(e.kind === 'bomb' ? { fuse: null } : {}),
   axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
   turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: startAim(e.turret) } : null,
 }));
@@ -84,6 +84,34 @@ export function smash(s, t) {
   s.events.push({ type: 'break', x: t.x, y: t.y });
 }
 
+// A push lights a bomb, unless it is in water or already burning.
+export function light(s, e) {
+  if (e.kind !== 'bomb' || e.fuse != null || cellAt(s, e.x, e.y) === 'water') return;
+  e.fuse = FUSE;
+  s.events.push({ type: 'light', id: e.id });
+}
+
+// A bomb going off: everything in the 3x3 around it that a blast destroys goes (light boxes,
+// weak enemies, breakable blocks), another bomb there goes off too, and you die if you are in it.
+const BLASTED = ['box', 'enemy'];
+function blast(s, e) {
+  kill(s, e, 'blast');
+  s.events.push({ type: 'blast', x: e.x, y: e.y });
+  let you = false;
+  for (let y = e.y - 1; y <= e.y + 1; y++) for (let x = e.x - 1; x <= e.x + 1; x++) {
+    if (!inb(s, x, y)) continue;
+    if (cellAt(s, x, y) === 'crack' && !s.broken.includes(y * s.w + x)) smash(s, { x, y, crack: true });
+    if (playerAt(s, x, y)) you = true;
+    for (const o of s.entities) {
+      if (o.dead || o.x !== x || o.y !== y) continue;
+      if (o.kind === 'bomb') you = blast(s, o) || you;
+      else if (BLASTED.includes(o.kind)) kill(s, o, 'blast');
+    }
+  }
+  return you;
+}
+export function explode(s, e) { if (blast(s, e)) die(s); }
+
 export function die(s) {
   s.events.push({ type: 'die', x: s.player.x, y: s.player.y });
   s.deaths++;
@@ -102,6 +130,6 @@ export function land(s, e, t) {
   e.x = t.x; e.y = t.y;
   const c = cellAt(s, e.x, e.y);
   if (c === 'sticky' && e.kind !== 'turret' && !e.glue && !e.sticky) { e.sticky = true; s.events.push({ type: 'sticky', id: e.id }); }
-  if (c === 'water') e.sticky = false;
+  if (c === 'water') { e.sticky = false; if (e.fuse != null) { e.fuse = null; s.events.push({ type: 'fizzle', id: e.id }); } }
   return true;
 }

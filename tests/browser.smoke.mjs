@@ -719,9 +719,27 @@ try {
   await page.evaluate(() => { window.__manualClock = true; });
   await page.keyboard.press('e');
   await page.evaluate(() => { window.wee.press('right'); window.advanceTime(60); window.wee.press('right'); window.advanceTime(1500); });
+  // The break's burst runs on the real clock: let it finish, then draw once more.
+  await page.waitForTimeout(400); await page.evaluate(() => window.advanceTime(60));
   const broke = JSON.parse(await page.evaluate(() => window.renderGameToText()));
   const gone = await red(3 + 6 / 32, 1 + 26 / 32);
   check('a dive breaks it, and it is drawn as floor', broke.broken?.[0]?.join() === '3,1' && broke.player.x === 5 && gone > 215, JSON.stringify({ broken: broke.broken, x: broke.player.x, gone }));
+  await page.keyboard.press('e');
+
+  // A bomb's fuse is its timer: a push lights it and its spark burns down one length per move.
+  await page.evaluate(l => window.wee.loadLevel(l), room(['#######', '#.....#', '#PO...#', '#######']));
+  const rgb = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round(x * t), Math.round(y * t), 1, 1).data].slice(0, 3); }, [x, y]);
+  const orange = ([r, g, b]) => r > 220 && g > 110 && g < 200 && b < 120;
+  await page.keyboard.press('e');
+  await page.evaluate(() => { window.wee.press('right'); window.advanceTime(1500); });
+  const sparkFull = await rgb(5 + 26 / 32, 2 + 3 / 32);
+  await page.evaluate(() => { window.wee.press('up'); window.advanceTime(1500); });
+  const sparkHalf = await rgb(5 + 21 / 32, 2 + 2 / 32), burnt = await rgb(5 + 26 / 32, 2 + 3 / 32);
+  check('a lit fuse sparks at its end, and burns one length shorter each move', orange(sparkFull) && orange(sparkHalf) && !orange(burnt), JSON.stringify({ sparkFull, sparkHalf, burnt }));
+  await page.evaluate(() => { window.wee.press('left'); window.advanceTime(60); });
+  await page.evaluate(() => window.advanceTime(1500));
+  const after = JSON.parse(await page.evaluate(() => window.renderGameToText()));
+  check('it goes off at the end of the second move after the push, with a blast', !after.pieces.some(p => p.kind === 'bomb') && (await page.evaluate(() => window.wee.fxTypes())).includes('blast'), JSON.stringify(after.pieces));
   await page.keyboard.press('e');
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) {

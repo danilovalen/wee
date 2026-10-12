@@ -71,6 +71,20 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
     g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();
     g.beginPath(); g.moveTo(7, 7); g.lineTo(25, 25); g.moveTo(25, 7); g.lineTo(7, 25); g.stroke();
+  } else if (e.kind === 'bomb') {
+    // The fuse is the timer: a full cord before it is lit, a spark that burns it down one
+    // length per move, and with no cord left the body glows: it goes off when this move ends.
+    const k = e.fuse == null ? 2 : e.fuse, hot = e.fuse === 0 ? 0.5 + 0.5 * Math.sin(frame.clock / 70) : 0;
+    g.fillStyle = INK.bomb; g.beginPath(); g.arc(16, 18, 10, 0, Math.PI * 2); g.fill();
+    if (hot) { g.fillStyle = `rgba(255,90,40,${0.35 + 0.45 * hot})`; g.beginPath(); g.arc(16, 18, 10, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = INK.bombHi; g.beginPath(); g.arc(12, 14, 2.5, 0, Math.PI * 2); g.fill();
+    g.fillStyle = INK.bomb; g.fillRect(14, 6, 5, 4);
+    const tip = [[17, 6], [21, 2], [26, 3]].slice(0, k + 1);
+    if (k) { g.strokeStyle = INK.fuse; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath(); tip.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke(); g.lineCap = 'butt'; }
+    if (e.fuse != null) {
+      const [sx, sy] = tip[tip.length - 1], f = 2 + Math.sin(frame.clock / 45);
+      g.fillStyle = INK.spark; g.beginPath(); g.arc(sx, sy, 1.8 + f * 0.6, 0, Math.PI * 2); g.fill();
+    }
   } else if (e.kind === 'heavy') {
     g.fillStyle = INK.heavy; roundRect(g, 2, 2, T - 4, T - 4, 3); g.fill();
     g.strokeStyle = INK.heavyEdge; g.lineWidth = 3; g.stroke();

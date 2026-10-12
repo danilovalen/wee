@@ -3,7 +3,7 @@
 import { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } from './base.js';
 import { aimOf, computeBeams, turnTurrets } from './beams.js';
 import { cellAt, inWater } from './grid.js';
-import { freshPieces, refreshDoors } from './life.js';
+import { explode, freshPieces, refreshDoors } from './life.js';
 import { fireSprings, rushOnce, slidePiece } from './pieces.js';
 import { input, slideOnce, unhide } from './player.js';
 import { checkStuck } from './sticky.js';
@@ -59,6 +59,8 @@ export function step(s, inputs = []) {
   fireSprings(s);
   checkStuck(s);
   checkGlue(s);
+  // A burnt-out fuse goes off once your move has ended.
+  if (!s.player.dir && !s.player.hidden) for (const e of s.entities) if (!e.dead && e.fuse === 0) explode(s, e);
   checkWin(s);
   computeBeams(s, true);
   refreshDoors(s);
@@ -81,7 +83,7 @@ export function gameText(s, mode = 'play') {
     player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden, swimming: s.player.swimming, sticky: s.player.sticky, stuck: s.player.stuck && (s.player.stuck.ride ? 'riding' : 'glued') },
     checkpoint: s.checkpoint,
     pieces: s.entities.filter(e => !e.dead).map(e => ({
-      kind: e.kind, x: e.x, y: e.y,
+      kind: e.kind, x: e.x, y: e.y, ...(e.fuse != null ? { fuse: e.fuse } : {}),
       ...(e.sticky ? { sticky: true } : {}), ...(partnerOf(s, e) ? { glued: true } : {}),
       ...(MOVES.includes(e.kind) ? { axis: e.axis, mode: e.mode } : {}),
       ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, aim: aimOf(e.turret) } } : {}),

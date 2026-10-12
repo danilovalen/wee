@@ -64,7 +64,7 @@ h2:not(:first-child) { margin-top: 16px; }
   .grid button[hidden] { display: flex; }
   .grid button { white-space: nowrap; padding: 4px 6px; font-size: 12.5px; }
   .grid canvas { width: 18px; height: 18px; }
-  .ghead { margin-top: 4px; }
+  .ghead { margin-top: 2px; }
 }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .grid button { min-width: 0; text-align: left; display: flex; align-items: center; gap: 6px; padding: 5px 6px; font-size: 13px; }
@@ -174,7 +174,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .genNums input { width: 4.5em; box-sizing: border-box; background: var(--field); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px; font: inherit; }
 .genNums #genSeed { width: 6.5em; }
 .genIng { list-style: none; margin: 6px 0; padding: 0; }
-.genSec h4 { margin: 8px 0 3px; font: 800 11px var(--label-face); text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.genSec h4 { margin: 5px 0 3px; font: 800 11px var(--label-face); text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
 .genItems { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 4px; }
 .genItems label { display: flex; align-items: center; gap: 6px; font-size: 0.9em; }
 .genItems canvas { width: 22px; height: 22px; flex: none; }
@@ -194,7 +194,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   main { flex: 1; min-height: 0; padding: 10px 16px; gap: 14px; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
   main > * { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
   aside { padding: 10px 12px; }
-  .grid { gap: 4px; }
+  .grid { gap: 3px 4px; }
   .grid button { padding: 2px 6px; }
   .power small { display: none; }
   .power { padding: 3px 0; }
@@ -757,7 +757,11 @@ const turn = (corner, d) => OUT[openFaces(corner).find(f => f !== ENTRY_FACE[d])
 
 // Clockwise order: a turret fires its chosen directions in this order.
 const CLOCKWISE = ['up', 'right', 'down', 'left'];
-const KINDS = ['mover', 'enemy', 'strong', 'box', 'heavy', 'turret'];
+const KINDS = ['mover', 'enemy', 'strong', 'box', 'heavy', 'turret', 'bomb'];
+// Pushed like a light box: a box, and a bomb.
+const LIGHT = ['box', 'bomb'];
+// A bomb goes off at the end of your second move after the push that lit it.
+const FUSE = 2;
 const MOVES = ['mover', 'enemy', 'strong'];
 const ENEMY = ['enemy', 'strong'];
 // realtime: on its own clock; input: on each world step; follow: on each world step,
@@ -771,8 +775,8 @@ const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'light', 'armored
 const NEEDS = { light: 'dark levels' };
 
 // Water stops you unless you are swimming, and stops weak enemies, light boxes and
-// lone turrets. Strong enemies, heavy boxes and blocks go through it.
-const WADES = ['strong', 'heavy', 'mover'];
+// lone turrets. Strong enemies, heavy boxes and blocks go through it, and a bomb sinks into it.
+const WADES = ['strong', 'heavy', 'mover', 'bomb'];
 const wades = e => WADES.includes(e.kind);
 // A closing door squashes what is in it, unless one of these holds it open.
 const HOLDS_DOOR = ['strong', 'heavy', 'mover'];
@@ -782,7 +786,7 @@ const BREAKS = ['strong', 'heavy'];
 const breaks = e => BREAKS.includes(e.kind);
 
 const DIR_OF = (dx, dy) => Object.keys(DIRS).find(k => DIRS[k][0] === dx && DIRS[k][1] === dy);
-return { TICK_MS, RT_PERIOD, HIDE_TICKS, LASER_TICKS, DIRS, OPPOSITE, COLOURS, CORNERS, EXIT_FACE, ENTRY_FACE, OUT, OPP, openFaces, turn, CLOCKWISE, KINDS, MOVES, ENEMY, MODES, CARRIES_TURRET, POWERS, NEEDS, WADES, wades, HOLDS_DOOR, BREAKS, breaks, DIR_OF };
+return { TICK_MS, RT_PERIOD, HIDE_TICKS, LASER_TICKS, DIRS, OPPOSITE, COLOURS, CORNERS, EXIT_FACE, ENTRY_FACE, OUT, OPP, openFaces, turn, CLOCKWISE, KINDS, LIGHT, FUSE, MOVES, ENEMY, MODES, CARRIES_TURRET, POWERS, NEEDS, WADES, wades, HOLDS_DOOR, BREAKS, breaks, DIR_OF };
 })();
 // ---- src/rules/grid.js
 const m1 = (() => {
@@ -861,8 +865,8 @@ return { inb, cellAt, onGravel, solidCell, triAt, facing, gateAt, stepTo, pushTo
 })();
 // ---- src/rules/life.js
 const m2 = (() => {
-const { CLOCKWISE, COLOURS, HOLDS_DOOR } = m0;
-const { cellAt, entAt, playerAt } = m1;
+const { CLOCKWISE, COLOURS, FUSE, HOLDS_DOOR } = m0;
+const { cellAt, entAt, inb, playerAt } = m1;
 // Doors and switches, dying, and the room reset.
 
 
@@ -871,7 +875,7 @@ const startAim = t => Math.max(0, CLOCKWISE.filter(d => t.dirs.includes(d)).inde
 
 // The room's pieces as the level places them; a reset builds them again from here.
 const freshPieces = list => list.map((e, i) => ({
-  id: i + 1, kind: e.kind, x: e.x, y: e.y,
+  id: i + 1, kind: e.kind, x: e.x, y: e.y, ...(e.kind === 'bomb' ? { fuse: null } : {}),
   axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
   turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: startAim(e.turret) } : null,
 }));
@@ -948,6 +952,34 @@ function smash(s, t) {
   s.events.push({ type: 'break', x: t.x, y: t.y });
 }
 
+// A push lights a bomb, unless it is in water or already burning.
+function light(s, e) {
+  if (e.kind !== 'bomb' || e.fuse != null || cellAt(s, e.x, e.y) === 'water') return;
+  e.fuse = FUSE;
+  s.events.push({ type: 'light', id: e.id });
+}
+
+// A bomb going off: everything in the 3x3 around it that a blast destroys goes (light boxes,
+// weak enemies, breakable blocks), another bomb there goes off too, and you die if you are in it.
+const BLASTED = ['box', 'enemy'];
+function blast(s, e) {
+  kill(s, e, 'blast');
+  s.events.push({ type: 'blast', x: e.x, y: e.y });
+  let you = false;
+  for (let y = e.y - 1; y <= e.y + 1; y++) for (let x = e.x - 1; x <= e.x + 1; x++) {
+    if (!inb(s, x, y)) continue;
+    if (cellAt(s, x, y) === 'crack' && !s.broken.includes(y * s.w + x)) smash(s, { x, y, crack: true });
+    if (playerAt(s, x, y)) you = true;
+    for (const o of s.entities) {
+      if (o.dead || o.x !== x || o.y !== y) continue;
+      if (o.kind === 'bomb') you = blast(s, o) || you;
+      else if (BLASTED.includes(o.kind)) kill(s, o, 'blast');
+    }
+  }
+  return you;
+}
+function explode(s, e) { if (blast(s, e)) die(s); }
+
 function die(s) {
   s.events.push({ type: 'die', x: s.player.x, y: s.player.y });
   s.deaths++;
@@ -966,16 +998,16 @@ function land(s, e, t) {
   e.x = t.x; e.y = t.y;
   const c = cellAt(s, e.x, e.y);
   if (c === 'sticky' && e.kind !== 'turret' && !e.glue && !e.sticky) { e.sticky = true; s.events.push({ type: 'sticky', id: e.id }); }
-  if (c === 'water') e.sticky = false;
+  if (c === 'water') { e.sticky = false; if (e.fuse != null) { e.fuse = null; s.events.push({ type: 'fizzle', id: e.id }); } }
   return true;
 }
-return { startAim, freshPieces, switchesOf, refreshDoors, respawn, smash, die, kill, land };
+return { startAim, freshPieces, switchesOf, refreshDoors, respawn, smash, light, explode, die, kill, land };
 })();
 // ---- src/rules/beams.js
 const m3 = (() => {
 const { DIRS } = m0;
 const { cellAt, entAt, facing, inWater, inb, playerAt, stepTo } = m1;
-const { die, kill } = m2;
+const { die, explode, kill } = m2;
 // Lasers: your shot, turret beams, relays, catchers and shocked water.
 
 
@@ -998,10 +1030,12 @@ function trace(s, x, y, d, hit, hitsPlayer) {
   return { path, wall, end: cd, stop, player };
 }
 
-// Any laser kills a weak enemy and goes on. Everything else stops it, and a strong
-// enemy takes no harm from it.
+// Any laser kills a weak enemy and goes on, and sets a bomb off. Everything else stops it, and a
+// strong enemy takes no harm from it.
 function laserHit(s, o, how) {
   if (o.kind === 'enemy') { kill(s, o, how); return true; }
+  // A beam does not light a bomb, it sets it off.
+  if (o.kind === 'bomb') { explode(s, o); return false; }
   return false;
 }
 
@@ -1063,6 +1097,7 @@ return { trace, laserHit, laser, shockPools, shockHarms, aimOf, inBeam, turnTurr
 })();
 // ---- src/rules/sticky.js
 const m4 = (() => {
+const { LIGHT } = m0;
 const { cellAt, shift } = m1;
 const { die, land } = m2;
 // Sticky: a puddle makes you sticky until water washes it off or you stick to
@@ -1071,12 +1106,13 @@ const { die, land } = m2;
 // it falls off only when it is left behind.
 
 
+
 // Sticky: a puddle makes you sticky until water washes it off or you stick to
 // something. You ride a moving block or a sliding box you meet until you move off; a
 // light box you meet glues to you and comes along; pushed into something it stays glued, and
 // it falls off only when it is left behind.
 const stuckTo = s => { const st = s.player.stuck; return st && s.entities.find(e => e.id === st.id && !e.dead); };
-const STICKS = e => e.kind === 'mover' || e.kind === 'box' || (e.kind === 'heavy' && !!e.slide);
+const STICKS = e => e.kind === 'mover' || LIGHT.includes(e.kind) || (e.kind === 'heavy' && !!e.slide);
 function stick(s, e) {
   const p = s.player;
   p.sticky = false;
@@ -1114,7 +1150,7 @@ function checkStuck(s) {
   if (!st) return;
   if (!e || p.hidden || e.x !== p.x + st.dx || e.y !== p.y + st.dy) { unstick(s); return; }
   // A sliding box you rode has stopped: a light one is glued to you now, a heavy one lets go.
-  if (st.ride && e.kind !== 'mover' && !e.slide) { if (e.kind === 'box') st.ride = false; else unstick(s); }
+  if (st.ride && e.kind !== 'mover' && !e.slide) { if (LIGHT.includes(e.kind)) st.ride = false; else unstick(s); }
 }
 return { stuckTo, STICKS, stick, unstick, entered, carry, drag, checkStuck };
 })();
@@ -1180,10 +1216,10 @@ return { partnerOf, meet, unglue, lead, follow, partnerAt, checkGlue };
 })();
 // ---- src/rules/pieces.js
 const m6 = (() => {
-const { DIRS, ENEMY, MOVES, breaks, wades } = m0;
+const { DIRS, ENEMY, LIGHT, MOVES, breaks, wades } = m0;
 const { turnTurrets } = m3;
 const { crushes, entAt, inb, onGravel, playerAt, pushTo, stepTo } = m1;
-const { die, kill, land, refreshDoors, smash } = m2;
+const { die, kill, land, light, refreshDoors, smash } = m2;
 const { carry, entered, stick, stuckTo } = m4;
 const { follow, lead, meet, partnerAt, partnerOf } = m5;
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
@@ -1193,11 +1229,15 @@ const { follow, lead, meet, partnerAt, partnerOf } = m5;
 
 
 
+// Each move of yours burns every lit fuse down by one.
+function burnFuses(s) { for (const e of s.entities) if (!e.dead && e.fuse) e.fuse--; }
+
 // A hide is one cycle with no direction: each on-your-move piece slides along its
 // patrol until something stops it, a tile per tick (see step), and turns there.
 function hideCycle(s) {
   s.worldSteps++;
   s.move++;
+  burnFuses(s);
   for (const e of s.entities) if (!e.dead && e.mode === 'input' && MOVES.includes(e.kind)) launch(s, e);
   turnTurrets(s, 'input');
   refreshDoors(s);
@@ -1247,7 +1287,7 @@ function moveMover(s, e, d) {
   const o = entAt(s, t.x, t.y, e);
   let b;
   if (o) {
-    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d, false))) { if (land(s, o, b)) follow(s, o, mx, my); }
+    if (LIGHT.includes(o.kind) && (b = pushTo(s, t.x, t.y, t.d, wades(o)))) { if (land(s, o, b)) { light(s, o); follow(s, o, mx, my); } }
     else { meet(s, e, o); blocked(); return; }
   }
   if (playerAt(s, t.x, t.y)) {
@@ -1270,7 +1310,7 @@ function moveMover(s, e, d) {
 }
 
 // A sliding heavy box breaks what it runs into: enemies and light boxes.
-const CRUSHABLE = ['enemy', 'strong', 'box'];
+const CRUSHABLE = ['enemy', 'strong', 'box', 'bomb'];
 
 // A piece sliding on its own (a thrown heavy box, anything a spring launched) goes a
 // tile per tick until something stops it. A heavy box squashes enemies, light boxes and you; an
@@ -1335,15 +1375,15 @@ function fireSprings(s) {
     }
   }
 }
-return { hideCycle, rushOnce, launch, worldStep, patrolDir, moveMover, slidePiece, springsOf, fireSprings };
+return { burnFuses, hideCycle, rushOnce, launch, worldStep, patrolDir, moveMover, slidePiece, springsOf, fireSprings };
 })();
 // ---- src/rules/player.js
 const m7 = (() => {
-const { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } = m0;
+const { DIRS, ENEMY, HIDE_TICKS, LIGHT, OPPOSITE, POWERS, wades } = m0;
 const { inBeam, laser, turnTurrets } = m3;
 const { cellAt, crushes, entAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } = m1;
-const { die, kill, land, refreshDoors, respawn, smash } = m2;
-const { hideCycle, worldStep } = m6;
+const { die, kill, land, light, refreshDoors, respawn, smash } = m2;
+const { burnFuses, hideCycle, worldStep } = m6;
 const { STICKS, drag, entered, stick, stuckTo, unstick } = m4;
 const { follow, lead, meet, partnerAt } = m5;
 // You: one slide step at a time, dive, hide, and what each key does.
@@ -1366,9 +1406,9 @@ function playerStep(s, d, diving) {
   if (ahead) {
     // The glued box is ahead: it goes first, or it is pushed against something and you both
     // stop, still glued.
-    const b = shift(s, g.x, g.y, dx, dy, false, g);
+    const b = shift(s, g.x, g.y, dx, dy, wades(g), g);
     if (!b) return 'blocked';
-    land(s, g, b);
+    if (land(s, g, b)) light(s, g);
   } else if (e && p.sticky && STICKS(e)) { stick(s, e); return 'blocked'; }
   else if (e) {
     let b;
@@ -1377,11 +1417,11 @@ function playerStep(s, d, diving) {
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (e.kind === 'box') {
+    } else if (LIGHT.includes(e.kind)) {
       // A box glued to another piece: the one ahead goes first, the one behind follows.
       const led = !!partnerAt(s, e, nx + dx, ny + dy) && lead(s, e, dx, dy);
-      if (!(b = pushTo(s, nx, ny, t.d, false))) { const o = entAt(s, nx + dx, ny + dy, e); if (o) meet(s, e, o); return 'blocked'; }
-      if (land(s, e, b)) { pushed = { id: e.id, d: b.d }; if (!led) follow(s, e, dx, dy); }
+      if (!(b = pushTo(s, nx, ny, t.d, wades(e)))) { const o = entAt(s, nx + dx, ny + dy, e); if (o) meet(s, e, o); return 'blocked'; }
+      if (land(s, e, b)) { pushed = { id: e.id, d: b.d }; light(s, e); if (!led) follow(s, e, dx, dy); }
     } else return 'blocked';
   }
   p.pushing = pushed;
@@ -1469,7 +1509,7 @@ function input(s, k) {
   if (!DIRS[k] || p.hidden) return;
   // Riding, a move lets go.
   if (p.stuck && p.stuck.ride) unstick(s);
-  if (!p.dir) { p.dir = k; p.moved = 0; s.move++; return; }
+  if (!p.dir) { p.dir = k; p.moved = 0; s.move++; burnFuses(s); return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
   else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { letGo(s); p.dir = k; s.events.push({ type: 'boomerang', from: OPPOSITE[k] }); } }
   else if (s.powers.laser) laser(s, k, from);
@@ -1490,7 +1530,7 @@ const m8 = (() => {
 const { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } = m0;
 const { aimOf, computeBeams, turnTurrets } = m3;
 const { cellAt, inWater } = m1;
-const { freshPieces, refreshDoors } = m2;
+const { explode, freshPieces, refreshDoors } = m2;
 const { fireSprings, rushOnce, slidePiece } = m6;
 const { input, slideOnce, unhide } = m7;
 const { checkStuck } = m4;
@@ -1555,6 +1595,8 @@ function step(s, inputs = []) {
   fireSprings(s);
   checkStuck(s);
   checkGlue(s);
+  // A burnt-out fuse goes off once your move has ended.
+  if (!s.player.dir && !s.player.hidden) for (const e of s.entities) if (!e.dead && e.fuse === 0) explode(s, e);
   checkWin(s);
   computeBeams(s, true);
   refreshDoors(s);
@@ -1577,7 +1619,7 @@ function gameText(s, mode = 'play') {
     player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden, swimming: s.player.swimming, sticky: s.player.sticky, stuck: s.player.stuck && (s.player.stuck.ride ? 'riding' : 'glued') },
     checkpoint: s.checkpoint,
     pieces: s.entities.filter(e => !e.dead).map(e => ({
-      kind: e.kind, x: e.x, y: e.y,
+      kind: e.kind, x: e.x, y: e.y, ...(e.fuse != null ? { fuse: e.fuse } : {}),
       ...(e.sticky ? { sticky: true } : {}), ...(partnerOf(s, e) ? { glued: true } : {}),
       ...(MOVES.includes(e.kind) ? { axis: e.axis, mode: e.mode } : {}),
       ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, aim: aimOf(e.turret) } } : {}),
@@ -1868,7 +1910,7 @@ const INK = {
   floor: '#e4e7ec', grid: '#d6dae2', wall: '#a9b0bf', wallTop: '#c3c9d5', crack: '#5b6070',
   player: '#7b6cff', start: '#7b6cff', shadow: 'rgba(40,44,60,0.22)',
   mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff4d6d', barrel: '#8f86d9', box: '#ffa94d', boxEdge: '#c97326',
-  heavy: '#9b8cff', heavyEdge: '#5b4fc8', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
+  heavy: '#9b8cff', heavyEdge: '#5b4fc8', bomb: '#3d4256', bombHi: '#7d8399', fuse: '#b08a5c', spark: '#ff9a3d', blast: '#ff8a3d', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
   red: '#ff6b81', blue: '#5aa9ff', yellow: '#ffd84d', green: '#5edc9a',
   mark: '#3a3f4c', deathBg: '#7a2747', deathSpike: '#ffb0c0', gateBg: '#3a3f4c', gateArrow: '#5edc9a', unlit: '#5b6070', spring: '#ffc23d', gravel: '#dcb88f', gravelDot: '#a98058', gravelHi: '#f4e1c6',
 };
@@ -1910,7 +1952,7 @@ const KEYS = ['up', 'right', 'down', 'left'];
 function stateKey(s) {
   const p = s.player, st = p.stuck;
   let k = `${p.x},${p.y},${p.swimming ? 1 : 0},${p.sticky ? 1 : 0},${st ? st.id + (st.ride ? 'r' : 'g') : '-'},${s.checkpoint.x},${s.checkpoint.y}|`;
-  for (const e of s.entities) if (!e.dead) k += `${e.id},${e.x},${e.y},${e.dir},${e.axis},${e.sticky ? 1 : 0},${e.glue || 0},${e.turret ? e.turret.aim % e.turret.dirs.length : -1};`;
+  for (const e of s.entities) if (!e.dead) k += `${e.id},${e.x},${e.y},${e.dir},${e.axis},${e.sticky ? 1 : 0},${e.glue || 0},${e.turret ? e.turret.aim % e.turret.dirs.length : -1},${e.fuse ?? ''};`;
   k += '|';
   for (const c of Object.keys(s.open).sort()) if (s.open[c]) k += c + ',';
   if (s.broken.length) k += '|' + [...s.broken].sort((a, b) => a - b).join(',');
@@ -2323,7 +2365,7 @@ const { syncWell } = m18;
 
 const SLICE_MS = 25, MAX = NOTES_MAX;
 const NAME = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', armored: 'Armored' };
-const PIECE = { box: 'box', heavy: 'heavy box', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', door: 'door', idoor: 'inverted door', receiver: 'laser catcher', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', gravel: 'gravel', checkpoint: 'checkpoint' };
+const PIECE = { box: 'box', heavy: 'heavy box', bomb: 'bomb', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', door: 'door', idoor: 'inverted door', receiver: 'laser catcher', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', gravel: 'gravel', checkpoint: 'checkpoint' };
 const moves = n => typeof n === 'number' ? `${n} ${n === 1 ? 'move' : 'moves'}` : n === 'unsolvable' ? 'no solution' : 'too many positions to tell';
 
 // Runs one generator to the end in slices, then calls done; gives up when the room changes.
@@ -2633,7 +2675,7 @@ const { INK } = m14;
 
 const PX = 4;
 const CELL = { wall: INK.wall, crack: INK.wall, water: INK.water, sticky: INK.goo, gravel: INK.gravel, goal: INK.goal, death: INK.deathBg, checkpoint: INK.flag };
-const PIECE = { box: INK.box, heavy: INK.heavy, mover: INK.mover, enemy: INK.enemy, strong: INK.strong, turret: INK.barrel };
+const PIECE = { box: INK.box, heavy: INK.heavy, bomb: INK.bomb, mover: INK.mover, enemy: INK.enemy, strong: INK.strong, turret: INK.barrel };
 
 function thumbURL(level) {
   const c = document.createElement('canvas');
@@ -2723,7 +2765,7 @@ const MECHANISMS = [
   ['tile:spring', 'Spring'], ['tile:death', 'Death block'], ['tile:water', 'Water'], ['tile:sticky', 'Sticky puddle'], ['tile:gravel', 'Gravel'], ['tile:crack', 'Breakable block'],
   ['tile:button', 'Button'], ['tile:door', 'Door'], ['tile:idoor', 'Inverted door'], ['tile:receiver', 'Laser catcher'], ['tile:sensor', 'Laser relay'],
   ['piece:mover', 'Moving block'], ['piece:enemy', 'Weak enemy'], ['piece:strong', 'Strong enemy'], ['piece:turret', 'Laser turret'],
-  ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'],
+  ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'], ['piece:bomb', 'Bomb'],
   ['clock:input', 'On your move'], ['clock:follow', 'Same way as you'], ['clock:realtime', 'Real time'],
   ['power:boomerang', 'Boomerang'], ['power:dive', 'Dive'], ['power:laser', 'Laser'], ['power:cycle', 'Cycle (hide)'],
   ['power:swim', 'Swim'], ['power:armored', 'Armored'],
@@ -2734,7 +2776,7 @@ const MECHANISMS = [
   ['use:beam-kill', 'A beam kills an enemy'], ['use:stick', 'You stick to something'], ['use:glue', 'Pieces glue together'],
   ['use:boomerang', 'You turn back mid-slide'], ['use:dive', 'You dive'], ['use:laser', 'You fire the laser'],
   ['use:hide', 'You hide'], ['use:swim', 'You swim'], ['use:checkpoint', 'You reach a checkpoint'],
-  ['use:break', 'A breakable block breaks'], ['use:tri', 'A triangle turns you'], ['use:gate', 'You pass a one-way'],
+  ['use:break', 'A breakable block breaks'], ['use:blast', 'A bomb goes off'], ['use:tri', 'A triangle turns you'], ['use:gate', 'You pass a one-way'],
 ];
 const LABEL = Object.fromEntries(MECHANISMS);
 
@@ -2760,7 +2802,7 @@ function contains(level) {
   return [...tags];
 }
 
-const EVENT_TAG = { boomerang: 'use:boomerang', dive: 'use:dive', laser: 'use:laser', pushed: 'use:pushed', spring: 'use:spring', stick: 'use:stick', glue: 'use:glue', hide: 'use:hide', checkpoint: 'use:checkpoint', break: 'use:break' };
+const EVENT_TAG = { boomerang: 'use:boomerang', dive: 'use:dive', laser: 'use:laser', pushed: 'use:pushed', spring: 'use:spring', stick: 'use:stick', glue: 'use:glue', hide: 'use:hide', checkpoint: 'use:checkpoint', break: 'use:break', blast: 'use:blast' };
 const KILL_TAG = { door: 'use:door-kill', squash: 'use:squash', death: 'use:death', turret: 'use:beam-kill', laser: 'use:beam-kill' };
 
 // What the solution does: the room replayed move by move, watching events and state.
@@ -3420,6 +3462,7 @@ const TOOLS = [
   { id: 'turret', label: 'Laser turret', group: 'pieces' },
   { id: 'box', label: 'Box', group: 'pieces' },
   { id: 'heavy', label: 'Heavy box', group: 'pieces' },
+  { id: 'bomb', label: 'Bomb', group: 'pieces' },
   { id: 'tri', label: 'Triangle', group: 'tiles' },
   { id: 'gate', label: 'One-way', group: 'tiles' },
   { id: 'spring', label: 'Spring', group: 'tiles' },
@@ -3468,7 +3511,7 @@ const { successors, stateKey, unsearchable, MAX_STATES } = m15;
 
 const KEYS = ['up', 'right', 'down', 'left'];
 const WIN = 'win';
-const PIECES = ['box', 'heavy', 'mover', 'enemy', 'strong'];
+const PIECES = ['box', 'heavy', 'bomb', 'mover', 'enemy', 'strong'];
 
 // { distance: Map tile -> fewest moves to win from a stop there, hopeless: tiles where no stop
 // can win, solution: the tiles a shortest way stops on, start first, beams and pieces: Sets of
@@ -4275,6 +4318,20 @@ function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
     g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();
     g.beginPath(); g.moveTo(7, 7); g.lineTo(25, 25); g.moveTo(25, 7); g.lineTo(7, 25); g.stroke();
+  } else if (e.kind === 'bomb') {
+    // The fuse is the timer: a full cord before it is lit, a spark that burns it down one
+    // length per move, and with no cord left the body glows: it goes off when this move ends.
+    const k = e.fuse == null ? 2 : e.fuse, hot = e.fuse === 0 ? 0.5 + 0.5 * Math.sin(frame.clock / 70) : 0;
+    g.fillStyle = INK.bomb; g.beginPath(); g.arc(16, 18, 10, 0, Math.PI * 2); g.fill();
+    if (hot) { g.fillStyle = `rgba(255,90,40,${0.35 + 0.45 * hot})`; g.beginPath(); g.arc(16, 18, 10, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = INK.bombHi; g.beginPath(); g.arc(12, 14, 2.5, 0, Math.PI * 2); g.fill();
+    g.fillStyle = INK.bomb; g.fillRect(14, 6, 5, 4);
+    const tip = [[17, 6], [21, 2], [26, 3]].slice(0, k + 1);
+    if (k) { g.strokeStyle = INK.fuse; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath(); tip.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke(); g.lineCap = 'butt'; }
+    if (e.fuse != null) {
+      const [sx, sy] = tip[tip.length - 1], f = 2 + Math.sin(frame.clock / 45);
+      g.fillStyle = INK.spark; g.beginPath(); g.arc(sx, sy, 1.8 + f * 0.6, 0, Math.PI * 2); g.fill();
+    }
   } else if (e.kind === 'heavy') {
     g.fillStyle = INK.heavy; roundRect(g, 2, 2, T - 4, T - 4, 3); g.fill();
     g.strokeStyle = INK.heavyEdge; g.lineWidth = 3; g.stroke();
@@ -4776,12 +4833,12 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   }
 }
 
-const BREAK_MS = 300;
+const BREAK_MS = 300, BLAST_MS = 360;
 
 // prev: positions before the last tick; alpha: 0..1 progress into the next tick.
 function drawPlay(g, s, prev, alpha, fx, now) {
   frame.clock = now;
-  const shake = fx.find(f => (f.type === 'crash' || f.type === 'break') && now - f.at < 180);
+  const shake = fx.find(f => (f.type === 'crash' || f.type === 'break' || f.type === 'blast') && now - f.at < 180);
   g.save();
   if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
   drawFloor(g, s.w, s.h);
@@ -4805,6 +4862,13 @@ function drawPlay(g, s, prev, alpha, fx, now) {
     const t = (now - f.at) / BREAK_MS, X = f.x * T + T / 2, Y = f.y * T + T / 2;
     g.fillStyle = INK.wall; g.globalAlpha = 1 - t;
     for (let k = 0; k < 6; k++) { const a = k * 1.047 + 0.4, r = 4 + 14 * t; g.fillRect(X + Math.cos(a) * r - 3, Y + Math.sin(a) * r - 3 + 8 * t * t, 6, 6); }
+    g.globalAlpha = 1;
+  }
+  // A bomb's blast: a ring that fills its 3x3 and fades.
+  for (const f of fx) if (f.type === 'blast' && now - f.at < BLAST_MS) {
+    const t = (now - f.at) / BLAST_MS;
+    g.fillStyle = INK.blast; g.globalAlpha = 0.6 * (1 - t);
+    g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, T * (0.6 + 1.1 * t), 0, Math.PI * 2); g.fill();
     g.globalAlpha = 1;
   }
   crackle(s.shocked, 1);
@@ -5529,6 +5593,7 @@ const standIn = (g, l) => g.standIn === null || g.power ? null : g.standIn ? g.s
 // Must use counts only when the room changes with the ingredient taken out and with its stand-in.
 const variants = (g, l) => [knock(g, l), standIn(g, l)].filter(Boolean);
 
+// A bomb's stand-in is a plain box, so Must use means it has to go off, not just be pushed.
 // A heavy box moves only when launched, and water stops you, so on their own both do a wall's
 // job: a heavy box brings a spring, water a moving block that wades through it.
 // Beam switches come before doors, so a door can share their colour instead of adding a button.
@@ -5536,6 +5601,7 @@ const variants = (g, l) => [knock(g, l), standIn(g, l)].filter(Boolean);
 // door brings a box, and two buttons bring two.
 const INGREDIENTS = [
   { id: 'box', label: 'Box', tags: ['piece:box'], place: (l, r) => piece(l, r, { kind: 'box' }) },
+  { id: 'bomb', label: 'Bomb', tags: ['piece:bomb'], standIn: l => ({ ...l, entities: l.entities.map(e => e.kind === 'bomb' ? { ...e, kind: 'box' } : e) }), place: (l, r) => piece(l, r, { kind: 'bomb' }) },
   { id: 'heavy', label: 'Heavy box', tags: ['piece:heavy'], with: ['spring'], place: (l, r) => piece(l, r, { kind: 'heavy' }) },
   { id: 'receiver', label: 'Laser catcher', tags: ['tile:receiver'], with: ['turret', 'door'], knock: l => ({ ...l, cells: l.cells.map(c => c.startsWith('receiver:') ? 'wall' : c) }), standIn: null, place: beamSwitch('receiver') },
   { id: 'sensor', label: 'Laser relay', tags: ['tile:sensor'], with: ['turret', 'door'], place: beamSwitch('sensor') },

@@ -66,6 +66,7 @@ export const standIn = (g, l) => g.standIn === null || g.power ? null : g.standI
 // Must use counts only when the room changes with the ingredient taken out and with its stand-in.
 export const variants = (g, l) => [knock(g, l), standIn(g, l)].filter(Boolean);
 
+// A bomb's stand-in is a plain box, so Must use means it has to go off, not just be pushed.
 // A heavy box moves only when launched, and water stops you, so on their own both do a wall's
 // job: a heavy box brings a spring, water a moving block that wades through it.
 // Beam switches come before doors, so a door can share their colour instead of adding a button.
@@ -73,6 +74,7 @@ export const variants = (g, l) => [knock(g, l), standIn(g, l)].filter(Boolean);
 // door brings a box, and two buttons bring two.
 export const INGREDIENTS = [
   { id: 'box', label: 'Box', tags: ['piece:box'], place: (l, r) => piece(l, r, { kind: 'box' }) },
+  { id: 'bomb', label: 'Bomb', tags: ['piece:bomb'], standIn: l => ({ ...l, entities: l.entities.map(e => e.kind === 'bomb' ? { ...e, kind: 'box' } : e) }), place: (l, r) => piece(l, r, { kind: 'bomb' }) },
   { id: 'heavy', label: 'Heavy box', tags: ['piece:heavy'], with: ['spring'], place: (l, r) => piece(l, r, { kind: 'heavy' }) },
   { id: 'receiver', label: 'Laser catcher', tags: ['tile:receiver'], with: ['turret', 'door'], knock: l => ({ ...l, cells: l.cells.map(c => c.startsWith('receiver:') ? 'wall' : c) }), standIn: null, place: beamSwitch('receiver') },
   { id: 'sensor', label: 'Laser relay', tags: ['tile:sensor'], with: ['turret', 'door'], place: beamSwitch('sensor') },

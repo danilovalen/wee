@@ -15,7 +15,7 @@ const KEYS = ['up', 'right', 'down', 'left'];
 export function stateKey(s) {
   const p = s.player, st = p.stuck;
   let k = `${p.x},${p.y},${p.swimming ? 1 : 0},${p.sticky ? 1 : 0},${st ? st.id + (st.ride ? 'r' : 'g') : '-'},${s.checkpoint.x},${s.checkpoint.y}|`;
-  for (const e of s.entities) if (!e.dead) k += `${e.id},${e.x},${e.y},${e.dir},${e.axis},${e.sticky ? 1 : 0},${e.glue || 0},${e.turret ? e.turret.aim % e.turret.dirs.length : -1};`;
+  for (const e of s.entities) if (!e.dead) k += `${e.id},${e.x},${e.y},${e.dir},${e.axis},${e.sticky ? 1 : 0},${e.glue || 0},${e.turret ? e.turret.aim % e.turret.dirs.length : -1},${e.fuse ?? ''};`;
   k += '|';
   for (const c of Object.keys(s.open).sort()) if (s.open[c]) k += c + ',';
   if (s.broken.length) k += '|' + [...s.broken].sort((a, b) => a - b).join(',');

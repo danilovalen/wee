@@ -14,6 +14,7 @@ export const TOOLS = [
   { id: 'turret', label: 'Laser turret', group: 'pieces' },
   { id: 'box', label: 'Box', group: 'pieces' },
   { id: 'heavy', label: 'Heavy box', group: 'pieces' },
+  { id: 'bomb', label: 'Bomb', group: 'pieces' },
   { id: 'tri', label: 'Triangle', group: 'tiles' },
   { id: 'gate', label: 'One-way', group: 'tiles' },
   { id: 'spring', label: 'Spring', group: 'tiles' },

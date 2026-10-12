@@ -8,6 +8,7 @@ import { drawTurret } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
 import { newHistory, record, undo, redo, LIMIT } from '../src/editor/history.js';
 import { RT_PERIOD } from '../src/rules/base.js';
+import { explode } from '../src/rules/life.js';
 
 // One move of yours, as the world sees it: pieces on your move start their slide, then
 // every slide and push runs to its end before the test looks.
@@ -1154,5 +1155,40 @@ const LONG = ['##########', '#..P....##', '##########'];
   const ed = room(['#####', '#P..#', '#####']);
   place(ed, { tool: 'crack' }, 3, 1, 'place');
   check('the tool places a breakable block, and Look names it', ed.cells[8] === 'crack' && describe(ed, 3, 1) === 'Breakable block', ed.cells[8]);
+}
+{ // a bomb: a push lights it, it goes off at the end of your second move after
+  const b0 = createGame(room(['########', '#......#', '#PO....#', '########']));
+  slide(b0, 'right');
+  const bomb = b0.entities[0];
+  check('pushing a bomb lights it', at(bomb, 6, 2) && bomb.fuse === 2 && !bomb.dead, JSON.stringify(bomb));
+  slide(b0, 'up');
+  check('one move later it is still burning', !bomb.dead && bomb.fuse === 1, JSON.stringify(bomb));
+  const watch = cloneGame(b0);
+  step(b0, ['left']);
+  check('the second move has started and it has not gone off yet', !b0.entities[0].dead && b0.entities[0].fuse === 0 && b0.player.dir, JSON.stringify(b0.entities[0]));
+  for (let i = 0; i < 50 && b0.player.dir; i++) step(b0);
+  check('it goes off when your second move ends, out of reach of you', b0.entities[0].dead && !b0.deaths && at(b0.player, 1, 1), JSON.stringify([b0.entities[0], b0.player]));
+  slide(watch, 'right');
+  check('standing in its 3x3 when it goes off kills you', watch.deaths === 1, JSON.stringify(watch.player));
+  const re = createGame(room(['#########', '#PO.g...#', '#########']));
+  slide(re, 'right'); slide(re, 'right');
+  check('pushing a burning bomb again does not restart its fuse', at(re.entities[0], 7, 1) && re.entities[0].fuse === 1, JSON.stringify(re.entities[0]));
+  const ch = createGame(room(['#########', '#...k..P#', '#.OOB...#', '#.EHS...#', '#########']));
+  explode(ch, ch.entities[0]);
+  const [o1, o2, bx, en, hv, st] = ch.entities;
+  check('a blast sets off a bomb beside it, which breaks what is in its own reach', o1.dead && o2.dead && bx.dead && ch.broken.includes(1 * 9 + 4), JSON.stringify(ch.entities.map(e => [e.kind, e.dead])));
+  check('a blast breaks weak enemies but not heavy boxes or strong enemies', en.dead && !hv.dead && !st.dead, JSON.stringify([en.dead, hv.dead, st.dead]));
+  const t = createGame(room(['########', '#T..O..#', '#.....P#', '########'])); step(t);
+  check('a turret beam sets a bomb off at once', t.entities[1].dead && t.events.some(e => e.type === 'blast'), JSON.stringify(t.entities[1]));
+  const w = createGame(room(['########', '#PO..ww#', '########']));
+  const seen = []; step(w, ['right']); for (let i = 0; i < 50 && w.player.dir; i++) { seen.push(...w.events.map(e => e.type)); step(w); }
+  seen.push(...w.events.map(e => e.type));
+  check('water puts its fuse out, and it does not light while in water', at(w.entities[0], 5, 1) && w.entities[0].fuse === null && seen.includes('fizzle'), JSON.stringify([w.entities[0], seen]));
+  const dry = createGame(room(['########', '#PO.w..#', '########'], { powers: { swim: true, cycle: false } }));
+  step(dry, ['hide']); slide(dry, 'right');
+  check('pushed out of the water, it lights again', at(dry.entities[0], 6, 1) && dry.entities[0].fuse === 2, JSON.stringify(dry.entities[0]));
+  step(dry, ['respawn']);
+  check('Reset puts the bomb back, unlit', at(dry.entities[0], 2, 1) && dry.entities[0].fuse === null);
+  check('a bomb is a piece a level can hold', parseLevel(JSON.stringify(room(['#####', '#PO.#', '#####']))).entities[0].kind === 'bomb');
 }
 done();

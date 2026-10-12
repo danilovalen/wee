@@ -74,12 +74,12 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   }
 }
 
-const BREAK_MS = 300;
+const BREAK_MS = 300, BLAST_MS = 360;
 
 // prev: positions before the last tick; alpha: 0..1 progress into the next tick.
 export function drawPlay(g, s, prev, alpha, fx, now) {
   frame.clock = now;
-  const shake = fx.find(f => (f.type === 'crash' || f.type === 'break') && now - f.at < 180);
+  const shake = fx.find(f => (f.type === 'crash' || f.type === 'break' || f.type === 'blast') && now - f.at < 180);
   g.save();
   if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
   drawFloor(g, s.w, s.h);
@@ -103,6 +103,13 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     const t = (now - f.at) / BREAK_MS, X = f.x * T + T / 2, Y = f.y * T + T / 2;
     g.fillStyle = INK.wall; g.globalAlpha = 1 - t;
     for (let k = 0; k < 6; k++) { const a = k * 1.047 + 0.4, r = 4 + 14 * t; g.fillRect(X + Math.cos(a) * r - 3, Y + Math.sin(a) * r - 3 + 8 * t * t, 6, 6); }
+    g.globalAlpha = 1;
+  }
+  // A bomb's blast: a ring that fills its 3x3 and fades.
+  for (const f of fx) if (f.type === 'blast' && now - f.at < BLAST_MS) {
+    const t = (now - f.at) / BLAST_MS;
+    g.fillStyle = INK.blast; g.globalAlpha = 0.6 * (1 - t);
+    g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, T * (0.6 + 1.1 * t), 0, Math.PI * 2); g.fill();
     g.globalAlpha = 1;
   }
   crackle(s.shocked, 1);

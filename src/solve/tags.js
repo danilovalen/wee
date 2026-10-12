@@ -9,7 +9,7 @@ export const MECHANISMS = [
   ['tile:spring', 'Spring'], ['tile:death', 'Death block'], ['tile:water', 'Water'], ['tile:sticky', 'Sticky puddle'], ['tile:gravel', 'Gravel'], ['tile:crack', 'Breakable block'],
   ['tile:button', 'Button'], ['tile:door', 'Door'], ['tile:idoor', 'Inverted door'], ['tile:receiver', 'Laser catcher'], ['tile:sensor', 'Laser relay'],
   ['piece:mover', 'Moving block'], ['piece:enemy', 'Weak enemy'], ['piece:strong', 'Strong enemy'], ['piece:turret', 'Laser turret'],
-  ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'],
+  ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'], ['piece:bomb', 'Bomb'],
   ['clock:input', 'On your move'], ['clock:follow', 'Same way as you'], ['clock:realtime', 'Real time'],
   ['power:boomerang', 'Boomerang'], ['power:dive', 'Dive'], ['power:laser', 'Laser'], ['power:cycle', 'Cycle (hide)'],
   ['power:swim', 'Swim'], ['power:armored', 'Armored'],
@@ -20,7 +20,7 @@ export const MECHANISMS = [
   ['use:beam-kill', 'A beam kills an enemy'], ['use:stick', 'You stick to something'], ['use:glue', 'Pieces glue together'],
   ['use:boomerang', 'You turn back mid-slide'], ['use:dive', 'You dive'], ['use:laser', 'You fire the laser'],
   ['use:hide', 'You hide'], ['use:swim', 'You swim'], ['use:checkpoint', 'You reach a checkpoint'],
-  ['use:break', 'A breakable block breaks'], ['use:tri', 'A triangle turns you'], ['use:gate', 'You pass a one-way'],
+  ['use:break', 'A breakable block breaks'], ['use:blast', 'A bomb goes off'], ['use:tri', 'A triangle turns you'], ['use:gate', 'You pass a one-way'],
 ];
 export const LABEL = Object.fromEntries(MECHANISMS);
 
@@ -46,7 +46,7 @@ export function contains(level) {
   return [...tags];
 }
 
-const EVENT_TAG = { boomerang: 'use:boomerang', dive: 'use:dive', laser: 'use:laser', pushed: 'use:pushed', spring: 'use:spring', stick: 'use:stick', glue: 'use:glue', hide: 'use:hide', checkpoint: 'use:checkpoint', break: 'use:break' };
+const EVENT_TAG = { boomerang: 'use:boomerang', dive: 'use:dive', laser: 'use:laser', pushed: 'use:pushed', spring: 'use:spring', stick: 'use:stick', glue: 'use:glue', hide: 'use:hide', checkpoint: 'use:checkpoint', break: 'use:break', blast: 'use:blast' };
 const KILL_TAG = { door: 'use:door-kill', squash: 'use:squash', death: 'use:death', turret: 'use:beam-kill', laser: 'use:beam-kill' };
 
 // What the solution does: the room replayed move by move, watching events and state.

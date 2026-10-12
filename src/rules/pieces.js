@@ -1,16 +1,20 @@
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
-import { DIRS, ENEMY, MOVES, breaks, wades } from './base.js';
+import { DIRS, ENEMY, LIGHT, MOVES, breaks, wades } from './base.js';
 import { turnTurrets } from './beams.js';
 import { crushes, entAt, inb, onGravel, playerAt, pushTo, stepTo } from './grid.js';
-import { die, kill, land, refreshDoors, smash } from './life.js';
+import { die, kill, land, light, refreshDoors, smash } from './life.js';
 import { carry, entered, stick, stuckTo } from './sticky.js';
 import { follow, lead, meet, partnerAt, partnerOf } from './glue.js';
+
+// Each move of yours burns every lit fuse down by one.
+export function burnFuses(s) { for (const e of s.entities) if (!e.dead && e.fuse) e.fuse--; }
 
 // A hide is one cycle with no direction: each on-your-move piece slides along its
 // patrol until something stops it, a tile per tick (see step), and turns there.
 export function hideCycle(s) {
   s.worldSteps++;
   s.move++;
+  burnFuses(s);
   for (const e of s.entities) if (!e.dead && e.mode === 'input' && MOVES.includes(e.kind)) launch(s, e);
   turnTurrets(s, 'input');
   refreshDoors(s);
@@ -60,7 +64,7 @@ export function moveMover(s, e, d) {
   const o = entAt(s, t.x, t.y, e);
   let b;
   if (o) {
-    if (o.kind === 'box' && (b = pushTo(s, t.x, t.y, t.d, false))) { if (land(s, o, b)) follow(s, o, mx, my); }
+    if (LIGHT.includes(o.kind) && (b = pushTo(s, t.x, t.y, t.d, wades(o)))) { if (land(s, o, b)) { light(s, o); follow(s, o, mx, my); } }
     else { meet(s, e, o); blocked(); return; }
   }
   if (playerAt(s, t.x, t.y)) {
@@ -83,7 +87,7 @@ export function moveMover(s, e, d) {
 }
 
 // A sliding heavy box breaks what it runs into: enemies and light boxes.
-const CRUSHABLE = ['enemy', 'strong', 'box'];
+const CRUSHABLE = ['enemy', 'strong', 'box', 'bomb'];
 
 // A piece sliding on its own (a thrown heavy box, anything a spring launched) goes a
 // tile per tick until something stops it. A heavy box squashes enemies, light boxes and you; an

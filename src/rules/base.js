@@ -26,7 +26,11 @@ export const turn = (corner, d) => OUT[openFaces(corner).find(f => f !== ENTRY_F
 
 // Clockwise order: a turret fires its chosen directions in this order.
 export const CLOCKWISE = ['up', 'right', 'down', 'left'];
-export const KINDS = ['mover', 'enemy', 'strong', 'box', 'heavy', 'turret'];
+export const KINDS = ['mover', 'enemy', 'strong', 'box', 'heavy', 'turret', 'bomb'];
+// Pushed like a light box: a box, and a bomb.
+export const LIGHT = ['box', 'bomb'];
+// A bomb goes off at the end of your second move after the push that lit it.
+export const FUSE = 2;
 export const MOVES = ['mover', 'enemy', 'strong'];
 export const ENEMY = ['enemy', 'strong'];
 // realtime: on its own clock; input: on each world step; follow: on each world step,
@@ -40,8 +44,8 @@ export const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'light', '
 export const NEEDS = { light: 'dark levels' };
 
 // Water stops you unless you are swimming, and stops weak enemies, light boxes and
-// lone turrets. Strong enemies, heavy boxes and blocks go through it.
-export const WADES = ['strong', 'heavy', 'mover'];
+// lone turrets. Strong enemies, heavy boxes and blocks go through it, and a bomb sinks into it.
+export const WADES = ['strong', 'heavy', 'mover', 'bomb'];
 export const wades = e => WADES.includes(e.kind);
 // A closing door squashes what is in it, unless one of these holds it open.
 export const HOLDS_DOOR = ['strong', 'heavy', 'mover'];

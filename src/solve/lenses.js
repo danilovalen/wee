@@ -8,7 +8,7 @@ import { successors, stateKey, unsearchable, MAX_STATES } from './solve.js';
 
 const KEYS = ['up', 'right', 'down', 'left'];
 const WIN = 'win';
-const PIECES = ['box', 'heavy', 'mover', 'enemy', 'strong'];
+const PIECES = ['box', 'heavy', 'bomb', 'mover', 'enemy', 'strong'];
 
 // { distance: Map tile -> fewest moves to win from a stop there, hopeless: tiles where no stop
 // can win, solution: the tiles a shortest way stops on, start first, beams and pieces: Sets of

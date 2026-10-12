@@ -4,7 +4,7 @@ import { INK } from './ink.js';
 
 const PX = 4;
 const CELL = { wall: INK.wall, crack: INK.wall, water: INK.water, sticky: INK.goo, gravel: INK.gravel, goal: INK.goal, death: INK.deathBg, checkpoint: INK.flag };
-const PIECE = { box: INK.box, heavy: INK.heavy, mover: INK.mover, enemy: INK.enemy, strong: INK.strong, turret: INK.barrel };
+const PIECE = { box: INK.box, heavy: INK.heavy, bomb: INK.bomb, mover: INK.mover, enemy: INK.enemy, strong: INK.strong, turret: INK.barrel };
 
 export function thumbURL(level) {
   const c = document.createElement('canvas');

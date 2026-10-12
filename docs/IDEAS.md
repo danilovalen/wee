@@ -161,7 +161,7 @@ a shake. The heavy set is `BREAKS` in `src/rules/base.js` (strong enemy, heavy b
 dive. In the generator it brings Dive, because a heavy box needs a spring to reach it and almost
 never made a room that fits.
 
-## Bomb (2026-10-11)
+## Bomb (2026-10-11) -- built 2026-10-12
 
 > a bomb is a block ie it is pushed, like a light block. after it does so, on the end of the
 > second movement after it is pushed it blows up and breaks all boxes, enemies, breakable walls
@@ -169,20 +169,23 @@ never made a room that fits.
 > it being prepared for blowing up. and of course it can become sticky. and will lose its fuse
 > when on contact with water, it won't light up while submerged
 
-Notes (mine):
-- **A box that is pushed like a light box**, and a push lights it.
-- **"The end of the second movement after it is pushed"**: I read it as two moves (ticks of the
-  room's clock) after the push that lit it, counted at the end of the second. Needs confirming:
-  it could also mean the end of its second slide.
-- **Blast: the 3x3 around it.** Destroys boxes, enemies, breakable walls and you; anything else
-  that can be destroyed later joins the list. Walls, water, doors and switches survive.
-- **The fuse shows**: a lit fuse that burns down over the two moves, so the countdown is visible.
-- **Sticky**: it can stop in a sticky puddle like any box (and still blows up there?).
-- **Water**: touching water puts the fuse out, and it will not light while submerged. Open: once
-  out of the water, can it be lit again by another push?
-- **A laser beam does not light it, it sets it off at once** (owner, 2026-10-11: *"lasers don't lit
-  bombs they insta explode bombs"*). So a beam crossing a bomb is the same as its fuse running out.
-- **Open:** does a blast set off another bomb in range (a chain)?
+His answers, 2026-10-11 and 2026-10-12:
+
+| question | answer |
+|---|---|
+| which count is "the second movement after" | your second move after the push; it goes off when that move ends. *"Timer should be clear on the bomb somehow but still diegetic."* |
+| a beam | sets it off at once, it does not light it |
+| a blast reaching another bomb | it goes off in the same moment (a chain) |
+| what a blast destroys | you, light boxes, weak enemies, breakable blocks (not heavy boxes, strong enemies) |
+| water | puts the fuse out; out of the water, a push lights it again |
+
+Built as the `bomb` piece (Pieces). Pushed like a light box, it can stick and glue, and it can be
+pushed into water (it sinks rather than stopping at the edge). The timer is the fuse: a full cord
+before it is lit, a spark that burns one length off per move, and no cord and a glowing body on the
+move it goes off. My readings, not his: pushing a bomb that is already burning does not restart its
+fuse; a heavy box sliding into a bomb, a closing door and a death block destroy it without a blast;
+a lone turret and a moving block survive a blast. In the generator its stand-in is a plain box, so
+Must use means it has to go off.
 
 ## Paint mode: a win by painting every tile (2026-10-11)
 

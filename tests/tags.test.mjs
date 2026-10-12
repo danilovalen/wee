@@ -36,5 +36,7 @@ const dv = room(['#######', '#P.H..#', '#######']); dv.cells[11] = 'goal';
 check('a mid-slide key in the solution counts (a dive)', uses(dv, ['right@1:right', 'right']).includes('use:dive'));
 const br = room(['########', '#P..k..#', '########'], { powers: { dive: true } }); br.cells[14] = 'goal';
 check('a breakable block is a tile, and diving through it says a block breaks', contains(br).includes('tile:crack') && uses(br, ['right@1:right']).includes('use:break'), uses(br, ['right@1:right']).join());
+const bm = room(['########', '#......#', '#PO....#', '########']); bm.cells[9] = 'goal';
+check('a bomb is a piece, and one that goes off says so', contains(bm).includes('piece:bomb') && uses(bm, ['right', 'up', 'left']).includes('use:blast'), uses(bm, ['right', 'up', 'left']).join());
 check('no moves, no uses', uses(push, []).length === 0);
 done();

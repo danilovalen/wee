@@ -4,7 +4,7 @@ import { emptyLevel } from '../src/level/format.js';
 //   #  wall          P  player start     C  checkpoint
 //   M  mover, h      V  mover, v         E  enemy, h     F  enemy, v
 //   S  strong enemy, h                  T  laser turret (fires right)
-//   B  box           H  heavy box
+//   B  box           H  heavy box       O  bomb
 //   o  red button    D  red door         u  blue button  Q  blue door    N  red inverted door    r  red receiver  s  red laser sensor  w  water  %  sticky puddle
 //   > < ^ v  one-way tile (that way)      =  two-way, across      |  two-way, up and down
 //   g  gravel        k  breakable block
@@ -41,6 +41,7 @@ export function room(rows, opts = {}) {
       case 'T': l.entities.push({ kind: 'turret', x, y, turret: { dirs: ['right'], mode } }); break;
       case 'B': put('box'); break;
       case 'H': put('heavy'); break;
+      case 'O': put('bomb'); break;
       case '7': l.cells[i] = 'tri:nw'; break;
       case '9': l.cells[i] = 'tri:ne'; break;
       case '1': l.cells[i] = 'tri:sw'; break;

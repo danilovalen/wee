@@ -1,9 +1,9 @@
 // You: one slide step at a time, dive, hide, and what each key does.
-import { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS } from './base.js';
+import { DIRS, ENEMY, HIDE_TICKS, LIGHT, OPPOSITE, POWERS, wades } from './base.js';
 import { inBeam, laser, turnTurrets } from './beams.js';
 import { cellAt, crushes, entAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } from './grid.js';
-import { die, kill, land, refreshDoors, respawn, smash } from './life.js';
-import { hideCycle, worldStep } from './pieces.js';
+import { die, kill, land, light, refreshDoors, respawn, smash } from './life.js';
+import { burnFuses, hideCycle, worldStep } from './pieces.js';
 import { STICKS, drag, entered, stick, stuckTo, unstick } from './sticky.js';
 import { follow, lead, meet, partnerAt } from './glue.js';
 
@@ -19,9 +19,9 @@ export function playerStep(s, d, diving) {
   if (ahead) {
     // The glued box is ahead: it goes first, or it is pushed against something and you both
     // stop, still glued.
-    const b = shift(s, g.x, g.y, dx, dy, false, g);
+    const b = shift(s, g.x, g.y, dx, dy, wades(g), g);
     if (!b) return 'blocked';
-    land(s, g, b);
+    if (land(s, g, b)) light(s, g);
   } else if (e && p.sticky && STICKS(e)) { stick(s, e); return 'blocked'; }
   else if (e) {
     let b;
@@ -30,11 +30,11 @@ export function playerStep(s, d, diving) {
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (e.kind === 'box') {
+    } else if (LIGHT.includes(e.kind)) {
       // A box glued to another piece: the one ahead goes first, the one behind follows.
       const led = !!partnerAt(s, e, nx + dx, ny + dy) && lead(s, e, dx, dy);
-      if (!(b = pushTo(s, nx, ny, t.d, false))) { const o = entAt(s, nx + dx, ny + dy, e); if (o) meet(s, e, o); return 'blocked'; }
-      if (land(s, e, b)) { pushed = { id: e.id, d: b.d }; if (!led) follow(s, e, dx, dy); }
+      if (!(b = pushTo(s, nx, ny, t.d, wades(e)))) { const o = entAt(s, nx + dx, ny + dy, e); if (o) meet(s, e, o); return 'blocked'; }
+      if (land(s, e, b)) { pushed = { id: e.id, d: b.d }; light(s, e); if (!led) follow(s, e, dx, dy); }
     } else return 'blocked';
   }
   p.pushing = pushed;
@@ -122,7 +122,7 @@ export function input(s, k) {
   if (!DIRS[k] || p.hidden) return;
   // Riding, a move lets go.
   if (p.stuck && p.stuck.ride) unstick(s);
-  if (!p.dir) { p.dir = k; p.moved = 0; s.move++; return; }
+  if (!p.dir) { p.dir = k; p.moved = 0; s.move++; burnFuses(s); return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
   else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { letGo(s); p.dir = k; s.events.push({ type: 'boomerang', from: OPPOSITE[k] }); } }
   else if (s.powers.laser) laser(s, k, from);

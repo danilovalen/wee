@@ -1,7 +1,7 @@
 // Lasers: your shot, turret beams, relays, catchers and shocked water.
 import { DIRS } from './base.js';
 import { cellAt, entAt, facing, inWater, inb, playerAt, stepTo } from './grid.js';
-import { die, kill } from './life.js';
+import { die, explode, kill } from './life.js';
 
 // A beam from (x, y) heading d, turned by triangles. hit(piece) says whether it
 // passes on. Returns the cells it crossed, whether geometry stopped it (and the
@@ -21,10 +21,12 @@ export function trace(s, x, y, d, hit, hitsPlayer) {
   return { path, wall, end: cd, stop, player };
 }
 
-// Any laser kills a weak enemy and goes on. Everything else stops it, and a strong
-// enemy takes no harm from it.
+// Any laser kills a weak enemy and goes on, and sets a bomb off. Everything else stops it, and a
+// strong enemy takes no harm from it.
 export function laserHit(s, o, how) {
   if (o.kind === 'enemy') { kill(s, o, how); return true; }
+  // A beam does not light a bomb, it sets it off.
+  if (o.kind === 'bomb') { explode(s, o); return false; }
   return false;
 }
 
