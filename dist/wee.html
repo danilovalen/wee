@@ -2292,6 +2292,7 @@ function finish(r) {
   S.check.result = r;
   $('checkText').textContent = S.check.live && r.status === 'capped' ? 'Too big to tell while editing. Press Check to search further.' : checkText(r);
   $('showSolution').hidden = r.status !== 'solved';
+  syncLint();
   if (r.status === 'solved' && !S.check.live) runDesign(r.moves.length);
 }
 
@@ -2327,11 +2328,13 @@ function feedDemo(game) {
 let lintStamp = null;
 function syncLint() {
   if (S.mode !== 'edit') { $('lintBox').hidden = true; return; }
-  const stamp = JSON.stringify(S.level) + (S.room && S.room.solution ? S.room.solution.join() : '');
+  // A check of this very room that found a way replaces the broken one, so the warning goes.
+  const rechecked = !!(S.check && S.check.stamp === JSON.stringify(S.level) && S.check.result && S.check.result.status === 'solved');
+  const stamp = JSON.stringify(S.level) + (S.room && S.room.solution ? S.room.solution.join() : '') + rechecked;
   if (stamp === lintStamp) return;
   lintStamp = stamp;
   const warns = lint(S.level), sol = S.room && S.room.solution;
-  if (sol && S.level.start) {
+  if (sol && S.level.start && !rechecked) {
     const n = brokenAt(S.level, sol);
     if (n) warns.unshift({ x: S.level.start.x, y: S.level.start.y, msg: `The saved solution no longer wins: it breaks at move ${n} of ${sol.length}. Check again and save.` });
   }

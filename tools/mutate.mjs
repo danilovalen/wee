@@ -540,6 +540,9 @@ const M = [
   ['src/gen/generate.js', "  for (const e of unused) { if (e.piece) l.entities", "  for (const e of []) { if (e.piece) l.entities", 'gen'],
   ['src/gen/generate.js', "    l.cells[e.y * l.w + e.x] = 'wall';\n  }", "  }", 'gen'],
   ['src/solve/design.js', "plain = checked.filter(e => e.without !== par && e.standIn === par);", "plain = [];", 'gen'],
+  // A successful recheck clears the stale-solution warning (register 113)
+  ['src/app/check.js', "  if (sol && S.level.start && !rechecked) {", "  if (sol && S.level.start) {", 'browser'],
+  ['src/app/check.js', "  $('showSolution').hidden = r.status !== 'solved';\n  syncLint();\n", "  $('showSolution').hidden = r.status !== 'solved';\n", 'browser'],
 ];
 
 let caught = 0, crashed = 0;

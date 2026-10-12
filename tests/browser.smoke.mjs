@@ -568,6 +568,12 @@ try {
   const blocked = JSON.parse(JSON.stringify(turnRoom)); blocked.cells[2 * 5 + 3] = 'wall';
   await page.evaluate(l => window.wee.loadLevel(l), blocked);
   check('editing the room so its saved solution fails says so', (await page.textContent('#lintList')).includes('saved solution no longer wins'), await page.textContent('#lintList'));
+  const detour = room(['#####', '#P..#', '#.###', '#...#', '#####']); detour.cells[3 * 5 + 3] = 'goal';
+  await page.evaluate(l => window.wee.loadLevel(l), detour);
+  check('a room with another way still warns before it is checked', (await page.textContent('#lintList')).includes('saved solution no longer wins'));
+  await page.click('#checkBtn');
+  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  check('and once Check finds the new way, the warning goes', !(await page.textContent('#lintList')).includes('saved solution no longer wins'), await page.textContent('#lintList'));
   const lone = room(['#####', '#P.D#', '#####']);
   await page.evaluate(l => window.wee.loadLevel(l), lone);
   check('a door with no switch is a warning', (await page.textContent('#lintSum')) === '2 warnings' && (await page.textContent('#lintList')).includes('red door with no red switch'), await page.textContent('#lintList'));
