@@ -16,7 +16,8 @@ export function closeWell() { WELL.open = false; syncWell(); }
 // Warnings plus design notes, not counting the line that says they are being worked out.
 function findings() {
   const lint = $('lintBox').hidden ? 0 : $('lintList').children.length;
-  const design = $('designBox').hidden || S.design?.working ? 0 : $('designList').children.length;
+  // Notes dimmed by an edit are about the room before it, so they are not counted.
+  const design = $('designBox').hidden || $('designBox').classList.contains('stale') ? 0 : $('designList').querySelectorAll('li:not(.working)').length;
   return lint + design;
 }
 
@@ -28,13 +29,15 @@ export function syncWell() {
   if (key === shown) return;
   shown = key;
   $('well').hidden = !open;
-  // With nothing found and the well shut there is nothing to open: the button goes.
-  $('wellBtn').hidden = !edit || (!n && !open);
+  // With nothing found and the well shut there is nothing to open: the button greys out
+  // (a phone hides a greyed one), so nothing beside it moves.
+  $('wellBtn').hidden = !edit;
+  $('wellBtn').disabled = !n && !open;
   $('wellBtn').textContent = label;
   $('wellBtn').setAttribute('aria-expanded', String(open));
   $('wellBtn').classList.toggle('on', open);
   document.querySelectorAll('[data-well]').forEach(b => { const on = b.dataset.well === WELL.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
-  document.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== WELL.tab; });
+  document.querySelectorAll('#well [data-pane]').forEach(p => { p.hidden = p.dataset.pane !== WELL.tab; });
   $('wellEmpty').hidden = n > 0;
   $('lensOff').hidden = !$('lensBox').hidden;
 }

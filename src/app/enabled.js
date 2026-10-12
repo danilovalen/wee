@@ -17,7 +17,10 @@ export function syncEnabled() {
   }
   // With no start (a cut took it), there is nothing to play or check until one is placed.
   $('mode').disabled = !level.start;
-  $('checkBtn').disabled = !level.start;
+  // Check is greyed out while this exact room's full check runs or once it is done: a second
+  // press would redo the same work and redraw the same words.
+  const stamp = level.start && S.check && !S.check.live ? JSON.stringify(level) : null;
+  $('checkBtn').disabled = !level.start || (!!stamp && S.check.stamp === stamp);
   // A side's add or cut is greyed out when it cannot happen (a placed thing, 2x2, 40x30).
   document.querySelectorAll('[data-side][data-delta]').forEach(b => { b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta); });
 }

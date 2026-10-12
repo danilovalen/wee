@@ -4,6 +4,7 @@
 import { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } from '../solve/design.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
+import { syncWell } from './well.js';
 
 const SLICE_MS = 25, MAX = NOTES_MAX;
 const NAME = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', armored: 'Armored' };
@@ -31,32 +32,33 @@ function line(text, spots = []) {
   return li;
 }
 
-export function clearDesign() {
+// The room changed: the notes stay where they are, dimmed, until a Check replaces them, so
+// the well never empties and refills on every edit.
+// A room just opened (nothing to undo yet) is another room: its notes go altogether.
+export function clearDesign(fresh = false) {
   S.design = null;
-  $('designBox').hidden = true;
-  $('designList').replaceChildren();
+  if (fresh) { $('designBox').hidden = true; $('designList').replaceChildren(); $('designBox').classList.remove('stale'); return; }
+  $('designBox').classList.add('stale');
 }
 
 // Called with a finished check of a solvable room.
 export function runDesign(par) {
   const level = JSON.parse(JSON.stringify(S.level)), stamp = JSON.stringify(level), list = $('designList');
-  S.design = { stamp, unused: [], traps: null, working: true };
-  list.replaceChildren(line('Working out the design notes...'));
-  $('designBox').hidden = false;
+  S.design = { stamp, unused: [], traps: null };
+  // Old notes stay, dimmed, while new ones are worked out; with none, a line says so.
+  if ($('designBox').hidden) { const w = line('Working out the design notes...'); w.className = 'working'; list.replaceChildren(w); $('designBox').hidden = false; }
   const lines = [];
-  const show = () => { S.design.working = false; list.replaceChildren(...lines); };
+  const swap = () => { $('designBox').classList.remove('stale'); list.replaceChildren(...lines); syncWell(); };
   sliced(routes(level), stamp, r => {
     if (r) {
       S.design.traps = r.traps;
       lines.push(line(`${r.routes} shortest ${r.routes === 1 ? 'route' : 'routes'}.`), line(`${r.dead} of ${r.positions} positions can no longer reach the goal.`));
     } else lines.push(line('Too many positions to count routes and dead ends.'));
-    show();
     sliced(powerCheck(level, MAX), stamp, ps => {
       const idle = ps.filter(p => p.without === par);
       for (const p of ps) if (p.without !== par) lines.push(line(`Without ${NAME[p.power]}: ${moves(p.without)} instead of ${par}.`));
       if (idle.length) lines.push(line(`Without ${idle.map(p => NAME[p.power]).join(', ')}: no change.`));
-      show();
-      sliced(elementCheck(level, MAX), stamp, es => {
+        sliced(elementCheck(level, MAX), stamp, es => {
         const name = e => `${PIECE[e.what] || e.what} at ${e.x}, ${e.y}`;
         const { unused, plain } = idleElements(es, par);
         S.design.unused = [...unused, ...plain];
@@ -66,7 +68,7 @@ export function runDesign(par) {
         if (walls.length) lines.push(line(`As a wall, these do the same job: ${walls.map(name).join('; ')}.`, walls));
         if (turrets.length) lines.push(line(`As a fixed turret, these do the same job: ${turrets.map(name).join('; ')}.`, turrets));
         if (!unused.length && !plain.length) lines.push(line('Each piece and tile changes the answer, and nothing could be a plain wall instead.'));
-        show();
+        swap();
       });
     });
   });

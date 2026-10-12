@@ -6,10 +6,13 @@ import { now } from './dom.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 import { runDesign, clearDesign } from './design.js';
+import { syncEnabled } from './enabled.js';
 
 const SLICE_MS = 25;
 // While you edit, the room is solved this long after the last change, with a smaller cap.
 const LIVE_WAIT_MS = 300, LIVE_MAX = 5000;
+// The progress count is rewritten at most this often, so it reads instead of flickering.
+const PROGRESS_MS = 250;
 let liveTimer = null;
 const SAY = {
   solved: r => `Solvable in ${r.moves.length} ${r.moves.length === 1 ? 'move' : 'moves'}.`,
@@ -27,16 +30,22 @@ export function runCheck(live = false) {
   const level = JSON.parse(JSON.stringify(S.level)), stamp = JSON.stringify(level);
   const it = search(level, live ? LIVE_MAX : undefined);
   S.check = { stamp, result: null, live };
-  clearDesign();
-  $('checkText').textContent = 'Checking...';
-  $('showSolution').hidden = true;
+  if (!live) clearDesign();
+  // A verdict already on screen stays, dimmed, until the new one replaces it; only with none
+  // does the line say it is checking.
+  const prior = $('checkText').dataset.verdict === '1';
+  $('checkText').classList.add('stale');
+  if (!prior) $('checkText').textContent = 'Checking...';
+  $('showSolution').disabled = true;
+  syncEnabled();
+  let said = performance.now();
   const slice = () => {
     if (!S.check || S.check.stamp !== stamp) return;
     const until = performance.now() + SLICE_MS;
     for (;;) {
       const r = it.next();
       if (r.done) { finish(r.value); return; }
-      if (performance.now() > until) { $('checkText').textContent = `Checking... ${r.value} positions`; break; }
+      if (performance.now() > until) { if (!prior && performance.now() - said > PROGRESS_MS) { said = performance.now(); $('checkText').textContent = `Checking... ${r.value} positions`; } break; }
     }
     setTimeout(slice, 0);
   };
@@ -46,21 +55,28 @@ export function runCheck(live = false) {
 function finish(r) {
   S.check.result = r;
   $('checkText').textContent = S.check.live && r.status === 'capped' ? 'Too big to tell while editing. Press Check to search further.' : checkText(r);
+  $('checkText').dataset.verdict = '1';
+  $('checkText').classList.remove('stale');
   $('showSolution').hidden = r.status !== 'solved';
+  $('showSolution').disabled = false;
   syncLint();
+  syncEnabled();
   if (r.status === 'solved' && !S.check.live) runDesign(r.moves.length);
 }
 
 // A check goes stale the moment the room changes, and a live one starts after a pause.
 export function syncCheck() {
   const stamp = JSON.stringify(S.level);
-  if (!S.level.start) { S.check = null; clearDesign(); clearTimeout(liveTimer); $('checkText').textContent = 'To check or play, place the start.'; $('showSolution').hidden = true; return; }
+  if (!S.level.start) { S.check = null; clearDesign(); clearTimeout(liveTimer); $('checkText').textContent = 'To check or play, place the start.'; $('checkText').dataset.verdict = ''; $('checkText').classList.remove('stale'); $('showSolution').hidden = true; return; }
   if (S.check && S.check.stamp === stamp) return;
+  // The room changed: the old verdict stays, dimmed, until the live check replaces it.
+  // A room just opened (nothing to undo) is another room: its verdict and notes go.
   if (S.check) {
+    const fresh = !S.history.past.length && !S.history.future.length;
     S.check = null;
-    clearDesign();
-    $('checkText').textContent = '';
-    $('showSolution').hidden = true;
+    clearDesign(fresh);
+    if (fresh) { $('checkText').textContent = ''; $('checkText').dataset.verdict = ''; $('checkText').classList.remove('stale'); $('showSolution').hidden = true; }
+    else { $('checkText').classList.add('stale'); $('showSolution').disabled = true; }
   }
   clearTimeout(liveTimer);
   liveTimer = setTimeout(() => { if (!S.check && JSON.stringify(S.level) === stamp) runCheck(true); }, LIVE_WAIT_MS);

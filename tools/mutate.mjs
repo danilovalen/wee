@@ -367,7 +367,7 @@ const M = [
   ['src', "if (!alive.has(k)) { alive.add(k); todo.push(k); }", "if (!alive.has(k)) alive.add(k);", 'designui'],
   ['src', "if (nodes.size >= max) return null;", "", 'design'],
   ['src', "const idle = ps.filter(p => p.without === par);", "const idle = [];", 'designui'],
-  ['src', "    S.check = null;\n    clearDesign();", "    S.check = null;", 'designui'],
+  ['src', "    S.check = null;\n    clearDesign(fresh);", "    S.check = null;", 'designui'],
   ['src', "S.ui.axis = b.dataset.axis; S.ui.dir = +b.dataset.dir;", "S.ui.axis = b.dataset.axis;", 'browser'],
   ['src', "b.dataset.axis === ui.axis && +b.dataset.dir === ui.dir", "b.dataset.axis === ui.axis", 'browser'],
   ['src', "  if (ui.aim.length < 2) $('startOpt').hidden = true;\n", "", 'browser'],
@@ -437,9 +437,8 @@ const M = [
   ['src', "    if ($('pad').nextElementSibling !== $('keys')) $('keys').before($('pad'));\n", "", 'fit'],
   ['src', "inside($('options'), $('ctx'));", "inside($('options'), $('tools'));", 'fit'],
   ['src', "closeWell() : openWell('findings'));", "closeWell() : openWell());", 'browser'],
-  ['src', "|| (!n && !open);", ";", 'phone'],
+  ['src', "  $('wellBtn').disabled = !n && !open;", "  $('wellBtn').disabled = false;", 'flicker'],
   ['src', "return lint + design;", "return lint;", 'designui'],
-  ['src', "const show = () => { S.design.working = false;", "const show = () => {", 'designui'],
   ['src', "$('checkBtn').onclick = () => { runCheck(); openWell('findings'); };", "$('checkBtn').onclick = () => { runCheck(); };", 'designui'],
   // lens chips and the hover line (U2)
   ['src', "    b.classList.toggle('auto', isAuto(gr.id));", "", 'lensui'],
@@ -524,7 +523,6 @@ const M = [
   ['src/level/format.js', "export const MIN_INSIDE = 2;", "export const MIN_INSIDE = 1;", 'size'],
   ['src/level/format.js', "  const start = moved && inside(moved.x, moved.y) ? moved : null;", "  const start = moved;", 'sim'],
   ['src/app/enabled.js', "  $('mode').disabled = !level.start;", "", 'browser'],
-  ['src/app/enabled.js', "  $('checkBtn').disabled = !level.start;", "", 'browser'],
   ['src/app/enabled.js', "b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta);", "b.disabled = false;", 'browser'],
   ['src/app/play.js', "  if (m === 'play' && !S.playFrom && !S.level.start) return;\n", "", 'browser'],
   ['src/app/size.js', "    while (n && !moveSide(S.level, side, n)) n -= Math.sign(n);\n", "", 'browser'],
@@ -541,7 +539,7 @@ const M = [
   ['src/solve/design.js', "plain = checked.filter(e => e.without !== par && e.standIn === par);", "plain = [];", 'gen'],
   // A successful recheck clears the stale-solution warning (register 113)
   ['src/app/check.js', "  if (sol && S.level.start && !rechecked) {", "  if (sol && S.level.start) {", 'browser'],
-  ['src/app/check.js', "  $('showSolution').hidden = r.status !== 'solved';\n  syncLint();\n", "  $('showSolution').hidden = r.status !== 'solved';\n", 'browser'],
+  ['src/app/check.js', "  syncLint();\n  syncEnabled();", "  syncEnabled();", 'browser'],
   ['src/rules/player.js', "    if (!b) return 'blocked';\n    land(s, g, b);", "    if (!b) { unstick(s); return 'blocked'; }\n    land(s, g, b);", 'sim'],
   ['src/editor/palette.js', "{ id: 'gravel', label: 'Gravel', group: 'floors' }", "{ id: 'gravel', label: 'Gravel', group: 'tiles' }", 'browser'],
   // Nothing clickable does nothing (register 116)
@@ -556,6 +554,17 @@ const M = [
   ['src/app/icons.js', "  else if (tool === 'follow') drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);\n", "", 'genui'],
   ['src/app/generator.js', "    else label.append(icon(ING_ICON[g.id] || g.id, ING_COLOUR[g.id]));", "    else label.append(icon(ING_ICON[g.id] || g.id));", 'genui'],
   ['src/app/generator.js', "['Powers', INGREDIENTS.filter(g => g.power)]", "['Powers', []]", 'genui'],
+  // Flicker (register 119)
+  ['src/app/check.js', "    else { $('checkText').classList.add('stale'); $('showSolution').disabled = true; }", "    else { $('checkText').textContent = ''; }", 'flicker'],
+  ['src/app/design.js', "  $('designBox').classList.add('stale');\n}", "  $('designBox').hidden = true; $('designList').replaceChildren();\n}", 'flicker'],
+  ['style.css', ".statusBar .check { flex: 1 1 0; min-width: 0; }", "", 'flicker'],
+  ['src/app/enabled.js', "  $('checkBtn').disabled = !level.start || (!!stamp && S.check.stamp === stamp);", "  $('checkBtn').disabled = !level.start;", 'browser'],
+  ['src/app/well.js', "document.querySelectorAll('#well [data-pane]')", "document.querySelectorAll('[data-pane]')", 'flicker'],
+  ['src/app/well.js', "  $('wellBtn').hidden = !edit;", "  $('wellBtn').hidden = !edit || (!n && !open);", 'flicker'],
+  ['src/app/check.js', "if (!prior && performance.now() - said > PROGRESS_MS)", "if (!prior)", 'flicker'],
+  ['src/app/check.js', "  if (!prior) $('checkText').textContent = 'Checking...';", "  $('checkText').textContent = 'Checking...';", 'flicker'],
+  ['src/app/well.js', " || $('designBox').classList.contains('stale') ? 0", " ? 0", 'flicker'],
+  ['src/app/check.js', "    const fresh = !S.history.past.length && !S.history.future.length;", "    const fresh = false;", 'flicker'],
 ];
 
 let caught = 0, crashed = 0;

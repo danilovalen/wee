@@ -59,7 +59,7 @@ try {
   await page.keyboard.press('Escape');
 
   // Check and Show stops on his room
-  w = await worst(async () => { await page.click('#checkBtn'); await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'), null, { timeout: 60000 }); });
+  w = await worst(async () => { await page.click('#checkBtn'); await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')), null, { timeout: 60000 }); });
   check(`Check never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
   await page.click('#wellClose');
   await page.click('[data-tool=look]');

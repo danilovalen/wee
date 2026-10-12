@@ -517,15 +517,15 @@ try {
   const goalRoom = room(['#######', '#P..#.#', '#######']); goalRoom.cells[10] = 'goal';
   await page.evaluate(l => window.wee.loadLevel(l), goalRoom);
   await page.click('#checkBtn');
-  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')));
   check('Check finds the solution and its length', (await page.textContent('#checkText')) === 'Solvable in 1 move.' && await page.locator('#showSolution').isVisible());
   await pick('enemy');
   check('picking a tool keeps the check', (await page.textContent('#checkText')) === 'Solvable in 1 move.');
   await pick('wall'); const g1 = at(5, 5); await page.mouse.click(g1.x, g1.y);
-  check('editing the room clears a stale check', (await page.textContent('#checkText')) === '' && !(await page.locator('#showSolution').isVisible()));
+  check('editing the room dims the stale check instead of blanking it, and Show solution greys out', (await page.textContent('#checkText')) === 'Solvable in 1 move.' && await page.$eval('#checkText', e => e.classList.contains('stale')) && await page.locator('#showSolution').isDisabled());
   await page.keyboard.press('Control+z');
   await page.click('#checkBtn');
-  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')));
   await page.click('#showSolution');
   await page.evaluate(() => window.advanceTime(1200));
   check('Show solution plays it to the win', await page.locator('#win').isVisible());
@@ -534,7 +534,7 @@ try {
   const turnRoom = room(['#####', '#P..#', '###.#', '###.#', '#####']); turnRoom.cells[3 * 5 + 3] = 'goal';
   await page.evaluate(l => window.wee.loadLevel(l), turnRoom);
   await page.click('#checkBtn');
-  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')));
   await page.click('#showSolution');
   await page.evaluate(() => window.advanceTime(3000));
   check('a two-move solution plays to the win', await page.locator('#win').isVisible() && (await page.textContent('#winText')) === 'Solved in 2 moves.', await page.textContent('#winText'));
@@ -543,17 +543,16 @@ try {
   const diveRoom = room(['#######', '#P.H..#', '#######']); diveRoom.cells[11] = 'goal';
   await page.evaluate(l => window.wee.loadLevel(l), diveRoom);
   await page.click('#checkBtn');
-  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')));
   await page.click('#showSolution');
   await page.evaluate(() => window.advanceTime(3000));
   check('Show solution plays a dive to the win', await page.locator('#win').isVisible(), await page.textContent('#checkText'));
   await page.click('#winEdit');
   await page.evaluate(l => window.wee.loadLevel(l), turnRoom);
   await page.click('#checkBtn');
-  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')));
   // a checked room saves its par, and the mechanism filter and tally read the saved rooms
-  await page.click('#checkBtn');
-  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  check('a room whose full check is done greys out Check: a second press would redo it', await page.locator('#checkBtn').isDisabled());
   await page.click('#roomTitle');
   await page.fill('#roomName', 'Par room');
   await page.click('#roomSaveAs');
@@ -581,7 +580,7 @@ try {
   await page.evaluate(l => window.wee.loadLevel(l), detour);
   check('a room with another way still warns before it is checked', (await page.textContent('#lintList')).includes('saved solution no longer wins'));
   await page.click('#checkBtn');
-  await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable'));
+  await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')));
   check('and once Check finds the new way, the warning goes', !(await page.textContent('#lintList')).includes('saved solution no longer wins'), await page.textContent('#lintList'));
   const lone = room(['#####', '#P.D#', '#####']);
   await page.evaluate(l => window.wee.loadLevel(l), lone);

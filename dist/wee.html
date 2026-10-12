@@ -98,6 +98,7 @@ button { touch-action: manipulation; }
 .pad button { flex: 1 1 30%; min-height: 48px; font-size: 16px; }
 @media (max-width: 700px) { main { grid-template-columns: 1fr; } #stage { order: -1; } }
 @media (max-width: 700px) {
+  #wellBtn:disabled { display: none; }
   body { font-size: 15px; }
   header { padding: 8px 12px; }
   main { padding: 12px; gap: 12px; }
@@ -225,6 +226,11 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .ctx { display: none; }
 .statusBar { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; width: 100%; max-width: 480px; margin-top: 4px; font-size: 13px; }
 .statusBar .check { margin: 0; }
+/* Flicker: a verdict or note being redone stays, dimmed, instead of going blank; the
+   verdict takes the free width so what follows it never moves when its words change. */
+#checkText.stale, #designBox.stale { opacity: .5; }
+.statusBar .check { flex: 1 1 0; min-width: 0; }
+#wellBtn { min-width: 6.4em; }
 .statusBar #keys { margin: 0; }
 .statusBar > [hidden] { display: none; }
 .well { display: flex; flex-direction: column; background: var(--panel); border: 0; border-radius: var(--r-m) var(--r-m) 0 0; }
@@ -587,9 +593,9 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
     </aside>
   </main>
   <footer id="statusBar" class="statusBar">
-    <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
-    <button id="wellBtn" type="button" data-edit>Findings</button>
+    <button id="wellBtn" type="button">Findings</button>
     <button id="sizeBtn" type="button" data-edit aria-label="Room size" aria-expanded="false"></button>
+    <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
     <p id="info" class="hint"></p>
     <p id="keys" class="hint"></p>
   </footer>
@@ -2167,14 +2173,70 @@ function* routes(level, max = MAX_STATES) {
 }
 return { powerCheck, elementCheck, NOTES_MAX, idleElements, routes };
 })();
-// ---- src/app/design.js
+// ---- src/app/well.js
 const m18 = (() => {
+const { S } = m11;
+const { $ } = m12;
+// The well: a fixed-height drawer under the room, with a tab for findings (warnings and
+// design notes) and one for lenses. It never pushes anything off the screen, it only takes
+// height from the room. All copy is draft.
+
+
+const WELL = { open: false, tab: 'findings' };
+
+function openWell(tab) {
+  WELL.open = true; if (tab) WELL.tab = tab; syncWell();
+  // On a phone the well and a sheet share the bottom, so the well puts the sheet away.
+  $('sheet').hidden = true; document.querySelectorAll('[data-sheet]').forEach(b => b.classList.toggle('on', b.dataset.sheet === 'build'));
+}
+function closeWell() { WELL.open = false; syncWell(); }
+
+// Warnings plus design notes, not counting the line that says they are being worked out.
+function findings() {
+  const lint = $('lintBox').hidden ? 0 : $('lintList').children.length;
+  // Notes dimmed by an edit are about the room before it, so they are not counted.
+  const design = $('designBox').hidden || $('designBox').classList.contains('stale') ? 0 : $('designList').querySelectorAll('li:not(.working)').length;
+  return lint + design;
+}
+
+let shown = '';
+function syncWell() {
+  const edit = S.mode === 'edit', open = WELL.open && edit, n = findings();
+  const label = n ? `Findings ${n}` : 'Findings';
+  const key = [open, WELL.tab, label, edit, $('lensBox').hidden, n].join();
+  if (key === shown) return;
+  shown = key;
+  $('well').hidden = !open;
+  // With nothing found and the well shut there is nothing to open: the button greys out
+  // (a phone hides a greyed one), so nothing beside it moves.
+  $('wellBtn').hidden = !edit;
+  $('wellBtn').disabled = !n && !open;
+  $('wellBtn').textContent = label;
+  $('wellBtn').setAttribute('aria-expanded', String(open));
+  $('wellBtn').classList.toggle('on', open);
+  document.querySelectorAll('[data-well]').forEach(b => { const on = b.dataset.well === WELL.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+  document.querySelectorAll('#well [data-pane]').forEach(p => { p.hidden = p.dataset.pane !== WELL.tab; });
+  $('wellEmpty').hidden = n > 0;
+  $('lensOff').hidden = !$('lensBox').hidden;
+}
+
+function buildWell() {
+  document.querySelectorAll('[data-well]').forEach(b => b.onclick = () => openWell(b.dataset.well));
+  $('wellClose').onclick = closeWell;
+  $('wellBtn').onclick = () => (WELL.open && WELL.tab === 'findings' ? closeWell() : openWell('findings'));
+}
+return { WELL, openWell, closeWell, syncWell, buildWell };
+})();
+// ---- src/app/design.js
+const m19 = (() => {
 const { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } = m17;
 const { S } = m11;
 const { $, now } = m12;
+const { syncWell } = m18;
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
 // how many shortest routes there are, and how many positions trap you. Runs a slice at a
 // time and stops when the room changes. All copy is draft.
+
 
 
 
@@ -2204,32 +2266,33 @@ function line(text, spots = []) {
   return li;
 }
 
-function clearDesign() {
+// The room changed: the notes stay where they are, dimmed, until a Check replaces them, so
+// the well never empties and refills on every edit.
+// A room just opened (nothing to undo yet) is another room: its notes go altogether.
+function clearDesign(fresh = false) {
   S.design = null;
-  $('designBox').hidden = true;
-  $('designList').replaceChildren();
+  if (fresh) { $('designBox').hidden = true; $('designList').replaceChildren(); $('designBox').classList.remove('stale'); return; }
+  $('designBox').classList.add('stale');
 }
 
 // Called with a finished check of a solvable room.
 function runDesign(par) {
   const level = JSON.parse(JSON.stringify(S.level)), stamp = JSON.stringify(level), list = $('designList');
-  S.design = { stamp, unused: [], traps: null, working: true };
-  list.replaceChildren(line('Working out the design notes...'));
-  $('designBox').hidden = false;
+  S.design = { stamp, unused: [], traps: null };
+  // Old notes stay, dimmed, while new ones are worked out; with none, a line says so.
+  if ($('designBox').hidden) { const w = line('Working out the design notes...'); w.className = 'working'; list.replaceChildren(w); $('designBox').hidden = false; }
   const lines = [];
-  const show = () => { S.design.working = false; list.replaceChildren(...lines); };
+  const swap = () => { $('designBox').classList.remove('stale'); list.replaceChildren(...lines); syncWell(); };
   sliced(routes(level), stamp, r => {
     if (r) {
       S.design.traps = r.traps;
       lines.push(line(`${r.routes} shortest ${r.routes === 1 ? 'route' : 'routes'}.`), line(`${r.dead} of ${r.positions} positions can no longer reach the goal.`));
     } else lines.push(line('Too many positions to count routes and dead ends.'));
-    show();
     sliced(powerCheck(level, MAX), stamp, ps => {
       const idle = ps.filter(p => p.without === par);
       for (const p of ps) if (p.without !== par) lines.push(line(`Without ${NAME[p.power]}: ${moves(p.without)} instead of ${par}.`));
       if (idle.length) lines.push(line(`Without ${idle.map(p => NAME[p.power]).join(', ')}: no change.`));
-      show();
-      sliced(elementCheck(level, MAX), stamp, es => {
+        sliced(elementCheck(level, MAX), stamp, es => {
         const name = e => `${PIECE[e.what] || e.what} at ${e.x}, ${e.y}`;
         const { unused, plain } = idleElements(es, par);
         S.design.unused = [...unused, ...plain];
@@ -2239,23 +2302,58 @@ function runDesign(par) {
         if (walls.length) lines.push(line(`As a wall, these do the same job: ${walls.map(name).join('; ')}.`, walls));
         if (turrets.length) lines.push(line(`As a fixed turret, these do the same job: ${turrets.map(name).join('; ')}.`, turrets));
         if (!unused.length && !plain.length) lines.push(line('Each piece and tile changes the answer, and nothing could be a plain wall instead.'));
-        show();
+        swap();
       });
     });
   });
 }
 return { sliced, clearDesign, runDesign };
 })();
+// ---- src/app/enabled.js
+const m20 = (() => {
+const { S } = m11;
+const { $ } = m12;
+const { moveSide } = m9;
+const { stateKey } = m15;
+// A control that would do nothing right now is greyed out, never left to refuse a click.
+// Runs after every change to the room, every switch between editing and playing, and each
+// tick of a run. Controls marked data-edit work on the room being edited, so a run greys them.
+
+
+
+
+function syncEnabled() {
+  const level = S.level, play = S.mode === 'play';
+  document.querySelectorAll('[data-edit]').forEach(b => { b.disabled = play; });
+  if (play) {
+    $('mode').disabled = false;
+    // Reset does nothing until the run has moved away from where it would put you.
+    $('respawnBtn').disabled = !!S.game && stateKey(S.game) === S.freshKey;
+    return;
+  }
+  // With no start (a cut took it), there is nothing to play or check until one is placed.
+  $('mode').disabled = !level.start;
+  // Check is greyed out while this exact room's full check runs or once it is done: a second
+  // press would redo the same work and redraw the same words.
+  const stamp = level.start && S.check && !S.check.live ? JSON.stringify(level) : null;
+  $('checkBtn').disabled = !level.start || (!!stamp && S.check.stamp === stamp);
+  // A side's add or cut is greyed out when it cannot happen (a placed thing, 2x2, 40x30).
+  document.querySelectorAll('[data-side][data-delta]').forEach(b => { b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta); });
+}
+return { syncEnabled };
+})();
 // ---- src/app/check.js
-const m19 = (() => {
+const m21 = (() => {
 const { search, parseMove } = m15;
 const { lint, brokenAt } = m16;
 const { now } = m12;
 const { S } = m11;
 const { $ } = m12;
-const { runDesign, clearDesign } = m18;
+const { runDesign, clearDesign } = m19;
+const { syncEnabled } = m20;
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
+
 
 
 
@@ -2265,6 +2363,8 @@ const { runDesign, clearDesign } = m18;
 const SLICE_MS = 25;
 // While you edit, the room is solved this long after the last change, with a smaller cap.
 const LIVE_WAIT_MS = 300, LIVE_MAX = 5000;
+// The progress count is rewritten at most this often, so it reads instead of flickering.
+const PROGRESS_MS = 250;
 let liveTimer = null;
 const SAY = {
   solved: r => `Solvable in ${r.moves.length} ${r.moves.length === 1 ? 'move' : 'moves'}.`,
@@ -2282,16 +2382,22 @@ function runCheck(live = false) {
   const level = JSON.parse(JSON.stringify(S.level)), stamp = JSON.stringify(level);
   const it = search(level, live ? LIVE_MAX : undefined);
   S.check = { stamp, result: null, live };
-  clearDesign();
-  $('checkText').textContent = 'Checking...';
-  $('showSolution').hidden = true;
+  if (!live) clearDesign();
+  // A verdict already on screen stays, dimmed, until the new one replaces it; only with none
+  // does the line say it is checking.
+  const prior = $('checkText').dataset.verdict === '1';
+  $('checkText').classList.add('stale');
+  if (!prior) $('checkText').textContent = 'Checking...';
+  $('showSolution').disabled = true;
+  syncEnabled();
+  let said = performance.now();
   const slice = () => {
     if (!S.check || S.check.stamp !== stamp) return;
     const until = performance.now() + SLICE_MS;
     for (;;) {
       const r = it.next();
       if (r.done) { finish(r.value); return; }
-      if (performance.now() > until) { $('checkText').textContent = `Checking... ${r.value} positions`; break; }
+      if (performance.now() > until) { if (!prior && performance.now() - said > PROGRESS_MS) { said = performance.now(); $('checkText').textContent = `Checking... ${r.value} positions`; } break; }
     }
     setTimeout(slice, 0);
   };
@@ -2301,21 +2407,28 @@ function runCheck(live = false) {
 function finish(r) {
   S.check.result = r;
   $('checkText').textContent = S.check.live && r.status === 'capped' ? 'Too big to tell while editing. Press Check to search further.' : checkText(r);
+  $('checkText').dataset.verdict = '1';
+  $('checkText').classList.remove('stale');
   $('showSolution').hidden = r.status !== 'solved';
+  $('showSolution').disabled = false;
   syncLint();
+  syncEnabled();
   if (r.status === 'solved' && !S.check.live) runDesign(r.moves.length);
 }
 
 // A check goes stale the moment the room changes, and a live one starts after a pause.
 function syncCheck() {
   const stamp = JSON.stringify(S.level);
-  if (!S.level.start) { S.check = null; clearDesign(); clearTimeout(liveTimer); $('checkText').textContent = 'To check or play, place the start.'; $('showSolution').hidden = true; return; }
+  if (!S.level.start) { S.check = null; clearDesign(); clearTimeout(liveTimer); $('checkText').textContent = 'To check or play, place the start.'; $('checkText').dataset.verdict = ''; $('checkText').classList.remove('stale'); $('showSolution').hidden = true; return; }
   if (S.check && S.check.stamp === stamp) return;
+  // The room changed: the old verdict stays, dimmed, until the live check replaces it.
+  // A room just opened (nothing to undo) is another room: its verdict and notes go.
   if (S.check) {
+    const fresh = !S.history.past.length && !S.history.future.length;
     S.check = null;
-    clearDesign();
-    $('checkText').textContent = '';
-    $('showSolution').hidden = true;
+    clearDesign(fresh);
+    if (fresh) { $('checkText').textContent = ''; $('checkText').dataset.verdict = ''; $('checkText').classList.remove('stale'); $('showSolution').hidden = true; }
+    else { $('checkText').classList.add('stale'); $('showSolution').disabled = true; }
   }
   clearTimeout(liveTimer);
   liveTimer = setTimeout(() => { if (!S.check && JSON.stringify(S.level) === stamp) runCheck(true); }, LIVE_WAIT_MS);
@@ -2361,14 +2474,14 @@ function syncLint() {
 return { checkText, runCheck, syncCheck, feedDemo, syncLint };
 })();
 // ---- src/level/templates.js
-const m20 = (() => {
+const m22 = (() => {
 
 // Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.
 const TEMPLATES = [{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"swim":false,"light":false},"clock":"tile"}}];
 return { TEMPLATES };
 })();
 // ---- src/level/code.js
-const m21 = (() => {
+const m23 = (() => {
 const { parseLevel } = m9;
 // A share code: the level as compressed, URL-safe text, so a room fits in a message or
 // a link (#room=<code>). Uses the platform's own deflate, in the page and in Node.
@@ -2399,7 +2512,7 @@ async function decodeRoom(code) {
 return { encodeRoom, decodeRoom };
 })();
 // ---- src/level/room.js
-const m22 = (() => {
+const m24 = (() => {
 const { parseLevel } = m9;
 // A room is a level plus what the person wrote about it. These split and join the two.
 
@@ -2432,7 +2545,7 @@ function unpack(text) {
 return { META, splitRoom, joinRoom, stampOf, pack, unpack };
 })();
 // ---- src/view/thumb.js
-const m23 = (() => {
+const m25 = (() => {
 const { INK } = m14;
 // A room's thumbnail: one small square per tile in the tile's main colour, so a list of
 // many rooms costs little to draw. Returns a data URL.
@@ -2460,7 +2573,7 @@ function thumbURL(level) {
 return { thumbURL };
 })();
 // ---- src/app/store.js
-const m24 = (() => {
+const m26 = (() => {
 
 // Where rooms are kept: on the server when the page is served by one, otherwise in this
 // browser's local storage. A room is a level file with id, name, note and updated added.
@@ -2516,7 +2629,7 @@ async function remove(id) {
 return { where, detect, newId, list, put, remove };
 })();
 // ---- src/solve/tags.js
-const m25 = (() => {
+const m27 = (() => {
 const { createGame, step } = m8;
 const { parseMove } = m15;
 // The mechanism index: what a room contains, and what its solution actually does.
@@ -2600,7 +2713,7 @@ function uses(level, moves) {
 return { MECHANISMS, LABEL, contains, uses };
 })();
 // ---- src/app/draft.js
-const m26 = (() => {
+const m28 = (() => {
 const { S } = m11;
 // Autosave: the room being edited, with its name and note, kept in this browser after
 // every change, so a closed tab or a phone that drops the page loses nothing. Saving the
@@ -2633,18 +2746,18 @@ function flushDraft(dirty) { if (dirty && timer) { clearTimeout(timer); write();
 return { readDraft, clearDraft, noteChange, flushDraft };
 })();
 // ---- src/app/rooms.js
-const m27 = (() => {
-const { TEMPLATES } = m20;
-const { encodeRoom, decodeRoom } = m21;
-const { splitRoom, joinRoom, stampOf, pack, unpack } = m22;
+const m29 = (() => {
+const { TEMPLATES } = m22;
+const { encodeRoom, decodeRoom } = m23;
+const { splitRoom, joinRoom, stampOf, pack, unpack } = m24;
 const { starterLevel } = m11;
 const { newHistory } = m10;
 const { S } = m11;
-const { thumbURL } = m23;
-const { list, put, remove, where, newId, detect } = m24;
-const { contains, uses, MECHANISMS } = m25;
+const { thumbURL } = m25;
+const { list, put, remove, where, newId, detect } = m26;
+const { contains, uses, MECHANISMS } = m27;
 const { $ } = m12;
-const { readDraft, noteChange, flushDraft, clearDraft } = m26;
+const { readDraft, noteChange, flushDraft, clearDraft } = m28;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
 
@@ -2923,44 +3036,14 @@ async function bootRooms() {
 }
 return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, save, refresh, buildRooms, bootRooms };
 })();
-// ---- src/app/enabled.js
-const m28 = (() => {
-const { S } = m11;
-const { $ } = m12;
-const { moveSide } = m9;
-const { stateKey } = m15;
-// A control that would do nothing right now is greyed out, never left to refuse a click.
-// Runs after every change to the room, every switch between editing and playing, and each
-// tick of a run. Controls marked data-edit work on the room being edited, so a run greys them.
-
-
-
-
-function syncEnabled() {
-  const level = S.level, play = S.mode === 'play';
-  document.querySelectorAll('[data-edit]').forEach(b => { b.disabled = play; });
-  if (play) {
-    $('mode').disabled = false;
-    // Reset does nothing until the run has moved away from where it would put you.
-    $('respawnBtn').disabled = !!S.game && stateKey(S.game) === S.freshKey;
-    return;
-  }
-  // With no start (a cut took it), there is nothing to play or check until one is placed.
-  $('mode').disabled = !level.start;
-  $('checkBtn').disabled = !level.start;
-  // A side's add or cut is greyed out when it cannot happen (a placed thing, 2x2, 40x30).
-  document.querySelectorAll('[data-side][data-delta]').forEach(b => { b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta); });
-}
-return { syncEnabled };
-})();
 // ---- src/app/undo.js
-const m29 = (() => {
+const m30 = (() => {
 const { record, undo, redo } = m10;
 const { S } = m11;
 const { $ } = m12;
-const { syncCheck, syncLint } = m19;
-const { syncRoomsButton, followUndo } = m27;
-const { syncEnabled } = m28;
+const { syncCheck, syncLint } = m21;
+const { syncRoomsButton, followUndo } = m29;
+const { syncEnabled } = m20;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -3001,11 +3084,11 @@ function step(back, after) {
 return { syncUndo, begin, end, change, step };
 })();
 // ---- src/app/size.js
-const m30 = (() => {
+const m31 = (() => {
 const { $, canvas } = m12;
 const { S } = m11;
 const { moveSide } = m9;
-const { change } = m29;
+const { change } = m30;
 // The room's size: a "+" on each edge of the room adds a row or a column there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
 
@@ -3078,11 +3161,11 @@ function buildSize({ after }) {
 return { syncSize, closeSize, buildSize };
 })();
 // ---- src/app/fit.js
-const m31 = (() => {
+const m32 = (() => {
 const { T } = m14;
 const { S } = m11;
 const { $, canvas, g } = m12;
-const { syncSize } = m30;
+const { syncSize } = m31;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 
 
@@ -3148,7 +3231,7 @@ function watchStage() {
 return { fit, watchStage };
 })();
 // ---- src/editor/palette.js
-const m32 = (() => {
+const m33 = (() => {
 
 // The palette: every tool, its group and label, and the words the editor uses for
 // powers, colours, clocks and directions. Draft copy throughout.
@@ -3200,7 +3283,7 @@ const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'b
 return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/solve/lenses.js
-const m33 = (() => {
+const m34 = (() => {
 const { createGame } = m8;
 const { computeBeams } = m3;
 const { successors, stateKey, unsearchable, MAX_STATES } = m15;
@@ -3284,67 +3367,16 @@ function* lensData(level, max = MAX_STATES) {
 }
 return { lensData };
 })();
-// ---- src/app/well.js
-const m34 = (() => {
-const { S } = m11;
-const { $ } = m12;
-// The well: a fixed-height drawer under the room, with a tab for findings (warnings and
-// design notes) and one for lenses. It never pushes anything off the screen, it only takes
-// height from the room. All copy is draft.
-
-
-const WELL = { open: false, tab: 'findings' };
-
-function openWell(tab) {
-  WELL.open = true; if (tab) WELL.tab = tab; syncWell();
-  // On a phone the well and a sheet share the bottom, so the well puts the sheet away.
-  $('sheet').hidden = true; document.querySelectorAll('[data-sheet]').forEach(b => b.classList.toggle('on', b.dataset.sheet === 'build'));
-}
-function closeWell() { WELL.open = false; syncWell(); }
-
-// Warnings plus design notes, not counting the line that says they are being worked out.
-function findings() {
-  const lint = $('lintBox').hidden ? 0 : $('lintList').children.length;
-  const design = $('designBox').hidden || S.design?.working ? 0 : $('designList').children.length;
-  return lint + design;
-}
-
-let shown = '';
-function syncWell() {
-  const edit = S.mode === 'edit', open = WELL.open && edit, n = findings();
-  const label = n ? `Findings ${n}` : 'Findings';
-  const key = [open, WELL.tab, label, edit, $('lensBox').hidden, n].join();
-  if (key === shown) return;
-  shown = key;
-  $('well').hidden = !open;
-  // With nothing found and the well shut there is nothing to open: the button goes.
-  $('wellBtn').hidden = !edit || (!n && !open);
-  $('wellBtn').textContent = label;
-  $('wellBtn').setAttribute('aria-expanded', String(open));
-  $('wellBtn').classList.toggle('on', open);
-  document.querySelectorAll('[data-well]').forEach(b => { const on = b.dataset.well === WELL.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
-  document.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== WELL.tab; });
-  $('wellEmpty').hidden = n > 0;
-  $('lensOff').hidden = !$('lensBox').hidden;
-}
-
-function buildWell() {
-  document.querySelectorAll('[data-well]').forEach(b => b.onclick = () => openWell(b.dataset.well));
-  $('wellClose').onclick = closeWell;
-  $('wellBtn').onclick = () => (WELL.open && WELL.tab === 'findings' ? closeWell() : openWell('findings'));
-}
-return { WELL, openWell, closeWell, syncWell, buildWell };
-})();
 // ---- src/app/lenses.js
 const m35 = (() => {
 const { reach } = m15;
 const { routes } = m17;
-const { lensData } = m33;
+const { lensData } = m34;
 const { INK } = m14;
 const { S } = m11;
 const { $ } = m12;
-const { sliced } = m18;
-const { WELL, closeWell } = m34;
+const { sliced } = m19;
+const { WELL, closeWell } = m18;
 // Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
 // you pick one in that group. Data comes from searches run a slice at a time, again whenever
@@ -3537,7 +3569,7 @@ return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, c
 // ---- src/editor/edit.js
 const m36 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
-const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m32;
+const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m33;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -3728,7 +3760,7 @@ return { buildChips, syncChips };
 // ---- src/app/sheets.js
 const m38 = (() => {
 const { $ } = m12;
-const { closeWell } = m34;
+const { closeWell } = m18;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
 // Rooms opens the rooms list. One sheet at a time; Build, Escape or play closes it.
 
@@ -3755,7 +3787,7 @@ return { openSheet, buildSheets };
 })();
 // ---- src/app/keys.js
 const m39 = (() => {
-const { TOOLS } = m32;
+const { TOOLS } = m33;
 const { $ } = m12;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
 // every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
@@ -3875,7 +3907,7 @@ return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 const m41 = (() => {
 const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m40;
 const { S } = m11;
-const { change } = m29;
+const { change } = m30;
 const { $ } = m12;
 // The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
 // it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
@@ -4730,18 +4762,18 @@ const m48 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m9;
 const { INK } = m14;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m32;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m33;
 const { S } = m11;
 const { $, canvas, touch } = m12;
-const { change, step: undoStep, syncUndo } = m29;
-const { runCheck, syncCheck, syncLint } = m19;
+const { change, step: undoStep, syncUndo } = m30;
+const { runCheck, syncCheck, syncLint } = m21;
 const { buildLenses, syncLenses } = m35;
-const { buildWell, openWell } = m34;
+const { buildWell, openWell } = m18;
 const { buildChips } = m37;
-const { buildSize } = m30;
+const { buildSize } = m31;
 const { buildSheets } = m38;
 const { buildKeys } = m39;
-const { syncRoomsButton } = m27;
+const { syncRoomsButton } = m29;
 const { buildSelect, syncSelect } = m41;
 const { icon } = m47;
 // The side panels: the tool palette and its options, powers and status, the room size,
@@ -4973,16 +5005,16 @@ const { S } = m11;
 const { $, g, now } = m12;
 const { openSheet } = m38;
 const { syncPanel, keysText } = m48;
-const { feedDemo } = m19;
+const { feedDemo } = m21;
 const { selectOverlay } = m41;
 const { watchStuck, resetStuck } = m49;
 const { lensMarks, lensBusy } = m35;
-const { syncWell } = m34;
+const { syncWell } = m18;
 const { syncChips } = m37;
 const { gust } = m13;
 const { stateKey } = m15;
 const { respawn } = m2;
-const { syncEnabled } = m28;
+const { syncEnabled } = m20;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
 
@@ -5119,14 +5151,14 @@ const { describe, holds, place } = m36;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
 const { setMode, aim } = m50;
-const { begin, end, step: undoStep } = m29;
-const { save } = m27;
+const { begin, end, step: undoStep } = m30;
+const { save } = m29;
 const { selectDown, selectMove, selectUp, selectKey } = m41;
 const { LENS_GROUPS, cycleLens, lensesOff } = m35;
 const { syncPanel } = m48;
-const { fit } = m31;
+const { fit } = m32;
 const { toolForKey, bareKey, showKeys } = m39;
-const { TOOLS } = m32;
+const { TOOLS } = m33;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -5349,7 +5381,7 @@ return { spot, knock, standIn, variants, INGREDIENTS, ING };
 const m53 = (() => {
 const { search } = m15;
 const { elementCheck, idleElements, NOTES_MAX } = m17;
-const { contains } = m25;
+const { contains } = m27;
 const { ING, variants } = m52;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
@@ -5560,14 +5592,14 @@ return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generate
 const m56 = (() => {
 const { INGREDIENTS } = m52;
 const { generate, normalize, recipeLabel, LIMITS } = m55;
-const { stampOf } = m22;
+const { stampOf } = m24;
 const { S } = m11;
-const { thumbURL } = m23;
+const { thumbURL } = m25;
 const { $ } = m12;
-const { change } = m29;
-const { dirty, remember, syncRoomsButton } = m27;
+const { change } = m30;
+const { dirty, remember, syncRoomsButton } = m29;
 const { icon } = m47;
-const { TOOLS, GROUPS } = m32;
+const { TOOLS, GROUPS } = m33;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
@@ -5753,11 +5785,11 @@ const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { portrait, $ } = m12;
 const { startSnow, windNow } = m13;
-const { fit, watchStage } = m31;
+const { fit, watchStage } = m32;
 const { buildPanels, syncPanel } = m48;
 const { bindInput } = m51;
 const { setMode, frame, render, tick, report, copyReport } = m50;
-const { buildRooms, bootRooms } = m27;
+const { buildRooms, bootRooms } = m29;
 const { buildGenerator } = m56;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.

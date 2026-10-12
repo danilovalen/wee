@@ -44,19 +44,19 @@ try {
   const extra = { ...first, entities: [...first.entities, { kind: 'box', x: 4, y: 6, dir: 1, mode: 'input' }] };
   await page.evaluate(l => window.wee.loadLevel(l), extra);
   await page.click('#checkBtn');
-  await page.waitForFunction(() => /changes the answer|nothing changes|same job/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
+  await page.waitForFunction(() => !document.getElementById('designBox').classList.contains('stale') && /changes the answer|nothing changes|same job/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
   check('a piece the answer does not depend on is named', (await notes()).includes('Without these, nothing changes: box at 4, 6.'), await notes());
   const red = await page.waitForFunction(() => { const c = document.getElementById('game'), g = c.getContext('2d'), k = c.width / window.wee.getLevel().w; const d = g.getImageData(Math.round(4 * k + 3 * k / 32), Math.round(6 * k + k / 2), 2, 2).data; return d[0] > 200 && d[1] < 120; }, null, { timeout: 3000 }).then(() => true, () => false);
   check('and framed in red on the map', red);
-  // Any edit makes the notes stale, and they go.
+  // Any edit makes the notes stale: they stay, dimmed, and their marks leave the room.
   await page.click('[data-tool=wall]').catch(() => {});
   const box = await page.locator('#game').boundingBox(), lv = await page.evaluate(() => window.wee.getLevel());
   await page.mouse.click(box.x + 4.5 * box.width / lv.w, box.y + 3.5 * box.height / lv.h);
-  check('an edit clears the notes', await page.locator('#designBox').isHidden());
+  check('an edit dims the notes instead of removing them', await page.locator('#designBox').isVisible() && await page.$eval('#designBox', e => e.classList.contains('stale')));
   // Then the room is solved again by itself, without the design notes.
   const live = await page.waitForFunction(() => /^(Solvable in \d+|No solution|Too big)/.test(document.getElementById('checkText').textContent), null, { timeout: 5000 }).then(() => true, () => false);
   check('after an edit the room is solved again by itself', live, await page.textContent('#checkText'));
-  check('and the live check leaves the design notes to Check', await page.locator('#designBox').isHidden());
+  check('and the live check leaves the design notes to Check: still dimmed', await page.$eval('#designBox', e => e.classList.contains('stale')));
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the design smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }
