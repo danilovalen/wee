@@ -227,6 +227,12 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .wellBody { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 10px 8px; scrollbar-width: thin; }
 .wellBody [data-pane][hidden], .wellBody .hint[hidden] { display: none; }
 .wellBody .lensBox { max-width: none; }
+/* Wide: the lens rows on the left, Follow the tool and the legend beside them, so nothing scrolls. */
+@media (min-width: 701px) {
+  .wellBody .lensBox:not([hidden]) { display: grid; grid-template-columns: max-content minmax(0, 32em); column-gap: 24px; justify-content: start; align-items: start; }
+  .wellBody .lensBox #lensRows { grid-row: 1 / span 2; }
+  .wellBody .lensBox .lensFollow { margin-top: 0; }
+}
 @media (max-width: 700px) {
   /* A phone: the well is a sheet over the bottom of the screen. */
   .well { position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); max-height: 55vh; z-index: 30; box-shadow: 0 -8px 24px rgba(40,44,60,.18); }
@@ -265,7 +271,6 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .chip .g { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
 .chip svg { width: 26px; height: 12px; display: block; flex: none; }
 .chip.on { color: var(--accent); }
-.chip.more { color: var(--dim); }
 #info:empty { display: none; }
 .statusBar #info { margin: 0; color: var(--text); }
 #info:not(:empty) ~ #keys { display: none; }
@@ -4017,6 +4022,19 @@ const LENS_GROUPS = [
   { id: 'lines', label: 'Lines', key: '3', lenses: [['solution', 'Solution'], ['moves', 'Moves']] },
   { id: 'frames', label: 'Frames', key: '4', lenses: [['traps', 'Traps'], ['danger', 'Danger']] },
 ];
+// What each lens shows, on its button's hover.
+const LENS_TIPS = {
+  off: 'Show nothing in this row.',
+  distance: 'Colour each tile by how many moves it takes to win from there.',
+  beams: 'Colour every tile a laser can ever reach.',
+  pieces: 'Colour every tile a box, a moving block or an enemy can ever stand on.',
+  stops: 'Dot every tile you can stop on.',
+  passes: 'Dot where you stop (big) and where you only slide through (small).',
+  solution: 'Draw one shortest way to the goal, its moves numbered.',
+  moves: 'Draw every slide from stop to stop, thicker where more positions make it.',
+  traps: 'Frame every tile from which the goal is out of reach for good.',
+  danger: 'Frame every tile where a move kills you.',
+};
 // The lens a tool opens by itself, while it is in hand.
 const PIECE = { colour: 'pieces' }, BEAM = { colour: 'beams' }, AIM = { colour: 'distance', lines: 'solution' };
 const AUTO = { turret: BEAM, receiver: BEAM, sensor: BEAM, box: PIECE, heavy: PIECE, mover: PIECE, enemy: PIECE, strong: PIECE, goal: AIM, start: AIM };
@@ -4162,7 +4180,7 @@ function buildLenses() {
     row.className = 'lensRow';
     const name = Object.assign(document.createElement('span'), { textContent: gr.label, title: `Key ${gr.key} cycles this row.` });
     row.append(name, ...[['off', 'Off'], ...gr.lenses].map(([id, label]) => {
-      const b = Object.assign(document.createElement('button'), { type: 'button', textContent: label });
+      const b = Object.assign(document.createElement('button'), { type: 'button', textContent: label, title: LENS_TIPS[id] });
       b.dataset.lensGroup = gr.id; b.dataset.lens = id;
       b.onclick = () => pickLens(gr.id, id);
       return b;
@@ -4172,7 +4190,7 @@ function buildLenses() {
   $('lensFollow').onchange = e => { L().follow = e.target.checked; syncLenses(); };
   $('stopsBtn').onclick = toggleLenses;
 }
-return { LENS_GROUPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
+return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
 // ---- src/editor/edit.js
 const m41 = (() => {
@@ -4305,11 +4323,9 @@ const { S } = m11;
 const { INK } = m14;
 const { $, touch } = m12;
 const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m40;
-const { openWell } = m39;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
-
 
 
 
@@ -4337,7 +4353,7 @@ function buildChips() {
     b.dataset.chip = gr.id;
     b.onclick = () => cycleLens(gr.id);
     return b;
-  }), Object.assign(document.createElement('button'), { type: 'button', id: 'chipsMore', className: 'chip more', textContent: 'More', title: 'Every lens, Follow the tool, and the legends', onclick: () => openWell('lenses') }));
+  }));
 }
 
 let shown = '';

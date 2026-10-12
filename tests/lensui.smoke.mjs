@@ -28,11 +28,14 @@ try {
   const floor = await pixel(4, 1);
   await page.click('#stopsBtn');
   check('Lenses open with Stops and Traps on', await on('dots') === 'stops' && await on('frames') === 'traps' && await on('colour') === 'off');
-  // The chips under the room carry the lenses; the well stays shut until More opens its rows.
+  // The chips under the room carry the lenses; the well stays shut until its Lenses tab is opened.
   const chip = g => page.$eval(`[data-chip=${g}]`, b => ({ text: b.querySelector('.n').textContent, auto: b.classList.contains('auto'), on: b.classList.contains('on') }));
   check('four chips appear under the room and the well stays shut', await page.locator('[data-chip]').count() === 4 && await page.locator('#lensChips').isVisible() && await page.locator('#well').isHidden() && (await chip('dots')).text === 'Stops' && (await chip('colour')).text === 'Off');
-  await page.click('#chipsMore');
-  check('More opens the well on the lens rows', await page.locator('#lensRows').isVisible());
+  check('there is no More chip', await page.locator('#chipsMore').count() === 0);
+  await page.evaluate(() => document.querySelector('[data-well=lenses]').click());
+  check('every lens button says what it shows on hover', await page.$$eval('#lensRows button', bs => bs.length === 13 && bs.every(b => b.title.length > 10)));
+  const cols = await page.evaluate(() => { const r = document.getElementById('lensRows').getBoundingClientRect(), f = document.querySelector('.lensFollow').getBoundingClientRect(), w = document.querySelector('.wellBody'); return { beside: f.left >= r.right && f.top < r.bottom, left: r.left - w.getBoundingClientRect().left < 40, scroll: w.scrollHeight - w.clientHeight }; });
+  check('wide, the rows sit left with Follow the tool beside them, and nothing scrolls', cols.beside && cols.left && cols.scroll <= 1, JSON.stringify(cols));
   await page.click('[data-tool=turret]');
   await settle();
   check('picking the turret opens Beams', await on('colour') === 'beams' && (await legend()).includes('red where a laser can ever reach'), await legend());

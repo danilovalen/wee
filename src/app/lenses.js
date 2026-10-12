@@ -18,6 +18,19 @@ export const LENS_GROUPS = [
   { id: 'lines', label: 'Lines', key: '3', lenses: [['solution', 'Solution'], ['moves', 'Moves']] },
   { id: 'frames', label: 'Frames', key: '4', lenses: [['traps', 'Traps'], ['danger', 'Danger']] },
 ];
+// What each lens shows, on its button's hover.
+export const LENS_TIPS = {
+  off: 'Show nothing in this row.',
+  distance: 'Colour each tile by how many moves it takes to win from there.',
+  beams: 'Colour every tile a laser can ever reach.',
+  pieces: 'Colour every tile a box, a moving block or an enemy can ever stand on.',
+  stops: 'Dot every tile you can stop on.',
+  passes: 'Dot where you stop (big) and where you only slide through (small).',
+  solution: 'Draw one shortest way to the goal, its moves numbered.',
+  moves: 'Draw every slide from stop to stop, thicker where more positions make it.',
+  traps: 'Frame every tile from which the goal is out of reach for good.',
+  danger: 'Frame every tile where a move kills you.',
+};
 // The lens a tool opens by itself, while it is in hand.
 const PIECE = { colour: 'pieces' }, BEAM = { colour: 'beams' }, AIM = { colour: 'distance', lines: 'solution' };
 export const AUTO = { turret: BEAM, receiver: BEAM, sensor: BEAM, box: PIECE, heavy: PIECE, mover: PIECE, enemy: PIECE, strong: PIECE, goal: AIM, start: AIM };
@@ -163,7 +176,7 @@ export function buildLenses() {
     row.className = 'lensRow';
     const name = Object.assign(document.createElement('span'), { textContent: gr.label, title: `Key ${gr.key} cycles this row.` });
     row.append(name, ...[['off', 'Off'], ...gr.lenses].map(([id, label]) => {
-      const b = Object.assign(document.createElement('button'), { type: 'button', textContent: label });
+      const b = Object.assign(document.createElement('button'), { type: 'button', textContent: label, title: LENS_TIPS[id] });
       b.dataset.lensGroup = gr.id; b.dataset.lens = id;
       b.onclick = () => pickLens(gr.id, id);
       return b;

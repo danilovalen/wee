@@ -451,7 +451,6 @@ const M = [
   ['style.css', "#info:not(:empty) ~ #keys { display: none; }", "", 'lensui'],
   ['src', "  if (!l.open && WELL.open && WELL.tab === 'lenses') closeWell();", "", 'lensui'],
   ['src', "const show = S.lens.open && S.mode === 'edit';", "const show = S.lens.open;", 'fit'],
-  ['src', "onclick: () => openWell('lenses') }", "onclick: () => {} }", 'lensui'],
   // room size on the edges and in the status bar; icon tools when narrow (U3)
   ['src', "document.querySelectorAll('[data-plus]').forEach(b => grip(b, after));", "", 'browser'],
   ['src', "  syncSize(level);\n", "", 'browser'],
@@ -532,6 +531,9 @@ const M = [
   ['src/app/play.js', "  if (m === 'play' && !S.playFrom && !S.level.start) return;\n", "", 'browser'],
   ['src/app/size.js', "    while (n && !moveSide(S.level, side, n)) n -= Math.sign(n);\n", "", 'browser'],
   ['src/app/check.js', "  if (!S.level.start) { S.check = null;", "  if (false) { S.check = null;", 'browser'],
+  // Lenses tab: hover text, two columns, no More (register 110)
+  ['src/app/lenses.js', "textContent: label, title: LENS_TIPS[id] });", "textContent: label });", 'lensui'],
+  ['style.css', "  .wellBody .lensBox:not([hidden]) { display: grid;", "  .wellBody .lensBox:not([hidden]) { display: block;", 'lensui'],
 ];
 
 let caught = 0, crashed = 0;

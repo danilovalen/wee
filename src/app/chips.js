@@ -6,7 +6,6 @@ import { S } from '../editor/state.js';
 import { INK } from '../view/ink.js';
 import { $, touch } from './dom.js';
 import { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } from './lenses.js';
-import { openWell } from './well.js';
 
 // A 26 by 12 mark per lens, the same marks the room draws.
 const ARROW = (c, w = 1.6) => `<path d="M2 6H20" stroke="${c}" stroke-width="${w}"/><path d="M24 6l-5-3.5v7z" fill="${c}"/>`;
@@ -30,7 +29,7 @@ export function buildChips() {
     b.dataset.chip = gr.id;
     b.onclick = () => cycleLens(gr.id);
     return b;
-  }), Object.assign(document.createElement('button'), { type: 'button', id: 'chipsMore', className: 'chip more', textContent: 'More', title: 'Every lens, Follow the tool, and the legends', onclick: () => openWell('lenses') }));
+  }));
 }
 
 let shown = '';
