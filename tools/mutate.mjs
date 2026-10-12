@@ -575,6 +575,15 @@ const M = [
   // Solver and generator speed (register 120)
   ['src/solve/solve.js', "  for (const c of Object.keys(s.open).sort()) if (s.open[c]) k += c + ',';", "", 'clone'],
   ['src/solve/solve.js', "${e.glue || 0},", "", 'clone'],
+  ['index.html', '<button id="roomNew" type="button" autofocus>', '<button id="roomNew" type="button">', 'browser'],
+  // A room's own menu in the Library (register 122)
+  ['src/app/tilemenu.js', "if (b.dataset.held) { delete b.dataset.held; ev.stopImmediatePropagation(); ev.preventDefault(); }", "if (b.dataset.held) { delete b.dataset.held; }", 'phone'],
+  ['src/app/tilemenu.js', "b.addEventListener('contextmenu', ev => { ev.preventDefault(); openMenu(b, r); });", "", 'browser'],
+  ['src/app/tilemenu.js', "Math.min(t.top + 24, innerHeight - m.offsetHeight - 8)", "t.top + 24", 'browser'],
+  ['src/app/tilemenu.js', "if (!$('tileMenu').hidden && !ev.target.closest('#tileMenu')) closeMenu();", "", 'browser'],
+  ['src/app/tilemenu.js', "    if (act === 'duplicate') { await put({ ...r, id: newId(),", "    if (act === 'x') { await put({ ...r, id: newId(),", 'browser'],
+  ['src/app/tilemenu.js', "      if (!confirm(`Delete \"${name}\"? This cannot be undone.`)) return;\n      await remove(r.id);", "      if (!confirm(`Delete \"${name}\"? This cannot be undone.`)) return;", 'browser'],
+  ['src/app/tilemenu.js', "  try { await put({ ...r, name }); }", "  try { await put({ ...r }); }", 'browser'],
 ];
 
 let caught = 0, crashed = 0;

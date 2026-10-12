@@ -208,7 +208,7 @@
   <dialog id="roomsBox" class="rooms library">
     <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
     <div class="row libBar">
-      <button id="roomNew" type="button">New room</button>
+      <button id="roomNew" type="button" autofocus>New room</button>
       <button id="codeBtn" type="button" aria-expanded="false">Open a code</button>
       <button id="importBtn" type="button">Import</button>
       <input id="importFile" type="file" accept=".weepack,.wee,.json" hidden>
@@ -224,6 +224,14 @@
       <details class="explored"><summary id="exploredSum"></summary><p class="hint">Not in any room yet:</p><ul id="unexplored"></ul></details>
     </div>
     <ul id="roomList" class="roomList tiles"></ul>
+    <div id="tileMenu" class="tileMenu" role="menu" hidden>
+      <button type="button" role="menuitem" data-act="rename">Rename</button>
+      <button type="button" role="menuitem" data-act="duplicate">Duplicate</button>
+      <button type="button" role="menuitem" data-act="code">Copy code</button>
+      <button type="button" role="menuitem" data-act="delete" class="del">Delete</button>
+      <form id="tileRename" class="row" hidden><input id="tileName" aria-label="Room name"><button type="submit">Save</button></form>
+      <input id="tileCode" readonly hidden aria-label="Room code">
+    </div>
     <div class="libFoot"><p id="roomsWhere" class="hint"></p><button id="exportAll" type="button">Export all</button></div>
   </dialog>
   <dialog id="newBox" class="rooms">

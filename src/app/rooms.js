@@ -11,6 +11,7 @@ import { list, put, remove, where, newId, detect } from './store.js';
 import { contains, uses, MECHANISMS } from '../solve/tags.js';
 import { $ } from './dom.js';
 import { readDraft, noteChange, flushDraft, clearDraft } from './draft.js';
+import { menuOn, buildTileMenu } from './tilemenu.js';
 
 const LAST = 'wee.last';
 let A = null; // the page actions (setMode, syncPanel, fit), passed in to avoid an import cycle
@@ -48,7 +49,7 @@ export function openRoom(level, meta) {
   fillCurrent();
 }
 
-function fillCurrent() {
+export function fillCurrent() {
   $('roomName').value = S.room ? S.room.name : '';
   $('roomNote').value = S.room ? S.room.note : '';
   $('roomDelete').disabled = !S.room || !S.room.id;
@@ -56,7 +57,7 @@ function fillCurrent() {
 
 const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only. Export all to keep a copy.'; };
 
-function say(msg) { $('roomsSay').textContent = msg; $('infoSay').textContent = msg; }
+export function say(msg) { $('roomsSay').textContent = msg; $('infoSay').textContent = msg; }
 
 export async function save(asNew) {
   if (!S.room) S.room = { id: null, name: '', note: '', saved: null, edited: false };
@@ -146,7 +147,9 @@ function renderList() {
       if (filter && !tags.has(filter)) continue;
       const { meta, level } = splitRoom(r);
       const par = meta.par ? ` · par ${meta.par}` : ' · not checked';
-      ul.append(row(level, meta.name || 'Untitled', `${level.w}x${level.h}${par} · ${when(meta.updated)}`, () => { if (leaveOk()) { openRoom(level, meta); closeAll(); } }, versionOf(r)));
+      const li = row(level, meta.name || 'Untitled', `${level.w}x${level.h}${par} · ${when(meta.updated)}`, () => { if (leaveOk()) { openRoom(level, meta); closeAll(); } }, versionOf(r));
+      menuOn(li.firstChild, r);
+      ul.append(li);
       shown++;
     }
     if (i < saved.length) { setTimeout(slice, 0); return; }
@@ -183,6 +186,7 @@ export function buildRooms(actions) {
   // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
   // generate, templates) and This room (name, note, save, share, delete), from the header title.
   $('roomsBtn').onclick = openLibrary;
+  buildTileMenu({ say, fillCurrent, refresh, remember, syncRoomsButton });
   $('roomTitle').onclick = () => { fillCurrent(); say(''); $('shareOut').hidden = true; $('infoBox').showModal(); };
   $('codeBtn').onclick = () => { const open = $('codeRow').hidden; $('codeRow').hidden = !open; $('codeBtn').setAttribute('aria-expanded', String(open)); if (open) $('codeIn').focus(); };
   $('tagFilter').onchange = renderList;

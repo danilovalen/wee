@@ -418,3 +418,10 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   .roomList.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+
+/* A saved room's own menu, at its tile. */
+.tileMenu { position: fixed; z-index: 5; display: grid; gap: 4px; min-width: 150px; padding: 6px; background: var(--panel); border-radius: var(--r-m); box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
+.tileMenu[hidden] { display: none; }
+.tileMenu button { justify-content: flex-start; text-align: left; }
+.tileMenu .del { color: #c8283c; }
+.tileMenu input { min-width: 0; }

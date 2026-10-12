@@ -25,6 +25,7 @@ try {
   await page.waitForFunction(() => window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   check('wee starts on the library', await page.locator('#roomsBox').isVisible());
+  check('focus starts on New room, not on Close', await page.evaluate(() => document.activeElement.id) === 'roomNew', await page.evaluate(() => document.activeElement.id));
   check('a fresh start has no unsaved tile', await page.locator('#openNow').isHidden());
   check('floors are their own section: water, sticky puddle and gravel', (await page.$$eval('[data-tool][data-in=floors]', bs => bs.map(b => b.dataset.tool).join())) === 'water,sticky,gravel' && await page.locator('[data-group=floors]').count() === 1);
   await page.click('#roomsBox .roomsHead button');
@@ -397,6 +398,7 @@ try {
   await page.click('#roomNew');
   page.once('dialog', d => d.accept());
   await page.click('#newBlank');
+  page.removeAllListeners('dialog');
   check('Empty room starts an empty one and closes every page', (await text()).level.cells.filter(c => c === 'wall').length !== wallsBefore && !(await page.locator('#newBox').isVisible()) && !(await page.locator('#roomsBox').isVisible()));
   await page.click('#roomsBtn');
   await page.locator('#roomList .roomRow', { hasText: 'Smoke room' }).click();
@@ -455,6 +457,39 @@ try {
   await page.locator('#importFile').setInputFiles({ name: 'two.weepack', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ format: 'wee-pack', version: 1, rooms: [{ ...room(['#####', '#P..#', '#####']), id: 'ra', name: 'A' }, { ...room(['#####', '#P..#', '#####']), id: 'rb', name: 'B' }] })) });
   await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 3);
   check('Import adds every room in a pack', (await page.textContent('#roomsSay')).includes('Imported 2 rooms'));
+  // A saved room's own menu: right-click a tile, act on it without opening it.
+  const tiles = () => page.$$eval('#roomList .roomRow b', bs => bs.map(b => b.textContent));
+  await page.locator('#roomList .roomRow', { hasText: /^A/ }).first().click({ button: 'right' });
+  check('right-clicking a room opens its menu, and the room stays shut', await page.locator('#tileMenu').isVisible() && await page.locator('#roomsBox').isVisible() && (await page.$$eval('#tileMenu [data-act]', bs => bs.map(b => b.textContent).join())) === 'Rename,Duplicate,Copy code,Delete');
+  await page.click('#tileMenu [data-act=rename]');
+  await page.fill('#tileName', 'Arch');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => [...document.querySelectorAll('#roomList .roomRow b')].some(b => b.textContent === 'Arch'));
+  check('Rename renames it in place', (await tiles()).includes('Arch') && !(await tiles()).includes('A') && await page.locator('#tileMenu').isHidden(), (await tiles()).join());
+  await page.locator('#roomList .roomRow', { hasText: 'Arch' }).click({ button: 'right' });
+  await page.click('#tileMenu [data-act=duplicate]');
+  await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 4);
+  check('Duplicate adds a copy beside it', (await tiles()).includes('Arch copy'), (await tiles()).join());
+  await page.locator('#roomList .roomRow', { hasText: 'Arch copy' }).click({ button: 'right' });
+  await page.click('#tileMenu [data-act=code]');
+  await page.waitForFunction(() => !document.getElementById('tileCode').hidden);
+  check('Copy code without the clipboard leaves the code in the menu', (await page.inputValue('#tileCode')).startsWith('w1'));
+  await page.mouse.click(5, 5);
+  check('a click elsewhere closes the menu', await page.locator('#tileMenu').isHidden());
+  if (!(await page.locator('#roomsBox').isVisible())) await page.click('#roomsBtn');
+  await page.setViewportSize({ width: 1280, height: 380 });
+  await page.locator('#roomList .roomRow').last().scrollIntoViewIfNeeded();
+  await page.locator('#roomList .roomRow').last().click({ button: 'right' });
+  const mb = await page.locator('#tileMenu').boundingBox();
+  check('a menu opened low on a short window stays on screen', mb.y + mb.height <= 380, JSON.stringify(mb));
+  await page.mouse.click(5, 5);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  if (!(await page.locator('#roomsBox').isVisible())) await page.click('#roomsBtn');
+  await page.locator('#roomList .roomRow', { hasText: 'Arch copy' }).click({ button: 'right' });
+  page.once('dialog', d => d.accept());
+  await page.click('#tileMenu [data-act=delete]');
+  await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 3);
+  check('Delete asks, then removes it', !(await tiles()).includes('Arch copy'), (await tiles()).join());
   await page.keyboard.press('Escape');
 
   // a boomerang kicks up a cloud where you turned, blown the way you were going

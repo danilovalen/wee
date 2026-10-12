@@ -25,6 +25,24 @@ try {
   const pick = async t => { const tab = page.locator(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); if (await tab.isVisible()) await tab.click(); await page.click(`[data-tool=${t}]`); };
   const lv = (await text()).level;
   check('a new room is taller than wide', lv.h > lv.w, `${lv.w}x${lv.h}`);
+  // Holding a room's tile opens its menu; a tap still opens the room.
+  await page.click('#roomTitle'); await page.fill('#roomName', 'Held'); await page.click('#roomSave');
+  await page.waitForFunction(() => document.getElementById('roomTitle').textContent === 'Held');
+  await page.keyboard.press('Escape');
+  await page.click('#navRooms');
+  await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 1);
+  const hold = async ms => page.$eval('#roomList .roomRow', async (b, ms) => {
+    const at = b.getBoundingClientRect(), o = { pointerType: 'touch', bubbles: true, clientX: at.x + 20, clientY: at.y + 20 };
+    b.dispatchEvent(new PointerEvent('pointerdown', o)); await new Promise(r => setTimeout(r, ms));
+    b.dispatchEvent(new PointerEvent('pointerup', o)); b.click();
+  }, ms);
+  await hold(700);
+  check('holding a room opens its menu instead of the room', await page.locator('#tileMenu').isVisible() && await page.locator('#roomsBox').isVisible());
+  const m = await page.locator('#tileMenu').boundingBox();
+  check('and the menu sits inside the screen', m.x >= 0 && m.y >= 0 && m.x + m.width <= 393 && m.y + m.height <= 852, JSON.stringify(m));
+  await page.locator('#roomsBox .roomsHead').click();
+  await hold(100);
+  check('a short tap still opens the room', !(await page.locator('#roomsBox').isVisible()));
 
   const layout = await page.evaluate(() => {
     const c = document.getElementById('game').getBoundingClientRect(), st = document.getElementById('stage');
