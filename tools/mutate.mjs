@@ -551,7 +551,7 @@ const M = [
   ['src/app/play.js', "const resetKey = game => { const c = structuredClone(game); respawn(c); return stateKey(c); };", "const resetKey = game => stateKey(game);", 'useless'],
   ['src/app/enabled.js', "    $('mode').disabled = false;\n", "", 'browser'],
   // Generator ingredients: icons, palette sections, powers apart (register 117)
-  ['style.css', ".genSec[data-section=Powers] .genItems { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }", "", 'genui'],
+  ['style.css', ".genSec[data-section=Powers] .genItems { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }", "", 'genui'],
   ['src/app/generator.js', "const ING_GROUP = { follow: 'pieces', mounted: 'pieces' };", "const ING_GROUP = {};", 'genui'],
   ['src/app/icons.js', "  else if (tool === 'follow') drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);\n", "", 'genui'],
   ['src/app/generator.js', "    else label.append(icon(ING_ICON[g.id] || g.id, ING_COLOUR[g.id]));", "    else label.append(icon(ING_ICON[g.id] || g.id));", 'genui'],
