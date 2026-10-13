@@ -31,13 +31,16 @@ function recipeFromForm() {
   const ing = {};
   const off = [];
   for (const sel of $('genIng').querySelectorAll('select')) if (sel.value) ing[sel.dataset.id] = sel.value; else if (sel.dataset.off) off.push(sel.dataset.id);
-  return normalize({ w: $('genW').value, h: $('genH').value, min: $('genMin').value, max: $('genMax').value, seed: $('genSeed').value, ing, off });
+  const base = $('genKeep').checked && S.level ? { base: structuredClone(S.level) } : {};
+  return normalize({ w: $('genW').value, h: $('genH').value, min: $('genMin').value, max: $('genMax').value, seed: $('genSeed').value, ing, off, ...base });
 }
 
 // The form shows the recipe as normalize() leaves it, so a brought-along ingredient shows
 // as Allowed and a number out of range shows its nearest allowed value. One you set Off
 // yourself stays Off, even when something else would bring it along.
+// Completing the room on screen takes its size, so Width and Height only show it.
 function fillForm(r) {
+  $('genKeep').checked = !!r.base; $('genW').disabled = $('genH').disabled = !!r.base;
   $('genW').value = r.w; $('genH').value = r.h; $('genMin').value = r.min; $('genMax').value = r.max; $('genSeed').value = r.seed;
   for (const sel of $('genIng').querySelectorAll('select')) { sel.value = r.ing[sel.dataset.id] || ''; if ((r.off || []).includes(sel.dataset.id)) sel.dataset.off = '1'; else delete sel.dataset.off; }
 }
@@ -89,7 +92,8 @@ function setRunning(on) {
 // Runs one recipe until it fits, the time runs out, or Stop. A newer run ends an older one.
 export function start(recipe, seconds) {
   const my = ++run, out = {}, it = generate(recipe, { out }), until = performance.now() + seconds * 1000;
-  write(FORM, { recipe, seconds });
+  const { base, ...form } = recipe;
+  write(FORM, { recipe: { ...form, keep: !!base }, seconds });
   setRunning(true); show(null);
   say('Trying...');
   const finish = res => {
@@ -165,8 +169,10 @@ export function buildGenerator(actions) {
   }));
   const saved = read(FORM, null);
   fillForm(normalize(saved ? saved.recipe : { seed: newSeed() }));
+  $('genKeep').checked = $('genW').disabled = $('genH').disabled = !!(saved && saved.recipe.keep);
+  $('genKeep').onchange = () => fillForm(recipeFromForm());
   $('genTime').value = saved ? saved.seconds : 15;
-  const open = () => { for (const id of ['roomsBox', 'newBox']) if ($(id).open) $(id).close(); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
+  const open = () => { for (const id of ['roomsBox', 'newBox']) if ($(id).open) $(id).close(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
   $('roomGen').onclick = $('genBtn').onclick = open;
   $('genReroll').onclick = () => { $('genSeed').value = newSeed(); };
   const seconds = () => Math.max(5, Math.min(60, +$('genTime').value || 15));

@@ -85,3 +85,9 @@ it: now 8x8, par 11 (down, right, up, right, up, left, down, right, up, hide, do
 into the corner by the breakable block, get clear, hide for the move its fuse needs, then slide
 straight down into the goal. Coming straight back down instead stops you at the unbroken block,
 beside the bomb.
+
+On finding 1, a brought-along ingredient can now be set Off (register 130). On finding 2, a fit
+that ends in a walk of more than 2 dull moves is held while the search looks on for 150 tries
+(register 131). On finding 3 he asked whether it would be a "complete this", and chose to keep
+everything placed: the Generator's **Complete this room** box starts from the room on screen and
+never touches a tile, piece, start or goal in it (register 132).

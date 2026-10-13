@@ -132,6 +132,21 @@ try {
   await page.evaluate(() => document.getElementById('roomsBox').close());
   await openPanel();
   check('the shelf and the last recipe survive a reload', await page.locator('#genShelf .roomRow').count() === 3 && await page.inputValue('#genW') === '7');
+  // Complete this room: the room on screen is kept, and only what it lacks is added.
+  await page.keyboard.press('Escape');
+  const mine = await page.evaluate(() => { const rows = ['########', '#P.....#', '#..#...#', '#......#', '#......#', '#......#', '#......#', '########']; const l = window.wee.blank(8, 8); rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '#') l.cells[y * 8 + x] = 'wall'; })); l.cells[6 * 8 + 6] = 'goal'; l.entities.push({ kind: 'box', x: 4, y: 3 }); l.start = { x: 1, y: 1 }; window.wee.loadLevel(l); return JSON.parse(JSON.stringify(window.wee.getLevel())); });
+  await page.evaluate(() => document.getElementById('genBtn').click());
+  await page.check('#genKeep');
+  check('completing the room on screen shows its size and locks Width and Height', await page.inputValue('#genW') === '8' && await page.inputValue('#genH') === '8' && await page.isDisabled('#genW') && await page.isDisabled('#genH') && await page.inputValue('#genIng select[data-id=box]') !== '', [await page.inputValue('#genW'), await page.inputValue('#genH'), await page.isDisabled('#genW'), await page.inputValue('#genIng select[data-id=box]')].join());
+  await page.evaluate(() => { document.querySelector('.genIngBox').open = true; });
+  await page.selectOption('#genIng select[data-id=tri]', 'must');
+  for (const [id, v] of [['genMin', 3], ['genMax', 12], ['genSeed', 1], ['genTime', 15]]) await page.fill('#' + id, String(v));
+  await page.click('#genGo');
+  await page.waitForSelector('#genResult:not([hidden])', { timeout: 30000 });
+  const done1 = JSON.parse(await shelfLevel(0));
+  check('a completed room keeps every tile, piece, start and goal you placed', done1.cells.every((c, i) => !mine.cells[i] || c === mine.cells[i]) && done1.entities.some(e => e.kind === 'box' && e.x === 4 && e.y === 3) && done1.start.x === 1 && done1.start.y === 1 && (await page.textContent('#genShelf')).includes('your room'), JSON.stringify(done1.entities));
+  await page.uncheck('#genKeep');
+  check('unticked, Width and Height are yours again', !(await page.isDisabled('#genW')));
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) {
   check('the generator smoke ran to the end', false, err.message);

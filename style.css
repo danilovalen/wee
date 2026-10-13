@@ -156,6 +156,9 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .genNums label { display: grid; gap: 2px; font-size: 0.9em; }
 .genNums input { width: 4.5em; box-sizing: border-box; background: var(--field); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px; font: inherit; }
 .genNums #genSeed { width: 6.5em; }
+.genNums .genKeep { display: flex; align-items: center; gap: 6px; min-height: 2.2em; }
+.genNums .genKeep input { width: auto; padding: 0; }
+.genNums input:disabled { opacity: 0.5; }
 .genIng { list-style: none; margin: 6px 0; padding: 0; }
 .genSec h4 { margin: 5px 0 3px; font: 800 11px var(--label-face); text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
 .genItems { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 4px; }

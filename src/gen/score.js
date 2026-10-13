@@ -7,6 +7,17 @@ import { elementCheck, idleElements, NOTES_MAX } from '../solve/design.js';
 import { contains } from '../solve/tags.js';
 import { ING, variants } from './ingredients.js';
 
+// The tiles you placed when completing a room (recipe.base): every cell that is not floor or
+// border, every piece, the start and the goal. Nothing there is moved, tidied or counted idle.
+export function lockedIn(recipe) {
+  const b = recipe.base, out = new Set();
+  if (!b) return out;
+  b.cells.forEach((c, i) => { if (c) out.add(i); });
+  for (const e of b.entities) out.add(e.y * b.w + e.x);
+  if (b.start) out.add(b.start.y * b.w + b.start.x);
+  return out;
+}
+
 // The Off ingredients whose tags the room holds.
 export const offFound = (level, recipe) => {
   const have = new Set(contains(level));
@@ -62,7 +73,8 @@ export function* judge(level, recipe, max = 3000) {
   if (miss.length || out) return { fit: false, score, status: 'solved', par, moves: r.moves, missing: miss };
   // Last, and only for a room that fits otherwise (it is the costly part): every piece and tile
   // must change the answer, as the editor's design notes would judge it.
-  const { unused, plain } = idleElements(yield* elementCheck(level, NOTES_MAX), par);
+  const locked = lockedIn(recipe), mine = e => !locked.has(e.y * level.w + e.x);
+  const all = idleElements(yield* elementCheck(level, NOTES_MAX), par), unused = all.unused.filter(mine), plain = all.plain.filter(mine);
   const idle = [...unused, ...plain];
   // How far the answer walks on after everything has happened; generate() looks on for a fit
   // that does not.

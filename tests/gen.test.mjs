@@ -6,7 +6,7 @@ import { solve } from '../src/solve/solve.js';
 import { contains, uses, MECHANISMS } from '../src/solve/tags.js';
 import { rng } from '../src/gen/random.js';
 import { INGREDIENTS, ING, knock, standIn } from '../src/gen/ingredients.js';
-import { offFound, judge, dullTail, TAIL_MAX } from '../src/gen/score.js';
+import { offFound, judge, dullTail, TAIL_MAX, lockedIn } from '../src/gen/score.js';
 import { normalize, recipeLabel, build, mutate, generateNow, tidy } from '../src/gen/generate.js';
 import { elementCheck, idleElements, NOTES_MAX } from '../src/solve/design.js';
 import { room, suite } from './lib.mjs';
@@ -169,4 +169,19 @@ for (const ing of [{ box: 'must' }, { bomb: 'must' }]) for (const seed of [1, 2,
   if (g.fit) tails.push(dullTail(g.level, solve(g.level).moves));
 }
 check(`fits that end in a walk of at most ${TAIL_MAX} moves are preferred (${tails.length} fits)`, tails.length >= 6 && tails.every(t => t <= TAIL_MAX), tails.join());
+// Completing a room (recipe.base): what you placed stays exactly where it is, and only what
+// the room is missing is added.
+const mine = goal(room(['########', '#P.....#', '#..#...#', '#...B..#', '#......#', '#.>....#', '#......#', '########']), 6, 6);
+const placed = l => mine.cells.every((c, i) => !c || l.cells[i] === c) && mine.entities.every(e => l.entities.some(x => x.kind === e.kind && x.x === e.x && x.y === e.y)) && l.start.x === 1 && l.start.y === 1;
+const kn = normalize({ w: 12, h: 5, ing: { tri: 'must' }, off: ['box', 'tri'], base: mine });
+check('completing a room takes its size, and allows what it already holds even when set Off', kn.w === 8 && kn.h === 8 && kn.ing.box === 'allowed' && kn.ing.gate === 'allowed' && !kn.off?.includes('box') && kn.ing.tri === 'must', JSON.stringify(kn));
+check('the label says it completes your room', recipeLabel(kn).includes('your room'));
+check('locked: every placed tile, piece and the start', lockedIn(kn).size === mine.cells.filter(Boolean).length + 2 && lockedIn({ ing: {} }).size === 0, String(lockedIn(kn).size));
+const kb = build(kn, rng(3));
+check('building from your room keeps it, adds no second start or goal, and does not add what it holds', placed(kb) && kb.cells.filter(c => c === 'goal').length === 1 && kb.entities.filter(e => e.kind === 'box').length === 1, JSON.stringify(kb.entities));
+let km = kb, kmOk = true;
+for (let k = 0; k < 400; k++) { km = mutate(km, kn, rng(k)); if (!placed(km) || km.cells[6 * 8 + 6] !== 'goal') { kmOk = false; break; } }
+check('changing the room never touches what you placed', kmOk);
+const kfits = [1, 2].map(seed => generateNow({ ing: { tri: 'must' }, seed, min: 3, max: 12, base: mine }, { maxTries: 400 }));
+check('a completed room fits, and keeps everything you placed, idle or not', kfits.every(r => r.fit && placed(r.level) && r.level.cells[6 * 8 + 6] === 'goal'), kfits.map(r => r.fit).join());
 done();

@@ -173,6 +173,9 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .genNums label { display: grid; gap: 2px; font-size: 0.9em; }
 .genNums input { width: 4.5em; box-sizing: border-box; background: var(--field); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px; font: inherit; }
 .genNums #genSeed { width: 6.5em; }
+.genNums .genKeep { display: flex; align-items: center; gap: 6px; min-height: 2.2em; }
+.genNums .genKeep input { width: auto; padding: 0; }
+.genNums input:disabled { opacity: 0.5; }
 .genIng { list-style: none; margin: 6px 0; padding: 0; }
 .genSec h4 { margin: 5px 0 3px; font: 800 11px var(--label-face); text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
 .genItems { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 4px; }
@@ -702,6 +705,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
     <div class="roomsHead"><b>Generate a room</b><form method="dialog"><button>Close</button></form></div>
     <p class="hint">Pick what the room is made of. Must use: the room has no solution or a different one without it. Allowed: it may be in the room. Real-time pieces are left out, since the solver cannot check them.</p>
     <div class="genNums">
+      <label class="genKeep" title="Keeps every tile, piece, start and goal of the room on screen, and adds only what it is missing."><input id="genKeep" type="checkbox"> Complete this room</label>
       <label>Width <input id="genW" type="number"></label>
       <label>Height <input id="genH" type="number"></label>
       <label>Moves from <input id="genMin" type="number"></label>
@@ -5659,6 +5663,17 @@ const { ING, variants } = m53;
 
 
 
+// The tiles you placed when completing a room (recipe.base): every cell that is not floor or
+// border, every piece, the start and the goal. Nothing there is moved, tidied or counted idle.
+function lockedIn(recipe) {
+  const b = recipe.base, out = new Set();
+  if (!b) return out;
+  b.cells.forEach((c, i) => { if (c) out.add(i); });
+  for (const e of b.entities) out.add(e.y * b.w + e.x);
+  if (b.start) out.add(b.start.y * b.w + b.start.x);
+  return out;
+}
+
 // The Off ingredients whose tags the room holds.
 const offFound = (level, recipe) => {
   const have = new Set(contains(level));
@@ -5714,14 +5729,15 @@ function* judge(level, recipe, max = 3000) {
   if (miss.length || out) return { fit: false, score, status: 'solved', par, moves: r.moves, missing: miss };
   // Last, and only for a room that fits otherwise (it is the costly part): every piece and tile
   // must change the answer, as the editor's design notes would judge it.
-  const { unused, plain } = idleElements(yield* elementCheck(level, NOTES_MAX), par);
+  const locked = lockedIn(recipe), mine = e => !locked.has(e.y * level.w + e.x);
+  const all = idleElements(yield* elementCheck(level, NOTES_MAX), par), unused = all.unused.filter(mine), plain = all.plain.filter(mine);
   const idle = [...unused, ...plain];
   // How far the answer walks on after everything has happened; generate() looks on for a fit
   // that does not.
   const tail = idle.length ? 0 : Math.max(0, dullTail(level, r.moves) - TAIL_MAX);
   return { fit: !idle.length, score: score - 30 * idle.length, status: 'solved', par, moves: r.moves, missing: miss, unused, plain, tail };
 }
-return { offFound, missing, TAIL_MAX, dullTail, judge };
+return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
 const m55 = (() => {
@@ -5745,12 +5761,14 @@ const m56 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
 const { INGREDIENTS, ING, spot } = m53;
-const { judge } = m54;
+const { judge, lockedIn } = m54;
+const { contains } = m27;
 const { rng } = m55;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
 // same room; only a time limit, applied by the caller, can cut the walk short.
+
 
 
 
@@ -5769,34 +5787,39 @@ const GRACE = 150;
 // answer (a checkpoint) is Allowed at most. What you set Off yourself (recipe.off) is never
 // brought along: a room that needs it then simply does not fit.
 function normalize(recipe) {
-  const ing = {}, off = (recipe.off || []).filter(id => ING[id]);
+  const ing = {}, base = recipe.base || null, has = base ? new Set(contains(base)) : new Set();
+  // Completing a room: what is already in it is allowed, whatever the form says.
+  const off = (recipe.off || []).filter(id => ING[id] && !ING[id].tags.some(t => has.has(t)));
   for (const [id, v] of Object.entries(recipe.ing || {})) if (ING[id] && (v === 'must' || v === 'allowed')) ing[id] = ING[id].allowedOnly ? 'allowed' : v;
+  for (const g of INGREDIENTS) if (!ing[g.id] && g.tags.some(t => has.has(t))) ing[g.id] = 'allowed';
   for (let grew = true; grew;) {
     grew = false;
     for (const id of Object.keys(ing)) for (const w of ING[id].with || []) if (!ing[w] && !off.includes(w)) { ing[w] = 'allowed'; grew = true; }
   }
   const min = clamp(recipe.min ?? 6, LIMITS.moves), max = Math.max(min, clamp(recipe.max ?? 12, LIMITS.moves));
-  return { w: clamp(recipe.w ?? 8, LIMITS.size), h: clamp(recipe.h ?? 8, LIMITS.size), ing, ...(off.length ? { off } : {}), min, max, seed: (+recipe.seed || 0) >>> 0 };
+  const w = base ? base.w : clamp(recipe.w ?? 8, LIMITS.size), h = base ? base.h : clamp(recipe.h ?? 8, LIMITS.size);
+  return { w, h, ing, ...(off.length ? { off } : {}), ...(base ? { base } : {}), min, max, seed: (+recipe.seed || 0) >>> 0 };
 }
 
 // The shelf's name for a recipe: size, move range, and what it must use.
 function recipeLabel(recipe) {
   const must = INGREDIENTS.filter(g => recipe.ing[g.id] === 'must').map(g => g.label);
-  return [`${recipe.w}x${recipe.h}`, `${recipe.min}-${recipe.max} moves`, ...(must.length ? [must.join(', ')] : [])].join(' · ');
+  return [`${recipe.w}x${recipe.h}`, ...(recipe.base ? ['your room'] : []), `${recipe.min}-${recipe.max} moves`, ...(must.length ? [must.join(', ')] : [])].join(' · ');
 }
 
 const ctxOf = recipe => ({ many: !!recipe.ing.colours, and: !!recipe.ing.and });
 const placers = recipe => INGREDIENTS.filter(g => recipe.ing[g.id] && g.place);
 
+// Completing a room (recipe.base) starts from it: its start and goal stay, and only the
+// ingredients it does not hold yet are added.
 function build(recipe, r) {
-  let l = wallBorder(emptyLevel(recipe.w, recipe.h));
-  for (const p of Object.keys(l.powers)) l.powers[p] = false;
+  const base = recipe.base, l = base ? structuredClone(base) : wallBorder(emptyLevel(recipe.w, recipe.h));
+  if (!base) for (const p of Object.keys(l.powers)) l.powers[p] = false;
   for (const g of INGREDIENTS) if (g.power && recipe.ing[g.id]) l.powers[g.power] = true;
-  const s = spot(l, r);
-  l.start = { x: s % l.w, y: (s - s % l.w) / l.w };
-  l.cells[spot(l, r)] = 'goal';
-  const ctx = ctxOf(recipe);
-  for (const g of placers(recipe)) if (recipe.ing[g.id] === 'must' || r.next() < 0.5) g.place(l, r, ctx);
+  if (!base || !l.start) { const s = spot(l, r); l.start = { x: s % l.w, y: (s - s % l.w) / l.w }; }
+  if (!l.cells.includes('goal')) l.cells[spot(l, r)] = 'goal';
+  const ctx = ctxOf(recipe), has = new Set(base ? contains(base) : []);
+  for (const g of placers(recipe)) if (!g.tags.some(t => has.has(t)) && (recipe.ing[g.id] === 'must' || r.next() < 0.5)) g.place(l, r, ctx);
   const area = (l.w - 2) * (l.h - 2), rocks = Math.round(area * (0.08 + r.next() * 0.1));
   for (let k = 0; k < rocks; k++) { const i = spot(l, r); if (i >= 0) l.cells[i] = 'wall'; }
   return l;
@@ -5811,19 +5834,20 @@ const turned = (c, r) => {
 
 // One change: move a tile, a piece, the start or the goal; add or take away a rock; turn a
 // tile that has a direction; now and then add an Allowed ingredient.
+// Nothing you placed is ever changed when completing a room (lockedIn).
 function mutate(level, recipe, r) {
-  const l = structuredClone(level), inner = [];
-  for (let i = 0; i < l.cells.length; i++) { const x = i % l.w, y = (i - x) / l.w; if (x > 0 && y > 0 && x < l.w - 1 && y < l.h - 1) inner.push(i); }
-  const op = r.int(6), to = spot(l, r);
+  const l = structuredClone(level), inner = [], locked = lockedIn(recipe);
+  for (let i = 0; i < l.cells.length; i++) { const x = i % l.w, y = (i - x) / l.w; if (x > 0 && y > 0 && x < l.w - 1 && y < l.h - 1 && !locked.has(i)) inner.push(i); }
+  const op = r.int(6), to = spot(l, r), mine = l.entities.filter(e => !locked.has(e.y * l.w + e.x));
   if (op === 0 && to >= 0) { const walls = inner.filter(i => l.cells[i] === 'wall'); if (walls.length && r.next() < 0.5) l.cells[r.pick(walls)] = ''; else l.cells[to] = 'wall'; }
   else if (op === 1 && to >= 0) { const tiles = inner.filter(i => l.cells[i] && l.cells[i] !== 'wall'); if (tiles.length) { const i = r.pick(tiles); l.cells[to] = l.cells[i]; l.cells[i] = ''; } }
-  else if (op === 2 && to >= 0 && l.entities.length) { const e = r.pick(l.entities); e.x = to % l.w; e.y = (to - e.x) / l.w; }
-  else if (op === 3 && to >= 0) l.start = { x: to % l.w, y: (to - to % l.w) / l.w };
+  else if (op === 2 && to >= 0 && mine.length) { const e = r.pick(mine); e.x = to % l.w; e.y = (to - e.x) / l.w; }
+  else if (op === 3 && to >= 0 && !recipe.base?.start) l.start = { x: to % l.w, y: (to - to % l.w) / l.w };
   else if (op === 4) { const ts = inner.filter(i => turned(l.cells[i], r)); if (ts.length) { const i = r.pick(ts); l.cells[i] = turned(l.cells[i], r); } else if (to >= 0) l.cells[to] = 'wall'; }
   else if (op === 5) {
     const allowed = placers(recipe).filter(g => recipe.ing[g.id] === 'allowed');
     if (allowed.length && r.next() < 0.3) r.pick(allowed).place(l, r, ctxOf(recipe));
-    else if (to >= 0) { const g = l.cells.indexOf('goal'); l.cells[g] = ''; l.cells[to] = 'goal'; }
+    else if (to >= 0 && !locked.has(l.cells.indexOf('goal'))) { const g = l.cells.indexOf('goal'); l.cells[g] = ''; l.cells[to] = 'goal'; }
   }
   return l;
 }
@@ -5937,13 +5961,16 @@ function recipeFromForm() {
   const ing = {};
   const off = [];
   for (const sel of $('genIng').querySelectorAll('select')) if (sel.value) ing[sel.dataset.id] = sel.value; else if (sel.dataset.off) off.push(sel.dataset.id);
-  return normalize({ w: $('genW').value, h: $('genH').value, min: $('genMin').value, max: $('genMax').value, seed: $('genSeed').value, ing, off });
+  const base = $('genKeep').checked && S.level ? { base: structuredClone(S.level) } : {};
+  return normalize({ w: $('genW').value, h: $('genH').value, min: $('genMin').value, max: $('genMax').value, seed: $('genSeed').value, ing, off, ...base });
 }
 
 // The form shows the recipe as normalize() leaves it, so a brought-along ingredient shows
 // as Allowed and a number out of range shows its nearest allowed value. One you set Off
 // yourself stays Off, even when something else would bring it along.
+// Completing the room on screen takes its size, so Width and Height only show it.
 function fillForm(r) {
+  $('genKeep').checked = !!r.base; $('genW').disabled = $('genH').disabled = !!r.base;
   $('genW').value = r.w; $('genH').value = r.h; $('genMin').value = r.min; $('genMax').value = r.max; $('genSeed').value = r.seed;
   for (const sel of $('genIng').querySelectorAll('select')) { sel.value = r.ing[sel.dataset.id] || ''; if ((r.off || []).includes(sel.dataset.id)) sel.dataset.off = '1'; else delete sel.dataset.off; }
 }
@@ -5995,7 +6022,8 @@ function setRunning(on) {
 // Runs one recipe until it fits, the time runs out, or Stop. A newer run ends an older one.
 function start(recipe, seconds) {
   const my = ++run, out = {}, it = generate(recipe, { out }), until = performance.now() + seconds * 1000;
-  write(FORM, { recipe, seconds });
+  const { base, ...form } = recipe;
+  write(FORM, { recipe: { ...form, keep: !!base }, seconds });
   setRunning(true); show(null);
   say('Trying...');
   const finish = res => {
@@ -6071,8 +6099,10 @@ function buildGenerator(actions) {
   }));
   const saved = read(FORM, null);
   fillForm(normalize(saved ? saved.recipe : { seed: newSeed() }));
+  $('genKeep').checked = $('genW').disabled = $('genH').disabled = !!(saved && saved.recipe.keep);
+  $('genKeep').onchange = () => fillForm(recipeFromForm());
   $('genTime').value = saved ? saved.seconds : 15;
-  const open = () => { for (const id of ['roomsBox', 'newBox']) if ($(id).open) $(id).close(); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
+  const open = () => { for (const id of ['roomsBox', 'newBox']) if ($(id).open) $(id).close(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
   $('roomGen').onclick = $('genBtn').onclick = open;
   $('genReroll').onclick = () => { $('genSeed').value = newSeed(); };
   const seconds = () => Math.max(5, Math.min(60, +$('genTime').value || 15));
