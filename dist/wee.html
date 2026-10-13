@@ -5646,13 +5646,15 @@ return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
 const m54 = (() => {
-const { search } = m15;
+const { search, move, stateKey } = m15;
+const { createGame } = m8;
 const { elementCheck, idleElements, NOTES_MAX } = m17;
 const { contains } = m27;
 const { ING, variants } = m53;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
+
 
 
 
@@ -5680,6 +5682,25 @@ function* missing(level, recipe, par, max) {
   return out;
 }
 
+// How many moves of an answer, before its last, come after the last one that changed the room
+// itself: a walk to the goal once everything has happened. A move counts when a piece, a door, a
+// broken block or a fuse changes, when it acts (a hide, a spring, a power), or when you cross
+// anything but plain floor on the way (through a door, over a one-way or a triangle).
+const TAIL_MAX = 2;
+const ACTS = new Set(['spring', 'hide', 'swim', 'laser', 'boomerang', 'dive', 'checkpoint', 'stick', 'glue', 'pushed', 'cross']);
+const world = s => stateKey(s).slice(stateKey(s).indexOf('|'));
+function dullTail(level, moves) {
+  let s = createGame(level), last = -1;
+  moves.forEach((m, i) => {
+    const before = world(s), acts = [];
+    const next = move(s, m, t => { acts.push(...t.events.map(e => e.type)); const c = t.cells[t.player.y * t.w + t.player.x]; if (c && c !== 'goal') acts.push('cross'); });
+    if (!next) return;
+    if (world(next) !== before || acts.some(a => ACTS.has(a))) last = i;
+    s = next;
+  });
+  return Math.max(0, moves.length - 2 - last);
+}
+
 // A generator: runs the solver a slice at a time, then returns the verdict.
 function* judge(level, recipe, max = 3000) {
   const off = offFound(level, recipe);
@@ -5695,9 +5716,12 @@ function* judge(level, recipe, max = 3000) {
   // must change the answer, as the editor's design notes would judge it.
   const { unused, plain } = idleElements(yield* elementCheck(level, NOTES_MAX), par);
   const idle = [...unused, ...plain];
-  return { fit: !idle.length, score: score - 30 * idle.length, status: 'solved', par, moves: r.moves, missing: miss, unused, plain };
+  // How far the answer walks on after everything has happened; generate() looks on for a fit
+  // that does not.
+  const tail = idle.length ? 0 : Math.max(0, dullTail(level, r.moves) - TAIL_MAX);
+  return { fit: !idle.length, score: score - 30 * idle.length, status: 'solved', par, moves: r.moves, missing: miss, unused, plain, tail };
 }
-return { offFound, missing, judge };
+return { offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
 const m55 = (() => {
@@ -5737,6 +5761,8 @@ const clamp = (v, [a, b]) => Math.max(a, Math.min(b, Math.round(+v || a)));
 const STALE = 40;
 // How many times in a row a room's idle parts are tidied away before it is judged as it is.
 const TIDY = 4;
+// How many more tries a fit that ends in a long walk waits for one that does not.
+const GRACE = 150;
 
 // Fills in defaults, keeps the numbers in range, and turns on what a Must or Allowed
 // ingredient brings with it (a laser catcher needs a turret). One that can never change the
@@ -5833,19 +5859,30 @@ function* generate(recipe, { maxTries = Infinity, out = {} } = {}) {
     }
     return [level, v];
   }
-  while (out.tries < maxTries) {
+  // A fit that ends in a long walk (verdict.tail) is kept, and the search goes on a while for
+  // one that does not; failing that, the walk is what comes back.
+  let held = null, until = Infinity;
+  const fits = (level, v) => {
+    if (!v.fit) return false;
+    if (!v.tail) return true;
+    if (!held) { held = { fit: true, level, verdict: v }; until = out.tries + GRACE; }
+    return false;
+  };
+  const done = () => held && out.tries >= until;
+  while (out.tries < maxTries && !done()) {
     let [cur, cv] = yield* settle(build(recipe, r));
     keep(cur, cv);
-    if (cv.fit) return { fit: true, level: cur, verdict: cv, tries: out.tries };
-    for (let stale = 0; stale < STALE && out.tries < maxTries;) {
+    if (fits(cur, cv)) return { fit: true, level: cur, verdict: cv, tries: out.tries };
+    for (let stale = 0; stale < STALE && out.tries < maxTries && !done();) {
       const [next, nv] = yield* settle(mutate(cur, recipe, r));
       keep(next, nv);
-      if (nv.fit) return { fit: true, level: next, verdict: nv, tries: out.tries };
+      if (fits(next, nv)) return { fit: true, level: next, verdict: nv, tries: out.tries };
       if (nv.score > cv.score) stale = 0; else stale++;
       if (nv.score >= cv.score) { cur = next; cv = nv; }
       yield out.tries;
     }
   }
+  if (held) return { ...held, tries: out.tries };
   return { fit: false, level: out.best.level, verdict: out.best.verdict, tries: out.tries };
 }
 

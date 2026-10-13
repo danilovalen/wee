@@ -13,6 +13,8 @@ const clamp = (v, [a, b]) => Math.max(a, Math.min(b, Math.round(+v || a)));
 const STALE = 40;
 // How many times in a row a room's idle parts are tidied away before it is judged as it is.
 const TIDY = 4;
+// How many more tries a fit that ends in a long walk waits for one that does not.
+const GRACE = 150;
 
 // Fills in defaults, keeps the numbers in range, and turns on what a Must or Allowed
 // ingredient brings with it (a laser catcher needs a turret). One that can never change the
@@ -109,19 +111,30 @@ export function* generate(recipe, { maxTries = Infinity, out = {} } = {}) {
     }
     return [level, v];
   }
-  while (out.tries < maxTries) {
+  // A fit that ends in a long walk (verdict.tail) is kept, and the search goes on a while for
+  // one that does not; failing that, the walk is what comes back.
+  let held = null, until = Infinity;
+  const fits = (level, v) => {
+    if (!v.fit) return false;
+    if (!v.tail) return true;
+    if (!held) { held = { fit: true, level, verdict: v }; until = out.tries + GRACE; }
+    return false;
+  };
+  const done = () => held && out.tries >= until;
+  while (out.tries < maxTries && !done()) {
     let [cur, cv] = yield* settle(build(recipe, r));
     keep(cur, cv);
-    if (cv.fit) return { fit: true, level: cur, verdict: cv, tries: out.tries };
-    for (let stale = 0; stale < STALE && out.tries < maxTries;) {
+    if (fits(cur, cv)) return { fit: true, level: cur, verdict: cv, tries: out.tries };
+    for (let stale = 0; stale < STALE && out.tries < maxTries && !done();) {
       const [next, nv] = yield* settle(mutate(cur, recipe, r));
       keep(next, nv);
-      if (nv.fit) return { fit: true, level: next, verdict: nv, tries: out.tries };
+      if (fits(next, nv)) return { fit: true, level: next, verdict: nv, tries: out.tries };
       if (nv.score > cv.score) stale = 0; else stale++;
       if (nv.score >= cv.score) { cur = next; cv = nv; }
       yield out.tries;
     }
   }
+  if (held) return { ...held, tries: out.tries };
   return { fit: false, level: out.best.level, verdict: out.best.verdict, tries: out.tries };
 }
 

@@ -6,7 +6,7 @@ import { solve } from '../src/solve/solve.js';
 import { contains, uses, MECHANISMS } from '../src/solve/tags.js';
 import { rng } from '../src/gen/random.js';
 import { INGREDIENTS, ING, knock, standIn } from '../src/gen/ingredients.js';
-import { offFound, judge } from '../src/gen/score.js';
+import { offFound, judge, dullTail, TAIL_MAX } from '../src/gen/score.js';
 import { normalize, recipeLabel, build, mutate, generateNow, tidy } from '../src/gen/generate.js';
 import { elementCheck, idleElements, NOTES_MAX } from '../src/solve/design.js';
 import { room, suite } from './lib.mjs';
@@ -156,4 +156,17 @@ check('a room that must use a bomb is made, and its answer sets the bomb off', b
 const keepOff = normalize({ ing: { crack: 'must' }, off: ['dive'], seed: 2 });
 check('an ingredient set Off is not brought along by one that needs it', keepOff.ing.crack === 'must' && !keepOff.ing.dive && normalize(keepOff).off?.join() === 'dive' && normalize({ ing: { crack: 'must' } }).ing.dive === 'allowed', JSON.stringify(keepOff));
 check('a room built with Dive set Off has Dive off', !build(keepOff, rng(2)).powers.dive);
+// A long walk after everything has happened: counted, and a fit that has one is passed over
+// while a better one turns up.
+const walk = goal(room(['#########', '#P.B...o#', '#.......#', '#.......#', '#.......#', '#########']), 7, 4);
+walk.cells[1 * 9 + 7] = 'button:red';
+const gated = JSON.parse(JSON.stringify(walk)); gated.cells[4 * 9 + 3] = 'gate:left,right';
+check('crossing a one-way on the way counts as doing something', dullTail(gated, ['right', 'down', 'left', 'up', 'right']) === 1, String(dullTail(gated, ['right', 'down', 'left', 'up', 'right'])));
+check('the dull tail counts the moves after the last one that changed the room', dullTail(walk, ['right', 'down', 'left', 'up', 'right']) === 3 && dullTail(walk, ['right']) === 0, String(dullTail(walk, ['right', 'down', 'left', 'up', 'right'])));
+const tails = [];
+for (const ing of [{ box: 'must' }, { bomb: 'must' }]) for (const seed of [1, 2, 3, 4]) {
+  const g = generateNow({ ing, seed, w: 8, h: 8, min: 4, max: 12 }, { maxTries: 400 });
+  if (g.fit) tails.push(dullTail(g.level, solve(g.level).moves));
+}
+check(`fits that end in a walk of at most ${TAIL_MAX} moves are preferred (${tails.length} fits)`, tails.length >= 6 && tails.every(t => t <= TAIL_MAX), tails.join());
 done();

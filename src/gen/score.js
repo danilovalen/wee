@@ -1,7 +1,8 @@
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
-import { search } from '../solve/solve.js';
+import { search, move, stateKey } from '../solve/solve.js';
+import { createGame } from '../rules/game.js';
 import { elementCheck, idleElements, NOTES_MAX } from '../solve/design.js';
 import { contains } from '../solve/tags.js';
 import { ING, variants } from './ingredients.js';
@@ -29,6 +30,25 @@ export function* missing(level, recipe, par, max) {
   return out;
 }
 
+// How many moves of an answer, before its last, come after the last one that changed the room
+// itself: a walk to the goal once everything has happened. A move counts when a piece, a door, a
+// broken block or a fuse changes, when it acts (a hide, a spring, a power), or when you cross
+// anything but plain floor on the way (through a door, over a one-way or a triangle).
+export const TAIL_MAX = 2;
+const ACTS = new Set(['spring', 'hide', 'swim', 'laser', 'boomerang', 'dive', 'checkpoint', 'stick', 'glue', 'pushed', 'cross']);
+const world = s => stateKey(s).slice(stateKey(s).indexOf('|'));
+export function dullTail(level, moves) {
+  let s = createGame(level), last = -1;
+  moves.forEach((m, i) => {
+    const before = world(s), acts = [];
+    const next = move(s, m, t => { acts.push(...t.events.map(e => e.type)); const c = t.cells[t.player.y * t.w + t.player.x]; if (c && c !== 'goal') acts.push('cross'); });
+    if (!next) return;
+    if (world(next) !== before || acts.some(a => ACTS.has(a))) last = i;
+    s = next;
+  });
+  return Math.max(0, moves.length - 2 - last);
+}
+
 // A generator: runs the solver a slice at a time, then returns the verdict.
 export function* judge(level, recipe, max = 3000) {
   const off = offFound(level, recipe);
@@ -44,5 +64,8 @@ export function* judge(level, recipe, max = 3000) {
   // must change the answer, as the editor's design notes would judge it.
   const { unused, plain } = idleElements(yield* elementCheck(level, NOTES_MAX), par);
   const idle = [...unused, ...plain];
-  return { fit: !idle.length, score: score - 30 * idle.length, status: 'solved', par, moves: r.moves, missing: miss, unused, plain };
+  // How far the answer walks on after everything has happened; generate() looks on for a fit
+  // that does not.
+  const tail = idle.length ? 0 : Math.max(0, dullTail(level, r.moves) - TAIL_MAX);
+  return { fit: !idle.length, score: score - 30 * idle.length, status: 'solved', par, moves: r.moves, missing: miss, unused, plain, tail };
 }
