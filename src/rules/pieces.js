@@ -6,8 +6,9 @@ import { die, kill, land, light, refreshDoors, smash } from './life.js';
 import { carry, entered, stick, stuckTo } from './sticky.js';
 import { follow, lead, meet, partnerAt, partnerOf } from './glue.js';
 
-// Each move of yours burns every lit fuse down by one.
-export function burnFuses(s) { for (const e of s.entities) if (!e.dead && e.fuse) e.fuse--; }
+// Each move of yours burns every lit fuse down by one (only those given, when a list is given:
+// a bomb lit by the move's own push starts burning on the next move).
+export function burnFuses(s, only) { for (const e of only || s.entities) if (!e.dead && e.fuse) e.fuse--; }
 
 // A hide is one cycle with no direction: each on-your-move piece slides along its
 // patrol until something stops it, a tile per tick (see step), and turns there.

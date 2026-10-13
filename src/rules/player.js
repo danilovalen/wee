@@ -59,7 +59,11 @@ export function endSlide(s) {
 // your move start when you leave your tile, not when you stop: an on-your-move turret turns
 // once, and with the slide clock the world takes its one step then.
 export function slideOnce(s, diving) {
-  const d = s.player.dir, r = playerStep(s, d, diving);
+  // A press counts as a move only once it does something: a step, a death, or sticking.
+  const p = s.player, fresh = p.fresh, stuck = p.stuck, lit = fresh && s.entities.filter(e => !e.dead && e.fuse != null);
+  p.fresh = false;
+  const d = p.dir, r = playerStep(s, d, diving);
+  if (fresh && (r !== 'blocked' || p.stuck !== stuck)) { s.move++; burnFuses(s, lit); }
   if (r === 'moved') {
     if (s.player.moved === 1) { turnTurrets(s, 'input'); if (s.clock === 'slide') worldStep(s, d); }
     if (s.clock === 'tile') worldStep(s, d);
@@ -122,7 +126,7 @@ export function input(s, k) {
   if (!DIRS[k] || p.hidden) return;
   // Riding, a move lets go.
   if (p.stuck && p.stuck.ride) unstick(s);
-  if (!p.dir) { p.dir = k; p.moved = 0; s.move++; burnFuses(s); return; }
+  if (!p.dir) { p.dir = k; p.moved = 0; p.fresh = true; return; }
   if (k === p.dir) { if (s.powers.dive) dive(s); }
   else if (k === OPPOSITE[p.dir]) { if (s.powers.boomerang) { letGo(s); p.dir = k; s.events.push({ type: 'boomerang', from: OPPOSITE[k] }); } }
   else if (s.powers.laser) laser(s, k, from);

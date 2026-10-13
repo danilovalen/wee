@@ -1204,4 +1204,20 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a turret riding a light box goes with the box; one on a heavy box stays', mt.entities[1].dead && !mt.entities[2].dead && !mt.beams.some(b => b.id === mt.entities[1].id), JSON.stringify(mt.entities.map(e => [e.kind, e.dead])));
   check('a bomb is a piece a level can hold', parseLevel(JSON.stringify(room(['#####', '#PO.#', '#####']))).entities[0].kind === 'bomb');
 }
+{ // a press that goes nowhere is not a move
+  const w = createGame(room(['#####', '#P..#', '#####']));
+  slide(w, 'up');
+  check('pressing into a wall is not a move', w.move === 0 && !w.player.dir, String(w.move));
+  slide(w, 'right');
+  check('a press that slides you is one move', w.move === 1, String(w.move));
+  const bx = createGame(room(['#####', '#PB#.', '#####']));
+  slide(bx, 'right');
+  check('pushing a box that cannot move is not a move', bx.move === 0 && at(bx.entities[0], 2, 1), String(bx.move));
+  const bm = createGame(room(['########', '#......#', '#PO....#', '########']));
+  slide(bm, 'right'); slide(bm, 'right'); slide(bm, 'right');
+  check('pressing into a wall does not burn a fuse', bm.entities[0].fuse === 2 && bm.move === 1, JSON.stringify([bm.entities[0], bm.move]));
+  const st = createGame(room(['#####', '#PB.#', '#####']));
+  st.player.sticky = true; slide(st, 'right');
+  check('sticking to a box you meet counts as a move, though you do not step', st.move === 1 && st.player.stuck, JSON.stringify([st.move, st.player.stuck]));
+}
 done();

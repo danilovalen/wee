@@ -73,3 +73,15 @@ and `roster-play` (each room picked from New room and played on the keyboard to 
    Short fuse uses as a "wait". It is consistent, but nothing in the game says so; a player may
    not think of it. Worth a decision: keep it as a mechanic (and show it), or not count it.
 6. Sample has no goal, so "every template solves" had to become "every template with a goal".
+
+## Follow-ups (his answers, 2026-10-13)
+
+He took all four. On finding 5: *"it is not a move. That's why you have to unlock one of the stall
+mechanisms."* A press that goes nowhere no longer counts as a move or burns a fuse (sticking to
+something you meet still counts, since it does something). **Short fuse was redesigned** for it:
+the old wait (pressing into a wall) became a two-move slide away and back, which made the catch
+soft. The frame search ran again with Cycle on, keeping only rooms that cannot be solved without
+it: now 8x8, par 11 (down, right, up, right, up, left, down, right, up, hide, down). Push the bomb
+into the corner by the breakable block, get clear, hide for the move its fuse needs, then slide
+straight down into the goal. Coming straight back down instead stops you at the unbroken block,
+beside the bomb.
