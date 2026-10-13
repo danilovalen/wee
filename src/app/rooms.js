@@ -17,7 +17,8 @@ const LAST = 'wee.last';
 let A = null; // the page actions (setMode, syncPanel, fit), passed in to avoid an import cycle
 let saved = [];
 
-export const dirty = () => !S.room || stampOf(S.level) !== S.room.saved || S.room.edited;
+// A template opened and left as it is has nothing to lose: it is clean until it changes.
+export const dirty = () => !S.room || stampOf(S.level) !== (S.room.saved ?? S.room.template) || S.room.edited;
 export const leaveOk = () => !dirty() || confirm('This room has changes that are not saved. Leave them?');
 
 export function syncRoomsButton() {
@@ -181,7 +182,7 @@ export function buildRooms(actions) {
   A = actions;
   $('templateList').replaceChildren(...TEMPLATES.map(t => {
     const { level } = splitRoom(t.level);
-    return row(level, t.name, `Template · ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.saved = null; syncRoomsButton(); closeAll(); } });
+    return row(level, t.name, `Template · ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } });
   }));
   // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
   // generate, templates) and This room (name, note, save, share, delete), from the header title.

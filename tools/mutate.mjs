@@ -262,7 +262,7 @@ const M = [
   ["src", "  if (S.check && S.check.stamp === stamp) return;", "  if (S.check) return;", "browser"],
   ["src", "  $('showSolution').hidden = r.status !== 'solved';", "  $('showSolution').hidden = true;", "browser"],
   ["src", "  if (!name) { say('Give the room a name first.'); $('roomName').focus(); return false; }\n", "", "browser"],
-  ["src", "export const dirty = () => !S.room || stampOf(S.level) !== S.room.saved || S.room.edited;", "export const dirty = () => !S.room || S.room.edited;", "browser"],
+  ["src", "export const dirty = () => !S.room || stampOf(S.level) !== (S.room.saved ?? S.room.template) || S.room.edited;", "export const dirty = () => !S.room || S.room.edited;", "browser"],
   ["src", "  if (r) { const { meta, level } = splitRoom(r); openRoom(level, meta); }", "  if (false) { const { meta, level } = splitRoom(r); openRoom(level, meta); }", "browser"],
   ["src", "    for (const r of rooms) await put({ ...r, id: r.id || newId() });", "    for (const r of rooms.slice(1)) await put({ ...r, id: r.id || newId() });", "browser"],
   ["src", "  else { S.room = { id: null, name: '', note: '', saved: stampOf(S.level), edited: false }; syncRoomsButton(); }", "  else { S.room = { id: null, name: '', note: '', saved: null, edited: false }; syncRoomsButton(); }", "single"],
@@ -630,6 +630,10 @@ const M = [
   ['style.css', "  .grid { gap: 3px 4px; }", "  .grid { gap: 4px; }", 'fit'],
   ['style.css', ".genSec h4 { margin: 5px 0 3px;", ".genSec h4 { margin: 8px 0 3px;", 'fit'],
   ['src/rules/life.js', "  if (e.kind === 'bomb' && how !== 'blast') { explode(s, e); return; }\n", "", 'sim'],
+  ['src/app/rooms.js', "stampOf(S.level) !== (S.room.saved ?? S.room.template)", "stampOf(S.level) !== S.room.saved", 'roster-play'],
+  ['src/app/rooms.js', "S.room.template = S.room.saved; S.room.saved = null;", "S.room.saved = null;", 'roster-play'],
+  ['src/level/templates.js', '"crack"', '"wall"', 'roster'],
+  ['src/level/templates.js', '"entities":[{"kind":"box","x":4,"y":3', '"entities":[{"kind":"box","x":5,"y":3', 'roster'],
   ['src/rules/life.js', "if (playerAt(s, x, y) && !s.powers.armored) you = true;", "if (playerAt(s, x, y)) you = true;", 'sim'],
 ];
 
@@ -649,7 +653,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses', 'size', 'clone'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses', 'size', 'clone', 'roster'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }

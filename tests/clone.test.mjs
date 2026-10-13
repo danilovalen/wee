@@ -41,11 +41,11 @@ const riding = !!(rb.player.stuck && rb.player.stuck.ride), copy = cloneGame(rb)
 for (let i = 0; i < 12; i++) step(copy);
 check('a copy that rides to a stop leaves the original still riding', riding && copy.player.stuck && !copy.player.stuck.ride && rb.player.stuck.ride, JSON.stringify([riding, copy.player.stuck, rb.player.stuck]));
 // Where the switches are is worked out once per room, not on every tick.
-const sw = createGame(TEMPLATES[1].level);
+const sw = createGame(TEMPLATES.find(t => t.name === 'Sample').level);
 check('the switch list is worked out once per room and reused', switchesOf(sw) === switchesOf(cloneGame(sw)) && switchesOf(sw).length > 3);
 // The position key tells apart every difference it is meant to: change any one field the
 // solver treats as part of a position, and the key changes.
-const base = createGame(TEMPLATES[1].level), k0 = stateKey(base);
+const base = createGame(TEMPLATES.find(t => t.name === 'Sample').level), k0 = stateKey(base);
 const FIELDS = {
   'player x': g => { g.player.x++; }, 'player y': g => { g.player.y++; }, swimming: g => { g.player.swimming = true; }, sticky: g => { g.player.sticky = true; },
   stuck: g => { g.player.stuck = { id: g.entities[1].id, ride: false }; }, riding: g => { g.player.stuck = { id: g.entities[1].id, ride: true }; },

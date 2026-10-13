@@ -431,7 +431,8 @@ try {
   await page.click('#roomsBtn');
   await page.click('#roomNew');
   await page.locator('#templateList .roomRow', { hasText: 'First room' }).click();
-  check('a template opens as a new, unsaved room', (await text()).level.w === FIRST_W && (await page.textContent('#roomsBtn')).includes('\u2022') && !(await page.locator('#newBox').isVisible()));
+  // A template opens as a new room, untitled; left as it is, it has no unsaved changes to warn about.
+  check('a template opens as a new, untitled room with nothing unsaved', (await text()).level.w === FIRST_W && !(await page.textContent('#roomsBtn')).includes('\u2022') && (await page.textContent('#roomTitle')).startsWith('Untitled') && !(await page.locator('#newBox').isVisible()));
   // a share code round-trips: sent from This room, received in the library, and a #room= link opens the room
   await page.click('#roomTitle');
   check('the share box stays hidden until it is needed', await page.locator('#shareOut').isHidden());
