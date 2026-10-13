@@ -29,15 +29,17 @@ const say = t => { $('genSay').textContent = t; };
 
 function recipeFromForm() {
   const ing = {};
-  for (const sel of $('genIng').querySelectorAll('select')) if (sel.value) ing[sel.dataset.id] = sel.value;
-  return normalize({ w: $('genW').value, h: $('genH').value, min: $('genMin').value, max: $('genMax').value, seed: $('genSeed').value, ing });
+  const off = [];
+  for (const sel of $('genIng').querySelectorAll('select')) if (sel.value) ing[sel.dataset.id] = sel.value; else if (sel.dataset.off) off.push(sel.dataset.id);
+  return normalize({ w: $('genW').value, h: $('genH').value, min: $('genMin').value, max: $('genMax').value, seed: $('genSeed').value, ing, off });
 }
 
 // The form shows the recipe as normalize() leaves it, so a brought-along ingredient shows
-// as Allowed and a number out of range shows its nearest allowed value.
+// as Allowed and a number out of range shows its nearest allowed value. One you set Off
+// yourself stays Off, even when something else would bring it along.
 function fillForm(r) {
   $('genW').value = r.w; $('genH').value = r.h; $('genMin').value = r.min; $('genMax').value = r.max; $('genSeed').value = r.seed;
-  for (const sel of $('genIng').querySelectorAll('select')) sel.value = r.ing[sel.dataset.id] || '';
+  for (const sel of $('genIng').querySelectorAll('select')) { sel.value = r.ing[sel.dataset.id] || ''; if ((r.off || []).includes(sel.dataset.id)) sel.dataset.off = '1'; else delete sel.dataset.off; }
 }
 
 function verdictText(entry) {
@@ -144,7 +146,7 @@ export function buildGenerator(actions) {
     sel.dataset.id = g.id;
     sel.append(...CHOICES.filter(([v]) => !(g.allowedOnly && v === 'must')).map(([v, t]) => new Option(t, v)));
     sel.setAttribute('aria-label', g.label);
-    sel.onchange = () => fillForm(recipeFromForm());
+    sel.onchange = () => { if (sel.value) delete sel.dataset.off; else sel.dataset.off = '1'; fillForm(recipeFromForm()); };
     label.title = g.allowedOnly ? `${g.label}. ${g.allowedOnly}` : g.label;
     if (g.power) label.append(Object.assign(document.createElement('span'), { className: 'genName', textContent: g.label }));
     else label.append(icon(ING_ICON[g.id] || g.id, ING_COLOUR[g.id]));

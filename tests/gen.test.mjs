@@ -152,4 +152,8 @@ const bl = room(['#####', '#PO.#', '#####']);
 check('a bomb\'s stand-in is a plain box, so pushing it like a box does not count as using it', standIn(ING.bomb, bl).entities[0]?.kind === 'box' && standIn(ING.bomb, bl).cells.join() === bl.cells.join());
 const bfit = [1, 4].map(seed => generateNow({ ing: { bomb: 'must' }, seed, w: 8, h: 8, min: 3, max: 12 }, { maxTries: 400 }));
 check('a room that must use a bomb is made, and its answer sets the bomb off', bfit.every(r => r.fit && uses(r.level, solve(r.level).moves).includes('use:blast')), bfit.map(r => r.fit).join());
+// What you set Off yourself is never brought along, and stays Off through another normalize.
+const keepOff = normalize({ ing: { crack: 'must' }, off: ['dive'], seed: 2 });
+check('an ingredient set Off is not brought along by one that needs it', keepOff.ing.crack === 'must' && !keepOff.ing.dive && normalize(keepOff).off?.join() === 'dive' && normalize({ ing: { crack: 'must' } }).ing.dive === 'allowed', JSON.stringify(keepOff));
+check('a room built with Dive set Off has Dive off', !build(keepOff, rng(2)).powers.dive);
 done();

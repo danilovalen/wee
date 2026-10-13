@@ -43,6 +43,12 @@ try {
   await page.selectOption('#genIng select[data-id=receiver]', 'must');
   check('an ingredient brings what it needs, shown as Allowed', await page.evaluate(() => ['turret', 'door'].every(id => document.querySelector(`#genIng select[data-id=${id}]`).value === 'allowed')));
   for (const id of ['receiver', 'turret', 'door']) await page.selectOption(`#genIng select[data-id=${id}]`, '');
+  await page.selectOption('#genIng select[data-id=crack]', 'must');
+  const broughtDive = await page.inputValue('#genIng select[data-id=dive]');
+  await page.selectOption('#genIng select[data-id=dive]', '');
+  await page.selectOption('#genIng select[data-id=gravel]', 'allowed');
+  check('something an ingredient brings along can be set Off, and stays Off', broughtDive === 'allowed' && (await page.inputValue('#genIng select[data-id=dive]')) === '' && (await page.inputValue('#genIng select[data-id=crack]')) === 'must', broughtDive);
+  for (const id of ['crack', 'gravel']) await page.selectOption(`#genIng select[data-id=${id}]`, '');
   await page.selectOption('#genIng select[data-id=box]', 'must');
   for (const [id, v] of [['genW', 7], ['genH', 7], ['genMin', 3], ['genMax', 10], ['genSeed', 1]]) await page.fill('#' + id, String(v));
   await page.click('#genGo');

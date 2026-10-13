@@ -5740,16 +5740,17 @@ const TIDY = 4;
 
 // Fills in defaults, keeps the numbers in range, and turns on what a Must or Allowed
 // ingredient brings with it (a laser catcher needs a turret). One that can never change the
-// answer (a checkpoint) is Allowed at most.
+// answer (a checkpoint) is Allowed at most. What you set Off yourself (recipe.off) is never
+// brought along: a room that needs it then simply does not fit.
 function normalize(recipe) {
-  const ing = {};
+  const ing = {}, off = (recipe.off || []).filter(id => ING[id]);
   for (const [id, v] of Object.entries(recipe.ing || {})) if (ING[id] && (v === 'must' || v === 'allowed')) ing[id] = ING[id].allowedOnly ? 'allowed' : v;
   for (let grew = true; grew;) {
     grew = false;
-    for (const id of Object.keys(ing)) for (const w of ING[id].with || []) if (!ing[w]) { ing[w] = 'allowed'; grew = true; }
+    for (const id of Object.keys(ing)) for (const w of ING[id].with || []) if (!ing[w] && !off.includes(w)) { ing[w] = 'allowed'; grew = true; }
   }
   const min = clamp(recipe.min ?? 6, LIMITS.moves), max = Math.max(min, clamp(recipe.max ?? 12, LIMITS.moves));
-  return { w: clamp(recipe.w ?? 8, LIMITS.size), h: clamp(recipe.h ?? 8, LIMITS.size), ing, min, max, seed: (+recipe.seed || 0) >>> 0 };
+  return { w: clamp(recipe.w ?? 8, LIMITS.size), h: clamp(recipe.h ?? 8, LIMITS.size), ing, ...(off.length ? { off } : {}), min, max, seed: (+recipe.seed || 0) >>> 0 };
 }
 
 // The shelf's name for a recipe: size, move range, and what it must use.
@@ -5897,15 +5898,17 @@ const say = t => { $('genSay').textContent = t; };
 
 function recipeFromForm() {
   const ing = {};
-  for (const sel of $('genIng').querySelectorAll('select')) if (sel.value) ing[sel.dataset.id] = sel.value;
-  return normalize({ w: $('genW').value, h: $('genH').value, min: $('genMin').value, max: $('genMax').value, seed: $('genSeed').value, ing });
+  const off = [];
+  for (const sel of $('genIng').querySelectorAll('select')) if (sel.value) ing[sel.dataset.id] = sel.value; else if (sel.dataset.off) off.push(sel.dataset.id);
+  return normalize({ w: $('genW').value, h: $('genH').value, min: $('genMin').value, max: $('genMax').value, seed: $('genSeed').value, ing, off });
 }
 
 // The form shows the recipe as normalize() leaves it, so a brought-along ingredient shows
-// as Allowed and a number out of range shows its nearest allowed value.
+// as Allowed and a number out of range shows its nearest allowed value. One you set Off
+// yourself stays Off, even when something else would bring it along.
 function fillForm(r) {
   $('genW').value = r.w; $('genH').value = r.h; $('genMin').value = r.min; $('genMax').value = r.max; $('genSeed').value = r.seed;
-  for (const sel of $('genIng').querySelectorAll('select')) sel.value = r.ing[sel.dataset.id] || '';
+  for (const sel of $('genIng').querySelectorAll('select')) { sel.value = r.ing[sel.dataset.id] || ''; if ((r.off || []).includes(sel.dataset.id)) sel.dataset.off = '1'; else delete sel.dataset.off; }
 }
 
 function verdictText(entry) {
@@ -6012,7 +6015,7 @@ function buildGenerator(actions) {
     sel.dataset.id = g.id;
     sel.append(...CHOICES.filter(([v]) => !(g.allowedOnly && v === 'must')).map(([v, t]) => new Option(t, v)));
     sel.setAttribute('aria-label', g.label);
-    sel.onchange = () => fillForm(recipeFromForm());
+    sel.onchange = () => { if (sel.value) delete sel.dataset.off; else sel.dataset.off = '1'; fillForm(recipeFromForm()); };
     label.title = g.allowedOnly ? `${g.label}. ${g.allowedOnly}` : g.label;
     if (g.power) label.append(Object.assign(document.createElement('span'), { className: 'genName', textContent: g.label }));
     else label.append(icon(ING_ICON[g.id] || g.id, ING_COLOUR[g.id]));

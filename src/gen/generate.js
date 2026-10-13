@@ -16,16 +16,17 @@ const TIDY = 4;
 
 // Fills in defaults, keeps the numbers in range, and turns on what a Must or Allowed
 // ingredient brings with it (a laser catcher needs a turret). One that can never change the
-// answer (a checkpoint) is Allowed at most.
+// answer (a checkpoint) is Allowed at most. What you set Off yourself (recipe.off) is never
+// brought along: a room that needs it then simply does not fit.
 export function normalize(recipe) {
-  const ing = {};
+  const ing = {}, off = (recipe.off || []).filter(id => ING[id]);
   for (const [id, v] of Object.entries(recipe.ing || {})) if (ING[id] && (v === 'must' || v === 'allowed')) ing[id] = ING[id].allowedOnly ? 'allowed' : v;
   for (let grew = true; grew;) {
     grew = false;
-    for (const id of Object.keys(ing)) for (const w of ING[id].with || []) if (!ing[w]) { ing[w] = 'allowed'; grew = true; }
+    for (const id of Object.keys(ing)) for (const w of ING[id].with || []) if (!ing[w] && !off.includes(w)) { ing[w] = 'allowed'; grew = true; }
   }
   const min = clamp(recipe.min ?? 6, LIMITS.moves), max = Math.max(min, clamp(recipe.max ?? 12, LIMITS.moves));
-  return { w: clamp(recipe.w ?? 8, LIMITS.size), h: clamp(recipe.h ?? 8, LIMITS.size), ing, min, max, seed: (+recipe.seed || 0) >>> 0 };
+  return { w: clamp(recipe.w ?? 8, LIMITS.size), h: clamp(recipe.h ?? 8, LIMITS.size), ing, ...(off.length ? { off } : {}), min, max, seed: (+recipe.seed || 0) >>> 0 };
 }
 
 // The shelf's name for a recipe: size, move range, and what it must use.

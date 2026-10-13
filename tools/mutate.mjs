@@ -341,7 +341,7 @@ const M = [
   ['src', "return Object.keys(ING).filter(id => !recipe.ing[id] && ING[id].tags.some(t => have.has(t)));", "return Object.keys(ING).filter(id => ING[id].tags.some(t => have.has(t)));", 'gen'],
   ['src', "  if (off.length) return { fit: false, score: -Infinity, status: 'off', off };\n", "", 'gen'],
   ['src', "const out = par < recipe.min ? recipe.min - par : par > recipe.max ? par - recipe.max : 0;", "const out = 0;", 'gen'],
-  ['src', "if (!ing[w]) { ing[w] = 'allowed'; grew = true; }", "if (!ing[w]) { grew = false; }", 'gen'],
+  ['src', "if (!ing[w] && !off.includes(w)) { ing[w] = 'allowed'; grew = true; }", "if (!ing[w] && !off.includes(w)) { grew = false; }", 'gen'],
   ['src', "w: clamp(recipe.w ?? 8, LIMITS.size)", "w: +recipe.w || 8", 'gen'],
   ['src', "if (recipe.ing[g.id] === 'must' || r.next() < 0.5) g.place(l, r, ctx);", "if (r.next() < 0.5) g.place(l, r, ctx);", 'gen'],
   ['src', "  for (const p of Object.keys(l.powers)) l.powers[p] = false;\n", "", 'gen'],
@@ -429,7 +429,7 @@ const M = [
   ['src', "$('genStop').dataset.stop === String(my)) {", "false) {", 'genui'],
   ['src', "solution, uses: solution ? uses(S.level, solution) : [], recipe: S.room.recipe }", "solution, uses: solution ? uses(S.level, solution) : [] }", 'genui'],
   ['src', "...(r.recipe ? [GENERATED] : [])", "...[]", 'genui'],
-  ['src', "sel.onchange = () => fillForm(recipeFromForm());", "sel.onchange = () => {};", 'genui'],
+  ['src', "else sel.dataset.off = '1'; fillForm(recipeFromForm()); };", "else sel.dataset.off = '1'; };", 'genui'],
   ['src', "write(SHELF, [entry, ...shelf()].slice(0, KEEP));", "write(SHELF, [entry]);", 'genui'],
   ['src', "KEEP = 20, SLICE_MS = 25;", "KEEP = 20, SLICE_MS = 3000;", 'perf'],
   // the frame (U1)
@@ -634,6 +634,9 @@ const M = [
   ['src/app/rooms.js', "stampOf(S.level) !== (S.room.saved ?? S.room.template)", "stampOf(S.level) !== S.room.saved", 'roster-play'],
   ['src/app/rooms.js', "S.room.template = S.room.saved; S.room.saved = null;", "S.room.saved = null;", 'roster-play'],
   ['src/level/templates.js', '"crack"', '"wall"', 'roster'],
+  ['src/gen/generate.js', "if (!ing[w] && !off.includes(w))", "if (!ing[w])", 'gen'],
+  ['src/app/generator.js', "if (sel.value) delete sel.dataset.off; else sel.dataset.off = '1';", "", 'genui'],
+  ['src/app/generator.js', "if ((r.off || []).includes(sel.dataset.id)) sel.dataset.off = '1'; else delete sel.dataset.off;", "delete sel.dataset.off;", 'genui'],
   ['src/level/templates.js', '"entities":[{"kind":"box","x":4,"y":3', '"entities":[{"kind":"box","x":5,"y":3', 'roster'],
   ['src/rules/life.js', "if (playerAt(s, x, y) && !s.powers.armored) you = true;", "if (playerAt(s, x, y)) you = true;", 'sim'],
 ];
