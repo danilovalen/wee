@@ -22,7 +22,7 @@ const M = [
   ['src', "if (cellAt(s, x, y).startsWith('sensor:') && !entAt(s, x, y) && !playerAt(s, x, y)) s.lit.add(y * s.w + x);", "if (cellAt(s, x, y).startsWith('sensor:') && !playerAt(s, x, y)) s.lit.add(y * s.w + x);", 'sim'],
   ['src', "if (cellAt(s, x, y).startsWith('sensor:') && !entAt(s, x, y) && !playerAt(s, x, y)) s.lit.add(y * s.w + x);", "", 'sim'],
   ['src', "      else if (c.startsWith('sensor:')) list.push({ i, x, y, col: c.slice(7), button: false });", "", 'sim'],
-  ['src', "const down = button ? playerAt(s, x, y) || !!entAt(s, x, y) : s.lit.has(i);", "const down = button ? playerAt(s, x, y) || !!entAt(s, x, y) : true;", 'sim'],
+  ['src', "const down = toggle ? s.toggled.includes(i) : button ? playerAt(s, x, y) || !!entAt(s, x, y) : s.lit.has(i);", "const down = toggle ? s.toggled.includes(i) : button ? playerAt(s, x, y) || !!entAt(s, x, y) : true;", 'sim'],
   ['src', "if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));", "", 'sim'],
   ['src', "if (s.tick % RT_PERIOD === RT_PERIOD - 1)", "if (false)", 'sim'],
   ['src', "    s.checkpoint = { x: nx, y: ny };\n", "", 'sim'],
@@ -124,7 +124,7 @@ const M = [
   ['src', "  if (shockHarms(s, pools, 'laser')) die(s);\n", "", 'sim'],
   ['src', "if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;", "if (c === 'death' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;", 'sim'],
   ['src', "} else if (t === 'water' || t === 'sticky' || t === 'gravel' || t === 'goal') {\n    if (isStart) return out;\n    setCell(t);", "} else if (false) {", 'browser'],
-  ['src', "b.hidden = b.dataset.in !== ui.group;", "", 'phone'],
+  ['src', "b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group;", "b.hidden = only ? !only.includes(b.dataset.tool) : false;", 'phone'],
   ['src', "$('hideBtn').hidden = !tap.length; ", "", 'phone'],
   ['src', "$('hideBtn').textContent = tap.join(' / ');", "$('hideBtn').textContent = 'Hide / Swim';", 'phone'],
   ['src', "pending.push(`power:${p}:${box.checked ? 1 : 0}`); syncPanel(); };", "pending.push(`power:${p}:${box.checked ? 1 : 0}`); };", 'phone'],
@@ -224,7 +224,7 @@ const M = [
   ['src', "  return { ...level, cells, entities: level.entities.filter(e => !edge(e)) };", "  return { ...level, cells };", "sim"],
   ['src', "const fixed = (l, x, y) => x < 0 || y < 0 || x >= l.w || y >= l.h || /^(wall|receiver:|spring:)/.test(l.cells[y * l.w + x]);", "const fixed = (l, x, y) => x < 0 || y < 0 || x >= l.w || y >= l.h || /^(wall)/.test(l.cells[y * l.w + x]);", "lint"],
   ['src', "    if (kind === 'door' || kind === 'idoor') (doors[col] ||= []).push(i);", "    if (kind === 'door') (doors[col] ||= []).push(i);", "lint"],
-  ['src', "    if (kind === 'button' || kind === 'receiver' || kind === 'sensor') (switches[col] ||= []).push(i);", "    if (kind === 'button' || kind === 'receiver') (switches[col] ||= []).push(i);", "lint"],
+  ['src', "    if (kind === 'button' || kind === 'toggle' || kind === 'receiver' || kind === 'sensor') (switches[col] ||= []).push(i);", "    if (kind === 'button' || kind === 'toggle' || kind === 'receiver') (switches[col] ||= []).push(i);", "lint"],
   ['src', "    if (e.kind !== 'turret' && Object.values(DIRS)", "    if (Object.values(DIRS)", "lint"],
   ['src', "    if (s.deaths !== deaths) return n + 1;\n", "", "lint"],
   ['src', "  return s.won ? 0 : moves.length;", "  return 0;", "lint"],
@@ -234,7 +234,7 @@ const M = [
   ['src', "  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null,", "  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: null,", "browser"],
   ['src', "  for (let i = 1; i <= limit(t) && !settled(t); i++) { step(t, i === at ? [then] : []); if (onTick) onTick(t); }\n  if (t.deaths !== deaths || !settled(t)) return null;\n  if (!t.won && stateKey(t) === before) return null;\n  return t;\n}\n\n// The mid", "  for (let i = 1; i <= limit(t) && !settled(t); i++) { step(t); if (onTick) onTick(t); }\n  if (t.deaths !== deaths || !settled(t)) return null;\n  if (!t.won && stateKey(t) === before) return null;\n  return t;\n}\n\n// The mid", "solve"],
   ['src', "      if (pw.dive) out.push(`${d}@${i}:${pd}`);\n", "", "solve"],
-  ['src', "      for (const pair of successors(s, keys)) {", "      for (const pair of successors(s, keys, false)) {", "solve"],
+  ['src/solve/solve.js', "      for (const pair of successors(s, keys)) {", "      for (const pair of successors(s, keys, false)) {", "solve"],
   ['src', "  if (w) { if (++w.i === w.at) { S.pending.push(w.then); S.demoWait = null; } return; }", "  if (w) { S.demoWait = null; return; }", "browser"],
   ['src', "  if (then) S.demoWait = { i: 0, at, then };\n", "", "browser"],
   ['src', "    for (let i = 1; i <= 4 * s.w * s.h + 40 && busy(); i++) { step(s, i === at ? [then] : []); watch(); }", "    for (let i = 1; i <= 4 * s.w * s.h + 40 && busy(); i++) { step(s); watch(); }", "tags"],
@@ -263,7 +263,7 @@ const M = [
   ["src", "  if (S.check && S.check.stamp === stamp) return;", "  if (S.check) return;", "browser"],
   ["src", "  $('showSolution').hidden = r.status !== 'solved';", "  $('showSolution').hidden = true;", "browser"],
   ["src", "  if (!name) { say('Give the room a name first.'); $('roomName').focus(); return false; }\n", "", "browser"],
-  ["src", "export const dirty = () => !S.room || stampOf(S.level) !== (S.room.saved ?? S.room.template) || S.room.edited;", "export const dirty = () => !S.room || S.room.edited;", "browser"],
+  ["src", "export const dirty = () => !S.camp && (!S.room || stampOf(S.level) !== (S.room.saved ?? S.room.template) || S.room.edited);", "export const dirty = () => !S.camp && (!S.room || S.room.edited);", "browser"],
   ["src", "  if (r) { const { meta, level } = splitRoom(r); openRoom(level, meta); }", "  if (false) { const { meta, level } = splitRoom(r); openRoom(level, meta); }", "browser"],
   ["src", "    for (const r of rooms) await put({ ...r, id: r.id || newId() });", "    for (const r of rooms.slice(1)) await put({ ...r, id: r.id || newId() });", "browser"],
   ["src", "  else { S.room = { id: null, name: '', note: '', saved: stampOf(S.level), edited: false }; syncRoomsButton(); }", "  else { S.room = { id: null, name: '', note: '', saved: null, edited: false }; syncRoomsButton(); }", "single"],
@@ -327,7 +327,7 @@ const M = [
   ['src', "if (c.startsWith('idoor:')) return !!s.open[c.slice(6)];", "if (c.startsWith('idoor:')) return !s.open[c.slice(6)];", 'sim'],
   ['src', "if (want !== !!s.open[col]) {", "if (!want && s.open[col]) {", 'sim'],
   ['src', "      const doors = doorsOf(s, (want ? 'idoor:' : 'door:') + col);", "      const doors = doorsOf(s, 'door:' + col);", 'sim'],
-  ['src', "(kind === 'button' || kind === 'door' || kind === 'idoor')", "(kind === 'button' || kind === 'door')", 'sim'],
+  ['src', "(kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor')", "(kind === 'button' || kind === 'toggle' || kind === 'door')", 'sim'],
   ['src', "const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');", "const isDoor = c => c.startsWith('door:');", 'sim'],
   ['src', "const solid = t === 'door' || t === 'idoor' || t === 'receiver';", "const solid = t === 'door' || t === 'receiver';", 'sim'],
   ['src', "    else if (kind === 'idoor') parts.push(`${COLOUR_NAME[v]} inverted door`);\n", "", 'sim'],
@@ -662,6 +662,17 @@ const M = [
   ['src/app/generator.js', "  $('genKeep').onchange = () => fillForm(recipeFromForm());\n", "", 'genui'],
   ['src/level/templates.js', '"entities":[{"kind":"box","x":4,"y":3', '"entities":[{"kind":"box","x":5,"y":3', 'roster'],
   ['src/rules/life.js', "if (playerAt(s, x, y) && !s.powers.armored) you = true;", "if (playerAt(s, x, y)) you = true;", 'sim'],
+  // toggle
+  ['src', "if (flip) for (const id of ids) if (!(was[i] || []).includes(id))", "if (flip) for (const id of ids) if (true)", 'toggle'],
+  ['src', "  s.toggled = []; flipToggles(s, false);", "  flipToggles(s, false);", 'toggle'],
+  ['src', "const down = toggle ? s.toggled.includes(i) :", "const down = toggle ? true :", 'toggle'],
+  ['src', "  if (s.toggled.length) k += '|t' + s.toggled.join(',');\n", "", 'toggle'],
+  // campaign
+  ['src', "else if (seen === d + 1) parents.get(k).push([key, m]);", "", 'campaign'],
+  ['src', "for (const path of r.paths) for (const id of def.require || [])", "for (const path of r.paths.slice(0, 1)) for (const id of def.require || [])", 'campaign'],
+  ['src', "if (r.length < st.best - st.range || r.length > st.best + st.range)", "if (r.length > st.best + st.range)", 'campaign'],
+  ['src', "rec.beaten = true;", "", 'campaign-play'],
+  ['src', "dot.textContent = cost[b.dataset.tool];", "dot.textContent = '';", 'campaign-play'],
 ];
 
 let caught = 0, crashed = 0;
@@ -680,7 +691,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses', 'size', 'clone', 'roster'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses', 'size', 'clone', 'roster', 'toggle', 'campaign'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }

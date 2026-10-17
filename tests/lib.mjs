@@ -7,7 +7,7 @@ import { emptyLevel } from '../src/level/format.js';
 //   B  box           H  heavy box       O  bomb
 //   o  red button    D  red door         u  blue button  Q  blue door    N  red inverted door    r  red receiver  s  red laser sensor  w  water  %  sticky puddle
 //   > < ^ v  one-way tile (that way)      =  two-way, across      |  two-way, up and down
-//   g  gravel        k  breakable block
+//   g  gravel        k  breakable block   t  red toggle   G  goal
 //   X  death block    8 6 2 4  spring facing up, right, down, left (numpad)
 //   7 9 1 3  triangle, solid in the corner a numpad key points to (7 = north-west)
 // Movers are 'input' unless opts.mode says 'realtime'.
@@ -55,6 +55,8 @@ export function room(rows, opts = {}) {
       case 'X': l.cells[i] = 'death'; break;
       case 'g': l.cells[i] = 'gravel'; break;
       case 'k': l.cells[i] = 'crack'; break;
+      case 't': l.cells[i] = 'toggle:red'; break;
+      case 'G': l.cells[i] = 'goal'; break;
       case '8': l.cells[i] = 'spring:up'; break;
       case '6': l.cells[i] = 'spring:right'; break;
       case '2': l.cells[i] = 'spring:down'; break;
