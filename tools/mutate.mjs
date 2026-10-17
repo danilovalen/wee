@@ -696,6 +696,8 @@ const M = [
   ['src', "  l.cells[w * h - 1] = 'goal';", "", 'campaign'],
   ['src', "      if (next) change(() => { S.level = next; });", "", 'campaign-play'],
   ['style.css', "  .grid { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto;", "  .grid { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: visible;", 'campaign-play'],
+  ['src', "return Object.values(pushes).some(n => n >= 3);", "return Object.values(pushes).some(n => n >= 2);", 'campaign'],
+  ['src', "if (now[id] !== undefined && now[id] !== was[id]) pushes[id]", "if (now[id] !== undefined) pushes[id]", 'campaign'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
   ['src', "dot.textContent = cost[b.dataset.tool];", "dot.textContent = '';", 'campaign-play'],
 ];

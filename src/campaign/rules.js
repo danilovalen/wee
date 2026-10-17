@@ -130,6 +130,21 @@ Object.assign(REQUIREMENTS, {
       return flipped && !robot;
     },
   },
+  boxPushedThrice: {
+    text: 'One box is pushed in at least 3 moves.',
+    // A push is a move that slides the box at least one tile; each move is replayed on its own.
+    judge: (room, moves) => {
+      const where = n => Object.fromEntries(replayPath(room, moves.slice(0, n), () => {}).entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.id, e.x + ',' + e.y]));
+      const pushes = {};
+      let was = where(0);
+      for (let n = 1; n <= moves.length; n++) {
+        const now = where(n);
+        for (const id of Object.keys(was)) if (now[id] !== undefined && now[id] !== was[id]) pushes[id] = (pushes[id] || 0) + 1;
+        was = now;
+      }
+      return Object.values(pushes).some(n => n >= 3);
+    },
+  },
   everyToggleOffAtEnd: {
     text: 'Every switch is off when the robot reaches the goal.',
     judge: (room, moves) => room.cells.some(c => c.startsWith('toggle:')) && replayPath(room, moves, () => {}).toggled.length === 0,

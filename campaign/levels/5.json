@@ -12,24 +12,14 @@
   "box": [
    1,
    null
-  ],
-  "toggle": [
-   1,
-   null
-  ],
-  "door": [
-   1,
-   null
   ]
  },
  "steps": {
-  "best": 7,
+  "best": 8,
   "range": 2
  },
  "rules": [],
  "require": [
-  "boxThroughOpenDoor",
-  "throughOpenDoor",
-  "onlyBoxesFlipSwitches"
+  "boxPushedThrice"
  ]
 }

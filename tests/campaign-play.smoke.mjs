@@ -29,7 +29,7 @@ try {
   const rows = await page.$$eval('.campRow', rs => rs.map(r => r.dataset.level));
   check('the level list shows every level', rows.length >= 5 && rows[0] === '1', rows.join());
   const parts = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part).join()])));
-  check('each level in the list shows the elements it uses', parts['1'] === 'block' && parts['5'] === 'block,box,toggle,door', JSON.stringify(parts));
+  check('each level in the list shows the elements it uses', parts['1'] === 'block' && parts['5'] === 'block,box' && parts['6'] === 'block,box,toggle,door', JSON.stringify(parts));
   await page.click('.campRow[data-level="1"]');
   check('a level hides the sandbox and shows its brief', await page.evaluate(() => document.body.classList.contains('campaign')) && await page.locator('#campBrief').isVisible());
   const tools = await visibleTools();
@@ -110,7 +110,7 @@ try {
   // On a phone, a palette wider than the screen scrolls by itself and the page stays put.
   const phone = await browser.newPage({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true });
   await phone.goto('http://localhost:5217/');
-  await phone.click('#menuCampaign'); await phone.click('.campRow[data-level="5"]');
+  await phone.click('#menuCampaign'); await phone.click('.campRow[data-level="6"]');
   const fit = await phone.evaluate(() => { const d = document.documentElement, g = document.getElementById('palette'); return { page: [d.scrollWidth, d.clientWidth, d.scrollHeight, d.clientHeight], grid: [g.scrollWidth, g.clientWidth, getComputedStyle(g).overflowX] }; });
   check('on a phone the page never scrolls; the palette row does', fit.page[0] === fit.page[1] && fit.page[2] === fit.page[3] && fit.grid[2] === 'auto', JSON.stringify(fit));
   await phone.close();

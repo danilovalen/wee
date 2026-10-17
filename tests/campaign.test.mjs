@@ -9,6 +9,8 @@ import { room, suite } from './lib.mjs';
 
 const { check: ok, done } = suite('campaign');
 const level = id => LEVELS.find(l => l.id === id);
+// His three-push room (2026-10-17): the robot starts boxed in on three sides.
+const HIS = ['.#..#.....', '....#.....', '....#.....', '....#.....', '.#.BP#....', '....#.....', '..........', '..........', '........G.', '###.......', '..........', '..........'];
 // A room in the level's legend: # block, t switch, D door, o button, B box, P start, G goal.
 // Full rows (all one length) set the room's size; otherwise the level's size is used. With no
 // P or G the start goes top left and the goal bottom right, one tile in.
@@ -75,7 +77,7 @@ const build = (def, rows) => {
   ok('too few of a required element is refused', placementErrors(d3, roomOf(d3)).some(e => /at least 1 switch\./.test(e.msg)));
   const lots = build(d3, ['']); for (let x = 1; x <= 5; x++) { lots.cells[2 * 7 + x] = 'toggle:red'; lots.cells[3 * 7 + x] = 'door:red'; }
   ok('a level with no maximum takes any number', placementErrors(d3, lots).length === 0, JSON.stringify(placementErrors(d3, lots)));
-  const d4 = level('6'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
+  const d4 = level('7'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
   ok('a box cannot start on a button', placementErrors(d4, onButton).some(e => /box cannot start on a button/.test(e.msg)));
 }
 { // the robot finds every shortest path
@@ -157,9 +159,19 @@ const build = (def, rows) => {
   ok('level 4 needs two switches and a door', d.palette.toggle[0] === 2 && d.palette.door[0] === 1 && d.require.join() === 'throughOpenDoor,everyToggleOffAtEnd');
   ok('a one-switch room no longer fits level 4', placementErrors(d, build(d, ['#######', '#P.#..#', '#....##', '#...t.#', '#..#.##', '##...G#', '#######'].map((r, y) => y === 1 ? '#P.#D.#' : r))).some(e => /at least 2 switches/.test(e.msg)));
 }
-{ // level 5: a box flips the switch, a box and the robot go through the door
+{ // level 5: one box pushed in three moves
   const d = level('5');
-  ok('level 5 needs a door, a switch and a box', ['door', 'toggle', 'box'].every(el => d.palette[el][0] === 1) && d.require.join() === 'boxThroughOpenDoor,throughOpenDoor,onlyBoxesFlipSwitches');
+  ok('level 5 has blocks and a box, nothing else', Object.keys(d.palette).join() === 'block,box' && d.palette.box[0] === 1 && d.require.join() === 'boxPushedThrice' && d.steps.best === 8 && d.steps.range === 2);
+  const req = (rows, moves) => REQUIREMENTS.boxPushedThrice.judge(room(rows), moves);
+  ok('three pushes: not met with one push', !req(['#######', '#PB...#', '#######'], ['right']));
+  ok('three pushes: not met when the robot never meets the box', !req(['######', '#P...#', '#....#', '#B...#', '######'], ['right', 'down']));
+  const his = build(d, HIS), a = allShortest(his);
+  ok('his boxed-in room: one shortest path of 7, and it pushes the box 3 times', a.length === 7 && a.paths.length === 1 && REQUIREMENTS.boxPushedThrice.judge(his, a.paths[0]), JSON.stringify([a.length, a.paths]));
+  ok('two pushes are not enough', !REQUIREMENTS.boxPushedThrice.judge(his, a.paths[0].slice(0, 4)));
+}
+{ // level 6: a box flips the switch, a box and the robot go through the door
+  const d = level('6');
+  ok('level 6 needs a door, a switch and a box', ['door', 'toggle', 'box'].every(el => d.palette[el][0] === 1) && d.require.join() === 'boxThroughOpenDoor,throughOpenDoor,onlyBoxesFlipSwitches');
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
   ok('a box through an open door: met', req('boxThroughOpenDoor', ['##########', '#Pt.B.D..#', '##########'], ['right']));
   ok('a box through an open door: not met when only the robot goes through', !req('boxThroughOpenDoor', ['#######', '#Pt.D.#', '#B....#', '#######'], ['right']));
@@ -181,16 +193,17 @@ const build = (def, rows) => {
   const v = check(d, both, COSTS);
   ok('one path missing the door fails the room', v.ok && !v.won && /Not met/.test(v.fail.why) && v.fail.path.map(m => m.split('@')[0]).join() === 'down,right', JSON.stringify(v.fail));
 }
-{ // every level can be won: one known 5x5 room each, found by search, so a rule change that
+{ // every level can be won: one known room each (5x5 unless noted), found by search, so a rule change that
   // makes a level impossible goes red
   const WINS = {
     1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
     2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
     3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],
     4: ['Pt.tD', '.#...', '.....', '###.#', '.#..G'],
-    5: ['P....', '....B', 'B..#t', 'D.#.#', '....G'],
-    6: ['P.#.B', '...#.', '..B.o', '.#..D', '#..#G'],
-    7: ['P.o..', '..B.D', '...##', '#.###', '#...G'],
+    5: HIS,
+    6: ['P....', '....B', 'B..#t', 'D.#.#', '....G'],
+    7: ['P.#.B', '...#.', '..B.o', '.#..D', '#..#G'],
+    8: ['P.o..', '..B.D', '...##', '#.###', '#...G'],
   };
   ok('there is a known winning room for every level', LEVELS.every(l => WINS[l.id]), LEVELS.map(l => l.id).join());
   for (const l of LEVELS) {
