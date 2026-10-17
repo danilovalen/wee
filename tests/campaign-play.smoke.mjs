@@ -50,6 +50,10 @@ try {
   const kept = await page.evaluate(() => window.wee.getLevel().cells.filter(c => c === 'wall').length);
   check('your room is kept for next time', kept === 24 + 7, String(kept));
   await page.click('#campBack');
+  await page.click('.campRow[data-level="3"]');
+  const brief = await page.locator('#campBrief .campPal').textContent();
+  check('an element with no maximum shows its count and minimum only', brief.includes('Switch 0 (min 1)') && brief.includes('Door 0 (min 1)'), brief);
+  await page.click('#campBack');
   // Level 4: one switch, one door. With the switch walled off behind the door, Run says why
   // the robot cannot finish and flashes the door and the switch.
   await page.click('.campRow[data-level="4"]');

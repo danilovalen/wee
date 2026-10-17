@@ -59,7 +59,7 @@ export function syncCostDots() {
 export function syncBrief() {
   if (!S.camp) return;
   const def = S.camp.def, { by } = placed(def, S.level), v = S.camp.verdict;
-  const parts = Object.entries(def.palette).map(([el, [min, max]]) => `${ELEMENTS[el].label} ${by[el].length}/${max}${min ? ` (min ${min})` : ''} · ${COSTS[el]} each`);
+  const parts = Object.entries(def.palette).map(([el, [min, max]]) => `${ELEMENTS[el].label} ${by[el].length}${max === null ? '' : `/${max}`}${min ? ` (min ${min})` : ''} · ${COSTS[el]} each`);
   const reqs = [stepsText(def.steps), ...(def.rules || []).includes('noBoxOnButton') ? ['A box cannot start on a button.'] : [], ...(def.require || []).map(id => REQUIREMENTS[id].text)];
   const box = $('campBrief');
   box.replaceChildren();

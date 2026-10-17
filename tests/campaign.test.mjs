@@ -43,7 +43,9 @@ const build = (def, rows) => {
   ok('an element outside the palette is refused', placementErrors(d, alien).some(e => /no doors/.test(e.msg)));
   ok('names take the right plural', nameOf('toggle', 2) === 'switches' && nameOf('toggle', 1) === 'switch' && nameOf('box', 2) === 'boxes' && nameOf('door', 2) === 'doors');
   const d3 = level('3');
-  ok('too few of a required element is refused', placementErrors(d3, roomOf(d3)).some(e => /at least 2 switches/.test(e.msg)));
+  ok('too few of a required element is refused', placementErrors(d3, roomOf(d3)).some(e => /at least 1 switch\./.test(e.msg)));
+  const lots = roomOf(d3); for (let x = 1; x <= 5; x++) { lots.cells[2 * 7 + x] = 'toggle:red'; lots.cells[3 * 7 + x] = 'door:red'; }
+  ok('a level with no maximum takes any number', placementErrors(d3, lots).length === 0, JSON.stringify(placementErrors(d3, lots)));
   const d4 = level('5'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
   ok('a box cannot start on a button', placementErrors(d4, onButton).some(e => /box cannot start on a button/.test(e.msg)));
 }

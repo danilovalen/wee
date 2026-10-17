@@ -678,6 +678,8 @@ const M = [
   ['src', ": n === all ? `none of its ${all} ${many} ${none}` :", ": false ? '' :", 'campaign'],
   ['src', "  else flashStuck(v);\n", "", 'campaign-play'],
   ['src', "out.onclick = () => flashStuck(v);", "", 'campaign-play'],
+  ['src', "if (max !== null && list.length > max)", "if (list.length > max)", 'campaign'],
+  ['src', "${max === null ? '' : `/${max}`}", "/${max}", 'campaign-play'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
   ['src', "dot.textContent = cost[b.dataset.tool];", "dot.textContent = '';", 'campaign-play'],
 ];

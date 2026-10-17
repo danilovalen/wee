@@ -54,9 +54,10 @@ export function placementErrors(def, room) {
   const si = base.start.y * base.w + base.start.x;
   if (room.cells[si] || room.entities.some(e => e.y * room.w + e.x === si)) errs.push({ msg: 'Leave the robot\'s start empty.', at: si });
   for (const [el, list] of Object.entries(by)) {
+    // A null maximum is no limit: cost is what keeps the count down.
     const [min, max] = def.palette[el] || [0, 0];
     if (list.length < min) errs.push({ msg: `Place at least ${min} ${nameOf(el, min)}.` });
-    if (list.length > max) errs.push({ msg: max ? `Place at most ${max} ${nameOf(el, max)}.` : `This level has no ${nameOf(el, 2)}.` });
+    if (max !== null && list.length > max) errs.push({ msg: max ? `Place at most ${max} ${nameOf(el, max)}.` : `This level has no ${nameOf(el, 2)}.` });
   }
   if ((def.rules || []).includes('noBoxOnButton'))
     for (const e of room.entities) if (e.kind === 'box' && room.cells[e.y * room.w + e.x].startsWith('button:')) errs.push({ msg: 'A box cannot start on a button.', at: e.y * room.w + e.x });

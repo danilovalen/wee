@@ -3583,7 +3583,7 @@ return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNE
 const m35 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10]},"steps":{"best":6,"range":2},"rules":[],"require":[]},{"id":"2","name":"Level 2","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"toggle":[1,1],"door":[1,1]},"steps":{"best":7,"range":2},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"]},{"id":"3","name":"Level 3","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"toggle":[2,2],"door":[1,1]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOn","throughOpenDoor","doorClosedAtEnd"]},{"id":"4","name":"Level 4","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"toggle":[1,1],"door":[1,1]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOnThenOff","throughOpenDoor"]},{"id":"5","name":"Level 5","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"box":[1,2],"button":[1,1],"door":[1,1]},"steps":{"best":6,"range":2},"rules":["noBoxOnButton"],"require":["throughOpenDoor"]},{"id":"6","name":"Level 6","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"box":[1,2],"button":[1,1],"door":[1,1]},"steps":{"best":10,"range":3},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"]}];
+const LEVELS = [{"id":"1","name":"Level 1","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10]},"steps":{"best":6,"range":2},"rules":[],"require":[]},{"id":"2","name":"Level 2","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"toggle":[1,1],"door":[1,1]},"steps":{"best":7,"range":2},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"]},{"id":"3","name":"Level 3","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"toggle":[1,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOn","throughOpenDoor","doorClosedAtEnd"]},{"id":"4","name":"Level 4","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"toggle":[1,1],"door":[1,1]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOnThenOff","throughOpenDoor"]},{"id":"5","name":"Level 5","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"box":[1,2],"button":[1,1],"door":[1,1]},"steps":{"best":6,"range":2},"rules":["noBoxOnButton"],"require":["throughOpenDoor"]},{"id":"6","name":"Level 6","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"box":[1,2],"button":[1,1],"door":[1,1]},"steps":{"best":10,"range":3},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"]}];
 const COSTS = {"block":1,"box":2,"button":3,"door":3,"toggle":2};
 return { LEVELS, COSTS };
 })();
@@ -3749,9 +3749,10 @@ function placementErrors(def, room) {
   const si = base.start.y * base.w + base.start.x;
   if (room.cells[si] || room.entities.some(e => e.y * room.w + e.x === si)) errs.push({ msg: 'Leave the robot\'s start empty.', at: si });
   for (const [el, list] of Object.entries(by)) {
+    // A null maximum is no limit: cost is what keeps the count down.
     const [min, max] = def.palette[el] || [0, 0];
     if (list.length < min) errs.push({ msg: `Place at least ${min} ${nameOf(el, min)}.` });
-    if (list.length > max) errs.push({ msg: max ? `Place at most ${max} ${nameOf(el, max)}.` : `This level has no ${nameOf(el, 2)}.` });
+    if (max !== null && list.length > max) errs.push({ msg: max ? `Place at most ${max} ${nameOf(el, max)}.` : `This level has no ${nameOf(el, 2)}.` });
   }
   if ((def.rules || []).includes('noBoxOnButton'))
     for (const e of room.entities) if (e.kind === 'box' && room.cells[e.y * room.w + e.x].startsWith('button:')) errs.push({ msg: 'A box cannot start on a button.', at: e.y * room.w + e.x });
@@ -4070,7 +4071,7 @@ function syncCostDots() {
 function syncBrief() {
   if (!S.camp) return;
   const def = S.camp.def, { by } = placed(def, S.level), v = S.camp.verdict;
-  const parts = Object.entries(def.palette).map(([el, [min, max]]) => `${ELEMENTS[el].label} ${by[el].length}/${max}${min ? ` (min ${min})` : ''} · ${COSTS[el]} each`);
+  const parts = Object.entries(def.palette).map(([el, [min, max]]) => `${ELEMENTS[el].label} ${by[el].length}${max === null ? '' : `/${max}`}${min ? ` (min ${min})` : ''} · ${COSTS[el]} each`);
   const reqs = [stepsText(def.steps), ...(def.rules || []).includes('noBoxOnButton') ? ['A box cannot start on a button.'] : [], ...(def.require || []).map(id => REQUIREMENTS[id].text)];
   const box = $('campBrief');
   box.replaceChildren();

@@ -46,10 +46,12 @@ All 7x7, robot top left, goal bottom right, no powers.
 |---|---|---|---|
 | 1 | block 0-10 | 6 ± 2 | none beyond the range |
 | 2 | block 0-10, switch 1-1, door 1-1 | 7 ± 2 | robot hits a closed door; robot goes through an open door |
-| 3 | block 0-10, switch 2-2, door 1-1 | 8 ± 2 | every switch on; through an open door; door closed at the end |
+| 3 | block 0-10, switch 1 or more, door 1 or more | 8 ± 2 | every switch on; through an open door; door closed at the end |
 | 4 | block 0-10, switch 1-1, door 1-1 | 8 ± 2 | every switch on then off; through an open door |
 | 5 | block 0-10, box 1-2, button 1-1, door 1-1 | 6 ± 2 | a box cannot start on a button; through an open door |
 | 6 | as 5 | 10 ± 3 | a box cannot start on a button; through an open door; door closed at the end |
+
+Level 3 asked for exactly 2 switches until 2026-10-17; now 1 or more of each, with no maximum (owner: *"no limit. it already is an optimization exercise on cost"*). A palette maximum of `null` means no limit.
 
 Level 2 was added on 2026-10-17 (owner: *"huge spike of difficulty between level 1 and 2"*).
 He first asked for one button and one door; a button only holds while something stands on it,

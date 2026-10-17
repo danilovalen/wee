@@ -15,12 +15,12 @@
    10
   ],
   "toggle": [
-   2,
-   2
+   1,
+   null
   ],
   "door": [
    1,
-   1
+   null
   ]
  },
  "steps": {
