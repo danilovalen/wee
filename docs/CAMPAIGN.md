@@ -24,6 +24,15 @@ the conversation that day. Rulings are restated, not quoted, unless in quotes.
   are being made.
 - Later: a "human" criterion.
 
+## The campaign's shape (his notes, 2026-10-17, not built)
+
+- A linear path where the next 3 levels are always unlocked.
+- For each element, a branch of specialised levels built around it.
+- Sometimes special areas of harder levels that mix two or three elements.
+- Maximums: *"usually maximum limits are only needed if the solution gets boring with a high
+  quantity. but the optimization aspect already kinda counts for it."* So a level leaves an
+  element's maximum open unless a high count makes the solution boring.
+
 ## Moves and the robot
 
 The robot slides like the player: a move is a press, and it slides until something stops it.
