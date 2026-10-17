@@ -24,6 +24,13 @@ the conversation that day. Rulings are restated, not quoted, unless in quotes.
   are being made.
 - Later: a "human" criterion.
 
+## What a good level is (his words, 2026-10-17)
+
+*"that is good puzzles for this game. it's always two layer. beating the minimum is half the
+time, optimizing is the other half."* A level should take real work to win at all, and then as
+much again to win well (exact count, lower cost, fewer tiles). Level 3 with one switch is the
+reference.
+
 ## The campaign's shape (his notes, 2026-10-17, not built)
 
 - A linear path where the next 3 levels are always unlocked.
