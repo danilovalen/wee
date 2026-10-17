@@ -98,6 +98,9 @@ const build = (def, rows) => {
   ok('runs into a closed door: not met when gravel stops it before an open one', !req('hitsClosedDoor', ['#######', '#PtgD.#', '#######'], ['right']));
   ok('runs into a closed door: not met when a wall stops it', !req('hitsClosedDoor', ['#######', '#P..#D#', '#######'], ['right']));
   ok('runs into a closed door: not met when it slides elsewhere', !req('hitsClosedDoor', ['#####', '#P..#', '#D..#', '#####'], ['right']));
+  ok('every switch off at the end: met once both are off again', req('everyToggleOffAtEnd', ['######', '#Pt..#', '######'], ['right', 'left']));
+  ok('every switch off at the end: not met while one is on', !req('everyToggleOffAtEnd', ['######', '#Pt..#', '######'], ['right']));
+  ok('every switch off at the end: not met with no switch at all', !req('everyToggleOffAtEnd', ['#####', '#P..#', '#####'], ['right']));
   ok('a requirement with no toggles is not met', !req('everyToggleOn', ['#####', '#P..#', '#####'], ['right']));
 }
 { // why the robot cannot finish (copy is a draft)
@@ -116,6 +119,11 @@ const build = (def, rows) => {
   ok('with no door to blame, it says so plainly', walls.why === 'The robot cannot reach the goal from anywhere it can get to.' && walls.at.length === 0);
   const v = check({ ...level('1'), palette: { block: [0, 30], toggle: [0, 2], door: [0, 1] } }, build(level('1'), ['', '', '', '#######', '#.t..D#', '#....G#']), COSTS);
   ok('an unsolvable verdict carries the reason and the tiles', v.ok && !v.won && v.fail.path === null && /door never opens/.test(v.fail.why) && v.fail.at.length > 0, JSON.stringify(v.fail));
+}
+{ // level 4: two switches at least, through the door, every switch off at the end
+  const d = level('4');
+  ok('level 4 needs two switches and a door', d.palette.toggle[0] === 2 && d.palette.door[0] === 1 && d.require.join() === 'throughOpenDoor,everyToggleOffAtEnd');
+  ok('a one-switch room no longer fits level 4', placementErrors(d, build(d, ['#######', '#P.#..#', '#....##', '#...t.#', '#..#.##', '##...G#', '#######'].map((r, y) => y === 1 ? '#P.#D.#' : r))).some(e => /at least 2 switches/.test(e.msg)));
 }
 { // level 2: a toggle, a door, run into it closed, then go through it open
   const d = level('2');
@@ -137,7 +145,7 @@ const build = (def, rows) => {
     1: ['#######', '#P.#.##', '#.....#', '#.###.#', '#.#...#', '#.#..G#', '#######'],
     2: ['#######', '#P..D##', '#..t..#', '#.##.##', '#.#...#', '##...G#', '#######'],
     3: ['#######', '#P.#.##', '#..####', '##..#.#', '#Dt...#', '#..t#G#', '#######'],
-    4: ['#######', '#Pt...#', '##.D..#', '##.#.##', '#.#...#', '#####G#', '#######'],
+    4: ['#######', '#Pt.tD#', '#.#...#', '#.....#', '####.##', '#.#..G#', '#######'],
     5: ['#######', '#P.#.B#', '#...#.#', '#..B.o#', '#.#..D#', '##..#G#', '#######'],
     6: ['#######', '#P.o..#', '#..B.D#', '#...###', '##.####', '##...G#', '#######'],
   };

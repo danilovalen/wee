@@ -65,11 +65,13 @@ ones they had before.
 | 1 | block 0-10 | 6 ± 2 | none beyond the range |
 | 2 | block 0-10, switch 1-1, door 1-1 | 7 ± 2 | robot hits a closed door; robot goes through an open door |
 | 3 | block 0-10, switch 1 or more, door 1 or more | 8 ± 2 | every switch on; through an open door; door closed at the end |
-| 4 | block 0-10, switch 1-1, door 1-1 | 8 ± 2 | every switch on then off; through an open door |
+| 4 | block, switch 2 or more, door 1 or more | 8 ± 2 | through an open door; every switch off when the robot reaches the goal |
 | 5 | block 0-10, box 1-2, button 1-1, door 1-1 | 6 ± 2 | a box cannot start on a button; through an open door |
 | 6 | as 5 | 10 ± 3 | a box cannot start on a button; through an open door; door closed at the end |
 
 Level 3 asked for exactly 2 switches until 2026-10-17; now 1 or more of each, with no maximum (owner: *"no limit. it already is an optimization exercise on cost"*). A palette maximum of `null` means no limit.
+
+Level 4 asked for one switch turned on then off until 2026-10-17, which his level 3 room also won (owner: *"level 4 has the same solution than level 3 and will need a different rule set"*). Now at least two switches and a door, through the open door, and both switches off at the end.
 
 Level 2 was added on 2026-10-17 (owner: *"huge spike of difficulty between level 1 and 2"*).
 He first asked for one button and one door; a button only holds while something stands on it,

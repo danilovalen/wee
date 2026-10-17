@@ -15,7 +15,7 @@
    null
   ],
   "toggle": [
-   1,
+   2,
    null
   ],
   "door": [
@@ -29,7 +29,7 @@
  },
  "rules": [],
  "require": [
-  "everyToggleOnThenOff",
-  "throughOpenDoor"
+  "throughOpenDoor",
+  "everyToggleOffAtEnd"
  ]
 }

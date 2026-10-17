@@ -115,6 +115,10 @@ Object.assign(REQUIREMENTS, {
     text: 'Every switch turns on.',
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
   },
+  everyToggleOffAtEnd: {
+    text: 'Every switch is off when the robot reaches the goal.',
+    judge: (room, moves) => room.cells.some(c => c.startsWith('toggle:')) && replayPath(room, moves, () => {}).toggled.length === 0,
+  },
   everyToggleOnThenOff: {
     text: 'Every switch turns on, then off again.',
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.onOff.has(i)); },

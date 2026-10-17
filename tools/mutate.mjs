@@ -680,6 +680,7 @@ const M = [
   ['src', "out.onclick = () => flashStuck(v);", "", 'campaign-play'],
   ['src', "if (max !== null && list.length > max)", "if (list.length > max)", 'campaign'],
   ['src', "${max === null ? '' : `/${max}`}", "/${max}", 'campaign-play'],
+  ['src', ".toggled.length === 0,", ".toggled.length >= 0,", 'campaign'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
   ['src', "dot.textContent = cost[b.dataset.tool];", "dot.textContent = '';", 'campaign-play'],
 ];
