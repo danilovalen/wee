@@ -23,7 +23,7 @@ try {
         || [...c.querySelectorAll('#ctxNote, #placeHint')].some(e => e.offsetParent && opts.height && e.getBoundingClientRect().top < opts.bottom - 1); });
     const cutTools = [];
     let turretNote = false;
-    for (const t of await page.$$eval('[data-tool]', bs => bs.map(b => b.dataset.tool))) {
+    for (const t of await page.$$eval('[data-tool]:not([data-camp])', bs => bs.map(b => b.dataset.tool))) {
       await page.click(`[data-tool=${t}]`);
       if (await over()) bad.push(t);
       if (t === 'turret' && !(await page.locator('[data-aim=up]').getAttribute('class') || '').includes('on')) await page.click('[data-aim=up]');
@@ -65,7 +65,7 @@ try {
     await page.waitForTimeout(250);
     const plus = await page.evaluate(() => { const a = document.getElementById('roomArea').getBoundingClientRect(); return [...document.querySelectorAll('[data-plus]')].filter(b => { const r = b.getBoundingClientRect(); return getComputedStyle(b).opacity < 0.9 || r.left < a.left || r.top < a.top || r.right > a.right || r.bottom > a.bottom; }).map(b => b.dataset.plus); });
     check(`${w}x${h}: the room's four + show on hover, none clipped`, !plus.length, plus.join(' '));
-    const unnamed = await page.evaluate(() => [...document.querySelectorAll('[data-tool]')].filter(b => !b.title || (b.querySelector('.lbl').offsetParent === null) !== (innerWidth <= 1100)).map(b => b.dataset.tool));
+    const unnamed = await page.evaluate(() => [...document.querySelectorAll('[data-tool]:not([data-camp])')].filter(b => !b.title || (b.querySelector('.lbl').offsetParent === null) !== (innerWidth <= 1100)).map(b => b.dataset.tool));
     check(`${w}x${h}: tools are icons up to 1100 px wide, labelled above it, and always named on hover`, !unnamed.length, unnamed.join(' '));
     check(`${w}x${h}: everything open: nothing scrolls, nothing is cut, the room fills its area`, !(await over()) && !(await cutOff()).length && await page.locator('#well').isVisible() && await page.locator('#lensChips').isVisible() && await fills(), JSON.stringify({ cut: await cutOff(), over: await over() }));
     check(`${w}x${h}: everything open, the room keeps at least 45% of the height`, open >= 0.45, open.toFixed(2));

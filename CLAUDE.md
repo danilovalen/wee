@@ -25,6 +25,7 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
   unpushed commit with it: the whole `wee-game` fork was lost that way on 2026-10-16 and
   rebuilt from a downloaded `dist/wee.html`. If a new repo cannot be created, push to a branch
   of an existing one at once; never keep working on an unpushed tree.
+- **Commit only after a green run.** Never chain `npm test | grep ... && git commit`: grep succeeds on a red run too. On 2026-10-17 that pushed three red smokes.
 - **Game design is the owner's.** Levels, mechanics, rules and requirements are his to decide.
   Ask one question at a time; draft a level only when asked, and build it only once approved.
 

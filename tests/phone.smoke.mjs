@@ -68,7 +68,7 @@ try {
   check('a tile is big enough to tap', layout.tile >= 28, layout.tile.toFixed(1));
   // every tool, picked from its tab, fits with its options under the room on one screen
   const over = [];
-  for (const [t, g] of await page.$$eval('[data-tool]', bs => bs.map(b => [b.dataset.tool, b.dataset.in]))) {
+  for (const [t, g] of await page.$$eval('[data-tool]:not([data-camp])', bs => bs.map(b => [b.dataset.tool, b.dataset.in]))) {
     await page.click(`[data-group=${g}]`); await page.click(`[data-tool=${t}]`);
     const [bottom, who] = await page.evaluate(() => { const es = [...document.querySelectorAll('#tools button, #tools .opt')].filter(e => e.offsetParent); const e = es.reduce((a, b) => b.getBoundingClientRect().bottom > a.getBoundingClientRect().bottom ? b : a); return [e.getBoundingClientRect().bottom, e.id || e.className || e.textContent.slice(0, 12)]; });
     if (bottom > 844) over.push(`${t}:${Math.round(bottom)} (${who})`);

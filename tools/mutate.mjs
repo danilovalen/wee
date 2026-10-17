@@ -124,7 +124,7 @@ const M = [
   ['src', "  if (shockHarms(s, pools, 'laser')) die(s);\n", "", 'sim'],
   ['src', "if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;", "if (c === 'death' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;", 'sim'],
   ['src', "} else if (t === 'water' || t === 'sticky' || t === 'gravel' || t === 'goal') {\n    if (isStart) return out;\n    setCell(t);", "} else if (false) {", 'browser'],
-  ['src', "b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group;", "b.hidden = only ? !only.includes(b.dataset.tool) : false;", 'phone'],
+  ['src', "b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp;", "b.hidden = only ? !only.includes(b.dataset.tool) : !!b.dataset.camp;", 'phone'],
   ['src', "$('hideBtn').hidden = !tap.length; ", "", 'phone'],
   ['src', "$('hideBtn').textContent = tap.join(' / ');", "$('hideBtn').textContent = 'Hide / Swim';", 'phone'],
   ['src', "pending.push(`power:${p}:${box.checked ? 1 : 0}`); syncPanel(); };", "pending.push(`power:${p}:${box.checked ? 1 : 0}`); };", 'phone'],
@@ -526,7 +526,7 @@ const M = [
   ['src/app/enabled.js', "  $('mode').disabled = !level.start;", "", 'browser'],
   ['src/app/enabled.js', "b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta);", "b.disabled = false;", 'browser'],
   ['src/app/play.js', "  if (m === 'play' && !S.playFrom && !S.level.start) return;\n", "", 'browser'],
-  ['src/app/size.js', "    while (n && !moveSide(S.level, side, n)) n -= Math.sign(n);\n", "", 'browser'],
+  ['src/app/size.js', "    while (n && !keeps(moveSide(S.level, side, n))) n -= Math.sign(n);\n", "", 'browser'],
   ['src/app/check.js', "  if (!S.level.start) { S.check = null;", "  if (false) { S.check = null;", 'browser'],
   // Lenses tab: hover text, two columns, no More (register 110)
   ['src/app/lenses.js', "textContent: label, title: LENS_TIPS[id] });", "textContent: label });", 'lensui'],
