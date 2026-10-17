@@ -12,27 +12,22 @@ export const ELEMENTS = {
   toggle: { label: 'Switch', cell: 'toggle:red' },
 };
 
-// The level's room from its rows: # block, P robot start, G goal, . floor.
+// The level's room: empty, at its starting size, with no border (the room's edge stops the
+// robot like a wall) and no start or goal: you place both, free.
 export function roomOf(def) {
-  const h = def.rows.length, w = def.rows[0].length, l = emptyLevel(w, h);
+  const [w, h] = def.size, l = emptyLevel(w, h);
   for (const p of Object.keys(l.powers)) l.powers[p] = !!(def.powers || []).includes(p);
   l.start = null;
-  def.rows.forEach((row, y) => [...row].forEach((c, x) => {
-    const i = y * w + x;
-    if (c === '#') l.cells[i] = 'wall';
-    if (c === 'G') l.cells[i] = 'goal';
-    if (c === 'P') l.start = { x, y };
-  }));
   return l;
 }
 
-// What you placed: every cell or piece that differs from the level's room, by element.
+// What you placed, by element; stray is anything the level's palette cannot have made.
 export function placed(def, room) {
-  const base = roomOf(def), out = Object.fromEntries(Object.keys(ELEMENTS).map(k => [k, []])), stray = [];
+  const out = Object.fromEntries(Object.keys(ELEMENTS).map(k => [k, []])), stray = [];
   room.cells.forEach((c, i) => {
-    if (c === base.cells[i]) return;
+    if (!c || c === 'goal') return;
     const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].cell === c);
-    if (el && !base.cells[i]) out[el].push(i); else stray.push(i);
+    if (el) out[el].push(i); else stray.push(i);
   });
   for (const e of room.entities) {
     const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].piece === e.kind), i = e.y * room.w + e.x;
@@ -46,13 +41,12 @@ export const nameOf = (el, n) => { const w = ELEMENTS[el].label.toLowerCase(); r
 
 // Why the room cannot be run yet: each is { msg, at? }. Empty when it can.
 export function placementErrors(def, room) {
-  const base = roomOf(def), errs = [];
-  if (room.w !== base.w || room.h !== base.h) return [{ msg: `The room must stay ${base.w}x${base.h}.` }];
-  const { by, stray } = placed(def, room);
-  for (const i of stray) errs.push({ msg: 'This level does not let you change that tile.', at: i });
-  if (!room.start || room.start.x !== base.start.x || room.start.y !== base.start.y) errs.push({ msg: 'The robot starts where the level puts it.' });
-  const si = base.start.y * base.w + base.start.x;
-  if (room.cells[si] || room.entities.some(e => e.y * room.w + e.x === si)) errs.push({ msg: 'Leave the robot\'s start empty.', at: si });
+  const errs = [], { by, stray } = placed(def, room);
+  for (const i of stray) errs.push({ msg: 'This level does not have that.', at: i });
+  if (!room.start) errs.push({ msg: 'Place the start.' });
+  const goals = room.cells.filter(c => c === 'goal').length;
+  if (!goals) errs.push({ msg: 'Place the goal.' });
+  if (goals > 1) errs.push({ msg: 'Place only one goal.' });
   for (const [el, list] of Object.entries(by)) {
     // A null maximum is no limit: cost is what keeps the count down.
     const [min, max] = def.palette[el] || [0, 0];
@@ -148,14 +142,8 @@ Object.assign(REQUIREMENTS, {
 export const stepsText = st => `The shortest path takes ${st.best - st.range} to ${st.best + st.range} moves.`;
 export const bestText = st => `Exactly ${st.best} moves.`;
 
-// The tiles a room occupies: anything not floor, the start included.
-export function tilesOf(room) {
-  const at = new Set();
-  room.cells.forEach((c, i) => { if (c) at.add(i); });
-  for (const e of room.entities) at.add(e.y * room.w + e.x);
-  if (room.start) at.add(room.start.y * room.w + room.start.x);
-  return at.size;
-}
+// The room's area, the size score.
+export const areaOf = room => room.w * room.h;
 
 export function costOf(def, room, costs) {
   const { by } = placed(def, room);
@@ -189,14 +177,14 @@ export function stuckText(room) {
 }
 
 // The whole verdict. { ok: false, errors } when the room cannot run; otherwise
-// { ok: true, won, length, paths, fail: { path, why } | null, cost, tiles, optional }.
+// { ok: true, won, length, paths, fail: { path, why } | null, cost, area, optional }.
 export function check(def, room, costs, opts) {
   const errors = placementErrors(def, room);
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
   if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'The robot gave up: this room is too big to search.' } };
-  const base = { ok: true, length: r.length, paths: r.paths.length, cost: costOf(def, room, costs), tiles: tilesOf(room) };
+  const base = { ok: true, length: r.length, paths: r.paths.length, cost: costOf(def, room, costs), area: areaOf(room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
   if (r.length < st.best - st.range || r.length > st.best + st.range) return { ...base, won: false, fail: { path: r.paths[0], why: `${stepsText(st)} This one takes ${r.length}.` } };
   for (const path of r.paths) for (const id of def.require || []) {

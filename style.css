@@ -434,7 +434,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 body.campaign .camp-only { display: revert; }
 body.campaign #campBrief { display: block; }
 body.campaign #roomTitle, body.campaign #checkBtn, body.campaign #stopsBtn, body.campaign #genBtn, body.campaign #roomsBtn,
-body.campaign #groups, body.campaign .ghead, body.campaign #options, body.campaign .plus, body.campaign #lensChips,
+body.campaign #groups, body.campaign .ghead, body.campaign #options, body.campaign #lensChips,
 body.campaign #wellBtn, body.campaign #sizeBtn, body.campaign #well, body.campaign #win, body.campaign #stuck,
 body.campaign #checkText, body.campaign #showSolution, body.campaign #lintBox, body.campaign #designBox,
 body.campaign #hideBtn, body.campaign #respawnBtn, body.campaign #reportBtn, body.campaign #phoneNav { display: none !important; }

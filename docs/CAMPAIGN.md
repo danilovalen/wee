@@ -15,9 +15,13 @@ the conversation that day. Rulings are restated, not quoted, unless in quotes.
   requirements the solution must meet. Hitting exactly x moves is optional.
 - On a failure the robot plays the failing path, so you can watch what went wrong.
 - A win is scored three ways, the best of each kept separately: **cost** (sum of placed
-  elements' costs), **tiles** (everything that is not floor, fixed tiles and the start included)
-  and **optional requirements met**.
-- Costs are constant across levels: block 1, box 2, button 3, door 3, switch 2.
+  elements' costs), **area** (the room's width times height) and **optional requirements met**.
+  Area replaced tiles on 2026-10-17 (owner: area "replaces tiles").
+- **The room is yours to size.** Every level opens on an empty 7x7 room and you grow or shrink
+  it with the grips on its edges, as in the sandbox; there is no limit. Its edge is not made of
+  blocks: it stops the robot like a wall, costs nothing, and touching it is not a death.
+- **You place the start and the goal**, free, exactly one of each.
+- Costs are constant across levels: block 1, box 2, button 3, door 3, switch 2. Start and goal are free.
 - The level list shows each level's elements as their palette icons (owner, 2026-10-17).
 - Main menu: **Campaign** (the level list, opening on the last level played) and **Sandbox**
   (the Rooms list).
@@ -57,7 +61,7 @@ its colour holds.
 
 ## Levels
 
-All 7x7, robot top left, goal bottom right, no powers. **No level has a maximum on any
+Every level opens on an empty 7x7 room with no border, no start and no goal; no powers. **No level has a maximum on any
 element for now** (owner, 2026-10-17: *"no maximums for now"*); the table's maximums are the
 ones they had before.
 

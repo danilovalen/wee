@@ -685,6 +685,12 @@ const M = [
   ['src', "      return flipped && !robot;", "      return flipped;", 'campaign'],
   ['src', "      return flipped && !robot;", "      return !robot;", 'campaign'],
   ['src', "c.dataset.part = el;", "", 'campaign-play'],
+  ['src', "  if (!room.start) errs.push({ msg: 'Place the start.' });\n", "", 'campaign'],
+  ['src', "  if (goals > 1) errs.push({ msg: 'Place only one goal.' });\n", "", 'campaign'],
+  ['src', "export const areaOf = room => room.w * room.h;", "export const areaOf = room => room.w * room.h - 1;", 'campaign'],
+  ['src', "    if (!c || c === 'goal') return;", "    if (!c) return;", 'campaign'],
+  ['src', "  const kept = rec && rec.room && unframe(rec.room);", "  const kept = rec && rec.room;", 'campaign-play'],
+  ['src', "const ALWAYS = ['start', 'goal'];", "const ALWAYS = [];", 'campaign-play'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
   ['src', "dot.textContent = cost[b.dataset.tool];", "dot.textContent = '';", 'campaign-play'],
 ];

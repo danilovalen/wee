@@ -3,7 +3,7 @@
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS, COSTS } from '../level/campaign.js';
-import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, bestText, costOf, tilesOf } from '../campaign/rules.js';
+import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, bestText, costOf, areaOf } from '../campaign/rules.js';
 import { place } from '../editor/edit.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -13,6 +13,8 @@ import { icon } from './icons.js';
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
 export const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle' };
+// Every level hands you the start and the goal, free.
+const ALWAYS = ['start', 'goal'];
 let A = null, boot = null;
 
 export function progress() {
@@ -22,18 +24,28 @@ export function progress() {
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
 const levelOf = id => LEVELS.find(l => l.id === id);
 
+// A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
+// level's, so it is cut off, and the start and goal it had stay where they were.
+export function unframe(room) {
+  const { w, h } = room, edge = i => { const x = i % w, y = (i - x) / w; return x === 0 || y === 0 || x === w - 1 || y === h - 1; };
+  if (w < 3 || h < 3 || !room.cells.every((c, i) => !edge(i) || c === 'wall')) return room;
+  const cells = [];
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) cells.push(room.cells[y * w + x]);
+  return { ...room, w: w - 2, h: h - 2, cells, start: room.start && { x: room.start.x - 1, y: room.start.y - 1 }, entities: room.entities.map(e => ({ ...e, x: e.x - 1, y: e.y - 1 })) };
+}
+
 // Whether a tap may change the room: placing must not break a rule the level enforces as you
-// build (locked tiles, the start, a maximum, a box on a button). Too few of something is fine
+// build (a maximum, a second goal, a box on a button). Too few of something is fine
 // while building; Run says so.
 export function allows(level, ui, x, y, how) {
   if (!S.camp) return true;
   const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
   place(next, ui, x, y, how);
-  return placementErrors(def, next).every(e => /at least/.test(e.msg) || before.has(e.msg));
+  return placementErrors(def, next).every(e => /^(Place at least|Place the )/.test(e.msg) || before.has(e.msg));
 }
 
 // The tools a level offers: Look, Erase, and its palette.
-export const toolsFor = def => ['look', 'erase', ...Object.keys(def.palette).map(el => TOOL[el])];
+export const toolsFor = def => ['look', 'erase', ...ALWAYS, ...Object.keys(def.palette).map(el => TOOL[el])];
 
 function save() {
   if (!S.camp) return;
@@ -65,7 +77,7 @@ export function syncBrief() {
   const box = $('campBrief');
   box.replaceChildren();
   const head = document.createElement('p'); head.className = 'campHead';
-  head.textContent = `${def.name} · Cost ${costOf(def, S.level, COSTS)} · Tiles ${tilesOf(S.level)}`;
+  head.textContent = `${def.name} · Cost ${costOf(def, S.level, COSTS)} · Area ${areaOf(S.level)}`;
   const pal = document.createElement('p'); pal.className = 'campPal'; pal.textContent = parts.join('  ·  ');
   const list = document.createElement('ul'); list.className = 'campReqs';
   for (const r of reqs) list.append(Object.assign(document.createElement('li'), { textContent: r }));
@@ -77,7 +89,7 @@ export function syncBrief() {
     out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
     out.id = 'campVerdict';
     out.textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
-      : v.won ? `The robot made it in ${plural(v.length, 'move')}${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}. Cost ${v.cost} · Tiles ${v.tiles} · Optional ${v.met}/${v.optional.length}.`
+      : v.won ? `The robot made it in ${plural(v.length, 'move')}${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}. Cost ${v.cost} · Area ${v.area} · Optional ${v.met}/${v.optional.length}.`
         : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
     // A run that cannot finish points at the tiles that stop it; tap the verdict to see them again.
     if (stuckAt(v).length) { out.classList.add('points'); out.onclick = () => flashStuck(v); out.title = 'Show the tiles'; }
@@ -91,7 +103,8 @@ export function enterLevel(id) {
   const p = progress(), rec = p.levels[id];
   closeAll();
   S.camp = { def, verdict: null };
-  S.level = rec && rec.room && placementErrors(def, rec.room).every(e => /at least/.test(e.msg)) ? rec.room : roomOf(def);
+  const kept = rec && rec.room && unframe(rec.room);
+  S.level = kept && placementErrors(def, kept).every(e => /^(Place at least|Place the )/.test(e.msg)) ? kept : roomOf(def);
   S.history = newHistory();
   S.ui.tool = 'look'; S.ui.colour = 'red';
   p.last = id; write(p);
@@ -122,7 +135,7 @@ export function run() {
   save();
   if (v.ok && v.won) {
     const p = progress(), rec = p.levels[def.id] ||= {}, best = rec.best || {};
-    rec.best = { cost: Math.min(best.cost ?? Infinity, v.cost), tiles: Math.min(best.tiles ?? Infinity, v.tiles), met: Math.max(best.met ?? 0, v.met) };
+    rec.best = { cost: Math.min(best.cost ?? Infinity, v.cost), area: Math.min(best.area ?? Infinity, v.area), met: Math.max(best.met ?? 0, v.met) };
     rec.beaten = true; rec.room = S.level;
     write(p);
   }
@@ -141,7 +154,7 @@ function renderList() {
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten · best cost ${rec.best.cost} · tiles ${rec.best.tiles} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
+    small.textContent = rec.beaten ? `Beaten · best cost ${rec.best.cost}${rec.best.area ? ` · area ${rec.best.area}` : ''} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
     // The elements the level hands you, as the palette draws them.
     const parts = document.createElement('span'); parts.className = 'campParts';
     for (const el of Object.keys(def.palette)) {

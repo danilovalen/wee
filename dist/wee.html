@@ -451,7 +451,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 body.campaign .camp-only { display: revert; }
 body.campaign #campBrief { display: block; }
 body.campaign #roomTitle, body.campaign #checkBtn, body.campaign #stopsBtn, body.campaign #genBtn, body.campaign #roomsBtn,
-body.campaign #groups, body.campaign .ghead, body.campaign #options, body.campaign .plus, body.campaign #lensChips,
+body.campaign #groups, body.campaign .ghead, body.campaign #options, body.campaign #lensChips,
 body.campaign #wellBtn, body.campaign #sizeBtn, body.campaign #well, body.campaign #win, body.campaign #stuck,
 body.campaign #checkText, body.campaign #showSolution, body.campaign #lintBox, body.campaign #designBox,
 body.campaign #hideBtn, body.campaign #respawnBtn, body.campaign #reportBtn, body.campaign #phoneNav { display: none !important; }
@@ -3585,7 +3585,7 @@ return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNE
 const m35 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null]},"steps":{"best":6,"range":2},"rules":[],"require":[]},{"id":"2","name":"Level 2","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"]},{"id":"3","name":"Level 3","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOn","throughOpenDoor","doorClosedAtEnd"]},{"id":"4","name":"Level 4","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"]},{"id":"5","name":"Level 5","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"]},{"id":"6","name":"Level 6","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6,"range":2},"rules":["noBoxOnButton"],"require":["throughOpenDoor"]},{"id":"7","name":"Level 7","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":10,"range":3},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"]}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6,"range":2},"rules":[],"require":[]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOn","throughOpenDoor","doorClosedAtEnd"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6,"range":2},"rules":["noBoxOnButton"],"require":["throughOpenDoor"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":10,"range":3},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"]}];
 const COSTS = {"block":1,"box":2,"button":3,"door":3,"toggle":2};
 return { LEVELS, COSTS };
 })();
@@ -3709,27 +3709,22 @@ const ELEMENTS = {
   toggle: { label: 'Switch', cell: 'toggle:red' },
 };
 
-// The level's room from its rows: # block, P robot start, G goal, . floor.
+// The level's room: empty, at its starting size, with no border (the room's edge stops the
+// robot like a wall) and no start or goal: you place both, free.
 function roomOf(def) {
-  const h = def.rows.length, w = def.rows[0].length, l = emptyLevel(w, h);
+  const [w, h] = def.size, l = emptyLevel(w, h);
   for (const p of Object.keys(l.powers)) l.powers[p] = !!(def.powers || []).includes(p);
   l.start = null;
-  def.rows.forEach((row, y) => [...row].forEach((c, x) => {
-    const i = y * w + x;
-    if (c === '#') l.cells[i] = 'wall';
-    if (c === 'G') l.cells[i] = 'goal';
-    if (c === 'P') l.start = { x, y };
-  }));
   return l;
 }
 
-// What you placed: every cell or piece that differs from the level's room, by element.
+// What you placed, by element; stray is anything the level's palette cannot have made.
 function placed(def, room) {
-  const base = roomOf(def), out = Object.fromEntries(Object.keys(ELEMENTS).map(k => [k, []])), stray = [];
+  const out = Object.fromEntries(Object.keys(ELEMENTS).map(k => [k, []])), stray = [];
   room.cells.forEach((c, i) => {
-    if (c === base.cells[i]) return;
+    if (!c || c === 'goal') return;
     const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].cell === c);
-    if (el && !base.cells[i]) out[el].push(i); else stray.push(i);
+    if (el) out[el].push(i); else stray.push(i);
   });
   for (const e of room.entities) {
     const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].piece === e.kind), i = e.y * room.w + e.x;
@@ -3743,13 +3738,12 @@ const nameOf = (el, n) => { const w = ELEMENTS[el].label.toLowerCase(); return n
 
 // Why the room cannot be run yet: each is { msg, at? }. Empty when it can.
 function placementErrors(def, room) {
-  const base = roomOf(def), errs = [];
-  if (room.w !== base.w || room.h !== base.h) return [{ msg: `The room must stay ${base.w}x${base.h}.` }];
-  const { by, stray } = placed(def, room);
-  for (const i of stray) errs.push({ msg: 'This level does not let you change that tile.', at: i });
-  if (!room.start || room.start.x !== base.start.x || room.start.y !== base.start.y) errs.push({ msg: 'The robot starts where the level puts it.' });
-  const si = base.start.y * base.w + base.start.x;
-  if (room.cells[si] || room.entities.some(e => e.y * room.w + e.x === si)) errs.push({ msg: 'Leave the robot\'s start empty.', at: si });
+  const errs = [], { by, stray } = placed(def, room);
+  for (const i of stray) errs.push({ msg: 'This level does not have that.', at: i });
+  if (!room.start) errs.push({ msg: 'Place the start.' });
+  const goals = room.cells.filter(c => c === 'goal').length;
+  if (!goals) errs.push({ msg: 'Place the goal.' });
+  if (goals > 1) errs.push({ msg: 'Place only one goal.' });
   for (const [el, list] of Object.entries(by)) {
     // A null maximum is no limit: cost is what keeps the count down.
     const [min, max] = def.palette[el] || [0, 0];
@@ -3845,14 +3839,8 @@ Object.assign(REQUIREMENTS, {
 const stepsText = st => `The shortest path takes ${st.best - st.range} to ${st.best + st.range} moves.`;
 const bestText = st => `Exactly ${st.best} moves.`;
 
-// The tiles a room occupies: anything not floor, the start included.
-function tilesOf(room) {
-  const at = new Set();
-  room.cells.forEach((c, i) => { if (c) at.add(i); });
-  for (const e of room.entities) at.add(e.y * room.w + e.x);
-  if (room.start) at.add(room.start.y * room.w + room.start.x);
-  return at.size;
-}
+// The room's area, the size score.
+const areaOf = room => room.w * room.h;
 
 function costOf(def, room, costs) {
   const { by } = placed(def, room);
@@ -3886,14 +3874,14 @@ function stuckText(room) {
 }
 
 // The whole verdict. { ok: false, errors } when the room cannot run; otherwise
-// { ok: true, won, length, paths, fail: { path, why } | null, cost, tiles, optional }.
+// { ok: true, won, length, paths, fail: { path, why } | null, cost, area, optional }.
 function check(def, room, costs, opts) {
   const errors = placementErrors(def, room);
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
   if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'The robot gave up: this room is too big to search.' } };
-  const base = { ok: true, length: r.length, paths: r.paths.length, cost: costOf(def, room, costs), tiles: tilesOf(room) };
+  const base = { ok: true, length: r.length, paths: r.paths.length, cost: costOf(def, room, costs), area: areaOf(room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
   if (r.length < st.best - st.range || r.length > st.best + st.range) return { ...base, won: false, fail: { path: r.paths[0], why: `${stepsText(st)} This one takes ${r.length}.` } };
   for (const path of r.paths) for (const id of def.require || []) {
@@ -3902,7 +3890,7 @@ function check(def, room, costs, opts) {
   const optional = [{ text: bestText(st), met: r.length === st.best }];
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, roomOf, placed, nameOf, placementErrors, REQUIREMENTS, stepsText, bestText, tilesOf, costOf, stuckText, check };
+return { ELEMENTS, roomOf, placed, nameOf, placementErrors, REQUIREMENTS, stepsText, bestText, areaOf, costOf, stuckText, check };
 })();
 // ---- src/editor/edit.js
 const m38 = (() => {
@@ -4809,7 +4797,7 @@ return { icon };
 // ---- src/app/campaign.js
 const m45 = (() => {
 const { LEVELS, COSTS } = m35;
-const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, bestText, costOf, tilesOf } = m37;
+const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, bestText, costOf, areaOf } = m37;
 const { place } = m38;
 const { newHistory } = m10;
 const { S, starterLevel } = m11;
@@ -4829,6 +4817,8 @@ const { icon } = m44;
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
 const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle' };
+// Every level hands you the start and the goal, free.
+const ALWAYS = ['start', 'goal'];
 let A = null, boot = null;
 
 function progress() {
@@ -4838,18 +4828,28 @@ function progress() {
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
 const levelOf = id => LEVELS.find(l => l.id === id);
 
+// A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
+// level's, so it is cut off, and the start and goal it had stay where they were.
+function unframe(room) {
+  const { w, h } = room, edge = i => { const x = i % w, y = (i - x) / w; return x === 0 || y === 0 || x === w - 1 || y === h - 1; };
+  if (w < 3 || h < 3 || !room.cells.every((c, i) => !edge(i) || c === 'wall')) return room;
+  const cells = [];
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) cells.push(room.cells[y * w + x]);
+  return { ...room, w: w - 2, h: h - 2, cells, start: room.start && { x: room.start.x - 1, y: room.start.y - 1 }, entities: room.entities.map(e => ({ ...e, x: e.x - 1, y: e.y - 1 })) };
+}
+
 // Whether a tap may change the room: placing must not break a rule the level enforces as you
-// build (locked tiles, the start, a maximum, a box on a button). Too few of something is fine
+// build (a maximum, a second goal, a box on a button). Too few of something is fine
 // while building; Run says so.
 function allows(level, ui, x, y, how) {
   if (!S.camp) return true;
   const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
   place(next, ui, x, y, how);
-  return placementErrors(def, next).every(e => /at least/.test(e.msg) || before.has(e.msg));
+  return placementErrors(def, next).every(e => /^(Place at least|Place the )/.test(e.msg) || before.has(e.msg));
 }
 
 // The tools a level offers: Look, Erase, and its palette.
-const toolsFor = def => ['look', 'erase', ...Object.keys(def.palette).map(el => TOOL[el])];
+const toolsFor = def => ['look', 'erase', ...ALWAYS, ...Object.keys(def.palette).map(el => TOOL[el])];
 
 function save() {
   if (!S.camp) return;
@@ -4881,7 +4881,7 @@ function syncBrief() {
   const box = $('campBrief');
   box.replaceChildren();
   const head = document.createElement('p'); head.className = 'campHead';
-  head.textContent = `${def.name} · Cost ${costOf(def, S.level, COSTS)} · Tiles ${tilesOf(S.level)}`;
+  head.textContent = `${def.name} · Cost ${costOf(def, S.level, COSTS)} · Area ${areaOf(S.level)}`;
   const pal = document.createElement('p'); pal.className = 'campPal'; pal.textContent = parts.join('  ·  ');
   const list = document.createElement('ul'); list.className = 'campReqs';
   for (const r of reqs) list.append(Object.assign(document.createElement('li'), { textContent: r }));
@@ -4893,7 +4893,7 @@ function syncBrief() {
     out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
     out.id = 'campVerdict';
     out.textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
-      : v.won ? `The robot made it in ${plural(v.length, 'move')}${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}. Cost ${v.cost} · Tiles ${v.tiles} · Optional ${v.met}/${v.optional.length}.`
+      : v.won ? `The robot made it in ${plural(v.length, 'move')}${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}. Cost ${v.cost} · Area ${v.area} · Optional ${v.met}/${v.optional.length}.`
         : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
     // A run that cannot finish points at the tiles that stop it; tap the verdict to see them again.
     if (stuckAt(v).length) { out.classList.add('points'); out.onclick = () => flashStuck(v); out.title = 'Show the tiles'; }
@@ -4907,7 +4907,8 @@ function enterLevel(id) {
   const p = progress(), rec = p.levels[id];
   closeAll();
   S.camp = { def, verdict: null };
-  S.level = rec && rec.room && placementErrors(def, rec.room).every(e => /at least/.test(e.msg)) ? rec.room : roomOf(def);
+  const kept = rec && rec.room && unframe(rec.room);
+  S.level = kept && placementErrors(def, kept).every(e => /^(Place at least|Place the )/.test(e.msg)) ? kept : roomOf(def);
   S.history = newHistory();
   S.ui.tool = 'look'; S.ui.colour = 'red';
   p.last = id; write(p);
@@ -4938,7 +4939,7 @@ function run() {
   save();
   if (v.ok && v.won) {
     const p = progress(), rec = p.levels[def.id] ||= {}, best = rec.best || {};
-    rec.best = { cost: Math.min(best.cost ?? Infinity, v.cost), tiles: Math.min(best.tiles ?? Infinity, v.tiles), met: Math.max(best.met ?? 0, v.met) };
+    rec.best = { cost: Math.min(best.cost ?? Infinity, v.cost), area: Math.min(best.area ?? Infinity, v.area), met: Math.max(best.met ?? 0, v.met) };
     rec.beaten = true; rec.room = S.level;
     write(p);
   }
@@ -4957,7 +4958,7 @@ function renderList() {
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten · best cost ${rec.best.cost} · tiles ${rec.best.tiles} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
+    small.textContent = rec.beaten ? `Beaten · best cost ${rec.best.cost}${rec.best.area ? ` · area ${rec.best.area}` : ''} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
     // The elements the level hands you, as the palette draws them.
     const parts = document.createElement('span'); parts.className = 'campParts';
     for (const el of Object.keys(def.palette)) {
@@ -5006,7 +5007,7 @@ function buildCampaign(actions, sandbox) {
   addEventListener('wee:mode', () => { if (S.camp) syncBrief(); });
   addEventListener('pagehide', save);
 }
-return { TOOL, progress, allows, toolsFor, syncCostDots, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
+return { TOOL, progress, unframe, allows, toolsFor, syncCostDots, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
 })();
 // ---- src/solve/lenses.js
 const m46 = (() => {

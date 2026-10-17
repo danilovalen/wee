@@ -1,34 +1,46 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { stuckText, nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, costOf, tilesOf, stepsText } from '../src/campaign/rules.js';
+import { stuckText, nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, costOf, areaOf, stepsText } from '../src/campaign/rules.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { LEVELS, COSTS } from '../src/level/campaign.js';
+import { emptyLevel } from '../src/level/format.js';
 import { room, suite } from './lib.mjs';
 
 const { check: ok, done } = suite('campaign');
 const level = id => LEVELS.find(l => l.id === id);
-// A room in the level's legend, plus a box at any B: # block, t toggle, D door, o button.
+// A room in the level's legend: # block, t switch, D door, o button, B box, P start, G goal.
+// Full rows (all one length) set the room's size; otherwise the level's size is used. With no
+// P or G the start goes top left and the goal bottom right, one tile in.
 const build = (def, rows) => {
-  const r = roomOf(def);
+  const full = rows.length >= 2 && rows.every(r => r.length === rows[0].length && r.length >= 2);
+  const r = full ? emptyLevel(rows[0].length, rows.length) : roomOf(def);
+  r.powers = roomOf(def).powers; r.start = null;
+  let goal = false;
   rows.forEach((row, y) => [...row].forEach((c, x) => {
     const i = y * r.w + x;
-    if (c === '#' && !r.cells[i]) r.cells[i] = 'wall';
+    if (c === '#') r.cells[i] = 'wall';
     if (c === 't') r.cells[i] = 'toggle:red';
     if (c === 'D') r.cells[i] = 'door:red';
     if (c === 'o') r.cells[i] = 'button:red';
+    if (c === 'G') { r.cells[i] = 'goal'; goal = true; }
+    if (c === 'P') r.start = { x, y };
     if (c === 'B') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
   }));
+  if (!r.start) r.start = { x: 1, y: 1 };
+  if (!goal) r.cells[(r.h - 2) * r.w + r.w - 2] = 'goal';
   return r;
 };
 
 { // the level's own room
   const d = level('1'), r = roomOf(d);
-  ok('a level room is 7x7', r.w === 7 && r.h === 7);
-  ok('the robot starts top left', r.start.x === 1 && r.start.y === 1);
-  ok('the goal is bottom right', r.cells[5 * 7 + 5] === 'goal');
-  ok('the untouched room can run', placementErrors(d, r).length === 0);
+  ok('a level room starts 7x7 with no border', r.w === 7 && r.h === 7 && r.cells.every(c => c === ''));
+  ok('you place the start and the goal', r.start === null && placementErrors(d, r).map(e => e.msg).join() === 'Place the start.,Place the goal.');
+  ok('with both placed the room can run', placementErrors(d, build(d, [''])).length === 0, JSON.stringify(placementErrors(d, build(d, ['']))));
+  const two = build(d, ['', '', '', '', '', 'G', 'G']);
+  ok('only one goal', placementErrors(d, two).some(e => e.msg === 'Place only one goal.'));
   ok('a level has no powers', Object.values(r.powers).every(p => !p));
   ok('levels are numbered from 1 in order', LEVELS.map(l => l.id).join() === LEVELS.map((_, i) => String(i + 1)).join());
+  ok('every level starts 7x7', LEVELS.every(l => l.size.join() === '7,7'));
 }
 { // what you may place
   const d = level('1'), r = build(d, ['', '', '..#']);
@@ -36,16 +48,14 @@ const build = (def, rows) => {
   const many = roomOf(d); for (let i = 0; i < 11; i++) many.cells[15 + i + Math.floor(i / 5) * 2] = 'wall';
   ok('more than a maximum is refused', placementErrors({ ...d, palette: { block: [0, 10] } }, many).some(e => /at most 10/.test(e.msg)));
   ok('no level sets a maximum for now', LEVELS.every(l => Object.values(l.palette).every(([, max]) => max === null)));
-  const start = roomOf(d); start.cells[8] = 'wall';
-  ok('the start must stay empty', placementErrors(d, start).some(e => /start empty/.test(e.msg)));
-  const fixed = roomOf(d); fixed.cells[0] = '';
-  ok('a fixed tile cannot change', placementErrors(d, fixed).some(e => /does not let you change/.test(e.msg)));
-  const alien = roomOf(d); alien.cells[10] = 'door:red';
+  const alien = build(d, ['', '', '..D']);
   ok('an element outside the palette is refused', placementErrors(d, alien).some(e => /no doors/.test(e.msg)));
+  const odd = build(d, ['', '', '..k']); odd.cells[2 * 7 + 2] = 'crack';
+  ok('a sandbox tile is refused', placementErrors(d, odd).some(e => e.msg === 'This level does not have that.'));
   ok('names take the right plural', nameOf('toggle', 2) === 'switches' && nameOf('toggle', 1) === 'switch' && nameOf('box', 2) === 'boxes' && nameOf('door', 2) === 'doors');
   const d3 = level('3');
   ok('too few of a required element is refused', placementErrors(d3, roomOf(d3)).some(e => /at least 1 switch\./.test(e.msg)));
-  const lots = roomOf(d3); for (let x = 1; x <= 5; x++) { lots.cells[2 * 7 + x] = 'toggle:red'; lots.cells[3 * 7 + x] = 'door:red'; }
+  const lots = build(d3, ['']); for (let x = 1; x <= 5; x++) { lots.cells[2 * 7 + x] = 'toggle:red'; lots.cells[3 * 7 + x] = 'door:red'; }
   ok('a level with no maximum takes any number', placementErrors(d3, lots).length === 0, JSON.stringify(placementErrors(d3, lots)));
   const d4 = level('6'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
   ok('a box cannot start on a button', placementErrors(d4, onButton).some(e => /box cannot start on a button/.test(e.msg)));
@@ -67,19 +77,23 @@ const build = (def, rows) => {
 }
 { // the verdict
   const d = level('1');
-  const empty = check(d, roomOf(d), COSTS);
-  ok('an empty level 1 is too short', empty.ok && !empty.won && empty.length === 2 && empty.fail.why.startsWith(stepsText(d.steps)), JSON.stringify(empty.fail));
+  // The old level 1: a 5x5 room, start top left, goal bottom right, nothing in it.
+  const open = ['P....', '.....', '.....', '.....', '....G'];
+  const empty = check(d, build(d, open), COSTS);
+  ok('an empty 5x5 is too short', empty.ok && !empty.won && empty.length === 2 && empty.fail.why.startsWith(stepsText(d.steps)), JSON.stringify(empty.fail));
   ok('a failure hands the robot a path to play', Array.isArray(empty.fail.path) && empty.fail.path.length === 2);
-  const win = build(d, ['#######', '#P.#.##', '#.....#', '#.###.#', '#.#...#', '#.#..G#', '#######']);
+  ok('the room\'s edge stops the robot like a wall', allShortest(build(d, open)).length === 2);
+  const win = build(d, ['P.#.#', '.....', '.###.', '.#...', '.#..G']);
   const v = check(d, win, COSTS);
   ok('a room in range wins', v.ok && v.won && v.length === 4, JSON.stringify(v.fail));
   ok('a win reports its cost', v.cost === placed(d, win).by.block.length * COSTS.block && v.cost === costOf(d, win, COSTS));
-  ok('tiles count everything but floor, the start included', v.tiles === tilesOf(win) && tilesOf(roomOf(d)) === 24 + 1 + 1, `${tilesOf(roomOf(d))}`);
+  ok('a win reports its area', v.area === 25 && areaOf(win) === 25 && areaOf(roomOf(d)) === 49);
+  ok('the start and the goal cost nothing', v.cost === 7, String(v.cost));
   ok('a win hands the robot its path', v.path && v.path.length === 4);
   ok('a win scores the optional exact count', v.optional.length === 1 && v.met === (v.length === d.steps.best ? 1 : 0));
-  const bad = check(d, Object.assign(roomOf(d), { w: 6 }), COSTS);
-  ok('a broken room cannot run', bad.ok === false && bad.errors.length > 0);
-  const walled = build(d, ['', '', '', '#######']);
+  const bad = check(d, roomOf(d), COSTS);
+  ok('a room without its start and goal cannot run', bad.ok === false && bad.errors.length === 2);
+  const walled = build(d, ['P....', '.....', '#####', '.....', '....G']);
   const u = check(d, walled, COSTS);
   ok('a room with no way through fails with no path', u.ok && !u.won && u.fail.path === null, JSON.stringify(u.fail));
 }
@@ -145,20 +159,20 @@ const build = (def, rows) => {
 }
 { // every shortest path must meet a requirement, not just one
   const d = { ...level('1'), require: ['throughOpenDoor'], steps: { best: 2, range: 0 }, palette: { block: [0, 30], toggle: [0, 1], door: [0, 1] } };
-  const both = build(d, ['', '#P.t..#', '', '#....D#']);
+  const both = build(d, ['P.t..', '.....', '....D', '.....', '....G']);
   const v = check(d, both, COSTS);
   ok('one path missing the door fails the room', v.ok && !v.won && /Not met/.test(v.fail.why) && v.fail.path.map(m => m.split('@')[0]).join() === 'down,right', JSON.stringify(v.fail));
 }
-{ // every level can be won: one known room each, found by search, so a rule change that makes
-  // a level impossible goes red
+{ // every level can be won: one known 5x5 room each, found by search, so a rule change that
+  // makes a level impossible goes red
   const WINS = {
-    1: ['#######', '#P.#.##', '#.....#', '#.###.#', '#.#...#', '#.#..G#', '#######'],
-    2: ['#######', '#P..D##', '#..t..#', '#.##.##', '#.#...#', '##...G#', '#######'],
-    3: ['#######', '#P.#.##', '#..####', '##..#.#', '#Dt...#', '#..t#G#', '#######'],
-    4: ['#######', '#Pt.tD#', '#.#...#', '#.....#', '####.##', '#.#..G#', '#######'],
-    5: ['#######', '#P....#', '#....B#', '#B..#t#', '#D.#.##', '#....G#', '#######'],
-    6: ['#######', '#P.#.B#', '#...#.#', '#..B.o#', '#.#..D#', '##..#G#', '#######'],
-    7: ['#######', '#P.o..#', '#..B.D#', '#...###', '##.####', '##...G#', '#######'],
+    1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
+    2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
+    3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],
+    4: ['Pt.tD', '.#...', '.....', '###.#', '.#..G'],
+    5: ['P....', '....B', 'B..#t', 'D.#.#', '....G'],
+    6: ['P.#.B', '...#.', '..B.o', '.#..D', '#..#G'],
+    7: ['P.o..', '..B.D', '...##', '#.###', '#...G'],
   };
   ok('there is a known winning room for every level', LEVELS.every(l => WINS[l.id]), LEVELS.map(l => l.id).join());
   for (const l of LEVELS) {
