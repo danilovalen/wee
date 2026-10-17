@@ -1,6 +1,6 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { roomOf, placed, placementErrors, check, REQUIREMENTS, costOf, tilesOf, stepsText } from '../src/campaign/rules.js';
+import { nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, costOf, tilesOf, stepsText } from '../src/campaign/rules.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { LEVELS, COSTS } from '../src/level/campaign.js';
 import { room, suite } from './lib.mjs';
@@ -41,8 +41,9 @@ const build = (def, rows) => {
   ok('a fixed tile cannot change', placementErrors(d, fixed).some(e => /does not let you change/.test(e.msg)));
   const alien = roomOf(d); alien.cells[10] = 'door:red';
   ok('an element outside the palette is refused', placementErrors(d, alien).some(e => /no doors/.test(e.msg)));
+  ok('names take the right plural', nameOf('toggle', 2) === 'switches' && nameOf('toggle', 1) === 'switch' && nameOf('box', 2) === 'boxes' && nameOf('door', 2) === 'doors');
   const d3 = level('3');
-  ok('too few of a required element is refused', placementErrors(d3, roomOf(d3)).some(e => /at least 2 toggles/.test(e.msg)));
+  ok('too few of a required element is refused', placementErrors(d3, roomOf(d3)).some(e => /at least 2 switches/.test(e.msg)));
   const d4 = level('5'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
   ok('a box cannot start on a button', placementErrors(d4, onButton).some(e => /box cannot start on a button/.test(e.msg)));
 }

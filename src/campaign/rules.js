@@ -9,7 +9,7 @@ export const ELEMENTS = {
   button: { label: 'Button', cell: 'button:red' },
   door: { label: 'Door', cell: 'door:red' },
   box: { label: 'Box', piece: 'box' },
-  toggle: { label: 'Toggle', cell: 'toggle:red' },
+  toggle: { label: 'Switch', cell: 'toggle:red' },
 };
 
 // The level's room from its rows: # block, P robot start, G goal, . floor.
@@ -41,6 +41,9 @@ export function placed(def, room) {
   return { by: out, stray };
 }
 
+// An element's name in lower case, plural unless there is one: switch, switches.
+export const nameOf = (el, n) => { const w = ELEMENTS[el].label.toLowerCase(); return n === 1 ? w : /(s|sh|ch|x)$/.test(w) ? w + 'es' : w + 's'; };
+
 // Why the room cannot be run yet: each is { msg, at? }. Empty when it can.
 export function placementErrors(def, room) {
   const base = roomOf(def), errs = [];
@@ -52,8 +55,8 @@ export function placementErrors(def, room) {
   if (room.cells[si] || room.entities.some(e => e.y * room.w + e.x === si)) errs.push({ msg: 'Leave the robot\'s start empty.', at: si });
   for (const [el, list] of Object.entries(by)) {
     const [min, max] = def.palette[el] || [0, 0];
-    if (list.length < min) errs.push({ msg: `Place at least ${min} ${ELEMENTS[el].label.toLowerCase()}${min === 1 ? '' : 's'}.` });
-    if (list.length > max) errs.push({ msg: max ? `Place at most ${max} ${ELEMENTS[el].label.toLowerCase()}${max === 1 ? '' : 's'}.` : `This level has no ${ELEMENTS[el].label.toLowerCase()}s.` });
+    if (list.length < min) errs.push({ msg: `Place at least ${min} ${nameOf(el, min)}.` });
+    if (list.length > max) errs.push({ msg: max ? `Place at most ${max} ${nameOf(el, max)}.` : `This level has no ${nameOf(el, 2)}.` });
   }
   if ((def.rules || []).includes('noBoxOnButton'))
     for (const e of room.entities) if (e.kind === 'box' && room.cells[e.y * room.w + e.x].startsWith('button:')) errs.push({ msg: 'A box cannot start on a button.', at: e.y * room.w + e.x });
@@ -108,11 +111,11 @@ function toggleHistory(room, moves) {
 }
 Object.assign(REQUIREMENTS, {
   everyToggleOn: {
-    text: 'Every toggle turns on.',
+    text: 'Every switch turns on.',
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
   },
   everyToggleOnThenOff: {
-    text: 'Every toggle turns on, then off again.',
+    text: 'Every switch turns on, then off again.',
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.onOff.has(i)); },
   },
 });

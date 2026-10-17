@@ -3,6 +3,10 @@
 import { createGame, step } from '../src/rules/game.js';
 import { respawn } from '../src/rules/life.js';
 import { stateKey } from '../src/solve/solve.js';
+import { TOOLS } from '../src/editor/palette.js';
+import { MECHANISMS } from '../src/solve/tags.js';
+import { ELEMENTS, REQUIREMENTS } from '../src/campaign/rules.js';
+import { readFileSync } from 'node:fs';
 import { room, suite } from './lib.mjs';
 
 const { check, done } = suite('toggle');
@@ -58,5 +62,11 @@ const idx = (s, x, y) => y * s.w + x;
   const t = createGame(room(['######', '#PBt.#', '######']));
   slide(t, 'right');
   check('the box and then the robot entering flips it twice', t.toggled.length === 0, JSON.stringify(t.toggled));
+}
+{ // the player calls it a Switch; "toggle" survives only as the internal id
+  const said = [...TOOLS.map(t => t.label), ...MECHANISMS.map(m => m[1]), ...Object.values(ELEMENTS).map(e => e.label), ...Object.values(REQUIREMENTS).map(r => r.text)];
+  const html = readFileSync('index.html', 'utf8').replace(/<[^>]*>/g, ' ');
+  check('no player-facing word says toggle', !said.some(t => /toggle/i.test(t)) && !/toggle/i.test(html), said.filter(t => /toggle/i.test(t)).join(' | '));
+  check('the tile is named Switch', TOOLS.find(t => t.id === 'toggle').label === 'Switch' && ELEMENTS.toggle.label === 'Switch');
 }
 done();

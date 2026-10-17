@@ -2443,7 +2443,7 @@ const { syncWell } = m18;
 
 const SLICE_MS = 25, MAX = NOTES_MAX;
 const NAME = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', armored: 'Armored' };
-const PIECE = { box: 'box', heavy: 'heavy box', bomb: 'bomb', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', toggle: 'toggle', door: 'door', idoor: 'inverted door', receiver: 'laser catcher', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', gravel: 'gravel', checkpoint: 'checkpoint' };
+const PIECE = { box: 'box', heavy: 'heavy box', bomb: 'bomb', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', toggle: 'switch', door: 'door', idoor: 'inverted door', receiver: 'laser catcher', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', gravel: 'gravel', checkpoint: 'checkpoint' };
 const moves = n => typeof n === 'number' ? `${n} ${n === 1 ? 'move' : 'moves'}` : n === 'unsolvable' ? 'no solution' : 'too many positions to tell';
 
 // Runs one generator to the end in slices, then calls done; gives up when the room changes.
@@ -2841,7 +2841,7 @@ const { parseMove } = m15;
 const MECHANISMS = [
   ['tile:goal', 'Goal'], ['tile:checkpoint', 'Checkpoint'], ['tile:tri', 'Triangle'], ['tile:gate', 'One-way'],
   ['tile:spring', 'Spring'], ['tile:death', 'Death block'], ['tile:water', 'Water'], ['tile:sticky', 'Sticky puddle'], ['tile:gravel', 'Gravel'], ['tile:crack', 'Breakable block'],
-  ['tile:button', 'Button'], ['tile:toggle', 'Toggle'], ['tile:door', 'Door'], ['tile:idoor', 'Inverted door'], ['tile:receiver', 'Laser catcher'], ['tile:sensor', 'Laser relay'],
+  ['tile:button', 'Button'], ['tile:toggle', 'Switch'], ['tile:door', 'Door'], ['tile:idoor', 'Inverted door'], ['tile:receiver', 'Laser catcher'], ['tile:sensor', 'Laser relay'],
   ['piece:mover', 'Moving block'], ['piece:enemy', 'Weak enemy'], ['piece:strong', 'Strong enemy'], ['piece:turret', 'Laser turret'],
   ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'], ['piece:bomb', 'Bomb'],
   ['clock:input', 'On your move'], ['clock:follow', 'Same way as you'], ['clock:realtime', 'Real time'],
@@ -2849,7 +2849,7 @@ const MECHANISMS = [
   ['power:swim', 'Swim'], ['power:armored', 'Armored'],
   ['wiring:and', 'Two switches, one colour'], ['wiring:colours', 'Two or more colours'],
   ['use:push', 'You push a box'], ['use:pushed', 'A block pushes you'], ['use:spring', 'A spring launches'],
-  ['use:door-opens', 'A door opens'], ['use:toggle', 'A toggle flips'], ['use:idoor-closes', 'An inverted door closes'], ['use:lit', 'A beam lights a switch'],
+  ['use:door-opens', 'A door opens'], ['use:toggle', 'A switch flips'], ['use:idoor-closes', 'An inverted door closes'], ['use:lit', 'A beam lights a switch'],
   ['use:door-kill', 'A door squashes a piece'], ['use:squash', 'A heavy box breaks something'], ['use:death', 'A piece falls into death'],
   ['use:beam-kill', 'A beam kills an enemy'], ['use:stick', 'You stick to something'], ['use:glue', 'Pieces glue together'],
   ['use:boomerang', 'You turn back mid-slide'], ['use:dive', 'You dive'], ['use:laser', 'You fire the laser'],
@@ -3552,7 +3552,7 @@ const TOOLS = [
   { id: 'sticky', label: 'Sticky puddle', group: 'floors' },
   { id: 'gravel', label: 'Gravel', group: 'floors' },
   { id: 'button', label: 'Button', group: 'switches' },
-  { id: 'toggle', label: 'Toggle', group: 'switches' },
+  { id: 'toggle', label: 'Switch', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'idoor', label: 'Inverted door', group: 'switches' },
   { id: 'receiver', label: 'Laser catcher', group: 'switches' },
@@ -3666,7 +3666,7 @@ const ELEMENTS = {
   button: { label: 'Button', cell: 'button:red' },
   door: { label: 'Door', cell: 'door:red' },
   box: { label: 'Box', piece: 'box' },
-  toggle: { label: 'Toggle', cell: 'toggle:red' },
+  toggle: { label: 'Switch', cell: 'toggle:red' },
 };
 
 // The level's room from its rows: # block, P robot start, G goal, . floor.
@@ -3698,6 +3698,9 @@ function placed(def, room) {
   return { by: out, stray };
 }
 
+// An element's name in lower case, plural unless there is one: switch, switches.
+const nameOf = (el, n) => { const w = ELEMENTS[el].label.toLowerCase(); return n === 1 ? w : /(s|sh|ch|x)$/.test(w) ? w + 'es' : w + 's'; };
+
 // Why the room cannot be run yet: each is { msg, at? }. Empty when it can.
 function placementErrors(def, room) {
   const base = roomOf(def), errs = [];
@@ -3709,8 +3712,8 @@ function placementErrors(def, room) {
   if (room.cells[si] || room.entities.some(e => e.y * room.w + e.x === si)) errs.push({ msg: 'Leave the robot\'s start empty.', at: si });
   for (const [el, list] of Object.entries(by)) {
     const [min, max] = def.palette[el] || [0, 0];
-    if (list.length < min) errs.push({ msg: `Place at least ${min} ${ELEMENTS[el].label.toLowerCase()}${min === 1 ? '' : 's'}.` });
-    if (list.length > max) errs.push({ msg: max ? `Place at most ${max} ${ELEMENTS[el].label.toLowerCase()}${max === 1 ? '' : 's'}.` : `This level has no ${ELEMENTS[el].label.toLowerCase()}s.` });
+    if (list.length < min) errs.push({ msg: `Place at least ${min} ${nameOf(el, min)}.` });
+    if (list.length > max) errs.push({ msg: max ? `Place at most ${max} ${nameOf(el, max)}.` : `This level has no ${nameOf(el, 2)}.` });
   }
   if ((def.rules || []).includes('noBoxOnButton'))
     for (const e of room.entities) if (e.kind === 'box' && room.cells[e.y * room.w + e.x].startsWith('button:')) errs.push({ msg: 'A box cannot start on a button.', at: e.y * room.w + e.x });
@@ -3765,11 +3768,11 @@ function toggleHistory(room, moves) {
 }
 Object.assign(REQUIREMENTS, {
   everyToggleOn: {
-    text: 'Every toggle turns on.',
+    text: 'Every switch turns on.',
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
   },
   everyToggleOnThenOff: {
-    text: 'Every toggle turns on, then off again.',
+    text: 'Every switch turns on, then off again.',
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.onOff.has(i)); },
   },
 });
@@ -3807,7 +3810,7 @@ function check(def, room, costs, opts) {
   const optional = [{ text: bestText(st), met: r.length === st.best }];
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, roomOf, placed, placementErrors, REQUIREMENTS, stepsText, bestText, tilesOf, costOf, check };
+return { ELEMENTS, roomOf, placed, nameOf, placementErrors, REQUIREMENTS, stepsText, bestText, tilesOf, costOf, check };
 })();
 // ---- src/editor/edit.js
 const m38 = (() => {

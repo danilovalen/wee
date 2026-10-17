@@ -24,7 +24,7 @@ export const TOOLS = [
   { id: 'sticky', label: 'Sticky puddle', group: 'floors' },
   { id: 'gravel', label: 'Gravel', group: 'floors' },
   { id: 'button', label: 'Button', group: 'switches' },
-  { id: 'toggle', label: 'Toggle', group: 'switches' },
+  { id: 'toggle', label: 'Switch', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'idoor', label: 'Inverted door', group: 'switches' },
   { id: 'receiver', label: 'Laser catcher', group: 'switches' },
