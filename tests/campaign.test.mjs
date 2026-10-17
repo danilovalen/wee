@@ -4,6 +4,7 @@ import { stuckText, nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS
 import { allShortest } from '../src/campaign/robot.js';
 import { LEVELS, COSTS } from '../src/level/campaign.js';
 import { emptyLevel } from '../src/level/format.js';
+import { moveAt } from '../src/editor/edit.js';
 import { room, suite } from './lib.mjs';
 
 const { check: ok, done } = suite('campaign');
@@ -14,7 +15,7 @@ const level = id => LEVELS.find(l => l.id === id);
 const build = (def, rows) => {
   const full = rows.length >= 2 && rows.every(r => r.length === rows[0].length && r.length >= 2);
   const r = full ? emptyLevel(rows[0].length, rows.length) : roomOf(def);
-  r.powers = roomOf(def).powers; r.start = null;
+  r.powers = roomOf(def).powers; r.start = null; r.cells.fill('');
   let goal = false;
   rows.forEach((row, y) => [...row].forEach((c, x) => {
     const i = y * r.w + x;
@@ -33,14 +34,31 @@ const build = (def, rows) => {
 
 { // the level's own room
   const d = level('1'), r = roomOf(d);
-  ok('a level room starts 7x7 with no border', r.w === 7 && r.h === 7 && r.cells.every(c => c === ''));
-  ok('you place the start and the goal', r.start === null && placementErrors(d, r).map(e => e.msg).join() === 'Place the start.,Place the goal.');
-  ok('with both placed the room can run', placementErrors(d, build(d, [''])).length === 0, JSON.stringify(placementErrors(d, build(d, ['']))));
+  ok('a level room starts 7x7 with no border', r.w === 7 && r.h === 7 && r.cells.filter(c => c).length === 1);
+  ok('the start is top left and the goal bottom right', r.start.x === 0 && r.start.y === 0 && r.cells[48] === 'goal');
+  ok('the untouched room can run', placementErrors(d, r).length === 0);
+  const none = { ...r, start: null, cells: r.cells.map(() => '') };
+  ok('a room needs its start and goal', placementErrors(d, none).map(e => e.msg).join() === 'Place the start.,Place the goal.');
   const two = build(d, ['', '', '', '', '', 'G', 'G']);
   ok('only one goal', placementErrors(d, two).some(e => e.msg === 'Place only one goal.'));
   ok('a level has no powers', Object.values(r.powers).every(p => !p));
   ok('levels are numbered from 1 in order', LEVELS.map(l => l.id).join() === LEVELS.map((_, i) => String(i + 1)).join());
   ok('every level starts 7x7', LEVELS.every(l => l.size.join() === '7,7'));
+}
+{ // Move: anything placed goes to another tile that can take it
+  const r = build(level('1'), ['P#t..', '.B...', '.....', '.....', '....G']);
+  const at = (l, x, y) => l.cells[y * l.w + x];
+  const s1 = moveAt(r, { x: 0, y: 0 }, { x: 0, y: 3 });
+  ok('the start moves', s1 && s1.start.x === 0 && s1.start.y === 3);
+  const g = moveAt(r, { x: 4, y: 4 }, { x: 3, y: 2 });
+  ok('the goal moves and leaves floor', g && at(g, 3, 2) === 'goal' && at(g, 4, 4) === '');
+  const b = moveAt(r, { x: 1, y: 1 }, { x: 2, y: 0 });
+  ok('a box moves onto a switch', b && b.entities[0].x === 2 && b.entities[0].y === 0 && at(b, 2, 0) === 'toggle:red');
+  ok('a block does not land on a switch', moveAt(r, { x: 1, y: 0 }, { x: 2, y: 0 }) === null);
+  ok('nothing lands on the start', moveAt(r, { x: 1, y: 0 }, { x: 0, y: 0 }) === null && moveAt(r, { x: 1, y: 1 }, { x: 0, y: 0 }) === null);
+  ok('the start does not go onto a block', moveAt(r, { x: 0, y: 0 }, { x: 1, y: 0 }) === null);
+  ok('an empty tile has nothing to move', moveAt(r, { x: 3, y: 3 }, { x: 2, y: 3 }) === null);
+  ok('the original room is untouched', r.start.x === 0 && at(r, 4, 4) === 'goal' && r.entities[0].x === 1);
 }
 { // what you may place
   const d = level('1'), r = build(d, ['', '', '..#']);
@@ -91,7 +109,7 @@ const build = (def, rows) => {
   ok('the start and the goal cost nothing', v.cost === 7, String(v.cost));
   ok('a win hands the robot its path', v.path && v.path.length === 4);
   ok('a win scores the optional exact count', v.optional.length === 1 && v.met === (v.length === d.steps.best ? 1 : 0));
-  const bad = check(d, roomOf(d), COSTS);
+  const bad = check(d, { ...roomOf(d), start: null, cells: roomOf(d).cells.map(() => '') }, COSTS);
   ok('a room without its start and goal cannot run', bad.ok === false && bad.errors.length === 2);
   const walled = build(d, ['P....', '.....', '#####', '.....', '....G']);
   const u = check(d, walled, COSTS);

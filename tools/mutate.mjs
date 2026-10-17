@@ -690,7 +690,12 @@ const M = [
   ['src', "export const areaOf = room => room.w * room.h;", "export const areaOf = room => room.w * room.h - 1;", 'campaign'],
   ['src', "    if (!c || c === 'goal') return;", "    if (!c) return;", 'campaign'],
   ['src', "  const kept = rec && rec.room && unframe(rec.room);", "  const kept = rec && rec.room;", 'campaign-play'],
-  ['src', "const ALWAYS = ['start', 'goal'];", "const ALWAYS = [];", 'campaign-play'],
+  ['src', "const ALWAYS = ['move'];", "const ALWAYS = [];", 'campaign-play'],
+  ['src', "    if (there || isStart(to) || !UNDER(l.cells[ti])) return null;", "    if (there || !UNDER(l.cells[ti])) return null;", 'campaign'],
+  ['src', "    if (l.cells[ti] || there || isStart(to)) return null;", "    if (there || isStart(to)) return null;", 'campaign'],
+  ['src', "  l.cells[w * h - 1] = 'goal';", "", 'campaign'],
+  ['src', "      if (next) change(() => { S.level = next; });", "", 'campaign-play'],
+  ['style.css', "  .grid { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto;", "  .grid { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: visible;", 'campaign-play'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
   ['src', "dot.textContent = cost[b.dataset.tool];", "dot.textContent = '';", 'campaign-play'],
 ];

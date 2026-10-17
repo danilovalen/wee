@@ -59,6 +59,7 @@ export function buildPanels(actions) {
     }
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.tool = t.id; b.dataset.in = t.group;
+    if (t.campaign) b.dataset.camp = '1';
     b.title = t.label;
     b.append(icon(t.id), Object.assign(document.createElement('span'), { className: 'lbl', textContent: t.label }));
     b.onclick = () => { S.ui.tool = t.id; syncPanel(); };
@@ -151,7 +152,7 @@ export function syncPanel() {
   // In a campaign level the palette is the level's: its elements, Look and Erase, in one list.
   const only = S.camp ? toolsFor(S.camp.def) : null;
   if (only && !only.includes(ui.tool)) ui.tool = 'look';
-  document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group; });
+  document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp; });
   syncBrief(); syncCostDots();
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;

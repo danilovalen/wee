@@ -33,14 +33,21 @@ try {
   await page.click('.campRow[data-level="1"]');
   check('a level hides the sandbox and shows its brief', await page.evaluate(() => document.body.classList.contains('campaign')) && await page.locator('#campBrief').isVisible());
   const tools = await visibleTools();
-  check('the palette is the level\'s own, with the start and the goal', tools.sort().join() === 'erase,goal,look,start,wall', tools.join());
+  check('the palette is the level\'s own, with Move', tools.sort().join() === 'erase,look,move,wall', tools.join());
   check('a priced tool wears its cost', (await page.locator('[data-tool="wall"] .costDot').textContent()) === '1');
-  check('a free tool wears none', await page.locator('[data-tool="look"] .costDot').count() === 0 && await page.locator('[data-tool="start"] .costDot').count() === 0);
-  check('a level opens on an empty 7x7 room', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && !l.start && l.cells.every(c => !c); }));
+  check('a free tool wears none', await page.locator('[data-tool="look"] .costDot').count() === 0 && await page.locator('[data-tool="move"] .costDot').count() === 0);
+  check('a level opens on a 7x7 room, start top left, goal bottom right', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.start.x === 0 && l.start.y === 0 && l.cells[48] === 'goal' && l.cells.filter(c => c).length === 1; }));
   check('the brief shows the area', (await page.locator('#campBrief .campHead').textContent()).includes('Area 49'));
-  await page.click('#campRun');
-  await page.waitForTimeout(200);
-  check('a room without its start and goal says to place them', /Place the start\. Place the goal\./.test(await verdict()), await verdict());
+  // Move: press on the start, release two tiles down; then the goal, one tile left.
+  await page.click('[data-tool="move"]');
+  const tile = async (x, y) => { const b = await page.locator('#game').boundingBox(); const l = await page.evaluate(() => [window.wee.getLevel().w, window.wee.getLevel().h]); return [b.x + (x + 0.5) * b.width / l[0], b.y + (y + 0.5) * b.height / l[1]]; };
+  const drag = async (a, b) => { const p = await tile(...a), q = await tile(...b); await page.mouse.move(...p); await page.mouse.down(); await page.mouse.move(...q, { steps: 5 }); await page.mouse.up(); };
+  await drag([0, 0], [0, 2]);
+  await drag([6, 6], [5, 6]);
+  const moved = await page.evaluate(() => { const l = window.wee.getLevel(); return [l.start.x, l.start.y, l.cells.indexOf('goal')].join(); });
+  check('Move carries the start and the goal', moved === '0,2,47', moved);
+  await page.click('#undo'); await page.click('#undo');
+  check('a move undoes in one step', await page.evaluate(() => { const l = window.wee.getLevel(); return l.start.y === 0 && l.cells[48] === 'goal'; }));
   // The grips on the room's edges work as in the sandbox: a tap adds a line.
   check('the room can be resized in a level', await page.locator('[data-plus="bottom"]').isVisible());
   await page.click('[data-plus="bottom"]');
@@ -98,7 +105,15 @@ try {
   await page.click('#menuSandbox');
   await page.waitForFunction(() => document.getElementById('roomsBox').open, null, { timeout: 5000 });
   check('Sandbox opens the rooms list', true);
+  check('the sandbox has no Move tool', await page.locator('[data-tool="move"]').isHidden());
   check('the sandbox shows the whole palette again', !(await page.evaluate(() => document.body.classList.contains('campaign'))) && (await page.locator('[data-tool="wall"] .costDot').count()) === 0);
+  // On a phone, a palette wider than the screen scrolls by itself and the page stays put.
+  const phone = await browser.newPage({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true });
+  await phone.goto('http://localhost:5217/');
+  await phone.click('#menuCampaign'); await phone.click('.campRow[data-level="5"]');
+  const fit = await phone.evaluate(() => { const d = document.documentElement, g = document.getElementById('palette'); return { page: [d.scrollWidth, d.clientWidth, d.scrollHeight, d.clientHeight], grid: [g.scrollWidth, g.clientWidth, getComputedStyle(g).overflowX] }; });
+  check('on a phone the page never scrolls; the palette row does', fit.page[0] === fit.page[1] && fit.page[2] === fit.page[3] && fit.grid[2] === 'auto', JSON.stringify(fit));
+  await phone.close();
   check('no page errors', errors.length === 0, errors.join(' | '));
 } finally {
   await browser.close();

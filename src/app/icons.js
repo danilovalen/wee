@@ -19,6 +19,15 @@ export function icon(tool, colour = 'red') {
     x.beginPath(); x.arc(14, 14, 7, 0, Math.PI * 2); x.moveTo(19, 19); x.lineTo(26, 26); x.stroke();
   } else if (tool === 'receiver') {
     const l = emptyLevel(1, 1); l.cells[0] = 'receiver:red'; l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
+  } else if (tool === 'move') {
+    // Four arrows out from the middle.
+    x.strokeStyle = '#6f6876'; x.lineWidth = 2.5; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath(); x.moveTo(16, 5); x.lineTo(16, 27); x.moveTo(5, 16); x.lineTo(27, 16);
+    for (const [ax, ay, dx, dy] of [[16, 5, 1, 1], [16, 27, 1, -1], [5, 16, 1, 1], [27, 16, -1, 1]]) {
+      if (ax === 16) { x.moveTo(ax - 4, ay + 4 * dy); x.lineTo(ax, ay); x.lineTo(ax + 4, ay + 4 * dy); }
+      else { x.moveTo(ax + 4 * dx, ay - 4); x.lineTo(ax, ay); x.lineTo(ax + 4 * dx, ay + 4); }
+    }
+    x.stroke();
   } else if (tool === 'erase') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
   } else if (tool === 'start') {

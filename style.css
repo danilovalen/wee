@@ -367,7 +367,10 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   #tools #options { order: 0; }
   .tabs { margin: 0 0 6px; gap: 4px; }
   .tabs button { min-height: 30px; font-size: 12.5px; padding: 3px 0; }
-  .grid { display: flex; gap: 6px; flex-wrap: nowrap; }
+  /* A row too long for the screen scrolls by itself; the page never moves with it. */
+  .grid { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior: contain; scrollbar-width: none; padding: 8px 4px 6px; margin: -8px -4px 0; }
+  .grid::-webkit-scrollbar { display: none; }
+  html { overflow: hidden; }
   .grid .ghead { display: none !important; }
   .grid button { flex: none; width: 46px; height: 46px; padding: 0; justify-content: center; align-items: center; }
   .grid button .lbl { display: none; }
@@ -460,3 +463,4 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
 .costDot { position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 3px; box-sizing: border-box; border-radius: var(--r-pill); background: #e0a100; color: #1d1d1d; font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; pointer-events: none; }
 body.campaign [data-tool][hidden], body.campaign #powers, body.campaign #placeHint, body.campaign #ctx { display: none !important; }
 .campVerdict.points { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+body:not(.campaign) [data-camp] { display: none !important; }

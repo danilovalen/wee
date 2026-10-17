@@ -8,6 +8,27 @@ const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');
 const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 
 // Does (x, y) already hold the kind of thing this tool places?
+// Moves whatever stands on one tile to another: the start, a piece, or a tile's contents.
+// Returns the moved level, or null when the target cannot take it.
+const UNDER = c => c === '' || c.startsWith('toggle:') || c.startsWith('button:');
+export function moveAt(level, from, to) {
+  if (from.x === to.x && from.y === to.y) return null;
+  const l = structuredClone(level), fi = idx(l, from.x, from.y), ti = idx(l, to.x, to.y);
+  const isStart = p => !!l.start && l.start.x === p.x && l.start.y === p.y;
+  const piece = pieceAt(l, from.x, from.y), there = pieceAt(l, to.x, to.y) >= 0;
+  if (isStart(from)) {
+    if (there || !UNDER(l.cells[ti])) return null;
+    l.start = { x: to.x, y: to.y };
+  } else if (piece >= 0) {
+    if (there || isStart(to) || !UNDER(l.cells[ti])) return null;
+    Object.assign(l.entities[piece], { x: to.x, y: to.y });
+  } else if (l.cells[fi]) {
+    if (l.cells[ti] || there || isStart(to)) return null;
+    l.cells[ti] = l.cells[fi]; l.cells[fi] = '';
+  } else return null;
+  return l;
+}
+
 export function holds(level, x, y, tool) {
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;

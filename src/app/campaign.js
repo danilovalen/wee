@@ -4,7 +4,7 @@
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS, COSTS } from '../level/campaign.js';
 import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, bestText, costOf, areaOf } from '../campaign/rules.js';
-import { place } from '../editor/edit.js';
+import { place, moveAt } from '../editor/edit.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { $, portrait, now } from './dom.js';
@@ -13,8 +13,8 @@ import { icon } from './icons.js';
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
 export const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle' };
-// Every level hands you the start and the goal, free.
-const ALWAYS = ['start', 'goal'];
+// Every level hands you Move, to carry anything placed (the start and goal too) elsewhere.
+const ALWAYS = ['move'];
 let A = null, boot = null;
 
 export function progress() {
@@ -23,6 +23,15 @@ export function progress() {
 }
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
 const levelOf = id => LEVELS.find(l => l.id === id);
+
+// Move: carries the thing on one tile to another, when the target can take it and the room
+// breaks no rule it kept before. Returns the moved room or null.
+export function moveIn(level, from, to) {
+  const next = moveAt(level, from, to);
+  if (!next || !S.camp) return next;
+  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg));
+  return placementErrors(S.camp.def, next).every(e => before.has(e.msg)) ? next : null;
+}
 
 // A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
 // level's, so it is cut off, and the start and goal it had stay where they were.
@@ -41,7 +50,7 @@ export function allows(level, ui, x, y, how) {
   if (!S.camp) return true;
   const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
   place(next, ui, x, y, how);
-  return placementErrors(def, next).every(e => /^(Place at least|Place the )/.test(e.msg) || before.has(e.msg));
+  return placementErrors(def, next).every(e => /^Place at least/.test(e.msg) || before.has(e.msg));
 }
 
 // The tools a level offers: Look, Erase, and its palette.

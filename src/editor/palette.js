@@ -4,6 +4,8 @@ export const TOOLS = [
   { id: 'look', label: 'Look', group: 'basic' },
   { id: 'erase', label: 'Erase', group: 'basic' },
   { id: 'select', label: 'Select', group: 'basic' },
+  // Campaign only: press on anything placed and drop it on another tile.
+  { id: 'move', label: 'Move', group: 'basic', campaign: true },
   { id: 'start', label: 'Start', group: 'basic' },
   { id: 'wall', label: 'Block', group: 'basic' },
   { id: 'checkpoint', label: 'Checkpoint', group: 'basic' },

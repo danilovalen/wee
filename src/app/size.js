@@ -21,6 +21,8 @@ function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('ar
 // inward cuts them. While dragging, a band shows the lines that will come or go; it stops at
 // the last line that can go (a placed thing, 2x2 inside) or come (40x30), so no drag fails.
 const OUT = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] };
+// In a campaign level the start is the level's, so a cut may not take it.
+const keeps = l => !!l && !(S.camp && S.level.start && !l.start);
 function grip(b, after) {
   const side = b.dataset.plus, wrap = $('roomWrap');
   let from = null, n = 0;
@@ -43,7 +45,7 @@ function grip(b, after) {
     if (Math.abs(d) > 6) from.moved = true;
     if (!from.moved) return;
     n = Math.round(d / tile()) || 0;
-    while (n && !moveSide(S.level, side, n)) n -= Math.sign(n);
+    while (n && !keeps(moveSide(S.level, side, n))) n -= Math.sign(n);
     show();
   });
   const done = ev => {
@@ -51,7 +53,7 @@ function grip(b, after) {
     const k = from.moved ? n : 1; from = null; band.hidden = true;
     if (!k || ev.type === 'pointercancel') return;
     const l = moveSide(S.level, side, k);
-    if (!l) return;
+    if (!keeps(l)) return;
     const lost = S.level.start && !l.start;
     change(() => { S.level = l; }); after();
     if (lost) $('placeHint').textContent = 'The cut took the start. To play, place it again.';

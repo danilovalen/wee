@@ -384,7 +384,10 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   #tools #options { order: 0; }
   .tabs { margin: 0 0 6px; gap: 4px; }
   .tabs button { min-height: 30px; font-size: 12.5px; padding: 3px 0; }
-  .grid { display: flex; gap: 6px; flex-wrap: nowrap; }
+  /* A row too long for the screen scrolls by itself; the page never moves with it. */
+  .grid { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior: contain; scrollbar-width: none; padding: 8px 4px 6px; margin: -8px -4px 0; }
+  .grid::-webkit-scrollbar { display: none; }
+  html { overflow: hidden; }
   .grid .ghead { display: none !important; }
   .grid button { flex: none; width: 46px; height: 46px; padding: 0; justify-content: center; align-items: center; }
   .grid button .lbl { display: none; }
@@ -477,6 +480,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
 .costDot { position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 3px; box-sizing: border-box; border-radius: var(--r-pill); background: #e0a100; color: #1d1d1d; font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; pointer-events: none; }
 body.campaign [data-tool][hidden], body.campaign #powers, body.campaign #placeHint, body.campaign #ctx { display: none !important; }
 .campVerdict.points { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+body:not(.campaign) [data-camp] { display: none !important; }
 </style>
 </head>
 <body>
@@ -3407,6 +3411,8 @@ function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('ar
 // inward cuts them. While dragging, a band shows the lines that will come or go; it stops at
 // the last line that can go (a placed thing, 2x2 inside) or come (40x30), so no drag fails.
 const OUT = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] };
+// In a campaign level the start is the level's, so a cut may not take it.
+const keeps = l => !!l && !(S.camp && S.level.start && !l.start);
 function grip(b, after) {
   const side = b.dataset.plus, wrap = $('roomWrap');
   let from = null, n = 0;
@@ -3429,7 +3435,7 @@ function grip(b, after) {
     if (Math.abs(d) > 6) from.moved = true;
     if (!from.moved) return;
     n = Math.round(d / tile()) || 0;
-    while (n && !moveSide(S.level, side, n)) n -= Math.sign(n);
+    while (n && !keeps(moveSide(S.level, side, n))) n -= Math.sign(n);
     show();
   });
   const done = ev => {
@@ -3437,7 +3443,7 @@ function grip(b, after) {
     const k = from.moved ? n : 1; from = null; band.hidden = true;
     if (!k || ev.type === 'pointercancel') return;
     const l = moveSide(S.level, side, k);
-    if (!l) return;
+    if (!keeps(l)) return;
     const lost = S.level.start && !l.start;
     change(() => { S.level = l; }); after();
     if (lost) $('placeHint').textContent = 'The cut took the start. To play, place it again.';
@@ -3535,6 +3541,8 @@ const TOOLS = [
   { id: 'look', label: 'Look', group: 'basic' },
   { id: 'erase', label: 'Erase', group: 'basic' },
   { id: 'select', label: 'Select', group: 'basic' },
+  // Campaign only: press on anything placed and drop it on another tile.
+  { id: 'move', label: 'Move', group: 'basic', campaign: true },
   { id: 'start', label: 'Start', group: 'basic' },
   { id: 'wall', label: 'Block', group: 'basic' },
   { id: 'checkpoint', label: 'Checkpoint', group: 'basic' },
@@ -3709,12 +3717,13 @@ const ELEMENTS = {
   toggle: { label: 'Switch', cell: 'toggle:red' },
 };
 
-// The level's room: empty, at its starting size, with no border (the room's edge stops the
-// robot like a wall) and no start or goal: you place both, free.
+// The level's room: empty at its starting size, with no border (the room's edge stops the
+// robot like a wall), the start top left and the goal bottom right. Both move freely.
 function roomOf(def) {
   const [w, h] = def.size, l = emptyLevel(w, h);
   for (const p of Object.keys(l.powers)) l.powers[p] = !!(def.powers || []).includes(p);
-  l.start = null;
+  l.start = { x: 0, y: 0 };
+  l.cells[w * h - 1] = 'goal';
   return l;
 }
 
@@ -3905,6 +3914,27 @@ const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');
 const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 
 // Does (x, y) already hold the kind of thing this tool places?
+// Moves whatever stands on one tile to another: the start, a piece, or a tile's contents.
+// Returns the moved level, or null when the target cannot take it.
+const UNDER = c => c === '' || c.startsWith('toggle:') || c.startsWith('button:');
+function moveAt(level, from, to) {
+  if (from.x === to.x && from.y === to.y) return null;
+  const l = structuredClone(level), fi = idx(l, from.x, from.y), ti = idx(l, to.x, to.y);
+  const isStart = p => !!l.start && l.start.x === p.x && l.start.y === p.y;
+  const piece = pieceAt(l, from.x, from.y), there = pieceAt(l, to.x, to.y) >= 0;
+  if (isStart(from)) {
+    if (there || !UNDER(l.cells[ti])) return null;
+    l.start = { x: to.x, y: to.y };
+  } else if (piece >= 0) {
+    if (there || isStart(to) || !UNDER(l.cells[ti])) return null;
+    Object.assign(l.entities[piece], { x: to.x, y: to.y });
+  } else if (l.cells[fi]) {
+    if (l.cells[ti] || there || isStart(to)) return null;
+    l.cells[ti] = l.cells[fi]; l.cells[fi] = '';
+  } else return null;
+  return l;
+}
+
 function holds(level, x, y, tool) {
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
@@ -4015,7 +4045,7 @@ function place(level, ui, x, y, how) {
   if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
   return out;
 }
-return { holds, describe, place };
+return { moveAt, holds, describe, place };
 })();
 // ---- src/view/pieces.js
 const m39 = (() => {
@@ -4781,6 +4811,15 @@ function icon(tool, colour = 'red') {
     x.beginPath(); x.arc(14, 14, 7, 0, Math.PI * 2); x.moveTo(19, 19); x.lineTo(26, 26); x.stroke();
   } else if (tool === 'receiver') {
     const l = emptyLevel(1, 1); l.cells[0] = 'receiver:red'; l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
+  } else if (tool === 'move') {
+    // Four arrows out from the middle.
+    x.strokeStyle = '#6f6876'; x.lineWidth = 2.5; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath(); x.moveTo(16, 5); x.lineTo(16, 27); x.moveTo(5, 16); x.lineTo(27, 16);
+    for (const [ax, ay, dx, dy] of [[16, 5, 1, 1], [16, 27, 1, -1], [5, 16, 1, 1], [27, 16, -1, 1]]) {
+      if (ax === 16) { x.moveTo(ax - 4, ay + 4 * dy); x.lineTo(ax, ay); x.lineTo(ax + 4, ay + 4 * dy); }
+      else { x.moveTo(ax + 4 * dx, ay - 4); x.lineTo(ax, ay); x.lineTo(ax + 4 * dx, ay + 4); }
+    }
+    x.stroke();
   } else if (tool === 'erase') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
   } else if (tool === 'start') {
@@ -4798,7 +4837,7 @@ return { icon };
 const m45 = (() => {
 const { LEVELS, COSTS } = m35;
 const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, bestText, costOf, areaOf } = m37;
-const { place } = m38;
+const { place, moveAt } = m38;
 const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { $, portrait, now } = m12;
@@ -4817,8 +4856,8 @@ const { icon } = m44;
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
 const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle' };
-// Every level hands you the start and the goal, free.
-const ALWAYS = ['start', 'goal'];
+// Every level hands you Move, to carry anything placed (the start and goal too) elsewhere.
+const ALWAYS = ['move'];
 let A = null, boot = null;
 
 function progress() {
@@ -4827,6 +4866,15 @@ function progress() {
 }
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
 const levelOf = id => LEVELS.find(l => l.id === id);
+
+// Move: carries the thing on one tile to another, when the target can take it and the room
+// breaks no rule it kept before. Returns the moved room or null.
+function moveIn(level, from, to) {
+  const next = moveAt(level, from, to);
+  if (!next || !S.camp) return next;
+  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg));
+  return placementErrors(S.camp.def, next).every(e => before.has(e.msg)) ? next : null;
+}
 
 // A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
 // level's, so it is cut off, and the start and goal it had stay where they were.
@@ -4845,7 +4893,7 @@ function allows(level, ui, x, y, how) {
   if (!S.camp) return true;
   const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
   place(next, ui, x, y, how);
-  return placementErrors(def, next).every(e => /^(Place at least|Place the )/.test(e.msg) || before.has(e.msg));
+  return placementErrors(def, next).every(e => /^Place at least/.test(e.msg) || before.has(e.msg));
 }
 
 // The tools a level offers: Look, Erase, and its palette.
@@ -5007,7 +5055,7 @@ function buildCampaign(actions, sandbox) {
   addEventListener('wee:mode', () => { if (S.camp) syncBrief(); });
   addEventListener('pagehide', save);
 }
-return { TOOL, progress, unframe, allows, toolsFor, syncCostDots, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
+return { TOOL, progress, moveIn, unframe, allows, toolsFor, syncCostDots, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
 })();
 // ---- src/solve/lenses.js
 const m46 = (() => {
@@ -5710,6 +5758,7 @@ function buildPanels(actions) {
     }
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.tool = t.id; b.dataset.in = t.group;
+    if (t.campaign) b.dataset.camp = '1';
     b.title = t.label;
     b.append(icon(t.id), Object.assign(document.createElement('span'), { className: 'lbl', textContent: t.label }));
     b.onclick = () => { S.ui.tool = t.id; syncPanel(); };
@@ -5802,7 +5851,7 @@ function syncPanel() {
   // In a campaign level the palette is the level's: its elements, Look and Erase, in one list.
   const only = S.camp ? toolsFor(S.camp.def) : null;
   if (only && !only.includes(ui.tool)) ui.tool = 'look';
-  document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group; });
+  document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp; });
   syncBrief(); syncCostDots();
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
@@ -6030,7 +6079,7 @@ const { describe, holds, place } = m38;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
 const { setMode, aim } = m55;
-const { begin, end, step: undoStep } = m31;
+const { begin, end, change, step: undoStep } = m31;
 const { save } = m30;
 const { selectDown, selectMove, selectUp, selectKey } = m52;
 const { LENS_GROUPS, cycleLens, lensesOff } = m47;
@@ -6038,7 +6087,7 @@ const { syncPanel } = m53;
 const { fit } = m33;
 const { toolForKey, bareKey, showKeys } = m50;
 const { TOOLS } = m34;
-const { allows } = m45;
+const { allows, moveIn } = m45;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -6100,6 +6149,8 @@ function bindInput() {
       return;
     }
     if (S.ui.tool === 'select') { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }
+    // Move: press on a thing, release on the tile it goes to; the outline shows where.
+    if (S.ui.tool === 'move') { canvas.setPointerCapture(ev.pointerId); S.carry = c; S.hover = c; return; }
     begin();
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
@@ -6109,13 +6160,20 @@ function bindInput() {
     if (S.mode === 'play') return;
     const c = S.mode === 'edit' ? cellFromEvent(ev) : null;
     // The outline follows a mouse only; a finger would leave it behind on lift.
-    S.hover = touch && S.ui.tool !== 'select' ? null : c;
+    S.hover = touch && S.ui.tool !== 'select' && !S.carry ? null : c;
     if (c && S.ui.tool === 'select' && ev.buttons) selectMove(c);
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
   const lift = () => { S.painting = 0; S.swipe = null; selectUp(); end(); };
-  canvas.addEventListener('pointerup', lift);
-  canvas.addEventListener('pointercancel', lift);
+  canvas.addEventListener('pointerup', ev => {
+    if (S.carry) {
+      const to = cellFromEvent(ev), next = to && moveIn(S.level, S.carry, to);
+      S.carry = null; if (touch) S.hover = null;
+      if (next) change(() => { S.level = next; });
+    }
+    lift();
+  });
+  canvas.addEventListener('pointercancel', () => { S.carry = null; lift(); });
   canvas.addEventListener('pointerleave', () => { S.hover = null; });
 
   window.addEventListener('keydown', ev => {

@@ -12,12 +12,13 @@ export const ELEMENTS = {
   toggle: { label: 'Switch', cell: 'toggle:red' },
 };
 
-// The level's room: empty, at its starting size, with no border (the room's edge stops the
-// robot like a wall) and no start or goal: you place both, free.
+// The level's room: empty at its starting size, with no border (the room's edge stops the
+// robot like a wall), the start top left and the goal bottom right. Both move freely.
 export function roomOf(def) {
   const [w, h] = def.size, l = emptyLevel(w, h);
   for (const p of Object.keys(l.powers)) l.powers[p] = !!(def.powers || []).includes(p);
-  l.start = null;
+  l.start = { x: 0, y: 0 };
+  l.cells[w * h - 1] = 'goal';
   return l;
 }
 

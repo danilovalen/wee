@@ -3,7 +3,7 @@ import { describe, holds, place } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch, now } from './dom.js';
 import { setMode, aim } from './play.js';
-import { begin, end, step as undoStep } from './undo.js';
+import { begin, end, change, step as undoStep } from './undo.js';
 import { save } from './rooms.js';
 import { selectDown, selectMove, selectUp, selectKey } from './select.js';
 import { LENS_GROUPS, cycleLens, lensesOff } from './lenses.js';
@@ -11,7 +11,7 @@ import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
 import { toolForKey, bareKey, showKeys } from './keys.js';
 import { TOOLS } from '../editor/palette.js';
-import { allows } from './campaign.js';
+import { allows, moveIn } from './campaign.js';
 
 function cellFromEvent(ev) {
   const r = canvas.getBoundingClientRect(), level = S.level;
@@ -60,6 +60,8 @@ export function bindInput() {
       return;
     }
     if (S.ui.tool === 'select') { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }
+    // Move: press on a thing, release on the tile it goes to; the outline shows where.
+    if (S.ui.tool === 'move') { canvas.setPointerCapture(ev.pointerId); S.carry = c; S.hover = c; return; }
     begin();
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
@@ -69,13 +71,20 @@ export function bindInput() {
     if (S.mode === 'play') return;
     const c = S.mode === 'edit' ? cellFromEvent(ev) : null;
     // The outline follows a mouse only; a finger would leave it behind on lift.
-    S.hover = touch && S.ui.tool !== 'select' ? null : c;
+    S.hover = touch && S.ui.tool !== 'select' && !S.carry ? null : c;
     if (c && S.ui.tool === 'select' && ev.buttons) selectMove(c);
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
   const lift = () => { S.painting = 0; S.swipe = null; selectUp(); end(); };
-  canvas.addEventListener('pointerup', lift);
-  canvas.addEventListener('pointercancel', lift);
+  canvas.addEventListener('pointerup', ev => {
+    if (S.carry) {
+      const to = cellFromEvent(ev), next = to && moveIn(S.level, S.carry, to);
+      S.carry = null; if (touch) S.hover = null;
+      if (next) change(() => { S.level = next; });
+    }
+    lift();
+  });
+  canvas.addEventListener('pointercancel', () => { S.carry = null; lift(); });
   canvas.addEventListener('pointerleave', () => { S.hover = null; });
 
   window.addEventListener('keydown', ev => {
