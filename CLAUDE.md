@@ -26,6 +26,7 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
   rebuilt from a downloaded `dist/wee.html`. If a new repo cannot be created, push to a branch
   of an existing one at once; never keep working on an unpushed tree.
 - **Commit only after a green run.** Never chain `npm test | grep ... && git commit`: grep succeeds on a red run too. On 2026-10-17 that pushed three red smokes.
+- **A search that finds nothing proves nothing.** Random or hill-climbing room searches only cover the shapes they generate (small rooms, start and goal in fixed corners, scattered walls). Say "not found in N rooms of this kind", never "impossible". Twice on 2026-10-17 a level was called unwinnable this way; the owner drew a winning room each time.
 - **Game design is the owner's.** Levels, mechanics, rules and requirements are his to decide.
   Ask one question at a time; draft a level only when asked, and build it only once approved.
 
