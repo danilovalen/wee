@@ -20,7 +20,7 @@ const on = group => page.$eval(`[data-lens-group=${group}].on`, b => b.dataset.l
 const pixel = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round((x + 0.5) * t), Math.round((y + 0.5) * t), 1, 1).data]; }, [x, y]);
 const settle = () => page.waitForFunction(() => !/Working/.test(document.getElementById('lensLegend').textContent), null, { timeout: 15000 }).then(() => page.waitForTimeout(120));
 try {
-  await page.goto('http://localhost:5213/');
+  await page.goto('http://localhost:5213/?sandbox');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => document.getElementById('roomsBox').close());

@@ -41,7 +41,7 @@ const SCENES = {
   'no start': async () => { await page.evaluate(l => window.wee.loadLevel(l), noStart); },
 };
 const boot = async scene => {
-  await page.goto(`http://localhost:${PORT}/`);
+  await page.goto(`http://localhost:${PORT}/?sandbox`);
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => { document.getElementById('roomsBox').close(); window.__copied = 0; navigator.clipboard.writeText = async () => { window.__copied++; }; window.__manualClock = true; });

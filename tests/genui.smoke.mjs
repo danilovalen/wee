@@ -19,7 +19,7 @@ const shelfLevel = async i => JSON.stringify(await page.evaluate(i => JSON.parse
 const openPanel = async () => { await page.click('#roomsBtn'); await page.click('#roomNew'); await page.click('#roomGen'); };
 
 try {
-  await page.goto(`http://localhost:${PORT}/`);
+  await page.goto(`http://localhost:${PORT}/?sandbox`);
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => document.getElementById('roomsBox').close());

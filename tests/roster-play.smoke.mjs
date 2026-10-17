@@ -16,7 +16,7 @@ page.on('pageerror', e => errors.push(e.message));
 const KEY = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', hide: 'Space' };
 try {
   for (const name of ['Overshoot', 'Short fuse']) {
-    await page.goto(`http://localhost:${PORT}/`);
+    await page.goto(`http://localhost:${PORT}/?sandbox`);
     await page.waitForFunction(() => window.wee && window.wee.roomsReady);
     await page.evaluate(() => window.wee.roomsReady);
     await page.click('#roomNew');
@@ -29,7 +29,7 @@ try {
     check(`${name}: picked from New room and played on the keyboard, its answer wins (${moves.length} moves)`, end.won && end.deaths === 0 && end.moves === moves.length && await page.locator('#win').isVisible(), JSON.stringify({ won: end.won, deaths: end.deaths, moves: end.moves }));
   }
   // A template you only opened has nothing to lose, so moving on asks nothing; once edited, it asks.
-  await page.goto(`http://localhost:${PORT}/`);
+  await page.goto(`http://localhost:${PORT}/?sandbox`);
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   const asked = []; page.on('dialog', d => { asked.push(d.message()); d.dismiss(); });

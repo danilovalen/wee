@@ -10,7 +10,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || 
 try {
   for (const [w, h] of [[874, 900], [760, 900], [701, 900], [1280, 720], [1366, 768], [1920, 1080]]) {
     const page = await browser.newPage({ viewport: { width: w, height: h } });
-    await page.goto('http://localhost:5191/');
+    await page.goto('http://localhost:5191/?sandbox');
     await page.waitForFunction(() => window.wee && window.wee.roomsReady);
     await page.evaluate(() => window.wee.roomsReady);
     await page.evaluate(() => document.getElementById('roomsBox').close());
@@ -84,7 +84,7 @@ try {
   }
   // Below about 700 px of height a column may scroll on its own, but nothing may be cut off.
   const low = await browser.newPage({ viewport: { width: 1280, height: 560 } });
-  await low.goto('http://localhost:5191/');
+  await low.goto('http://localhost:5191/?sandbox');
   await low.waitForFunction(() => window.wee && window.wee.roomsReady);
   await low.evaluate(() => window.wee.roomsReady);
   await low.evaluate(() => document.getElementById('roomsBox').close());

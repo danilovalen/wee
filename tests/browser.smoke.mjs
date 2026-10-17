@@ -20,7 +20,7 @@ page.on('pageerror', e => errors.push(e.message));
 mkdirSync('shots', { recursive: true });
 
 try {
-  await page.goto(`http://localhost:${PORT}/`);
+  await page.goto(`http://localhost:${PORT}/?sandbox`);
   await page.waitForFunction(() => window.wee);
   await page.waitForFunction(() => window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
@@ -688,7 +688,7 @@ try {
   await page.keyboard.press('Escape');
   const sp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   sp.on('pageerror', e => errors.push(e.message));
-  await sp.goto(`http://localhost:${PORT + 1}/`);
+  await sp.goto(`http://localhost:${PORT + 1}/?sandbox`);
   await sp.waitForFunction(() => window.wee && window.wee.roomsReady);
   await sp.evaluate(() => window.wee.roomsReady);
   await sp.evaluate(() => document.getElementById('roomsBox').close());

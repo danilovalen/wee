@@ -14,7 +14,7 @@ page.on('pageerror', e => errors.push(e.message));
 const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'));
 const notes = () => page.textContent('#designList');
 try {
-  await page.goto('http://localhost:5189/');
+  await page.goto('http://localhost:5189/?sandbox');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => document.getElementById('roomsBox').close());
