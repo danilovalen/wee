@@ -7,7 +7,7 @@
 // --require a,b and --steps best,range try the level with other requirements or another range.
 import { roomOf, check, placementErrors, REQUIREMENTS } from '../src/campaign/rules.js';
 import { allShortest } from '../src/campaign/robot.js';
-import { LEVELS, COSTS } from '../src/level/campaign.js';
+import { LEVELS } from '../src/level/campaign.js';
 
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const base = LEVELS.find(l => l.id === process.argv[2]);
@@ -99,10 +99,10 @@ while (Date.now() < end) {
   for (let i = 0; i < 300 && s > 0 && Date.now() < end; i++) { const h = mutate(g), t = score(h); if (t <= s) { g = h; s = t; } }
   best = Math.min(best, s);
   if (s !== 0) continue;
-  const r = make(g), v = check(def, r, COSTS);
+  const r = make(g), v = check(def, r);
   if (!v.won || seen.has(show(r))) continue;
   seen.add(show(r));
-  console.log(`WIN ${v.length} moves, ${r.w}x${r.h}, cost ${v.cost}: ${show(r)}`);
+  console.log(`WIN ${v.length} moves, ${r.w}x${r.h}, area ${v.area}: ${show(r)}`);
   if (!all) break;
 }
 if (!seen.size) console.log(`Not found in ${tries} climbs over ${seconds}s (rooms 3x3 to 10x10, start and goal anywhere, half walled in around the start; closest penalty ${best}). That is not proof it cannot be done.`);

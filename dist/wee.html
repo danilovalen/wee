@@ -485,7 +485,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
 .campReqs .optional { color: var(--dim); font-weight: 600; }
 .campReqs .optional:not(.met):not(.unmet) .mark { box-shadow: none; outline: 1.5px dashed var(--dim); outline-offset: -1.5px; }
 .campIcon { width: 18px; height: 18px; vertical-align: -4px; }
-.campScores { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.campScores { display: grid; gap: 6px; }
 .campScore { padding: 4px 10px; border-radius: var(--r-s); background: var(--field); display: flex; align-items: baseline; gap: 6px; }
 .campScore small:first-child { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); font-size: 0.75em; }
 .campScore b { font-size: 1.15em; }
@@ -500,7 +500,6 @@ body.campaign .roomArea { position: relative; }
 .campVerdict[hidden], .campTip[hidden] { display: none !important; }
 .campTip { position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 4px)); padding: 5px 9px; border-radius: var(--r-s); background: #24262e; color: #fff; font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
 [data-tool] { position: relative; }
-.costDot { position: absolute; bottom: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 3px; box-sizing: border-box; border-radius: var(--r-pill); background: #e0a100; color: #1d1d1d; font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; pointer-events: none; }
 body.campaign [data-tool][hidden], body.campaign #powers, body.campaign #placeHint, body.campaign #ctx { display: none !important; }
 .countDot { position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: var(--r-pill); background: #24262e; color: #fff; font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; pointer-events: none; }
 .countDot.short { background: #c0392b; }
@@ -3624,8 +3623,7 @@ const m35 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
 const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6,"range":2},"rules":[],"require":[]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["boxPushedTwiceHitOnce"]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6,"range":2},"rules":["noBoxOnButton"],"require":["throughOpenDoor"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":10,"range":3},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"]}];
-const COSTS = {"block":1,"box":2,"button":3,"door":3,"toggle":2};
-return { LEVELS, COSTS };
+return { LEVELS };
 })();
 // ---- src/campaign/robot.js
 const m36 = (() => {
@@ -3926,11 +3924,6 @@ const bestShort = st => `exactly ${st.best}`;
 // The room's area, the size score.
 const areaOf = room => room.w * room.h;
 
-function costOf(def, room, costs) {
-  const { by } = placed(def, room);
-  return Object.entries(by).reduce((n, [el, list]) => n + list.length * (costs[el] || 0), 0);
-}
-
 // Why the robot cannot reach the goal, in words, with the tiles to point at. Copy is a draft.
 // Per kind: its name, its plural, and how one, several or none of them fail to hold.
 const HOLD = {
@@ -3958,14 +3951,14 @@ function stuckText(room) {
 }
 
 // The whole verdict. { ok: false, errors } when the room cannot run; otherwise
-// { ok: true, won, length, paths, fail: { path, why } | null, cost, area, optional }.
-function check(def, room, costs, opts) {
+// { ok: true, won, length, paths, fail: { path, why } | null, area, optional }.
+function check(def, room, opts) {
   const errors = placementErrors(def, room);
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
   if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'The robot gave up: this room is too big to search.' } };
-  const base = { ok: true, length: r.length, paths: r.paths.length, cost: costOf(def, room, costs), area: areaOf(room) };
+  const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
   // Each requirement holds on every shortest path or it is not met; the card marks each one.
   const failed = {};
@@ -3978,7 +3971,7 @@ function check(def, room, costs, opts) {
   const optional = [{ text: bestText(st), met: r.length === st.best }];
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, roomOf, placed, nameOf, placementErrors, boxMoves, REQUIREMENTS, stepsText, bestText, rangeShort, bestShort, areaOf, costOf, stuckText, check };
+return { ELEMENTS, roomOf, placed, nameOf, placementErrors, boxMoves, REQUIREMENTS, stepsText, bestText, rangeShort, bestShort, areaOf, stuckText, check };
 })();
 // ---- src/editor/edit.js
 const m38 = (() => {
@@ -4939,8 +4932,8 @@ return { icon };
 })();
 // ---- src/app/campaign.js
 const m45 = (() => {
-const { LEVELS, COSTS } = m35;
-const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, rangeShort, bestShort, costOf, areaOf } = m37;
+const { LEVELS } = m35;
+const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, rangeShort, bestShort, areaOf } = m37;
 const { place, moveAt } = m38;
 const { newHistory } = m10;
 const { S, starterLevel } = m11;
@@ -5031,18 +5024,16 @@ function save() {
   write(p);
 }
 
-// On each palette button of a level: its cost, and how many are placed against the minimum
-// (and the maximum, when the level sets one). None outside a level.
-function syncCostDots() {
+// On each palette button of a level: how many are placed against the minimum (and the
+// maximum, when the level sets one). None outside a level.
+function syncCounts() {
   const def = S.camp && S.camp.def, by = def ? placed(def, S.level).by : {};
   const els = def ? Object.fromEntries(Object.keys(def.palette).map(el => [TOOL[el], el])) : {};
   document.querySelectorAll('[data-tool]').forEach(b => {
     const el = els[b.dataset.tool];
-    for (const k of ['costDot', 'countDot']) { const d = b.querySelector('.' + k); if (!el && d) d.remove(); }
+    const d = b.querySelector('.countDot'); if (!el && d) d.remove();
     b.classList.toggle('full', false);
     if (!el) return;
-    const dot = b.querySelector('.costDot') || b.appendChild(Object.assign(document.createElement('span'), { className: 'costDot' }));
-    dot.textContent = COSTS[el]; dot.title = `Costs ${COSTS[el]}`;
     const [min, max] = def.palette[el], n = by[el].length;
     const count = b.querySelector('.countDot') || b.appendChild(Object.assign(document.createElement('span'), { className: 'countDot' }));
     count.textContent = max !== null ? `${n}/${max}` : min ? `${n}/${min}+` : `${n}`;
@@ -5102,9 +5093,9 @@ function syncBrief() {
     return t;
   };
   const scores = document.createElement('div'); scores.className = 'campScores';
-  scores.append(tile('Cost', costOf(def, S.level, COSTS), best.cost), tile('Area', areaOf(S.level), best.area));
+  scores.append(tile('Area', areaOf(S.level), best.area));
   $('campBrief').replaceChildren(card, scores);
-  syncCostDots();
+  syncCounts();
   // The verdict's words, over the room.
   const out = $('campVerdict');
   out.hidden = !v;
@@ -5153,12 +5144,12 @@ function flashStuck(v) { for (const t of stuckAt(v)) S.fx.push({ type: 'flash', 
 // the first shortest path of a win.
 function run() {
   if (!S.camp) return null;
-  const def = S.camp.def, v = check(def, S.level, COSTS);
+  const def = S.camp.def, v = check(def, S.level);
   S.camp.verdict = v;
   save();
   if (v.ok && v.won) {
     const p = progress(), rec = p.levels[def.id] ||= {}, best = rec.best || {};
-    rec.best = { cost: Math.min(best.cost ?? Infinity, v.cost), area: Math.min(best.area ?? Infinity, v.area), met: Math.max(best.met ?? 0, v.met) };
+    rec.best = { area: Math.min(best.area ?? Infinity, v.area), met: Math.max(best.met ?? 0, v.met) };
     rec.beaten = true; rec.room = S.level;
     write(p);
   }
@@ -5177,7 +5168,7 @@ function renderList() {
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten · best cost ${rec.best.cost}${rec.best.area ? ` · area ${rec.best.area}` : ''} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
+    small.textContent = rec.beaten ? `Beaten${rec.best.area ? ` · best area ${rec.best.area}` : ''} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
     // The elements the level hands you, as the palette draws them.
     const parts = document.createElement('span'); parts.className = 'campParts';
     for (const el of Object.keys(def.palette)) {
@@ -5227,7 +5218,7 @@ function buildCampaign(actions, sandbox) {
   addEventListener('wee:mode', () => { if (S.camp) syncBrief(); });
   addEventListener('pagehide', save);
 }
-return { TOOL, progress, moveIn, unframe, refusal, allows, moveRefusal, refuse, toolsFor, syncCostDots, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
+return { TOOL, progress, moveIn, unframe, refusal, allows, moveRefusal, refuse, toolsFor, syncCounts, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
 })();
 // ---- src/solve/lenses.js
 const m46 = (() => {
@@ -5856,7 +5847,7 @@ const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m9;
 const { INK } = m14;
 const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m34;
-const { toolsFor, syncBrief, syncCostDots } = m45;
+const { toolsFor, syncBrief, syncCounts } = m45;
 const { S } = m11;
 const { $, canvas, touch } = m12;
 const { change, step: undoStep, syncUndo } = m31;
@@ -6024,7 +6015,7 @@ function syncPanel() {
   const only = S.camp ? toolsFor(S.camp.def) : null;
   if (only && !only.includes(ui.tool)) ui.tool = 'look';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp; });
-  syncBrief(); syncCostDots();
+  syncBrief(); syncCounts();
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label;

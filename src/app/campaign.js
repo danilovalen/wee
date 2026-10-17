@@ -2,8 +2,8 @@
 // robot. Run judges the room (src/campaign/rules.js) and the robot plays a shortest path:
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
-import { LEVELS, COSTS } from '../level/campaign.js';
-import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, rangeShort, bestShort, costOf, areaOf } from '../campaign/rules.js';
+import { LEVELS } from '../level/campaign.js';
+import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, rangeShort, bestShort, areaOf } from '../campaign/rules.js';
 import { place, moveAt } from '../editor/edit.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -84,18 +84,16 @@ function save() {
   write(p);
 }
 
-// On each palette button of a level: its cost, and how many are placed against the minimum
-// (and the maximum, when the level sets one). None outside a level.
-export function syncCostDots() {
+// On each palette button of a level: how many are placed against the minimum (and the
+// maximum, when the level sets one). None outside a level.
+export function syncCounts() {
   const def = S.camp && S.camp.def, by = def ? placed(def, S.level).by : {};
   const els = def ? Object.fromEntries(Object.keys(def.palette).map(el => [TOOL[el], el])) : {};
   document.querySelectorAll('[data-tool]').forEach(b => {
     const el = els[b.dataset.tool];
-    for (const k of ['costDot', 'countDot']) { const d = b.querySelector('.' + k); if (!el && d) d.remove(); }
+    const d = b.querySelector('.countDot'); if (!el && d) d.remove();
     b.classList.toggle('full', false);
     if (!el) return;
-    const dot = b.querySelector('.costDot') || b.appendChild(Object.assign(document.createElement('span'), { className: 'costDot' }));
-    dot.textContent = COSTS[el]; dot.title = `Costs ${COSTS[el]}`;
     const [min, max] = def.palette[el], n = by[el].length;
     const count = b.querySelector('.countDot') || b.appendChild(Object.assign(document.createElement('span'), { className: 'countDot' }));
     count.textContent = max !== null ? `${n}/${max}` : min ? `${n}/${min}+` : `${n}`;
@@ -155,9 +153,9 @@ export function syncBrief() {
     return t;
   };
   const scores = document.createElement('div'); scores.className = 'campScores';
-  scores.append(tile('Cost', costOf(def, S.level, COSTS), best.cost), tile('Area', areaOf(S.level), best.area));
+  scores.append(tile('Area', areaOf(S.level), best.area));
   $('campBrief').replaceChildren(card, scores);
-  syncCostDots();
+  syncCounts();
   // The verdict's words, over the room.
   const out = $('campVerdict');
   out.hidden = !v;
@@ -206,12 +204,12 @@ function flashStuck(v) { for (const t of stuckAt(v)) S.fx.push({ type: 'flash', 
 // the first shortest path of a win.
 export function run() {
   if (!S.camp) return null;
-  const def = S.camp.def, v = check(def, S.level, COSTS);
+  const def = S.camp.def, v = check(def, S.level);
   S.camp.verdict = v;
   save();
   if (v.ok && v.won) {
     const p = progress(), rec = p.levels[def.id] ||= {}, best = rec.best || {};
-    rec.best = { cost: Math.min(best.cost ?? Infinity, v.cost), area: Math.min(best.area ?? Infinity, v.area), met: Math.max(best.met ?? 0, v.met) };
+    rec.best = { area: Math.min(best.area ?? Infinity, v.area), met: Math.max(best.met ?? 0, v.met) };
     rec.beaten = true; rec.room = S.level;
     write(p);
   }
@@ -230,7 +228,7 @@ function renderList() {
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten · best cost ${rec.best.cost}${rec.best.area ? ` · area ${rec.best.area}` : ''} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
+    small.textContent = rec.beaten ? `Beaten${rec.best.area ? ` · best area ${rec.best.area}` : ''} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
     // The elements the level hands you, as the palette draws them.
     const parts = document.createElement('span'); parts.className = 'campParts';
     for (const el of Object.keys(def.palette)) {

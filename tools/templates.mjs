@@ -12,13 +12,12 @@ export function templatesSource() {
   return `// Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.\nexport const TEMPLATES = ${JSON.stringify(rooms)};\n`;
 }
 
-// The campaign's levels, in number order, and the fixed cost of each element.
+// The campaign's levels, in number order.
 export function campaignSource() {
   const levels = readdirSync('campaign/levels').filter(f => f.endsWith('.json'))
     .sort((a, b) => parseInt(a) - parseInt(b))
     .map(f => ({ id: f.replace(/\.json$/, ''), ...JSON.parse(readFileSync('campaign/levels/' + f, 'utf8')) }));
-  const costs = JSON.parse(readFileSync('campaign/costs.json', 'utf8'));
-  return `// Generated from campaign/ by tools/templates.mjs. Do not edit by hand.\nexport const LEVELS = ${JSON.stringify(levels)};\nexport const COSTS = ${JSON.stringify(costs)};\n`;
+  return `// Generated from campaign/ by tools/templates.mjs. Do not edit by hand.\nexport const LEVELS = ${JSON.stringify(levels)};\n`;
 }
 
 if (process.argv[1] && process.argv[1].endsWith('templates.mjs')) {

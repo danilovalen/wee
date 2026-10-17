@@ -1,8 +1,9 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { boxMoves, stuckText, nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, ELEMENTS, costOf, areaOf, stepsText } from '../src/campaign/rules.js';
+import { boxMoves, stuckText, nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
 import { allShortest } from '../src/campaign/robot.js';
-import { LEVELS, COSTS } from '../src/level/campaign.js';
+import { LEVELS } from '../src/level/campaign.js';
+import * as LEVELDATA from '../src/level/campaign.js';
 import { emptyLevel } from '../src/level/format.js';
 import { moveAt } from '../src/editor/edit.js';
 import { room, suite } from './lib.mjs';
@@ -104,22 +105,21 @@ const build = (def, rows) => {
   const d = level('1');
   // The old level 1: a 5x5 room, start top left, goal bottom right, nothing in it.
   const open = ['P....', '.....', '.....', '.....', '....G'];
-  const empty = check(d, build(d, open), COSTS);
+  const empty = check(d, build(d, open));
   ok('an empty 5x5 is too short', empty.ok && !empty.won && empty.length === 2 && empty.fail.why.startsWith(stepsText(d.steps)), JSON.stringify(empty.fail));
   ok('a failure hands the robot a path to play', Array.isArray(empty.fail.path) && empty.fail.path.length === 2);
   ok('the room\'s edge stops the robot like a wall', allShortest(build(d, open)).length === 2);
   const win = build(d, ['P.#.#', '.....', '.###.', '.#...', '.#..G']);
-  const v = check(d, win, COSTS);
+  const v = check(d, win);
   ok('a room in range wins', v.ok && v.won && v.length === 4, JSON.stringify(v.fail));
-  ok('a win reports its cost', v.cost === placed(d, win).by.block.length * COSTS.block && v.cost === costOf(d, win, COSTS));
   ok('a win reports its area', v.area === 25 && areaOf(win) === 25 && areaOf(roomOf(d)) === 49);
-  ok('the start and the goal cost nothing', v.cost === 7, String(v.cost));
+  ok('there is no cost score any more', !('cost' in v) && !('COSTS' in LEVELDATA));
   ok('a win hands the robot its path', v.path && v.path.length === 4);
   ok('a win scores the optional exact count', v.optional.length === 1 && v.met === (v.length === d.steps.best ? 1 : 0));
-  const bad = check(d, { ...roomOf(d), start: null, cells: roomOf(d).cells.map(() => '') }, COSTS);
+  const bad = check(d, { ...roomOf(d), start: null, cells: roomOf(d).cells.map(() => '') });
   ok('a room without its start and goal cannot run', bad.ok === false && bad.errors.length === 2);
   const walled = build(d, ['P....', '.....', '#####', '.....', '....G']);
-  const u = check(d, walled, COSTS);
+  const u = check(d, walled);
   ok('a room with no way through fails with no path', u.ok && !u.won && u.fail.path === null, JSON.stringify(u.fail));
 }
 { // each requirement, judged on a replay of a path
@@ -156,7 +156,7 @@ const build = (def, rows) => {
   ok('switches each held but never together are said apart', apart.why.endsWith('It needs everything red held at once, and that never happens.') && at(apart, 1, 1) && at(apart, 5, 1) && at(apart, 3, 2), apart.why);
   const walls = why(['######', '#P##.G', '######']);
   ok('with no door to blame, it says so plainly', walls.why === 'The robot cannot reach the goal from anywhere it can get to.' && walls.at.length === 0);
-  const v = check({ ...level('1'), palette: { block: [0, 30], toggle: [0, 2], door: [0, 1] } }, build(level('1'), ['', '', '', '#######', '#.t..D#', '#....G#']), COSTS);
+  const v = check({ ...level('1'), palette: { block: [0, 30], toggle: [0, 2], door: [0, 1] } }, build(level('1'), ['', '', '', '#######', '#.t..D#', '#....G#']));
   ok('an unsolvable verdict carries the reason and the tiles', v.ok && !v.won && v.fail.path === null && /door never opens/.test(v.fail.why) && v.fail.at.length > 0, JSON.stringify(v.fail));
 }
 { // level 4: two switches at least, through the door, every switch off at the end
@@ -192,15 +192,15 @@ const build = (def, rows) => {
 { // level 2: a toggle, a door, run into it closed, then go through it open
   const d = level('2');
   ok('level 2 asks for both door requirements', d.require.join() === 'hitsClosedDoor,throughOpenDoor' && d.palette.toggle[0] === 1 && d.palette.door[0] === 1);
-  const v = check(d, build(d, ['#######', '#P..#.#', '#.t...#', '###D.##', '#.....#', '#....G#', '#######']), COSTS);
+  const v = check(d, build(d, ['#######', '#P..#.#', '#.t...#', '###D.##', '#.....#', '#....G#', '#######']));
   ok('level 2 can be won', v.ok && v.won && v.length >= 5 && v.length <= 9, JSON.stringify(v.fail || v.length));
-  const lazy = check(d, build(d, ['', '#P...t#', '', '', '', '#...D.#']), COSTS);
+  const lazy = check(d, build(d, ['', '#P...t#', '', '', '', '#...D.#']));
   ok('a door the robot never meets closed fails level 2', lazy.ok && !lazy.won, JSON.stringify(lazy.fail));
 }
 { // every shortest path must meet a requirement, not just one
   const d = { ...level('1'), require: ['throughOpenDoor'], steps: { best: 2, range: 0 }, palette: { block: [0, 30], toggle: [0, 1], door: [0, 1] } };
   const both = build(d, ['P.t..', '.....', '....D', '.....', '....G']);
-  const v = check(d, both, COSTS);
+  const v = check(d, both);
   ok('one path missing the door fails the room', v.ok && !v.won && /Not met/.test(v.fail.why) && v.fail.path.map(m => m.split('@')[0]).join() === 'down,right', JSON.stringify(v.fail));
   ok('the verdict marks each requirement for the goal card', v.reqs && v.reqs.throughOpenDoor === false && v.inRange === true, JSON.stringify(v.reqs));
   ok('every requirement has a short row, with at least one word', Object.values(REQUIREMENTS).every(r => Array.isArray(r.short) && r.short.some(p => typeof p === 'string')));
@@ -221,7 +221,7 @@ const build = (def, rows) => {
   };
   ok('there is a known winning room for every level', LEVELS.every(l => WINS[l.id]), LEVELS.map(l => l.id).join());
   for (const l of LEVELS) {
-    const v = WINS[l.id] && check(l, build(l, WINS[l.id]), COSTS);
+    const v = WINS[l.id] && check(l, build(l, WINS[l.id]));
     ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
     ok(`level ${l.id}'s win marks every row of its goal card met`, v && v.inRange && (l.require || []).every(id => v.reqs[id] === true), JSON.stringify(v && v.reqs));
   }

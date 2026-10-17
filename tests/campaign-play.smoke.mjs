@@ -1,5 +1,5 @@
 // The campaign in the page: the menu at launch, the level list, building a level's room with
-// its own palette and costs, Run, and the saved best.
+// its own palette, Run, and the saved best.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite } from './lib.mjs';
@@ -37,12 +37,12 @@ try {
   check('a level hides the sandbox and shows its brief', await page.evaluate(() => document.body.classList.contains('campaign')) && await page.locator('#campBrief').isVisible());
   const tools = await visibleTools();
   check('the palette is the level\'s own, with Move', tools.sort().join() === 'erase,look,move,wall', tools.join());
-  check('a priced tool wears its cost', (await page.locator('[data-tool="wall"] .costDot').textContent()) === '1');
-  check('a free tool wears none', await page.locator('[data-tool="look"] .costDot').count() === 0 && await page.locator('[data-tool="move"] .costDot').count() === 0);
+  check('no tool wears a cost', await page.locator('.costDot').count() === 0);
+  check('a free tool wears no count', await page.locator('[data-tool="look"] .countDot').count() === 0 && await page.locator('[data-tool="move"] .countDot').count() === 0);
   check('a level opens on a 7x7 room, start and goal one step in from their corners', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.start.x === 1 && l.start.y === 1 && l.cells[40] === 'goal' && l.cells.filter(c => c).length === 1; }));
   check('the goal card shows the area', (await score('area')) === '49');
   check('every row is unmarked before a run', /^steps:-,best:-$/.test(await marks()), await marks());
-  check('a priced tool wears its count too', (await page.locator('[data-tool="wall"] .countDot').textContent()) === '0');
+  check('an element tool wears its count', (await page.locator('[data-tool="wall"] .countDot').textContent()) === '0');
   // Move: press on the start, release two tiles down; then the goal, one tile left.
   await page.click('[data-tool="move"]');
   const tile = async (x, y) => { const b = await page.locator('#game').boundingBox(); const l = await page.evaluate(() => [window.wee.getLevel().w, window.wee.getLevel().h]); return [b.x + (x + 0.5) * b.width / l[0], b.y + (y + 0.5) * b.height / l[1]]; };
@@ -73,12 +73,12 @@ try {
   await page.waitForTimeout(200);
   const won = await verdict();
   check('a room in range wins and the card marks every row', /Made it in 4 moves/.test(won) && (await marks()).startsWith('steps:met') && (await page.locator('#campLast').textContent()) === 'won in 4', won + ' ' + await marks());
-  check('the card shows the scores beside the best', (await score('cost')) === '7' && (await score('area')) === '25' && /best 7/.test(await page.locator('.campScore[data-score="cost"]').textContent()));
+  check('the card shows the area beside the best, and no cost', (await score('area')) === '25' && /best 25/.test(await page.locator('.campScore[data-score="area"]').textContent()) && await page.locator('.campScore[data-score="cost"]').count() === 0);
   await page.click('#campVerdictClose');
   check('the verdict closes', await page.locator('#campVerdict').isHidden());
   await page.click('#campBack');
   const row = await page.locator('.campRow[data-level="1"] small').textContent();
-  check('the list keeps the best of a beaten level', /Beaten/.test(row) && /best cost 7 · area 25/.test(row), row);
+  check('the list keeps the best of a beaten level', /Beaten/.test(row) && /best area 25/.test(row) && !/cost/.test(row), row);
   check('the level you were on is selected', await page.locator('.campRow[data-level="1"]').evaluate(b => b.classList.contains('sel')));
   await page.click('.campRow[data-level="1"]');
   const kept = await page.evaluate(() => { const l = window.wee.getLevel(); return [l.w, l.h, l.cells.filter(c => c === 'wall').length].join(); });
@@ -145,7 +145,7 @@ try {
   await page.waitForFunction(() => document.getElementById('roomsBox').open, null, { timeout: 5000 });
   check('Sandbox opens the rooms list', true);
   check('the sandbox has no Move tool', await page.locator('[data-tool="move"]').isHidden());
-  check('the sandbox shows the whole palette again', !(await page.evaluate(() => document.body.classList.contains('campaign'))) && (await page.locator('[data-tool="wall"] .costDot').count()) === 0);
+  check('the sandbox shows the whole palette again', !(await page.evaluate(() => document.body.classList.contains('campaign'))) && (await page.locator('[data-tool="wall"] .countDot').count()) === 0);
   // On a phone, a palette wider than the screen scrolls by itself and the page stays put.
   const phone = await browser.newPage({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true });
   await phone.goto('http://localhost:5217/');

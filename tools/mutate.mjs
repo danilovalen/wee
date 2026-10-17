@@ -705,7 +705,6 @@ const M = [
   ['src/app/size.js', "  addEventListener('pointerup', done); addEventListener('pointercancel', done);\n", "", 'size-band'],
   ['src/app/size.js', "if (ev.target !== b && (from || !band.hidden)) { from = null; band.hidden = true; }", "if (ev.target !== b && !from && !band.hidden) band.hidden = true;", 'size-band'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
-  ['src', "dot.textContent = COSTS[el];", "dot.textContent = '';", 'campaign-play'],
   // the goal card, refused taps and the move preview
   ['src', "base.reqs = Object.fromEntries((def.require || []).map(id => [id, !(id in failed)]));", "base.reqs = Object.fromEntries((def.require || []).map(id => [id, true]));", 'campaign'],
   ['src', "met: ran ? v.inRange : null", "met: null", 'campaign-play'],

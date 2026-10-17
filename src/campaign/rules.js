@@ -191,11 +191,6 @@ export const bestShort = st => `exactly ${st.best}`;
 // The room's area, the size score.
 export const areaOf = room => room.w * room.h;
 
-export function costOf(def, room, costs) {
-  const { by } = placed(def, room);
-  return Object.entries(by).reduce((n, [el, list]) => n + list.length * (costs[el] || 0), 0);
-}
-
 // Why the robot cannot reach the goal, in words, with the tiles to point at. Copy is a draft.
 // Per kind: its name, its plural, and how one, several or none of them fail to hold.
 const HOLD = {
@@ -223,14 +218,14 @@ export function stuckText(room) {
 }
 
 // The whole verdict. { ok: false, errors } when the room cannot run; otherwise
-// { ok: true, won, length, paths, fail: { path, why } | null, cost, area, optional }.
-export function check(def, room, costs, opts) {
+// { ok: true, won, length, paths, fail: { path, why } | null, area, optional }.
+export function check(def, room, opts) {
   const errors = placementErrors(def, room);
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
   if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'The robot gave up: this room is too big to search.' } };
-  const base = { ok: true, length: r.length, paths: r.paths.length, cost: costOf(def, room, costs), area: areaOf(room) };
+  const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
   // Each requirement holds on every shortest path or it is not met; the card marks each one.
   const failed = {};

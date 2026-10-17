@@ -11,17 +11,18 @@ the conversation that day. Rulings are restated, not quoted, unless in quotes.
 - You do not solve the puzzle. **You build the room and a robot plays it.**
 - The robot plays **every shortest path**. A room passes only when all of them pass.
 - Each level sets: the room size, its fixed pieces (possibly none), the robot's powers, a
-  palette of elements with a cost and a min/max each, a required move range x ± y, and
+  palette of elements with a min/max each, a required move range x ± y, and
   requirements the solution must meet. Hitting exactly x moves is optional.
 - On a failure the robot plays the failing path, so you can watch what went wrong.
-- A win is scored three ways, the best of each kept separately: **cost** (sum of placed
-  elements' costs), **area** (the room's width times height) and **optional requirements met**.
-  Area replaced tiles on 2026-10-17 (owner: area "replaces tiles").
+- A win is scored two ways, the best of each kept separately: **area** (the room's width times
+  height) and **optional requirements met**. Area replaced tiles on 2026-10-17 (owner: area
+  "replaces tiles"). Cost (a price per element) was removed the same day (owner: *"first remove
+  the score, if we will use tiles depends on the diagnosis"*): whether a count of placed things
+  comes back waits on measuring how far it moves with area (register 176).
 - **The room is yours to size.** Every level opens on an empty 7x7 room and you grow or shrink
   it with the grips on its edges, as in the sandbox; there is no limit. Its edge is not made of
-  blocks: it stops the robot like a wall, costs nothing, and touching it is not a death.
+  blocks: it stops the robot like a wall and touching it is not a death.
 - **The start and the goal sit one diagonal step in from the top left and bottom right corners** when a level opens (owner: *"I prefer having start and end preplaced on the corners"*, then *"moved one diagonal step towards the center as default"*). Rooms already saved keep their own. The **Move** tool carries them, or anything placed, to another tile: press on it, release where it goes. Exactly one of each, free.
-- Costs are constant across levels: block 1, box 2, button 3, door 3, switch 2. Start and goal are free.
 - The level list shows each level's elements as their palette icons (owner, 2026-10-17).
 - Main menu: **Campaign** (the level list, opening on the last level played) and **Sandbox**
   (the Rooms list).
@@ -105,11 +106,10 @@ Chosen 2026-10-17 from sketches (owner: *"B but using icon instead of name for o
 both interactions). Over the room, a goal card: the level's name, then one row per goal, the
 move range first and the optional exact count last. Each row draws its objects as their palette
 icons (the robot, a box, a door, a switch, a button) and is marked ✓ or ✕ after a Run; a
-requirement is met only when every shortest path meets it. Under it, cost and area beside your
+requirement is met only when every shortest path meets it. Under it, the area beside your
 best. The card's height never changes: the verdict's words float over the bottom of the room
 (× closes them) and the room never moves. Each palette button of an element wears how many are
-placed (red until the minimum, written `n/min+`; `n/max` when a level sets a maximum) and its
-cost. A tap the level refuses shakes the tile red and says why on it for a moment. Dragging with
+placed (red until the minimum, written `n/min+`; `n/max` when a level sets a maximum). A tap the level refuses shakes the tile red and says why on it for a moment. Dragging with
 Move shows a see-through copy on the landing tile, red with a cross where it cannot land, and a
 dashed frame where the thing was. Row wording is a draft.
 
