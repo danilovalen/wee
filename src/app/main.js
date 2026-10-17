@@ -13,6 +13,7 @@ import { bindInput } from './input.js';
 import { setMode, frame, render, tick, report, copyReport } from './play.js';
 import { buildRooms, bootRooms } from './rooms.js';
 import { buildGenerator } from './generator.js';
+import { buildCampaign, openMenu } from './campaign.js';
 
 S.level = starterLevel(portrait());
 
@@ -27,6 +28,7 @@ window.wee = { draws: () => S.draws, blank: (w, h) => emptyLevel(w, h), report, 
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
+buildCampaign({ setMode, syncPanel, fit }, () => { window.wee.roomsReady = bootRooms(); return window.wee.roomsReady; });
 bindInput();
 syncPanel();
 addEventListener('resize', fit);
@@ -37,4 +39,6 @@ fit();
 setMode('edit');
 startSnow($('snow'));
 requestAnimationFrame(frame);
-window.wee.roomsReady = bootRooms();
+// The game opens on the main menu. A shared room link, or ?sandbox, goes straight to the sandbox.
+if (location.hash.startsWith('#room=') || new URLSearchParams(location.search).has('sandbox')) window.wee.roomsReady = bootRooms();
+else openMenu();

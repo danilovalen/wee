@@ -19,6 +19,7 @@ export function stateKey(s) {
   k += '|';
   for (const c of Object.keys(s.open).sort()) if (s.open[c]) k += c + ',';
   if (s.broken.length) k += '|' + [...s.broken].sort((a, b) => a - b).join(',');
+  if (s.toggled.length) k += '|t' + s.toggled.join(',');
   return k;
 }
 

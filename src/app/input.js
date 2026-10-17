@@ -11,6 +11,7 @@ import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
 import { toolForKey, bareKey, showKeys } from './keys.js';
 import { TOOLS } from '../editor/palette.js';
+import { allows } from './campaign.js';
 
 function cellFromEvent(ev) {
   const r = canvas.getBoundingClientRect(), level = S.level;
@@ -20,6 +21,7 @@ function cellFromEvent(ev) {
 }
 
 function paint(x, y, how) {
+  if (!allows(S.level, S.ui, x, y, how)) return;
   const t = now();
   for (const f of place(S.level, S.ui, x, y, how)) S.fx.push({ ...f, at: t });
 }

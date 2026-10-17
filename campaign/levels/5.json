@@ -1,0 +1,41 @@
+{
+ "name": "Level 5",
+ "rows": [
+  "#######",
+  "#P....#",
+  "#.....#",
+  "#.....#",
+  "#.....#",
+  "#....G#",
+  "#######"
+ ],
+ "palette": {
+  "block": [
+   0,
+   10
+  ],
+  "box": [
+   1,
+   2
+  ],
+  "button": [
+   1,
+   1
+  ],
+  "door": [
+   1,
+   1
+  ]
+ },
+ "steps": {
+  "best": 10,
+  "range": 3
+ },
+ "rules": [
+  "noBoxOnButton"
+ ],
+ "require": [
+  "throughOpenDoor",
+  "doorClosedAtEnd"
+ ]
+}

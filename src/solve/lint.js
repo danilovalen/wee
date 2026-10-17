@@ -13,7 +13,7 @@ export function lint(level) {
   level.cells.forEach((c, i) => {
     const [kind, col] = c.split(':');
     if (kind === 'door' || kind === 'idoor') (doors[col] ||= []).push(i);
-    if (kind === 'button' || kind === 'receiver' || kind === 'sensor') (switches[col] ||= []).push(i);
+    if (kind === 'button' || kind === 'toggle' || kind === 'receiver' || kind === 'sensor') (switches[col] ||= []).push(i);
   });
   for (const col in doors) if (!switches[col]) out.push({ ...at(doors[col][0]), msg: `A ${col} door with no ${col} switch never changes.` });
   for (const col in switches) if (!doors[col]) out.push({ ...at(switches[col][0]), msg: `A ${col} switch with no ${col} door does nothing.` });

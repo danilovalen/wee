@@ -1,0 +1,35 @@
+{
+ "name": "Level 3",
+ "rows": [
+  "#######",
+  "#P....#",
+  "#.....#",
+  "#.....#",
+  "#.....#",
+  "#....G#",
+  "#######"
+ ],
+ "palette": {
+  "block": [
+   0,
+   10
+  ],
+  "toggle": [
+   1,
+   1
+  ],
+  "door": [
+   1,
+   1
+  ]
+ },
+ "steps": {
+  "best": 8,
+  "range": 2
+ },
+ "rules": [],
+ "require": [
+  "everyToggleOnThenOff",
+  "throughOpenDoor"
+ ]
+}

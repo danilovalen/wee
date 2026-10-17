@@ -1,0 +1,36 @@
+{
+ "name": "Level 2",
+ "rows": [
+  "#######",
+  "#P....#",
+  "#.....#",
+  "#.....#",
+  "#.....#",
+  "#....G#",
+  "#######"
+ ],
+ "palette": {
+  "block": [
+   0,
+   10
+  ],
+  "toggle": [
+   2,
+   2
+  ],
+  "door": [
+   1,
+   1
+  ]
+ },
+ "steps": {
+  "best": 8,
+  "range": 2
+ },
+ "rules": [],
+ "require": [
+  "everyToggleOn",
+  "throughOpenDoor",
+  "doorClosedAtEnd"
+ ]
+}

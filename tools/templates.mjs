@@ -1,5 +1,6 @@
 // Writes src/level/templates.js from every rooms/*.wee, so the page carries them as
-// read-only templates. Usage: node tools/templates.mjs (the build also checks it is current).
+// read-only templates, and src/level/campaign.js from campaign/. Usage: node tools/templates.mjs
+// (the build also checks both are current).
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 
 export function templatesSource() {
@@ -11,7 +12,17 @@ export function templatesSource() {
   return `// Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.\nexport const TEMPLATES = ${JSON.stringify(rooms)};\n`;
 }
 
+// The campaign's levels, in number order, and the fixed cost of each element.
+export function campaignSource() {
+  const levels = readdirSync('campaign/levels').filter(f => f.endsWith('.json'))
+    .sort((a, b) => parseInt(a) - parseInt(b))
+    .map(f => ({ id: f.replace(/\.json$/, ''), ...JSON.parse(readFileSync('campaign/levels/' + f, 'utf8')) }));
+  const costs = JSON.parse(readFileSync('campaign/costs.json', 'utf8'));
+  return `// Generated from campaign/ by tools/templates.mjs. Do not edit by hand.\nexport const LEVELS = ${JSON.stringify(levels)};\nexport const COSTS = ${JSON.stringify(costs)};\n`;
+}
+
 if (process.argv[1] && process.argv[1].endsWith('templates.mjs')) {
   writeFileSync('src/level/templates.js', templatesSource());
-  console.log('src/level/templates.js written');
+  writeFileSync('src/level/campaign.js', campaignSource());
+  console.log('src/level/templates.js and src/level/campaign.js written');
 }

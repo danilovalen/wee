@@ -27,6 +27,7 @@ export function switchesOf(s) {
       if (c.startsWith('button:')) list.push({ i, x, y, col: c.slice(7), button: true });
       else if (c.startsWith('receiver:')) list.push({ i, x, y, col: c.slice(9), button: false });
       else if (c.startsWith('sensor:')) list.push({ i, x, y, col: c.slice(7), button: false });
+      else if (c.startsWith('toggle:')) list.push({ i, x, y, col: c.slice(7), toggle: true });
     });
     SWITCHES.set(s.cells, list);
   }
@@ -40,11 +41,30 @@ function doorsOf(s, cell) {
   return by[cell] || [];
 }
 
+// A toggle flips each time something enters it (you, or any piece), and starts off. Who stands
+// on each toggle is kept, so standing still or sliding on does not flip it twice; with flip
+// false, the occupants are only noted (a run's start, a reset). Both are replaced, never
+// edited, so a copy of a run can share them.
+export function flipToggles(s, flip = true) {
+  const list = switchesOf(s).filter(w => w.toggle);
+  if (!list.length) return;
+  const was = s.onToggle || {}, now = {};
+  let on = s.toggled;
+  for (const { i, x, y } of list) {
+    const ids = s.player.x === x && s.player.y === y ? ['you'] : [];
+    for (const e of s.entities) if (!e.dead && e.x === x && e.y === y) ids.push(e.id);
+    now[i] = ids;
+    if (flip) for (const id of ids) if (!(was[i] || []).includes(id)) on = on.includes(i) ? on.filter(j => j !== i) : [...on, i].sort((a, b) => a - b);
+  }
+  s.onToggle = now; s.toggled = on;
+}
+
 export function refreshDoors(s) {
   const pressed = {}, any = {};
-  // A receiver or a sensor is a button that a turret beam holds down.
-  for (const { i, x, y, col, button } of switchesOf(s)) {
-    const down = button ? playerAt(s, x, y) || !!entAt(s, x, y) : s.lit.has(i);
+  flipToggles(s);
+  // A receiver or a sensor is a button that a turret beam holds down; a toggle is held while on.
+  for (const { i, x, y, col, button, toggle } of switchesOf(s)) {
+    const down = toggle ? s.toggled.includes(i) : button ? playerAt(s, x, y) || !!entAt(s, x, y) : s.lit.has(i);
     any[col] = true;
     pressed[col] = (pressed[col] ?? true) && down;
   }
@@ -73,6 +93,7 @@ export function respawn(s) {
   s.entities = freshPieces(s.origin);
   s.broken = [];
   Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, pushing: null, snap: true });
+  s.toggled = []; flipToggles(s, false);
   refreshDoors(s);
 }
 

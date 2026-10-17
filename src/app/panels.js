@@ -4,6 +4,7 @@ import { CLOCKWISE, COLOURS, POWERS, NEEDS } from '../rules/base.js';
 import { resizeLevel, moveSide, wallBorder } from '../level/format.js';
 import { INK } from '../view/ink.js';
 import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
+import { toolsFor, syncBrief, syncCostDots } from './campaign.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch } from './dom.js';
 import { change, step as undoStep, syncUndo } from './undo.js';
@@ -147,7 +148,11 @@ export function syncPanel() {
   syncLenses();
   syncRoomsButton();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
-  document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = b.dataset.in !== ui.group; });
+  // In a campaign level the palette is the level's: its elements, Look and Erase, in one list.
+  const only = S.camp ? toolsFor(S.camp.def) : null;
+  if (only && !only.includes(ui.tool)) ui.tool = 'look';
+  document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group; });
+  syncBrief(); syncCostDots();
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label;

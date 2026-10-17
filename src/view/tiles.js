@@ -118,7 +118,15 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   } else {
     const [kind, col] = c.split(':');
     g.fillStyle = INK[col]; g.strokeStyle = INK[col]; g.lineWidth = 2.5;
-    if (kind === 'button') {
+    if (kind === 'toggle') {
+      // A switch plate: a pill in its colour with a knob, left and hollow while off, right
+      // and filled while on.
+      const on = s && s.toggled.includes(y * s.w + x);
+      g.globalAlpha = on ? 1 : 0.35; roundRect(g, 5, 10, 22, 12, 6); g.fill(); g.globalAlpha = 1;
+      roundRect(g, 5, 10, 22, 12, 6); g.stroke();
+      g.fillStyle = on ? '#fff' : INK[col];
+      g.beginPath(); g.arc(on ? 21 : 11, 16, 4, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'button') {
       const down = s && pressedAt(s, x, y);
       g.globalAlpha = 0.35; g.beginPath(); g.arc(16, 16, 11, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
       g.beginPath(); g.arc(16, down ? 17 : 15, down ? 6 : 8, 0, Math.PI * 2); g.fill();

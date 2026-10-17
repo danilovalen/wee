@@ -18,7 +18,7 @@ let A = null; // the page actions (setMode, syncPanel, fit), passed in to avoid 
 let saved = [];
 
 // A template opened and left as it is has nothing to lose: it is clean until it changes.
-export const dirty = () => !S.room || stampOf(S.level) !== (S.room.saved ?? S.room.template) || S.room.edited;
+export const dirty = () => !S.camp && (!S.room || stampOf(S.level) !== (S.room.saved ?? S.room.template) || S.room.edited);
 export const leaveOk = () => !dirty() || confirm('This room has changes that are not saved. Leave them?');
 
 export function syncRoomsButton() {

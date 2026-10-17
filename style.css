@@ -428,3 +428,32 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 .tileMenu button { justify-content: flex-start; text-align: left; }
 .tileMenu .del { color: #c8283c; }
 .tileMenu input { min-width: 0; }
+
+/* Campaign: the main menu, the level list, and a level's brief over the room. */
+.camp-only { display: none; }
+body.campaign .camp-only { display: revert; }
+body.campaign #campBrief { display: block; }
+body.campaign #roomTitle, body.campaign #checkBtn, body.campaign #stopsBtn, body.campaign #genBtn, body.campaign #roomsBtn,
+body.campaign #groups, body.campaign .ghead, body.campaign #options, body.campaign .plus, body.campaign #lensChips,
+body.campaign #wellBtn, body.campaign #sizeBtn, body.campaign #well, body.campaign #win, body.campaign #stuck,
+body.campaign #checkText, body.campaign #showSolution, body.campaign #lintBox, body.campaign #designBox,
+body.campaign #hideBtn, body.campaign #respawnBtn, body.campaign #reportBtn, body.campaign #phoneNav { display: none !important; }
+body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
+.menu { text-align: center; min-width: 240px; }
+.menuLogo { display: block; font-size: 2.4em; margin: 8px 0 16px; }
+.menuList { display: grid; gap: 10px; }
+.menuList button { font-size: 1.15em; padding: 12px; }
+.campList { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.campRow { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; }
+.campRow.sel { outline: 2px solid var(--accent, #6b5cff); }
+.campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; padding: 8px 10px; border-radius: var(--r-s); background: var(--field); font-size: 0.9em; box-sizing: border-box; }
+.campBrief p { margin: 0 0 4px; }
+.campHead { font-weight: 700; }
+.campReqs { margin: 0; padding-left: 18px; }
+.campReqs .optional { color: var(--dim); }
+.campVerdict { margin-top: 6px !important; font-weight: 700; }
+.campVerdict.won { color: #2e8b57; }
+.campVerdict.lost { color: #c0392b; }
+[data-tool] { position: relative; }
+.costDot { position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 3px; box-sizing: border-box; border-radius: var(--r-pill); background: #e0a100; color: #1d1d1d; font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; pointer-events: none; }
+body.campaign [data-tool][hidden], body.campaign #powers, body.campaign #placeHint, body.campaign #ctx { display: none !important; }

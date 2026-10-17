@@ -4,7 +4,7 @@
 // export, a default export and an exported `let` (a snapshot cannot follow it).
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
-import { templatesSource } from './templates.mjs';
+import { templatesSource, campaignSource } from './templates.mjs';
 
 const ENTRY = 'src/app/main.js';
 const IMPORT = /^import\s*\{([^}]*)\}\s*from\s*'([^']+)';\s*$/gm;
@@ -48,6 +48,8 @@ export function bundle(entry = ENTRY) {
 if (process.argv[1] && process.argv[1].endsWith('build-single.mjs')) {
   if (readFileSync('src/level/templates.js', 'utf8') !== templatesSource())
     throw new Error('src/level/templates.js is out of step with rooms/: run node tools/templates.mjs');
+  if (readFileSync('src/level/campaign.js', 'utf8') !== campaignSource())
+    throw new Error('src/level/campaign.js is out of step with campaign/: run node tools/templates.mjs');
   const js = bundle();
   const fonts = readFileSync('fonts.css', 'utf8')
     .replace(/url\('(fonts\/[^']+\.woff2)'\)/g, (_, f) => `url(data:font/woff2;base64,${readFileSync(f).toString('base64')})`);

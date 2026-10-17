@@ -3,7 +3,7 @@
 import { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } from './base.js';
 import { aimOf, computeBeams, turnTurrets } from './beams.js';
 import { cellAt, inWater } from './grid.js';
-import { explode, freshPieces, refreshDoors } from './life.js';
+import { explode, flipToggles, freshPieces, refreshDoors } from './life.js';
 import { fireSprings, rushOnce, slidePiece } from './pieces.js';
 import { input, slideOnce, unhide } from './player.js';
 import { checkStuck } from './sticky.js';
@@ -18,15 +18,16 @@ export function createGame(level) {
     checkpoint: { ...l.start },
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
     entities: freshPieces(l.entities),
-    open: {}, broken: [], lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
+    open: {}, broken: [], toggled: [], onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };
   computeBeams(s, false);
+  flipToggles(s, false);
   refreshDoors(s);
   return s;
 }
 
 // A copy of a run to try a move on. What a run never changes is shared (the cells, the
-// room as it started, the start); the checkpoint, broken blocks, beams, lit and shocked are replaced,
+// room as it started, the start); the checkpoint, broken blocks, toggles, beams, lit and shocked are replaced,
 // never edited in place, so they are shared too. Everything a tick can edit is copied.
 export function cloneGame(s) {
   const p = s.player;

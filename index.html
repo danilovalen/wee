@@ -12,7 +12,9 @@
   <header>
     <b class="logo">wee</b>
     <button id="roomTitle" class="roomTitle" type="button" title="This room">Untitled</button>
+    <button id="campBack" type="button" class="camp-only">Levels</button>
     <button id="mode" type="button" title="E">Play</button>
+    <button id="campRun" type="button" class="camp-only primary">Run</button>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
     <button id="checkBtn" type="button" data-edit>Check</button>
@@ -90,7 +92,7 @@
           <button type="button" data-corner="sw" title="Bottom left">&#9699;</button>
           <button type="button" data-corner="se" title="Bottom right">&#9698;</button>
         </div>
-        <div class="opt" data-for="button door idoor receiver sensor">
+        <div class="opt" data-for="button toggle door idoor receiver sensor">
           <span>Colour</span>
           <span id="colours"></span>
         </div>
@@ -99,6 +101,7 @@
 
     </aside>
     <section id="stage">
+      <div id="campBrief" class="campBrief camp-only"></div>
       <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="game"></canvas>
         <button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button>
         <button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom">+</button>
@@ -204,6 +207,17 @@
   <dialog id="keysBox" class="rooms keys">
     <div class="roomsHead"><b>Keys</b><form method="dialog"><button>Close</button></form></div>
     <div id="keysList" class="keysList"></div>
+  </dialog>
+  <dialog id="menuBox" class="rooms menu">
+    <b class="logo menuLogo">wee</b>
+    <div class="menuList">
+      <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
+      <button id="menuSandbox" type="button">Sandbox</button>
+    </div>
+  </dialog>
+  <dialog id="campBox" class="rooms">
+    <div class="roomsHead"><b>Campaign</b><button id="campMenu" type="button">Menu</button></div>
+    <ul id="campList" class="campList"></ul>
   </dialog>
   <dialog id="roomsBox" class="rooms library">
     <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
