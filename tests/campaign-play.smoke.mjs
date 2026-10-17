@@ -102,7 +102,7 @@ try {
   const lay = await page.evaluate(() => { const must = document.querySelector('.campMust'), opt = document.querySelector('.campOpt'), xs = new Set([...must.children].map(li => Math.round(li.getBoundingClientRect().left))); return { cols: xs.size, opt: [...opt.children].map(li => li.dataset.req).join(), must: [...must.children].map(li => li.dataset.req).join(), below: opt.getBoundingClientRect().top >= must.getBoundingClientRect().bottom }; });
   check('required goals sit two to a line', lay.cols === 2, JSON.stringify(lay));
   check('the optional goal sits apart, below the required ones', lay.opt === 'best' && !lay.must.includes('best') && lay.below, JSON.stringify(lay));
-  check('requirement rows draw objects as icons', reqRows.includes('everyToggleOn=toggle') && reqRows.includes('throughOpenDoor=start+door') && reqRows.includes('doorClosedAtEnd=door'), reqRows.join());
+  check('requirement rows draw objects as icons', reqRows.includes('throughOpenDoor=start+door') && reqRows.includes('doorClosedAtEnd=door'), reqRows.join());
   await page.click('#campBack');
   // Level 3: one switch, one door. With the switch walled off behind the door, Run says why
   // the robot cannot finish and flashes the door and the switch.

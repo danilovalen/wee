@@ -49,6 +49,8 @@ const build = (def, rows) => {
   ok('a level has no powers', Object.values(r.powers).every(p => !p));
   ok('levels are numbered from 1 in order', LEVELS.map(l => l.id).join() === LEVELS.map((_, i) => String(i + 1)).join());
   ok('every level starts 7x7', LEVELS.every(l => l.size.join() === '7,7'));
+  // Through an open door already turns every switch on: every switch and door in a level is red.
+  ok('level 3 does not ask for what the open door already implies', level('3').require.join() === 'throughOpenDoor,doorClosedAtEnd', level('3').require.join());
 }
 { // Move: anything placed goes to another tile that can take it
   const r = build(level('1'), ['P#t..', '.B...', '.....', '.....', '....G']);

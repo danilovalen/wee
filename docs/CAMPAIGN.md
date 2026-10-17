@@ -69,7 +69,7 @@ ones they had before.
 |---|---|---|---|
 | 1 | block 0-10 | 6 ± 2 | none beyond the range |
 | 2 | block 0-10, switch 1-1, door 1-1 | 7 ± 2 | robot collides with a closed door; robot goes through an open door |
-| 3 | block 0-10, switch 1 or more, door 1 or more | 8 ± 2 | every switch on; through an open door; door closed at the end |
+| 3 | block 0-10, switch 1 or more, door 1 or more | 8 ± 2 | through an open door; door closed at the end (every switch on was dropped: the open door implies it) |
 | 4 | block, switch 2 or more, door 1 or more | 8 ± 2 | through an open door; every switch off when the robot reaches the goal |
 | 5 | block, box 1 or more | 8 ± 2 | one box is pushed in at least 2 moves and the robot collides with it once without moving it |
 | 6 | block, box 1 or more, switch 1 or more, door 1 or more | 7 ± 2 | a box passes through an open door; the robot passes through an open door; only boxes flip switches |

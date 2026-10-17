@@ -24,7 +24,6 @@
  },
  "rules": [],
  "require": [
-  "everyToggleOn",
   "throughOpenDoor",
   "doorClosedAtEnd"
  ]
