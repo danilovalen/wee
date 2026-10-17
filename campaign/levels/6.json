@@ -28,14 +28,13 @@
   ]
  },
  "steps": {
-  "best": 10,
-  "range": 3
+  "best": 6,
+  "range": 2
  },
  "rules": [
   "noBoxOnButton"
  ],
  "require": [
-  "throughOpenDoor",
-  "doorClosedAtEnd"
+  "throughOpenDoor"
  ]
 }

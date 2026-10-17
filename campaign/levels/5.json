@@ -18,7 +18,7 @@
    1,
    null
   ],
-  "button": [
+  "toggle": [
    1,
    null
   ],
@@ -28,13 +28,13 @@
   ]
  },
  "steps": {
-  "best": 6,
+  "best": 7,
   "range": 2
  },
- "rules": [
-  "noBoxOnButton"
- ],
+ "rules": [],
  "require": [
-  "throughOpenDoor"
+  "boxThroughOpenDoor",
+  "throughOpenDoor",
+  "onlyBoxesFlipSwitches"
  ]
 }

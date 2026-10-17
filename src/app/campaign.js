@@ -8,6 +8,7 @@ import { place } from '../editor/edit.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { $, portrait, now } from './dom.js';
+import { icon } from './icons.js';
 
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
@@ -141,7 +142,13 @@ function renderList() {
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
     small.textContent = rec.beaten ? `Beaten · best cost ${rec.best.cost} · tiles ${rec.best.tiles} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
-    b.append(name, small);
+    // The elements the level hands you, as the palette draws them.
+    const parts = document.createElement('span'); parts.className = 'campParts';
+    for (const el of Object.keys(def.palette)) {
+      const c = icon(TOOL[el]); c.dataset.part = el; c.title = ELEMENTS[el].label; c.setAttribute('aria-label', ELEMENTS[el].label);
+      parts.append(c);
+    }
+    b.append(name, parts, small);
     if (def.id === p.last) b.classList.add('sel');
     b.onclick = () => enterLevel(def.id);
     li.append(b);

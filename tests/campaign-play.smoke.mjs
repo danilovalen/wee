@@ -21,6 +21,8 @@ try {
   await page.click('#menuCampaign');
   const rows = await page.$$eval('.campRow', rs => rs.map(r => r.dataset.level));
   check('the level list shows every level', rows.length >= 5 && rows[0] === '1', rows.join());
+  const parts = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part).join()])));
+  check('each level in the list shows the elements it uses', parts['1'] === 'block' && parts['5'] === 'block,box,toggle,door', JSON.stringify(parts));
   await page.click('.campRow[data-level="1"]');
   check('a level hides the sandbox and shows its brief', await page.evaluate(() => document.body.classList.contains('campaign')) && await page.locator('#campBrief').isVisible());
   const tools = await visibleTools();

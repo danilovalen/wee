@@ -47,7 +47,7 @@ const build = (def, rows) => {
   ok('too few of a required element is refused', placementErrors(d3, roomOf(d3)).some(e => /at least 1 switch\./.test(e.msg)));
   const lots = roomOf(d3); for (let x = 1; x <= 5; x++) { lots.cells[2 * 7 + x] = 'toggle:red'; lots.cells[3 * 7 + x] = 'door:red'; }
   ok('a level with no maximum takes any number', placementErrors(d3, lots).length === 0, JSON.stringify(placementErrors(d3, lots)));
-  const d4 = level('5'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
+  const d4 = level('6'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
   ok('a box cannot start on a button', placementErrors(d4, onButton).some(e => /box cannot start on a button/.test(e.msg)));
 }
 { // the robot finds every shortest path
@@ -125,6 +125,16 @@ const build = (def, rows) => {
   ok('level 4 needs two switches and a door', d.palette.toggle[0] === 2 && d.palette.door[0] === 1 && d.require.join() === 'throughOpenDoor,everyToggleOffAtEnd');
   ok('a one-switch room no longer fits level 4', placementErrors(d, build(d, ['#######', '#P.#..#', '#....##', '#...t.#', '#..#.##', '##...G#', '#######'].map((r, y) => y === 1 ? '#P.#D.#' : r))).some(e => /at least 2 switches/.test(e.msg)));
 }
+{ // level 5: a box flips the switch, a box and the robot go through the door
+  const d = level('5');
+  ok('level 5 needs a door, a switch and a box', ['door', 'toggle', 'box'].every(el => d.palette[el][0] === 1) && d.require.join() === 'boxThroughOpenDoor,throughOpenDoor,onlyBoxesFlipSwitches');
+  const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
+  ok('a box through an open door: met', req('boxThroughOpenDoor', ['##########', '#Pt.B.D..#', '##########'], ['right']));
+  ok('a box through an open door: not met when only the robot goes through', !req('boxThroughOpenDoor', ['#######', '#Pt.D.#', '#B....#', '#######'], ['right']));
+  ok('only boxes flip switches: met when a box flips it', req('onlyBoxesFlipSwitches', ['######', '#PB.t#', '######'], ['right']));
+  ok('only boxes flip switches: not met when the robot crosses one', !req('onlyBoxesFlipSwitches', ['######', '#Pt..#', '######'], ['right']));
+  ok('only boxes flip switches: not met when nothing flips', !req('onlyBoxesFlipSwitches', ['######', '#P..t#', '#....#', '######'], ['down']));
+}
 { // level 2: a toggle, a door, run into it closed, then go through it open
   const d = level('2');
   ok('level 2 asks for both door requirements', d.require.join() === 'hitsClosedDoor,throughOpenDoor' && d.palette.toggle[0] === 1 && d.palette.door[0] === 1);
@@ -146,8 +156,9 @@ const build = (def, rows) => {
     2: ['#######', '#P..D##', '#..t..#', '#.##.##', '#.#...#', '##...G#', '#######'],
     3: ['#######', '#P.#.##', '#..####', '##..#.#', '#Dt...#', '#..t#G#', '#######'],
     4: ['#######', '#Pt.tD#', '#.#...#', '#.....#', '####.##', '#.#..G#', '#######'],
-    5: ['#######', '#P.#.B#', '#...#.#', '#..B.o#', '#.#..D#', '##..#G#', '#######'],
-    6: ['#######', '#P.o..#', '#..B.D#', '#...###', '##.####', '##...G#', '#######'],
+    5: ['#######', '#P....#', '#....B#', '#B..#t#', '#D.#.##', '#....G#', '#######'],
+    6: ['#######', '#P.#.B#', '#...#.#', '#..B.o#', '#.#..D#', '##..#G#', '#######'],
+    7: ['#######', '#P.o..#', '#..B.D#', '#...###', '##.####', '##...G#', '#######'],
   };
   ok('there is a known winning room for every level', LEVELS.every(l => WINS[l.id]), LEVELS.map(l => l.id).join());
   for (const l of LEVELS) {

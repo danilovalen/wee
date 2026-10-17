@@ -462,6 +462,8 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
 .menuList button { font-size: 1.15em; padding: 12px; }
 .campList { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
 .campRow { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; }
+.campParts { display: flex; gap: 4px; }
+.campParts canvas { width: 22px; height: 22px; }
 .campRow.sel { outline: 2px solid var(--accent, #6b5cff); }
 .campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; padding: 8px 10px; border-radius: var(--r-s); background: var(--field); font-size: 0.9em; box-sizing: border-box; }
 .campBrief p { margin: 0 0 4px; }
@@ -3583,7 +3585,7 @@ return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNE
 const m35 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null]},"steps":{"best":6,"range":2},"rules":[],"require":[]},{"id":"2","name":"Level 2","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"]},{"id":"3","name":"Level 3","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOn","throughOpenDoor","doorClosedAtEnd"]},{"id":"4","name":"Level 4","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"]},{"id":"5","name":"Level 5","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6,"range":2},"rules":["noBoxOnButton"],"require":["throughOpenDoor"]},{"id":"6","name":"Level 6","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":10,"range":3},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"]}];
+const LEVELS = [{"id":"1","name":"Level 1","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null]},"steps":{"best":6,"range":2},"rules":[],"require":[]},{"id":"2","name":"Level 2","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"]},{"id":"3","name":"Level 3","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOn","throughOpenDoor","doorClosedAtEnd"]},{"id":"4","name":"Level 4","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"]},{"id":"5","name":"Level 5","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"]},{"id":"6","name":"Level 6","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6,"range":2},"rules":["noBoxOnButton"],"require":["throughOpenDoor"]},{"id":"7","name":"Level 7","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":10,"range":3},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"]}];
 const COSTS = {"block":1,"box":2,"button":3,"door":3,"toggle":2};
 return { LEVELS, COSTS };
 })();
@@ -3810,6 +3812,26 @@ Object.assign(REQUIREMENTS, {
     text: 'Every switch turns on.',
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
   },
+  boxThroughOpenDoor: {
+    text: 'A box passes through an open door.',
+    // A closed door is solid, so a box on a door tile means it is open.
+    judge: (room, moves) => {
+      let ok = false;
+      replayPath(room, moves, s => { if (s.entities.some(e => !e.dead && e.kind === 'box' && /^door:/.test(room.cells[e.y * room.w + e.x] || ''))) ok = true; });
+      return ok;
+    },
+  },
+  onlyBoxesFlipSwitches: {
+    text: 'Only boxes turn switches on and off. The robot never crosses one.',
+    judge: (room, moves) => {
+      let robot = false, flipped = false;
+      replayPath(room, moves, s => {
+        if ((room.cells[s.player.y * room.w + s.player.x] || '').startsWith('toggle:')) robot = true;
+        if (s.toggled.length) flipped = true;
+      });
+      return flipped && !robot;
+    },
+  },
   everyToggleOffAtEnd: {
     text: 'Every switch is off when the robot reaches the goal.',
     judge: (room, moves) => room.cells.some(c => c.startsWith('toggle:')) && replayPath(room, moves, () => {}).toggled.length === 0,
@@ -4007,823 +4029,8 @@ function place(level, ui, x, y, how) {
 }
 return { holds, describe, place };
 })();
-// ---- src/app/campaign.js
-const m39 = (() => {
-const { LEVELS, COSTS } = m35;
-const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, bestText, costOf, tilesOf } = m37;
-const { place } = m38;
-const { newHistory } = m10;
-const { S, starterLevel } = m11;
-const { $, portrait, now } = m12;
-// The campaign: a main menu at launch, the level list, and building a level's room for the
-// robot. Run judges the room (src/campaign/rules.js) and the robot plays a shortest path:
-// the failing one when it fails. Progress and each level's room stay in this browser.
-// Every level is open while the levels are being made. All copy is draft.
-
-
-
-
-
-
-const KEY = 'wee.campaign';
-// The editor tool that places each palette element.
-const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle' };
-let A = null, boot = null;
-
-function progress() {
-  try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return p; } catch { /* storage off */ }
-  return { last: null, levels: {} };
-}
-const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
-const levelOf = id => LEVELS.find(l => l.id === id);
-
-// Whether a tap may change the room: placing must not break a rule the level enforces as you
-// build (locked tiles, the start, a maximum, a box on a button). Too few of something is fine
-// while building; Run says so.
-function allows(level, ui, x, y, how) {
-  if (!S.camp) return true;
-  const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
-  place(next, ui, x, y, how);
-  return placementErrors(def, next).every(e => /at least/.test(e.msg) || before.has(e.msg));
-}
-
-// The tools a level offers: Look, Erase, and its palette.
-const toolsFor = def => ['look', 'erase', ...Object.keys(def.palette).map(el => TOOL[el])];
-
-function save() {
-  if (!S.camp) return;
-  const p = progress(), rec = p.levels[S.camp.def.id] ||= {};
-  rec.room = S.level; p.last = S.camp.def.id;
-  write(p);
-}
-
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-// A dot on each palette button that costs something, saying how much; none outside a level.
-function syncCostDots() {
-  const cost = S.camp ? Object.fromEntries(Object.keys(S.camp.def.palette).map(el => [TOOL[el], COSTS[el]])) : {};
-  document.querySelectorAll('[data-tool]').forEach(b => {
-    let dot = b.querySelector('.costDot');
-    if (cost[b.dataset.tool] == null) { if (dot) dot.remove(); return; }
-    if (!dot) b.append(dot = Object.assign(document.createElement('span'), { className: 'costDot' }));
-    dot.textContent = cost[b.dataset.tool];
-    dot.title = `Costs ${cost[b.dataset.tool]}`;
-  });
-}
-
-// The level's brief over the room: what to place, what the robot must do, and what it costs.
-function syncBrief() {
-  if (!S.camp) return;
-  const def = S.camp.def, { by } = placed(def, S.level), v = S.camp.verdict;
-  const parts = Object.entries(def.palette).map(([el, [min, max]]) => `${ELEMENTS[el].label} ${by[el].length}${max === null ? '' : `/${max}`}${min ? ` (min ${min})` : ''} · ${COSTS[el]} each`);
-  const reqs = [stepsText(def.steps), ...(def.rules || []).includes('noBoxOnButton') ? ['A box cannot start on a button.'] : [], ...(def.require || []).map(id => REQUIREMENTS[id].text)];
-  const box = $('campBrief');
-  box.replaceChildren();
-  const head = document.createElement('p'); head.className = 'campHead';
-  head.textContent = `${def.name} · Cost ${costOf(def, S.level, COSTS)} · Tiles ${tilesOf(S.level)}`;
-  const pal = document.createElement('p'); pal.className = 'campPal'; pal.textContent = parts.join('  ·  ');
-  const list = document.createElement('ul'); list.className = 'campReqs';
-  for (const r of reqs) list.append(Object.assign(document.createElement('li'), { textContent: r }));
-  const opt = document.createElement('li'); opt.className = 'optional'; opt.textContent = `Optional: ${bestText(def.steps)}`;
-  list.append(opt);
-  box.append(head, pal, list);
-  if (v) {
-    const out = document.createElement('p');
-    out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
-    out.id = 'campVerdict';
-    out.textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
-      : v.won ? `The robot made it in ${plural(v.length, 'move')}${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}. Cost ${v.cost} · Tiles ${v.tiles} · Optional ${v.met}/${v.optional.length}.`
-        : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
-    // A run that cannot finish points at the tiles that stop it; tap the verdict to see them again.
-    if (stuckAt(v).length) { out.classList.add('points'); out.onclick = () => flashStuck(v); out.title = 'Show the tiles'; }
-    box.append(out);
-  }
-}
-
-function enterLevel(id) {
-  const def = levelOf(id);
-  if (!def) return false;
-  const p = progress(), rec = p.levels[id];
-  closeAll();
-  S.camp = { def, verdict: null };
-  S.level = rec && rec.room && placementErrors(def, rec.room).every(e => /at least/.test(e.msg)) ? rec.room : roomOf(def);
-  S.history = newHistory();
-  S.ui.tool = 'look'; S.ui.colour = 'red';
-  p.last = id; write(p);
-  document.body.classList.add('campaign');
-  A.setMode('edit'); A.syncPanel(); A.fit();
-  syncBrief();
-  return true;
-}
-
-function leaveLevel() {
-  save();
-  S.camp = null;
-  document.body.classList.remove('campaign');
-  // The sandbox never inherits a campaign room.
-  S.level = starterLevel(portrait()); S.history = newHistory();
-  A.setMode('edit');
-}
-
-const stuckAt = v => (v && v.ok && !v.won && v.fail.at) || [];
-function flashStuck(v) { for (const t of stuckAt(v)) S.fx.push({ type: 'flash', x: t.x, y: t.y, at: now() }); }
-
-// Judges the room, keeps the best scores of a win, then the robot plays: the failing path, or
-// the first shortest path of a win.
-function run() {
-  if (!S.camp) return null;
-  const def = S.camp.def, v = check(def, S.level, COSTS);
-  S.camp.verdict = v;
-  save();
-  if (v.ok && v.won) {
-    const p = progress(), rec = p.levels[def.id] ||= {}, best = rec.best || {};
-    rec.best = { cost: Math.min(best.cost ?? Infinity, v.cost), tiles: Math.min(best.tiles ?? Infinity, v.tiles), met: Math.max(best.met ?? 0, v.met) };
-    rec.beaten = true; rec.room = S.level;
-    write(p);
-  }
-  S.camp.ranOn = JSON.stringify(S.level);
-  const show = v.ok ? (v.won ? v.path : v.fail.path) : null;
-  if (show) { A.setMode('play'); S.demo = [...show]; }
-  else flashStuck(v);
-  syncBrief();
-  return v;
-}
-
-function renderList() {
-  const p = progress(), list = $('campList');
-  list.replaceChildren(...LEVELS.map(def => {
-    const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button');
-    b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
-    const name = document.createElement('b'), small = document.createElement('small');
-    name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten · best cost ${rec.best.cost} · tiles ${rec.best.tiles} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
-    b.append(name, small);
-    if (def.id === p.last) b.classList.add('sel');
-    b.onclick = () => enterLevel(def.id);
-    li.append(b);
-    return li;
-  }));
-}
-
-function closeAll() { for (const id of ['menuBox', 'campBox']) if ($(id).open) $(id).close(); }
-
-function openList() {
-  renderList();
-  closeAll();
-  $('campBox').showModal();
-  const sel = $('campList').querySelector('.sel') || $('campList').querySelector('button');
-  if (sel) { sel.focus(); sel.scrollIntoView({ block: 'nearest' }); }
-}
-
-function openMenu() { closeAll(); $('menuBox').showModal(); }
-
-// actions: setMode, syncPanel, fit; sandbox(): starts the sandbox (the Rooms list).
-function buildCampaign(actions, sandbox) {
-  A = actions; boot = sandbox;
-  $('menuCampaign').onclick = openList;
-  $('menuSandbox').onclick = () => { closeAll(); boot(); };
-  $('campMenu').onclick = openMenu;
-  $('campBack').onclick = () => { leaveLevel(); openList(); };
-  $('campRun').onclick = run;
-  // A change to the room clears the last verdict and is kept for next time.
-  let stamp = '';
-  const watch = () => {
-    if (!S.camp) return;
-    const s = JSON.stringify(S.level);
-    if (s === stamp) return;
-    stamp = s;
-    if (S.camp.ranOn !== s) S.camp.verdict = null;
-    save(); syncBrief();
-  };
-  for (const t of ['pointerup', 'keyup', 'click']) addEventListener(t, () => setTimeout(watch, 0));
-  addEventListener('wee:mode', () => { if (S.camp) syncBrief(); });
-  addEventListener('pagehide', save);
-}
-return { TOOL, progress, allows, toolsFor, syncCostDots, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
-})();
-// ---- src/solve/lenses.js
-const m40 = (() => {
-const { createGame } = m8;
-const { computeBeams } = m3;
-const { successors, stateKey, unsearchable, MAX_STATES } = m15;
-// What the editor's lenses draw, from every position the room can reach: how far each tile
-// is from winning, a shortest way there, every tile you pass through on the way to a stop,
-// every tile a beam or a piece ever covers, the moves between stops, and where a move kills
-// you. A generator, so the page can run it a slice at a time.
-
-
-
-const KEYS = ['up', 'right', 'down', 'left'];
-const WIN = 'win';
-const PIECES = ['box', 'heavy', 'bomb', 'mover', 'enemy', 'strong'];
-
-// { distance: Map tile -> fewest moves to win from a stop there, hopeless: tiles where no stop
-// can win, solution: the tiles a shortest way stops on, start first, beams and pieces: Sets of
-// tiles, passes: a Set of every tile you cross in a move that works, stops: every tile a move
-// ends on, moves: Map 'from>to' -> how many positions make that move, danger: a Set of tiles
-// where some move kills you, capped }. Null for a room with real-time pieces.
-function* lensData(level, max = MAX_STATES) {
-  if (unsearchable({ ...level, cells: [...level.cells, 'goal'] })) return null;
-  const start = createGame(level), keys = [...KEYS, ...(level.powers.cycle || level.powers.swim ? ['hide'] : [])];
-  const tileOf = s => s.player.y * s.w + s.player.x;
-  const beams = new Set(), pieces = new Set(), passes = new Set(), stops = new Set([tileOf(start)]);
-  // The tiles of the move being tried; kept only when the move works.
-  let crossed = [];
-  const moves = new Map(), danger = new Set();
-  const onTick = s => {
-    crossed.push(tileOf(s));
-    for (const e of s.events) if (e.type === 'die') danger.add(e.y * s.w + e.x);
-  };
-  const record = s => {
-    computeBeams(s, false);
-    for (const b of s.beams) for (const [x, y] of b.path.slice(1)) beams.add(y * s.w + x);
-    for (const e of s.entities) if (!e.dead && PIECES.includes(e.kind)) pieces.add(e.y * s.w + e.x);
-  };
-  const first = stateKey(start);
-  const nodes = new Map([[first, { tile: tileOf(start), parent: null, next: new Set() }]]), order = [first], waiting = new Map([[first, start]]);
-  record(start);
-  let capped = false, win = null;
-  for (let i = 0; i < order.length && !capped; i++) {
-    const k = order[i], s = waiting.get(k), node = nodes.get(k);
-    waiting.delete(k);
-    for (const pair of successors(s, keys, true, onTick)) {
-      if (pair) for (const i of crossed) passes.add(i);
-      crossed = [];
-      if (pair) {
-        const t = pair[1];
-        stops.add(tileOf(t));
-        const edge = `${node.tile}>${tileOf(t)}`;
-        moves.set(edge, (moves.get(edge) || 0) + 1);
-        if (t.won) { node.next.add(WIN); if (!win) win = { from: k, tile: tileOf(t) }; }
-        else {
-          const tk = stateKey(t);
-          node.next.add(tk);
-          if (!nodes.has(tk)) {
-            if (nodes.size >= max) { capped = true; break; }
-            nodes.set(tk, { tile: tileOf(t), parent: k, next: new Set() });
-            order.push(tk); waiting.set(tk, t);
-            record(t);
-          }
-        }
-      }
-      yield nodes.size;
-    }
-  }
-  // Moves to win from each position: a walk back from the win along every move.
-  const back = new Map();
-  for (const [k, n] of nodes) for (const t of n.next) (back.get(t) || back.set(t, []).get(t)).push(k);
-  const toWin = new Map([[WIN, 0]]), todo = [WIN];
-  for (let i = 0; i < todo.length; i++) for (const k of back.get(todo[i]) || []) if (!toWin.has(k)) { toWin.set(k, toWin.get(todo[i]) + 1); todo.push(k); }
-  const distance = new Map(), seen = new Set();
-  for (const [k, n] of nodes) {
-    seen.add(n.tile);
-    if (toWin.has(k) && !(distance.get(n.tile) <= toWin.get(k))) distance.set(n.tile, toWin.get(k));
-  }
-  const solution = [];
-  if (win) { solution.push(win.tile); for (let k = win.from; k; k = nodes.get(k).parent) solution.unshift(nodes.get(k).tile); }
-  for (const i of stops) passes.delete(i);
-  return { distance, hopeless: [...seen].filter(t => !distance.has(t)), solution, beams, pieces, passes, stops, moves, danger, capped, positions: nodes.size };
-}
-return { lensData };
-})();
-// ---- src/app/lenses.js
-const m41 = (() => {
-const { reach } = m15;
-const { routes } = m17;
-const { lensData } = m40;
-const { INK } = m14;
-const { S } = m11;
-const { $ } = m12;
-const { sliced } = m19;
-const { WELL, closeWell } = m18;
-// Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
-// lens on per group and every group at once. A tool in hand can open a lens by itself, until
-// you pick one in that group. Data comes from searches run a slice at a time, again whenever
-// the room changes. All copy is draft.
-
-
-
-
-
-
-
-
-const STOPS_BUDGET_MS = 2000;
-const LENS_GROUPS = [
-  { id: 'colour', label: 'Colour', key: '1', lenses: [['distance', 'Distance'], ['beams', 'Beams'], ['pieces', 'Pieces']] },
-  { id: 'dots', label: 'Dots', key: '2', lenses: [['stops', 'Stops'], ['passes', 'Passes']] },
-  { id: 'lines', label: 'Lines', key: '3', lenses: [['solution', 'Solution'], ['moves', 'Moves']] },
-  { id: 'frames', label: 'Frames', key: '4', lenses: [['traps', 'Traps'], ['danger', 'Danger']] },
-];
-// What each lens shows, on its button's hover.
-const LENS_TIPS = {
-  off: 'Show nothing in this row.',
-  distance: 'Colour each tile by how many moves it takes to win from there.',
-  beams: 'Colour every tile a laser can ever reach.',
-  pieces: 'Colour every tile a box, a moving block or an enemy can ever stand on.',
-  stops: 'Dot every tile you can stop on.',
-  passes: 'Dot where you stop (big) and where you only slide through (small).',
-  solution: 'Draw one shortest way to the goal, its moves numbered.',
-  moves: 'Draw every slide from stop to stop, thicker where more positions make it.',
-  traps: 'Frame every tile from which the goal is out of reach for good.',
-  danger: 'Frame every tile where a move kills you.',
-};
-// The lens a tool opens by itself, while it is in hand.
-const PIECE = { colour: 'pieces' }, BEAM = { colour: 'beams' }, AIM = { colour: 'distance', lines: 'solution' };
-const AUTO = { turret: BEAM, receiver: BEAM, sensor: BEAM, box: PIECE, heavy: PIECE, mover: PIECE, enemy: PIECE, strong: PIECE, goal: AIM, start: AIM };
-const SEARCHED = ['distance', 'beams', 'pieces', 'solution', 'passes', 'moves', 'danger'];
-
-const L = () => S.lens;
-// What is on in a group: your pick, else what the tool opens, else nothing.
-function lensOn(group) {
-  const pick = L().pick[group];
-  if (pick !== undefined) return pick === 'off' ? null : pick;
-  return L().follow ? (AUTO[S.ui.tool] || {})[group] || null : null;
-}
-// Whether a group's lens is the tool's doing rather than your pick.
-const isAuto = group => L().pick[group] === undefined && !!lensOn(group);
-const onNow = () => L().open && S.mode === 'edit' ? LENS_GROUPS.map(gr => lensOn(gr.id)).filter(Boolean) : [];
-
-function toggleLenses() {
-  const l = L();
-  l.open = !l.open;
-  // Opening the first time shows what Stops used to: every stop, and the traps among them.
-  if (l.open && !l.opened) { l.opened = true; l.pick.dots = 'stops'; l.pick.frames = 'traps'; }
-  // The chips under the room carry the lenses; turning them off closes their tab if it shows.
-  if (!l.open && WELL.open && WELL.tab === 'lenses') closeWell();
-  syncLenses();
-}
-function pickLens(group, id) { L().pick[group] = id; syncLenses(); }
-function cycleLens(group) {
-  const gr = LENS_GROUPS.find(g => g.id === group), ids = ['off', ...gr.lenses.map(([id]) => id)];
-  if (!L().open) toggleLenses();
-  pickLens(group, ids[(ids.indexOf(lensOn(group) || 'off') + 1) % ids.length]);
-}
-function lensesOff() { for (const gr of LENS_GROUPS) L().pick[gr.id] = 'off'; syncLenses(); }
-
-// Starts whatever search the lenses on now need and the room does not have yet.
-function ensure() {
-  if (!S.level.start) return;
-  const on = onNow(), stamp = JSON.stringify(S.level);
-  if ((on.includes('stops') || on.includes('traps')) && (!S.stops || S.stops.stamp !== stamp)) runStops(stamp);
-  if (on.some(id => SEARCHED.includes(id)) && (!S.lensData || S.lensData.stamp !== stamp)) {
-    S.lensData = { stamp, d: undefined };
-    sliced(lensData(JSON.parse(stamp)), stamp, d => { if (S.lensData.stamp === stamp) { S.lensData.d = d; S.redraw = true; legend(); } });
-  }
-}
-
-// The stop map: plain slides first, then the whole search until its time runs out.
-function runStops(stamp) {
-  const out = {}, it = reach(JSON.parse(stamp), { budgetMs: STOPS_BUDGET_MS, out });
-  S.stops = { stamp, list: null, out, why: null, capped: false, traps: null };
-  const slice = () => {
-    if (!S.stops || S.stops.stamp !== stamp) return;
-    const until = performance.now() + 25;
-    for (;;) {
-      const r = it.next();
-      if (r.done) {
-        Object.assign(S.stops, { list: r.value.stops, why: r.value.why, capped: r.value.capped });
-        legend(); S.redraw = true;
-        if (!r.value.why && S.level.cells.includes('goal')) sliced(routes(JSON.parse(stamp)), stamp, m => {
-          if (!S.stops || S.stops.stamp !== stamp) return;
-          S.stops.traps = m ? m.traps : [];
-          S.redraw = true; legend();
-        });
-        return;
-      }
-      if (performance.now() > until) break;
-    }
-    setTimeout(slice, 0);
-  };
-  slice();
-}
-
-const tiles = n => `${n} ${n === 1 ? 'tile' : 'tiles'}`;
-const fresh = d => d && d.stamp === JSON.stringify(S.level) ? d : null;
-// What the room draws for the lenses on now; see view/lenses.js.
-function lensMarks() {
-  ensure();
-  const st = fresh(S.stops), ld = fresh(S.lensData), d = ld && ld.d;
-  const colour = lensOn('colour'), out = {};
-  if (L().open && S.mode === 'edit') {
-    if (d && colour === 'distance') out.heat = { distance: d.distance, hopeless: S.level.cells.includes('goal') ? d.hopeless : [] };
-    if (d && colour === 'beams') out.heat = { tiles: d.beams, colour: INK.beam };
-    if (d && colour === 'pieces') out.heat = { tiles: d.pieces, colour: INK.box };
-    if (st && lensOn('dots') === 'stops') out.dots = st.list || [...(st.out.stops || [])];
-    if (d && lensOn('dots') === 'passes') { out.dots = [...d.stops]; out.small = [...d.passes]; }
-    if (d && lensOn('lines') === 'solution') out.lines = d.solution;
-    if (d && lensOn('lines') === 'moves') out.moves = [...d.moves].map(([k, n]) => { const [a, b] = k.split('>').map(Number); return { a, b, n }; }).filter(m => m.a !== m.b);
-    if (d && lensOn('frames') === 'danger') out.crosses = d.danger;
-    if (st && st.traps && lensOn('frames') === 'traps') out.frames = new Set(st.traps);
-  }
-  return out;
-}
-// What the searches already know about one tile, for the hover line. Nothing is searched for it.
-function tileFacts(i) {
-  const st = fresh(S.stops), ld = fresh(S.lensData), d = ld && ld.d, out = [], goal = S.level.cells.includes('goal');
-  if (d) {
-    if (d.distance.has(i)) out.push(`${d.distance.get(i)} ${d.distance.get(i) === 1 ? 'move' : 'moves'} to win from here`);
-    else if (goal && d.hopeless.includes(i)) out.push('no win from here');
-    if (d.stops.has(i)) out.push('you can stop here'); else if (d.passes.has(i)) out.push('you only slide through');
-    if (d.beams.has(i)) out.push('a laser reaches here');
-    if (d.pieces.has(i)) out.push('a piece can be here');
-    if (d.danger.has(i)) out.push('a move kills you here');
-  } else if (st && st.list && st.list.includes(i)) out.push('you can stop here');
-  if (st && st.traps && st.traps.includes(i)) out.push('the goal is out of reach for good from here');
-  return out;
-}
-// Whether a search the lenses wait on is still running, so the room keeps redrawing.
-const lensBusy = () => onNow().length > 0 && ((fresh(S.stops) && !S.stops.list) || (fresh(S.lensData) && S.lensData.d === undefined));
-
-function lensLine(id) {
-  const st = fresh(S.stops), ld = fresh(S.lensData), d = ld ? ld.d : undefined, part = d && d.capped ? ' Partial: the room has more positions than were searched.' : '';
-  if (['stops', 'traps'].includes(id) && st && st.why || SEARCHED.includes(id) && d === null) return 'Has real-time pieces, so lenses cannot map it.';
-  const wait = 'Working it out...';
-  switch (id) {
-    case 'stops': return st && st.list ? `Dots: ${tiles(st.list.length)} you can stop on${st.capped ? ', maybe more' : ''}.` : wait;
-    case 'passes': return !d ? wait : `Dots: big where you stop (${d.stops.size}), small where you only pass (${d.passes.size}).${part}`;
-    case 'moves': return !d ? wait : `Lines: every move from stop to stop, thicker where more positions make it.${part}`;
-    case 'danger': return !d ? wait : d.danger.size ? `Frames: ${tiles(d.danger.size)} where a move kills you.${part}` : `Frames: no move kills you.${part}`;
-    case 'traps': return !S.level.cells.includes('goal') ? 'Frames: place a Goal to find traps.' : st && st.traps ? `Frames: ${tiles(st.traps.length)} where the goal is out of reach for good.` : wait;
-    case 'distance': return !d ? wait : !S.level.cells.includes('goal') ? 'Colour: place a Goal to see how far each tile is.' : `Colour: green is near the goal, red is far, grey can no longer win.${part}`;
-    case 'beams': return !d ? wait : `Colour: red where a laser can ever reach.${part}`;
-    case 'pieces': return !d ? wait : `Colour: brown where a box, block or enemy can ever be.${part}`;
-    case 'solution': return !d ? wait : d.solution.length ? `Lines: a shortest way, ${d.solution.length - 1} moves, numbered.${part}` : !S.level.cells.includes('goal') ? 'Lines: place a Goal to see a way.' : 'Lines: no way to the goal.';
-  }
-  return '';
-}
-function legend() {
-  const on = onNow();
-  $('lensLegend').replaceChildren(...on.map(id => Object.assign(document.createElement('li'), { textContent: lensLine(id) })));
-}
-
-function syncLenses() {
-  const l = L(), show = l.open && S.mode === 'edit';
-  $('stopsBtn').setAttribute('aria-pressed', String(l.open)); $('stopsBtn').classList.toggle('on', l.open);
-  $('lensBox').hidden = !show;
-  $('lensFollow').checked = l.follow;
-  document.querySelectorAll('[data-lens-group]').forEach(b => b.classList.toggle('on', (lensOn(b.dataset.lensGroup) || 'off') === b.dataset.lens));
-  if (show) { ensure(); legend(); }
-  S.redraw = true;
-}
-
-function buildLenses() {
-  $('lensRows').replaceChildren(...LENS_GROUPS.map(gr => {
-    const row = document.createElement('div');
-    row.className = 'lensRow';
-    const name = Object.assign(document.createElement('span'), { textContent: gr.label, title: `Key ${gr.key} cycles this row.` });
-    row.append(name, ...[['off', 'Off'], ...gr.lenses].map(([id, label]) => {
-      const b = Object.assign(document.createElement('button'), { type: 'button', textContent: label, title: LENS_TIPS[id] });
-      b.dataset.lensGroup = gr.id; b.dataset.lens = id;
-      b.onclick = () => pickLens(gr.id, id);
-      return b;
-    }));
-    return row;
-  }));
-  $('lensFollow').onchange = e => { L().follow = e.target.checked; syncLenses(); };
-  $('stopsBtn').onclick = toggleLenses;
-}
-return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
-})();
-// ---- src/app/chips.js
-const m42 = (() => {
-const { describe } = m38;
-const { S } = m11;
-const { INK } = m14;
-const { $, touch } = m12;
-const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m41;
-// The lens chips under the room, one per group, each drawing its own small legend, and the
-// hover line in the status bar: what is on a tile and what the lenses know about it. All copy
-// is draft.
-
-
-
-
-
-// A 26 by 12 mark per lens, the same marks the room draws.
-const ARROW = (c, w = 1.6) => `<path d="M2 6H20" stroke="${c}" stroke-width="${w}"/><path d="M24 6l-5-3.5v7z" fill="${c}"/>`;
-const MARK = {
-  off: `<path d="M6 6H20" stroke="currentColor" stroke-opacity=".4" stroke-width="1.5"/>`,
-  distance: `<defs><linearGradient id="chipDist"><stop offset="0" stop-color="hsl(120,75%,45%)"/><stop offset="1" stop-color="hsl(0,75%,45%)"/></linearGradient></defs><rect x="1" y="2" width="24" height="8" rx="2" fill="url(#chipDist)"/>`,
-  beams: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.beam}" fill-opacity=".55"/>`,
-  pieces: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.box}" fill-opacity=".6"/>`,
-  stops: `<circle cx="13" cy="6" r="3.5" fill="${INK.player}"/>`,
-  passes: `<circle cx="7" cy="6" r="3.5" fill="${INK.player}"/><circle cx="15" cy="6" r="1.6" fill="${INK.player}"/><circle cx="21" cy="6" r="1.6" fill="${INK.player}"/>`,
-  solution: ARROW(INK.goal, 2.2),
-  moves: `<g opacity=".7">${ARROW(INK.player, 1.2)}</g>`,
-  traps: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="${INK.beam}" stroke-width="1.8"/>`,
-  danger: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="#ff9f43" stroke-width="1.8"/><path d="M10 3l6 6M16 3l-6 6" stroke="#ff9f43" stroke-width="1.6"/>`,
-};
-const NAME = Object.fromEntries(LENS_GROUPS.flatMap(g => g.lenses));
-
-function buildChips() {
-  $('lensChips').replaceChildren(...LENS_GROUPS.map(gr => {
-    const b = Object.assign(document.createElement('button'), { type: 'button', className: 'chip' });
-    b.dataset.chip = gr.id;
-    b.onclick = () => cycleLens(gr.id);
-    return b;
-  }));
-}
-
-let shown = '';
-function syncChips() {
-  const show = S.lens.open && S.mode === 'edit';
-  const key = show + LENS_GROUPS.map(g => `${lensOn(g.id)}${isAuto(g.id)}${lensLine(lensOn(g.id) || '')}`).join();
-  if (key !== shown) {
-    shown = key;
-    $('lensChips').hidden = !show;
-    for (const gr of LENS_GROUPS) {
-      const b = document.querySelector(`[data-chip=${gr.id}]`), id = lensOn(gr.id);
-      b.classList.toggle('on', !!id);
-      b.classList.toggle('auto', isAuto(gr.id));
-      b.title = `${id ? lensLine(id) : `${gr.label} is off.`}${isAuto(gr.id) ? ' Opened by the tool in hand.' : ''} Key ${gr.key}.`;
-      b.innerHTML = `<span class="g">${gr.label}</span><svg viewBox="0 0 26 12" aria-hidden="true">${MARK[id || 'off']}</svg><span class="n">${id ? NAME[id] : 'Off'}</span>`;
-    }
-  }
-  syncInfo();
-}
-
-// The hover line: a mouse over a tile in edit mode. A finger has the Look tool for this.
-let info = '';
-function syncInfo() {
-  const h = S.mode === 'edit' && !touch ? S.hover : null;
-  const text = h ? `Tile ${h.x}, ${h.y}: ${[describe(S.level, h.x, h.y), ...tileFacts(h.y * S.level.w + h.x)].join(' · ')}` : '';
-  if (text !== info) $('info').textContent = info = text;
-}
-return { buildChips, syncChips };
-})();
-// ---- src/app/sheets.js
-const m43 = (() => {
-const { $ } = m12;
-const { closeWell } = m18;
-// A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
-// Rooms opens the rooms list. One sheet at a time; Build, Escape or play closes it.
-
-
-function openSheet(name) {
-  const sheet = $('sheet');
-  if (name && name !== 'build') closeWell();
-  sheet.hidden = !name || name === 'build';
-  document.querySelectorAll('#sheet [data-pane]').forEach(p => { p.hidden = p.dataset.pane !== name; });
-  document.querySelectorAll('[data-sheet]').forEach(b => b.classList.toggle('on', b.dataset.sheet === (sheet.hidden ? 'build' : name)));
-}
-
-function buildSheets() {
-  document.querySelectorAll('[data-sheet]').forEach(b => b.onclick = () => openSheet($('sheet').hidden || !b.classList.contains('on') ? b.dataset.sheet : 'build'));
-  $('navRooms').onclick = () => $('roomsBtn').click();
-  addEventListener('keydown', ev => { if (ev.key === 'Escape') openSheet('build'); });
-  // A tapped power shows what it does, under its name; the rest stay one line.
-  $('powers').addEventListener('click', ev => {
-    const row = ev.target.closest('.power'); if (!row) return;
-    document.querySelectorAll('#powers .power').forEach(r => r.classList.toggle('show', r === row));
-  });
-}
-return { openSheet, buildSheets };
-})();
-// ---- src/app/keys.js
-const m44 = (() => {
-const { TOOLS } = m34;
-const { $ } = m12;
-// Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
-// every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
-
-
-const TOOL_KEYS = { look: 'L', erase: 'X', select: 'S', start: 'P', wall: 'B', checkpoint: 'C', goal: 'G', mover: 'M', turret: 'T', box: 'O', heavy: 'H', water: 'W', door: 'D' };
-const BY_KEY = Object.fromEntries(Object.entries(TOOL_KEYS).map(([t, k]) => [k, t]));
-const name = id => TOOLS.find(t => t.id === id).label;
-
-const LIST = [
-  ['Editing', [['E', 'Play this room, or go back to editing'], ['Ctrl+Z', 'Undo'], ['Ctrl+Shift+Z', 'Redo'], ['Ctrl+S', 'Save'], ['Tab', 'Hide or show both side columns'], ['?', 'This list']]],
-  ['Tools', Object.entries(TOOL_KEYS).map(([t, k]) => [k, name(t)])],
-  ['Lenses', [['1 to 4', 'Next lens in Colour, Dots, Lines or Frames'], ['0', 'Every lens off']]],
-  ['Select', [['Ctrl+C', 'Copy'], ['Ctrl+X', 'Cut'], ['Ctrl+V', 'Paste'], ['Delete', 'Delete'], ['R', 'Rotate'], ['Escape', 'Let go']]],
-  ['Playing', [['Arrows', 'Slide'], ['Space', 'Hide, or start or stop swimming, with those powers'], ['R', 'Reset the room'], ['E', 'Back to editing']]],
-];
-
-function buildKeys() {
-  document.querySelectorAll('[data-tool]').forEach(b => {
-    const k = TOOL_KEYS[b.dataset.tool];
-    if (!k) return;
-    b.title = `${b.title} (${k})`;
-    b.append(Object.assign(document.createElement('kbd'), { className: 'key', textContent: k }));
-  });
-  $('keysList').replaceChildren(...LIST.map(([head, rows]) => {
-    const sec = document.createElement('section');
-    sec.append(Object.assign(document.createElement('h3'), { textContent: head }), ...rows.map(([k, does]) => {
-      const row = document.createElement('p');
-      row.append(Object.assign(document.createElement('kbd'), { textContent: k }), ` ${does}`);
-      return row;
-    }));
-    return sec;
-  }));
-  $('keysBtn').onclick = () => $('keysBox').showModal();
-}
-
-// The tool a bare letter picks in edit mode, or null.
-const toolForKey = ev => (ev.ctrlKey || ev.metaKey || ev.altKey ? null : BY_KEY[ev.key.toUpperCase()] || null);
-
-// Tab hides both side columns, but only when no control has focus, so it still moves focus.
-function bareKey(ev) {
-  if (ev.key !== 'Tab' || ev.ctrlKey || ev.altKey || innerWidth <= 700) return false;
-  const f = document.activeElement;
-  if (f && f !== document.body && f.id !== 'game') return false;
-  document.body.classList.toggle('bare');
-  return true;
-}
-const showKeys = () => $('keysBox').showModal();
-return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
-})();
-// ---- src/level/region.js
-const m45 = (() => {
-const { CLOCKWISE } = m0;
-// Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
-// each takes a level or a clip and returns a new one. The start never moves.
-
-const cw = d => CLOCKWISE[(CLOCKWISE.indexOf(d) + 1) % 4];
-const CORNER_CW = { nw: 'ne', ne: 'se', se: 'sw', sw: 'nw' };
-
-// r: {x0, y0, x1, y1}, corners in any order.
-const norm = r => ({ x0: Math.min(r.x0, r.x1), y0: Math.min(r.y0, r.y1), x1: Math.max(r.x0, r.x1), y1: Math.max(r.y0, r.y1) });
-const inR = (r, x, y) => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1;
-
-function copyRegion(level, r) {
-  r = norm(r);
-  const w = r.x1 - r.x0 + 1, h = r.y1 - r.y0 + 1, cells = [];
-  for (let y = r.y0; y <= r.y1; y++) for (let x = r.x0; x <= r.x1; x++) cells.push(level.cells[y * level.w + x]);
-  const entities = level.entities.filter(e => inR(r, e.x, e.y)).map(e => ({ ...JSON.parse(JSON.stringify(e)), x: e.x - r.x0, y: e.y - r.y0 }));
-  return { w, h, cells, entities };
-}
-
-function clearRegion(level, r) {
-  r = norm(r);
-  const cells = level.cells.map((c, i) => inR(r, i % level.w, Math.floor(i / level.w)) ? '' : c);
-  return { ...level, cells, entities: level.entities.filter(e => !inR(r, e.x, e.y)) };
-}
-
-// A quarter turn clockwise, turning everything that has a direction with it.
-function turnCell(c) {
-  const [kind, v] = c.split(':');
-  if (kind === 'spring') return 'spring:' + cw(v);
-  if (kind === 'tri') return 'tri:' + CORNER_CW[v];
-  if (kind === 'gate') return 'gate:' + CLOCKWISE.filter(d => v.split(',').map(cw).includes(d)).join(',');
-  return c;
-}
-function turnPiece(e, h) {
-  const t = { ...e, x: h - 1 - e.y, y: e.x };
-  if (e.axis) { // h, +1 is right -> down; v, +1 is down -> left
-    t.axis = e.axis === 'h' ? 'v' : 'h';
-    t.dir = e.axis === 'h' ? (e.dir || 1) : -(e.dir || 1);
-  }
-  if (e.turret) t.turret = { ...e.turret, dirs: CLOCKWISE.filter(d => e.turret.dirs.map(cw).includes(d)), ...(e.turret.start ? { start: cw(e.turret.start) } : {}) };
-  return t;
-}
-function rotateClip(clip) {
-  const { w, h } = clip, cells = Array(w * h);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) cells[x * h + (h - 1 - y)] = turnCell(clip.cells[y * w + x]);
-  return { w: h, h: w, cells, entities: clip.entities.map(e => turnPiece(e, h)) };
-}
-
-// Stamps a clip with its top-left at (x, y). What falls outside the room is dropped; a
-// piece in the clip replaces one already there; the start's tile stays free.
-function pasteRegion(level, clip, x, y) {
-  const cells = [...level.cells], isStart = (cx, cy) => !!level.start && cx === level.start.x && cy === level.start.y;
-  const inside = (cx, cy) => cx >= 0 && cy >= 0 && cx < level.w && cy < level.h;
-  for (let j = 0; j < clip.h; j++) for (let i = 0; i < clip.w; i++) {
-    const cx = x + i, cy = y + j;
-    if (inside(cx, cy) && !(isStart(cx, cy) && clip.cells[j * clip.w + i])) cells[cy * level.w + cx] = clip.cells[j * clip.w + i];
-  }
-  const placed = clip.entities.map(e => ({ ...JSON.parse(JSON.stringify(e)), x: e.x + x, y: e.y + y })).filter(e => inside(e.x, e.y) && !isStart(e.x, e.y));
-  const taken = new Set(placed.map(e => e.x + ',' + e.y));
-  return { ...level, cells, entities: [...level.entities.filter(e => !taken.has(e.x + ',' + e.y)), ...placed] };
-}
-return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
-})();
-// ---- src/app/select.js
-const m46 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m45;
-const { S } = m11;
-const { change } = m31;
-const { $ } = m12;
-// The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
-// it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
-// undo step each.
-
-
-
-
-let A = null; // { syncPanel }
-function buildSelect(actions) {
-  A = actions;
-  $('selCopy').onclick = copy;
-  $('selCut').onclick = cut;
-  $('selDelete').onclick = del;
-  $('selRotate').onclick = rotate;
-  $('selPaste').onclick = startPaste;
-}
-
-const say = t => { $('placeHint').textContent = t; };
-function syncSelect() {
-  const has = !!S.sel;
-  for (const id of ['selCopy', 'selCut', 'selDelete']) $(id).disabled = !has;
-  $('selRotate').disabled = !has && !S.paste;
-  $('selPaste').disabled = !S.clip;
-  $('selPaste').textContent = S.paste ? 'Done' : 'Paste';
-}
-
-// Pointer: a press starts a box (or stamps, when pasting); a drag grows it. A press inside
-// the box picks it up instead, and letting go puts it down where it was dragged.
-const inside = (r, c) => c.x >= r.x0 && c.x <= r.x1 && c.y >= r.y0 && c.y <= r.y1;
-function selectDown(c) {
-  if (S.paste) { change(() => { S.level = pasteRegion(S.level, S.paste, c.x, c.y); }); A.syncPanel(); return; }
-  if (S.sel && inside(norm(S.sel), c)) { S.moving = { from: norm(S.sel), clip: copyRegion(S.level, S.sel), grab: c, at: c }; return; }
-  S.sel = { x0: c.x, y0: c.y, x1: c.x, y1: c.y };
-  syncSelect();
-}
-function selectMove(c) {
-  if (S.moving) { S.moving.at = c; return; }
-  if (S.sel && !S.paste) { S.sel.x1 = c.x; S.sel.y1 = c.y; }
-}
-function selectUp() {
-  const m = S.moving;
-  if (!m) return;
-  S.moving = null;
-  const dx = m.at.x - m.grab.x, dy = m.at.y - m.grab.y;
-  if (!dx && !dy) return;
-  const r = m.from, x0 = r.x0 + dx, y0 = r.y0 + dy;
-  change(() => {
-    const st = S.level.start, carried = !!st && inside(r, st);
-    S.level = pasteRegion(clearRegion(S.level, r), m.clip, x0, y0);
-    // The start rides along when it was inside the box and lands inside the room.
-    const to = { x: st.x + dx, y: st.y + dy };
-    if (carried && to.x >= 0 && to.y >= 0 && to.x < S.level.w && to.y < S.level.h) {
-      S.level = { ...S.level, start: to, entities: S.level.entities.filter(e => e.x !== to.x || e.y !== to.y) };
-    }
-  });
-  S.sel = { x0, y0, x1: x0 + m.clip.w - 1, y1: y0 + m.clip.h - 1 };
-  A.syncPanel();
-}
-
-function copy() {
-  if (!S.sel) return;
-  S.clip = copyRegion(S.level, S.sel);
-  say(`Copied ${S.clip.w}x${S.clip.h}. Paste places it.`);
-  syncSelect();
-}
-function cut() {
-  if (!S.sel) return;
-  copy();
-  change(() => { S.level = clearRegion(S.level, S.sel); });
-  A.syncPanel();
-}
-function del() {
-  if (!S.sel) return;
-  change(() => { S.level = clearRegion(S.level, S.sel); });
-  A.syncPanel();
-}
-// Rotating a box turns it a quarter clockwise in place, around its top-left corner.
-function rotate() {
-  if (S.paste) { S.paste = rotateClip(S.paste); return; }
-  if (!S.sel) return;
-  const r = norm(S.sel), turned = rotateClip(copyRegion(S.level, r));
-  change(() => { S.level = pasteRegion(clearRegion(S.level, r), turned, r.x0, r.y0); });
-  S.sel = { x0: r.x0, y0: r.y0, x1: r.x0 + turned.w - 1, y1: r.y0 + turned.h - 1 };
-  A.syncPanel();
-}
-function startPaste() {
-  if (S.paste) { S.paste = null; say(''); syncSelect(); return; }
-  if (!S.clip) return;
-  S.paste = JSON.parse(JSON.stringify(S.clip));
-  S.sel = null;
-  say('Click or tap where the top-left corner goes. Rotate turns it.');
-  syncSelect();
-}
-
-// Keys in edit mode with Select: Ctrl+C, Ctrl+X, Ctrl+V, Delete, R, Escape.
-function selectKey(ev) {
-  if (S.ui.tool !== 'select') return false;
-  const ctrl = ev.ctrlKey || ev.metaKey, k = ev.key.toLowerCase();
-  if (ctrl && k === 'c') copy();
-  else if (ctrl && k === 'x') cut();
-  else if (ctrl && k === 'v') { if (!S.paste) startPaste(); }
-  else if (!ctrl && (k === 'delete' || k === 'backspace')) del();
-  else if (!ctrl && k === 'r') rotate();
-  else if (k === 'escape') { S.paste = null; S.sel = null; S.moving = null; say(''); syncSelect(); }
-  else return false;
-  ev.preventDefault();
-  return true;
-}
-
-// What edit view draws on top: the box, or the ghost of the paste under the pointer.
-function selectOverlay() {
-  if (S.ui.tool !== 'select') return null;
-  if (S.paste) return S.hover ? { paste: S.paste, x: S.hover.x, y: S.hover.y } : null;
-  if (S.moving) { const m = S.moving; return { paste: m.clip, x: m.from.x0 + m.at.x - m.grab.x, y: m.from.y0 + m.at.y - m.grab.y }; }
-  return S.sel ? { sel: norm(S.sel) } : null;
-}
-return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
-})();
 // ---- src/view/pieces.js
-const m47 = (() => {
+const m39 = (() => {
 const { AIM, INK, T, frame, roundRect } = m14;
 // Pieces and the player.
 
@@ -4967,7 +4174,7 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
 return { modeBadge, drawTurret, drawPiece, drawPlayer };
 })();
 // ---- src/view/tiles.js
-const m48 = (() => {
+const m40 = (() => {
 const { INK, T, frame, roundRect } = m14;
 // Tiles: floor, walls and every cell type, drawn in place.
 
@@ -5141,9 +4348,9 @@ function drawFloor(g, w, h) {
 return { grit, drawCell, pressedAt, drawFloor };
 })();
 // ---- src/view/masses.js
-const m49 = (() => {
+const m41 = (() => {
 const { INK, T, frame } = m14;
-const { grit } = m48;
+const { grit } = m40;
 // Joined-up tiles: neighbouring walls, water, sticky puddles and death blocks are drawn as
 // one mass each. Every cell is four quarters; a quarter reads its two side neighbours and
 // the diagonal between them, so outer corners round, inner corners get a fillet and a
@@ -5260,7 +4467,7 @@ function drawMasses(g, cells, w, h, skip = () => false) {
 return { MASSES, RADIUS, joins, inMass, overlay, quarter, kindIn, drawMasses };
 })();
 // ---- src/view/lenses.js
-const m50 = (() => {
+const m42 = (() => {
 const { INK, T } = m14;
 // The editor's lenses, drawn over the room. A heat lens recolours tiles under the pieces; dots,
 // lines and frames are marks on top. One lens per group, so nothing here paints over its own kind.
@@ -5338,13 +4545,13 @@ function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses } = {}
 return { drawHeat, drawLensMarks };
 })();
 // ---- src/view/scene.js
-const m51 = (() => {
+const m43 = (() => {
 const { DIRS } = m0;
 const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m14;
-const { drawPiece, drawPlayer } = m47;
-const { drawCell, drawFloor } = m48;
-const { drawMasses, inMass, overlay } = m49;
-const { drawHeat, drawLensMarks } = m50;
+const { drawPiece, drawPlayer } = m39;
+const { drawCell, drawFloor } = m40;
+const { drawMasses, inMass, overlay } = m41;
+const { drawHeat, drawLensMarks } = m42;
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
 
@@ -5561,11 +4768,11 @@ function drawPlay(g, s, prev, alpha, fx, now) {
 return { drawEdit, drawPlay };
 })();
 // ---- src/app/icons.js
-const m52 = (() => {
+const m44 = (() => {
 const { emptyLevel } = m9;
 const { T, INK } = m14;
-const { drawPiece } = m47;
-const { drawEdit } = m51;
+const { drawPiece } = m39;
+const { drawEdit } = m43;
 // A tool's icon, drawn the way the room draws the thing: the palette and the generator's
 // ingredients share it.
 
@@ -5599,26 +4806,849 @@ function icon(tool, colour = 'red') {
 }
 return { icon };
 })();
+// ---- src/app/campaign.js
+const m45 = (() => {
+const { LEVELS, COSTS } = m35;
+const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, bestText, costOf, tilesOf } = m37;
+const { place } = m38;
+const { newHistory } = m10;
+const { S, starterLevel } = m11;
+const { $, portrait, now } = m12;
+const { icon } = m44;
+// The campaign: a main menu at launch, the level list, and building a level's room for the
+// robot. Run judges the room (src/campaign/rules.js) and the robot plays a shortest path:
+// the failing one when it fails. Progress and each level's room stay in this browser.
+// Every level is open while the levels are being made. All copy is draft.
+
+
+
+
+
+
+
+const KEY = 'wee.campaign';
+// The editor tool that places each palette element.
+const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle' };
+let A = null, boot = null;
+
+function progress() {
+  try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return p; } catch { /* storage off */ }
+  return { last: null, levels: {} };
+}
+const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
+const levelOf = id => LEVELS.find(l => l.id === id);
+
+// Whether a tap may change the room: placing must not break a rule the level enforces as you
+// build (locked tiles, the start, a maximum, a box on a button). Too few of something is fine
+// while building; Run says so.
+function allows(level, ui, x, y, how) {
+  if (!S.camp) return true;
+  const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
+  place(next, ui, x, y, how);
+  return placementErrors(def, next).every(e => /at least/.test(e.msg) || before.has(e.msg));
+}
+
+// The tools a level offers: Look, Erase, and its palette.
+const toolsFor = def => ['look', 'erase', ...Object.keys(def.palette).map(el => TOOL[el])];
+
+function save() {
+  if (!S.camp) return;
+  const p = progress(), rec = p.levels[S.camp.def.id] ||= {};
+  rec.room = S.level; p.last = S.camp.def.id;
+  write(p);
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+// A dot on each palette button that costs something, saying how much; none outside a level.
+function syncCostDots() {
+  const cost = S.camp ? Object.fromEntries(Object.keys(S.camp.def.palette).map(el => [TOOL[el], COSTS[el]])) : {};
+  document.querySelectorAll('[data-tool]').forEach(b => {
+    let dot = b.querySelector('.costDot');
+    if (cost[b.dataset.tool] == null) { if (dot) dot.remove(); return; }
+    if (!dot) b.append(dot = Object.assign(document.createElement('span'), { className: 'costDot' }));
+    dot.textContent = cost[b.dataset.tool];
+    dot.title = `Costs ${cost[b.dataset.tool]}`;
+  });
+}
+
+// The level's brief over the room: what to place, what the robot must do, and what it costs.
+function syncBrief() {
+  if (!S.camp) return;
+  const def = S.camp.def, { by } = placed(def, S.level), v = S.camp.verdict;
+  const parts = Object.entries(def.palette).map(([el, [min, max]]) => `${ELEMENTS[el].label} ${by[el].length}${max === null ? '' : `/${max}`}${min ? ` (min ${min})` : ''} · ${COSTS[el]} each`);
+  const reqs = [stepsText(def.steps), ...(def.rules || []).includes('noBoxOnButton') ? ['A box cannot start on a button.'] : [], ...(def.require || []).map(id => REQUIREMENTS[id].text)];
+  const box = $('campBrief');
+  box.replaceChildren();
+  const head = document.createElement('p'); head.className = 'campHead';
+  head.textContent = `${def.name} · Cost ${costOf(def, S.level, COSTS)} · Tiles ${tilesOf(S.level)}`;
+  const pal = document.createElement('p'); pal.className = 'campPal'; pal.textContent = parts.join('  ·  ');
+  const list = document.createElement('ul'); list.className = 'campReqs';
+  for (const r of reqs) list.append(Object.assign(document.createElement('li'), { textContent: r }));
+  const opt = document.createElement('li'); opt.className = 'optional'; opt.textContent = `Optional: ${bestText(def.steps)}`;
+  list.append(opt);
+  box.append(head, pal, list);
+  if (v) {
+    const out = document.createElement('p');
+    out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
+    out.id = 'campVerdict';
+    out.textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
+      : v.won ? `The robot made it in ${plural(v.length, 'move')}${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}. Cost ${v.cost} · Tiles ${v.tiles} · Optional ${v.met}/${v.optional.length}.`
+        : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
+    // A run that cannot finish points at the tiles that stop it; tap the verdict to see them again.
+    if (stuckAt(v).length) { out.classList.add('points'); out.onclick = () => flashStuck(v); out.title = 'Show the tiles'; }
+    box.append(out);
+  }
+}
+
+function enterLevel(id) {
+  const def = levelOf(id);
+  if (!def) return false;
+  const p = progress(), rec = p.levels[id];
+  closeAll();
+  S.camp = { def, verdict: null };
+  S.level = rec && rec.room && placementErrors(def, rec.room).every(e => /at least/.test(e.msg)) ? rec.room : roomOf(def);
+  S.history = newHistory();
+  S.ui.tool = 'look'; S.ui.colour = 'red';
+  p.last = id; write(p);
+  document.body.classList.add('campaign');
+  A.setMode('edit'); A.syncPanel(); A.fit();
+  syncBrief();
+  return true;
+}
+
+function leaveLevel() {
+  save();
+  S.camp = null;
+  document.body.classList.remove('campaign');
+  // The sandbox never inherits a campaign room.
+  S.level = starterLevel(portrait()); S.history = newHistory();
+  A.setMode('edit');
+}
+
+const stuckAt = v => (v && v.ok && !v.won && v.fail.at) || [];
+function flashStuck(v) { for (const t of stuckAt(v)) S.fx.push({ type: 'flash', x: t.x, y: t.y, at: now() }); }
+
+// Judges the room, keeps the best scores of a win, then the robot plays: the failing path, or
+// the first shortest path of a win.
+function run() {
+  if (!S.camp) return null;
+  const def = S.camp.def, v = check(def, S.level, COSTS);
+  S.camp.verdict = v;
+  save();
+  if (v.ok && v.won) {
+    const p = progress(), rec = p.levels[def.id] ||= {}, best = rec.best || {};
+    rec.best = { cost: Math.min(best.cost ?? Infinity, v.cost), tiles: Math.min(best.tiles ?? Infinity, v.tiles), met: Math.max(best.met ?? 0, v.met) };
+    rec.beaten = true; rec.room = S.level;
+    write(p);
+  }
+  S.camp.ranOn = JSON.stringify(S.level);
+  const show = v.ok ? (v.won ? v.path : v.fail.path) : null;
+  if (show) { A.setMode('play'); S.demo = [...show]; }
+  else flashStuck(v);
+  syncBrief();
+  return v;
+}
+
+function renderList() {
+  const p = progress(), list = $('campList');
+  list.replaceChildren(...LEVELS.map(def => {
+    const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button');
+    b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
+    const name = document.createElement('b'), small = document.createElement('small');
+    name.textContent = def.name;
+    small.textContent = rec.beaten ? `Beaten · best cost ${rec.best.cost} · tiles ${rec.best.tiles} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
+    // The elements the level hands you, as the palette draws them.
+    const parts = document.createElement('span'); parts.className = 'campParts';
+    for (const el of Object.keys(def.palette)) {
+      const c = icon(TOOL[el]); c.dataset.part = el; c.title = ELEMENTS[el].label; c.setAttribute('aria-label', ELEMENTS[el].label);
+      parts.append(c);
+    }
+    b.append(name, parts, small);
+    if (def.id === p.last) b.classList.add('sel');
+    b.onclick = () => enterLevel(def.id);
+    li.append(b);
+    return li;
+  }));
+}
+
+function closeAll() { for (const id of ['menuBox', 'campBox']) if ($(id).open) $(id).close(); }
+
+function openList() {
+  renderList();
+  closeAll();
+  $('campBox').showModal();
+  const sel = $('campList').querySelector('.sel') || $('campList').querySelector('button');
+  if (sel) { sel.focus(); sel.scrollIntoView({ block: 'nearest' }); }
+}
+
+function openMenu() { closeAll(); $('menuBox').showModal(); }
+
+// actions: setMode, syncPanel, fit; sandbox(): starts the sandbox (the Rooms list).
+function buildCampaign(actions, sandbox) {
+  A = actions; boot = sandbox;
+  $('menuCampaign').onclick = openList;
+  $('menuSandbox').onclick = () => { closeAll(); boot(); };
+  $('campMenu').onclick = openMenu;
+  $('campBack').onclick = () => { leaveLevel(); openList(); };
+  $('campRun').onclick = run;
+  // A change to the room clears the last verdict and is kept for next time.
+  let stamp = '';
+  const watch = () => {
+    if (!S.camp) return;
+    const s = JSON.stringify(S.level);
+    if (s === stamp) return;
+    stamp = s;
+    if (S.camp.ranOn !== s) S.camp.verdict = null;
+    save(); syncBrief();
+  };
+  for (const t of ['pointerup', 'keyup', 'click']) addEventListener(t, () => setTimeout(watch, 0));
+  addEventListener('wee:mode', () => { if (S.camp) syncBrief(); });
+  addEventListener('pagehide', save);
+}
+return { TOOL, progress, allows, toolsFor, syncCostDots, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
+})();
+// ---- src/solve/lenses.js
+const m46 = (() => {
+const { createGame } = m8;
+const { computeBeams } = m3;
+const { successors, stateKey, unsearchable, MAX_STATES } = m15;
+// What the editor's lenses draw, from every position the room can reach: how far each tile
+// is from winning, a shortest way there, every tile you pass through on the way to a stop,
+// every tile a beam or a piece ever covers, the moves between stops, and where a move kills
+// you. A generator, so the page can run it a slice at a time.
+
+
+
+const KEYS = ['up', 'right', 'down', 'left'];
+const WIN = 'win';
+const PIECES = ['box', 'heavy', 'bomb', 'mover', 'enemy', 'strong'];
+
+// { distance: Map tile -> fewest moves to win from a stop there, hopeless: tiles where no stop
+// can win, solution: the tiles a shortest way stops on, start first, beams and pieces: Sets of
+// tiles, passes: a Set of every tile you cross in a move that works, stops: every tile a move
+// ends on, moves: Map 'from>to' -> how many positions make that move, danger: a Set of tiles
+// where some move kills you, capped }. Null for a room with real-time pieces.
+function* lensData(level, max = MAX_STATES) {
+  if (unsearchable({ ...level, cells: [...level.cells, 'goal'] })) return null;
+  const start = createGame(level), keys = [...KEYS, ...(level.powers.cycle || level.powers.swim ? ['hide'] : [])];
+  const tileOf = s => s.player.y * s.w + s.player.x;
+  const beams = new Set(), pieces = new Set(), passes = new Set(), stops = new Set([tileOf(start)]);
+  // The tiles of the move being tried; kept only when the move works.
+  let crossed = [];
+  const moves = new Map(), danger = new Set();
+  const onTick = s => {
+    crossed.push(tileOf(s));
+    for (const e of s.events) if (e.type === 'die') danger.add(e.y * s.w + e.x);
+  };
+  const record = s => {
+    computeBeams(s, false);
+    for (const b of s.beams) for (const [x, y] of b.path.slice(1)) beams.add(y * s.w + x);
+    for (const e of s.entities) if (!e.dead && PIECES.includes(e.kind)) pieces.add(e.y * s.w + e.x);
+  };
+  const first = stateKey(start);
+  const nodes = new Map([[first, { tile: tileOf(start), parent: null, next: new Set() }]]), order = [first], waiting = new Map([[first, start]]);
+  record(start);
+  let capped = false, win = null;
+  for (let i = 0; i < order.length && !capped; i++) {
+    const k = order[i], s = waiting.get(k), node = nodes.get(k);
+    waiting.delete(k);
+    for (const pair of successors(s, keys, true, onTick)) {
+      if (pair) for (const i of crossed) passes.add(i);
+      crossed = [];
+      if (pair) {
+        const t = pair[1];
+        stops.add(tileOf(t));
+        const edge = `${node.tile}>${tileOf(t)}`;
+        moves.set(edge, (moves.get(edge) || 0) + 1);
+        if (t.won) { node.next.add(WIN); if (!win) win = { from: k, tile: tileOf(t) }; }
+        else {
+          const tk = stateKey(t);
+          node.next.add(tk);
+          if (!nodes.has(tk)) {
+            if (nodes.size >= max) { capped = true; break; }
+            nodes.set(tk, { tile: tileOf(t), parent: k, next: new Set() });
+            order.push(tk); waiting.set(tk, t);
+            record(t);
+          }
+        }
+      }
+      yield nodes.size;
+    }
+  }
+  // Moves to win from each position: a walk back from the win along every move.
+  const back = new Map();
+  for (const [k, n] of nodes) for (const t of n.next) (back.get(t) || back.set(t, []).get(t)).push(k);
+  const toWin = new Map([[WIN, 0]]), todo = [WIN];
+  for (let i = 0; i < todo.length; i++) for (const k of back.get(todo[i]) || []) if (!toWin.has(k)) { toWin.set(k, toWin.get(todo[i]) + 1); todo.push(k); }
+  const distance = new Map(), seen = new Set();
+  for (const [k, n] of nodes) {
+    seen.add(n.tile);
+    if (toWin.has(k) && !(distance.get(n.tile) <= toWin.get(k))) distance.set(n.tile, toWin.get(k));
+  }
+  const solution = [];
+  if (win) { solution.push(win.tile); for (let k = win.from; k; k = nodes.get(k).parent) solution.unshift(nodes.get(k).tile); }
+  for (const i of stops) passes.delete(i);
+  return { distance, hopeless: [...seen].filter(t => !distance.has(t)), solution, beams, pieces, passes, stops, moves, danger, capped, positions: nodes.size };
+}
+return { lensData };
+})();
+// ---- src/app/lenses.js
+const m47 = (() => {
+const { reach } = m15;
+const { routes } = m17;
+const { lensData } = m46;
+const { INK } = m14;
+const { S } = m11;
+const { $ } = m12;
+const { sliced } = m19;
+const { WELL, closeWell } = m18;
+// Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
+// lens on per group and every group at once. A tool in hand can open a lens by itself, until
+// you pick one in that group. Data comes from searches run a slice at a time, again whenever
+// the room changes. All copy is draft.
+
+
+
+
+
+
+
+
+const STOPS_BUDGET_MS = 2000;
+const LENS_GROUPS = [
+  { id: 'colour', label: 'Colour', key: '1', lenses: [['distance', 'Distance'], ['beams', 'Beams'], ['pieces', 'Pieces']] },
+  { id: 'dots', label: 'Dots', key: '2', lenses: [['stops', 'Stops'], ['passes', 'Passes']] },
+  { id: 'lines', label: 'Lines', key: '3', lenses: [['solution', 'Solution'], ['moves', 'Moves']] },
+  { id: 'frames', label: 'Frames', key: '4', lenses: [['traps', 'Traps'], ['danger', 'Danger']] },
+];
+// What each lens shows, on its button's hover.
+const LENS_TIPS = {
+  off: 'Show nothing in this row.',
+  distance: 'Colour each tile by how many moves it takes to win from there.',
+  beams: 'Colour every tile a laser can ever reach.',
+  pieces: 'Colour every tile a box, a moving block or an enemy can ever stand on.',
+  stops: 'Dot every tile you can stop on.',
+  passes: 'Dot where you stop (big) and where you only slide through (small).',
+  solution: 'Draw one shortest way to the goal, its moves numbered.',
+  moves: 'Draw every slide from stop to stop, thicker where more positions make it.',
+  traps: 'Frame every tile from which the goal is out of reach for good.',
+  danger: 'Frame every tile where a move kills you.',
+};
+// The lens a tool opens by itself, while it is in hand.
+const PIECE = { colour: 'pieces' }, BEAM = { colour: 'beams' }, AIM = { colour: 'distance', lines: 'solution' };
+const AUTO = { turret: BEAM, receiver: BEAM, sensor: BEAM, box: PIECE, heavy: PIECE, mover: PIECE, enemy: PIECE, strong: PIECE, goal: AIM, start: AIM };
+const SEARCHED = ['distance', 'beams', 'pieces', 'solution', 'passes', 'moves', 'danger'];
+
+const L = () => S.lens;
+// What is on in a group: your pick, else what the tool opens, else nothing.
+function lensOn(group) {
+  const pick = L().pick[group];
+  if (pick !== undefined) return pick === 'off' ? null : pick;
+  return L().follow ? (AUTO[S.ui.tool] || {})[group] || null : null;
+}
+// Whether a group's lens is the tool's doing rather than your pick.
+const isAuto = group => L().pick[group] === undefined && !!lensOn(group);
+const onNow = () => L().open && S.mode === 'edit' ? LENS_GROUPS.map(gr => lensOn(gr.id)).filter(Boolean) : [];
+
+function toggleLenses() {
+  const l = L();
+  l.open = !l.open;
+  // Opening the first time shows what Stops used to: every stop, and the traps among them.
+  if (l.open && !l.opened) { l.opened = true; l.pick.dots = 'stops'; l.pick.frames = 'traps'; }
+  // The chips under the room carry the lenses; turning them off closes their tab if it shows.
+  if (!l.open && WELL.open && WELL.tab === 'lenses') closeWell();
+  syncLenses();
+}
+function pickLens(group, id) { L().pick[group] = id; syncLenses(); }
+function cycleLens(group) {
+  const gr = LENS_GROUPS.find(g => g.id === group), ids = ['off', ...gr.lenses.map(([id]) => id)];
+  if (!L().open) toggleLenses();
+  pickLens(group, ids[(ids.indexOf(lensOn(group) || 'off') + 1) % ids.length]);
+}
+function lensesOff() { for (const gr of LENS_GROUPS) L().pick[gr.id] = 'off'; syncLenses(); }
+
+// Starts whatever search the lenses on now need and the room does not have yet.
+function ensure() {
+  if (!S.level.start) return;
+  const on = onNow(), stamp = JSON.stringify(S.level);
+  if ((on.includes('stops') || on.includes('traps')) && (!S.stops || S.stops.stamp !== stamp)) runStops(stamp);
+  if (on.some(id => SEARCHED.includes(id)) && (!S.lensData || S.lensData.stamp !== stamp)) {
+    S.lensData = { stamp, d: undefined };
+    sliced(lensData(JSON.parse(stamp)), stamp, d => { if (S.lensData.stamp === stamp) { S.lensData.d = d; S.redraw = true; legend(); } });
+  }
+}
+
+// The stop map: plain slides first, then the whole search until its time runs out.
+function runStops(stamp) {
+  const out = {}, it = reach(JSON.parse(stamp), { budgetMs: STOPS_BUDGET_MS, out });
+  S.stops = { stamp, list: null, out, why: null, capped: false, traps: null };
+  const slice = () => {
+    if (!S.stops || S.stops.stamp !== stamp) return;
+    const until = performance.now() + 25;
+    for (;;) {
+      const r = it.next();
+      if (r.done) {
+        Object.assign(S.stops, { list: r.value.stops, why: r.value.why, capped: r.value.capped });
+        legend(); S.redraw = true;
+        if (!r.value.why && S.level.cells.includes('goal')) sliced(routes(JSON.parse(stamp)), stamp, m => {
+          if (!S.stops || S.stops.stamp !== stamp) return;
+          S.stops.traps = m ? m.traps : [];
+          S.redraw = true; legend();
+        });
+        return;
+      }
+      if (performance.now() > until) break;
+    }
+    setTimeout(slice, 0);
+  };
+  slice();
+}
+
+const tiles = n => `${n} ${n === 1 ? 'tile' : 'tiles'}`;
+const fresh = d => d && d.stamp === JSON.stringify(S.level) ? d : null;
+// What the room draws for the lenses on now; see view/lenses.js.
+function lensMarks() {
+  ensure();
+  const st = fresh(S.stops), ld = fresh(S.lensData), d = ld && ld.d;
+  const colour = lensOn('colour'), out = {};
+  if (L().open && S.mode === 'edit') {
+    if (d && colour === 'distance') out.heat = { distance: d.distance, hopeless: S.level.cells.includes('goal') ? d.hopeless : [] };
+    if (d && colour === 'beams') out.heat = { tiles: d.beams, colour: INK.beam };
+    if (d && colour === 'pieces') out.heat = { tiles: d.pieces, colour: INK.box };
+    if (st && lensOn('dots') === 'stops') out.dots = st.list || [...(st.out.stops || [])];
+    if (d && lensOn('dots') === 'passes') { out.dots = [...d.stops]; out.small = [...d.passes]; }
+    if (d && lensOn('lines') === 'solution') out.lines = d.solution;
+    if (d && lensOn('lines') === 'moves') out.moves = [...d.moves].map(([k, n]) => { const [a, b] = k.split('>').map(Number); return { a, b, n }; }).filter(m => m.a !== m.b);
+    if (d && lensOn('frames') === 'danger') out.crosses = d.danger;
+    if (st && st.traps && lensOn('frames') === 'traps') out.frames = new Set(st.traps);
+  }
+  return out;
+}
+// What the searches already know about one tile, for the hover line. Nothing is searched for it.
+function tileFacts(i) {
+  const st = fresh(S.stops), ld = fresh(S.lensData), d = ld && ld.d, out = [], goal = S.level.cells.includes('goal');
+  if (d) {
+    if (d.distance.has(i)) out.push(`${d.distance.get(i)} ${d.distance.get(i) === 1 ? 'move' : 'moves'} to win from here`);
+    else if (goal && d.hopeless.includes(i)) out.push('no win from here');
+    if (d.stops.has(i)) out.push('you can stop here'); else if (d.passes.has(i)) out.push('you only slide through');
+    if (d.beams.has(i)) out.push('a laser reaches here');
+    if (d.pieces.has(i)) out.push('a piece can be here');
+    if (d.danger.has(i)) out.push('a move kills you here');
+  } else if (st && st.list && st.list.includes(i)) out.push('you can stop here');
+  if (st && st.traps && st.traps.includes(i)) out.push('the goal is out of reach for good from here');
+  return out;
+}
+// Whether a search the lenses wait on is still running, so the room keeps redrawing.
+const lensBusy = () => onNow().length > 0 && ((fresh(S.stops) && !S.stops.list) || (fresh(S.lensData) && S.lensData.d === undefined));
+
+function lensLine(id) {
+  const st = fresh(S.stops), ld = fresh(S.lensData), d = ld ? ld.d : undefined, part = d && d.capped ? ' Partial: the room has more positions than were searched.' : '';
+  if (['stops', 'traps'].includes(id) && st && st.why || SEARCHED.includes(id) && d === null) return 'Has real-time pieces, so lenses cannot map it.';
+  const wait = 'Working it out...';
+  switch (id) {
+    case 'stops': return st && st.list ? `Dots: ${tiles(st.list.length)} you can stop on${st.capped ? ', maybe more' : ''}.` : wait;
+    case 'passes': return !d ? wait : `Dots: big where you stop (${d.stops.size}), small where you only pass (${d.passes.size}).${part}`;
+    case 'moves': return !d ? wait : `Lines: every move from stop to stop, thicker where more positions make it.${part}`;
+    case 'danger': return !d ? wait : d.danger.size ? `Frames: ${tiles(d.danger.size)} where a move kills you.${part}` : `Frames: no move kills you.${part}`;
+    case 'traps': return !S.level.cells.includes('goal') ? 'Frames: place a Goal to find traps.' : st && st.traps ? `Frames: ${tiles(st.traps.length)} where the goal is out of reach for good.` : wait;
+    case 'distance': return !d ? wait : !S.level.cells.includes('goal') ? 'Colour: place a Goal to see how far each tile is.' : `Colour: green is near the goal, red is far, grey can no longer win.${part}`;
+    case 'beams': return !d ? wait : `Colour: red where a laser can ever reach.${part}`;
+    case 'pieces': return !d ? wait : `Colour: brown where a box, block or enemy can ever be.${part}`;
+    case 'solution': return !d ? wait : d.solution.length ? `Lines: a shortest way, ${d.solution.length - 1} moves, numbered.${part}` : !S.level.cells.includes('goal') ? 'Lines: place a Goal to see a way.' : 'Lines: no way to the goal.';
+  }
+  return '';
+}
+function legend() {
+  const on = onNow();
+  $('lensLegend').replaceChildren(...on.map(id => Object.assign(document.createElement('li'), { textContent: lensLine(id) })));
+}
+
+function syncLenses() {
+  const l = L(), show = l.open && S.mode === 'edit';
+  $('stopsBtn').setAttribute('aria-pressed', String(l.open)); $('stopsBtn').classList.toggle('on', l.open);
+  $('lensBox').hidden = !show;
+  $('lensFollow').checked = l.follow;
+  document.querySelectorAll('[data-lens-group]').forEach(b => b.classList.toggle('on', (lensOn(b.dataset.lensGroup) || 'off') === b.dataset.lens));
+  if (show) { ensure(); legend(); }
+  S.redraw = true;
+}
+
+function buildLenses() {
+  $('lensRows').replaceChildren(...LENS_GROUPS.map(gr => {
+    const row = document.createElement('div');
+    row.className = 'lensRow';
+    const name = Object.assign(document.createElement('span'), { textContent: gr.label, title: `Key ${gr.key} cycles this row.` });
+    row.append(name, ...[['off', 'Off'], ...gr.lenses].map(([id, label]) => {
+      const b = Object.assign(document.createElement('button'), { type: 'button', textContent: label, title: LENS_TIPS[id] });
+      b.dataset.lensGroup = gr.id; b.dataset.lens = id;
+      b.onclick = () => pickLens(gr.id, id);
+      return b;
+    }));
+    return row;
+  }));
+  $('lensFollow').onchange = e => { L().follow = e.target.checked; syncLenses(); };
+  $('stopsBtn').onclick = toggleLenses;
+}
+return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
+})();
+// ---- src/app/chips.js
+const m48 = (() => {
+const { describe } = m38;
+const { S } = m11;
+const { INK } = m14;
+const { $, touch } = m12;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m47;
+// The lens chips under the room, one per group, each drawing its own small legend, and the
+// hover line in the status bar: what is on a tile and what the lenses know about it. All copy
+// is draft.
+
+
+
+
+
+// A 26 by 12 mark per lens, the same marks the room draws.
+const ARROW = (c, w = 1.6) => `<path d="M2 6H20" stroke="${c}" stroke-width="${w}"/><path d="M24 6l-5-3.5v7z" fill="${c}"/>`;
+const MARK = {
+  off: `<path d="M6 6H20" stroke="currentColor" stroke-opacity=".4" stroke-width="1.5"/>`,
+  distance: `<defs><linearGradient id="chipDist"><stop offset="0" stop-color="hsl(120,75%,45%)"/><stop offset="1" stop-color="hsl(0,75%,45%)"/></linearGradient></defs><rect x="1" y="2" width="24" height="8" rx="2" fill="url(#chipDist)"/>`,
+  beams: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.beam}" fill-opacity=".55"/>`,
+  pieces: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.box}" fill-opacity=".6"/>`,
+  stops: `<circle cx="13" cy="6" r="3.5" fill="${INK.player}"/>`,
+  passes: `<circle cx="7" cy="6" r="3.5" fill="${INK.player}"/><circle cx="15" cy="6" r="1.6" fill="${INK.player}"/><circle cx="21" cy="6" r="1.6" fill="${INK.player}"/>`,
+  solution: ARROW(INK.goal, 2.2),
+  moves: `<g opacity=".7">${ARROW(INK.player, 1.2)}</g>`,
+  traps: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="${INK.beam}" stroke-width="1.8"/>`,
+  danger: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="#ff9f43" stroke-width="1.8"/><path d="M10 3l6 6M16 3l-6 6" stroke="#ff9f43" stroke-width="1.6"/>`,
+};
+const NAME = Object.fromEntries(LENS_GROUPS.flatMap(g => g.lenses));
+
+function buildChips() {
+  $('lensChips').replaceChildren(...LENS_GROUPS.map(gr => {
+    const b = Object.assign(document.createElement('button'), { type: 'button', className: 'chip' });
+    b.dataset.chip = gr.id;
+    b.onclick = () => cycleLens(gr.id);
+    return b;
+  }));
+}
+
+let shown = '';
+function syncChips() {
+  const show = S.lens.open && S.mode === 'edit';
+  const key = show + LENS_GROUPS.map(g => `${lensOn(g.id)}${isAuto(g.id)}${lensLine(lensOn(g.id) || '')}`).join();
+  if (key !== shown) {
+    shown = key;
+    $('lensChips').hidden = !show;
+    for (const gr of LENS_GROUPS) {
+      const b = document.querySelector(`[data-chip=${gr.id}]`), id = lensOn(gr.id);
+      b.classList.toggle('on', !!id);
+      b.classList.toggle('auto', isAuto(gr.id));
+      b.title = `${id ? lensLine(id) : `${gr.label} is off.`}${isAuto(gr.id) ? ' Opened by the tool in hand.' : ''} Key ${gr.key}.`;
+      b.innerHTML = `<span class="g">${gr.label}</span><svg viewBox="0 0 26 12" aria-hidden="true">${MARK[id || 'off']}</svg><span class="n">${id ? NAME[id] : 'Off'}</span>`;
+    }
+  }
+  syncInfo();
+}
+
+// The hover line: a mouse over a tile in edit mode. A finger has the Look tool for this.
+let info = '';
+function syncInfo() {
+  const h = S.mode === 'edit' && !touch ? S.hover : null;
+  const text = h ? `Tile ${h.x}, ${h.y}: ${[describe(S.level, h.x, h.y), ...tileFacts(h.y * S.level.w + h.x)].join(' · ')}` : '';
+  if (text !== info) $('info').textContent = info = text;
+}
+return { buildChips, syncChips };
+})();
+// ---- src/app/sheets.js
+const m49 = (() => {
+const { $ } = m12;
+const { closeWell } = m18;
+// A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
+// Rooms opens the rooms list. One sheet at a time; Build, Escape or play closes it.
+
+
+function openSheet(name) {
+  const sheet = $('sheet');
+  if (name && name !== 'build') closeWell();
+  sheet.hidden = !name || name === 'build';
+  document.querySelectorAll('#sheet [data-pane]').forEach(p => { p.hidden = p.dataset.pane !== name; });
+  document.querySelectorAll('[data-sheet]').forEach(b => b.classList.toggle('on', b.dataset.sheet === (sheet.hidden ? 'build' : name)));
+}
+
+function buildSheets() {
+  document.querySelectorAll('[data-sheet]').forEach(b => b.onclick = () => openSheet($('sheet').hidden || !b.classList.contains('on') ? b.dataset.sheet : 'build'));
+  $('navRooms').onclick = () => $('roomsBtn').click();
+  addEventListener('keydown', ev => { if (ev.key === 'Escape') openSheet('build'); });
+  // A tapped power shows what it does, under its name; the rest stay one line.
+  $('powers').addEventListener('click', ev => {
+    const row = ev.target.closest('.power'); if (!row) return;
+    document.querySelectorAll('#powers .power').forEach(r => r.classList.toggle('show', r === row));
+  });
+}
+return { openSheet, buildSheets };
+})();
+// ---- src/app/keys.js
+const m50 = (() => {
+const { TOOLS } = m34;
+const { $ } = m12;
+// Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
+// every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
+
+
+const TOOL_KEYS = { look: 'L', erase: 'X', select: 'S', start: 'P', wall: 'B', checkpoint: 'C', goal: 'G', mover: 'M', turret: 'T', box: 'O', heavy: 'H', water: 'W', door: 'D' };
+const BY_KEY = Object.fromEntries(Object.entries(TOOL_KEYS).map(([t, k]) => [k, t]));
+const name = id => TOOLS.find(t => t.id === id).label;
+
+const LIST = [
+  ['Editing', [['E', 'Play this room, or go back to editing'], ['Ctrl+Z', 'Undo'], ['Ctrl+Shift+Z', 'Redo'], ['Ctrl+S', 'Save'], ['Tab', 'Hide or show both side columns'], ['?', 'This list']]],
+  ['Tools', Object.entries(TOOL_KEYS).map(([t, k]) => [k, name(t)])],
+  ['Lenses', [['1 to 4', 'Next lens in Colour, Dots, Lines or Frames'], ['0', 'Every lens off']]],
+  ['Select', [['Ctrl+C', 'Copy'], ['Ctrl+X', 'Cut'], ['Ctrl+V', 'Paste'], ['Delete', 'Delete'], ['R', 'Rotate'], ['Escape', 'Let go']]],
+  ['Playing', [['Arrows', 'Slide'], ['Space', 'Hide, or start or stop swimming, with those powers'], ['R', 'Reset the room'], ['E', 'Back to editing']]],
+];
+
+function buildKeys() {
+  document.querySelectorAll('[data-tool]').forEach(b => {
+    const k = TOOL_KEYS[b.dataset.tool];
+    if (!k) return;
+    b.title = `${b.title} (${k})`;
+    b.append(Object.assign(document.createElement('kbd'), { className: 'key', textContent: k }));
+  });
+  $('keysList').replaceChildren(...LIST.map(([head, rows]) => {
+    const sec = document.createElement('section');
+    sec.append(Object.assign(document.createElement('h3'), { textContent: head }), ...rows.map(([k, does]) => {
+      const row = document.createElement('p');
+      row.append(Object.assign(document.createElement('kbd'), { textContent: k }), ` ${does}`);
+      return row;
+    }));
+    return sec;
+  }));
+  $('keysBtn').onclick = () => $('keysBox').showModal();
+}
+
+// The tool a bare letter picks in edit mode, or null.
+const toolForKey = ev => (ev.ctrlKey || ev.metaKey || ev.altKey ? null : BY_KEY[ev.key.toUpperCase()] || null);
+
+// Tab hides both side columns, but only when no control has focus, so it still moves focus.
+function bareKey(ev) {
+  if (ev.key !== 'Tab' || ev.ctrlKey || ev.altKey || innerWidth <= 700) return false;
+  const f = document.activeElement;
+  if (f && f !== document.body && f.id !== 'game') return false;
+  document.body.classList.toggle('bare');
+  return true;
+}
+const showKeys = () => $('keysBox').showModal();
+return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
+})();
+// ---- src/level/region.js
+const m51 = (() => {
+const { CLOCKWISE } = m0;
+// Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
+// each takes a level or a clip and returns a new one. The start never moves.
+
+const cw = d => CLOCKWISE[(CLOCKWISE.indexOf(d) + 1) % 4];
+const CORNER_CW = { nw: 'ne', ne: 'se', se: 'sw', sw: 'nw' };
+
+// r: {x0, y0, x1, y1}, corners in any order.
+const norm = r => ({ x0: Math.min(r.x0, r.x1), y0: Math.min(r.y0, r.y1), x1: Math.max(r.x0, r.x1), y1: Math.max(r.y0, r.y1) });
+const inR = (r, x, y) => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1;
+
+function copyRegion(level, r) {
+  r = norm(r);
+  const w = r.x1 - r.x0 + 1, h = r.y1 - r.y0 + 1, cells = [];
+  for (let y = r.y0; y <= r.y1; y++) for (let x = r.x0; x <= r.x1; x++) cells.push(level.cells[y * level.w + x]);
+  const entities = level.entities.filter(e => inR(r, e.x, e.y)).map(e => ({ ...JSON.parse(JSON.stringify(e)), x: e.x - r.x0, y: e.y - r.y0 }));
+  return { w, h, cells, entities };
+}
+
+function clearRegion(level, r) {
+  r = norm(r);
+  const cells = level.cells.map((c, i) => inR(r, i % level.w, Math.floor(i / level.w)) ? '' : c);
+  return { ...level, cells, entities: level.entities.filter(e => !inR(r, e.x, e.y)) };
+}
+
+// A quarter turn clockwise, turning everything that has a direction with it.
+function turnCell(c) {
+  const [kind, v] = c.split(':');
+  if (kind === 'spring') return 'spring:' + cw(v);
+  if (kind === 'tri') return 'tri:' + CORNER_CW[v];
+  if (kind === 'gate') return 'gate:' + CLOCKWISE.filter(d => v.split(',').map(cw).includes(d)).join(',');
+  return c;
+}
+function turnPiece(e, h) {
+  const t = { ...e, x: h - 1 - e.y, y: e.x };
+  if (e.axis) { // h, +1 is right -> down; v, +1 is down -> left
+    t.axis = e.axis === 'h' ? 'v' : 'h';
+    t.dir = e.axis === 'h' ? (e.dir || 1) : -(e.dir || 1);
+  }
+  if (e.turret) t.turret = { ...e.turret, dirs: CLOCKWISE.filter(d => e.turret.dirs.map(cw).includes(d)), ...(e.turret.start ? { start: cw(e.turret.start) } : {}) };
+  return t;
+}
+function rotateClip(clip) {
+  const { w, h } = clip, cells = Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) cells[x * h + (h - 1 - y)] = turnCell(clip.cells[y * w + x]);
+  return { w: h, h: w, cells, entities: clip.entities.map(e => turnPiece(e, h)) };
+}
+
+// Stamps a clip with its top-left at (x, y). What falls outside the room is dropped; a
+// piece in the clip replaces one already there; the start's tile stays free.
+function pasteRegion(level, clip, x, y) {
+  const cells = [...level.cells], isStart = (cx, cy) => !!level.start && cx === level.start.x && cy === level.start.y;
+  const inside = (cx, cy) => cx >= 0 && cy >= 0 && cx < level.w && cy < level.h;
+  for (let j = 0; j < clip.h; j++) for (let i = 0; i < clip.w; i++) {
+    const cx = x + i, cy = y + j;
+    if (inside(cx, cy) && !(isStart(cx, cy) && clip.cells[j * clip.w + i])) cells[cy * level.w + cx] = clip.cells[j * clip.w + i];
+  }
+  const placed = clip.entities.map(e => ({ ...JSON.parse(JSON.stringify(e)), x: e.x + x, y: e.y + y })).filter(e => inside(e.x, e.y) && !isStart(e.x, e.y));
+  const taken = new Set(placed.map(e => e.x + ',' + e.y));
+  return { ...level, cells, entities: [...level.entities.filter(e => !taken.has(e.x + ',' + e.y)), ...placed] };
+}
+return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
+})();
+// ---- src/app/select.js
+const m52 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m51;
+const { S } = m11;
+const { change } = m31;
+const { $ } = m12;
+// The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
+// it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
+// undo step each.
+
+
+
+
+let A = null; // { syncPanel }
+function buildSelect(actions) {
+  A = actions;
+  $('selCopy').onclick = copy;
+  $('selCut').onclick = cut;
+  $('selDelete').onclick = del;
+  $('selRotate').onclick = rotate;
+  $('selPaste').onclick = startPaste;
+}
+
+const say = t => { $('placeHint').textContent = t; };
+function syncSelect() {
+  const has = !!S.sel;
+  for (const id of ['selCopy', 'selCut', 'selDelete']) $(id).disabled = !has;
+  $('selRotate').disabled = !has && !S.paste;
+  $('selPaste').disabled = !S.clip;
+  $('selPaste').textContent = S.paste ? 'Done' : 'Paste';
+}
+
+// Pointer: a press starts a box (or stamps, when pasting); a drag grows it. A press inside
+// the box picks it up instead, and letting go puts it down where it was dragged.
+const inside = (r, c) => c.x >= r.x0 && c.x <= r.x1 && c.y >= r.y0 && c.y <= r.y1;
+function selectDown(c) {
+  if (S.paste) { change(() => { S.level = pasteRegion(S.level, S.paste, c.x, c.y); }); A.syncPanel(); return; }
+  if (S.sel && inside(norm(S.sel), c)) { S.moving = { from: norm(S.sel), clip: copyRegion(S.level, S.sel), grab: c, at: c }; return; }
+  S.sel = { x0: c.x, y0: c.y, x1: c.x, y1: c.y };
+  syncSelect();
+}
+function selectMove(c) {
+  if (S.moving) { S.moving.at = c; return; }
+  if (S.sel && !S.paste) { S.sel.x1 = c.x; S.sel.y1 = c.y; }
+}
+function selectUp() {
+  const m = S.moving;
+  if (!m) return;
+  S.moving = null;
+  const dx = m.at.x - m.grab.x, dy = m.at.y - m.grab.y;
+  if (!dx && !dy) return;
+  const r = m.from, x0 = r.x0 + dx, y0 = r.y0 + dy;
+  change(() => {
+    const st = S.level.start, carried = !!st && inside(r, st);
+    S.level = pasteRegion(clearRegion(S.level, r), m.clip, x0, y0);
+    // The start rides along when it was inside the box and lands inside the room.
+    const to = { x: st.x + dx, y: st.y + dy };
+    if (carried && to.x >= 0 && to.y >= 0 && to.x < S.level.w && to.y < S.level.h) {
+      S.level = { ...S.level, start: to, entities: S.level.entities.filter(e => e.x !== to.x || e.y !== to.y) };
+    }
+  });
+  S.sel = { x0, y0, x1: x0 + m.clip.w - 1, y1: y0 + m.clip.h - 1 };
+  A.syncPanel();
+}
+
+function copy() {
+  if (!S.sel) return;
+  S.clip = copyRegion(S.level, S.sel);
+  say(`Copied ${S.clip.w}x${S.clip.h}. Paste places it.`);
+  syncSelect();
+}
+function cut() {
+  if (!S.sel) return;
+  copy();
+  change(() => { S.level = clearRegion(S.level, S.sel); });
+  A.syncPanel();
+}
+function del() {
+  if (!S.sel) return;
+  change(() => { S.level = clearRegion(S.level, S.sel); });
+  A.syncPanel();
+}
+// Rotating a box turns it a quarter clockwise in place, around its top-left corner.
+function rotate() {
+  if (S.paste) { S.paste = rotateClip(S.paste); return; }
+  if (!S.sel) return;
+  const r = norm(S.sel), turned = rotateClip(copyRegion(S.level, r));
+  change(() => { S.level = pasteRegion(clearRegion(S.level, r), turned, r.x0, r.y0); });
+  S.sel = { x0: r.x0, y0: r.y0, x1: r.x0 + turned.w - 1, y1: r.y0 + turned.h - 1 };
+  A.syncPanel();
+}
+function startPaste() {
+  if (S.paste) { S.paste = null; say(''); syncSelect(); return; }
+  if (!S.clip) return;
+  S.paste = JSON.parse(JSON.stringify(S.clip));
+  S.sel = null;
+  say('Click or tap where the top-left corner goes. Rotate turns it.');
+  syncSelect();
+}
+
+// Keys in edit mode with Select: Ctrl+C, Ctrl+X, Ctrl+V, Delete, R, Escape.
+function selectKey(ev) {
+  if (S.ui.tool !== 'select') return false;
+  const ctrl = ev.ctrlKey || ev.metaKey, k = ev.key.toLowerCase();
+  if (ctrl && k === 'c') copy();
+  else if (ctrl && k === 'x') cut();
+  else if (ctrl && k === 'v') { if (!S.paste) startPaste(); }
+  else if (!ctrl && (k === 'delete' || k === 'backspace')) del();
+  else if (!ctrl && k === 'r') rotate();
+  else if (k === 'escape') { S.paste = null; S.sel = null; S.moving = null; say(''); syncSelect(); }
+  else return false;
+  ev.preventDefault();
+  return true;
+}
+
+// What edit view draws on top: the box, or the ghost of the paste under the pointer.
+function selectOverlay() {
+  if (S.ui.tool !== 'select') return null;
+  if (S.paste) return S.hover ? { paste: S.paste, x: S.hover.x, y: S.hover.y } : null;
+  if (S.moving) { const m = S.moving; return { paste: m.clip, x: m.from.x0 + m.at.x - m.grab.x, y: m.from.y0 + m.at.y - m.grab.y }; }
+  return S.sel ? { sel: norm(S.sel) } : null;
+}
+return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
+})();
 // ---- src/app/panels.js
 const m53 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m9;
 const { INK } = m14;
 const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m34;
-const { toolsFor, syncBrief, syncCostDots } = m39;
+const { toolsFor, syncBrief, syncCostDots } = m45;
 const { S } = m11;
 const { $, canvas, touch } = m12;
 const { change, step: undoStep, syncUndo } = m31;
 const { runCheck, syncCheck, syncLint } = m21;
-const { buildLenses, syncLenses } = m41;
+const { buildLenses, syncLenses } = m47;
 const { buildWell, openWell } = m18;
-const { buildChips } = m42;
+const { buildChips } = m48;
 const { buildSize } = m32;
-const { buildSheets } = m43;
-const { buildKeys } = m44;
+const { buildSheets } = m49;
+const { buildKeys } = m50;
 const { syncRoomsButton } = m30;
-const { buildSelect, syncSelect } = m46;
-const { icon } = m52;
+const { buildSelect, syncSelect } = m52;
+const { icon } = m44;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -5848,17 +5878,17 @@ const m55 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
-const { drawEdit, drawPlay } = m51;
+const { drawEdit, drawPlay } = m43;
 const { S } = m11;
 const { $, g, now } = m12;
-const { openSheet } = m43;
+const { openSheet } = m49;
 const { syncPanel, keysText } = m53;
 const { feedDemo } = m21;
-const { selectOverlay } = m46;
+const { selectOverlay } = m52;
 const { watchStuck, resetStuck } = m54;
-const { lensMarks, lensBusy } = m41;
+const { lensMarks, lensBusy } = m47;
 const { syncWell } = m18;
-const { syncChips } = m42;
+const { syncChips } = m48;
 const { gust } = m13;
 const { stateKey } = m15;
 const { respawn } = m2;
@@ -6001,13 +6031,13 @@ const { $, canvas, touch, now } = m12;
 const { setMode, aim } = m55;
 const { begin, end, step: undoStep } = m31;
 const { save } = m30;
-const { selectDown, selectMove, selectUp, selectKey } = m46;
-const { LENS_GROUPS, cycleLens, lensesOff } = m41;
+const { selectDown, selectMove, selectUp, selectKey } = m52;
+const { LENS_GROUPS, cycleLens, lensesOff } = m47;
 const { syncPanel } = m53;
 const { fit } = m33;
-const { toolForKey, bareKey, showKeys } = m44;
+const { toolForKey, bareKey, showKeys } = m50;
 const { TOOLS } = m34;
-const { allows } = m39;
+const { allows } = m45;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -6510,7 +6540,7 @@ const { thumbURL } = m25;
 const { $ } = m12;
 const { change } = m31;
 const { dirty, remember, syncRoomsButton } = m30;
-const { icon } = m52;
+const { icon } = m44;
 const { TOOLS, GROUPS } = m34;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
@@ -6711,7 +6741,7 @@ const { bindInput } = m56;
 const { setMode, frame, render, tick, report, copyReport } = m55;
 const { buildRooms, bootRooms } = m30;
 const { buildGenerator } = m61;
-const { buildCampaign, openMenu } = m39;
+const { buildCampaign, openMenu } = m45;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 

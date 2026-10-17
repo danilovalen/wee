@@ -681,6 +681,10 @@ const M = [
   ['src', "if (max !== null && list.length > max)", "if (list.length > max)", 'campaign'],
   ['src', "${max === null ? '' : `/${max}`}", "/${max}", 'campaign-play'],
   ['src', ".toggled.length === 0,", ".toggled.length >= 0,", 'campaign'],
+  ['src', "e.kind === 'box' && /^door:/.test(room.cells[e.y * room.w + e.x] || '')", "e.kind === 'box'", 'campaign'],
+  ['src', "      return flipped && !robot;", "      return flipped;", 'campaign'],
+  ['src', "      return flipped && !robot;", "      return !robot;", 'campaign'],
+  ['src', "c.dataset.part = el;", "", 'campaign-play'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
   ['src', "dot.textContent = cost[b.dataset.tool];", "dot.textContent = '';", 'campaign-play'],
 ];

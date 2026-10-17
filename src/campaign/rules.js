@@ -115,6 +115,26 @@ Object.assign(REQUIREMENTS, {
     text: 'Every switch turns on.',
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
   },
+  boxThroughOpenDoor: {
+    text: 'A box passes through an open door.',
+    // A closed door is solid, so a box on a door tile means it is open.
+    judge: (room, moves) => {
+      let ok = false;
+      replayPath(room, moves, s => { if (s.entities.some(e => !e.dead && e.kind === 'box' && /^door:/.test(room.cells[e.y * room.w + e.x] || ''))) ok = true; });
+      return ok;
+    },
+  },
+  onlyBoxesFlipSwitches: {
+    text: 'Only boxes turn switches on and off. The robot never crosses one.',
+    judge: (room, moves) => {
+      let robot = false, flipped = false;
+      replayPath(room, moves, s => {
+        if ((room.cells[s.player.y * room.w + s.player.x] || '').startsWith('toggle:')) robot = true;
+        if (s.toggled.length) flipped = true;
+      });
+      return flipped && !robot;
+    },
+  },
   everyToggleOffAtEnd: {
     text: 'Every switch is off when the robot reaches the goal.',
     judge: (room, moves) => room.cells.some(c => c.startsWith('toggle:')) && replayPath(room, moves, () => {}).toggled.length === 0,

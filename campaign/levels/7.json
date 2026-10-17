@@ -1,0 +1,41 @@
+{
+ "name": "Level 7",
+ "rows": [
+  "#######",
+  "#P....#",
+  "#.....#",
+  "#.....#",
+  "#.....#",
+  "#....G#",
+  "#######"
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "box": [
+   1,
+   null
+  ],
+  "button": [
+   1,
+   null
+  ],
+  "door": [
+   1,
+   null
+  ]
+ },
+ "steps": {
+  "best": 10,
+  "range": 3
+ },
+ "rules": [
+  "noBoxOnButton"
+ ],
+ "require": [
+  "throughOpenDoor",
+  "doorClosedAtEnd"
+ ]
+}
