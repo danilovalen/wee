@@ -3582,7 +3582,7 @@ return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNE
 const m35 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10]},"steps":{"best":6,"range":2},"rules":[],"require":[]},{"id":"2","name":"Level 2","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"toggle":[2,2],"door":[1,1]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOn","throughOpenDoor","doorClosedAtEnd"]},{"id":"3","name":"Level 3","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"toggle":[1,1],"door":[1,1]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOnThenOff","throughOpenDoor"]},{"id":"4","name":"Level 4","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"box":[1,2],"button":[1,1],"door":[1,1]},"steps":{"best":6,"range":2},"rules":["noBoxOnButton"],"require":["throughOpenDoor"]},{"id":"5","name":"Level 5","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"box":[1,2],"button":[1,1],"door":[1,1]},"steps":{"best":10,"range":3},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"]}];
+const LEVELS = [{"id":"1","name":"Level 1","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10]},"steps":{"best":6,"range":2},"rules":[],"require":[]},{"id":"2","name":"Level 2","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"toggle":[1,1],"door":[1,1]},"steps":{"best":7,"range":2},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"]},{"id":"3","name":"Level 3","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"toggle":[2,2],"door":[1,1]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOn","throughOpenDoor","doorClosedAtEnd"]},{"id":"4","name":"Level 4","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"toggle":[1,1],"door":[1,1]},"steps":{"best":8,"range":2},"rules":[],"require":["everyToggleOnThenOff","throughOpenDoor"]},{"id":"5","name":"Level 5","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"box":[1,2],"button":[1,1],"door":[1,1]},"steps":{"best":6,"range":2},"rules":["noBoxOnButton"],"require":["throughOpenDoor"]},{"id":"6","name":"Level 6","rows":["#######","#P....#","#.....#","#.....#","#.....#","#....G#","#######"],"palette":{"block":[0,10],"box":[1,2],"button":[1,1],"door":[1,1]},"steps":{"best":10,"range":3},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"]}];
 const COSTS = {"block":1,"box":2,"button":3,"door":3,"toggle":2};
 return { LEVELS, COSTS };
 })();
@@ -3718,6 +3718,7 @@ function placementErrors(def, room) {
 }
 
 // Requirements on one shortest path, judged from every tick of its replay.
+const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
 const REQUIREMENTS = {
   throughOpenDoor: {
     text: 'The robot passes through an open door.',
@@ -3725,6 +3726,22 @@ const REQUIREMENTS = {
     judge: (room, moves) => {
       let ok = false;
       replayPath(room, moves, s => { if (/^door:/.test(room.cells[s.player.y * room.w + s.player.x] || '')) ok = true; });
+      return ok;
+    },
+  },
+  hitsClosedDoor: {
+    text: 'The robot runs into a closed door.',
+    // A slide that ends with a closed door on the next tile ahead: the door is what stopped it.
+    judge: (room, moves) => {
+      let ok = false, dir = null;
+      replayPath(room, moves, s => {
+        const p = s.player;
+        if (dir && !p.dir) {
+          const [dx, dy] = STEP[dir], c = room.cells[(p.y + dy) * room.w + p.x + dx] || '';
+          if (/^door:/.test(c) && !s.open[c.slice(5)]) ok = true;
+        }
+        dir = p.dir;
+      });
       return ok;
     },
   },

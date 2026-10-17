@@ -41,9 +41,9 @@ const build = (def, rows) => {
   ok('a fixed tile cannot change', placementErrors(d, fixed).some(e => /does not let you change/.test(e.msg)));
   const alien = roomOf(d); alien.cells[10] = 'door:red';
   ok('an element outside the palette is refused', placementErrors(d, alien).some(e => /no doors/.test(e.msg)));
-  const d2 = level('2');
-  ok('too few of a required element is refused', placementErrors(d2, roomOf(d2)).some(e => /at least 2 toggles/.test(e.msg)));
-  const d4 = level('4'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
+  const d3 = level('3');
+  ok('too few of a required element is refused', placementErrors(d3, roomOf(d3)).some(e => /at least 2 toggles/.test(e.msg)));
+  const d4 = level('5'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
   ok('a box cannot start on a button', placementErrors(d4, onButton).some(e => /box cannot start on a button/.test(e.msg)));
 }
 { // the robot finds every shortest path
@@ -89,7 +89,20 @@ const build = (def, rows) => {
   ok('every toggle on: met', req('everyToggleOn', ['######', '#Pt..#', '#...t#', '######'], ['right', 'down']));
   ok('on then off: not met when it stays on', !req('everyToggleOnThenOff', ['######', '#Pt..#', '######'], ['right']));
   ok('on then off: met', req('everyToggleOnThenOff', ['######', '#Pt..#', '######'], ['right', 'left']));
+  ok('runs into a closed door: met when a slide stops against it', req('hitsClosedDoor', ['#######', '#P..D.#', '#######'], ['right']));
+  ok('runs into a closed door: not met when the door is open', !req('hitsClosedDoor', ['#######', '#Pt.D.#', '#######'], ['right']));
+  ok('runs into a closed door: not met when gravel stops it before an open one', !req('hitsClosedDoor', ['#######', '#PtgD.#', '#######'], ['right']));
+  ok('runs into a closed door: not met when a wall stops it', !req('hitsClosedDoor', ['#######', '#P..#D#', '#######'], ['right']));
+  ok('runs into a closed door: not met when it slides elsewhere', !req('hitsClosedDoor', ['#####', '#P..#', '#D..#', '#####'], ['right']));
   ok('a requirement with no toggles is not met', !req('everyToggleOn', ['#####', '#P..#', '#####'], ['right']));
+}
+{ // level 2: a toggle, a door, run into it closed, then go through it open
+  const d = level('2');
+  ok('level 2 asks for both door requirements', d.require.join() === 'hitsClosedDoor,throughOpenDoor' && d.palette.toggle.join() === '1,1' && d.palette.door.join() === '1,1');
+  const v = check(d, build(d, ['#######', '#P..#.#', '#.t...#', '###D.##', '#.....#', '#....G#', '#######']), COSTS);
+  ok('level 2 can be won', v.ok && v.won && v.length >= 5 && v.length <= 9, JSON.stringify(v.fail || v.length));
+  const lazy = check(d, build(d, ['', '#P...t#', '', '', '', '#...D.#']), COSTS);
+  ok('a door the robot never meets closed fails level 2', lazy.ok && !lazy.won, JSON.stringify(lazy.fail));
 }
 { // every shortest path must meet a requirement, not just one
   const d = { ...level('1'), require: ['throughOpenDoor'], steps: { best: 2, range: 0 }, palette: { block: [0, 30], toggle: [0, 1], door: [0, 1] } };

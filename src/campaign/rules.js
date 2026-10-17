@@ -61,6 +61,7 @@ export function placementErrors(def, room) {
 }
 
 // Requirements on one shortest path, judged from every tick of its replay.
+const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
 export const REQUIREMENTS = {
   throughOpenDoor: {
     text: 'The robot passes through an open door.',
@@ -68,6 +69,22 @@ export const REQUIREMENTS = {
     judge: (room, moves) => {
       let ok = false;
       replayPath(room, moves, s => { if (/^door:/.test(room.cells[s.player.y * room.w + s.player.x] || '')) ok = true; });
+      return ok;
+    },
+  },
+  hitsClosedDoor: {
+    text: 'The robot runs into a closed door.',
+    // A slide that ends with a closed door on the next tile ahead: the door is what stopped it.
+    judge: (room, moves) => {
+      let ok = false, dir = null;
+      replayPath(room, moves, s => {
+        const p = s.player;
+        if (dir && !p.dir) {
+          const [dx, dy] = STEP[dir], c = room.cells[(p.y + dy) * room.w + p.x + dx] || '';
+          if (/^door:/.test(c) && !s.open[c.slice(5)]) ok = true;
+        }
+        dir = p.dir;
+      });
       return ok;
     },
   },

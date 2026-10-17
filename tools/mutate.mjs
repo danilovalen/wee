@@ -671,6 +671,8 @@ const M = [
   ['src', "else if (seen === d + 1) parents.get(k).push([key, m]);", "", 'campaign'],
   ['src', "for (const path of r.paths) for (const id of def.require || [])", "for (const path of r.paths.slice(0, 1)) for (const id of def.require || [])", 'campaign'],
   ['src', "if (r.length < st.best - st.range || r.length > st.best + st.range)", "if (r.length > st.best + st.range)", 'campaign'],
+  ['src', "if (/^door:/.test(c) && !s.open[c.slice(5)]) ok = true;", "if (/^door:/.test(c)) ok = true;", 'campaign'],
+  ['src', "        dir = p.dir;\n", "", 'campaign'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
   ['src', "dot.textContent = cost[b.dataset.tool];", "dot.textContent = '';", 'campaign-play'],
 ];
