@@ -68,7 +68,7 @@ ones they had before.
 | Level | Palette (min-max) | Moves | Requirements |
 |---|---|---|---|
 | 1 | block 0-10 | 6 ± 2 | none beyond the range |
-| 2 | block 0-10, switch 1-1, door 1-1 | 7 ± 2 | robot hits a closed door; robot goes through an open door |
+| 2 | block 0-10, switch 1-1, door 1-1 | 7 ± 2 | robot collides with a closed door; robot goes through an open door |
 | 3 | block 0-10, switch 1 or more, door 1 or more | 8 ± 2 | every switch on; through an open door; door closed at the end |
 | 4 | block, switch 2 or more, door 1 or more | 8 ± 2 | through an open door; every switch off when the robot reaches the goal |
 | 5 | block, box 1 or more | 8 ± 2 | one box is pushed in at least 2 moves and the robot collides with it once without moving it |
@@ -98,6 +98,20 @@ switches never hold, named per kind ("its button is never pressed", "1 of its 2 
 turns on"). If every one holds at some point but never all together, it says so. With no door
 to blame: "The robot cannot reach the goal from anywhere it can get to." Tap the verdict to
 flash the tiles again. All of this copy is a draft.
+
+## The level screen
+
+Chosen 2026-10-17 from sketches (owner: *"B but using icon instead of name for objects"*, then
+both interactions). Over the room, a goal card: the level's name, then one row per goal, the
+move range first and the optional exact count last. Each row draws its objects as their palette
+icons (the robot, a box, a door, a switch, a button) and is marked ✓ or ✕ after a Run; a
+requirement is met only when every shortest path meets it. Under it, cost and area beside your
+best. The card's height never changes: the verdict's words float over the bottom of the room
+(× closes them) and the room never moves. Each palette button of an element wears how many are
+placed (red until the minimum, written `n/min+`; `n/max` when a level sets a maximum) and its
+cost. A tap the level refuses shakes the tile red and says why on it for a moment. Dragging with
+Move shows a see-through copy on the landing tile, red with a cross where it cannot land, and a
+dashed frame where the thing was. Row wording is a draft.
 
 ## Open
 

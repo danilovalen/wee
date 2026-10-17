@@ -48,6 +48,31 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     g.strokeStyle = INK.goal; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
     g.strokeRect(f.x * T + 2, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
   }
+  // A refused tap: the tile shakes with a red frame.
+  for (const f of fx) if (f.type === 'refuse' && now - f.at < 400) {
+    const t = (now - f.at) / 400, dx = Math.sin(t * Math.PI * 6) * 3 * (1 - t);
+    g.strokeStyle = INK.beam; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
+    g.strokeRect(f.x * T + 2 + dx, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
+  }
+  if (over && over.carry) {
+    // Move: a dashed frame where the thing was, a see-through copy where it lands, red and
+    // crossed where it cannot.
+    const { from, to, ok } = over.carry, i = from.y * level.w + from.x;
+    g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([4, 3]);
+    g.strokeRect(from.x * T + 3, from.y * T + 3, T - 6, T - 6); g.setLineDash([]);
+    g.globalAlpha = 0.5;
+    const e = level.entities.find(e => e.x === from.x && e.y === from.y);
+    if (level.start && level.start.x === from.x && level.start.y === from.y) drawPlayer(g, to.x * T, to.y * T, false, 0.9, 0.9, level.powers.armored);
+    else if (e) drawPiece(g, e, to.x * T, to.y * T);
+    else if (level.cells[i]) drawCell(g, level.cells[i], to.x, to.y, null);
+    g.globalAlpha = 1;
+    if (!ok) {
+      g.fillStyle = 'rgba(230,80,80,0.35)'; g.fillRect(to.x * T, to.y * T, T, T);
+      g.strokeStyle = INK.beam; g.lineWidth = 3; g.beginPath();
+      g.moveTo(to.x * T + T * 0.3, to.y * T + T * 0.3); g.lineTo(to.x * T + T * 0.7, to.y * T + T * 0.7);
+      g.moveTo(to.x * T + T * 0.7, to.y * T + T * 0.3); g.lineTo(to.x * T + T * 0.3, to.y * T + T * 0.7); g.stroke();
+    } else { g.strokeStyle = INK.mark; g.lineWidth = 2; g.strokeRect(to.x * T + 1, to.y * T + 1, T - 2, T - 2); }
+  }
   if (over && over.sel) {
     const r = over.sel;
     g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([6, 4]);

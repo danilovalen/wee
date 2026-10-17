@@ -670,16 +670,16 @@ const M = [
   // campaign
   ['src', "else if (seen === d + 1) parents.get(k).push([key, m]);", "", 'campaign'],
   ['src', "for (const path of r.paths) for (const id of def.require || [])", "for (const path of r.paths.slice(0, 1)) for (const id of def.require || [])", 'campaign'],
-  ['src', "if (r.length < st.best - st.range || r.length > st.best + st.range)", "if (r.length > st.best + st.range)", 'campaign'],
+  ['src', "base.inRange = r.length >= st.best - st.range && r.length <= st.best + st.range;", "base.inRange = r.length <= st.best + st.range;", 'campaign'],
   ['src', "if (/^door:/.test(c) && !s.open[c.slice(5)]) ok = true;", "if (/^door:/.test(c)) ok = true;", 'campaign'],
   ['src', "        dir = p.dir;\n", "", 'campaign'],
   ['src', "if (c.startsWith('toggle:') ? s.toggled.includes(i) :", "if (c.startsWith('toggle:') ? true :", 'campaign'],
   ['src', "const stuck = own.filter(i => !held.has(i));", "const stuck = own;", 'campaign'],
   ['src', ": n === all ? `none of its ${all} ${many} ${none}` :", ": false ? '' :", 'campaign'],
   ['src', "  else flashStuck(v);\n", "", 'campaign-play'],
-  ['src', "out.onclick = () => flashStuck(v);", "", 'campaign-play'],
+  ['src', "$('campVerdictText').onclick = points ? () => flashStuck(v) : null;", "$('campVerdictText').onclick = null;", 'campaign-play'],
   ['src', "if (max !== null && list.length > max)", "if (list.length > max)", 'campaign'],
-  ['src', "${max === null ? '' : `/${max}`}", "/${max}", 'campaign-play'],
+  ['src', "max !== null ? `${n}/${max}` : min ? `${n}/${min}+` : `${n}`;", "`${n}`;", 'campaign-play'],
   ['src', ".toggled.length === 0,", ".toggled.length >= 0,", 'campaign'],
   ['src', "e.kind === 'box' && /^door:/.test(room.cells[e.y * room.w + e.x] || '')", "e.kind === 'box'", 'campaign'],
   ['src', "      return flipped && !robot;", "      return flipped;", 'campaign'],
@@ -703,7 +703,17 @@ const M = [
   ['src/app/size.js', "  addEventListener('pointerup', done); addEventListener('pointercancel', done);\n", "", 'size-band'],
   ['src/app/size.js', "if (ev.target !== b && (from || !band.hidden)) { from = null; band.hidden = true; }", "if (ev.target !== b && !from && !band.hidden) band.hidden = true;", 'size-band'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
-  ['src', "dot.textContent = cost[b.dataset.tool];", "dot.textContent = '';", 'campaign-play'],
+  ['src', "dot.textContent = COSTS[el];", "dot.textContent = '';", 'campaign-play'],
+  // the goal card, refused taps and the move preview
+  ['src', "base.reqs = Object.fromEntries((def.require || []).map(id => [id, !(id in failed)]));", "base.reqs = Object.fromEntries((def.require || []).map(id => [id, true]));", 'campaign'],
+  ['src', "met: ran ? v.inRange : null", "met: null", 'campaign-play'],
+  ['src', "c.className = 'campIcon'; c.dataset.part = p.el;", "c.className = 'campIcon';", 'campaign-play'],
+  ['src', "count.classList.toggle('short', n < min);", "", 'campaign-play'],
+  ['src', "  if (no) { if (fresh) refuse(x, y, no); return; }", "  if (no) return;", 'campaign-play'],
+  ['src', "      else if (no) refuse(to.x, to.y, no);", "", 'campaign-play'],
+  ['src', "return { carry: { from, to, ok: carried.ok } };", "return { carry: { from, to, ok: true } };", 'campaign-play'],
+  ['src', "selectOverlay() || carryOverlay());", "selectOverlay());", 'campaign-play'],
+  ['style.css', ".campVerdict { position: absolute;", ".campVerdict { position: relative;", 'campaign-play'],
 ];
 
 let caught = 0, crashed = 0;

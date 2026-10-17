@@ -468,18 +468,38 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
 .campParts { display: flex; gap: 4px; }
 .campParts canvas { width: 22px; height: 22px; }
 .campRow.sel { outline: 2px solid var(--accent, #6b5cff); }
-.campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; padding: 8px 10px; border-radius: var(--r-s); background: var(--field); font-size: 0.9em; box-sizing: border-box; }
-.campBrief p { margin: 0 0 4px; }
-.campHead { font-weight: 700; }
-.campReqs { margin: 0; padding-left: 18px; }
-.campReqs .optional { color: var(--dim); }
-.campVerdict { margin-top: 6px !important; font-weight: 700; }
-.campVerdict.won { color: #2e8b57; }
-.campVerdict.lost { color: #c0392b; }
+.campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
+.campGoal { padding: 8px 10px; border-radius: var(--r-s); background: var(--field); }
+.campHead { margin: 0 0 4px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.campLast { color: var(--dim); font-weight: 700; font-size: 0.92em; }
+.campReqs { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; }
+.campReqs li { display: flex; align-items: center; gap: 5px; min-height: 22px; font-weight: 700; }
+.campReqs .mark { flex: none; width: 20px; height: 20px; margin-right: 1px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; box-sizing: border-box; box-shadow: inset 0 0 0 1.5px var(--dim); color: var(--dim); }
+.campReqs .met .mark { box-shadow: none; background: #dff3e7; color: #2e8b57; }
+.campReqs .unmet .mark { box-shadow: none; background: #fde3e0; color: #c0392b; }
+.campReqs .optional { color: var(--dim); font-weight: 600; }
+.campReqs .optional:not(.met):not(.unmet) .mark { box-shadow: none; outline: 1.5px dashed var(--dim); outline-offset: -1.5px; }
+.campIcon { width: 18px; height: 18px; flex: none; vertical-align: middle; }
+.campScores { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.campScore { padding: 4px 10px; border-radius: var(--r-s); background: var(--field); display: flex; align-items: baseline; gap: 6px; }
+.campScore small:first-child { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); font-size: 0.75em; }
+.campScore b { font-size: 1.15em; }
+.campScore .best { color: var(--dim); }
+body.campaign .roomArea { position: relative; }
+.campVerdict { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 8px 6px 8px 12px; border-radius: var(--r-s); background: #24262e; color: #fff; font-weight: 700; line-height: 1.35; box-shadow: 0 6px 18px rgba(36, 38, 46, .25); }
+.campVerdict > span { flex: 1; }
+.campVerdict.won > span::before { content: '✓ '; color: #7ee2a8; }
+.campVerdict.lost > span::before { content: '✕ '; color: #ff8a80; }
+.campVerdict button { flex: none; min-width: 32px; min-height: 32px; padding: 0; background: transparent; color: #fff; border: 0; box-shadow: none; font-size: 1.2em; }
+.campVerdict.points > span { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.campVerdict[hidden], .campTip[hidden] { display: none !important; }
+.campTip { position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 4px)); padding: 5px 9px; border-radius: var(--r-s); background: #24262e; color: #fff; font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
 [data-tool] { position: relative; }
-.costDot { position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 3px; box-sizing: border-box; border-radius: var(--r-pill); background: #e0a100; color: #1d1d1d; font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; pointer-events: none; }
+.costDot { position: absolute; bottom: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 3px; box-sizing: border-box; border-radius: var(--r-pill); background: #e0a100; color: #1d1d1d; font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; pointer-events: none; }
 body.campaign [data-tool][hidden], body.campaign #powers, body.campaign #placeHint, body.campaign #ctx { display: none !important; }
-.campVerdict.points { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.countDot { position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: var(--r-pill); background: #24262e; color: #fff; font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; pointer-events: none; }
+.countDot.short { background: #c0392b; }
+[data-tool].full { border-style: dashed; opacity: .6; }
 body:not(.campaign) [data-camp] { display: none !important; }
 </style>
 </head>
@@ -579,11 +599,13 @@ body:not(.campaign) [data-camp] { display: none !important; }
     <section id="stage">
       <div id="campBrief" class="campBrief camp-only"></div>
       <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="game"></canvas>
+        <div id="campTip" class="campTip" role="status" hidden></div>
         <button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button>
         <button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom">+</button>
         <button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left">+</button>
         <button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right">+</button>
-      </div></div>
+      </div>
+        <div id="campVerdict" class="campVerdict" role="status" hidden><span id="campVerdictText"></span><button id="campVerdictClose" type="button" aria-label="Close">&#215;</button></div></div>
       <div id="lensChips" class="chips" hidden></div>
       <div id="pad" class="pad" hidden>
         <button id="hideBtn" type="button">Hide / Swim</button>
@@ -3795,6 +3817,7 @@ const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
 const REQUIREMENTS = {
   throughOpenDoor: {
     text: 'The robot passes through an open door.',
+    short: [{ el: 'start' }, 'through an open', { el: 'door' }],
     // A closed door is solid, so standing on a door tile means it is open.
     judge: (room, moves) => {
       let ok = false;
@@ -3803,7 +3826,8 @@ const REQUIREMENTS = {
     },
   },
   hitsClosedDoor: {
-    text: 'The robot runs into a closed door.',
+    text: 'The robot collides with a closed door.',
+    short: [{ el: 'start' }, 'collides with a closed', { el: 'door' }],
     // A slide that ends with a closed door on the next tile ahead: the door is what stopped it.
     judge: (room, moves) => {
       let ok = false, dir = null;
@@ -3820,6 +3844,7 @@ const REQUIREMENTS = {
   },
   doorClosedAtEnd: {
     text: 'Every door is closed when the robot reaches the goal.',
+    short: ['every', { el: 'door' }, 'closed at the end'],
     judge: (room, moves) => {
       const end = replayPath(room, moves, () => {});
       return !Object.values(end.open).some(Boolean);
@@ -3839,10 +3864,12 @@ function toggleHistory(room, moves) {
 Object.assign(REQUIREMENTS, {
   everyToggleOn: {
     text: 'Every switch turns on.',
+    short: ['every', { el: 'toggle' }, 'turns on'],
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
   },
   boxThroughOpenDoor: {
     text: 'A box passes through an open door.',
+    short: [{ el: 'box' }, 'through an open', { el: 'door' }],
     // A closed door is solid, so a box on a door tile means it is open.
     judge: (room, moves) => {
       let ok = false;
@@ -3852,6 +3879,7 @@ Object.assign(REQUIREMENTS, {
   },
   onlyBoxesFlipSwitches: {
     text: 'Only boxes turn switches on and off. The robot never crosses one.',
+    short: ['only', { el: 'box' }, 'flips', { el: 'toggle' }],
     judge: (room, moves) => {
       let robot = false, flipped = false;
       replayPath(room, moves, s => {
@@ -3863,24 +3891,31 @@ Object.assign(REQUIREMENTS, {
   },
   boxPushedThrice: {
     text: 'One box is pushed in at least 3 moves.',
+    short: [{ el: 'box' }, 'pushed ×3'],
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 3),
   },
   boxPushedTwiceHitOnce: {
     text: 'One box is pushed in at least 2 moves, and the robot collides with it once without moving it.',
+    short: [{ el: 'box' }, 'pushed ×2, collided ×1'],
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2 && b.hits >= 1),
   },
   everyToggleOffAtEnd: {
     text: 'Every switch is off when the robot reaches the goal.',
+    short: ['every', { el: 'toggle' }, 'off at the end'],
     judge: (room, moves) => room.cells.some(c => c.startsWith('toggle:')) && replayPath(room, moves, () => {}).toggled.length === 0,
   },
   everyToggleOnThenOff: {
     text: 'Every switch turns on, then off again.',
+    short: ['every', { el: 'toggle' }, 'on, then off'],
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.onOff.has(i)); },
   },
 });
 
 const stepsText = st => `The shortest path takes ${st.best - st.range} to ${st.best + st.range} moves.`;
 const bestText = st => `Exactly ${st.best} moves.`;
+// The same, as the goal card's rows say them.
+const rangeShort = st => `${st.best - st.range}–${st.best + st.range} moves`;
+const bestShort = st => `exactly ${st.best}`;
 
 // The room's area, the size score.
 const areaOf = room => room.w * room.h;
@@ -3926,14 +3961,18 @@ function check(def, room, costs, opts) {
   if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'The robot gave up: this room is too big to search.' } };
   const base = { ok: true, length: r.length, paths: r.paths.length, cost: costOf(def, room, costs), area: areaOf(room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
-  if (r.length < st.best - st.range || r.length > st.best + st.range) return { ...base, won: false, fail: { path: r.paths[0], why: `${stepsText(st)} This one takes ${r.length}.` } };
-  for (const path of r.paths) for (const id of def.require || []) {
-    if (!REQUIREMENTS[id].judge(room, path)) return { ...base, won: false, fail: { path, why: `Not met: ${REQUIREMENTS[id].text}` } };
-  }
+  // Each requirement holds on every shortest path or it is not met; the card marks each one.
+  const failed = {};
+  for (const path of r.paths) for (const id of def.require || []) if (!(id in failed) && !REQUIREMENTS[id].judge(room, path)) failed[id] = path;
+  base.reqs = Object.fromEntries((def.require || []).map(id => [id, !(id in failed)]));
+  base.inRange = r.length >= st.best - st.range && r.length <= st.best + st.range;
+  if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: `${stepsText(st)} This one takes ${r.length}.` } };
+  const first = (def.require || []).find(id => id in failed);
+  if (first) return { ...base, won: false, fail: { path: failed[first], why: `Not met: ${REQUIREMENTS[first].text}` } };
   const optional = [{ text: bestText(st), met: r.length === st.best }];
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, roomOf, placed, nameOf, placementErrors, boxMoves, REQUIREMENTS, stepsText, bestText, areaOf, costOf, stuckText, check };
+return { ELEMENTS, roomOf, placed, nameOf, placementErrors, boxMoves, REQUIREMENTS, stepsText, bestText, rangeShort, bestShort, areaOf, costOf, stuckText, check };
 })();
 // ---- src/editor/edit.js
 const m38 = (() => {
@@ -4653,6 +4692,31 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     g.strokeStyle = INK.goal; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
     g.strokeRect(f.x * T + 2, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
   }
+  // A refused tap: the tile shakes with a red frame.
+  for (const f of fx) if (f.type === 'refuse' && now - f.at < 400) {
+    const t = (now - f.at) / 400, dx = Math.sin(t * Math.PI * 6) * 3 * (1 - t);
+    g.strokeStyle = INK.beam; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
+    g.strokeRect(f.x * T + 2 + dx, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
+  }
+  if (over && over.carry) {
+    // Move: a dashed frame where the thing was, a see-through copy where it lands, red and
+    // crossed where it cannot.
+    const { from, to, ok } = over.carry, i = from.y * level.w + from.x;
+    g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([4, 3]);
+    g.strokeRect(from.x * T + 3, from.y * T + 3, T - 6, T - 6); g.setLineDash([]);
+    g.globalAlpha = 0.5;
+    const e = level.entities.find(e => e.x === from.x && e.y === from.y);
+    if (level.start && level.start.x === from.x && level.start.y === from.y) drawPlayer(g, to.x * T, to.y * T, false, 0.9, 0.9, level.powers.armored);
+    else if (e) drawPiece(g, e, to.x * T, to.y * T);
+    else if (level.cells[i]) drawCell(g, level.cells[i], to.x, to.y, null);
+    g.globalAlpha = 1;
+    if (!ok) {
+      g.fillStyle = 'rgba(230,80,80,0.35)'; g.fillRect(to.x * T, to.y * T, T, T);
+      g.strokeStyle = INK.beam; g.lineWidth = 3; g.beginPath();
+      g.moveTo(to.x * T + T * 0.3, to.y * T + T * 0.3); g.lineTo(to.x * T + T * 0.7, to.y * T + T * 0.7);
+      g.moveTo(to.x * T + T * 0.7, to.y * T + T * 0.3); g.lineTo(to.x * T + T * 0.3, to.y * T + T * 0.7); g.stroke();
+    } else { g.strokeStyle = INK.mark; g.lineWidth = 2; g.strokeRect(to.x * T + 1, to.y * T + 1, T - 2, T - 2); }
+  }
   if (over && over.sel) {
     const r = over.sel;
     g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([6, 4]);
@@ -4870,7 +4934,7 @@ return { icon };
 // ---- src/app/campaign.js
 const m45 = (() => {
 const { LEVELS, COSTS } = m35;
-const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, bestText, costOf, areaOf } = m37;
+const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, rangeShort, bestShort, costOf, areaOf } = m37;
 const { place, moveAt } = m38;
 const { newHistory } = m10;
 const { S, starterLevel } = m11;
@@ -4904,10 +4968,7 @@ const levelOf = id => LEVELS.find(l => l.id === id);
 // Move: carries the thing on one tile to another, when the target can take it and the room
 // breaks no rule it kept before. Returns the moved room or null.
 function moveIn(level, from, to) {
-  const next = moveAt(level, from, to);
-  if (!next || !S.camp) return next;
-  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg));
-  return placementErrors(S.camp.def, next).every(e => before.has(e.msg)) ? next : null;
+  return moveRefusal(level, from, to) ? null : moveAt(level, from, to);
 }
 
 // A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
@@ -4920,14 +4981,38 @@ function unframe(room) {
   return { ...room, w: w - 2, h: h - 2, cells, start: room.start && { x: room.start.x - 1, y: room.start.y - 1 }, entities: room.entities.map(e => ({ ...e, x: e.x - 1, y: e.y - 1 })) };
 }
 
-// Whether a tap may change the room: placing must not break a rule the level enforces as you
-// build (a maximum, a second goal, a box on a button). Too few of something is fine
-// while building; Run says so.
-function allows(level, ui, x, y, how) {
-  if (!S.camp) return true;
+// Why a tap may not change the room, or null when it may: placing must not break a rule the
+// level enforces as you build (a maximum, a second goal, a box on a button). Too few of
+// something is fine while building; Run says so.
+function refusal(level, ui, x, y, how) {
+  if (!S.camp) return null;
   const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
   place(next, ui, x, y, how);
-  return placementErrors(def, next).every(e => /^Place at least/.test(e.msg) || before.has(e.msg));
+  const e = placementErrors(def, next).find(e => !/^Place at least/.test(e.msg) && !before.has(e.msg));
+  return e ? tipOf(e.msg) : null;
+}
+const allows = (level, ui, x, y, how) => !refusal(level, ui, x, y, how);
+// A refusal said on the tile: the start and goal are never removed, only moved.
+const tipOf = msg => msg === 'Place the goal.' ? 'The goal stays. Use Move.' : msg === 'Place the start.' ? 'The start stays. Use Move.' : msg;
+
+// Why Move cannot carry a thing from one tile to another, or null when it can.
+function moveRefusal(level, from, to) {
+  const next = moveAt(level, from, to);
+  if (!next) return 'Cannot go there.';
+  if (!S.camp) return null;
+  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg)), e = placementErrors(S.camp.def, next).find(e => !before.has(e.msg));
+  return e ? tipOf(e.msg) : null;
+}
+
+// Says why a tap was refused, on the tile, for a moment; the room does not change.
+function refuse(x, y, why) {
+  S.fx.push({ type: 'refuse', x, y, at: now() });
+  const tip = $('campTip'), c = $('game'), w = $('roomWrap').getBoundingClientRect(), r = c.getBoundingClientRect();
+  tip.textContent = why;
+  tip.style.left = `${r.left - w.left + (x + 0.5) * r.width / S.level.w}px`;
+  tip.style.top = `${r.top - w.top + y * r.height / S.level.h}px`;
+  tip.hidden = false;
+  clearTimeout(refuse.t); refuse.t = setTimeout(() => { tip.hidden = true; }, 1500);
 }
 
 // The tools a level offers: Look, Erase, and its palette.
@@ -4940,47 +5025,86 @@ function save() {
   write(p);
 }
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-// A dot on each palette button that costs something, saying how much; none outside a level.
+// On each palette button of a level: its cost, and how many are placed against the minimum
+// (and the maximum, when the level sets one). None outside a level.
 function syncCostDots() {
-  const cost = S.camp ? Object.fromEntries(Object.keys(S.camp.def.palette).map(el => [TOOL[el], COSTS[el]])) : {};
+  const def = S.camp && S.camp.def, by = def ? placed(def, S.level).by : {};
+  const els = def ? Object.fromEntries(Object.keys(def.palette).map(el => [TOOL[el], el])) : {};
   document.querySelectorAll('[data-tool]').forEach(b => {
-    let dot = b.querySelector('.costDot');
-    if (cost[b.dataset.tool] == null) { if (dot) dot.remove(); return; }
-    if (!dot) b.append(dot = Object.assign(document.createElement('span'), { className: 'costDot' }));
-    dot.textContent = cost[b.dataset.tool];
-    dot.title = `Costs ${cost[b.dataset.tool]}`;
+    const el = els[b.dataset.tool];
+    for (const k of ['costDot', 'countDot']) { const d = b.querySelector('.' + k); if (!el && d) d.remove(); }
+    b.classList.toggle('full', false);
+    if (!el) return;
+    const dot = b.querySelector('.costDot') || b.appendChild(Object.assign(document.createElement('span'), { className: 'costDot' }));
+    dot.textContent = COSTS[el]; dot.title = `Costs ${COSTS[el]}`;
+    const [min, max] = def.palette[el], n = by[el].length;
+    const count = b.querySelector('.countDot') || b.appendChild(Object.assign(document.createElement('span'), { className: 'countDot' }));
+    count.textContent = max !== null ? `${n}/${max}` : min ? `${n}/${min}+` : `${n}`;
+    count.title = max !== null ? `${n} placed, ${min} to ${max}` : min ? `${n} placed, at least ${min}` : `${n} placed`;
+    count.classList.toggle('short', n < min);
+    b.classList.toggle('full', max !== null && n >= max);
   });
 }
 
-// The level's brief over the room: what to place, what the robot must do, and what it costs.
+// A row's words, with each object drawn as its palette icon.
+function words(parts) {
+  return parts.map(p => {
+    if (typeof p === 'string') return document.createTextNode(p);
+    const c = icon(p.el === 'start' ? 'start' : TOOL[p.el]), name = p.el === 'start' ? 'Robot' : ELEMENTS[p.el].label;
+    c.className = 'campIcon'; c.dataset.part = p.el; c.title = name; c.setAttribute('aria-label', name); c.setAttribute('role', 'img');
+    return c;
+  });
+}
+
+// The level over the room: a goal card with one row per requirement, marked after a run, and
+// the scores beside your best. Its height never changes with a verdict; the verdict's words
+// float over the room instead.
 function syncBrief() {
   if (!S.camp) return;
-  const def = S.camp.def, { by } = placed(def, S.level), v = S.camp.verdict;
-  const parts = Object.entries(def.palette).map(([el, [min, max]]) => `${ELEMENTS[el].label} ${by[el].length}${max === null ? '' : `/${max}`}${min ? ` (min ${min})` : ''} · ${COSTS[el]} each`);
-  const reqs = [stepsText(def.steps), ...(def.rules || []).includes('noBoxOnButton') ? ['A box cannot start on a button.'] : [], ...(def.require || []).map(id => REQUIREMENTS[id].text)];
-  const box = $('campBrief');
-  box.replaceChildren();
+  const def = S.camp.def, v = S.camp.verdict, best = (progress().levels[def.id] || {}).best || {};
+  const ran = v && v.ok && v.length != null;
+  const rows = [{ id: 'steps', parts: [rangeShort(def.steps)], text: stepsText(def.steps), met: ran ? v.inRange : null }];
+  if ((def.rules || []).includes('noBoxOnButton'))
+    rows.push({ id: 'noBoxOnButton', parts: ['no', { el: 'box' }, 'starts on a', { el: 'button' }], text: 'A box cannot start on a button.', met: v && !v.ok && v.errors.some(e => /box cannot start/.test(e.msg)) ? false : null });
+  for (const id of def.require || []) rows.push({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: ran && v.reqs ? v.reqs[id] : null });
+  rows.push({ id: 'best', parts: [bestShort(def.steps)], text: `Optional: exactly ${def.steps.best} moves.`, met: ran ? v.length === def.steps.best : null, optional: true });
+  const card = document.createElement('div'); card.className = 'campGoal';
   const head = document.createElement('p'); head.className = 'campHead';
-  head.textContent = `${def.name} · Cost ${costOf(def, S.level, COSTS)} · Area ${areaOf(S.level)}`;
-  const pal = document.createElement('p'); pal.className = 'campPal'; pal.textContent = parts.join('  ·  ');
+  const last = document.createElement('span'); last.className = 'campLast'; last.id = 'campLast';
+  last.textContent = !v ? '' : !v.ok ? 'not ready' : v.won ? `won in ${v.length}` : v.length != null ? `last run: ${v.length} moves` : 'no way through';
+  head.append(Object.assign(document.createElement('b'), { textContent: def.name }), last);
   const list = document.createElement('ul'); list.className = 'campReqs';
-  for (const r of reqs) list.append(Object.assign(document.createElement('li'), { textContent: r }));
-  const opt = document.createElement('li'); opt.className = 'optional'; opt.textContent = `Optional: ${bestText(def.steps)}`;
-  list.append(opt);
-  box.append(head, pal, list);
-  if (v) {
-    const out = document.createElement('p');
-    out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
-    out.id = 'campVerdict';
-    out.textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
-      : v.won ? `The robot made it in ${plural(v.length, 'move')}${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}. Cost ${v.cost} · Area ${v.area} · Optional ${v.met}/${v.optional.length}.`
-        : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
-    // A run that cannot finish points at the tiles that stop it; tap the verdict to see them again.
-    if (stuckAt(v).length) { out.classList.add('points'); out.onclick = () => flashStuck(v); out.title = 'Show the tiles'; }
-    box.append(out);
+  for (const r of rows) {
+    const li = document.createElement('li'); li.dataset.req = r.id; li.title = r.text;
+    li.className = (r.optional ? 'optional ' : '') + (r.met === true ? 'met' : r.met === false ? 'unmet' : '');
+    const mark = document.createElement('span'); mark.className = 'mark'; mark.textContent = r.met === true ? '✓' : r.met === false ? '✕' : r.optional ? '★' : '';
+    li.append(mark, ...words(r.parts));
+    list.append(li);
   }
+  card.append(head, list);
+  const tile = (label, n, b) => {
+    const t = document.createElement('div'); t.className = 'campScore'; t.dataset.score = label.toLowerCase();
+    t.append(Object.assign(document.createElement('small'), { textContent: label }), Object.assign(document.createElement('b'), { textContent: n }));
+    if (b != null) t.append(Object.assign(document.createElement('small'), { className: 'best', textContent: `best ${b}` }));
+    return t;
+  };
+  const scores = document.createElement('div'); scores.className = 'campScores';
+  scores.append(tile('Cost', costOf(def, S.level, COSTS), best.cost), tile('Area', areaOf(S.level), best.area));
+  $('campBrief').replaceChildren(card, scores);
+  syncCostDots();
+  // The verdict's words, over the room.
+  const out = $('campVerdict');
+  out.hidden = !v;
+  if (!v) return;
+  out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
+  $('campVerdictText').textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
+    : v.won ? `Made it in ${v.length} moves${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}.`
+      : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
+  // A run that cannot finish points at the tiles that stop it; tap the words to see them again.
+  const points = stuckAt(v).length > 0;
+  out.classList.toggle('points', points);
+  $('campVerdictText').onclick = points ? () => flashStuck(v) : null;
+  $('campVerdictText').title = points ? 'Show the tiles' : '';
 }
 
 function enterLevel(id) {
@@ -4995,8 +5119,8 @@ function enterLevel(id) {
   S.ui.tool = 'look'; S.ui.colour = 'red';
   p.last = id; write(p);
   document.body.classList.add('campaign');
-  A.setMode('edit'); A.syncPanel(); A.fit();
   syncBrief();
+  A.setMode('edit'); A.syncPanel(); A.fit();
   return true;
 }
 
@@ -5075,6 +5199,7 @@ function buildCampaign(actions, sandbox) {
   $('campMenu').onclick = openMenu;
   $('campBack').onclick = () => { leaveLevel(); openList(); };
   $('campRun').onclick = run;
+  $('campVerdictClose').onclick = () => { $('campVerdict').hidden = true; };
   // A change to the room clears the last verdict and is kept for next time.
   let stamp = '';
   const watch = () => {
@@ -5089,7 +5214,7 @@ function buildCampaign(actions, sandbox) {
   addEventListener('wee:mode', () => { if (S.camp) syncBrief(); });
   addEventListener('pagehide', save);
 }
-return { TOOL, progress, moveIn, unframe, allows, toolsFor, syncCostDots, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
+return { TOOL, progress, moveIn, unframe, refusal, allows, moveRefusal, refuse, toolsFor, syncCostDots, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
 })();
 // ---- src/solve/lenses.js
 const m46 = (() => {
@@ -5969,6 +6094,7 @@ const { openSheet } = m49;
 const { syncPanel, keysText } = m53;
 const { feedDemo } = m21;
 const { selectOverlay } = m52;
+const { moveRefusal } = m45;
 const { watchStuck, resetStuck } = m54;
 const { lensMarks, lensBusy } = m47;
 const { syncWell } = m18;
@@ -5978,6 +6104,7 @@ const { stateKey } = m15;
 const { respawn } = m2;
 const { syncEnabled } = m20;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
 
 
 
@@ -6064,7 +6191,7 @@ const AMBIENT_MS = 100;
 const ANIMATED = /^(water|goal)$/;
 function editNeedsDraw(t) {
   if (S.redraw) return true;
-  if (S.fx.length || S.paste || S.moving || lensBusy()) return true;
+  if (S.fx.length || S.paste || S.moving || S.carry || lensBusy()) return true;
   return t - (S.drawnAt || 0) > AMBIENT_MS && S.level.cells.some(c => ANIMATED.test(c));
 }
 function frame(t) {
@@ -6084,7 +6211,17 @@ function render() {
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay());
+  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay());
+}
+
+// Move's preview: where the carried thing would land, and whether it can.
+let carried = null;
+function carryOverlay() {
+  const from = S.carry, to = S.hover;
+  if (!from || !to || (from.x === to.x && from.y === to.y)) return null;
+  const key = `${from.x},${from.y},${to.x},${to.y},${JSON.stringify(S.level)}`;
+  if (!carried || carried.key !== key) carried = { key, ok: !moveRefusal(S.level, from, to) };
+  return { carry: { from, to, ok: carried.ok } };
 }
 
 // What the editor marks on the room: the lenses on now, and pieces or tiles the design notes
@@ -6121,7 +6258,7 @@ const { syncPanel } = m53;
 const { fit } = m33;
 const { toolForKey, bareKey, showKeys } = m50;
 const { TOOLS } = m34;
-const { allows, moveIn } = m45;
+const { refusal, moveRefusal, moveIn, refuse } = m45;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -6143,8 +6280,10 @@ function cellFromEvent(ev) {
   return x >= 0 && y >= 0 && x < level.w && y < level.h ? { x, y } : null;
 }
 
-function paint(x, y, how) {
-  if (!allows(S.level, S.ui, x, y, how)) return;
+// fresh: the press itself, not a drag across tiles, which would say it on every tile.
+function paint(x, y, how, fresh) {
+  const no = refusal(S.level, S.ui, x, y, how);
+  if (no) { if (fresh) refuse(x, y, no); return; }
   const t = now();
   for (const f of place(S.level, S.ui, x, y, how)) S.fx.push({ ...f, at: t });
 }
@@ -6188,7 +6327,7 @@ function bindInput() {
     begin();
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
-    paint(c.x, c.y, S.painting);
+    paint(c.x, c.y, S.painting, true);
   });
   canvas.addEventListener('pointermove', ev => {
     if (S.mode === 'play') return;
@@ -6201,9 +6340,11 @@ function bindInput() {
   const lift = () => { S.painting = 0; S.swipe = null; selectUp(); end(); };
   canvas.addEventListener('pointerup', ev => {
     if (S.carry) {
-      const to = cellFromEvent(ev), next = to && moveIn(S.level, S.carry, to);
+      const from = S.carry, to = cellFromEvent(ev), moved = to && (to.x !== from.x || to.y !== from.y);
+      const no = moved && moveRefusal(S.level, from, to), next = moved && !no && moveIn(S.level, from, to);
       S.carry = null; if (touch) S.hover = null;
       if (next) change(() => { S.level = next; });
+      else if (no) refuse(to.x, to.y, no);
     }
     lift();
   });

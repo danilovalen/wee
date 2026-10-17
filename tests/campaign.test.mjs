@@ -1,6 +1,6 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { boxMoves, stuckText, nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, costOf, areaOf, stepsText } from '../src/campaign/rules.js';
+import { boxMoves, stuckText, nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, ELEMENTS, costOf, areaOf, stepsText } from '../src/campaign/rules.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { LEVELS, COSTS } from '../src/level/campaign.js';
 import { emptyLevel } from '../src/level/format.js';
@@ -130,11 +130,11 @@ const build = (def, rows) => {
   ok('every toggle on: met', req('everyToggleOn', ['######', '#Pt..#', '#...t#', '######'], ['right', 'down']));
   ok('on then off: not met when it stays on', !req('everyToggleOnThenOff', ['######', '#Pt..#', '######'], ['right']));
   ok('on then off: met', req('everyToggleOnThenOff', ['######', '#Pt..#', '######'], ['right', 'left']));
-  ok('runs into a closed door: met when a slide stops against it', req('hitsClosedDoor', ['#######', '#P..D.#', '#######'], ['right']));
-  ok('runs into a closed door: not met when the door is open', !req('hitsClosedDoor', ['#######', '#Pt.D.#', '#######'], ['right']));
-  ok('runs into a closed door: not met when gravel stops it before an open one', !req('hitsClosedDoor', ['#######', '#PtgD.#', '#######'], ['right']));
-  ok('runs into a closed door: not met when a wall stops it', !req('hitsClosedDoor', ['#######', '#P..#D#', '#######'], ['right']));
-  ok('runs into a closed door: not met when it slides elsewhere', !req('hitsClosedDoor', ['#####', '#P..#', '#D..#', '#####'], ['right']));
+  ok('collides with a closed door: met when a slide stops against it', req('hitsClosedDoor', ['#######', '#P..D.#', '#######'], ['right']));
+  ok('collides with a closed door: not met when the door is open', !req('hitsClosedDoor', ['#######', '#Pt.D.#', '#######'], ['right']));
+  ok('collides with a closed door: not met when gravel stops it before an open one', !req('hitsClosedDoor', ['#######', '#PtgD.#', '#######'], ['right']));
+  ok('collides with a closed door: not met when a wall stops it', !req('hitsClosedDoor', ['#######', '#P..#D#', '#######'], ['right']));
+  ok('collides with a closed door: not met when it slides elsewhere', !req('hitsClosedDoor', ['#####', '#P..#', '#D..#', '#####'], ['right']));
   ok('every switch off at the end: met once both are off again', req('everyToggleOffAtEnd', ['######', '#Pt..#', '######'], ['right', 'left']));
   ok('every switch off at the end: not met while one is on', !req('everyToggleOffAtEnd', ['######', '#Pt..#', '######'], ['right']));
   ok('every switch off at the end: not met with no switch at all', !req('everyToggleOffAtEnd', ['#####', '#P..#', '#####'], ['right']));
@@ -200,6 +200,10 @@ const build = (def, rows) => {
   const both = build(d, ['P.t..', '.....', '....D', '.....', '....G']);
   const v = check(d, both, COSTS);
   ok('one path missing the door fails the room', v.ok && !v.won && /Not met/.test(v.fail.why) && v.fail.path.map(m => m.split('@')[0]).join() === 'down,right', JSON.stringify(v.fail));
+  ok('the verdict marks each requirement for the goal card', v.reqs && v.reqs.throughOpenDoor === false && v.inRange === true, JSON.stringify(v.reqs));
+  ok('every requirement has a short row, with at least one word', Object.values(REQUIREMENTS).every(r => Array.isArray(r.short) && r.short.some(p => typeof p === 'string')));
+  ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.el === 'start' || ELEMENTS[p.el])));
+  ok('collides, not runs into', /collides with/.test(REQUIREMENTS.hitsClosedDoor.text) && !/runs into/.test(REQUIREMENTS.hitsClosedDoor.text));
 }
 { // every level can be won: one known room each (5x5 unless noted), found by search, so a rule change that
   // makes a level impossible goes red
@@ -217,6 +221,7 @@ const build = (def, rows) => {
   for (const l of LEVELS) {
     const v = WINS[l.id] && check(l, build(l, WINS[l.id]), COSTS);
     ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
+    ok(`level ${l.id}'s win marks every row of its goal card met`, v && v.inRange && (l.require || []).every(id => v.reqs[id] === true), JSON.stringify(v && v.reqs));
   }
 }
 done();

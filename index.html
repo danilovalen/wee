@@ -103,11 +103,13 @@
     <section id="stage">
       <div id="campBrief" class="campBrief camp-only"></div>
       <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="game"></canvas>
+        <div id="campTip" class="campTip" role="status" hidden></div>
         <button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button>
         <button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom">+</button>
         <button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left">+</button>
         <button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right">+</button>
-      </div></div>
+      </div>
+        <div id="campVerdict" class="campVerdict" role="status" hidden><span id="campVerdictText"></span><button id="campVerdictClose" type="button" aria-label="Close">&#215;</button></div></div>
       <div id="lensChips" class="chips" hidden></div>
       <div id="pad" class="pad" hidden>
         <button id="hideBtn" type="button">Hide / Swim</button>

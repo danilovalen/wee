@@ -11,7 +11,10 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 const visibleTools = () => page.$$eval('[data-tool]', bs => bs.filter(b => !b.hidden).map(b => b.dataset.tool));
-const verdict = () => page.locator('#campVerdict').textContent().catch(() => '');
+const verdict = () => page.locator('#campVerdictText').textContent().catch(() => '');
+const score = k => page.locator(`.campScore[data-score="${k}"] b`).textContent();
+const marks = () => page.$$eval('.campReqs li', ls => ls.map(l => l.dataset.req + ':' + (l.classList.contains('met') ? 'met' : l.classList.contains('unmet') ? 'unmet' : '-')).join());
+const box = () => page.locator('#game').boundingBox().then(b => [b.x, b.y, b.width, b.height].map(Math.round).join());
 // Level 1's winning room from tests/campaign.test.mjs: # block, t switch, D door, P start, G goal.
 const WIN = ['P.#.#', '.....', '.###.', '.#...', '.#..G'];
 const load = rows => page.evaluate(rows => {
@@ -37,7 +40,9 @@ try {
   check('a priced tool wears its cost', (await page.locator('[data-tool="wall"] .costDot').textContent()) === '1');
   check('a free tool wears none', await page.locator('[data-tool="look"] .costDot').count() === 0 && await page.locator('[data-tool="move"] .costDot').count() === 0);
   check('a level opens on a 7x7 room, start top left, goal bottom right', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.start.x === 0 && l.start.y === 0 && l.cells[48] === 'goal' && l.cells.filter(c => c).length === 1; }));
-  check('the brief shows the area', (await page.locator('#campBrief .campHead').textContent()).includes('Area 49'));
+  check('the goal card shows the area', (await score('area')) === '49');
+  check('every row is unmarked before a run', /^steps:-,best:-$/.test(await marks()), await marks());
+  check('a priced tool wears its count too', (await page.locator('[data-tool="wall"] .countDot').textContent()) === '0');
   // Move: press on the start, release two tiles down; then the goal, one tile left.
   await page.click('[data-tool="move"]');
   const tile = async (x, y) => { const b = await page.locator('#game').boundingBox(); const l = await page.evaluate(() => [window.wee.getLevel().w, window.wee.getLevel().h]); return [b.x + (x + 0.5) * b.width / l[0], b.y + (y + 0.5) * b.height / l[1]]; };
@@ -52,11 +57,14 @@ try {
   check('the room can be resized in a level', await page.locator('[data-plus="bottom"]').isVisible());
   await page.click('[data-plus="bottom"]');
   await page.waitForTimeout(100);
-  check('a tap on a grip adds a line and the area follows', (await page.evaluate(() => window.wee.getLevel().h)) === 8 && (await page.locator('#campBrief .campHead').textContent()).includes('Area 56'));
+  check('a tap on a grip adds a line and the area follows', (await page.evaluate(() => window.wee.getLevel().h)) === 8 && (await score('area')) === '56');
   await load(['P....', '.....', '.....', '.....', '....G']);
+  const before = await box();
   await page.click('#campRun');
   await page.waitForTimeout(200);
   const lost = await verdict();
+  check('the verdict floats over the room and moves nothing', await page.locator('#campVerdict').isVisible() && (await box()) === before, before + ' / ' + await box());
+  check('a run too short marks the moves row', (await marks()).startsWith('steps:unmet'), await marks());
   check('an empty 5x5 is too short and says so', /takes 4 to 8 moves/.test(lost) && /Watch the robot/.test(lost), lost);
   check('the robot plays the failing path', await page.evaluate(() => document.getElementById('mode').textContent === 'Edit'), await page.locator('#mode').textContent());
   await page.click('#mode');
@@ -64,7 +72,10 @@ try {
   await page.click('#campRun');
   await page.waitForTimeout(200);
   const won = await verdict();
-  check('a room in range wins and reports its scores', /made it in 4 moves/.test(won) && /Cost 7 · Area 25/.test(won), won);
+  check('a room in range wins and the card marks every row', /Made it in 4 moves/.test(won) && (await marks()).startsWith('steps:met') && (await page.locator('#campLast').textContent()) === 'won in 4', won + ' ' + await marks());
+  check('the card shows the scores beside the best', (await score('cost')) === '7' && (await score('area')) === '25' && /best 7/.test(await page.locator('.campScore[data-score="cost"]').textContent()));
+  await page.click('#campVerdictClose');
+  check('the verdict closes', await page.locator('#campVerdict').isHidden());
   await page.click('#campBack');
   const row = await page.locator('.campRow[data-level="1"] small').textContent();
   check('the list keeps the best of a beaten level', /Beaten/.test(row) && /best cost 7 · area 25/.test(row), row);
@@ -85,8 +96,10 @@ try {
   check('an old framed room comes back without its frame', old === '5,5,0,0,1,24', old);
   await page.click('#campBack');
   await page.click('.campRow[data-level="3"]');
-  const brief = await page.locator('#campBrief .campPal').textContent();
-  check('an element with no maximum shows its count and minimum only', brief.includes('Switch 0 (min 1)') && brief.includes('Door 0 (min 1)'), brief);
+  const counts = [await page.locator('[data-tool="toggle"] .countDot').textContent(), await page.locator('[data-tool="door"] .countDot').textContent()];
+  check('an element with a minimum shows its count against it, short until met', counts.join() === '0/1+,0/1+' && await page.locator('[data-tool="toggle"] .countDot.short').count() === 1, counts.join());
+  const reqRows = await page.$$eval('.campReqs li', ls => ls.map(l => [l.dataset.req, [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join('+')].join('=')));
+  check('requirement rows draw objects as icons', reqRows.includes('everyToggleOn=toggle') && reqRows.includes('throughOpenDoor=start+door') && reqRows.includes('doorClosedAtEnd=door'), reqRows.join());
   await page.click('#campBack');
   // Level 3: one switch, one door. With the switch walled off behind the door, Run says why
   // the robot cannot finish and flashes the door and the switch.
@@ -98,8 +111,31 @@ try {
   check('a run that cannot finish says why', /red door never opens, because its switch never turns on/.test(stuck), stuck);
   check('and flashes the tiles that stop it', (await page.evaluate(() => window.wee.fxTypes())).filter(t => t === 'flash').length === 2);
   await page.waitForTimeout(1000);
-  await page.click('#campVerdict');
+  await page.click('#campVerdictText');
   check('tapping the verdict flashes them again', (await page.evaluate(() => window.wee.fxTypes())).filter(t => t === 'flash').length === 2);
+  // Level 2's row says collides, with the door drawn.
+  await page.click('#campBack'); await page.click('.campRow[data-level="2"]');
+  const hit = await page.locator('.campReqs li[data-req="hitsClosedDoor"]').evaluate(l => l.textContent + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join());
+  check('level 2 says collides with, and draws the robot and the door', /collides with a closed/.test(hit) && hit.endsWith('start,door'), hit);
+  // A refused tap: a block on the goal. The room stays, the tile says why.
+  const room = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));
+  await page.click('[data-tool="wall"]');
+  const g = await tile(6, 6); await page.mouse.click(...g);
+  check('a refused tap changes nothing and says why on the tile', (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === room && await page.locator('#campTip').isVisible() && /goal stays/.test(await page.locator('#campTip').textContent()) && (await page.evaluate(() => window.wee.fxTypes())).includes('refuse'), await page.locator('#campTip').textContent());
+  // Move's preview: the tile under a carried start changes while held; over the goal it is red.
+  await page.click('[data-tool="move"]');
+  const px = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), l = window.wee.getLevel(), d = c.getContext('2d').getImageData(Math.floor((x + 0.5) * c.width / l.w), Math.floor((y + 0.5) * c.height / l.h), 1, 1).data; return [d[0], d[1], d[2]]; }, [x, y]);
+  const empty = await px(2, 2), goal = await px(6, 6);
+  await page.mouse.move(...await tile(0, 0)); await page.mouse.down();
+  await page.mouse.move(...await tile(2, 2), { steps: 4 }); await page.waitForTimeout(80);
+  const ghost = await px(2, 2);
+  await page.mouse.move(...await tile(6, 6), { steps: 4 }); await page.waitForTimeout(80);
+  const red = await px(6, 6);
+  await page.evaluate(() => { document.getElementById('campTip').hidden = true; });
+  await page.mouse.up();
+  check('dragging shows the start where it would land', ghost.join() !== empty.join(), empty + ' -> ' + ghost);
+  check('over a tile it cannot take, the copy is red', red.join() !== goal.join() && red[0] > red[1] + 40, goal + ' -> ' + red);
+  check('and releasing there leaves the room and says why', (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === room && await page.locator('#campTip').isVisible());
   await page.click('#campBack');
   await page.click('#campMenu');
   await page.click('#menuSandbox');

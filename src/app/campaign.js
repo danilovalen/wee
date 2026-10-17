@@ -3,7 +3,7 @@
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS, COSTS } from '../level/campaign.js';
-import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, bestText, costOf, areaOf } from '../campaign/rules.js';
+import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, rangeShort, bestShort, costOf, areaOf } from '../campaign/rules.js';
 import { place, moveAt } from '../editor/edit.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -27,10 +27,7 @@ const levelOf = id => LEVELS.find(l => l.id === id);
 // Move: carries the thing on one tile to another, when the target can take it and the room
 // breaks no rule it kept before. Returns the moved room or null.
 export function moveIn(level, from, to) {
-  const next = moveAt(level, from, to);
-  if (!next || !S.camp) return next;
-  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg));
-  return placementErrors(S.camp.def, next).every(e => before.has(e.msg)) ? next : null;
+  return moveRefusal(level, from, to) ? null : moveAt(level, from, to);
 }
 
 // A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
@@ -43,14 +40,38 @@ export function unframe(room) {
   return { ...room, w: w - 2, h: h - 2, cells, start: room.start && { x: room.start.x - 1, y: room.start.y - 1 }, entities: room.entities.map(e => ({ ...e, x: e.x - 1, y: e.y - 1 })) };
 }
 
-// Whether a tap may change the room: placing must not break a rule the level enforces as you
-// build (a maximum, a second goal, a box on a button). Too few of something is fine
-// while building; Run says so.
-export function allows(level, ui, x, y, how) {
-  if (!S.camp) return true;
+// Why a tap may not change the room, or null when it may: placing must not break a rule the
+// level enforces as you build (a maximum, a second goal, a box on a button). Too few of
+// something is fine while building; Run says so.
+export function refusal(level, ui, x, y, how) {
+  if (!S.camp) return null;
   const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
   place(next, ui, x, y, how);
-  return placementErrors(def, next).every(e => /^Place at least/.test(e.msg) || before.has(e.msg));
+  const e = placementErrors(def, next).find(e => !/^Place at least/.test(e.msg) && !before.has(e.msg));
+  return e ? tipOf(e.msg) : null;
+}
+export const allows = (level, ui, x, y, how) => !refusal(level, ui, x, y, how);
+// A refusal said on the tile: the start and goal are never removed, only moved.
+const tipOf = msg => msg === 'Place the goal.' ? 'The goal stays. Use Move.' : msg === 'Place the start.' ? 'The start stays. Use Move.' : msg;
+
+// Why Move cannot carry a thing from one tile to another, or null when it can.
+export function moveRefusal(level, from, to) {
+  const next = moveAt(level, from, to);
+  if (!next) return 'Cannot go there.';
+  if (!S.camp) return null;
+  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg)), e = placementErrors(S.camp.def, next).find(e => !before.has(e.msg));
+  return e ? tipOf(e.msg) : null;
+}
+
+// Says why a tap was refused, on the tile, for a moment; the room does not change.
+export function refuse(x, y, why) {
+  S.fx.push({ type: 'refuse', x, y, at: now() });
+  const tip = $('campTip'), c = $('game'), w = $('roomWrap').getBoundingClientRect(), r = c.getBoundingClientRect();
+  tip.textContent = why;
+  tip.style.left = `${r.left - w.left + (x + 0.5) * r.width / S.level.w}px`;
+  tip.style.top = `${r.top - w.top + y * r.height / S.level.h}px`;
+  tip.hidden = false;
+  clearTimeout(refuse.t); refuse.t = setTimeout(() => { tip.hidden = true; }, 1500);
 }
 
 // The tools a level offers: Look, Erase, and its palette.
@@ -63,47 +84,86 @@ function save() {
   write(p);
 }
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-// A dot on each palette button that costs something, saying how much; none outside a level.
+// On each palette button of a level: its cost, and how many are placed against the minimum
+// (and the maximum, when the level sets one). None outside a level.
 export function syncCostDots() {
-  const cost = S.camp ? Object.fromEntries(Object.keys(S.camp.def.palette).map(el => [TOOL[el], COSTS[el]])) : {};
+  const def = S.camp && S.camp.def, by = def ? placed(def, S.level).by : {};
+  const els = def ? Object.fromEntries(Object.keys(def.palette).map(el => [TOOL[el], el])) : {};
   document.querySelectorAll('[data-tool]').forEach(b => {
-    let dot = b.querySelector('.costDot');
-    if (cost[b.dataset.tool] == null) { if (dot) dot.remove(); return; }
-    if (!dot) b.append(dot = Object.assign(document.createElement('span'), { className: 'costDot' }));
-    dot.textContent = cost[b.dataset.tool];
-    dot.title = `Costs ${cost[b.dataset.tool]}`;
+    const el = els[b.dataset.tool];
+    for (const k of ['costDot', 'countDot']) { const d = b.querySelector('.' + k); if (!el && d) d.remove(); }
+    b.classList.toggle('full', false);
+    if (!el) return;
+    const dot = b.querySelector('.costDot') || b.appendChild(Object.assign(document.createElement('span'), { className: 'costDot' }));
+    dot.textContent = COSTS[el]; dot.title = `Costs ${COSTS[el]}`;
+    const [min, max] = def.palette[el], n = by[el].length;
+    const count = b.querySelector('.countDot') || b.appendChild(Object.assign(document.createElement('span'), { className: 'countDot' }));
+    count.textContent = max !== null ? `${n}/${max}` : min ? `${n}/${min}+` : `${n}`;
+    count.title = max !== null ? `${n} placed, ${min} to ${max}` : min ? `${n} placed, at least ${min}` : `${n} placed`;
+    count.classList.toggle('short', n < min);
+    b.classList.toggle('full', max !== null && n >= max);
   });
 }
 
-// The level's brief over the room: what to place, what the robot must do, and what it costs.
+// A row's words, with each object drawn as its palette icon.
+function words(parts) {
+  return parts.map(p => {
+    if (typeof p === 'string') return document.createTextNode(p);
+    const c = icon(p.el === 'start' ? 'start' : TOOL[p.el]), name = p.el === 'start' ? 'Robot' : ELEMENTS[p.el].label;
+    c.className = 'campIcon'; c.dataset.part = p.el; c.title = name; c.setAttribute('aria-label', name); c.setAttribute('role', 'img');
+    return c;
+  });
+}
+
+// The level over the room: a goal card with one row per requirement, marked after a run, and
+// the scores beside your best. Its height never changes with a verdict; the verdict's words
+// float over the room instead.
 export function syncBrief() {
   if (!S.camp) return;
-  const def = S.camp.def, { by } = placed(def, S.level), v = S.camp.verdict;
-  const parts = Object.entries(def.palette).map(([el, [min, max]]) => `${ELEMENTS[el].label} ${by[el].length}${max === null ? '' : `/${max}`}${min ? ` (min ${min})` : ''} · ${COSTS[el]} each`);
-  const reqs = [stepsText(def.steps), ...(def.rules || []).includes('noBoxOnButton') ? ['A box cannot start on a button.'] : [], ...(def.require || []).map(id => REQUIREMENTS[id].text)];
-  const box = $('campBrief');
-  box.replaceChildren();
+  const def = S.camp.def, v = S.camp.verdict, best = (progress().levels[def.id] || {}).best || {};
+  const ran = v && v.ok && v.length != null;
+  const rows = [{ id: 'steps', parts: [rangeShort(def.steps)], text: stepsText(def.steps), met: ran ? v.inRange : null }];
+  if ((def.rules || []).includes('noBoxOnButton'))
+    rows.push({ id: 'noBoxOnButton', parts: ['no', { el: 'box' }, 'starts on a', { el: 'button' }], text: 'A box cannot start on a button.', met: v && !v.ok && v.errors.some(e => /box cannot start/.test(e.msg)) ? false : null });
+  for (const id of def.require || []) rows.push({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: ran && v.reqs ? v.reqs[id] : null });
+  rows.push({ id: 'best', parts: [bestShort(def.steps)], text: `Optional: exactly ${def.steps.best} moves.`, met: ran ? v.length === def.steps.best : null, optional: true });
+  const card = document.createElement('div'); card.className = 'campGoal';
   const head = document.createElement('p'); head.className = 'campHead';
-  head.textContent = `${def.name} · Cost ${costOf(def, S.level, COSTS)} · Area ${areaOf(S.level)}`;
-  const pal = document.createElement('p'); pal.className = 'campPal'; pal.textContent = parts.join('  ·  ');
+  const last = document.createElement('span'); last.className = 'campLast'; last.id = 'campLast';
+  last.textContent = !v ? '' : !v.ok ? 'not ready' : v.won ? `won in ${v.length}` : v.length != null ? `last run: ${v.length} moves` : 'no way through';
+  head.append(Object.assign(document.createElement('b'), { textContent: def.name }), last);
   const list = document.createElement('ul'); list.className = 'campReqs';
-  for (const r of reqs) list.append(Object.assign(document.createElement('li'), { textContent: r }));
-  const opt = document.createElement('li'); opt.className = 'optional'; opt.textContent = `Optional: ${bestText(def.steps)}`;
-  list.append(opt);
-  box.append(head, pal, list);
-  if (v) {
-    const out = document.createElement('p');
-    out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
-    out.id = 'campVerdict';
-    out.textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
-      : v.won ? `The robot made it in ${plural(v.length, 'move')}${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}. Cost ${v.cost} · Area ${v.area} · Optional ${v.met}/${v.optional.length}.`
-        : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
-    // A run that cannot finish points at the tiles that stop it; tap the verdict to see them again.
-    if (stuckAt(v).length) { out.classList.add('points'); out.onclick = () => flashStuck(v); out.title = 'Show the tiles'; }
-    box.append(out);
+  for (const r of rows) {
+    const li = document.createElement('li'); li.dataset.req = r.id; li.title = r.text;
+    li.className = (r.optional ? 'optional ' : '') + (r.met === true ? 'met' : r.met === false ? 'unmet' : '');
+    const mark = document.createElement('span'); mark.className = 'mark'; mark.textContent = r.met === true ? '✓' : r.met === false ? '✕' : r.optional ? '★' : '';
+    li.append(mark, ...words(r.parts));
+    list.append(li);
   }
+  card.append(head, list);
+  const tile = (label, n, b) => {
+    const t = document.createElement('div'); t.className = 'campScore'; t.dataset.score = label.toLowerCase();
+    t.append(Object.assign(document.createElement('small'), { textContent: label }), Object.assign(document.createElement('b'), { textContent: n }));
+    if (b != null) t.append(Object.assign(document.createElement('small'), { className: 'best', textContent: `best ${b}` }));
+    return t;
+  };
+  const scores = document.createElement('div'); scores.className = 'campScores';
+  scores.append(tile('Cost', costOf(def, S.level, COSTS), best.cost), tile('Area', areaOf(S.level), best.area));
+  $('campBrief').replaceChildren(card, scores);
+  syncCostDots();
+  // The verdict's words, over the room.
+  const out = $('campVerdict');
+  out.hidden = !v;
+  if (!v) return;
+  out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
+  $('campVerdictText').textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
+    : v.won ? `Made it in ${v.length} moves${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}.`
+      : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
+  // A run that cannot finish points at the tiles that stop it; tap the words to see them again.
+  const points = stuckAt(v).length > 0;
+  out.classList.toggle('points', points);
+  $('campVerdictText').onclick = points ? () => flashStuck(v) : null;
+  $('campVerdictText').title = points ? 'Show the tiles' : '';
 }
 
 export function enterLevel(id) {
@@ -118,8 +178,8 @@ export function enterLevel(id) {
   S.ui.tool = 'look'; S.ui.colour = 'red';
   p.last = id; write(p);
   document.body.classList.add('campaign');
-  A.setMode('edit'); A.syncPanel(); A.fit();
   syncBrief();
+  A.setMode('edit'); A.syncPanel(); A.fit();
   return true;
 }
 
@@ -198,6 +258,7 @@ export function buildCampaign(actions, sandbox) {
   $('campMenu').onclick = openMenu;
   $('campBack').onclick = () => { leaveLevel(); openList(); };
   $('campRun').onclick = run;
+  $('campVerdictClose').onclick = () => { $('campVerdict').hidden = true; };
   // A change to the room clears the last verdict and is kept for next time.
   let stamp = '';
   const watch = () => {

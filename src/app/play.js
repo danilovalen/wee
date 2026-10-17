@@ -9,6 +9,7 @@ import { openSheet } from './sheets.js';
 import { syncPanel, keysText } from './panels.js';
 import { feedDemo } from './check.js';
 import { selectOverlay } from './select.js';
+import { moveRefusal } from './campaign.js';
 import { watchStuck, resetStuck } from './stuck.js';
 import { lensMarks, lensBusy } from './lenses.js';
 import { syncWell } from './well.js';
@@ -86,7 +87,7 @@ const AMBIENT_MS = 100;
 const ANIMATED = /^(water|goal)$/;
 function editNeedsDraw(t) {
   if (S.redraw) return true;
-  if (S.fx.length || S.paste || S.moving || lensBusy()) return true;
+  if (S.fx.length || S.paste || S.moving || S.carry || lensBusy()) return true;
   return t - (S.drawnAt || 0) > AMBIENT_MS && S.level.cells.some(c => ANIMATED.test(c));
 }
 export function frame(t) {
@@ -106,7 +107,17 @@ export function render() {
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay());
+  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay());
+}
+
+// Move's preview: where the carried thing would land, and whether it can.
+let carried = null;
+function carryOverlay() {
+  const from = S.carry, to = S.hover;
+  if (!from || !to || (from.x === to.x && from.y === to.y)) return null;
+  const key = `${from.x},${from.y},${to.x},${to.y},${JSON.stringify(S.level)}`;
+  if (!carried || carried.key !== key) carried = { key, ok: !moveRefusal(S.level, from, to) };
+  return { carry: { from, to, ok: carried.ok } };
 }
 
 // What the editor marks on the room: the lenses on now, and pieces or tiles the design notes

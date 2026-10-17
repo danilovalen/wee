@@ -11,7 +11,7 @@ import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
 import { toolForKey, bareKey, showKeys } from './keys.js';
 import { TOOLS } from '../editor/palette.js';
-import { allows, moveIn } from './campaign.js';
+import { refusal, moveRefusal, moveIn, refuse } from './campaign.js';
 
 function cellFromEvent(ev) {
   const r = canvas.getBoundingClientRect(), level = S.level;
@@ -20,8 +20,10 @@ function cellFromEvent(ev) {
   return x >= 0 && y >= 0 && x < level.w && y < level.h ? { x, y } : null;
 }
 
-function paint(x, y, how) {
-  if (!allows(S.level, S.ui, x, y, how)) return;
+// fresh: the press itself, not a drag across tiles, which would say it on every tile.
+function paint(x, y, how, fresh) {
+  const no = refusal(S.level, S.ui, x, y, how);
+  if (no) { if (fresh) refuse(x, y, no); return; }
   const t = now();
   for (const f of place(S.level, S.ui, x, y, how)) S.fx.push({ ...f, at: t });
 }
@@ -65,7 +67,7 @@ export function bindInput() {
     begin();
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
-    paint(c.x, c.y, S.painting);
+    paint(c.x, c.y, S.painting, true);
   });
   canvas.addEventListener('pointermove', ev => {
     if (S.mode === 'play') return;
@@ -78,9 +80,11 @@ export function bindInput() {
   const lift = () => { S.painting = 0; S.swipe = null; selectUp(); end(); };
   canvas.addEventListener('pointerup', ev => {
     if (S.carry) {
-      const to = cellFromEvent(ev), next = to && moveIn(S.level, S.carry, to);
+      const from = S.carry, to = cellFromEvent(ev), moved = to && (to.x !== from.x || to.y !== from.y);
+      const no = moved && moveRefusal(S.level, from, to), next = moved && !no && moveIn(S.level, from, to);
       S.carry = null; if (touch) S.hover = null;
       if (next) change(() => { S.level = next; });
+      else if (no) refuse(to.x, to.y, no);
     }
     lift();
   });

@@ -87,6 +87,7 @@ const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
 export const REQUIREMENTS = {
   throughOpenDoor: {
     text: 'The robot passes through an open door.',
+    short: [{ el: 'start' }, 'through an open', { el: 'door' }],
     // A closed door is solid, so standing on a door tile means it is open.
     judge: (room, moves) => {
       let ok = false;
@@ -95,7 +96,8 @@ export const REQUIREMENTS = {
     },
   },
   hitsClosedDoor: {
-    text: 'The robot runs into a closed door.',
+    text: 'The robot collides with a closed door.',
+    short: [{ el: 'start' }, 'collides with a closed', { el: 'door' }],
     // A slide that ends with a closed door on the next tile ahead: the door is what stopped it.
     judge: (room, moves) => {
       let ok = false, dir = null;
@@ -112,6 +114,7 @@ export const REQUIREMENTS = {
   },
   doorClosedAtEnd: {
     text: 'Every door is closed when the robot reaches the goal.',
+    short: ['every', { el: 'door' }, 'closed at the end'],
     judge: (room, moves) => {
       const end = replayPath(room, moves, () => {});
       return !Object.values(end.open).some(Boolean);
@@ -131,10 +134,12 @@ function toggleHistory(room, moves) {
 Object.assign(REQUIREMENTS, {
   everyToggleOn: {
     text: 'Every switch turns on.',
+    short: ['every', { el: 'toggle' }, 'turns on'],
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
   },
   boxThroughOpenDoor: {
     text: 'A box passes through an open door.',
+    short: [{ el: 'box' }, 'through an open', { el: 'door' }],
     // A closed door is solid, so a box on a door tile means it is open.
     judge: (room, moves) => {
       let ok = false;
@@ -144,6 +149,7 @@ Object.assign(REQUIREMENTS, {
   },
   onlyBoxesFlipSwitches: {
     text: 'Only boxes turn switches on and off. The robot never crosses one.',
+    short: ['only', { el: 'box' }, 'flips', { el: 'toggle' }],
     judge: (room, moves) => {
       let robot = false, flipped = false;
       replayPath(room, moves, s => {
@@ -155,24 +161,31 @@ Object.assign(REQUIREMENTS, {
   },
   boxPushedThrice: {
     text: 'One box is pushed in at least 3 moves.',
+    short: [{ el: 'box' }, 'pushed ×3'],
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 3),
   },
   boxPushedTwiceHitOnce: {
     text: 'One box is pushed in at least 2 moves, and the robot collides with it once without moving it.',
+    short: [{ el: 'box' }, 'pushed ×2, collided ×1'],
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2 && b.hits >= 1),
   },
   everyToggleOffAtEnd: {
     text: 'Every switch is off when the robot reaches the goal.',
+    short: ['every', { el: 'toggle' }, 'off at the end'],
     judge: (room, moves) => room.cells.some(c => c.startsWith('toggle:')) && replayPath(room, moves, () => {}).toggled.length === 0,
   },
   everyToggleOnThenOff: {
     text: 'Every switch turns on, then off again.',
+    short: ['every', { el: 'toggle' }, 'on, then off'],
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.onOff.has(i)); },
   },
 });
 
 export const stepsText = st => `The shortest path takes ${st.best - st.range} to ${st.best + st.range} moves.`;
 export const bestText = st => `Exactly ${st.best} moves.`;
+// The same, as the goal card's rows say them.
+export const rangeShort = st => `${st.best - st.range}–${st.best + st.range} moves`;
+export const bestShort = st => `exactly ${st.best}`;
 
 // The room's area, the size score.
 export const areaOf = room => room.w * room.h;
@@ -218,10 +231,14 @@ export function check(def, room, costs, opts) {
   if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'The robot gave up: this room is too big to search.' } };
   const base = { ok: true, length: r.length, paths: r.paths.length, cost: costOf(def, room, costs), area: areaOf(room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
-  if (r.length < st.best - st.range || r.length > st.best + st.range) return { ...base, won: false, fail: { path: r.paths[0], why: `${stepsText(st)} This one takes ${r.length}.` } };
-  for (const path of r.paths) for (const id of def.require || []) {
-    if (!REQUIREMENTS[id].judge(room, path)) return { ...base, won: false, fail: { path, why: `Not met: ${REQUIREMENTS[id].text}` } };
-  }
+  // Each requirement holds on every shortest path or it is not met; the card marks each one.
+  const failed = {};
+  for (const path of r.paths) for (const id of def.require || []) if (!(id in failed) && !REQUIREMENTS[id].judge(room, path)) failed[id] = path;
+  base.reqs = Object.fromEntries((def.require || []).map(id => [id, !(id in failed)]));
+  base.inRange = r.length >= st.best - st.range && r.length <= st.best + st.range;
+  if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: `${stepsText(st)} This one takes ${r.length}.` } };
+  const first = (def.require || []).find(id => id in failed);
+  if (first) return { ...base, won: false, fail: { path: failed[first], why: `Not met: ${REQUIREMENTS[first].text}` } };
   const optional = [{ text: bestText(st), met: r.length === st.best }];
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
