@@ -33,8 +33,9 @@ const build = (def, rows) => {
 { // what you may place
   const d = level('1'), r = build(d, ['', '', '..#']);
   ok('a placed block is counted', placed(d, r).by.block.length === 1);
-  const many = roomOf(d); for (let i = 0; i < 11; i++) many.cells[8 + i + Math.floor(i / 5) * 2] = 'wall';
-  ok('more than the maximum is refused', placementErrors(d, many).some(e => /at most 10/.test(e.msg)));
+  const many = roomOf(d); for (let i = 0; i < 11; i++) many.cells[15 + i + Math.floor(i / 5) * 2] = 'wall';
+  ok('more than a maximum is refused', placementErrors({ ...d, palette: { block: [0, 10] } }, many).some(e => /at most 10/.test(e.msg)));
+  ok('no level sets a maximum for now', LEVELS.every(l => Object.values(l.palette).every(([, max]) => max === null)));
   const start = roomOf(d); start.cells[8] = 'wall';
   ok('the start must stay empty', placementErrors(d, start).some(e => /start empty/.test(e.msg)));
   const fixed = roomOf(d); fixed.cells[0] = '';
@@ -118,7 +119,7 @@ const build = (def, rows) => {
 }
 { // level 2: a toggle, a door, run into it closed, then go through it open
   const d = level('2');
-  ok('level 2 asks for both door requirements', d.require.join() === 'hitsClosedDoor,throughOpenDoor' && d.palette.toggle.join() === '1,1' && d.palette.door.join() === '1,1');
+  ok('level 2 asks for both door requirements', d.require.join() === 'hitsClosedDoor,throughOpenDoor' && d.palette.toggle[0] === 1 && d.palette.door[0] === 1);
   const v = check(d, build(d, ['#######', '#P..#.#', '#.t...#', '###D.##', '#.....#', '#....G#', '#######']), COSTS);
   ok('level 2 can be won', v.ok && v.won && v.length >= 5 && v.length <= 9, JSON.stringify(v.fail || v.length));
   const lazy = check(d, build(d, ['', '#P...t#', '', '', '', '#...D.#']), COSTS);

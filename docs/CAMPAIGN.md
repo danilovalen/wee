@@ -49,7 +49,9 @@ its colour holds.
 
 ## Levels
 
-All 7x7, robot top left, goal bottom right, no powers.
+All 7x7, robot top left, goal bottom right, no powers. **No level has a maximum on any
+element for now** (owner, 2026-10-17: *"no maximums for now"*); the table's maximums are the
+ones they had before.
 
 | Level | Palette (min-max) | Moves | Requirements |
 |---|---|---|---|
