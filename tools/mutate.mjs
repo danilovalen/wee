@@ -673,6 +673,11 @@ const M = [
   ['src', "if (r.length < st.best - st.range || r.length > st.best + st.range)", "if (r.length > st.best + st.range)", 'campaign'],
   ['src', "if (/^door:/.test(c) && !s.open[c.slice(5)]) ok = true;", "if (/^door:/.test(c)) ok = true;", 'campaign'],
   ['src', "        dir = p.dir;\n", "", 'campaign'],
+  ['src', "if (c.startsWith('toggle:') ? s.toggled.includes(i) :", "if (c.startsWith('toggle:') ? true :", 'campaign'],
+  ['src', "const stuck = own.filter(i => !held.has(i));", "const stuck = own;", 'campaign'],
+  ['src', ": n === all ? `none of its ${all} ${many} ${none}` :", ": false ? '' :", 'campaign'],
+  ['src', "  else flashStuck(v);\n", "", 'campaign-play'],
+  ['src', "out.onclick = () => flashStuck(v);", "", 'campaign-play'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
   ['src', "dot.textContent = cost[b.dataset.tool];", "dot.textContent = '';", 'campaign-play'],
 ];

@@ -474,6 +474,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
 [data-tool] { position: relative; }
 .costDot { position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 3px; box-sizing: border-box; border-radius: var(--r-pill); background: #e0a100; color: #1d1d1d; font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; pointer-events: none; }
 body.campaign [data-tool][hidden], body.campaign #powers, body.campaign #placeHint, body.campaign #ctx { display: none !important; }
+.campVerdict.points { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
 </style>
 </head>
 <body>
@@ -3589,10 +3590,12 @@ return { LEVELS, COSTS };
 // ---- src/campaign/robot.js
 const m36 = (() => {
 const { createGame } = m8;
+const { entAt, playerAt } = m1;
 const { stateKey, successors, unsearchable, move, MAX_STATES } = m15;
 // The robot: every shortest way to the goal, not just one. A breadth-first search by layers
 // that keeps every parent of a state reached at its first depth, so two equal-length routes
 // into one position both survive, then walks back from each winning move.
+
 
 
 const KEYS = ['up', 'right', 'down', 'left'];
@@ -3650,12 +3653,47 @@ function replayPath(level, moves, see) {
   for (const m of moves) s = move(s, m, see) || s;
   return s;
 }
-return { shortestPaths, allShortest, replayPath };
+
+// Why the robot cannot finish: every position it can reach, and what never happens there.
+// Returns { capped } when the search ran out, else { door, stuck, apart }: door is the first
+// colour whose doors never open (null if every door opens at some point), stuck the cells of
+// its switches that never hold, apart true when each holds at some point but never all at once.
+function whyStuck(level, { max = MAX_STATES } = {}) {
+  const start = createGame(level), keys = [...KEYS, ...(start.powers.cycle || start.powers.swim ? ['hide'] : [])];
+  const seen = new Set([stateKey(start)]), opened = new Set(), held = new Set();
+  const note = s => {
+    for (const [c, on] of Object.entries(s.open)) if (on) opened.add(c);
+    s.cells.forEach((c, i) => {
+      const x = i % s.w, y = Math.floor(i / s.w);
+      if (c.startsWith('toggle:') ? s.toggled.includes(i) : c.startsWith('button:') ? playerAt(s, x, y) || !!entAt(s, x, y) : /^(receiver|sensor):/.test(c) && s.lit.has(i)) held.add(i);
+    });
+  };
+  note(start);
+  let frontier = [start];
+  while (frontier.length) {
+    const next = [];
+    for (const s of frontier) for (const pair of successors(s, keys)) {
+      if (!pair || pair[1].won) continue;
+      const t = pair[1], k = stateKey(t);
+      if (seen.has(k)) continue;
+      seen.add(k); note(t); next.push(t);
+      if (seen.size >= max) return { capped: true };
+    }
+    frontier = next;
+  }
+  const colours = [...new Set(start.cells.filter(c => /^door:/.test(c)).map(c => c.slice(5)))];
+  const door = colours.find(c => !opened.has(c)) ?? null;
+  if (door === null) return { door, stuck: [], apart: false };
+  const own = start.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.endsWith(':' + door) ? [i] : []);
+  const stuck = own.filter(i => !held.has(i));
+  return { door, stuck, apart: own.length > 0 && stuck.length === 0 };
+}
+return { shortestPaths, allShortest, replayPath, whyStuck };
 })();
 // ---- src/campaign/rules.js
 const m37 = (() => {
 const { emptyLevel } = m9;
-const { allShortest, replayPath } = m36;
+const { allShortest, replayPath, whyStuck } = m36;
 // A campaign level: the room it gives you, what you may place and how many, and what the
 // robot's shortest paths must do. check() judges a room you built against it. All copy is draft.
 
@@ -3794,13 +3832,40 @@ function costOf(def, room, costs) {
   return Object.entries(by).reduce((n, [el, list]) => n + list.length * (costs[el] || 0), 0);
 }
 
+// Why the robot cannot reach the goal, in words, with the tiles to point at. Copy is a draft.
+// Per kind: its name, its plural, and how one, several or none of them fail to hold.
+const HOLD = {
+  button: ['button', 'buttons', 'is never pressed', 'are never pressed', 'is ever pressed'],
+  toggle: ['switch', 'switches', 'never turns on', 'never turn on', 'ever turns on'],
+  receiver: ['laser catcher', 'laser catchers', 'is never lit', 'are never lit', 'is ever lit'],
+  sensor: ['laser relay', 'laser relays', 'is never lit', 'are never lit', 'is ever lit'],
+};
+function stuckText(room) {
+  const w = whyStuck(room), xy = i => ({ x: i % room.w, y: Math.floor(i / room.w) });
+  if (w.capped) return { why: 'The robot cannot reach the goal, and the room is too big to say why.', at: [] };
+  if (!w.door) return { why: 'The robot cannot reach the goal from anywhere it can get to.', at: [] };
+  const doors = room.cells.flatMap((c, i) => c === 'door:' + w.door ? [xy(i)] : []);
+  const own = room.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.endsWith(':' + w.door) ? [i] : []);
+  const head = `The robot cannot reach the goal: the ${w.door} door never opens`;
+  if (!own.length) return { why: `${head}, because nothing ${w.door} opens it.`, at: doors };
+  if (w.apart) return { why: `${head}. It needs everything ${w.door} held at once, and that never happens.`, at: [...doors, ...own.map(xy)] };
+  // Said per kind, so a door held by a button and a switch names the one that fails.
+  const kindOf = i => room.cells[i].split(':')[0], kinds = [...new Set(w.stuck.map(kindOf))];
+  const which = kinds.map(k => {
+    const [one, many, is, are, none] = HOLD[k], n = w.stuck.filter(i => kindOf(i) === k).length, all = own.filter(i => kindOf(i) === k).length;
+    return all === 1 ? `its ${one} ${is}` : n === all ? `none of its ${all} ${many} ${none}` : `${n} of its ${all} ${many} ${n === 1 ? is : are}`;
+  }).join(' and ');
+  return { why: `${head}, because ${which}.`, at: [...doors, ...w.stuck.map(xy)] };
+}
+
 // The whole verdict. { ok: false, errors } when the room cannot run; otherwise
 // { ok: true, won, length, paths, fail: { path, why } | null, cost, tiles, optional }.
 function check(def, room, costs, opts) {
   const errors = placementErrors(def, room);
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
-  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: r.status === 'unsolvable' ? 'The robot cannot reach the goal.' : 'The robot gave up: this room is too big to search.' } };
+  if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
+  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'The robot gave up: this room is too big to search.' } };
   const base = { ok: true, length: r.length, paths: r.paths.length, cost: costOf(def, room, costs), tiles: tilesOf(room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
   if (r.length < st.best - st.range || r.length > st.best + st.range) return { ...base, won: false, fail: { path: r.paths[0], why: `${stepsText(st)} This one takes ${r.length}.` } };
@@ -3810,7 +3875,7 @@ function check(def, room, costs, opts) {
   const optional = [{ text: bestText(st), met: r.length === st.best }];
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, roomOf, placed, nameOf, placementErrors, REQUIREMENTS, stepsText, bestText, tilesOf, costOf, check };
+return { ELEMENTS, roomOf, placed, nameOf, placementErrors, REQUIREMENTS, stepsText, bestText, tilesOf, costOf, stuckText, check };
 })();
 // ---- src/editor/edit.js
 const m38 = (() => {
@@ -3944,7 +4009,7 @@ const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsTex
 const { place } = m38;
 const { newHistory } = m10;
 const { S, starterLevel } = m11;
-const { $, portrait } = m12;
+const { $, portrait, now } = m12;
 // The campaign: a main menu at launch, the level list, and building a level's room for the
 // robot. Run judges the room (src/campaign/rules.js) and the robot plays a shortest path:
 // the failing one when it fails. Progress and each level's room stay in this browser.
@@ -4024,6 +4089,8 @@ function syncBrief() {
     out.textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
       : v.won ? `The robot made it in ${plural(v.length, 'move')}${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}. Cost ${v.cost} · Tiles ${v.tiles} · Optional ${v.met}/${v.optional.length}.`
         : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
+    // A run that cannot finish points at the tiles that stop it; tap the verdict to see them again.
+    if (stuckAt(v).length) { out.classList.add('points'); out.onclick = () => flashStuck(v); out.title = 'Show the tiles'; }
     box.append(out);
   }
 }
@@ -4053,6 +4120,9 @@ function leaveLevel() {
   A.setMode('edit');
 }
 
+const stuckAt = v => (v && v.ok && !v.won && v.fail.at) || [];
+function flashStuck(v) { for (const t of stuckAt(v)) S.fx.push({ type: 'flash', x: t.x, y: t.y, at: now() }); }
+
 // Judges the room, keeps the best scores of a win, then the robot plays: the failing path, or
 // the first shortest path of a win.
 function run() {
@@ -4069,6 +4139,7 @@ function run() {
   S.camp.ranOn = JSON.stringify(S.level);
   const show = v.ok ? (v.won ? v.path : v.fail.path) : null;
   if (show) { A.setMode('play'); S.demo = [...show]; }
+  else flashStuck(v);
   syncBrief();
   return v;
 }

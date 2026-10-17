@@ -1,6 +1,6 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, costOf, tilesOf, stepsText } from '../src/campaign/rules.js';
+import { stuckText, nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, costOf, tilesOf, stepsText } from '../src/campaign/rules.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { LEVELS, COSTS } from '../src/level/campaign.js';
 import { room, suite } from './lib.mjs';
@@ -97,6 +97,23 @@ const build = (def, rows) => {
   ok('runs into a closed door: not met when it slides elsewhere', !req('hitsClosedDoor', ['#####', '#P..#', '#D..#', '#####'], ['right']));
   ok('a requirement with no toggles is not met', !req('everyToggleOn', ['#####', '#P..#', '#####'], ['right']));
 }
+{ // why the robot cannot finish (copy is a draft)
+  const why = rows => stuckText(room(rows));
+  const at = (r, x, y) => r.at.some(t => t.x === x && t.y === y);
+  const behind = why(['########', '#Pt.D.tG', '########']);
+  ok('a switch behind its own door is named', behind.why === 'The robot cannot reach the goal: the red door never opens, because 1 of its 2 switches never turns on.', behind.why);
+  ok('it points at the door and that switch, not the one that turns on', at(behind, 4, 1) && at(behind, 6, 1) && !at(behind, 2, 1));
+  ok('none of several', why(['#########', '#P.D.t.tG', '#########']).why.endsWith('none of its 2 switches ever turns on.'));
+  ok('a lone button', why(['#######', '#Po.D.G', '#######']).why.endsWith('its button is never pressed.'));
+  ok('a mixed door names only the kind that fails', why(['#######', '#Pot.DG', '#######']).why.endsWith('its button is never pressed.'));
+  ok('a door with no switch', why(['#######', '#P..D.G', '#######']).why.endsWith('because nothing red opens it.'));
+  const apart = why(['#######', '#o.P.o#', '###D###', '###G###', '#######']);
+  ok('switches each held but never together are said apart', apart.why.endsWith('It needs everything red held at once, and that never happens.') && at(apart, 1, 1) && at(apart, 5, 1) && at(apart, 3, 2), apart.why);
+  const walls = why(['######', '#P##.G', '######']);
+  ok('with no door to blame, it says so plainly', walls.why === 'The robot cannot reach the goal from anywhere it can get to.' && walls.at.length === 0);
+  const v = check({ ...level('1'), palette: { block: [0, 30], toggle: [0, 2], door: [0, 1] } }, build(level('1'), ['', '', '', '#######', '#.t..D#', '#....G#']), COSTS);
+  ok('an unsolvable verdict carries the reason and the tiles', v.ok && !v.won && v.fail.path === null && /door never opens/.test(v.fail.why) && v.fail.at.length > 0, JSON.stringify(v.fail));
+}
 { // level 2: a toggle, a door, run into it closed, then go through it open
   const d = level('2');
   ok('level 2 asks for both door requirements', d.require.join() === 'hitsClosedDoor,throughOpenDoor' && d.palette.toggle.join() === '1,1' && d.palette.door.join() === '1,1');
@@ -110,5 +127,21 @@ const build = (def, rows) => {
   const both = build(d, ['', '#P.t..#', '', '#....D#']);
   const v = check(d, both, COSTS);
   ok('one path missing the door fails the room', v.ok && !v.won && /Not met/.test(v.fail.why) && v.fail.path.map(m => m.split('@')[0]).join() === 'down,right', JSON.stringify(v.fail));
+}
+{ // every level can be won: one known room each, found by search, so a rule change that makes
+  // a level impossible goes red
+  const WINS = {
+    1: ['#######', '#P.#.##', '#.....#', '#.###.#', '#.#...#', '#.#..G#', '#######'],
+    2: ['#######', '#P..D##', '#..t..#', '#.##.##', '#.#...#', '##...G#', '#######'],
+    3: ['#######', '#P.#.##', '#..####', '##..#.#', '#Dt...#', '#..t#G#', '#######'],
+    4: ['#######', '#Pt...#', '##.D..#', '##.#.##', '#.#...#', '#####G#', '#######'],
+    5: ['#######', '#P.#.B#', '#...#.#', '#..B.o#', '#.#..D#', '##..#G#', '#######'],
+    6: ['#######', '#P.o..#', '#..B.D#', '#...###', '##.####', '##...G#', '#######'],
+  };
+  ok('there is a known winning room for every level', LEVELS.every(l => WINS[l.id]), LEVELS.map(l => l.id).join());
+  for (const l of LEVELS) {
+    const v = WINS[l.id] && check(l, build(l, WINS[l.id]), COSTS);
+    ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
+  }
 }
 done();

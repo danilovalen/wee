@@ -2,6 +2,7 @@
 // that keeps every parent of a state reached at its first depth, so two equal-length routes
 // into one position both survive, then walks back from each winning move.
 import { createGame } from '../rules/game.js';
+import { entAt, playerAt } from '../rules/grid.js';
 import { stateKey, successors, unsearchable, move, MAX_STATES } from '../solve/solve.js';
 
 const KEYS = ['up', 'right', 'down', 'left'];
@@ -58,4 +59,39 @@ export function replayPath(level, moves, see) {
   see(s);
   for (const m of moves) s = move(s, m, see) || s;
   return s;
+}
+
+// Why the robot cannot finish: every position it can reach, and what never happens there.
+// Returns { capped } when the search ran out, else { door, stuck, apart }: door is the first
+// colour whose doors never open (null if every door opens at some point), stuck the cells of
+// its switches that never hold, apart true when each holds at some point but never all at once.
+export function whyStuck(level, { max = MAX_STATES } = {}) {
+  const start = createGame(level), keys = [...KEYS, ...(start.powers.cycle || start.powers.swim ? ['hide'] : [])];
+  const seen = new Set([stateKey(start)]), opened = new Set(), held = new Set();
+  const note = s => {
+    for (const [c, on] of Object.entries(s.open)) if (on) opened.add(c);
+    s.cells.forEach((c, i) => {
+      const x = i % s.w, y = Math.floor(i / s.w);
+      if (c.startsWith('toggle:') ? s.toggled.includes(i) : c.startsWith('button:') ? playerAt(s, x, y) || !!entAt(s, x, y) : /^(receiver|sensor):/.test(c) && s.lit.has(i)) held.add(i);
+    });
+  };
+  note(start);
+  let frontier = [start];
+  while (frontier.length) {
+    const next = [];
+    for (const s of frontier) for (const pair of successors(s, keys)) {
+      if (!pair || pair[1].won) continue;
+      const t = pair[1], k = stateKey(t);
+      if (seen.has(k)) continue;
+      seen.add(k); note(t); next.push(t);
+      if (seen.size >= max) return { capped: true };
+    }
+    frontier = next;
+  }
+  const colours = [...new Set(start.cells.filter(c => /^door:/.test(c)).map(c => c.slice(5)))];
+  const door = colours.find(c => !opened.has(c)) ?? null;
+  if (door === null) return { door, stuck: [], apart: false };
+  const own = start.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.endsWith(':' + door) ? [i] : []);
+  const stuck = own.filter(i => !held.has(i));
+  return { door, stuck, apart: own.length > 0 && stuck.length === 0 };
 }

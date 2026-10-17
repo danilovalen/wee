@@ -50,6 +50,24 @@ try {
   const kept = await page.evaluate(() => window.wee.getLevel().cells.filter(c => c === 'wall').length);
   check('your room is kept for next time', kept === 24 + 7, String(kept));
   await page.click('#campBack');
+  // Level 4: one switch, one door. With the switch walled off behind the door, Run says why
+  // the robot cannot finish and flashes the door and the switch.
+  await page.click('.campRow[data-level="4"]');
+  await page.evaluate(() => {
+    const l = window.wee.getLevel(), at = (x, y, c) => { l.cells[y * l.w + x] = c; };
+    for (let x = 1; x <= 5; x++) at(x, 3, 'wall');
+    at(3, 3, 'door:red'); at(3, 4, 'toggle:red');
+    window.wee.loadLevel(l);
+  });
+  await page.click('#campRun');
+  await page.waitForTimeout(150);
+  const stuck = await verdict();
+  check('a run that cannot finish says why', /red door never opens, because its switch never turns on/.test(stuck), stuck);
+  check('and flashes the tiles that stop it', (await page.evaluate(() => window.wee.fxTypes())).filter(t => t === 'flash').length === 2);
+  await page.waitForTimeout(1000);
+  await page.click('#campVerdict');
+  check('tapping the verdict flashes them again', (await page.evaluate(() => window.wee.fxTypes())).filter(t => t === 'flash').length === 2);
+  await page.click('#campBack');
   await page.click('#campMenu');
   await page.click('#menuSandbox');
   await page.waitForFunction(() => document.getElementById('roomsBox').open, null, { timeout: 5000 });

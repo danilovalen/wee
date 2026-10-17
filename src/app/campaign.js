@@ -7,7 +7,7 @@ import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsTe
 import { place } from '../editor/edit.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
-import { $, portrait } from './dom.js';
+import { $, portrait, now } from './dom.js';
 
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
@@ -78,6 +78,8 @@ export function syncBrief() {
     out.textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
       : v.won ? `The robot made it in ${plural(v.length, 'move')}${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}. Cost ${v.cost} · Tiles ${v.tiles} · Optional ${v.met}/${v.optional.length}.`
         : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
+    // A run that cannot finish points at the tiles that stop it; tap the verdict to see them again.
+    if (stuckAt(v).length) { out.classList.add('points'); out.onclick = () => flashStuck(v); out.title = 'Show the tiles'; }
     box.append(out);
   }
 }
@@ -107,6 +109,9 @@ function leaveLevel() {
   A.setMode('edit');
 }
 
+const stuckAt = v => (v && v.ok && !v.won && v.fail.at) || [];
+function flashStuck(v) { for (const t of stuckAt(v)) S.fx.push({ type: 'flash', x: t.x, y: t.y, at: now() }); }
+
 // Judges the room, keeps the best scores of a win, then the robot plays: the failing path, or
 // the first shortest path of a win.
 export function run() {
@@ -123,6 +128,7 @@ export function run() {
   S.camp.ranOn = JSON.stringify(S.level);
   const show = v.ok ? (v.won ? v.path : v.fail.path) : null;
   if (show) { A.setMode('play'); S.demo = [...show]; }
+  else flashStuck(v);
   syncBrief();
   return v;
 }
