@@ -3743,12 +3743,13 @@ const ELEMENTS = {
 };
 
 // The level's room: empty at its starting size, with no border (the room's edge stops the
-// robot like a wall), the start top left and the goal bottom right. Both move freely.
+// robot like a wall), the start one diagonal step in from the top left corner and the goal one
+// in from the bottom right. Both move freely.
 function roomOf(def) {
   const [w, h] = def.size, l = emptyLevel(w, h);
   for (const p of Object.keys(l.powers)) l.powers[p] = !!(def.powers || []).includes(p);
-  l.start = { x: 0, y: 0 };
-  l.cells[w * h - 1] = 'goal';
+  l.start = { x: 1, y: 1 };
+  l.cells[(h - 2) * w + w - 2] = 'goal';
   return l;
 }
 

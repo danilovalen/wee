@@ -40,7 +40,7 @@ const build = (def, rows) => {
 { // the level's own room
   const d = level('1'), r = roomOf(d);
   ok('a level room starts 7x7 with no border', r.w === 7 && r.h === 7 && r.cells.filter(c => c).length === 1);
-  ok('the start is top left and the goal bottom right', r.start.x === 0 && r.start.y === 0 && r.cells[48] === 'goal');
+  ok('the start and the goal sit one diagonal step in from their corners', r.start.x === 1 && r.start.y === 1 && r.cells[40] === 'goal');
   ok('the untouched room can run', placementErrors(d, r).length === 0);
   const none = { ...r, start: null, cells: r.cells.map(() => '') };
   ok('a room needs its start and goal', placementErrors(d, none).map(e => e.msg).join() === 'Place the start.,Place the goal.');

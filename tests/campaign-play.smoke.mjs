@@ -39,7 +39,7 @@ try {
   check('the palette is the level\'s own, with Move', tools.sort().join() === 'erase,look,move,wall', tools.join());
   check('a priced tool wears its cost', (await page.locator('[data-tool="wall"] .costDot').textContent()) === '1');
   check('a free tool wears none', await page.locator('[data-tool="look"] .costDot').count() === 0 && await page.locator('[data-tool="move"] .costDot').count() === 0);
-  check('a level opens on a 7x7 room, start top left, goal bottom right', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.start.x === 0 && l.start.y === 0 && l.cells[48] === 'goal' && l.cells.filter(c => c).length === 1; }));
+  check('a level opens on a 7x7 room, start and goal one step in from their corners', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.start.x === 1 && l.start.y === 1 && l.cells[40] === 'goal' && l.cells.filter(c => c).length === 1; }));
   check('the goal card shows the area', (await score('area')) === '49');
   check('every row is unmarked before a run', /^steps:-,best:-$/.test(await marks()), await marks());
   check('a priced tool wears its count too', (await page.locator('[data-tool="wall"] .countDot').textContent()) === '0');
@@ -47,12 +47,12 @@ try {
   await page.click('[data-tool="move"]');
   const tile = async (x, y) => { const b = await page.locator('#game').boundingBox(); const l = await page.evaluate(() => [window.wee.getLevel().w, window.wee.getLevel().h]); return [b.x + (x + 0.5) * b.width / l[0], b.y + (y + 0.5) * b.height / l[1]]; };
   const drag = async (a, b) => { const p = await tile(...a), q = await tile(...b); await page.mouse.move(...p); await page.mouse.down(); await page.mouse.move(...q, { steps: 5 }); await page.mouse.up(); };
-  await drag([0, 0], [0, 2]);
-  await drag([6, 6], [5, 6]);
+  await drag([1, 1], [1, 3]);
+  await drag([5, 5], [4, 5]);
   const moved = await page.evaluate(() => { const l = window.wee.getLevel(); return [l.start.x, l.start.y, l.cells.indexOf('goal')].join(); });
-  check('Move carries the start and the goal', moved === '0,2,47', moved);
+  check('Move carries the start and the goal', moved === '1,3,39', moved);
   await page.click('#undo'); await page.click('#undo');
-  check('a move undoes in one step', await page.evaluate(() => { const l = window.wee.getLevel(); return l.start.y === 0 && l.cells[48] === 'goal'; }));
+  check('a move undoes in one step', await page.evaluate(() => { const l = window.wee.getLevel(); return l.start.y === 1 && l.cells[40] === 'goal'; }));
   // The grips on the room's edges work as in the sandbox: a tap adds a line.
   check('the room can be resized in a level', await page.locator('[data-plus="bottom"]').isVisible());
   await page.click('[data-plus="bottom"]');
@@ -120,17 +120,17 @@ try {
   // A refused tap: a block on the goal. The room stays, the tile says why.
   const room = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));
   await page.click('[data-tool="wall"]');
-  const g = await tile(6, 6); await page.mouse.click(...g);
+  const g = await tile(5, 5); await page.mouse.click(...g);
   check('a refused tap changes nothing and says why on the tile', (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === room && await page.locator('#campTip').isVisible() && /goal stays/.test(await page.locator('#campTip').textContent()) && (await page.evaluate(() => window.wee.fxTypes())).includes('refuse'), await page.locator('#campTip').textContent());
   // Move's preview: the tile under a carried start changes while held; over the goal it is red.
   await page.click('[data-tool="move"]');
   const px = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), l = window.wee.getLevel(), d = c.getContext('2d').getImageData(Math.floor((x + 0.5) * c.width / l.w), Math.floor((y + 0.5) * c.height / l.h), 1, 1).data; return [d[0], d[1], d[2]]; }, [x, y]);
-  const empty = await px(2, 2), goal = await px(6, 6);
-  await page.mouse.move(...await tile(0, 0)); await page.mouse.down();
+  const empty = await px(2, 2), goal = await px(5, 5);
+  await page.mouse.move(...await tile(1, 1)); await page.mouse.down();
   await page.mouse.move(...await tile(2, 2), { steps: 4 }); await page.waitForTimeout(80);
   const ghost = await px(2, 2);
-  await page.mouse.move(...await tile(6, 6), { steps: 4 }); await page.waitForTimeout(80);
-  const red = await px(6, 6);
+  await page.mouse.move(...await tile(5, 5), { steps: 4 }); await page.waitForTimeout(80);
+  const red = await px(5, 5);
   await page.evaluate(() => { document.getElementById('campTip').hidden = true; });
   await page.mouse.up();
   check('dragging shows the start where it would land', ghost.join() !== empty.join(), empty + ' -> ' + ghost);

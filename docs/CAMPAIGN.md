@@ -20,7 +20,7 @@ the conversation that day. Rulings are restated, not quoted, unless in quotes.
 - **The room is yours to size.** Every level opens on an empty 7x7 room and you grow or shrink
   it with the grips on its edges, as in the sandbox; there is no limit. Its edge is not made of
   blocks: it stops the robot like a wall, costs nothing, and touching it is not a death.
-- **The start is top left and the goal bottom right** when a level opens (owner: *"I prefer having start and end preplaced on the corners"*). The **Move** tool carries them, or anything placed, to another tile: press on it, release where it goes. Exactly one of each, free.
+- **The start and the goal sit one diagonal step in from the top left and bottom right corners** when a level opens (owner: *"I prefer having start and end preplaced on the corners"*, then *"moved one diagonal step towards the center as default"*). Rooms already saved keep their own. The **Move** tool carries them, or anything placed, to another tile: press on it, release where it goes. Exactly one of each, free.
 - Costs are constant across levels: block 1, box 2, button 3, door 3, switch 2. Start and goal are free.
 - The level list shows each level's elements as their palette icons (owner, 2026-10-17).
 - Main menu: **Campaign** (the level list, opening on the last level played) and **Sandbox**
@@ -61,7 +61,7 @@ its colour holds.
 
 ## Levels
 
-Every level opens on an empty 7x7 room with no border, the start top left and the goal bottom right; no powers. **No level has a maximum on any
+Every level opens on an empty 7x7 room with no border, the start at (1,1) and the goal at (5,5); no powers. **No level has a maximum on any
 element for now** (owner, 2026-10-17: *"no maximums for now"*); the table's maximums are the
 ones they had before.
 
