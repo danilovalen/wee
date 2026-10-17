@@ -715,6 +715,9 @@ const M = [
   ['src', "      else if (no) refuse(to.x, to.y, no);", "", 'campaign-play'],
   ['src', "return { carry: { from, to, ok: carried.ok } };", "return { carry: { from, to, ok: true } };", 'campaign-play'],
   ['src', "selectOverlay() || carryOverlay());", "selectOverlay());", 'campaign-play'],
+  ['style.css', ".campMust { grid-template-columns: repeat(2, minmax(0, 1fr)); }", "", 'campaign-play'],
+  ['src', "    const list = r.optional ? opt : must;", "    const list = must;", 'campaign-play'],
+  ['style.css', ".sizeBand[hidden] { display: none; }", "", 'size-band'],
   ['style.css', ".campVerdict { position: absolute;", ".campVerdict { position: relative;", 'campaign-play'],
 ];
 

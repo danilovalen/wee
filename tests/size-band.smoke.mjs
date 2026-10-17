@@ -8,7 +8,8 @@ const { check, done } = suite('size-band');
 const server = await serve(5237);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
 const page = await browser.newPage({ viewport: { width: 412, height: 915 } });
-const shown = () => page.$$eval('.sizeBand', bs => bs.filter(b => !b.hidden).length);
+// Painted, not flagged: a band's own display rule can outrank its hidden attribute.
+const shown = () => page.$$eval('.sizeBand', bs => bs.filter(b => getComputedStyle(b).display !== 'none' && b.getBoundingClientRect().width > 0).length);
 try {
   await page.goto('http://localhost:5237/?sandbox');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);

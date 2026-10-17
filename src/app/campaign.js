@@ -107,12 +107,15 @@ export function syncCostDots() {
 
 // A row's words, with each object drawn as its palette icon.
 function words(parts) {
-  return parts.map(p => {
-    if (typeof p === 'string') return document.createTextNode(p);
-    const c = icon(p.el === 'start' ? 'start' : TOOL[p.el]), name = p.el === 'start' ? 'Robot' : ELEMENTS[p.el].label;
-    c.className = 'campIcon'; c.dataset.part = p.el; c.title = name; c.setAttribute('aria-label', name); c.setAttribute('role', 'img');
-    return c;
-  });
+  const span = document.createElement('span'); span.className = 'words';
+  span.append(...parts.flatMap((p, i) => [...(i ? [document.createTextNode(' ')] : []), word(p)]));
+  return span;
+}
+function word(p) {
+  if (typeof p === 'string') return document.createTextNode(p);
+  const c = icon(p.el === 'start' ? 'start' : TOOL[p.el]), name = p.el === 'start' ? 'Robot' : ELEMENTS[p.el].label;
+  c.className = 'campIcon'; c.dataset.part = p.el; c.title = name; c.setAttribute('aria-label', name); c.setAttribute('role', 'img');
+  return c;
 }
 
 // The level over the room: a goal card with one row per requirement, marked after a run, and
@@ -132,15 +135,19 @@ export function syncBrief() {
   const last = document.createElement('span'); last.className = 'campLast'; last.id = 'campLast';
   last.textContent = !v ? '' : !v.ok ? 'not ready' : v.won ? `won in ${v.length}` : v.length != null ? `last run: ${v.length} moves` : 'no way through';
   head.append(Object.assign(document.createElement('b'), { textContent: def.name }), last);
-  const list = document.createElement('ul'); list.className = 'campReqs';
+  // What a level requires, two to a line; what it only rewards, apart beneath.
+  const must = document.createElement('ul'); must.className = 'campReqs campMust';
+  const opt = document.createElement('ul'); opt.className = 'campReqs campOpt';
+  opt.dataset.label = 'Optional';
   for (const r of rows) {
+    const list = r.optional ? opt : must;
     const li = document.createElement('li'); li.dataset.req = r.id; li.title = r.text;
     li.className = (r.optional ? 'optional ' : '') + (r.met === true ? 'met' : r.met === false ? 'unmet' : '');
     const mark = document.createElement('span'); mark.className = 'mark'; mark.textContent = r.met === true ? '✓' : r.met === false ? '✕' : r.optional ? '★' : '';
-    li.append(mark, ...words(r.parts));
+    li.append(mark, words(r.parts));
     list.append(li);
   }
-  card.append(head, list);
+  card.append(head, must, opt);
   const tile = (label, n, b) => {
     const t = document.createElement('div'); t.className = 'campScore'; t.dataset.score = label.toLowerCase();
     t.append(Object.assign(document.createElement('small'), { textContent: label }), Object.assign(document.createElement('b'), { textContent: n }));
