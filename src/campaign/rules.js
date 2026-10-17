@@ -60,6 +60,29 @@ export function placementErrors(def, room) {
 }
 
 // Requirements on one shortest path, judged from every tick of its replay.
+
+// What each move of a path did to each box: a push slides it at least one tile; a hit is a
+// slide of the robot (it moved) that ends against the box without moving it. Each move is replayed alone.
+export function boxMoves(room, moves) {
+  const at = n => {
+    let dir = null;
+    const s = replayPath(room, moves.slice(0, n), t => { if (t.player.dir) dir = t.player.dir; });
+    return { s, dir, boxes: Object.fromEntries(s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.id, e.x + ',' + e.y])) };
+  };
+  const out = {};
+  let was = at(0);
+  for (let n = 1; n <= moves.length; n++) {
+    const now = at(n), [dx, dy] = STEP[now.dir] || [0, 0], p = now.s.player;
+    const ahead = now.s.entities.find(e => !e.dead && e.kind === 'box' && e.x === p.x + dx && e.y === p.y + dy);
+    for (const id of Object.keys(was.boxes)) {
+      const b = out[id] ||= { pushes: 0, hits: 0 };
+      if (now.boxes[id] !== undefined && now.boxes[id] !== was.boxes[id]) b.pushes++;
+      else if (ahead && String(ahead.id) === id && (p.x !== was.s.player.x || p.y !== was.s.player.y)) b.hits++;
+    }
+    was = now;
+  }
+  return Object.values(out);
+}
 const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
 export const REQUIREMENTS = {
   throughOpenDoor: {
@@ -132,18 +155,11 @@ Object.assign(REQUIREMENTS, {
   },
   boxPushedThrice: {
     text: 'One box is pushed in at least 3 moves.',
-    // A push is a move that slides the box at least one tile; each move is replayed on its own.
-    judge: (room, moves) => {
-      const where = n => Object.fromEntries(replayPath(room, moves.slice(0, n), () => {}).entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.id, e.x + ',' + e.y]));
-      const pushes = {};
-      let was = where(0);
-      for (let n = 1; n <= moves.length; n++) {
-        const now = where(n);
-        for (const id of Object.keys(was)) if (now[id] !== undefined && now[id] !== was[id]) pushes[id] = (pushes[id] || 0) + 1;
-        was = now;
-      }
-      return Object.values(pushes).some(n => n >= 3);
-    },
+    judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 3),
+  },
+  boxPushedTwiceHitOnce: {
+    text: 'One box is pushed in at least 2 moves, and the robot collides with it once without moving it.',
+    judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2 && b.hits >= 1),
   },
   everyToggleOffAtEnd: {
     text: 'Every switch is off when the robot reaches the goal.',

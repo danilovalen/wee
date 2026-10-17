@@ -1,6 +1,6 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { stuckText, nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, costOf, areaOf, stepsText } from '../src/campaign/rules.js';
+import { boxMoves, stuckText, nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, costOf, areaOf, stepsText } from '../src/campaign/rules.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { LEVELS, COSTS } from '../src/level/campaign.js';
 import { emptyLevel } from '../src/level/format.js';
@@ -10,6 +10,9 @@ import { room, suite } from './lib.mjs';
 const { check: ok, done } = suite('campaign');
 const level = id => LEVELS.find(l => l.id === id);
 // His three-push room (2026-10-17): the robot starts boxed in on three sides.
+// Level 5's known win, found by tools/levelSearch.mjs: two pushes and a hit on one box.
+const WIN5 = ['....', '....', '....', '....', '.BB.', 'PB..', '..G.', '....'];
+const boxCounts = (rows, moves) => boxMoves(room(rows), moves);
 const HIS = ['.#..#.....', '....#.....', '....#.....', '....#.....', '.#.BP#....', '....#.....', '..........', '..........', '........G.', '###.......', '..........', '..........'];
 // A room in the level's legend: # block, t switch, D door, o button, B box, P start, G goal.
 // Full rows (all one length) set the room's size; otherwise the level's size is used. With no
@@ -159,15 +162,20 @@ const build = (def, rows) => {
   ok('level 4 needs two switches and a door', d.palette.toggle[0] === 2 && d.palette.door[0] === 1 && d.require.join() === 'throughOpenDoor,everyToggleOffAtEnd');
   ok('a one-switch room no longer fits level 4', placementErrors(d, build(d, ['#######', '#P.#..#', '#....##', '#...t.#', '#..#.##', '##...G#', '#######'].map((r, y) => y === 1 ? '#P.#D.#' : r))).some(e => /at least 2 switches/.test(e.msg)));
 }
-{ // level 5: one box pushed in three moves
+{ // level 5: one box pushed in two moves and run into once without moving
   const d = level('5');
-  ok('level 5 has blocks and a box, nothing else', Object.keys(d.palette).join() === 'block,box' && d.palette.box[0] === 1 && d.require.join() === 'boxPushedThrice' && d.steps.best === 8 && d.steps.range === 2);
-  const req = (rows, moves) => REQUIREMENTS.boxPushedThrice.judge(room(rows), moves);
-  ok('three pushes: not met with one push', !req(['#######', '#PB...#', '#######'], ['right']));
-  ok('three pushes: not met when the robot never meets the box', !req(['######', '#P...#', '#....#', '#B...#', '######'], ['right', 'down']));
+  ok('level 5 has blocks and a box, nothing else', Object.keys(d.palette).join() === 'block,box' && d.palette.box[0] === 1 && d.require.join() === 'boxPushedTwiceHitOnce' && d.steps.best === 8 && d.steps.range === 2);
+  const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
+  ok('a hit: the robot stops against a box that cannot move', req('boxPushedTwiceHitOnce', ['########', '#P.B..#', '#.....#', '########'], ['right', 'right']) === false);
+  const one = ['#######', '#.....#', '#P..B.#', '#.....#', '#######'];
+  ok('a push slides the box; a slide that ends against a box that cannot move is a hit; a press that goes nowhere is neither', JSON.stringify(boxCounts(one, ['right', 'right'])) === '[{"pushes":1,"hits":0}]' && JSON.stringify(boxCounts(['######', '#P.B#', '######'], ['right'])) === '[{"pushes":0,"hits":1}]' && JSON.stringify(boxCounts(['#####', '#PB#', '#####'].map(r => r.slice(0, 4)), ['right'])) === '[{"pushes":0,"hits":0}]', JSON.stringify([boxCounts(one, ['right', 'right']), boxCounts(['######', '#P.B#', '######'], ['right'])]));
+  ok('three pushes: not met with one push', !req('boxPushedThrice', ['#######', '#PB...#', '#######'], ['right']));
   const his = build(d, HIS), a = allShortest(his);
   ok('his boxed-in room: one shortest path of 7, and it pushes the box 3 times', a.length === 7 && a.paths.length === 1 && REQUIREMENTS.boxPushedThrice.judge(his, a.paths[0]), JSON.stringify([a.length, a.paths]));
-  ok('two pushes are not enough', !REQUIREMENTS.boxPushedThrice.judge(his, a.paths[0].slice(0, 4)));
+  ok('two pushes are not enough for three', !REQUIREMENTS.boxPushedThrice.judge(his, a.paths[0].slice(0, 4)));
+  ok('two pushes with no hit do not meet level 5', !REQUIREMENTS.boxPushedTwiceHitOnce.judge(his, a.paths[0].slice(0, 4)) && JSON.stringify(boxMoves(his, a.paths[0].slice(0, 4))) === '[{"pushes":2,"hits":0}]');
+  const win = build(d, WIN5), w = allShortest(win);
+  ok('the known level 5 room pushes one box twice and hits it once', w.paths.every(p => REQUIREMENTS.boxPushedTwiceHitOnce.judge(win, p)) && !w.paths.every(p => REQUIREMENTS.boxPushedThrice.judge(win, p)));
 }
 { // level 6: a box flips the switch, a box and the robot go through the door
   const d = level('6');
@@ -200,7 +208,7 @@ const build = (def, rows) => {
     2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
     3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],
     4: ['Pt.tD', '.#...', '.....', '###.#', '.#..G'],
-    5: HIS,
+    5: WIN5,
     6: ['P....', '....B', 'B..#t', 'D.#.#', '....G'],
     7: ['P.#.B', '...#.', '..B.o', '.#..D', '#..#G'],
     8: ['P.o..', '..B.D', '...##', '#.###', '#...G'],

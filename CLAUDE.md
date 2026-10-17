@@ -15,7 +15,7 @@ plays every shortest path. Its design and every ruling: `docs/CAMPAIGN.md`.
 | One gate | `npm test -- --only=sim` |
 | Prove the gates can go red | `node tools/mutate.mjs` |
 | One-file build for phones (`dist/wee.html`) | `node tools/build-single.mjs` |
-| Find a room that wins a campaign level | `node tools/levelSearch.mjs <level> [seed]` |
+| Find rooms that win a campaign level | `node tools/levelSearch.mjs <level> [--seconds S] [--seed N] [--all] [--require a,b] [--steps best,range]` |
 
 The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` elsewhere.
 

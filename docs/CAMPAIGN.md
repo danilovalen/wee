@@ -71,7 +71,7 @@ ones they had before.
 | 2 | block 0-10, switch 1-1, door 1-1 | 7 ± 2 | robot hits a closed door; robot goes through an open door |
 | 3 | block 0-10, switch 1 or more, door 1 or more | 8 ± 2 | every switch on; through an open door; door closed at the end |
 | 4 | block, switch 2 or more, door 1 or more | 8 ± 2 | through an open door; every switch off when the robot reaches the goal |
-| 5 | block, box 1 or more | 8 ± 2 | one box is pushed in at least 3 moves (a push slides it at least one tile) |
+| 5 | block, box 1 or more | 8 ± 2 | one box is pushed in at least 2 moves and the robot collides with it once without moving it |
 | 6 | block, box 1 or more, switch 1 or more, door 1 or more | 7 ± 2 | a box passes through an open door; the robot passes through an open door; only boxes flip switches |
 | 7 | block 0-10, box 1-2, button 1-1, door 1-1 | 6 ± 2 | a box cannot start on a button; through an open door |
 | 8 | as 7 | 10 ± 3 | a box cannot start on a button; through an open door; door closed at the end |
@@ -80,7 +80,7 @@ Level 3 asked for exactly 2 switches until 2026-10-17; now 1 or more of each, wi
 
 Level 4 asked for one switch turned on then off until 2026-10-17, which his level 3 room also won (owner: *"level 4 has the same solution than level 3 and will need a different rule set"*). Now at least two switches and a door, through the open door, and both switches off at the end.
 
-Level 5 (one box, three pushes) was added on 2026-10-17 between levels 4 and 5 (owner: *"box must do three moves as part of the solution"*, a push being a move that slides the box at least one tile). ⚠ I measured ~230,000 random 6x6 rooms, found no shortest path pushing one box twice, and said it could not be done; he drew a room that does it in 7 moves by boxing the robot in on three sides, so the only way out is through the box. That room is the level's known win. Random small rooms are the wrong instrument for this one. He chose 8 ± 2.
+Level 5 (one box, three pushes) was added on 2026-10-17 between levels 4 and 5 (owner: *"box must do three moves as part of the solution"*, a push being a move that slides the box at least one tile). ⚠ I measured ~230,000 random 6x6 rooms, found no shortest path pushing one box twice, and said it could not be done; he drew a room that does it in 7 moves by boxing the robot in on three sides, so the only way out is through the box. He chose 8 ± 2, then changed the requirement the same day to *"2 pushes and 1 collide w/o push"*: one box pushed in at least 2 moves (a push slides it at least one tile), and at least one move where the robot slides and stops against that box without moving it. Three pushes stays available as a requirement (`boxPushedThrice`).
 
 The switch-and-box level (now 6) was added on 2026-10-17 between the two-switch level and the button-and-box one (owner: *"box should go over door, you should go over door, switch can only be toggled by box"*). ⚠ **One box can never win it**: the robot always steps into the tile a box leaves, so pushing a box off a switch puts the robot on it. Every winning room found uses two boxes, one parked on the switch and one pushed through the door. Measured over 259 winning rooms: 4 to 9 moves, most often 4. He chose 7 ± 2.
 
