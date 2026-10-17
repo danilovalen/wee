@@ -3448,9 +3448,12 @@ function grip(b, after) {
     change(() => { S.level = l; }); after();
     if (lost) $('placeHint').textContent = 'The cut took the start. To play, place it again.';
   };
-  // A release anywhere ends the drag, even off the grip or outside the window.
+  // A release anywhere ends the drag, even off the grip, outside the window, or where the
+  // browser never gave the grip its capture (some phone webviews): the window hears it too.
   b.addEventListener('pointerup', done); b.addEventListener('pointercancel', done); b.addEventListener('lostpointercapture', done);
-  addEventListener('pointerdown', ev => { if (!from && !band.hidden && ev.target !== b) band.hidden = true; });
+  addEventListener('pointerup', done); addEventListener('pointercancel', done);
+  // A new press anywhere else drops a band left behind by a drag whose release never came.
+  addEventListener('pointerdown', ev => { if (ev.target !== b && (from || !band.hidden)) { from = null; band.hidden = true; } });
 }
 
 function buildSize({ after }) {

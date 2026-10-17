@@ -700,6 +700,8 @@ const M = [
   ['src', "some(b => b.pushes >= 2 && b.hits >= 1),", "some(b => b.pushes >= 2),", 'campaign'],
   ['src', "if (now.boxes[id] !== undefined && now.boxes[id] !== was.boxes[id]) b.pushes++;", "if (now.boxes[id] !== undefined) b.pushes++;", 'campaign'],
   ['src', " && (p.x !== was.s.player.x || p.y !== was.s.player.y)) b.hits++;", ") b.hits++;", 'campaign'],
+  ['src/app/size.js', "  addEventListener('pointerup', done); addEventListener('pointercancel', done);\n", "", 'size-band'],
+  ['src/app/size.js', "if (ev.target !== b && (from || !band.hidden)) { from = null; band.hidden = true; }", "if (ev.target !== b && !from && !band.hidden) band.hidden = true;", 'size-band'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
   ['src', "dot.textContent = cost[b.dataset.tool];", "dot.textContent = '';", 'campaign-play'],
 ];
