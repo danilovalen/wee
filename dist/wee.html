@@ -485,11 +485,6 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
 .campReqs .optional { color: var(--dim); font-weight: 600; }
 .campReqs .optional:not(.met):not(.unmet) .mark { box-shadow: none; outline: 1.5px dashed var(--dim); outline-offset: -1.5px; }
 .campIcon { width: 18px; height: 18px; vertical-align: -4px; }
-.campScores { display: grid; gap: 6px; }
-.campScore { padding: 4px 10px; border-radius: var(--r-s); background: var(--field); display: flex; align-items: baseline; gap: 6px; }
-.campScore small:first-child { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); font-size: 0.75em; }
-.campScore b { font-size: 1.15em; }
-.campScore .best { color: var(--dim); }
 body.campaign .roomArea { position: relative; }
 .campVerdict { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 8px 6px 8px 12px; border-radius: var(--r-s); background: #24262e; color: #fff; font-weight: 700; line-height: 1.35; box-shadow: 0 6px 18px rgba(36, 38, 46, .25); }
 .campVerdict > span { flex: 1; }
@@ -3622,7 +3617,7 @@ return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNE
 const m35 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6,"range":2},"rules":[],"require":[]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["boxPushedTwiceHitOnce"]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6,"range":2},"rules":["noBoxOnButton"],"require":["throughOpenDoor"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":10,"range":3},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"]}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6,"range":2},"rules":[],"require":[],"small":[3,3]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"],"small":[3,4]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8,"range":2},"rules":[],"require":["boxPushedTwiceHitOnce"],"small":[4,4]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7,"range":2},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6,"range":2},"rules":["noBoxOnButton"],"require":["throughOpenDoor"],"small":[3,3]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":10,"range":3},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[5,5]}];
 return { LEVELS };
 })();
 // ---- src/campaign/robot.js
@@ -3920,6 +3915,13 @@ const bestText = st => `Exactly ${st.best} moves.`;
 // The same, as the goal card's rows say them.
 const rangeShort = st => `${st.best - st.range}–${st.best + st.range} moves`;
 const bestShort = st => `exactly ${st.best}`;
+// The two optional goals every level has: the exact move count, and a room no bigger than
+// A x B (its area at most A times B, either way round). A x B is the smallest room a search
+// found that wins the level.
+const OPTIONAL = [
+  { id: 'best', short: def => bestShort(def.steps), text: def => bestText(def.steps), met: (def, v) => v.length === def.steps.best },
+  { id: 'small', short: def => `${def.small[0]}×${def.small[1]} or smaller`, text: def => `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: (def, v) => v.area <= def.small[0] * def.small[1] },
+];
 
 // The room's area, the size score.
 const areaOf = room => room.w * room.h;
@@ -3951,7 +3953,7 @@ function stuckText(room) {
 }
 
 // The whole verdict. { ok: false, errors } when the room cannot run; otherwise
-// { ok: true, won, length, paths, fail: { path, why } | null, area, optional }.
+// { ok: true, won, length, paths, fail: { path, why } | null, area, optional: [{ id, text, met }] }.
 function check(def, room, opts) {
   const errors = placementErrors(def, room);
   if (errors.length) return { ok: false, errors };
@@ -3968,10 +3970,10 @@ function check(def, room, opts) {
   if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: `${stepsText(st)} This one takes ${r.length}.` } };
   const first = (def.require || []).find(id => id in failed);
   if (first) return { ...base, won: false, fail: { path: failed[first], why: `Not met: ${REQUIREMENTS[first].text}` } };
-  const optional = [{ text: bestText(st), met: r.length === st.best }];
+  const optional = OPTIONAL.map(o => ({ id: o.id, text: o.text(def), met: o.met(def, base) }));
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, roomOf, placed, nameOf, placementErrors, boxMoves, REQUIREMENTS, stepsText, bestText, rangeShort, bestShort, areaOf, stuckText, check };
+return { ELEMENTS, roomOf, placed, nameOf, placementErrors, boxMoves, REQUIREMENTS, stepsText, bestText, rangeShort, bestShort, OPTIONAL, areaOf, stuckText, check };
 })();
 // ---- src/editor/edit.js
 const m38 = (() => {
@@ -4933,7 +4935,7 @@ return { icon };
 // ---- src/app/campaign.js
 const m45 = (() => {
 const { LEVELS } = m35;
-const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, rangeShort, bestShort, areaOf } = m37;
+const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, rangeShort, OPTIONAL } = m37;
 const { place, moveAt } = m38;
 const { newHistory } = m10;
 const { S, starterLevel } = m11;
@@ -5057,17 +5059,17 @@ function word(p) {
 }
 
 // The level over the room: a goal card with one row per requirement, marked after a run, and
-// the scores beside your best. Its height never changes with a verdict; the verdict's words
+// the optional goals apart. Its height never changes with a verdict; the verdict's words
 // float over the room instead.
 function syncBrief() {
   if (!S.camp) return;
-  const def = S.camp.def, v = S.camp.verdict, best = (progress().levels[def.id] || {}).best || {};
+  const def = S.camp.def, v = S.camp.verdict;
   const ran = v && v.ok && v.length != null;
   const rows = [{ id: 'steps', parts: [rangeShort(def.steps)], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   if ((def.rules || []).includes('noBoxOnButton'))
     rows.push({ id: 'noBoxOnButton', parts: ['no', { el: 'box' }, 'starts on a', { el: 'button' }], text: 'A box cannot start on a button.', met: v && !v.ok && v.errors.some(e => /box cannot start/.test(e.msg)) ? false : null });
   for (const id of def.require || []) rows.push({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: ran && v.reqs ? v.reqs[id] : null });
-  rows.push({ id: 'best', parts: [bestShort(def.steps)], text: `Optional: exactly ${def.steps.best} moves.`, met: ran ? v.length === def.steps.best : null, optional: true });
+  for (const o of OPTIONAL) rows.push({ id: o.id, parts: [o.short(def)], text: `Optional: ${o.text(def)}`, met: ran ? o.met(def, v) : null, optional: true });
   const card = document.createElement('div'); card.className = 'campGoal';
   const head = document.createElement('p'); head.className = 'campHead';
   const last = document.createElement('span'); last.className = 'campLast'; last.id = 'campLast';
@@ -5086,15 +5088,7 @@ function syncBrief() {
     list.append(li);
   }
   card.append(head, must, opt);
-  const tile = (label, n, b) => {
-    const t = document.createElement('div'); t.className = 'campScore'; t.dataset.score = label.toLowerCase();
-    t.append(Object.assign(document.createElement('small'), { textContent: label }), Object.assign(document.createElement('b'), { textContent: n }));
-    if (b != null) t.append(Object.assign(document.createElement('small'), { className: 'best', textContent: `best ${b}` }));
-    return t;
-  };
-  const scores = document.createElement('div'); scores.className = 'campScores';
-  scores.append(tile('Area', areaOf(S.level), best.area));
-  $('campBrief').replaceChildren(card, scores);
+  $('campBrief').replaceChildren(card);
   syncCounts();
   // The verdict's words, over the room.
   const out = $('campVerdict');
@@ -5140,7 +5134,7 @@ function leaveLevel() {
 const stuckAt = v => (v && v.ok && !v.won && v.fail.at) || [];
 function flashStuck(v) { for (const t of stuckAt(v)) S.fx.push({ type: 'flash', x: t.x, y: t.y, at: now() }); }
 
-// Judges the room, keeps the best scores of a win, then the robot plays: the failing path, or
+// Judges the room, keeps which optional goals a win has met, then the robot plays: the failing path, or
 // the first shortest path of a win.
 function run() {
   if (!S.camp) return null;
@@ -5148,8 +5142,8 @@ function run() {
   S.camp.verdict = v;
   save();
   if (v.ok && v.won) {
-    const p = progress(), rec = p.levels[def.id] ||= {}, best = rec.best || {};
-    rec.best = { area: Math.min(best.area ?? Infinity, v.area), met: Math.max(best.met ?? 0, v.met) };
+    const p = progress(), rec = p.levels[def.id] ||= {}, goals = rec.goals || {};
+    rec.goals = Object.fromEntries(v.optional.map(o => [o.id, !!goals[o.id] || o.met]));
     rec.beaten = true; rec.room = S.level;
     write(p);
   }
@@ -5168,7 +5162,7 @@ function renderList() {
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten${rec.best.area ? ` · best area ${rec.best.area}` : ''} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
+    small.textContent = rec.beaten ? `Beaten · optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${OPTIONAL.length}` : `${stepsText(def.steps)}`;
     // The elements the level hands you, as the palette draws them.
     const parts = document.createElement('span'); parts.className = 'campParts';
     for (const el of Object.keys(def.palette)) {

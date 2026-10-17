@@ -31,5 +31,9 @@
  ],
  "require": [
   "throughOpenDoor"
+ ],
+ "small": [
+  3,
+  3
  ]
 }

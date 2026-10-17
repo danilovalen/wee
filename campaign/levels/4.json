@@ -26,5 +26,9 @@
  "require": [
   "throughOpenDoor",
   "everyToggleOffAtEnd"
+ ],
+ "small": [
+  3,
+  4
  ]
 }

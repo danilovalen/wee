@@ -26,5 +26,9 @@
  "require": [
   "throughOpenDoor",
   "doorClosedAtEnd"
+ ],
+ "small": [
+  3,
+  3
  ]
 }

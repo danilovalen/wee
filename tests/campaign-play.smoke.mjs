@@ -12,7 +12,6 @@ const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 const visibleTools = () => page.$$eval('[data-tool]', bs => bs.filter(b => !b.hidden).map(b => b.dataset.tool));
 const verdict = () => page.locator('#campVerdictText').textContent().catch(() => '');
-const score = k => page.locator(`.campScore[data-score="${k}"] b`).textContent();
 const marks = () => page.$$eval('.campReqs li', ls => ls.map(l => l.dataset.req + ':' + (l.classList.contains('met') ? 'met' : l.classList.contains('unmet') ? 'unmet' : '-')).join());
 const box = () => page.locator('#game').boundingBox().then(b => [b.x, b.y, b.width, b.height].map(Math.round).join());
 // Level 1's winning room from tests/campaign.test.mjs: # block, t switch, D door, P start, G goal.
@@ -40,8 +39,9 @@ try {
   check('no tool wears a cost', await page.locator('.costDot').count() === 0);
   check('a free tool wears no count', await page.locator('[data-tool="look"] .countDot').count() === 0 && await page.locator('[data-tool="move"] .countDot').count() === 0);
   check('a level opens on a 7x7 room, start and goal one step in from their corners', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.start.x === 1 && l.start.y === 1 && l.cells[40] === 'goal' && l.cells.filter(c => c).length === 1; }));
-  check('the goal card shows the area', (await score('area')) === '49');
-  check('every row is unmarked before a run', /^steps:-,best:-$/.test(await marks()), await marks());
+  check('the card keeps no score', await page.locator('.campScore').count() === 0);
+  check('every level has two optional goals: the exact count and a room size', (await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join())) === 'best=★exactly 6,small=★3×3 or smaller', await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join()));
+  check('every row is unmarked before a run', /^steps:-,best:-,small:-$/.test(await marks()), await marks());
   check('an element tool wears its count', (await page.locator('[data-tool="wall"] .countDot').textContent()) === '0');
   // Move: press on the start, release two tiles down; then the goal, one tile left.
   await page.click('[data-tool="move"]');
@@ -57,7 +57,7 @@ try {
   check('the room can be resized in a level', await page.locator('[data-plus="bottom"]').isVisible());
   await page.click('[data-plus="bottom"]');
   await page.waitForTimeout(100);
-  check('a tap on a grip adds a line and the area follows', (await page.evaluate(() => window.wee.getLevel().h)) === 8 && (await score('area')) === '56');
+  check('a tap on a grip adds a line and the area follows', (await page.evaluate(() => window.wee.getLevel().h)) === 8 );
   await load(['P....', '.....', '.....', '.....', '....G']);
   const before = await box();
   await page.click('#campRun');
@@ -73,16 +73,31 @@ try {
   await page.waitForTimeout(200);
   const won = await verdict();
   check('a room in range wins and the card marks every row', /Made it in 4 moves/.test(won) && (await marks()).startsWith('steps:met') && (await page.locator('#campLast').textContent()) === 'won in 4', won + ' ' + await marks());
-  check('the card shows the area beside the best, and no cost', (await score('area')) === '25' && /best 25/.test(await page.locator('.campScore[data-score="area"]').textContent()) && await page.locator('.campScore[data-score="cost"]').count() === 0);
+  check('a 5x5 win misses the 3x3 goal', (await marks()).endsWith('small:unmet'), await marks());
   await page.click('#campVerdictClose');
   check('the verdict closes', await page.locator('#campVerdict').isHidden());
   await page.click('#campBack');
   const row = await page.locator('.campRow[data-level="1"] small').textContent();
-  check('the list keeps the best of a beaten level', /Beaten/.test(row) && /best area 25/.test(row) && !/cost/.test(row), row);
+  check('the list keeps a beaten level and how many optional goals it met', /Beaten · optional 0\/2/.test(row) && !/cost|area/.test(row), row);
   check('the level you were on is selected', await page.locator('.campRow[data-level="1"]').evaluate(b => b.classList.contains('sel')));
   await page.click('.campRow[data-level="1"]');
   const kept = await page.evaluate(() => { const l = window.wee.getLevel(); return [l.w, l.h, l.cells.filter(c => c === 'wall').length].join(); });
   check('your room is kept for next time', kept === '5,5,7', kept);
+  // A 3x3 win, found by tools/tilesArea.mjs, meets the room-size goal, and the list keeps it.
+  await load(['.GP', '...', '..#']);
+  await page.click('#campRun'); await page.waitForTimeout(200);
+  check('a 3x3 win meets the room-size goal', (await marks()).endsWith('small:met'), await marks());
+  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  await page.click('#campBack');
+  const row2 = await page.locator('.campRow[data-level="1"] small').textContent();
+  await page.click('.campRow[data-level="1"]');
+  await load(WIN);
+  await page.click('#campRun'); await page.waitForTimeout(200);
+  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  await page.click('#campBack');
+  const row3 = await page.locator('.campRow[data-level="1"] small').textContent();
+  check('a met optional goal stays met after a later win misses it', /optional [12]\/2/.test(row2) && row3 === row2, row2 + ' / ' + row3);
+  await page.click('.campRow[data-level="1"]');
   // A room saved before rooms lost their border comes back without it.
   await page.click('#campBack');
   await page.evaluate(() => {
@@ -101,7 +116,7 @@ try {
   const reqRows = await page.$$eval('.campReqs li', ls => ls.map(l => [l.dataset.req, [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join('+')].join('=')));
   const lay = await page.evaluate(() => { const must = document.querySelector('.campMust'), opt = document.querySelector('.campOpt'), xs = new Set([...must.children].map(li => Math.round(li.getBoundingClientRect().left))); return { cols: xs.size, opt: [...opt.children].map(li => li.dataset.req).join(), must: [...must.children].map(li => li.dataset.req).join(), below: opt.getBoundingClientRect().top >= must.getBoundingClientRect().bottom }; });
   check('required goals sit two to a line', lay.cols === 2, JSON.stringify(lay));
-  check('the optional goal sits apart, below the required ones', lay.opt === 'best' && !lay.must.includes('best') && lay.below, JSON.stringify(lay));
+  check('the optional goal sits apart, below the required ones', lay.opt === 'best,small' && !lay.must.includes('best') && lay.below, JSON.stringify(lay));
   check('requirement rows draw objects as icons', reqRows.includes('throughOpenDoor=start+door') && reqRows.includes('doorClosedAtEnd=door'), reqRows.join());
   await page.click('#campBack');
   // Level 3: one switch, one door. With the switch walled off behind the door, Run says why

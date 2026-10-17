@@ -468,11 +468,6 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
 .campReqs .optional { color: var(--dim); font-weight: 600; }
 .campReqs .optional:not(.met):not(.unmet) .mark { box-shadow: none; outline: 1.5px dashed var(--dim); outline-offset: -1.5px; }
 .campIcon { width: 18px; height: 18px; vertical-align: -4px; }
-.campScores { display: grid; gap: 6px; }
-.campScore { padding: 4px 10px; border-radius: var(--r-s); background: var(--field); display: flex; align-items: baseline; gap: 6px; }
-.campScore small:first-child { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); font-size: 0.75em; }
-.campScore b { font-size: 1.15em; }
-.campScore .best { color: var(--dim); }
 body.campaign .roomArea { position: relative; }
 .campVerdict { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 8px 6px 8px 12px; border-radius: var(--r-s); background: #24262e; color: #fff; font-weight: 700; line-height: 1.35; box-shadow: 0 6px 18px rgba(36, 38, 46, .25); }
 .campVerdict > span { flex: 1; }

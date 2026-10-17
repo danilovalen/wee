@@ -31,5 +31,9 @@
   "boxThroughOpenDoor",
   "throughOpenDoor",
   "onlyBoxesFlipSwitches"
+ ],
+ "small": [
+  3,
+  5
  ]
 }

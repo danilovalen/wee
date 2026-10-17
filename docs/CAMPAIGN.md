@@ -14,11 +14,14 @@ the conversation that day. Rulings are restated, not quoted, unless in quotes.
   palette of elements with a min/max each, a required move range x ± y, and
   requirements the solution must meet. Hitting exactly x moves is optional.
 - On a failure the robot plays the failing path, so you can watch what went wrong.
-- A win is scored two ways, the best of each kept separately: **area** (the room's width times
-  height) and **optional requirements met**. Area replaced tiles on 2026-10-17 (owner: area
-  "replaces tiles"). Cost (a price per element) was removed the same day (owner: *"first remove
-  the score, if we will use tiles depends on the diagnosis"*): whether a count of placed things
-  comes back waits on measuring how far it moves with area (register 176).
+- **No scores.** A win is a win; each level then has two optional goals: the **exact move
+  count**, and a **room of A×B or smaller** (its area at most A times B, either way round). A×B
+  is the smallest winning room `tools/tilesArea.mjs` found for that level. The level list keeps
+  how many optional goals a level has ever met. Owner, 2026-10-17: *"drop both area and tile...
+  one of the optional goals permanently be an area one... no more ZACHTRONICS evaluation"*,
+  then *"A x B or smaller, use your smallest area search found"*. Before that a win was scored on
+  cost and area (cost removed first, then area once a measurement showed the fewest-tiles win
+  is also the smallest-area win in all 8 levels, register 176).
 - **The room is yours to size.** Every level opens on an empty 7x7 room and you grow or shrink
   it with the grips on its edges, as in the sandbox; there is no limit. Its edge is not made of
   blocks: it stops the robot like a wall and touching it is not a death.

@@ -187,6 +187,13 @@ export const bestText = st => `Exactly ${st.best} moves.`;
 // The same, as the goal card's rows say them.
 export const rangeShort = st => `${st.best - st.range}–${st.best + st.range} moves`;
 export const bestShort = st => `exactly ${st.best}`;
+// The two optional goals every level has: the exact move count, and a room no bigger than
+// A x B (its area at most A times B, either way round). A x B is the smallest room a search
+// found that wins the level.
+export const OPTIONAL = [
+  { id: 'best', short: def => bestShort(def.steps), text: def => bestText(def.steps), met: (def, v) => v.length === def.steps.best },
+  { id: 'small', short: def => `${def.small[0]}×${def.small[1]} or smaller`, text: def => `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: (def, v) => v.area <= def.small[0] * def.small[1] },
+];
 
 // The room's area, the size score.
 export const areaOf = room => room.w * room.h;
@@ -218,7 +225,7 @@ export function stuckText(room) {
 }
 
 // The whole verdict. { ok: false, errors } when the room cannot run; otherwise
-// { ok: true, won, length, paths, fail: { path, why } | null, area, optional }.
+// { ok: true, won, length, paths, fail: { path, why } | null, area, optional: [{ id, text, met }] }.
 export function check(def, room, opts) {
   const errors = placementErrors(def, room);
   if (errors.length) return { ok: false, errors };
@@ -235,6 +242,6 @@ export function check(def, room, opts) {
   if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: `${stepsText(st)} This one takes ${r.length}.` } };
   const first = (def.require || []).find(id => id in failed);
   if (first) return { ...base, won: false, fail: { path: failed[first], why: `Not met: ${REQUIREMENTS[first].text}` } };
-  const optional = [{ text: bestText(st), met: r.length === st.best }];
+  const optional = OPTIONAL.map(o => ({ id: o.id, text: o.text(def), met: o.met(def, base) }));
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }

@@ -115,7 +115,7 @@ const build = (def, rows) => {
   ok('a win reports its area', v.area === 25 && areaOf(win) === 25 && areaOf(roomOf(d)) === 49);
   ok('there is no cost score any more', !('cost' in v) && !('COSTS' in LEVELDATA));
   ok('a win hands the robot its path', v.path && v.path.length === 4);
-  ok('a win scores the optional exact count', v.optional.length === 1 && v.met === (v.length === d.steps.best ? 1 : 0));
+  ok('a win scores two optional goals: the exact count and the room size', v.optional.map(o => o.id).join() === 'best,small' && v.optional[0].met === (v.length === d.steps.best) && v.optional[1].met === (v.area <= d.small[0] * d.small[1]) && v.met === v.optional.filter(o => o.met).length);
   const bad = check(d, { ...roomOf(d), start: null, cells: roomOf(d).cells.map(() => '') });
   ok('a room without its start and goal cannot run', bad.ok === false && bad.errors.length === 2);
   const walled = build(d, ['P....', '.....', '#####', '.....', '....G']);
@@ -206,6 +206,14 @@ const build = (def, rows) => {
   ok('every requirement has a short row, with at least one word', Object.values(REQUIREMENTS).every(r => Array.isArray(r.short) && r.short.some(p => typeof p === 'string')));
   ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.el === 'start' || ELEMENTS[p.el])));
   ok('collides, not runs into', /collides with/.test(REQUIREMENTS.hitsClosedDoor.text) && !/runs into/.test(REQUIREMENTS.hitsClosedDoor.text));
+}
+{ // every level's room-size goal is reachable: the smallest winning room tools/tilesArea.mjs found
+  const SMALL = { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
+    5: ['....', '..BP', '.#..', '.G..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['..P', 'GD.', 'oB.'], 8: ['.G.oP', '....D', '.....', '...B.', '....#'] };
+  for (const l of LEVELS) {
+    const v = check(l, build(l, SMALL[l.id]));
+    ok(`level ${l.id}'s ${l.small.join('x')} goal is met by a win`, Array.isArray(l.small) && v.won && v.optional.find(o => o.id === 'small').met, JSON.stringify(v.fail || v.optional));
+  }
 }
 { // every level can be won: one known room each (5x5 unless noted), found by search, so a rule change that
   // makes a level impossible goes red

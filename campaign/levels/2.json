@@ -26,5 +26,9 @@
  "require": [
   "hitsClosedDoor",
   "throughOpenDoor"
+ ],
+ "small": [
+  3,
+  3
  ]
 }

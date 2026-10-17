@@ -3,7 +3,7 @@
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS } from '../level/campaign.js';
-import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, rangeShort, bestShort, areaOf } from '../campaign/rules.js';
+import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, rangeShort, OPTIONAL } from '../campaign/rules.js';
 import { place, moveAt } from '../editor/edit.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -117,17 +117,17 @@ function word(p) {
 }
 
 // The level over the room: a goal card with one row per requirement, marked after a run, and
-// the scores beside your best. Its height never changes with a verdict; the verdict's words
+// the optional goals apart. Its height never changes with a verdict; the verdict's words
 // float over the room instead.
 export function syncBrief() {
   if (!S.camp) return;
-  const def = S.camp.def, v = S.camp.verdict, best = (progress().levels[def.id] || {}).best || {};
+  const def = S.camp.def, v = S.camp.verdict;
   const ran = v && v.ok && v.length != null;
   const rows = [{ id: 'steps', parts: [rangeShort(def.steps)], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   if ((def.rules || []).includes('noBoxOnButton'))
     rows.push({ id: 'noBoxOnButton', parts: ['no', { el: 'box' }, 'starts on a', { el: 'button' }], text: 'A box cannot start on a button.', met: v && !v.ok && v.errors.some(e => /box cannot start/.test(e.msg)) ? false : null });
   for (const id of def.require || []) rows.push({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: ran && v.reqs ? v.reqs[id] : null });
-  rows.push({ id: 'best', parts: [bestShort(def.steps)], text: `Optional: exactly ${def.steps.best} moves.`, met: ran ? v.length === def.steps.best : null, optional: true });
+  for (const o of OPTIONAL) rows.push({ id: o.id, parts: [o.short(def)], text: `Optional: ${o.text(def)}`, met: ran ? o.met(def, v) : null, optional: true });
   const card = document.createElement('div'); card.className = 'campGoal';
   const head = document.createElement('p'); head.className = 'campHead';
   const last = document.createElement('span'); last.className = 'campLast'; last.id = 'campLast';
@@ -146,15 +146,7 @@ export function syncBrief() {
     list.append(li);
   }
   card.append(head, must, opt);
-  const tile = (label, n, b) => {
-    const t = document.createElement('div'); t.className = 'campScore'; t.dataset.score = label.toLowerCase();
-    t.append(Object.assign(document.createElement('small'), { textContent: label }), Object.assign(document.createElement('b'), { textContent: n }));
-    if (b != null) t.append(Object.assign(document.createElement('small'), { className: 'best', textContent: `best ${b}` }));
-    return t;
-  };
-  const scores = document.createElement('div'); scores.className = 'campScores';
-  scores.append(tile('Area', areaOf(S.level), best.area));
-  $('campBrief').replaceChildren(card, scores);
+  $('campBrief').replaceChildren(card);
   syncCounts();
   // The verdict's words, over the room.
   const out = $('campVerdict');
@@ -200,7 +192,7 @@ function leaveLevel() {
 const stuckAt = v => (v && v.ok && !v.won && v.fail.at) || [];
 function flashStuck(v) { for (const t of stuckAt(v)) S.fx.push({ type: 'flash', x: t.x, y: t.y, at: now() }); }
 
-// Judges the room, keeps the best scores of a win, then the robot plays: the failing path, or
+// Judges the room, keeps which optional goals a win has met, then the robot plays: the failing path, or
 // the first shortest path of a win.
 export function run() {
   if (!S.camp) return null;
@@ -208,8 +200,8 @@ export function run() {
   S.camp.verdict = v;
   save();
   if (v.ok && v.won) {
-    const p = progress(), rec = p.levels[def.id] ||= {}, best = rec.best || {};
-    rec.best = { area: Math.min(best.area ?? Infinity, v.area), met: Math.max(best.met ?? 0, v.met) };
+    const p = progress(), rec = p.levels[def.id] ||= {}, goals = rec.goals || {};
+    rec.goals = Object.fromEntries(v.optional.map(o => [o.id, !!goals[o.id] || o.met]));
     rec.beaten = true; rec.room = S.level;
     write(p);
   }
@@ -228,7 +220,7 @@ function renderList() {
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten${rec.best.area ? ` · best area ${rec.best.area}` : ''} · optional ${rec.best.met}` : `${stepsText(def.steps)}`;
+    small.textContent = rec.beaten ? `Beaten · optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${OPTIONAL.length}` : `${stepsText(def.steps)}`;
     // The elements the level hands you, as the palette draws them.
     const parts = document.createElement('span'); parts.className = 'campParts';
     for (const el of Object.keys(def.palette)) {

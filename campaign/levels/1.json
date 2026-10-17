@@ -15,5 +15,9 @@
   "range": 2
  },
  "rules": [],
- "require": []
+ "require": [],
+ "small": [
+  3,
+  3
+ ]
 }
