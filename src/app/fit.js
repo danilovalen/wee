@@ -40,10 +40,11 @@ export function fit() {
   const area = $('roomArea');
   // The room keeps a margin for the "+" on each of its edges.
   const stage = (wide ? area.clientWidth - 2 * EDGE : $('stage').clientWidth - 2 * EDGE) || level.w * T;
-  // A phone in play gives the room everything between the header and the play buttons.
+  // A phone in play gives the room everything between the header and the play buttons; in a level
+  // the room keeps its edit size instead, so nothing moves when the mode changes (register 222).
   const below = $('pad').hidden ? 0 : $('pad').offsetHeight + 16;
   const room = wide ? area.clientHeight - 2 * EDGE
-    : S.mode === 'play' ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
+    : S.mode === 'play' && !S.camp ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
       : area.clientHeight - 2 * EDGE;
   const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
   const k = (window.devicePixelRatio || 1) * zoom;

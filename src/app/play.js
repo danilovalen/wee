@@ -69,7 +69,7 @@ export function setMode(m, keep) {
   $('pad').hidden = m !== 'play';
   $('win').hidden = true;
   resetStuck();
-  $('moves').textContent = m === 'play' ? 'Moves 0' : '';
+  $('moves').textContent = m === 'play' ? 'Moves 0' : '\u00a0';
   if (m === 'play') openSheet('build');
   // On a phone, play takes the whole screen: the room is sized again without the editor.
   requestAnimationFrame(() => dispatchEvent(new Event('resize')));

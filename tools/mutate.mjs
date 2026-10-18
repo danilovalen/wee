@@ -416,7 +416,7 @@ const M = [
   ['src', "const stand = held.has(i) || c.startsWith('receiver:') ? null", "const stand = c.startsWith('receiver:') ? null", 'design'],
   ['src', "export const variants = (g, l) => [knock(g, l), standIn(g, l)].filter(Boolean);", "export const variants = (g, l) => [knock(g, l)];", 'gen'],
   ['src', "const room = wide ? area.clientHeight - 2 * EDGE\n", "const room = wide ? innerHeight - canvas.getBoundingClientRect().top - 170\n", 'fit'],
-  ['src', "    : S.mode === 'play' ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE\n", "    : S.mode === 'play' ? innerHeight * 0.62\n", 'phone'],
+  ['src', "    : S.mode === 'play' && !S.camp ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE\n", "    : S.mode === 'play' && !S.camp ? innerHeight * 0.62\n", 'phone'],
   ['src', "  new ResizeObserver(() => requestAnimationFrame(fit)).observe($('roomArea'));", "", 'fit'],
   ['src', "if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }", "canvas.width = cw; canvas.height = ch;", 'designui'],
   ['src', "e.turret ? e.turret.aim % e.turret.dirs.length : -1", "e.turret ? e.turret.aim : -1", 'solve'],
@@ -760,7 +760,13 @@ const M = [
   ['style.css', ".sizeBand[hidden] { display: none; }", "", 'size-band'],
   ['src/app/size.js', "const k = from.far >= tile() / 2 ? n : 1;", "const k = from.moved ? n : 1;", 'size-band'],
   ['src/app/size.js', "const k = from.far >= tile() / 2 ? n : 1;", "const k = from.far >= 0 ? 1 : n;", 'size-band'],
-  ['style.css', ".campVerdict { position: absolute;", ".campVerdict { position: relative;", 'campaign-play'],
+  ['style.css', "box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px;", "box-sizing: border-box; margin: 0 0 6px;", 'steady'],
+  ['style.css', "body.campaign #campVerdict[hidden] { visibility: hidden; }", "", 'campaign-play'],
+  ['src', "    : S.mode === 'play' && !S.camp ? innerHeight", "    : S.mode === 'play' ? innerHeight", 'steady'],
+  ['style.css', "body.campaign .pad[hidden] { display: flex; visibility: hidden; }", "", 'steady'],
+  ['src', "$('moves').textContent = m === 'play' ? 'Moves 0' : '\\u00a0';", "$('moves').textContent = m === 'play' ? 'Moves 0' : '';", 'steady'],
+  ['style.css', "body.campaign.play #statusBar { display: revert; visibility: hidden; }", "body.campaign.play #statusBar { display: none; }", 'steady'],
+  ['style.css', ".plus, .plus:hover:not(:disabled), .plus:active:not(:disabled) { transform: none; }", "", 'steady'],
 ];
 
 let caught = 0, crashed = 0;

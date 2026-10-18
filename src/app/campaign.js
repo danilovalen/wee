@@ -247,8 +247,7 @@ export function buildCampaign(actions, sandbox) {
     $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}. A test does not count: Run judges the room.`;
     $('campVerdictText').onclick = null;
   });
-  $('campVerdictClose').onclick = () => { $('campVerdict').hidden = true; S.camp.verdictGone = true; };
-  // The verdict is read once: the next touch anywhere else puts it away; the card keeps the marks.
+  // The verdict is read once: the next touch anywhere else blanks it (its band keeps its place); the card keeps the marks.
   addEventListener('pointerdown', ev => {
     if (ev.target.closest('#campVerdict, .campReqs li.points')) return;
     $('campVerdict').hidden = true; if (S.camp) S.camp.verdictGone = true;

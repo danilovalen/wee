@@ -94,6 +94,8 @@ body.play #tools { opacity: .45; pointer-events: none; }
 button { touch-action: manipulation; }
 .pad { display: flex; gap: 8px; margin-top: 10px; width: 100%; max-width: 480px; }
 .pad[hidden] { display: none; }
+/* In a level the play row keeps its place while editing, so the room does not move (register 222). */
+body.campaign .pad[hidden] { display: flex; visibility: hidden; }
 .pad { flex-wrap: wrap; }
 .pad button { flex: 1 1 30%; min-height: 48px; font-size: 16px; }
 @media (max-width: 700px) { main { grid-template-columns: 1fr; } #stage { order: -1; } }
@@ -302,10 +304,13 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 /* The room's edges: a "+" on each adds a row or column there. Shown on hover, always on touch. */
 .roomWrap { position: relative; line-height: 0; }
 .plus { position: absolute; width: 24px; height: 24px; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 15px; line-height: 1; opacity: 0; transition: opacity .12s; z-index: 2; }
-.plus[data-plus=top] { left: 50%; top: -12px; transform: translateX(-50%); }
-.plus[data-plus=bottom] { left: 50%; bottom: -12px; transform: translateX(-50%); }
-.plus[data-plus=left] { top: 50%; left: -12px; transform: translateY(-50%); }
-.plus[data-plus=right] { top: 50%; right: -12px; transform: translateY(-50%); }
+/* Centred with translate, not transform, and never lifted or pressed: the house button motion would
+   replace the centring and the grip would jump under the finger (register 227). */
+.plus[data-plus=top] { left: 50%; top: -12px; translate: -50% 0; }
+.plus[data-plus=bottom] { left: 50%; bottom: -12px; translate: -50% 0; }
+.plus[data-plus=left] { top: 50%; left: -12px; translate: 0 -50%; }
+.plus[data-plus=right] { top: 50%; right: -12px; translate: 0 -50%; }
+.plus, .plus:hover:not(:disabled), .plus:active:not(:disabled) { transform: none; }
 .roomWrap:hover .plus, .plus:focus-visible { opacity: 1; }
 @media (pointer: coarse) { .plus { opacity: .85; } }
 .plus { touch-action: none; cursor: grab; }
@@ -359,7 +364,10 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 /* A phone in play: one screen, nothing scrolls, every swipe moves you (register 103). */
 @media (max-width: 700px) {
   body.play { height: 100dvh; overflow: hidden; touch-action: none; }
-  body.play #tools, body.play #powers, body.play #lensChips, body.play #statusBar, body.play .plus { display: none !important; }
+  body.play #tools, body.play #powers, body.play #lensChips, body.play #statusBar { display: none; }
+  /* In a level they are hidden, not removed, so the room keeps its place and size from Edit to play (register 222). */
+  body.campaign.play #tools, body.campaign.play #powers, body.campaign.play #lensChips, body.campaign.play #statusBar { display: revert; visibility: hidden; }
+  body.play .plus { display: none !important; }
 }
 
 /* A phone editor is one screen (register 105): header, the room, a check line, the tool's name
@@ -531,13 +539,17 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .campReqs .optional:not(.met):not(.unmet) .mark { box-shadow: none; outline: 1.5px dashed var(--dim); outline-offset: -1.5px; }
 .campIcon { width: 18px; height: 18px; vertical-align: -4px; }
 body.campaign .roomArea { position: relative; }
-.campVerdict { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 8px 6px 8px 12px; border-radius: var(--r-s); background: #24262e; color: #fff; font-weight: 700; line-height: 1.35; box-shadow: 0 6px 18px rgba(36, 38, 46, .25); }
-.campVerdict > span { flex: 1; }
+/* The run's verdict: a band of its own under the goal card, two lines tall whether it shows or not, so
+   it never covers the room and nothing moves when it comes or goes. */
+.campVerdict { width: 100%; max-width: 640px; box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px; display: flex; align-items: center; padding: 6px 12px; border-radius: var(--r-s); background: #24262e; color: #fff; font-size: 0.9em; font-weight: 700; line-height: 1.35; overflow: hidden; }
+body.campaign #campVerdict { display: flex; }
+body.campaign #campVerdict[hidden] { visibility: hidden; }
+.campVerdict > span { flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .campVerdict.won > span::before { content: '✓ '; color: #7ee2a8; }
 .campVerdict.lost > span::before { content: '✕ '; color: #ff8a80; }
-.campVerdict button { flex: none; min-width: 32px; min-height: 32px; padding: 0; background: transparent; color: #fff; border: 0; box-shadow: none; font-size: 1.2em; }
 .campVerdict.points > span { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
-.campVerdict[hidden], .campTip[hidden] { display: none !important; }
+.campTip[hidden] { display: none !important; }
+body:not(.campaign) #campVerdict { display: none !important; }
 .campTip { position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 4px)); padding: 5px 9px; border-radius: var(--r-s); background: #24262e; color: #fff; font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
 [data-tool] { position: relative; }
 body.campaign [data-tool][hidden], body.campaign #powers, body.campaign #placeHint, body.campaign #ctx { display: none !important; }
@@ -640,6 +652,7 @@ body:not(.campaign) [data-camp] { display: none !important; }
     </aside>
     <section id="stage">
       <div id="campBrief" class="campBrief camp-only"></div>
+      <div id="campVerdict" class="campVerdict camp-only" role="status" hidden><span id="campVerdictText"></span></div>
       <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="game"></canvas>
         <div id="campTip" class="campTip" role="status" hidden></div>
         <button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button>
@@ -647,7 +660,7 @@ body:not(.campaign) [data-camp] { display: none !important; }
         <button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left">+</button>
         <button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right">+</button>
       </div>
-        <div id="campVerdict" class="campVerdict" role="status" hidden><span id="campVerdictText"></span><button id="campVerdictClose" type="button" aria-label="Close">&#215;</button></div></div>
+</div>
       <div id="lensChips" class="chips" hidden></div>
       <div id="pad" class="pad" hidden>
         <button id="hideBtn" type="button">Hide / Swim</button>
@@ -3580,10 +3593,11 @@ function fit() {
   const area = $('roomArea');
   // The room keeps a margin for the "+" on each of its edges.
   const stage = (wide ? area.clientWidth - 2 * EDGE : $('stage').clientWidth - 2 * EDGE) || level.w * T;
-  // A phone in play gives the room everything between the header and the play buttons.
+  // A phone in play gives the room everything between the header and the play buttons; in a level
+  // the room keeps its edit size instead, so nothing moves when the mode changes (register 222).
   const below = $('pad').hidden ? 0 : $('pad').offsetHeight + 16;
   const room = wide ? area.clientHeight - 2 * EDGE
-    : S.mode === 'play' ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
+    : S.mode === 'play' && !S.camp ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
       : area.clientHeight - 2 * EDGE;
   const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
   const k = (window.devicePixelRatio || 1) * zoom;
@@ -5393,8 +5407,7 @@ function buildCampaign(actions, sandbox) {
     $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}. A test does not count: Run judges the room.`;
     $('campVerdictText').onclick = null;
   });
-  $('campVerdictClose').onclick = () => { $('campVerdict').hidden = true; S.camp.verdictGone = true; };
-  // The verdict is read once: the next touch anywhere else puts it away; the card keeps the marks.
+  // The verdict is read once: the next touch anywhere else blanks it (its band keeps its place); the card keeps the marks.
   addEventListener('pointerdown', ev => {
     if (ev.target.closest('#campVerdict, .campReqs li.points')) return;
     $('campVerdict').hidden = true; if (S.camp) S.camp.verdictGone = true;
@@ -6620,7 +6633,7 @@ function setMode(m, keep) {
   $('pad').hidden = m !== 'play';
   $('win').hidden = true;
   resetStuck();
-  $('moves').textContent = m === 'play' ? 'Moves 0' : '';
+  $('moves').textContent = m === 'play' ? 'Moves 0' : '\u00a0';
   if (m === 'play') openSheet('build');
   // On a phone, play takes the whole screen: the room is sized again without the editor.
   requestAnimationFrame(() => dispatchEvent(new Event('resize')));

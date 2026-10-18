@@ -74,7 +74,7 @@ try {
   await page.click('#campRun');
   await page.waitForTimeout(200);
   const lost = await verdict();
-  check('the verdict floats over the room and moves nothing', await page.locator('#campVerdict').isVisible() && (await box()) === before, before + ' / ' + await box());
+  check('the verdict shows in its band and moves nothing', await page.locator('#campVerdict').isVisible() && (await box()) === before, before + ' / ' + await box());
   check('a run too short marks the moves row', (await marks()).startsWith('steps:unmet'), await marks());
   check('an empty 5x5 is too short and says so', /takes at least 4 moves/.test(lost) && /Watch the robot/.test(lost), lost);
   check('the robot plays the failing path', await page.evaluate(() => document.getElementById('mode').textContent === 'Edit'), await page.locator('#mode').textContent());
@@ -103,9 +103,8 @@ try {
   const won = await verdict();
   check('a room in range wins and the card marks every row', /Made it in 4 moves/.test(won) && (await marks()).startsWith('steps:met') && (await page.locator('#campLast').textContent()) === 'won in 4', won + ' ' + await marks());
   check('a 5x5 win misses the 3x3 goal', (await marks()).endsWith('small:unmet,touchBlockFourTimes:unmet,mix:unmet'), await marks());
-  await page.click('#campVerdictClose');
-  check('the verdict closes', await page.locator('#campVerdict').isHidden());
-  // Without the close button: the next touch elsewhere puts it away; a touch on it keeps it.
+  check('the verdict has no close button: nothing to dismiss', await page.locator('#campVerdict button').count() === 0);
+  // The next touch elsewhere puts it away; a touch on it keeps it.
   if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
   await page.click('#campRun'); await page.waitForTimeout(200);
   await page.click('#campVerdictText');
