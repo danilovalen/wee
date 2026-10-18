@@ -32,6 +32,9 @@ try {
   check('the level list shows every level', rows.length >= 5 && rows[0] === '1', rows.join());
   const parts = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part).join()])));
   check('each level in the list shows the elements it uses', parts['1'] === 'block' && parts['5'] === 'block,box' && parts['6'] === 'block,box,toggle,door', JSON.stringify(parts));
+  const listing = await page.evaluate(() => { const rows = [...document.querySelectorAll('.campRow')]; return { cols: new Set(rows.map(r => Math.round(r.getBoundingClientRect().left))).size, said: rows.filter(r => /shortest path/i.test(r.textContent)).length }; });
+  check('the level list lays its levels out two to a row', listing.cols === 2, JSON.stringify(listing));
+  check('no level row repeats the 4-move rule', listing.said === 0, JSON.stringify(listing));
   await page.click('.campRow[data-level="1"]');
   check('a level hides the sandbox and shows its brief', await page.evaluate(() => document.body.classList.contains('campaign')) && await page.locator('#campBrief').isVisible());
   const tools = await visibleTools();

@@ -65,8 +65,6 @@ export function syncBrief() {
   const def = S.camp.def, v = S.camp.verdict;
   const ran = v && v.ok && v.length != null;
   const rows = [{ id: 'steps', parts: [rangeShort(def.steps)], text: stepsText(def.steps), met: ran ? v.inRange : null }];
-  if ((def.rules || []).includes('noBoxOnButton'))
-    rows.push({ id: 'noBoxOnButton', parts: ['no', { el: 'box' }, 'starts on a', { el: 'button' }], text: 'A box cannot start on a button.', met: v && !v.ok && v.errors.some(e => /box cannot start/.test(e.msg)) ? false : null });
   // A minimum of 2 or more is a goal of its own; a minimum of 1 goes without saying, since a
   // requirement already needs the piece (Run still names one that is missing).
   const { by } = placed(def, S.level);
@@ -134,7 +132,8 @@ export function enterLevel(id) {
   closeAll();
   S.camp = { def, verdict: null }; S.trail = null;
   const kept = rec && rec.room && unframe(rec.room);
-  S.level = kept && placementErrors(def, kept).every(e => /^(Place at least|Place the )/.test(e.msg)) ? kept : roomOf(def);
+  // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
+  S.level = kept && placementErrors(def, kept).every(e => /^(Place at least|Place the |Nothing can start)/.test(e.msg)) ? kept : roomOf(def);
   S.history = newHistory();
   S.ui.tool = 'look'; S.ui.colour = 'red';
   p.last = id; write(p);
@@ -198,7 +197,7 @@ function renderList() {
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten · optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}` : `${stepsText(def.steps)}`;
+    small.textContent = rec.beaten ? `Beaten · optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}` : '';
     // The elements the level hands you, as the palette draws them.
     const parts = document.createElement('span'); parts.className = 'campParts';
     for (const el of Object.keys(def.palette)) {

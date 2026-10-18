@@ -10,6 +10,8 @@ the conversation that day. Rulings are restated, not quoted, unless in quotes.
 
 - You do not solve the puzzle. **You build the room and a robot plays it.**
 - The robot plays **every shortest path**. A room passes only when all of them pass.
+- **Nothing starts on a button or a switch**, in any level: no box and not the robot (owner,
+  2026-10-18), so no level needs to say it.
 - **Every room needs at least 4 moves**, in every level: one rule for the whole campaign, the
   first line of the goal card (owner, 2026-10-18: *"a min 4 for EVERY level, the ultimate
   unquestionable minimum, high priority info"*). There is no most. Each level's former range
@@ -87,8 +89,8 @@ ones they had before.
 | 4 | block, switch 2 or more, door 1 or more | exactly 8 (optional) | through an open door; every switch off when the robot reaches the goal |
 | 5 | block, box 1 or more | exactly 8 (optional) | one box is pushed in at least 2 moves and the robot collides with it once without moving it |
 | 6 | block, box 1 or more, switch 1 or more, door 1 or more | exactly 7 (optional) | a box passes through an open door; the robot passes through an open door; only boxes flip switches |
-| 7 | block 0-10, box 1-2, button 1-1, door 1-1 | exactly 6 (optional) | a box cannot start on a button; through an open door |
-| 8 | as 7 | exactly 10 (optional) | a box cannot start on a button; through an open door; door closed at the end |
+| 7 | block 0-10, box 1-2, button 1-1, door 1-1 | exactly 6 (optional) | through an open door; every box off the button at the end |
+| 8 | as 7 | exactly 10 (optional) | through an open door; door closed at the end |
 
 Level 3 asked for exactly 2 switches until 2026-10-17; now 1 or more of each, with no maximum (owner: *"no limit. it already is an optimization exercise on cost"*). A palette maximum of `null` means no limit.
 

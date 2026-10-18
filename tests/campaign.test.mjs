@@ -94,7 +94,15 @@ const build = (def, rows) => {
   const lots = build(d3, ['']); for (let x = 1; x <= 5; x++) { lots.cells[2 * 7 + x] = 'toggle:red'; lots.cells[3 * 7 + x] = 'door:red'; }
   ok('a level with no maximum takes any number', placementErrors(d3, lots).length === 0, JSON.stringify(placementErrors(d3, lots)));
   const d4 = level('7'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
-  ok('a box cannot start on a button', placementErrors(d4, onButton).some(e => /box cannot start on a button/.test(e.msg)));
+  ok('a box cannot start on a button', placementErrors(d4, onButton).some(e => /Nothing can start on a button or a switch/.test(e.msg)));
+  const d6 = level('6'), onSwitch = build(d6, ['', '', '..t']); onSwitch.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
+  ok('a box cannot start on a switch, in any level', placementErrors(d6, onSwitch).some(e => /Nothing can start on a button or a switch/.test(e.msg)));
+  const robotOn = build(d6, ['', '', '..t']); robotOn.start = { x: 2, y: 2 };
+  ok('nor can the robot', placementErrors(d6, robotOn).some(e => /Nothing can start/.test(e.msg)));
+  const end7 = REQUIREMENTS.boxOffButtonAtEnd;
+  ok('box off the button at the end: met when the box has moved on', end7.judge(room(['#######', '#PBo..#', '#######']), ['right']) === true);
+  ok('box off the button at the end: not met when it rests there', end7.judge(room(['#####', '#PBo#', '#####']), ['right']) === false);
+  ok('no level carries the old box-on-button rule', LEVELS.every(l => !(l.rules || []).includes('noBoxOnButton')));
 }
 { // the robot finds every shortest path
   const open = room(['#####', '#P..#', '#...#', '#..G#', '#####']);
@@ -240,7 +248,7 @@ const build = (def, rows) => {
 }
 { // every level's room-size goal is reachable: the smallest winning room tools/tilesArea.mjs found
   const SMALL = { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
-    5: ['....', '..BP', '.#..', '.G..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['..P', 'GD.', 'oB.'], 8: ['.G.oP', '....D', '.....', '...B.', '....#'] };
+    5: ['....', '..BP', '.#..', '.G..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.D.', 'oBP', '...', 'G..', '...'], 8: ['.G.oP', '....D', '.....', '...B.', '....#'] };
   for (const l of LEVELS) {
     const v = check(l, build(l, SMALL[l.id]));
     // Mix holds where one room meets two goals at once: level 5's smallest room also takes exactly 8.
@@ -264,7 +272,8 @@ const build = (def, rows) => {
     4: ['Pt.tD', '.#...', '.....', '###.#', '.#..G'],
     5: WIN5,
     6: ['P....', '....B', 'B..#t', 'D.#.#', '....G'],
-    7: ['P.#.B', '...#.', '..B.o', '.#..D', '#..#G'],
+    // His room (2026-10-18): won in 4, the box ends off the button.
+    7: ['.....', '..P..', '..B..', '...D.', '.Go..', '..#.#', '.....'],
     8: ['P.o..', '..B.D', '...##', '#.###', '#...G'],
   };
   ok('there is a known winning room for every level', LEVELS.every(l => WINS[l.id]), LEVELS.map(l => l.id).join());

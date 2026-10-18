@@ -25,14 +25,13 @@
  "steps": {
   "best": 6
  },
- "rules": [
-  "noBoxOnButton"
- ],
+ "rules": [],
  "require": [
-  "throughOpenDoor"
+  "throughOpenDoor",
+  "boxOffButtonAtEnd"
  ],
  "small": [
   3,
-  3
+  5
  ]
 }

@@ -42,6 +42,7 @@ export function placed(def, room) {
 // An element's name in lower case, plural unless there is one: switch, switches.
 export const nameOf = (el, n) => { const w = ELEMENTS[el].label.toLowerCase(); return n === 1 ? w : /(s|sh|ch|x)$/.test(w) ? w + 'es' : w + 's'; };
 
+export const START_ON = 'Nothing can start on a button or a switch.';
 // Why the room cannot be run yet: each is { msg, at? }. Empty when it can.
 export function placementErrors(def, room) {
   const errs = [], { by, stray } = placed(def, room);
@@ -56,8 +57,10 @@ export function placementErrors(def, room) {
     if (list.length < min) errs.push({ msg: `Place at least ${min} ${nameOf(el, min)}.` });
     if (max !== null && list.length > max) errs.push({ msg: max ? `Place at most ${max} ${nameOf(el, max)}.` : `This level has no ${nameOf(el, 2)}.` });
   }
-  if ((def.rules || []).includes('noBoxOnButton'))
-    for (const e of room.entities) if (e.kind === 'box' && room.cells[e.y * room.w + e.x].startsWith('button:')) errs.push({ msg: 'A box cannot start on a button.', at: e.y * room.w + e.x });
+  // Nothing starts on a button or a switch, in every level: no box, and not the robot.
+  const under = (x, y) => /^(button|toggle):/.test(room.cells[y * room.w + x] || '');
+  for (const e of room.entities) if (under(e.x, e.y)) errs.push({ msg: START_ON, at: e.y * room.w + e.x });
+  if (room.start && under(room.start.x, room.start.y)) errs.push({ msg: START_ON, at: room.start.y * room.w + room.start.x });
   return errs;
 }
 

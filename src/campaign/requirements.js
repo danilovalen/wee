@@ -87,6 +87,14 @@ export const REQUIREMENTS = {
       return Object.values(touches).some(n => n >= 4);
     },
   },
+  boxOffButtonAtEnd: {
+    text: 'Every box is off its button when the robot reaches the goal.',
+    short: ['every', { el: 'box' }, 'off the', { el: 'button' }, 'at the end'],
+    judge: (room, moves) => {
+      const end = replayPath(room, moves, () => {});
+      return end.entities.filter(e => !e.dead && e.kind === 'box').every(e => !(room.cells[e.y * room.w + e.x] || '').startsWith('button:'));
+    },
+  },
   doorClosedAtEnd: {
     text: 'Every door is closed when the robot reaches the goal.',
     short: ['every', { el: 'door' }, 'closed at the end'],

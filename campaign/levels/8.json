@@ -25,9 +25,7 @@
  "steps": {
   "best": 10
  },
- "rules": [
-  "noBoxOnButton"
- ],
+ "rules": [],
  "require": [
   "throughOpenDoor",
   "doorClosedAtEnd"
