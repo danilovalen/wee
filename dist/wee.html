@@ -3449,11 +3449,12 @@ function grip(b, after) {
     band.textContent = n > 0 ? '+' + n : '\u2212' + -n;
     band.hidden = n === 0;
   };
-  b.addEventListener('pointerdown', ev => { from = { x: ev.clientX, y: ev.clientY, moved: false }; n = 0; b.setPointerCapture(ev.pointerId); ev.preventDefault(); });
+  b.addEventListener('pointerdown', ev => { from = { x: ev.clientX, y: ev.clientY, moved: false, far: 0 }; n = 0; b.setPointerCapture(ev.pointerId); ev.preventDefault(); });
   b.addEventListener('pointermove', ev => {
     if (!from) return;
     const [ux, uy] = OUT[side], d = (ev.clientX - from.x) * ux + (ev.clientY - from.y) * uy;
     if (Math.abs(d) > 6) from.moved = true;
+    from.far = Math.max(from.far, Math.abs(d));
     if (!from.moved) return;
     n = Math.round(d / tile()) || 0;
     while (n && !keeps(moveSide(S.level, side, n))) n -= Math.sign(n);
@@ -3461,7 +3462,8 @@ function grip(b, after) {
   });
   const done = ev => {
     if (!from) return;
-    const k = from.moved ? n : 1; from = null; band.hidden = true;
+    // A press that never went half a tile is a tap, however much the finger drifted.
+    const k = from.far >= tile() / 2 ? n : 1; from = null; band.hidden = true;
     if (!k || ev.type === 'pointercancel') return;
     const l = moveSide(S.level, side, k);
     if (!keeps(l)) return;

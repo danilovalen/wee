@@ -34,6 +34,22 @@ try {
     document.body.dispatchEvent(new PointerEvent('pointerup', { ...o, clientX: x - 120, clientY: y }));
   }, at);
   check('a release off the grip ends the drag', (await shown()) === 0);
+  // A finger's tap drifts: a press that moves under half a tile still adds a line; a real drag
+  // that comes back to where it started changes nothing.
+  const press = (moves) => page.evaluate(([x, y, moves]) => {
+    const b = document.querySelector('[data-plus="right"]'), o = { pointerId: 10, bubbles: true, isPrimary: true, pointerType: 'touch' };
+    b.dispatchEvent(new PointerEvent('pointerdown', { ...o, clientX: x, clientY: y }));
+    for (const dx of moves) b.dispatchEvent(new PointerEvent('pointermove', { ...o, clientX: x + dx, clientY: y + 3 }));
+    b.dispatchEvent(new PointerEvent('pointerup', { ...o, clientX: x + moves.at(-1), clientY: y + 3 }));
+  }, [...at, moves]);
+  const width = () => page.evaluate(() => window.wee.getLevel().w);
+  const w0 = await width();
+  await press([4, 9, 14]);
+  check('a tap that drifts a little still adds a line', (await width()) === w0 + 1, `${w0} -> ${await width()}`);
+  const tile = await page.evaluate(() => document.getElementById('game').getBoundingClientRect().width / window.wee.getLevel().w);
+  const w1 = await width();
+  await press([tile * 0.5, tile * 1.2, tile * 0.6, 2]);
+  check('a drag that comes back to its start changes nothing', (await width()) === w1, `${w1} -> ${await width()}`);
 } finally {
   await browser.close();
   server.close();

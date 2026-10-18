@@ -494,7 +494,7 @@ const M = [
   ['src/level/format.js', "  if (!clear || l.entities.some(at)) return null;", "  if (l.entities.some(at)) return null;", 'size'],
   ['src/level/format.js', "const wall = bordered(l, side), k = wall ?", "const wall = false, k = wall ?", 'size'],
   ['src/level/format.js', "  if (!bordered(l, side)) return resizeSide(l, side, 1);", "  return resizeSide(l, side, 1);", 'size'],
-  ['src/app/size.js', "const k = from.moved ? n : 1;", "const k = 1;", 'browser'],
+  ['src/app/size.js', "const k = from.far >= tile() / 2 ? n : 1;", "const k = 1;", 'browser'],
   ['style.css', "  .grid button .lbl { display: none; }\n  .grid canvas { width: 28px; height: 28px; }", "  .grid canvas { width: 28px; height: 28px; }", 'phone'],
   ['src/app/fit.js', "    if (!wide) inside(el, sheet);\n", "", 'phone'],
   ['src/app/sheets.js', "  sheet.hidden = !name || name === 'build';", "  sheet.hidden = false;", 'phone'],
@@ -719,6 +719,8 @@ const M = [
   ['style.css', ".campMust { grid-template-columns: repeat(2, minmax(0, 1fr)); }", "", 'campaign-play'],
   ['src', "    const list = r.optional ? opt : must;", "    const list = must;", 'campaign-play'],
   ['style.css', ".sizeBand[hidden] { display: none; }", "", 'size-band'],
+  ['src/app/size.js', "const k = from.far >= tile() / 2 ? n : 1;", "const k = from.moved ? n : 1;", 'size-band'],
+  ['src/app/size.js', "const k = from.far >= tile() / 2 ? n : 1;", "const k = from.far >= 0 ? 1 : n;", 'size-band'],
   ['style.css', ".campVerdict { position: absolute;", ".campVerdict { position: relative;", 'campaign-play'],
 ];
 
