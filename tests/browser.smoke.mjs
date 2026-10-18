@@ -197,10 +197,10 @@ try {
   check('a key slide pushes the box to the wall', s.player.x === 7 && s.pieces[0].x === 8, JSON.stringify(s.player));
   await page.screenshot({ path: 'shots/play.png' });
 
-  // the painted player sits where the text state says
+  // the painted player sits where the text state says: sampled on the robot's body, below its visor
   const px = await page.evaluate(({ x, y }) => {
     const c = document.getElementById('game'), tile = c.width / window.wee.getLevel().w;
-    const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * tile), Math.round((y + 0.75) * tile), 1, 1).data;
+    const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * tile), Math.round((y + 0.62) * tile), 1, 1).data;
     return [d[0], d[1], d[2]];
   }, s.player);
   check('the player is painted on its tile', px[2] > 200 && px[2] - px[1] > 80 && px[0] < px[2] - 60, px.join(','));

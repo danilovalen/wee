@@ -95,6 +95,25 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
   g.restore();
 }
 
+// The robot, centred on 0,0 and about 20 across: antenna, body, visor with two eyes, feet.
+// Hidden, only its outline (dashed) and its eyes show.
+export function drawRobot(g, hidden = false) {
+  g.save(); g.scale(0.5, 0.5); g.translate(-26, -27);
+  const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); };
+  if (!hidden) {
+    g.strokeStyle = INK.robotDark; g.lineWidth = 3; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(26, 6); g.lineTo(26, 13); g.stroke();
+    g.fillStyle = INK.robotTip; g.beginPath(); g.arc(26, 5, 3.5, 0, Math.PI * 2); g.fill();
+    g.fillStyle = INK.robotDark; rr(15, 41, 7, 6, 2); g.fill(); rr(30, 41, 7, 6, 2); g.fill();
+    g.fillStyle = INK.player; rr(9, 13, 34, 28, 9); g.fill();
+    g.fillStyle = INK.robotVisor; rr(14, 19, 24, 12, 6); g.fill();
+  } else {
+    g.strokeStyle = INK.player; g.lineWidth = 3; g.setLineDash([5, 5]); rr(9, 13, 34, 28, 9); g.stroke(); g.setLineDash([]);
+  }
+  g.fillStyle = INK.robotEye; g.beginPath(); g.arc(21, 25, 3, 0, Math.PI * 2); g.arc(31, 25, 3, 0, Math.PI * 2); g.fill();
+  g.restore();
+}
+
 // Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
 // on top of you, so you can still be found. Swimming on land you wear a blue drop;
 // under water you waver, tinted, with a ripple.
@@ -110,10 +129,7 @@ export function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false,
     g.globalAlpha = alpha * 0.8;
     g.translate(w * 1.5, 0); g.scale(1 + 0.07 * w, 1 - 0.07 * w);
   }
-  if (hidden) {
-    g.strokeStyle = INK.player; g.lineWidth = 2; g.setLineDash([3, 3]);
-    g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
-  } else { g.fillStyle = INK.player; g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill(); }
+  drawRobot(g, hidden);
   if (armored) {
     // A steel rim with four rivets.
     g.strokeStyle = INK.armor; g.lineWidth = 3.5;
@@ -121,7 +137,6 @@ export function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false,
     g.fillStyle = '#e8eef6';
     for (const a of [0.25, 0.75, 1.25, 1.75]) { g.beginPath(); g.arc(Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6, 0, Math.PI * 2); g.fill(); }
   }
-  g.fillStyle = '#0b2a2c'; g.beginPath(); g.arc(-3.5, -2, 2.2, 0, Math.PI * 2); g.arc(3.5, -2, 2.2, 0, Math.PI * 2); g.fill();
   if (sticky) {
     // Goo on top, dripping from the bottom.
     g.fillStyle = INK.goo;

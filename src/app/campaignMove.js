@@ -36,10 +36,22 @@ export function moveRefusal(level, from, to) {
 // Says why a tap was refused, on the tile, for a moment; the room does not change.
 export function refuse(x, y, why) {
   S.fx.push({ type: 'refuse', x, y, at: now() });
+  say(x, y, why);
+}
+
+// A line on a tile, for a moment.
+export function say(x, y, why, ms = 1500) {
   const tip = $('campTip'), c = $('game'), w = $('roomWrap').getBoundingClientRect(), r = c.getBoundingClientRect();
   tip.textContent = why;
   tip.style.left = `${r.left - w.left + (x + 0.5) * r.width / S.level.w}px`;
   tip.style.top = `${r.top - w.top + y * r.height / S.level.h}px`;
   tip.hidden = false;
-  clearTimeout(refuse.t); refuse.t = setTimeout(() => { tip.hidden = true; }, 1500);
+  clearTimeout(say.t); say.t = setTimeout(() => { tip.hidden = true; }, ms);
+}
+
+// The first one-way placed in a level says how to turn it; once per browser.
+const TURN_HINT = 'wee.hint.turnOneWay';
+export function hintTurn(x, y) {
+  try { if (localStorage.getItem(TURN_HINT)) return; localStorage.setItem(TURN_HINT, '1'); } catch { /* no storage: say it every time */ }
+  say(x, y, 'Tap it again to turn it.', 3000);
 }

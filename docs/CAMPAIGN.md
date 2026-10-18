@@ -91,6 +91,10 @@ ones they had before.
 | 6 | block, box 1 or more, switch 1 or more, door 1 or more | exactly 7 (optional) | a box passes through an open door; the robot passes through an open door; only boxes flip switches |
 | 7 | block 0-10, box 1-2, button 1-1, door 1-1 | exactly 6 (optional) | through an open door; every box off the button at the end |
 | 8 | as 7 | exactly 10 (optional) | through an open door; door closed at the end |
+| 9 | block, one-way 2 or more | exactly 8 (optional, provisional); 3×5 or smaller | the robot goes through every one-way; the robot collides with every one-way |
+| 10 | block, box 1 or more, one-way 1 or more | exactly 13 (optional, provisional); 8×6 or smaller | a box goes through a one-way; the same box collides with a one-way twice |
+
+**One-ways (levels 9 and 10, owner 2026-10-18).** Placed pointing right; a tap on one with its tool turns it a quarter clockwise (the first time, a tip on the tile says so). *Through* is entering along the arrow and leaving off the far side; stopping on it is not through. *Colliding* is a slide stopped by a one-way from any direction it does not let through, head-on or from the side. A box never slides by itself: the robot pushes it tile by tile, and the box collides when a push ends with a one-way stopping it, counted only when the box moved in that push. Exact counts for 9 and 10 are mine, each proven by a known win in `tests/campaign.test.mjs`, and wait for his numbers; size goals are the smallest wins `tools/tilesArea.mjs` found (found, not proven). "A box ends on a one-way" is reachable on level 10 (a 33-move 9×9 win) and is not a goal yet.
 
 Level 3 asked for exactly 2 switches until 2026-10-17; now 1 or more of each, with no maximum (owner: *"no limit. it already is an optimization exercise on cost"*). A palette maximum of `null` means no limit.
 

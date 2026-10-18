@@ -279,6 +279,21 @@ try {
   const fit = await phone.evaluate(() => { const d = document.documentElement, g = document.getElementById('palette'); return { page: [d.scrollWidth, d.clientWidth, d.scrollHeight, d.clientHeight], grid: [g.scrollWidth, g.clientWidth, getComputedStyle(g).overflowX] }; });
   check('on a phone the page never scrolls; the palette row does', fit.page[0] === fit.page[1] && fit.page[2] === fit.page[3] && fit.grid[2] === 'auto', JSON.stringify(fit));
   await phone.close();
+  // Level 9: a one-way is placed pointing right, and a tap on it with its tool turns it; the robot is drawn as a robot.
+  const nine = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  nine.on('pageerror', e => errors.push(e.message));
+  await nine.goto('http://localhost:5217/');
+  await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="9"]'); await nine.click('[data-tool="gate"]');
+  const gb = await nine.locator('#game').boundingBox(), gt = gb.width / 7, gateAt = () => nine.evaluate(() => window.wee.getLevel().cells[3 * 7 + 3]);
+  await nine.mouse.click(gb.x + 3.5 * gt, gb.y + 3.5 * gt); const g1 = await gateAt();
+  const hint = await nine.evaluate(() => { const t = document.getElementById('campTip'); return t.hidden ? '' : t.textContent; });
+  check('the first one-way placed says a tap turns it', hint === 'Tap it again to turn it.', hint);
+  await nine.mouse.click(gb.x + 3.5 * gt, gb.y + 3.5 * gt); const g2 = await gateAt();
+  check('a one-way goes down pointing right, and a tap on it turns it a quarter clockwise', g1 === 'gate:right' && g2 === 'gate:down', g1 + ' ' + g2);
+  // The robot's antenna tip is the one pink on its tile.
+  const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 230 && d[i + 1] > 90 && d[i + 1] < 130 && d[i + 2] > 110 && d[i + 2] < 150) n++; return n; });
+  check('the start is drawn as the robot (its antenna tip shows)', tip > 3, String(tip));
+  await nine.close();
   check('no page errors', errors.length === 0, errors.join(' | '));
 } finally {
   await browser.close();

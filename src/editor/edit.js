@@ -60,6 +60,12 @@ function swapAt(level, from, to) {
   return put(a, to) && put(b, from) ? l : null;
 }
 
+// Turns a one-way a quarter clockwise, every direction it lets through.
+export function turnGate(level, x, y) {
+  const i = idx(level, x, y), dirs = level.cells[i].slice(5).split(',');
+  level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',');
+}
+
 export function holds(level, x, y, tool) {
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;

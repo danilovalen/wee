@@ -2,7 +2,7 @@
 // ingredients share it.
 import { emptyLevel } from '../level/format.js';
 import { T, INK } from '../view/ink.js';
-import { drawPiece } from '../view/pieces.js';
+import { drawPiece, drawRobot } from '../view/pieces.js';
 import { drawEdit } from '../view/scene.js';
 
 export function icon(tool, colour = 'red') {
@@ -31,7 +31,7 @@ export function icon(tool, colour = 'red') {
   } else if (tool === 'erase') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
   } else if (tool === 'start') {
-    x.fillStyle = INK.player; x.beginPath(); x.arc(16, 16, 10, 0, Math.PI * 2); x.fill();
+    x.save(); x.translate(16, 16); x.scale(1.3, 1.3); drawRobot(x); x.restore();
   } else if (tool === 'turret') drawPiece(x, { kind: 'turret', turret: { dirs: ['up', 'right'], mode: 'input' } }, 0, 0);
   // Two ingredients that are a tool with a twist: a turret riding a box, a block that copies you.
   else if (tool === 'mounted') drawPiece(x, { kind: 'box', turret: { dirs: ['up'], mode: 'input' } }, 0, 0);

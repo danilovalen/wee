@@ -6,6 +6,7 @@ import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { allShortest } from '../src/campaign/robot.js';
 
 const CELL = { block: 'wall', toggle: 'toggle:red', door: 'door:red', button: 'button:red' };
+const DIRS = ['up', 'right', 'down', 'left'];
 const D4 = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
 export function searcher(def, seed = 1) {
@@ -15,8 +16,9 @@ export function searcher(def, seed = 1) {
     const r = roomOf({ ...def, size: [g.w, g.h] });
     r.cells.fill(''); r.start = { ...g.start };
     r.cells[g.goal.y * g.w + g.goal.x] = 'goal';
-    for (const [el, x, y] of g.items) {
-      if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
+    for (const [el, x, y, d] of g.items) {
+      if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right');
+      else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
       else r.cells[y * g.w + x] = CELL[el];
     }
     return r;
@@ -26,7 +28,7 @@ export function searcher(def, seed = 1) {
     for (let t = 0; t < 50; t++) { const x = Math.floor(rnd() * g.w), y = Math.floor(rnd() * g.h); if (!taken(g, x, y)) return [x, y]; }
     return null;
   }
-  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push([el, ...f]); };
+  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push(el === 'gate' ? [el, ...f, pick(DIRS)] : [el, ...f]); };
   function random() {
     const w = 4 + Math.floor(rnd() * 5), h = 4 + Math.floor(rnd() * 5);
     const g = { w, h, start: { x: Math.floor(rnd() * w), y: Math.floor(rnd() * h) }, goal: null, items: [] };
@@ -43,7 +45,7 @@ export function searcher(def, seed = 1) {
   }
   function mutate(g0) {
     const g = structuredClone(g0), r = rnd(), els = Object.keys(def.palette);
-    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; }
+    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if (it[0] === 'gate' && rnd() < 0.5) it[3] = pick(DIRS); }
     else if (r < 0.5) add(g, pick(els));
     else if (r < 0.65 && g.items.length) {
       const i = Math.floor(rnd() * g.items.length), [el] = g.items[i];
@@ -75,7 +77,7 @@ export function searcher(def, seed = 1) {
     const c = r.cells[y * r.w + x];
     if (r.start.x === x && r.start.y === y) return 'P';
     if (r.entities.some(e => e.x === x && e.y === y)) return 'B';
-    return c === 'wall' ? '#' : c === 'goal' ? 'G' : c.startsWith('toggle') ? 't' : c.startsWith('door') ? 'D' : c.startsWith('button') ? 'o' : '.';
+    return c === 'wall' ? '#' : c.startsWith('gate:') ? { up: '^', right: '>', down: 'v', left: '<' }[c.slice(5)] : c === 'goal' ? 'G' : c.startsWith('toggle') ? 't' : c.startsWith('door') ? 'D' : c.startsWith('button') ? 'o' : '.';
   }).join('')).join(' ');
   return { random, mutate, penalty, make, show };
 }

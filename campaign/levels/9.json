@@ -1,0 +1,29 @@
+{
+ "name": "Level 9",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "gate": [
+   2,
+   null
+  ]
+ },
+ "steps": {
+  "best": 8
+ },
+ "rules": [],
+ "require": [
+  "robotThroughEveryOneWay",
+  "robotHitsEveryOneWay"
+ ],
+ "small": [
+  3,
+  5
+ ]
+}

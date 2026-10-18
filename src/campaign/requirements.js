@@ -1,6 +1,7 @@
 // What a level can require of the robot's shortest paths, each judged on one path from every
 // tick of its replay; and a path drawn on its room. All copy is draft.
 import { replayPath } from './robot.js';
+import { ONE_WAY_REQUIREMENTS } from './oneWay.js';
 
 
 // What each move of a path did to each box: a push slides it at least one tile; a hit is a
@@ -162,7 +163,7 @@ Object.assign(REQUIREMENTS, {
     short: ['every', { el: 'toggle' }, 'on, then off'],
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.onOff.has(i)); },
   },
-});
+}, ONE_WAY_REQUIREMENTS);
 
 // A path drawn on its room: where the robot is after each move, and each box's places in order.
 export function trailOf(room, moves) {

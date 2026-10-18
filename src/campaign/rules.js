@@ -11,7 +11,10 @@ export const ELEMENTS = {
   door: { label: 'Door', cell: 'door:red' },
   box: { label: 'Box', piece: 'box' },
   toggle: { label: 'Switch', cell: 'toggle:red' },
+  // Placed pointing right; a tap on one with its tool turns it. Any direction is the same element.
+  gate: { label: 'One-way', cell: 'gate:right', kind: 'gate:' },
 };
+const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind));
 
 // The level's room: empty at its starting size, with no border (the room's edge stops the
 // robot like a wall), the start one diagonal step in from the top left corner and the goal one
@@ -29,7 +32,7 @@ export function placed(def, room) {
   const out = Object.fromEntries(Object.keys(ELEMENTS).map(k => [k, []])), stray = [];
   room.cells.forEach((c, i) => {
     if (!c || c === 'goal') return;
-    const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].cell === c);
+    const el = Object.keys(ELEMENTS).find(k => isEl(k, c));
     if (el) out[el].push(i); else stray.push(i);
   });
   for (const e of room.entities) {

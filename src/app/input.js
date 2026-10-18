@@ -1,5 +1,5 @@
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
-import { describe, holds, place } from '../editor/edit.js';
+import { describe, holds, place, turnGate } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch, now } from './dom.js';
 import { setMode, aim } from './play.js';
@@ -11,7 +11,7 @@ import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
 import { toolForKey, bareKey, showKeys } from './keys.js';
 import { TOOLS } from '../editor/palette.js';
-import { refusal, moveRefusal, moveIn, refuse } from './campaignMove.js';
+import { refusal, moveRefusal, moveIn, refuse, hintTurn } from './campaignMove.js';
 
 function cellFromEvent(ev) {
   const r = canvas.getBoundingClientRect(), level = S.level;
@@ -65,9 +65,12 @@ export function bindInput() {
     // Move: press on a thing, release on the tile it goes to; the outline shows where.
     if (S.ui.tool === 'move') { canvas.setPointerCapture(ev.pointerId); S.carry = c; S.hover = c; return; }
     begin();
+    // In a level, a tap with the one-way tool on a one-way turns it; Erase takes it away.
+    if (S.camp && S.ui.tool === 'gate' && ev.button !== 2 && holds(S.level, c.x, c.y, 'gate')) { turnGate(S.level, c.x, c.y); end(); return; }
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
     paint(c.x, c.y, S.painting, true);
+    if (S.camp && S.ui.tool === 'gate' && S.painting === 'place' && holds(S.level, c.x, c.y, 'gate')) hintTurn(c.x, c.y);
   });
   canvas.addEventListener('pointermove', ev => {
     if (S.mode === 'play') return;

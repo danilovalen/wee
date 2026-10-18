@@ -30,6 +30,7 @@ const build = (def, rows) => {
     if (c === 't') r.cells[i] = 'toggle:red';
     if (c === 'D') r.cells[i] = 'door:red';
     if (c === 'o') r.cells[i] = 'button:red';
+    if ('^>v<'.includes(c)) r.cells[i] = 'gate:' + { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c];
     if (c === 'G') { r.cells[i] = 'goal'; goal = true; }
     if (c === 'P') r.start = { x, y };
     if (c === 'B') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
@@ -246,9 +247,29 @@ const build = (def, rows) => {
   ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.el === 'start' || ELEMENTS[p.el])));
   ok('collides, not runs into', /collides with/.test(REQUIREMENTS.hitsClosedDoor.text) && !/runs into/.test(REQUIREMENTS.hitsClosedDoor.text));
 }
+{ // one-ways: through is in along the arrow and out the far side; colliding is a slide stopped by
+  // one from any direction it does not let through
+  const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
+  ok('robot through every one-way: met when it slides across', req('robotThroughEveryOneWay', ['#######', '#P.>..#', '#######'], ['right']));
+  ok('robot through every one-way: not met when it stops on one', !req('robotThroughEveryOneWay', ['######', '#P.>#', '######'].map(r => r.slice(0, 5)), ['right']));
+  ok('robot through every one-way: not met when one is never crossed', !req('robotThroughEveryOneWay', ['#######', '#P.>..#', '#.....#', '#..v..#', '#######'], ['right']));
+  ok('robot collides with every one-way: met head on, against the arrow', req('robotHitsEveryOneWay', ['#######', '#..<.P#', '#######'].map(r => r.replace('<', '>')), ['left']));
+  ok('robot collides with every one-way: met from the side', req('robotHitsEveryOneWay', ['#####', '#.P.#', '#...#', '#.>.#', '#####'], ['down']));
+  ok('robot collides with every one-way: not met when it lets the robot through', !req('robotHitsEveryOneWay', ['#######', '#P.>..#', '#######'], ['right']));
+  ok('robot collides with every one-way: not met when a block stops it first', !req('robotHitsEveryOneWay', ['########', '#..>#.P#', '########'], ['left']));
+  ok('a box through a one-way: met when a pushed box crosses it', req('boxThroughOneWay', ['########', '#PB.>..#', '########'], ['right']));
+  ok('a box through a one-way: not met when only the robot crosses', !req('boxThroughOneWay', ['#######', '#P.>..#', '#B....#', '#######'], ['right']));
+  ok('a box collides with a one-way twice: one hit is not enough', !req('boxHitsOneWayTwice', ['#######', '#.<.BP#', '#######'].map(r => r.replace('<', '>')), ['left']));
+  // From a level 10 win the search found: the same box is pushed into a one-way twice, moving each time.
+  const twice = '....P. #.B#.. .B>.B. ....G. ....v. ...<.. .B.B.. ..B... ....^. .B....'.split(' ');
+  ok('a box collides with a one-way twice: the same box, moving into it each time', req('boxHitsOneWayTwice', twice, ['down@5:up', 'left', 'down', 'right', 'up@2:down', 'left', 'up@1:down', 'left', 'up', 'right']));
+  ok('a box collides with a one-way: not when the box is already against it and does not move', !req('boxHitsOneWayTwice', ['########', '#.>..BP#', '########'], ['left', 'right', 'left']));
+  ok('a box ends on a one-way: met when it stops on one', req('boxStuckOnOneWay', ['#######', '#PB.>#', '#######'].map(r => r.slice(0, 6)), ['right']));
+}
 { // every level's room-size goal is reachable: the smallest winning room tools/tilesArea.mjs found
   const SMALL = { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
-    5: ['....', '..BP', '.#..', '.G..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.D.', 'oBP', '...', 'G..', '...'], 8: ['.G.oP', '....D', '.....', '...B.', '....#'] };
+    5: ['....', '..BP', '.#..', '.G..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.D.', 'oBP', '...', 'G..', '...'], 8: ['.G.oP', '....D', '.....', '...B.', '....#'],
+    9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..v.....', '........', '.......<', '..^.B...', '......G.', '...<B..P'] };
   for (const l of LEVELS) {
     const v = check(l, build(l, SMALL[l.id]));
     // Mix holds where one room meets two goals at once: level 5's smallest room also takes exactly 8.
@@ -275,11 +296,16 @@ const build = (def, rows) => {
     // His room (2026-10-18): won in 4, the box ends off the button.
     7: ['.....', '..P..', '..B..', '...D.', '.Go..', '..#.#', '.....'],
     8: ['P.o..', '..B.D', '...##', '#.###', '#...G'],
+    // Found by tools/levelSearch.mjs (2026-10-18): 8 moves, level 9's exact count.
+    9: ['...#.', '..<..', '.G..P', '.#...', 'v....', '....#', '.....', '.....', '.....'],
+    // Found by search: 13 moves, level 10's exact count; the same box is pushed into a one-way twice.
+    10: ['....P.', '#.B#..', '.B>.B.', '....G.', '....v.', '...<..', '.B.B..', '..B...', '....^.', '.B....'],
   };
   ok('there is a known winning room for every level', LEVELS.every(l => WINS[l.id]), LEVELS.map(l => l.id).join());
   for (const l of LEVELS) {
     const v = WINS[l.id] && check(l, build(l, WINS[l.id]));
     ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
+    if (['9', '10'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
     ok(`level ${l.id}'s win marks every row of its goal card met`, v && v.inRange && (l.require || []).every(id => v.reqs[id] === true), JSON.stringify(v && v.reqs));
   }
 }
