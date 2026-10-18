@@ -734,6 +734,7 @@ const M = [
   ['src', "      return Object.values(touches).some(n => n >= 4);", "      return Object.values(touches).some(n => n >= 3);", 'campaign'],
   ['src', "    if (!S.camp || !S.camp.testing) return;", "    return;", 'campaign-play'],
   ['src', "dispatchEvent(new CustomEvent('wee:win', { detail: { moves: e.moves } }));", "", 'campaign-play'],
+  ['src', "  out.hidden = !v || S.camp.verdictGone;", "  out.hidden = !v;", 'campaign-play'],
   ['style.css', ".campMust { grid-template-columns: repeat(2, minmax(0, 1fr)); }", "", 'campaign-play'],
   ['src', "    const list = r.optional ? opt : must;", "    const list = must;", 'campaign-play'],
   ['style.css', ".sizeBand[hidden] { display: none; }", "", 'size-band'],

@@ -460,6 +460,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .campMust { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .campMust li[data-req="steps"] { grid-column: 1 / -1; font-size: 1.08em; }
 .campOpt { margin-top: 6px; padding-top: 6px; box-shadow: inset 0 1px 0 var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.campLabel { margin: 0 0 4px; font-size: 0.75em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
 .campOpt::before { content: attr(data-label); font-size: 0.75em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
 .campReqs li { display: flex; align-items: flex-start; gap: 5px; min-height: 22px; font-weight: 700; line-height: 1.3; }
 .campReqs .words { padding-top: 1px; }

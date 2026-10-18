@@ -83,7 +83,7 @@ export function syncBrief() {
   // What a level requires, two to a line; what it only rewards, apart beneath.
   const must = document.createElement('ul'); must.className = 'campReqs campMust';
   const opt = document.createElement('ul'); opt.className = 'campReqs campOpt';
-  opt.dataset.label = 'Optional';
+  opt.dataset.label = 'Optional goals';
   for (const r of rows) {
     const list = r.optional ? opt : must;
     const li = document.createElement('li'); li.dataset.req = r.id; li.title = r.text;
@@ -96,11 +96,13 @@ export function syncBrief() {
     li.append(mark, words(r.parts));
     list.append(li);
   }
-  card.append(head, must, opt);
+  const label = Object.assign(document.createElement('p'), { className: 'campLabel', textContent: 'Goals' });
+  card.append(head, label, must, opt);
   $('campBrief').replaceChildren(card);
   // The verdict's words, over the room.
   const out = $('campVerdict');
-  out.hidden = !v;
+  // A message the player put away stays away until the next Run, however often the card redraws.
+  out.hidden = !v || S.camp.verdictGone;
   if (!v) return;
   out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
   $('campVerdictText').textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
@@ -116,7 +118,7 @@ export function syncBrief() {
 // Draws on the room one shortest path that missed a goal, and says which goal.
 function showTrail(row, path) {
   A.setMode('edit');
-  S.trail = trailOf(S.level, path); S.camp.trailOf = row.id; S.redraw = true;
+  S.trail = trailOf(S.level, path); S.camp.trailOf = row.id; S.camp.verdictGone = false; S.redraw = true;
   syncBrief();
   const out = $('campVerdict');
   out.className = 'campVerdict lost'; out.hidden = false;
@@ -159,6 +161,7 @@ function flashStuck(v) { for (const t of stuckAt(v)) S.fx.push({ type: 'flash', 
 export function run() {
   if (!S.camp) return null;
   const def = S.camp.def, v = check(def, S.level);
+  S.camp.verdictGone = false;
   S.camp.verdict = v;
   save();
   if (v.ok && v.won) {
@@ -231,7 +234,7 @@ export function buildCampaign(actions, sandbox) {
   $('campBack').onclick = () => { leaveLevel(); openList(); };
   $('campRun').onclick = () => { S.camp.testing = false; run(); };
   // Test: the room played by hand, the robot not involved; nothing is judged or saved.
-  $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.testing = true; A.setMode('play'); };
+  $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.verdictGone = true; S.camp.testing = true; A.setMode('play'); };
   addEventListener('wee:win', ev => {
     if (!S.camp || !S.camp.testing) return;
     const out = $('campVerdict');
@@ -239,11 +242,11 @@ export function buildCampaign(actions, sandbox) {
     $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}. A test does not count: Run judges the room.`;
     $('campVerdictText').onclick = null;
   });
-  $('campVerdictClose').onclick = () => { $('campVerdict').hidden = true; };
+  $('campVerdictClose').onclick = () => { $('campVerdict').hidden = true; S.camp.verdictGone = true; };
   // The verdict is read once: the next touch anywhere else puts it away; the card keeps the marks.
   addEventListener('pointerdown', ev => {
     if (ev.target.closest('#campVerdict, .campReqs li.points')) return;
-    $('campVerdict').hidden = true;
+    $('campVerdict').hidden = true; if (S.camp) S.camp.verdictGone = true;
     clearTrail();
   }, true);
   // A change to the room clears the last verdict and is kept for next time.
