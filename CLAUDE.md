@@ -43,3 +43,4 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
 - Every playtest report gets a numbered item in `docs/REGISTER.md` and closes with an outcome.
 - Menus are full pages, never a box over the game (owner, 2026-10-18, row 220). A ruling about one screen covers every screen of its kind: ask before treating it as narrower.
 - Nothing moves when the mode changes: the room keeps its place and size from Edit to Run to Test and back (owner, 2026-10-18, row 222).
+- When a rule changes, re-derive every number measured under the old one (size goals, exact counts, "no win found"), and say which ones moved (row 225).
