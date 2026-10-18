@@ -442,7 +442,7 @@ body.campaign #groups, body.campaign .ghead, body.campaign #options, body.campai
 body.campaign #wellBtn, body.campaign #sizeBtn, body.campaign #well, body.campaign #win, body.campaign #stuck,
 body.campaign #checkText, body.campaign #showSolution, body.campaign #lintBox, body.campaign #designBox,
 body.campaign #hideBtn, body.campaign #respawnBtn, body.campaign #reportBtn, body.campaign #phoneNav { display: none !important; }
-body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
+body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play #campTest { display: none; }
 .menu { text-align: center; min-width: 240px; }
 .menuLogo { display: block; font-size: 2.4em; margin: 8px 0 16px; }
 .menuList { display: grid; gap: 10px; }
@@ -467,6 +467,9 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
 .campReqs .met .mark { box-shadow: none; background: #dff3e7; color: #2e8b57; }
 .campReqs .unmet .mark { box-shadow: none; background: #fde3e0; color: #c0392b; }
 .campReqs .optional { color: var(--dim); font-weight: 600; }
+.campReqs li.points { cursor: pointer; }
+.campReqs li.points .words { text-decoration: underline dotted; text-underline-offset: 3px; }
+.campReqs li.shown { border-radius: var(--r-s); box-shadow: 0 0 0 2px var(--accent, #6b5cff); }
 .campReqs .optional:not(.met):not(.unmet) .mark { box-shadow: none; outline: 1.5px dashed var(--dim); outline-offset: -1.5px; }
 .campIcon { width: 18px; height: 18px; vertical-align: -4px; }
 body.campaign .roomArea { position: relative; }

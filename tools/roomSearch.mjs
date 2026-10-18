@@ -1,7 +1,8 @@
 // The room search shared by tools/levelSearch.mjs and tools/tilesArea.mjs. A genome is what a
 // player can vary: the room's size, where the start and the goal stand, and what goes in.
 // searcher(def, seed) returns its moves: random(), mutate(g), penalty(g), make(g), show(room).
-import { roomOf, placementErrors, REQUIREMENTS, bounds } from '../src/campaign/rules.js';
+import { roomOf, placementErrors, bounds } from '../src/campaign/rules.js';
+import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { allShortest } from '../src/campaign/robot.js';
 
 const CELL = { block: 'wall', toggle: 'toggle:red', door: 'door:red', button: 'button:red' };

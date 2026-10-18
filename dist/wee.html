@@ -459,7 +459,7 @@ body.campaign #groups, body.campaign .ghead, body.campaign #options, body.campai
 body.campaign #wellBtn, body.campaign #sizeBtn, body.campaign #well, body.campaign #win, body.campaign #stuck,
 body.campaign #checkText, body.campaign #showSolution, body.campaign #lintBox, body.campaign #designBox,
 body.campaign #hideBtn, body.campaign #respawnBtn, body.campaign #reportBtn, body.campaign #phoneNav { display: none !important; }
-body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
+body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play #campTest { display: none; }
 .menu { text-align: center; min-width: 240px; }
 .menuLogo { display: block; font-size: 2.4em; margin: 8px 0 16px; }
 .menuList { display: grid; gap: 10px; }
@@ -484,6 +484,9 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun { display: none; }
 .campReqs .met .mark { box-shadow: none; background: #dff3e7; color: #2e8b57; }
 .campReqs .unmet .mark { box-shadow: none; background: #fde3e0; color: #c0392b; }
 .campReqs .optional { color: var(--dim); font-weight: 600; }
+.campReqs li.points { cursor: pointer; }
+.campReqs li.points .words { text-decoration: underline dotted; text-underline-offset: 3px; }
+.campReqs li.shown { border-radius: var(--r-s); box-shadow: 0 0 0 2px var(--accent, #6b5cff); }
 .campReqs .optional:not(.met):not(.unmet) .mark { box-shadow: none; outline: 1.5px dashed var(--dim); outline-offset: -1.5px; }
 .campIcon { width: 18px; height: 18px; vertical-align: -4px; }
 body.campaign .roomArea { position: relative; }
@@ -508,6 +511,7 @@ body:not(.campaign) [data-camp] { display: none !important; }
     <button id="campBack" type="button" class="camp-only">Levels</button>
     <button id="mode" type="button" title="E">Play</button>
     <button id="campRun" type="button" class="camp-only primary">Run</button>
+    <button id="campTest" type="button" class="camp-only" title="Play your room by hand. A test is not judged.">Test</button>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
     <button id="checkBtn" type="button" data-edit>Check</button>
@@ -3617,7 +3621,7 @@ return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNE
 const m35 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"],"small":[3,4]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8},"rules":[],"require":["boxPushedTwiceHitOnce"],"small":[4,4]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":["noBoxOnButton"],"require":["throughOpenDoor"],"small":[3,3]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":10},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[5,5]}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"],"small":[3,4]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8},"rules":[],"require":["boxPushedTwiceHitOnce"],"small":[4,4]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":["noBoxOnButton"],"require":["throughOpenDoor"],"small":[3,3]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":10},"rules":["noBoxOnButton"],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[5,5]}];
 return { LEVELS };
 })();
 // ---- src/campaign/robot.js
@@ -3725,72 +3729,11 @@ function whyStuck(level, { max = MAX_STATES } = {}) {
 }
 return { shortestPaths, allShortest, replayPath, whyStuck };
 })();
-// ---- src/campaign/rules.js
+// ---- src/campaign/requirements.js
 const m37 = (() => {
-const { emptyLevel } = m9;
-const { allShortest, replayPath, whyStuck } = m36;
-// A campaign level: the room it gives you, what you may place and how many, and what the
-// robot's shortest paths must do. check() judges a room you built against it. All copy is draft.
-
-
-// What each palette element is in the room.
-const ELEMENTS = {
-  block: { label: 'Block', cell: 'wall' },
-  button: { label: 'Button', cell: 'button:red' },
-  door: { label: 'Door', cell: 'door:red' },
-  box: { label: 'Box', piece: 'box' },
-  toggle: { label: 'Switch', cell: 'toggle:red' },
-};
-
-// The level's room: empty at its starting size, with no border (the room's edge stops the
-// robot like a wall), the start one diagonal step in from the top left corner and the goal one
-// in from the bottom right. Both move freely.
-function roomOf(def) {
-  const [w, h] = def.size, l = emptyLevel(w, h);
-  for (const p of Object.keys(l.powers)) l.powers[p] = !!(def.powers || []).includes(p);
-  l.start = { x: 1, y: 1 };
-  l.cells[(h - 2) * w + w - 2] = 'goal';
-  return l;
-}
-
-// What you placed, by element; stray is anything the level's palette cannot have made.
-function placed(def, room) {
-  const out = Object.fromEntries(Object.keys(ELEMENTS).map(k => [k, []])), stray = [];
-  room.cells.forEach((c, i) => {
-    if (!c || c === 'goal') return;
-    const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].cell === c);
-    if (el) out[el].push(i); else stray.push(i);
-  });
-  for (const e of room.entities) {
-    const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].piece === e.kind), i = e.y * room.w + e.x;
-    if (el) out[el].push(i); else stray.push(i);
-  }
-  return { by: out, stray };
-}
-
-// An element's name in lower case, plural unless there is one: switch, switches.
-const nameOf = (el, n) => { const w = ELEMENTS[el].label.toLowerCase(); return n === 1 ? w : /(s|sh|ch|x)$/.test(w) ? w + 'es' : w + 's'; };
-
-// Why the room cannot be run yet: each is { msg, at? }. Empty when it can.
-function placementErrors(def, room) {
-  const errs = [], { by, stray } = placed(def, room);
-  for (const i of stray) errs.push({ msg: 'This level does not have that.', at: i });
-  if (!room.start) errs.push({ msg: 'Place the start.' });
-  const goals = room.cells.filter(c => c === 'goal').length;
-  if (!goals) errs.push({ msg: 'Place the goal.' });
-  if (goals > 1) errs.push({ msg: 'Place only one goal.' });
-  for (const [el, list] of Object.entries(by)) {
-    // A null maximum is no limit: cost is what keeps the count down.
-    const [min, max] = def.palette[el] || [0, 0];
-    if (list.length < min) errs.push({ msg: `Place at least ${min} ${nameOf(el, min)}.` });
-    if (max !== null && list.length > max) errs.push({ msg: max ? `Place at most ${max} ${nameOf(el, max)}.` : `This level has no ${nameOf(el, 2)}.` });
-  }
-  if ((def.rules || []).includes('noBoxOnButton'))
-    for (const e of room.entities) if (e.kind === 'box' && room.cells[e.y * room.w + e.x].startsWith('button:')) errs.push({ msg: 'A box cannot start on a button.', at: e.y * room.w + e.x });
-  return errs;
-}
-
-// Requirements on one shortest path, judged from every tick of its replay.
+const { replayPath } = m36;
+// What a level can require of the robot's shortest paths, each judged on one path from every
+// tick of its replay; and a path drawn on its room. All copy is draft.
 
 // What each move of a path did to each box: a push slides it at least one tile; a hit is a
 // slide of the robot (it moved) that ends against the box without moving it. Each move is replayed alone.
@@ -3856,6 +3799,24 @@ const REQUIREMENTS = {
         was = on;
       });
       return passes >= 2;
+    },
+  },
+  touchBlockFourTimes: {
+    text: 'The robot touches the same block 4 times.',
+    short: ['touch one', { el: 'block' }, '×4'],
+    // A touch is a slide that ends against a block, as a collision ends against a door.
+    judge: (room, moves) => {
+      const touches = {};
+      let dir = null;
+      replayPath(room, moves, s => {
+        const p = s.player;
+        if (dir && !p.dir) {
+          const [dx, dy] = STEP[dir], x = p.x + dx, y = p.y + dy;
+          if (x >= 0 && y >= 0 && x < room.w && y < room.h && room.cells[y * room.w + x] === 'wall') touches[y * room.w + x] = (touches[y * room.w + x] || 0) + 1;
+        }
+        dir = p.dir;
+      });
+      return Object.values(touches).some(n => n >= 4);
     },
   },
   doorClosedAtEnd: {
@@ -3927,6 +3888,91 @@ Object.assign(REQUIREMENTS, {
   },
 });
 
+// A path drawn on its room: where the robot is after each move, and each box's places in order.
+function trailOf(room, moves) {
+  const at = n => replayPath(room, moves.slice(0, n), () => {});
+  const states = Array.from({ length: moves.length + 1 }, (_, n) => at(n));
+  const robot = states.map(s => ({ x: s.player.x, y: s.player.y }));
+  const boxes = states[0].entities.filter(e => e.kind === 'box').map(b => {
+    const spots = [];
+    for (const s of states) {
+      const e = s.entities.find(e => e.id === b.id && !e.dead);
+      if (e && (!spots.length || spots.at(-1).x !== e.x || spots.at(-1).y !== e.y)) spots.push({ x: e.x, y: e.y });
+    }
+    return spots;
+  }).filter(spots => spots.length > 1);
+  return { robot, boxes };
+}
+return { boxMoves, REQUIREMENTS, trailOf };
+})();
+// ---- src/campaign/rules.js
+const m38 = (() => {
+const { emptyLevel } = m9;
+const { allShortest, whyStuck } = m36;
+const { REQUIREMENTS } = m37;
+// A campaign level: the room it gives you, what you may place and how many, and what the
+// robot's shortest paths must do. check() judges a room you built against it. All copy is draft.
+
+
+
+// What each palette element is in the room.
+const ELEMENTS = {
+  block: { label: 'Block', cell: 'wall' },
+  button: { label: 'Button', cell: 'button:red' },
+  door: { label: 'Door', cell: 'door:red' },
+  box: { label: 'Box', piece: 'box' },
+  toggle: { label: 'Switch', cell: 'toggle:red' },
+};
+
+// The level's room: empty at its starting size, with no border (the room's edge stops the
+// robot like a wall), the start one diagonal step in from the top left corner and the goal one
+// in from the bottom right. Both move freely.
+function roomOf(def) {
+  const [w, h] = def.size, l = emptyLevel(w, h);
+  for (const p of Object.keys(l.powers)) l.powers[p] = !!(def.powers || []).includes(p);
+  l.start = { x: 1, y: 1 };
+  l.cells[(h - 2) * w + w - 2] = 'goal';
+  return l;
+}
+
+// What you placed, by element; stray is anything the level's palette cannot have made.
+function placed(def, room) {
+  const out = Object.fromEntries(Object.keys(ELEMENTS).map(k => [k, []])), stray = [];
+  room.cells.forEach((c, i) => {
+    if (!c || c === 'goal') return;
+    const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].cell === c);
+    if (el) out[el].push(i); else stray.push(i);
+  });
+  for (const e of room.entities) {
+    const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].piece === e.kind), i = e.y * room.w + e.x;
+    if (el) out[el].push(i); else stray.push(i);
+  }
+  return { by: out, stray };
+}
+
+// An element's name in lower case, plural unless there is one: switch, switches.
+const nameOf = (el, n) => { const w = ELEMENTS[el].label.toLowerCase(); return n === 1 ? w : /(s|sh|ch|x)$/.test(w) ? w + 'es' : w + 's'; };
+
+// Why the room cannot be run yet: each is { msg, at? }. Empty when it can.
+function placementErrors(def, room) {
+  const errs = [], { by, stray } = placed(def, room);
+  for (const i of stray) errs.push({ msg: 'This level does not have that.', at: i });
+  if (!room.start) errs.push({ msg: 'Place the start.' });
+  const goals = room.cells.filter(c => c === 'goal').length;
+  if (!goals) errs.push({ msg: 'Place the goal.' });
+  if (goals > 1) errs.push({ msg: 'Place only one goal.' });
+  for (const [el, list] of Object.entries(by)) {
+    // A null maximum is no limit: cost is what keeps the count down.
+    const [min, max] = def.palette[el] || [0, 0];
+    if (list.length < min) errs.push({ msg: `Place at least ${min} ${nameOf(el, min)}.` });
+    if (max !== null && list.length > max) errs.push({ msg: max ? `Place at most ${max} ${nameOf(el, max)}.` : `This level has no ${nameOf(el, 2)}.` });
+  }
+  if ((def.rules || []).includes('noBoxOnButton'))
+    for (const e of room.entities) if (e.kind === 'box' && room.cells[e.y * room.w + e.x].startsWith('button:')) errs.push({ msg: 'A box cannot start on a button.', at: e.y * room.w + e.x });
+  return errs;
+}
+
+
 // Every room in every level needs at least 4 moves: one rule for the campaign, said first.
 // A tool may narrow a search with steps.min and steps.max; a level sets neither.
 const MIN_MOVES = 4;
@@ -3936,9 +3982,6 @@ const bestText = st => `Exactly ${st.best} moves.`;
 // The same, as the goal card's rows say them.
 const rangeShort = st => `at least ${bounds(st).min} moves`;
 const bestShort = st => `exactly ${st.best}`;
-// The two optional goals every level has: the exact move count, and a room no bigger than
-// A x B (its area at most A times B, either way round). A x B is the smallest room a search
-// found that wins the level.
 // A level's optional goals: the exact count and the room size (every level), the level's own
 // path goals (def.optional: requirement ids, met only when every shortest path meets them),
 // then mix, any two of the others in one run. Not every pair, let alone all, need fit one room.
@@ -4003,190 +4046,17 @@ function check(def, room, opts) {
   base.pathGoals = Object.fromEntries((def.optional || []).map(id => [id, r.paths.every(path => REQUIREMENTS[id].judge(room, path))]));
   const { min, max } = bounds(st);
   base.inRange = r.length >= min && r.length <= max;
+  // For each goal that failed, one shortest path that missed it: the card can draw it.
+  base.missed = { ...failed };
+  for (const id of def.optional || []) if (!base.pathGoals[id]) base.missed[id] = r.paths.find(path => !REQUIREMENTS[id].judge(room, path));
+  if (!base.inRange) base.missed.steps = r.paths[0];
   if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: r.length < min ? `${stepsText(st)} This one takes ${r.length}.` : `The shortest path takes at most ${max} moves. This one takes ${r.length}.` } };
   const first = (def.require || []).find(id => id in failed);
   if (first) return { ...base, won: false, fail: { path: failed[first], why: `Not met: ${REQUIREMENTS[first].text}` } };
   const optional = optionalResults(def, base);
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, roomOf, placed, nameOf, placementErrors, boxMoves, REQUIREMENTS, MIN_MOVES, bounds, stepsText, bestText, rangeShort, bestShort, optionalGoals, optionalResults, areaOf, stuckText, check };
-})();
-// ---- src/editor/edit.js
-const m38 = (() => {
-const { CLOCKWISE, CARRIES_TURRET } = m0;
-const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m34;
-// Editing a level in place: what a tile holds, the Look line, and placing or removing
-// with the current tool. Returns what changed so the caller can animate it.
-
-
-const idx = (level, x, y) => y * level.w + x;
-const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');
-const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
-
-// Does (x, y) already hold the kind of thing this tool places?
-// Moves whatever stands on one tile to another: the start, a piece, or a tile's contents.
-// Onto a tile that holds something, the two swap. Returns the new level, or null when
-// either would end up where it cannot stand.
-const UNDER = c => c === '' || c.startsWith('toggle:') || c.startsWith('button:');
-function moveAt(level, from, to) {
-  return moveOnto(level, from, to) || swapAt(level, from, to);
-}
-function moveOnto(level, from, to) {
-  if (from.x === to.x && from.y === to.y) return null;
-  const l = structuredClone(level), fi = idx(l, from.x, from.y), ti = idx(l, to.x, to.y);
-  const isStart = p => !!l.start && l.start.x === p.x && l.start.y === p.y;
-  const piece = pieceAt(l, from.x, from.y), there = pieceAt(l, to.x, to.y) >= 0;
-  if (isStart(from)) {
-    if (there || !UNDER(l.cells[ti])) return null;
-    l.start = { x: to.x, y: to.y };
-  } else if (piece >= 0) {
-    if (there || isStart(to) || !UNDER(l.cells[ti])) return null;
-    Object.assign(l.entities[piece], { x: to.x, y: to.y });
-  } else if (l.cells[fi]) {
-    if (l.cells[ti] || there || isStart(to)) return null;
-    l.cells[ti] = l.cells[fi]; l.cells[fi] = '';
-  } else return null;
-  return l;
-}
-
-// What is on top of a tile goes first (the start, then a piece), else the tile itself.
-function swapAt(level, from, to) {
-  if (from.x === to.x && from.y === to.y) return null;
-  const l = structuredClone(level);
-  const grab = p => {
-    const i = idx(l, p.x, p.y);
-    if (l.start && l.start.x === p.x && l.start.y === p.y) { l.start = null; return { start: true }; }
-    const k = pieceAt(l, p.x, p.y);
-    if (k >= 0) return { piece: l.entities.splice(k, 1)[0] };
-    if (l.cells[i]) { const cell = l.cells[i]; l.cells[i] = ''; return { cell }; }
-    return null;
-  };
-  const a = grab(from), b = grab(to);
-  if (!a || !b) return null;
-  const put = (t, p) => {
-    const i = idx(l, p.x, p.y);
-    if (t.start) l.start = { x: p.x, y: p.y };
-    else if (t.piece) l.entities.push({ ...t.piece, x: p.x, y: p.y });
-    else if (l.cells[i]) return false;
-    else l.cells[i] = t.cell;
-    return true;
-  };
-  // A swap frees both tiles first, so the robot or a piece always lands where one stood or on
-  // bare floor; the one refusal is a tile landing under a robot or piece left on a switch or button.
-  return put(a, to) && put(b, from) ? l : null;
-}
-
-function holds(level, x, y, tool) {
-  const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
-  if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
-  if (tool === 'spring') return c.startsWith('spring:');
-  if (tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
-  if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
-  return !!pc && pc.kind === tool;
-}
-
-
-// The Look tool's one line about a tile: what is on it and how it is set.
-function describe(level, x, y) {
-  const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)], parts = [];
-  if (pc) {
-    const name = TOOLS.find(t => t.id === pc.kind)?.label || pc.kind;
-    parts.push(['mover', 'enemy', 'strong'].includes(pc.kind)
-      ? `${name} \u00b7 ${pc.mode === 'follow' ? '' : (pc.axis === 'h' ? 'across \u00b7 ' : 'up and down \u00b7 ')}${CLOCK_NAME[pc.mode]}` : name);
-    if (pc.turret && pc.kind !== 'turret') parts.push('carries a turret');
-    if (pc.turret) parts.push(`fires ${pc.turret.dirs.map(d => ARROW[d]).join(' ')} \u00b7 ${CLOCK_NAME[pc.turret.mode]}`);
-  }
-  if (c) {
-    const [kind, v] = c.split(':');
-    if (kind === 'wall') parts.push('Block');
-    else if (kind === 'crack') parts.push('Breakable block');
-    else if (kind === 'checkpoint') parts.push('Checkpoint');
-    else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
-    else if (kind === 'death') parts.push('Death block');
-    else if (kind === 'water') parts.push('Water');
-    else if (kind === 'sticky') parts.push('Sticky puddle');
-    else if (kind === 'gravel') parts.push('Gravel');
-    else if (kind === 'goal') parts.push('Goal');
-    else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
-    else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
-    else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser relay`);
-    else if (kind === 'receiver') parts.push(`${COLOUR_NAME[v]} laser catcher`);
-    else if (kind === 'idoor') parts.push(`${COLOUR_NAME[v]} inverted door`);
-    else parts.push(`${COLOUR_NAME[v]} ${kind}`);
-  }
-  if (level.start && level.start.x === x && level.start.y === y) parts.push('Start');
-  return parts.length ? parts.join(' \u00b7 ') : 'Empty floor';
-}
-
-
-// how: 'place', 'remove' (only what this tool places) or 'erase' (anything).
-// Returns the effects to show: what was taken off the tile, and a pop where it placed.
-function place(level, ui, x, y, how) {
-  const out = [];
-  if (how === 'remove' && !holds(level, x, y, ui.tool)) return out;
-  if (how === 'place' && holds(level, x, y, ui.tool)) return out;
-  const t = how === 'erase' ? 'erase' : how === 'remove' ? 'remove' : ui.tool, i = idx(level, x, y), pi = pieceAt(level, x, y);
-  const gone = { type: 'erase', x, y };
-  const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
-  const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
-  const isStart = !!level.start && level.start.x === x && level.start.y === y;
-  if (t === 'erase') {
-    if (pi >= 0) removePiece(); else setCell('');
-  } else if (t === 'remove') {
-    const host = pi >= 0 ? level.entities[pi] : null;
-    if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'crack', 'checkpoint', 'button', 'toggle', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
-    else removePiece();
-  } else if (t === 'spring' || t === 'death') {
-    if (isStart) return out;
-    removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
-  } else if (t === 'water' || t === 'sticky' || t === 'gravel' || t === 'goal') {
-    if (isStart) return out;
-    setCell(t);
-  } else if (t === 'gate') {
-    if (isStart) return out;
-    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
-  } else if (t === 'tri') {
-    if (isStart) return out;
-    removePiece(); setCell('tri:' + ui.corner);
-  } else if (t === 'start') {
-    if (level.cells[i] === 'wall' || level.cells[i] === 'crack' || isDoor(level.cells[i])) setCell('');
-    removePiece();
-    level.start = { x, y };
-  } else if (t === 'wall' || t === 'crack') {
-    if (isStart) return out;
-    removePiece(); setCell(t);
-  } else if (t === 'checkpoint' || t === 'button' || t === 'toggle' || t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor') {
-    const solid = t === 'door' || t === 'idoor' || t === 'receiver';
-    if (solid && isStart) return out;
-    if (solid) removePiece();
-    setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
-  } else if (t === 'turret') {
-    if (isStart) return out;
-    const dirs = CLOCKWISE.filter(d => ui.aim.includes(d));
-    const turret = { dirs, mode: ui.mode, ...(dirs.includes(ui.start) && ui.start !== dirs[0] ? { start: ui.start } : {}) };
-    const host = pi >= 0 ? level.entities[pi] : null;
-    if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
-      if (JSON.stringify(host.turret) === JSON.stringify(turret)) return out;
-      host.turret = turret;
-    } else {
-      removePiece();
-      if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
-      level.entities.push({ kind: 'turret', x, y, turret });
-    }
-  } else {
-    if (isStart) return out;
-    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: ui.dir, mode: ui.mode } : {}) };
-    if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return out;
-    removePiece();
-    if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
-    level.entities.push(want);
-  }
-  if (gone.cell || gone.piece) out.push(gone);
-  if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
-  return out;
-}
-return { moveAt, holds, describe, place };
+return { ELEMENTS, roomOf, placed, nameOf, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, bestShort, optionalGoals, optionalResults, areaOf, stuckText, check };
 })();
 // ---- src/view/pieces.js
 const m39 = (() => {
@@ -4791,6 +4661,24 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
       g.moveTo(to.x * T + T * 0.7, to.y * T + T * 0.3); g.lineTo(to.x * T + T * 0.3, to.y * T + T * 0.7); g.stroke();
     } else { g.strokeStyle = INK.mark; g.lineWidth = 2; g.strokeRect(to.x * T + 1, to.y * T + 1, T - 2, T - 2); }
   }
+  if (over && over.trail) {
+    // A path that missed a goal: each box's places dashed, then the robot's moves numbered.
+    const mid = p => [p.x * T + T / 2, p.y * T + T / 2];
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    for (const spots of over.trail.boxes) {
+      g.strokeStyle = '#c8701d'; g.lineWidth = 3; g.setLineDash([6, 5]); g.beginPath();
+      spots.forEach((p, i) => (i ? g.lineTo : g.moveTo).call(g, ...mid(p))); g.stroke(); g.setLineDash([]);
+    }
+    const r = over.trail.robot;
+    g.strokeStyle = INK.mark; g.lineWidth = 4; g.beginPath();
+    r.forEach((p, i) => (i ? g.lineTo : g.moveTo).call(g, ...mid(p))); g.stroke();
+    g.font = `800 ${Math.round(T * 0.26)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (let i = 1; i < r.length; i++) {
+      const [ax, ay] = mid(r[i - 1]), [bx, by] = mid(r[i]), x = (ax + bx) / 2, y = (ay + by) / 2;
+      g.fillStyle = INK.mark; g.beginPath(); g.arc(x, y, T * 0.2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff'; g.fillText(String(i), x, y + 1);
+    }
+  }
   if (over && over.sel) {
     const r = over.sel;
     g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([6, 4]);
@@ -5008,8 +4896,8 @@ return { icon };
 // ---- src/app/campaign.js
 const m45 = (() => {
 const { LEVELS } = m35;
-const { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } = m37;
-const { place, moveAt } = m38;
+const { roomOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } = m38;
+const { REQUIREMENTS, trailOf } = m37;
 const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { $, portrait, now } = m12;
@@ -5039,12 +4927,6 @@ function progress() {
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
 const levelOf = id => LEVELS.find(l => l.id === id);
 
-// Move: carries the thing on one tile to another, when the target can take it and the room
-// breaks no rule it kept before. Returns the moved room or null.
-function moveIn(level, from, to) {
-  return moveRefusal(level, from, to) ? null : moveAt(level, from, to);
-}
-
 // A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
 // level's, so it is cut off, and the start and goal it had stay where they were.
 function unframe(room) {
@@ -5053,40 +4935,6 @@ function unframe(room) {
   const cells = [];
   for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) cells.push(room.cells[y * w + x]);
   return { ...room, w: w - 2, h: h - 2, cells, start: room.start && { x: room.start.x - 1, y: room.start.y - 1 }, entities: room.entities.map(e => ({ ...e, x: e.x - 1, y: e.y - 1 })) };
-}
-
-// Why a tap may not change the room, or null when it may: placing must not break a rule the
-// level enforces as you build (a maximum, a second goal, a box on a button). Too few of
-// something is fine while building; Run says so.
-function refusal(level, ui, x, y, how) {
-  if (!S.camp) return null;
-  const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
-  place(next, ui, x, y, how);
-  const e = placementErrors(def, next).find(e => !/^Place at least/.test(e.msg) && !before.has(e.msg));
-  return e ? tipOf(e.msg) : null;
-}
-const allows = (level, ui, x, y, how) => !refusal(level, ui, x, y, how);
-// A refusal said on the tile: the start and goal are never removed, only moved.
-const tipOf = msg => msg === 'Place the goal.' ? 'The goal stays. Use Move.' : msg === 'Place the start.' ? 'The start stays. Use Move.' : msg;
-
-// Why Move cannot carry a thing from one tile to another, or null when it can.
-function moveRefusal(level, from, to) {
-  const next = moveAt(level, from, to);
-  if (!next) return 'Cannot go there.';
-  if (!S.camp) return null;
-  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg)), e = placementErrors(S.camp.def, next).find(e => !before.has(e.msg));
-  return e ? tipOf(e.msg) : null;
-}
-
-// Says why a tap was refused, on the tile, for a moment; the room does not change.
-function refuse(x, y, why) {
-  S.fx.push({ type: 'refuse', x, y, at: now() });
-  const tip = $('campTip'), c = $('game'), w = $('roomWrap').getBoundingClientRect(), r = c.getBoundingClientRect();
-  tip.textContent = why;
-  tip.style.left = `${r.left - w.left + (x + 0.5) * r.width / S.level.w}px`;
-  tip.style.top = `${r.top - w.top + y * r.height / S.level.h}px`;
-  tip.hidden = false;
-  clearTimeout(refuse.t); refuse.t = setTimeout(() => { tip.hidden = true; }, 1500);
 }
 
 // The tools a level offers: Look, Erase, and its palette.
@@ -5143,6 +4991,10 @@ function syncBrief() {
     const list = r.optional ? opt : must;
     const li = document.createElement('li'); li.dataset.req = r.id; li.title = r.text;
     li.className = (r.optional ? 'optional ' : '') + (r.met === true ? 'met' : r.met === false ? 'unmet' : '');
+    // A failed row with a path that missed it: a tap draws that path on the room.
+    const missed = v && v.missed && v.missed[r.id];
+    if (missed) { li.classList.add('points'); li.title = `${r.text} Tap to see a shortest path that misses it.`; li.onclick = () => showTrail(r, missed); }
+    if (S.camp.trailOf === r.id) li.classList.add('shown');
     const mark = document.createElement('span'); mark.className = 'mark'; mark.textContent = r.met === true ? '✓' : r.met === false ? '✕' : r.optional ? '★' : '';
     li.append(mark, words(r.parts));
     list.append(li);
@@ -5164,12 +5016,24 @@ function syncBrief() {
   $('campVerdictText').title = points ? 'Show the tiles' : '';
 }
 
+// Draws on the room one shortest path that missed a goal, and says which goal.
+function showTrail(row, path) {
+  A.setMode('edit');
+  S.trail = trailOf(S.level, path); S.camp.trailOf = row.id; S.redraw = true;
+  syncBrief();
+  const out = $('campVerdict');
+  out.className = 'campVerdict lost'; out.hidden = false;
+  $('campVerdictText').textContent = `Not met: ${row.text.replace(/^Optional: /, '')} This shortest path misses it, ${path.length} moves.`;
+  $('campVerdictText').onclick = null;
+}
+function clearTrail() { if (S.trail) { S.trail = null; S.redraw = true; } if (S.camp && S.camp.trailOf) { S.camp.trailOf = null; syncBrief(); } }
+
 function enterLevel(id) {
   const def = levelOf(id);
   if (!def) return false;
   const p = progress(), rec = p.levels[id];
   closeAll();
-  S.camp = { def, verdict: null };
+  S.camp = { def, verdict: null }; S.trail = null;
   const kept = rec && rec.room && unframe(rec.room);
   S.level = kept && placementErrors(def, kept).every(e => /^(Place at least|Place the )/.test(e.msg)) ? kept : roomOf(def);
   S.history = newHistory();
@@ -5183,7 +5047,7 @@ function enterLevel(id) {
 
 function leaveLevel() {
   save();
-  S.camp = null;
+  S.camp = null; S.trail = null;
   document.body.classList.remove('campaign');
   // The sandbox never inherits a campaign room.
   S.level = starterLevel(portrait()); S.history = newHistory();
@@ -5268,10 +5132,23 @@ function buildCampaign(actions, sandbox) {
   $('menuSandbox').onclick = () => { closeAll(); boot(); };
   $('campMenu').onclick = openMenu;
   $('campBack').onclick = () => { leaveLevel(); openList(); };
-  $('campRun').onclick = run;
+  $('campRun').onclick = () => { S.camp.testing = false; run(); };
+  // Test: the room played by hand, the robot not involved; nothing is judged or saved.
+  $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.testing = true; A.setMode('play'); };
+  addEventListener('wee:win', ev => {
+    if (!S.camp || !S.camp.testing) return;
+    const out = $('campVerdict');
+    out.className = 'campVerdict won'; out.hidden = false;
+    $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}. A test does not count: Run judges the room.`;
+    $('campVerdictText').onclick = null;
+  });
   $('campVerdictClose').onclick = () => { $('campVerdict').hidden = true; };
   // The verdict is read once: the next touch anywhere else puts it away; the card keeps the marks.
-  addEventListener('pointerdown', ev => { if (!$('campVerdict').hidden && !ev.target.closest('#campVerdict')) $('campVerdict').hidden = true; }, true);
+  addEventListener('pointerdown', ev => {
+    if (ev.target.closest('#campVerdict, .campReqs li.points')) return;
+    $('campVerdict').hidden = true;
+    clearTrail();
+  }, true);
   // A change to the room clears the last verdict and is kept for next time.
   let stamp = '';
   const watch = () => {
@@ -5279,14 +5156,14 @@ function buildCampaign(actions, sandbox) {
     const s = JSON.stringify(S.level);
     if (s === stamp) return;
     stamp = s;
-    if (S.camp.ranOn !== s) S.camp.verdict = null;
+    if (S.camp.ranOn !== s) { S.camp.verdict = null; S.trail = null; S.camp.trailOf = null; }
     save(); syncBrief();
   };
   for (const t of ['pointerup', 'keyup', 'click']) addEventListener(t, () => setTimeout(watch, 0));
-  addEventListener('wee:mode', () => { if (S.camp) syncBrief(); });
+  addEventListener('wee:mode', () => { if (S.camp) { if (S.mode !== 'play') S.camp.testing = false; syncBrief(); } });
   addEventListener('pagehide', save);
 }
-return { TOOL, progress, moveIn, unframe, refusal, allows, moveRefusal, refuse, toolsFor, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
+return { TOOL, progress, unframe, toolsFor, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
 })();
 // ---- src/solve/lenses.js
 const m46 = (() => {
@@ -5572,9 +5449,186 @@ function buildLenses() {
 }
 return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
-// ---- src/app/chips.js
+// ---- src/editor/edit.js
 const m48 = (() => {
-const { describe } = m38;
+const { CLOCKWISE, CARRIES_TURRET } = m0;
+const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m34;
+// Editing a level in place: what a tile holds, the Look line, and placing or removing
+// with the current tool. Returns what changed so the caller can animate it.
+
+
+const idx = (level, x, y) => y * level.w + x;
+const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');
+const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
+
+// Does (x, y) already hold the kind of thing this tool places?
+// Moves whatever stands on one tile to another: the start, a piece, or a tile's contents.
+// Onto a tile that holds something, the two swap. Returns the new level, or null when
+// either would end up where it cannot stand.
+const UNDER = c => c === '' || c.startsWith('toggle:') || c.startsWith('button:');
+function moveAt(level, from, to) {
+  return moveOnto(level, from, to) || swapAt(level, from, to);
+}
+function moveOnto(level, from, to) {
+  if (from.x === to.x && from.y === to.y) return null;
+  const l = structuredClone(level), fi = idx(l, from.x, from.y), ti = idx(l, to.x, to.y);
+  const isStart = p => !!l.start && l.start.x === p.x && l.start.y === p.y;
+  const piece = pieceAt(l, from.x, from.y), there = pieceAt(l, to.x, to.y) >= 0;
+  if (isStart(from)) {
+    if (there || !UNDER(l.cells[ti])) return null;
+    l.start = { x: to.x, y: to.y };
+  } else if (piece >= 0) {
+    if (there || isStart(to) || !UNDER(l.cells[ti])) return null;
+    Object.assign(l.entities[piece], { x: to.x, y: to.y });
+  } else if (l.cells[fi]) {
+    if (l.cells[ti] || there || isStart(to)) return null;
+    l.cells[ti] = l.cells[fi]; l.cells[fi] = '';
+  } else return null;
+  return l;
+}
+
+// What is on top of a tile goes first (the start, then a piece), else the tile itself.
+function swapAt(level, from, to) {
+  if (from.x === to.x && from.y === to.y) return null;
+  const l = structuredClone(level);
+  const grab = p => {
+    const i = idx(l, p.x, p.y);
+    if (l.start && l.start.x === p.x && l.start.y === p.y) { l.start = null; return { start: true }; }
+    const k = pieceAt(l, p.x, p.y);
+    if (k >= 0) return { piece: l.entities.splice(k, 1)[0] };
+    if (l.cells[i]) { const cell = l.cells[i]; l.cells[i] = ''; return { cell }; }
+    return null;
+  };
+  const a = grab(from), b = grab(to);
+  if (!a || !b) return null;
+  const put = (t, p) => {
+    const i = idx(l, p.x, p.y);
+    if (t.start) l.start = { x: p.x, y: p.y };
+    else if (t.piece) l.entities.push({ ...t.piece, x: p.x, y: p.y });
+    else if (l.cells[i]) return false;
+    else l.cells[i] = t.cell;
+    return true;
+  };
+  // A swap frees both tiles first, so the robot or a piece always lands where one stood or on
+  // bare floor; the one refusal is a tile landing under a robot or piece left on a switch or button.
+  return put(a, to) && put(b, from) ? l : null;
+}
+
+function holds(level, x, y, tool) {
+  const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
+  if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
+  if (tool === 'spring') return c.startsWith('spring:');
+  if (tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
+  if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
+  return !!pc && pc.kind === tool;
+}
+
+
+// The Look tool's one line about a tile: what is on it and how it is set.
+function describe(level, x, y) {
+  const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)], parts = [];
+  if (pc) {
+    const name = TOOLS.find(t => t.id === pc.kind)?.label || pc.kind;
+    parts.push(['mover', 'enemy', 'strong'].includes(pc.kind)
+      ? `${name} \u00b7 ${pc.mode === 'follow' ? '' : (pc.axis === 'h' ? 'across \u00b7 ' : 'up and down \u00b7 ')}${CLOCK_NAME[pc.mode]}` : name);
+    if (pc.turret && pc.kind !== 'turret') parts.push('carries a turret');
+    if (pc.turret) parts.push(`fires ${pc.turret.dirs.map(d => ARROW[d]).join(' ')} \u00b7 ${CLOCK_NAME[pc.turret.mode]}`);
+  }
+  if (c) {
+    const [kind, v] = c.split(':');
+    if (kind === 'wall') parts.push('Block');
+    else if (kind === 'crack') parts.push('Breakable block');
+    else if (kind === 'checkpoint') parts.push('Checkpoint');
+    else if (kind === 'tri') parts.push(`Triangle, solid ${CORNER_NAME[v]}`);
+    else if (kind === 'death') parts.push('Death block');
+    else if (kind === 'water') parts.push('Water');
+    else if (kind === 'sticky') parts.push('Sticky puddle');
+    else if (kind === 'gravel') parts.push('Gravel');
+    else if (kind === 'goal') parts.push('Goal');
+    else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
+    else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
+    else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser relay`);
+    else if (kind === 'receiver') parts.push(`${COLOUR_NAME[v]} laser catcher`);
+    else if (kind === 'idoor') parts.push(`${COLOUR_NAME[v]} inverted door`);
+    else parts.push(`${COLOUR_NAME[v]} ${kind}`);
+  }
+  if (level.start && level.start.x === x && level.start.y === y) parts.push('Start');
+  return parts.length ? parts.join(' \u00b7 ') : 'Empty floor';
+}
+
+
+// how: 'place', 'remove' (only what this tool places) or 'erase' (anything).
+// Returns the effects to show: what was taken off the tile, and a pop where it placed.
+function place(level, ui, x, y, how) {
+  const out = [];
+  if (how === 'remove' && !holds(level, x, y, ui.tool)) return out;
+  if (how === 'place' && holds(level, x, y, ui.tool)) return out;
+  const t = how === 'erase' ? 'erase' : how === 'remove' ? 'remove' : ui.tool, i = idx(level, x, y), pi = pieceAt(level, x, y);
+  const gone = { type: 'erase', x, y };
+  const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
+  const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
+  const isStart = !!level.start && level.start.x === x && level.start.y === y;
+  if (t === 'erase') {
+    if (pi >= 0) removePiece(); else setCell('');
+  } else if (t === 'remove') {
+    const host = pi >= 0 ? level.entities[pi] : null;
+    if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
+    else if (['wall', 'crack', 'checkpoint', 'button', 'toggle', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
+    else removePiece();
+  } else if (t === 'spring' || t === 'death') {
+    if (isStart) return out;
+    removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
+  } else if (t === 'water' || t === 'sticky' || t === 'gravel' || t === 'goal') {
+    if (isStart) return out;
+    setCell(t);
+  } else if (t === 'gate') {
+    if (isStart) return out;
+    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
+  } else if (t === 'tri') {
+    if (isStart) return out;
+    removePiece(); setCell('tri:' + ui.corner);
+  } else if (t === 'start') {
+    if (level.cells[i] === 'wall' || level.cells[i] === 'crack' || isDoor(level.cells[i])) setCell('');
+    removePiece();
+    level.start = { x, y };
+  } else if (t === 'wall' || t === 'crack') {
+    if (isStart) return out;
+    removePiece(); setCell(t);
+  } else if (t === 'checkpoint' || t === 'button' || t === 'toggle' || t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor') {
+    const solid = t === 'door' || t === 'idoor' || t === 'receiver';
+    if (solid && isStart) return out;
+    if (solid) removePiece();
+    setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
+  } else if (t === 'turret') {
+    if (isStart) return out;
+    const dirs = CLOCKWISE.filter(d => ui.aim.includes(d));
+    const turret = { dirs, mode: ui.mode, ...(dirs.includes(ui.start) && ui.start !== dirs[0] ? { start: ui.start } : {}) };
+    const host = pi >= 0 ? level.entities[pi] : null;
+    if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
+      if (JSON.stringify(host.turret) === JSON.stringify(turret)) return out;
+      host.turret = turret;
+    } else {
+      removePiece();
+      if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
+      level.entities.push({ kind: 'turret', x, y, turret });
+    }
+  } else {
+    if (isStart) return out;
+    const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: ui.dir, mode: ui.mode } : {}) };
+    if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return out;
+    removePiece();
+    if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
+    level.entities.push(want);
+  }
+  if (gone.cell || gone.piece) out.push(gone);
+  if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
+  return out;
+}
+return { moveAt, holds, describe, place };
+})();
+// ---- src/app/chips.js
+const m49 = (() => {
+const { describe } = m48;
 const { S } = m11;
 const { INK } = m14;
 const { $, touch } = m12;
@@ -5640,7 +5694,7 @@ function syncInfo() {
 return { buildChips, syncChips };
 })();
 // ---- src/app/sheets.js
-const m49 = (() => {
+const m50 = (() => {
 const { $ } = m12;
 const { closeWell } = m18;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
@@ -5668,7 +5722,7 @@ function buildSheets() {
 return { openSheet, buildSheets };
 })();
 // ---- src/app/keys.js
-const m50 = (() => {
+const m51 = (() => {
 const { TOOLS } = m34;
 const { $ } = m12;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
@@ -5721,7 +5775,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m51 = (() => {
+const m52 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -5786,8 +5840,8 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m52 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m51;
+const m53 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m52;
 const { S } = m11;
 const { change } = m31;
 const { $ } = m12;
@@ -5910,7 +5964,7 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/panels.js
-const m53 = (() => {
+const m54 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m9;
 const { INK } = m14;
@@ -5922,12 +5976,12 @@ const { change, step: undoStep, syncUndo } = m31;
 const { runCheck, syncCheck, syncLint } = m21;
 const { buildLenses, syncLenses } = m47;
 const { buildWell, openWell } = m18;
-const { buildChips } = m48;
+const { buildChips } = m49;
 const { buildSize } = m32;
-const { buildSheets } = m49;
-const { buildKeys } = m50;
+const { buildSheets } = m50;
+const { buildKeys } = m51;
 const { syncRoomsButton } = m30;
-const { buildSelect, syncSelect } = m52;
+const { buildSelect, syncSelect } = m53;
 const { icon } = m44;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
@@ -6119,8 +6173,60 @@ function syncPanel() {
 }
 return { keysText, buildPanels, syncPanel };
 })();
+// ---- src/app/campaignMove.js
+const m55 = (() => {
+const { placementErrors } = m38;
+const { place, moveAt } = m48;
+const { S } = m11;
+const { $, now } = m12;
+// Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
+
+
+
+
+// Move: carries the thing on one tile to another, when the target can take it and the room
+// breaks no rule it kept before. Returns the moved room or null.
+function moveIn(level, from, to) {
+  return moveRefusal(level, from, to) ? null : moveAt(level, from, to);
+}
+
+// Why a tap may not change the room, or null when it may: placing must not break a rule the
+// level enforces as you build (a maximum, a second goal, a box on a button). Too few of
+// something is fine while building; Run says so.
+function refusal(level, ui, x, y, how) {
+  if (!S.camp) return null;
+  const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
+  place(next, ui, x, y, how);
+  const e = placementErrors(def, next).find(e => !/^Place at least/.test(e.msg) && !before.has(e.msg));
+  return e ? tipOf(e.msg) : null;
+}
+const allows = (level, ui, x, y, how) => !refusal(level, ui, x, y, how);
+// A refusal said on the tile: the start and goal are never removed, only moved.
+const tipOf = msg => msg === 'Place the goal.' ? 'The goal stays. Use Move.' : msg === 'Place the start.' ? 'The start stays. Use Move.' : msg;
+
+// Why Move cannot carry a thing from one tile to another, or null when it can.
+function moveRefusal(level, from, to) {
+  const next = moveAt(level, from, to);
+  if (!next) return 'Cannot go there.';
+  if (!S.camp) return null;
+  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg)), e = placementErrors(S.camp.def, next).find(e => !before.has(e.msg));
+  return e ? tipOf(e.msg) : null;
+}
+
+// Says why a tap was refused, on the tile, for a moment; the room does not change.
+function refuse(x, y, why) {
+  S.fx.push({ type: 'refuse', x, y, at: now() });
+  const tip = $('campTip'), c = $('game'), w = $('roomWrap').getBoundingClientRect(), r = c.getBoundingClientRect();
+  tip.textContent = why;
+  tip.style.left = `${r.left - w.left + (x + 0.5) * r.width / S.level.w}px`;
+  tip.style.top = `${r.top - w.top + y * r.height / S.level.h}px`;
+  tip.hidden = false;
+  clearTimeout(refuse.t); refuse.t = setTimeout(() => { tip.hidden = true; }, 1500);
+}
+return { moveIn, refusal, allows, moveRefusal, refuse };
+})();
 // ---- src/app/stuck.js
-const m54 = (() => {
+const m56 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m15;
 const { S } = m11;
 const { $ } = m12;
@@ -6155,22 +6261,22 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m55 = (() => {
+const m57 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m43;
 const { S } = m11;
 const { $, g, now } = m12;
-const { openSheet } = m49;
-const { syncPanel, keysText } = m53;
+const { openSheet } = m50;
+const { syncPanel, keysText } = m54;
 const { feedDemo } = m21;
-const { selectOverlay } = m52;
-const { moveRefusal } = m45;
-const { watchStuck, resetStuck } = m54;
+const { selectOverlay } = m53;
+const { moveRefusal } = m55;
+const { watchStuck, resetStuck } = m56;
 const { lensMarks, lensBusy } = m47;
 const { syncWell } = m18;
-const { syncChips } = m48;
+const { syncChips } = m49;
 const { gust } = m13;
 const { stateKey } = m15;
 const { respawn } = m2;
@@ -6220,7 +6326,7 @@ function tick() {
   if (game.events.some(e => e.type === 'checkpoint')) S.freshKey = resetKey(game);
   syncEnabled();
   for (const e of game.events) {
-    if (e.type === 'win') { $('winText').textContent = `Solved in ${e.moves} ${e.moves === 1 ? 'move' : 'moves'}.`; $('win').hidden = false; }
+    if (e.type === 'win') { $('winText').textContent = `Solved in ${e.moves} ${e.moves === 1 ? 'move' : 'moves'}.`; $('win').hidden = false; dispatchEvent(new CustomEvent('wee:win', { detail: { moves: e.moves } })); }
     if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
     else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
   }
@@ -6283,7 +6389,7 @@ function render() {
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay());
+  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
 }
 
 // Move's preview: where the carried thing would land, and whether it can.
@@ -6317,20 +6423,20 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m56 = (() => {
-const { describe, holds, place } = m38;
+const m58 = (() => {
+const { describe, holds, place } = m48;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m55;
+const { setMode, aim } = m57;
 const { begin, end, change, step: undoStep } = m31;
 const { save } = m30;
-const { selectDown, selectMove, selectUp, selectKey } = m52;
+const { selectDown, selectMove, selectUp, selectKey } = m53;
 const { LENS_GROUPS, cycleLens, lensesOff } = m47;
-const { syncPanel } = m53;
+const { syncPanel } = m54;
 const { fit } = m33;
-const { toolForKey, bareKey, showKeys } = m50;
+const { toolForKey, bareKey, showKeys } = m51;
 const { TOOLS } = m34;
-const { refusal, moveRefusal, moveIn, refuse } = m45;
+const { refusal, moveRefusal, moveIn, refuse } = m55;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -6456,7 +6562,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m57 = (() => {
+const m59 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -6568,12 +6674,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m58 = (() => {
+const m60 = (() => {
 const { search, move, stateKey } = m15;
 const { createGame } = m8;
 const { elementCheck, idleElements, NOTES_MAX } = m17;
 const { contains } = m27;
-const { ING, variants } = m57;
+const { ING, variants } = m59;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -6659,7 +6765,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m59 = (() => {
+const m61 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -6676,13 +6782,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m60 = (() => {
+const m62 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
-const { INGREDIENTS, ING, spot } = m57;
-const { judge, lockedIn } = m58;
+const { INGREDIENTS, ING, spot } = m59;
+const { judge, lockedIn } = m60;
 const { contains } = m27;
-const { rng } = m59;
+const { rng } = m61;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -6837,9 +6943,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m61 = (() => {
-const { INGREDIENTS } = m57;
-const { generate, normalize, recipeLabel, LIMITS } = m60;
+const m63 = (() => {
+const { INGREDIENTS } = m59;
+const { generate, normalize, recipeLabel, LIMITS } = m62;
 const { stampOf } = m24;
 const { S } = m11;
 const { thumbURL } = m25;
@@ -7033,7 +7139,7 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m62 = (() => {
+const m64 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -7042,11 +7148,11 @@ const { S, starterLevel } = m11;
 const { portrait, $ } = m12;
 const { startSnow, windNow } = m13;
 const { fit, watchStage } = m33;
-const { buildPanels, syncPanel } = m53;
-const { bindInput } = m56;
-const { setMode, frame, render, tick, report, copyReport } = m55;
+const { buildPanels, syncPanel } = m54;
+const { bindInput } = m58;
+const { setMode, frame, render, tick, report, copyReport } = m57;
 const { buildRooms, bootRooms } = m30;
-const { buildGenerator } = m61;
+const { buildGenerator } = m63;
 const { buildCampaign, openMenu } = m45;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
@@ -7072,7 +7178,7 @@ window.advanceTime = ms => {
   for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
   S.acc = 0; render();
 };
-window.wee = { draws: () => S.draws, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, wind: () => windNow(), fxTypes: () => S.fx.map(f => f.type), loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
+window.wee = { draws: () => S.draws, trail: () => S.trail, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, wind: () => windNow(), fxTypes: () => S.fx.map(f => f.type), loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
 
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });

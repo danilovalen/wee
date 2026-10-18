@@ -1,0 +1,173 @@
+// What a level can require of the robot's shortest paths, each judged on one path from every
+// tick of its replay; and a path drawn on its room. All copy is draft.
+import { replayPath } from './robot.js';
+
+
+// What each move of a path did to each box: a push slides it at least one tile; a hit is a
+// slide of the robot (it moved) that ends against the box without moving it. Each move is replayed alone.
+export function boxMoves(room, moves) {
+  const at = n => {
+    let dir = null;
+    const s = replayPath(room, moves.slice(0, n), t => { if (t.player.dir) dir = t.player.dir; });
+    return { s, dir, boxes: Object.fromEntries(s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.id, e.x + ',' + e.y])) };
+  };
+  const out = {};
+  let was = at(0);
+  for (let n = 1; n <= moves.length; n++) {
+    const now = at(n), [dx, dy] = STEP[now.dir] || [0, 0], p = now.s.player;
+    const ahead = now.s.entities.find(e => !e.dead && e.kind === 'box' && e.x === p.x + dx && e.y === p.y + dy);
+    for (const id of Object.keys(was.boxes)) {
+      const b = out[id] ||= { pushes: 0, hits: 0 };
+      if (now.boxes[id] !== undefined && now.boxes[id] !== was.boxes[id]) b.pushes++;
+      else if (ahead && String(ahead.id) === id && (p.x !== was.s.player.x || p.y !== was.s.player.y)) b.hits++;
+    }
+    was = now;
+  }
+  return Object.values(out);
+}
+const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
+export const REQUIREMENTS = {
+  throughOpenDoor: {
+    text: 'The robot passes through an open door.',
+    short: [{ el: 'start' }, 'through an open', { el: 'door' }],
+    // A closed door is solid, so standing on a door tile means it is open.
+    judge: (room, moves) => {
+      let ok = false;
+      replayPath(room, moves, s => { if (/^door:/.test(room.cells[s.player.y * room.w + s.player.x] || '')) ok = true; });
+      return ok;
+    },
+  },
+  hitsClosedDoor: {
+    text: 'The robot collides with a closed door.',
+    short: [{ el: 'start' }, 'collides with a closed', { el: 'door' }],
+    // A slide that ends with a closed door on the next tile ahead: the door is what stopped it.
+    judge: (room, moves) => {
+      let ok = false, dir = null;
+      replayPath(room, moves, s => {
+        const p = s.player;
+        if (dir && !p.dir) {
+          const [dx, dy] = STEP[dir], c = room.cells[(p.y + dy) * room.w + p.x + dx] || '';
+          if (/^door:/.test(c) && !s.open[c.slice(5)]) ok = true;
+        }
+        dir = p.dir;
+      });
+      return ok;
+    },
+  },
+  throughOpenDoorTwice: {
+    text: 'The robot passes through an open door twice.',
+    short: [{ el: 'start' }, 'through an open', { el: 'door' }, '×2'],
+    // One pass is stepping onto a door tile from a tile that is not one: a slide across two
+    // doors side by side passes once.
+    judge: (room, moves) => {
+      let passes = 0, was = false;
+      replayPath(room, moves, s => {
+        const on = /^door:/.test(room.cells[s.player.y * room.w + s.player.x] || '');
+        if (on && !was) passes++;
+        was = on;
+      });
+      return passes >= 2;
+    },
+  },
+  touchBlockFourTimes: {
+    text: 'The robot touches the same block 4 times.',
+    short: ['touch one', { el: 'block' }, '×4'],
+    // A touch is a slide that ends against a block, as a collision ends against a door.
+    judge: (room, moves) => {
+      const touches = {};
+      let dir = null;
+      replayPath(room, moves, s => {
+        const p = s.player;
+        if (dir && !p.dir) {
+          const [dx, dy] = STEP[dir], x = p.x + dx, y = p.y + dy;
+          if (x >= 0 && y >= 0 && x < room.w && y < room.h && room.cells[y * room.w + x] === 'wall') touches[y * room.w + x] = (touches[y * room.w + x] || 0) + 1;
+        }
+        dir = p.dir;
+      });
+      return Object.values(touches).some(n => n >= 4);
+    },
+  },
+  doorClosedAtEnd: {
+    text: 'Every door is closed when the robot reaches the goal.',
+    short: ['every', { el: 'door' }, 'closed at the end'],
+    judge: (room, moves) => {
+      const end = replayPath(room, moves, () => {});
+      return !Object.values(end.open).some(Boolean);
+    },
+  },
+};
+
+// The toggles a path turns on, and the ones it turns on and later off again.
+function toggleHistory(room, moves) {
+  const on = new Set(), onOff = new Set();
+  replayPath(room, moves, s => {
+    for (const i of s.toggled) on.add(i);
+    for (const i of on) if (!s.toggled.includes(i)) onOff.add(i);
+  });
+  return { on, onOff, all: room.cells.flatMap((c, i) => c.startsWith('toggle:') ? [i] : []) };
+}
+Object.assign(REQUIREMENTS, {
+  everyToggleOn: {
+    text: 'Every switch turns on.',
+    short: ['every', { el: 'toggle' }, 'turns on'],
+    judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
+  },
+  boxThroughOpenDoor: {
+    text: 'A box passes through an open door.',
+    short: [{ el: 'box' }, 'through an open', { el: 'door' }],
+    // A closed door is solid, so a box on a door tile means it is open.
+    judge: (room, moves) => {
+      let ok = false;
+      replayPath(room, moves, s => { if (s.entities.some(e => !e.dead && e.kind === 'box' && /^door:/.test(room.cells[e.y * room.w + e.x] || ''))) ok = true; });
+      return ok;
+    },
+  },
+  onlyBoxesFlipSwitches: {
+    text: 'Only boxes turn switches on and off. The robot never crosses one.',
+    short: ['only', { el: 'box' }, 'flips', { el: 'toggle' }],
+    judge: (room, moves) => {
+      let robot = false, flipped = false;
+      replayPath(room, moves, s => {
+        if ((room.cells[s.player.y * room.w + s.player.x] || '').startsWith('toggle:')) robot = true;
+        if (s.toggled.length) flipped = true;
+      });
+      return flipped && !robot;
+    },
+  },
+  boxPushedThrice: {
+    text: 'One box is pushed in at least 3 moves.',
+    short: [{ el: 'box' }, 'pushed ×3'],
+    judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 3),
+  },
+  boxPushedTwiceHitOnce: {
+    text: 'One box is pushed in at least 2 moves, and the robot collides with it once without moving it.',
+    short: [{ el: 'box' }, 'pushed ×2, collided ×1'],
+    judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2 && b.hits >= 1),
+  },
+  everyToggleOffAtEnd: {
+    text: 'Every switch is off when the robot reaches the goal.',
+    short: ['every', { el: 'toggle' }, 'off at the end'],
+    judge: (room, moves) => room.cells.some(c => c.startsWith('toggle:')) && replayPath(room, moves, () => {}).toggled.length === 0,
+  },
+  everyToggleOnThenOff: {
+    text: 'Every switch turns on, then off again.',
+    short: ['every', { el: 'toggle' }, 'on, then off'],
+    judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.onOff.has(i)); },
+  },
+});
+
+// A path drawn on its room: where the robot is after each move, and each box's places in order.
+export function trailOf(room, moves) {
+  const at = n => replayPath(room, moves.slice(0, n), () => {});
+  const states = Array.from({ length: moves.length + 1 }, (_, n) => at(n));
+  const robot = states.map(s => ({ x: s.player.x, y: s.player.y }));
+  const boxes = states[0].entities.filter(e => e.kind === 'box').map(b => {
+    const spots = [];
+    for (const s of states) {
+      const e = s.entities.find(e => e.id === b.id && !e.dead);
+      if (e && (!spots.length || spots.at(-1).x !== e.x || spots.at(-1).y !== e.y)) spots.push({ x: e.x, y: e.y });
+    }
+    return spots;
+  }).filter(spots => spots.length > 1);
+  return { robot, boxes };
+}

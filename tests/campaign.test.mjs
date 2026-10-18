@@ -1,6 +1,7 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { boxMoves, stuckText, nameOf, roomOf, placed, placementErrors, check, REQUIREMENTS, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
+import { stuckText, nameOf, roomOf, placed, placementErrors, check, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
+import { boxMoves, REQUIREMENTS, trailOf } from '../src/campaign/requirements.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { LEVELS } from '../src/level/campaign.js';
 import * as LEVELDATA from '../src/level/campaign.js';
@@ -115,6 +116,7 @@ const build = (def, rows) => {
   // The old level 1: a 5x5 room, start top left, goal bottom right, nothing in it.
   const open = ['P....', '.....', '.....', '.....', '....G'];
   const empty = check(d, build(d, open));
+  ok('a run too short keeps its path for the moves row', empty.missed && empty.missed.steps.length === 2);
   ok('an empty 5x5 is too short', empty.ok && !empty.won && empty.length === 2 && empty.fail.why.startsWith(stepsText(d.steps)), JSON.stringify(empty.fail));
   ok('a failure hands the robot a path to play', Array.isArray(empty.fail.path) && empty.fail.path.length === 2);
   ok('the room\'s edge stops the robot like a wall', allShortest(build(d, open)).length === 2);
@@ -126,10 +128,15 @@ const build = (def, rows) => {
   const his11 = build(d, ['..##P#.', '.#.G...', '....#..', '#.....#', '...#...', '.#...#.', '.......']);
   const long = check(d, his11);
   ok('a long path wins: his 11-move level 1 room, once refused for passing 8', long.won && long.length === 11, JSON.stringify(long.fail));
+  // Level 1's own goal: the same block touched 4 times, on every shortest path.
+  ok('his room: one shortest path touches a block 4 times, the other 3, so the goal is not met', long.paths === 2 && !long.optional.find(o => o.id === 'touchBlockFourTimes').met);
+  const touch4 = check(d, build(d, ['..##P#.', '.#.G...', '....#..', '#.....#', '...#..#', '.#...#.', '.......']));
+  ok('one more block and every shortest path touches it 4 times: met', touch4.won && touch4.optional.find(o => o.id === 'touchBlockFourTimes').met, JSON.stringify(touch4.optional));
+  ok('touching: three times is not four', !REQUIREMENTS.touchBlockFourTimes.judge(his11, ['down', 'left', 'down', 'right', 'up', 'left', 'up', 'left', 'up', 'right', 'up']));
   ok('a win reports its area', v.area === 25 && areaOf(win) === 25 && areaOf(roomOf(d)) === 49);
   ok('there is no cost score any more', !('cost' in v) && !('COSTS' in LEVELDATA));
   ok('a win hands the robot its path', v.path && v.path.length === 4);
-  ok('a win scores three optional goals: the exact count, the room size and mix', v.optional.map(o => o.id).join() === 'best,small,mix' && v.optional[2].met === (v.optional[0].met && v.optional[1].met) && v.optional[0].met === (v.length === d.steps.best) && v.optional[1].met === (v.area <= d.small[0] * d.small[1]) && v.met === v.optional.filter(o => o.met).length);
+  ok('a win scores the exact count, the room size, the level\'s own goal and mix', v.optional.map(o => o.id).join() === 'best,small,touchBlockFourTimes,mix' && v.optional[3].met === (v.optional.slice(0, 3).filter(o => o.met).length >= 2) && v.optional[0].met === (v.length === d.steps.best) && v.optional[1].met === (v.area <= d.small[0] * d.small[1]) && v.met === v.optional.filter(o => o.met).length);
   const bad = check(d, { ...roomOf(d), start: null, cells: roomOf(d).cells.map(() => '') });
   ok('a room without its start and goal cannot run', bad.ok === false && bad.errors.length === 2);
   const walled = build(d, ['P....', '.....', '#####', '.....', '....G']);
@@ -222,6 +229,10 @@ const build = (def, rows) => {
   // An optional path goal is judged like a requirement: met only when every shortest path meets it.
   const og = check({ ...d, require: [], optional: ['throughOpenDoor'] }, both);
   ok('a path goal one shortest path misses is not met', og.paths === 2 && og.optional.find(o => o.id === 'throughOpenDoor').met === false, JSON.stringify(og.optional));
+  ok('a failed goal keeps a shortest path that missed it', v.missed && v.missed.throughOpenDoor && !REQUIREMENTS.throughOpenDoor.judge(both, v.missed.throughOpenDoor), JSON.stringify(v.missed));
+  ok('a path goal one path misses keeps that path too', og.missed && og.missed.throughOpenDoor && !REQUIREMENTS.throughOpenDoor.judge(both, og.missed.throughOpenDoor));
+  const tr = trailOf(room(['#######', '#PB...#', '#######']), ['right']);
+  ok('a trail has the robot after each move and each box that moved', JSON.stringify(tr.robot) === '[{"x":1,"y":1},{"x":4,"y":1}]' && tr.boxes.length === 1 && tr.boxes[0].at(-1).x === 5, JSON.stringify(tr));
   ok('the verdict marks each requirement for the goal card', v.reqs && v.reqs.throughOpenDoor === false && v.inRange === true, JSON.stringify(v.reqs));
   ok('every requirement has a short row, with at least one word', Object.values(REQUIREMENTS).every(r => Array.isArray(r.short) && r.short.some(p => typeof p === 'string')));
   ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.el === 'start' || ELEMENTS[p.el])));

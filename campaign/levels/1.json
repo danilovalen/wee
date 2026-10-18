@@ -18,5 +18,8 @@
  "small": [
   3,
   3
+ ],
+ "optional": [
+  "touchBlockFourTimes"
  ]
 }

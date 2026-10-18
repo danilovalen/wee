@@ -79,6 +79,24 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
       g.moveTo(to.x * T + T * 0.7, to.y * T + T * 0.3); g.lineTo(to.x * T + T * 0.3, to.y * T + T * 0.7); g.stroke();
     } else { g.strokeStyle = INK.mark; g.lineWidth = 2; g.strokeRect(to.x * T + 1, to.y * T + 1, T - 2, T - 2); }
   }
+  if (over && over.trail) {
+    // A path that missed a goal: each box's places dashed, then the robot's moves numbered.
+    const mid = p => [p.x * T + T / 2, p.y * T + T / 2];
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    for (const spots of over.trail.boxes) {
+      g.strokeStyle = '#c8701d'; g.lineWidth = 3; g.setLineDash([6, 5]); g.beginPath();
+      spots.forEach((p, i) => (i ? g.lineTo : g.moveTo).call(g, ...mid(p))); g.stroke(); g.setLineDash([]);
+    }
+    const r = over.trail.robot;
+    g.strokeStyle = INK.mark; g.lineWidth = 4; g.beginPath();
+    r.forEach((p, i) => (i ? g.lineTo : g.moveTo).call(g, ...mid(p))); g.stroke();
+    g.font = `800 ${Math.round(T * 0.26)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (let i = 1; i < r.length; i++) {
+      const [ax, ay] = mid(r[i - 1]), [bx, by] = mid(r[i]), x = (ax + bx) / 2, y = (ay + by) / 2;
+      g.fillStyle = INK.mark; g.beginPath(); g.arc(x, y, T * 0.2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff'; g.fillText(String(i), x, y + 1);
+    }
+  }
   if (over && over.sel) {
     const r = over.sel;
     g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([6, 4]);

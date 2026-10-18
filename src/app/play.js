@@ -9,7 +9,7 @@ import { openSheet } from './sheets.js';
 import { syncPanel, keysText } from './panels.js';
 import { feedDemo } from './check.js';
 import { selectOverlay } from './select.js';
-import { moveRefusal } from './campaign.js';
+import { moveRefusal } from './campaignMove.js';
 import { watchStuck, resetStuck } from './stuck.js';
 import { lensMarks, lensBusy } from './lenses.js';
 import { syncWell } from './well.js';
@@ -44,7 +44,7 @@ export function tick() {
   if (game.events.some(e => e.type === 'checkpoint')) S.freshKey = resetKey(game);
   syncEnabled();
   for (const e of game.events) {
-    if (e.type === 'win') { $('winText').textContent = `Solved in ${e.moves} ${e.moves === 1 ? 'move' : 'moves'}.`; $('win').hidden = false; }
+    if (e.type === 'win') { $('winText').textContent = `Solved in ${e.moves} ${e.moves === 1 ? 'move' : 'moves'}.`; $('win').hidden = false; dispatchEvent(new CustomEvent('wee:win', { detail: { moves: e.moves } })); }
     if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
     else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
   }
@@ -107,7 +107,7 @@ export function render() {
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay());
+  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
 }
 
 // Move's preview: where the carried thing would land, and whether it can.

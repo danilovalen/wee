@@ -5,7 +5,8 @@ import { respawn } from '../src/rules/life.js';
 import { stateKey } from '../src/solve/solve.js';
 import { TOOLS } from '../src/editor/palette.js';
 import { MECHANISMS } from '../src/solve/tags.js';
-import { ELEMENTS, REQUIREMENTS } from '../src/campaign/rules.js';
+import { ELEMENTS } from '../src/campaign/rules.js';
+import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { readFileSync } from 'node:fs';
 import { room, suite } from './lib.mjs';
 

@@ -105,6 +105,17 @@ a slide that ends against a closed door (his words: *"touching it and stopping..
 somehow a wall"*). Its range 7 ± 2 is measured, not guessed: rooms meeting both requirements
 were found from 5 to 16 moves, most often 6 to 9.
 
+## Test
+
+**Test**, beside Run, plays the room by hand (arrows or swipes); reaching the goal says so and in
+how many moves. A test is never judged and never saved (owner, 2026-10-18).
+
+## Why a goal was missed
+
+A failed goal row is underlined: a tap draws on the room a shortest path that missed it, the
+robot's moves numbered and each box's trail dashed, and names the goal (owner's pick, F1 of two
+sketches, 2026-10-18).
+
 ## When the robot cannot finish
 
 Run says why and flashes the tiles: the first door colour that never opens, and which of its

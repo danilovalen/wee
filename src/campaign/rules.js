@@ -1,7 +1,8 @@
 // A campaign level: the room it gives you, what you may place and how many, and what the
 // robot's shortest paths must do. check() judges a room you built against it. All copy is draft.
 import { emptyLevel } from '../level/format.js';
-import { allShortest, replayPath, whyStuck } from './robot.js';
+import { allShortest, whyStuck } from './robot.js';
+import { REQUIREMENTS } from './requirements.js';
 
 // What each palette element is in the room.
 export const ELEMENTS = {
@@ -60,142 +61,6 @@ export function placementErrors(def, room) {
   return errs;
 }
 
-// Requirements on one shortest path, judged from every tick of its replay.
-
-// What each move of a path did to each box: a push slides it at least one tile; a hit is a
-// slide of the robot (it moved) that ends against the box without moving it. Each move is replayed alone.
-export function boxMoves(room, moves) {
-  const at = n => {
-    let dir = null;
-    const s = replayPath(room, moves.slice(0, n), t => { if (t.player.dir) dir = t.player.dir; });
-    return { s, dir, boxes: Object.fromEntries(s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.id, e.x + ',' + e.y])) };
-  };
-  const out = {};
-  let was = at(0);
-  for (let n = 1; n <= moves.length; n++) {
-    const now = at(n), [dx, dy] = STEP[now.dir] || [0, 0], p = now.s.player;
-    const ahead = now.s.entities.find(e => !e.dead && e.kind === 'box' && e.x === p.x + dx && e.y === p.y + dy);
-    for (const id of Object.keys(was.boxes)) {
-      const b = out[id] ||= { pushes: 0, hits: 0 };
-      if (now.boxes[id] !== undefined && now.boxes[id] !== was.boxes[id]) b.pushes++;
-      else if (ahead && String(ahead.id) === id && (p.x !== was.s.player.x || p.y !== was.s.player.y)) b.hits++;
-    }
-    was = now;
-  }
-  return Object.values(out);
-}
-const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
-export const REQUIREMENTS = {
-  throughOpenDoor: {
-    text: 'The robot passes through an open door.',
-    short: [{ el: 'start' }, 'through an open', { el: 'door' }],
-    // A closed door is solid, so standing on a door tile means it is open.
-    judge: (room, moves) => {
-      let ok = false;
-      replayPath(room, moves, s => { if (/^door:/.test(room.cells[s.player.y * room.w + s.player.x] || '')) ok = true; });
-      return ok;
-    },
-  },
-  hitsClosedDoor: {
-    text: 'The robot collides with a closed door.',
-    short: [{ el: 'start' }, 'collides with a closed', { el: 'door' }],
-    // A slide that ends with a closed door on the next tile ahead: the door is what stopped it.
-    judge: (room, moves) => {
-      let ok = false, dir = null;
-      replayPath(room, moves, s => {
-        const p = s.player;
-        if (dir && !p.dir) {
-          const [dx, dy] = STEP[dir], c = room.cells[(p.y + dy) * room.w + p.x + dx] || '';
-          if (/^door:/.test(c) && !s.open[c.slice(5)]) ok = true;
-        }
-        dir = p.dir;
-      });
-      return ok;
-    },
-  },
-  throughOpenDoorTwice: {
-    text: 'The robot passes through an open door twice.',
-    short: [{ el: 'start' }, 'through an open', { el: 'door' }, '×2'],
-    // One pass is stepping onto a door tile from a tile that is not one: a slide across two
-    // doors side by side passes once.
-    judge: (room, moves) => {
-      let passes = 0, was = false;
-      replayPath(room, moves, s => {
-        const on = /^door:/.test(room.cells[s.player.y * room.w + s.player.x] || '');
-        if (on && !was) passes++;
-        was = on;
-      });
-      return passes >= 2;
-    },
-  },
-  doorClosedAtEnd: {
-    text: 'Every door is closed when the robot reaches the goal.',
-    short: ['every', { el: 'door' }, 'closed at the end'],
-    judge: (room, moves) => {
-      const end = replayPath(room, moves, () => {});
-      return !Object.values(end.open).some(Boolean);
-    },
-  },
-};
-
-// The toggles a path turns on, and the ones it turns on and later off again.
-function toggleHistory(room, moves) {
-  const on = new Set(), onOff = new Set();
-  replayPath(room, moves, s => {
-    for (const i of s.toggled) on.add(i);
-    for (const i of on) if (!s.toggled.includes(i)) onOff.add(i);
-  });
-  return { on, onOff, all: room.cells.flatMap((c, i) => c.startsWith('toggle:') ? [i] : []) };
-}
-Object.assign(REQUIREMENTS, {
-  everyToggleOn: {
-    text: 'Every switch turns on.',
-    short: ['every', { el: 'toggle' }, 'turns on'],
-    judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
-  },
-  boxThroughOpenDoor: {
-    text: 'A box passes through an open door.',
-    short: [{ el: 'box' }, 'through an open', { el: 'door' }],
-    // A closed door is solid, so a box on a door tile means it is open.
-    judge: (room, moves) => {
-      let ok = false;
-      replayPath(room, moves, s => { if (s.entities.some(e => !e.dead && e.kind === 'box' && /^door:/.test(room.cells[e.y * room.w + e.x] || ''))) ok = true; });
-      return ok;
-    },
-  },
-  onlyBoxesFlipSwitches: {
-    text: 'Only boxes turn switches on and off. The robot never crosses one.',
-    short: ['only', { el: 'box' }, 'flips', { el: 'toggle' }],
-    judge: (room, moves) => {
-      let robot = false, flipped = false;
-      replayPath(room, moves, s => {
-        if ((room.cells[s.player.y * room.w + s.player.x] || '').startsWith('toggle:')) robot = true;
-        if (s.toggled.length) flipped = true;
-      });
-      return flipped && !robot;
-    },
-  },
-  boxPushedThrice: {
-    text: 'One box is pushed in at least 3 moves.',
-    short: [{ el: 'box' }, 'pushed ×3'],
-    judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 3),
-  },
-  boxPushedTwiceHitOnce: {
-    text: 'One box is pushed in at least 2 moves, and the robot collides with it once without moving it.',
-    short: [{ el: 'box' }, 'pushed ×2, collided ×1'],
-    judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2 && b.hits >= 1),
-  },
-  everyToggleOffAtEnd: {
-    text: 'Every switch is off when the robot reaches the goal.',
-    short: ['every', { el: 'toggle' }, 'off at the end'],
-    judge: (room, moves) => room.cells.some(c => c.startsWith('toggle:')) && replayPath(room, moves, () => {}).toggled.length === 0,
-  },
-  everyToggleOnThenOff: {
-    text: 'Every switch turns on, then off again.',
-    short: ['every', { el: 'toggle' }, 'on, then off'],
-    judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.onOff.has(i)); },
-  },
-});
 
 // Every room in every level needs at least 4 moves: one rule for the campaign, said first.
 // A tool may narrow a search with steps.min and steps.max; a level sets neither.
@@ -206,9 +71,6 @@ export const bestText = st => `Exactly ${st.best} moves.`;
 // The same, as the goal card's rows say them.
 export const rangeShort = st => `at least ${bounds(st).min} moves`;
 export const bestShort = st => `exactly ${st.best}`;
-// The two optional goals every level has: the exact move count, and a room no bigger than
-// A x B (its area at most A times B, either way round). A x B is the smallest room a search
-// found that wins the level.
 // A level's optional goals: the exact count and the room size (every level), the level's own
 // path goals (def.optional: requirement ids, met only when every shortest path meets them),
 // then mix, any two of the others in one run. Not every pair, let alone all, need fit one room.
@@ -273,6 +135,10 @@ export function check(def, room, opts) {
   base.pathGoals = Object.fromEntries((def.optional || []).map(id => [id, r.paths.every(path => REQUIREMENTS[id].judge(room, path))]));
   const { min, max } = bounds(st);
   base.inRange = r.length >= min && r.length <= max;
+  // For each goal that failed, one shortest path that missed it: the card can draw it.
+  base.missed = { ...failed };
+  for (const id of def.optional || []) if (!base.pathGoals[id]) base.missed[id] = r.paths.find(path => !REQUIREMENTS[id].judge(room, path));
+  if (!base.inRange) base.missed.steps = r.paths[0];
   if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: r.length < min ? `${stepsText(st)} This one takes ${r.length}.` : `The shortest path takes at most ${max} moves. This one takes ${r.length}.` } };
   const first = (def.require || []).find(id => id in failed);
   if (first) return { ...base, won: false, fail: { path: failed[first], why: `Not met: ${REQUIREMENTS[first].text}` } };

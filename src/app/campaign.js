@@ -3,8 +3,8 @@
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS } from '../level/campaign.js';
-import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } from '../campaign/rules.js';
-import { place, moveAt } from '../editor/edit.js';
+import { roomOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } from '../campaign/rules.js';
+import { REQUIREMENTS, trailOf } from '../campaign/requirements.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { $, portrait, now } from './dom.js';
@@ -24,12 +24,6 @@ export function progress() {
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
 const levelOf = id => LEVELS.find(l => l.id === id);
 
-// Move: carries the thing on one tile to another, when the target can take it and the room
-// breaks no rule it kept before. Returns the moved room or null.
-export function moveIn(level, from, to) {
-  return moveRefusal(level, from, to) ? null : moveAt(level, from, to);
-}
-
 // A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
 // level's, so it is cut off, and the start and goal it had stay where they were.
 export function unframe(room) {
@@ -38,40 +32,6 @@ export function unframe(room) {
   const cells = [];
   for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) cells.push(room.cells[y * w + x]);
   return { ...room, w: w - 2, h: h - 2, cells, start: room.start && { x: room.start.x - 1, y: room.start.y - 1 }, entities: room.entities.map(e => ({ ...e, x: e.x - 1, y: e.y - 1 })) };
-}
-
-// Why a tap may not change the room, or null when it may: placing must not break a rule the
-// level enforces as you build (a maximum, a second goal, a box on a button). Too few of
-// something is fine while building; Run says so.
-export function refusal(level, ui, x, y, how) {
-  if (!S.camp) return null;
-  const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
-  place(next, ui, x, y, how);
-  const e = placementErrors(def, next).find(e => !/^Place at least/.test(e.msg) && !before.has(e.msg));
-  return e ? tipOf(e.msg) : null;
-}
-export const allows = (level, ui, x, y, how) => !refusal(level, ui, x, y, how);
-// A refusal said on the tile: the start and goal are never removed, only moved.
-const tipOf = msg => msg === 'Place the goal.' ? 'The goal stays. Use Move.' : msg === 'Place the start.' ? 'The start stays. Use Move.' : msg;
-
-// Why Move cannot carry a thing from one tile to another, or null when it can.
-export function moveRefusal(level, from, to) {
-  const next = moveAt(level, from, to);
-  if (!next) return 'Cannot go there.';
-  if (!S.camp) return null;
-  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg)), e = placementErrors(S.camp.def, next).find(e => !before.has(e.msg));
-  return e ? tipOf(e.msg) : null;
-}
-
-// Says why a tap was refused, on the tile, for a moment; the room does not change.
-export function refuse(x, y, why) {
-  S.fx.push({ type: 'refuse', x, y, at: now() });
-  const tip = $('campTip'), c = $('game'), w = $('roomWrap').getBoundingClientRect(), r = c.getBoundingClientRect();
-  tip.textContent = why;
-  tip.style.left = `${r.left - w.left + (x + 0.5) * r.width / S.level.w}px`;
-  tip.style.top = `${r.top - w.top + y * r.height / S.level.h}px`;
-  tip.hidden = false;
-  clearTimeout(refuse.t); refuse.t = setTimeout(() => { tip.hidden = true; }, 1500);
 }
 
 // The tools a level offers: Look, Erase, and its palette.
@@ -128,6 +88,10 @@ export function syncBrief() {
     const list = r.optional ? opt : must;
     const li = document.createElement('li'); li.dataset.req = r.id; li.title = r.text;
     li.className = (r.optional ? 'optional ' : '') + (r.met === true ? 'met' : r.met === false ? 'unmet' : '');
+    // A failed row with a path that missed it: a tap draws that path on the room.
+    const missed = v && v.missed && v.missed[r.id];
+    if (missed) { li.classList.add('points'); li.title = `${r.text} Tap to see a shortest path that misses it.`; li.onclick = () => showTrail(r, missed); }
+    if (S.camp.trailOf === r.id) li.classList.add('shown');
     const mark = document.createElement('span'); mark.className = 'mark'; mark.textContent = r.met === true ? '✓' : r.met === false ? '✕' : r.optional ? '★' : '';
     li.append(mark, words(r.parts));
     list.append(li);
@@ -149,12 +113,24 @@ export function syncBrief() {
   $('campVerdictText').title = points ? 'Show the tiles' : '';
 }
 
+// Draws on the room one shortest path that missed a goal, and says which goal.
+function showTrail(row, path) {
+  A.setMode('edit');
+  S.trail = trailOf(S.level, path); S.camp.trailOf = row.id; S.redraw = true;
+  syncBrief();
+  const out = $('campVerdict');
+  out.className = 'campVerdict lost'; out.hidden = false;
+  $('campVerdictText').textContent = `Not met: ${row.text.replace(/^Optional: /, '')} This shortest path misses it, ${path.length} moves.`;
+  $('campVerdictText').onclick = null;
+}
+function clearTrail() { if (S.trail) { S.trail = null; S.redraw = true; } if (S.camp && S.camp.trailOf) { S.camp.trailOf = null; syncBrief(); } }
+
 export function enterLevel(id) {
   const def = levelOf(id);
   if (!def) return false;
   const p = progress(), rec = p.levels[id];
   closeAll();
-  S.camp = { def, verdict: null };
+  S.camp = { def, verdict: null }; S.trail = null;
   const kept = rec && rec.room && unframe(rec.room);
   S.level = kept && placementErrors(def, kept).every(e => /^(Place at least|Place the )/.test(e.msg)) ? kept : roomOf(def);
   S.history = newHistory();
@@ -168,7 +144,7 @@ export function enterLevel(id) {
 
 function leaveLevel() {
   save();
-  S.camp = null;
+  S.camp = null; S.trail = null;
   document.body.classList.remove('campaign');
   // The sandbox never inherits a campaign room.
   S.level = starterLevel(portrait()); S.history = newHistory();
@@ -253,10 +229,23 @@ export function buildCampaign(actions, sandbox) {
   $('menuSandbox').onclick = () => { closeAll(); boot(); };
   $('campMenu').onclick = openMenu;
   $('campBack').onclick = () => { leaveLevel(); openList(); };
-  $('campRun').onclick = run;
+  $('campRun').onclick = () => { S.camp.testing = false; run(); };
+  // Test: the room played by hand, the robot not involved; nothing is judged or saved.
+  $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.testing = true; A.setMode('play'); };
+  addEventListener('wee:win', ev => {
+    if (!S.camp || !S.camp.testing) return;
+    const out = $('campVerdict');
+    out.className = 'campVerdict won'; out.hidden = false;
+    $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}. A test does not count: Run judges the room.`;
+    $('campVerdictText').onclick = null;
+  });
   $('campVerdictClose').onclick = () => { $('campVerdict').hidden = true; };
   // The verdict is read once: the next touch anywhere else puts it away; the card keeps the marks.
-  addEventListener('pointerdown', ev => { if (!$('campVerdict').hidden && !ev.target.closest('#campVerdict')) $('campVerdict').hidden = true; }, true);
+  addEventListener('pointerdown', ev => {
+    if (ev.target.closest('#campVerdict, .campReqs li.points')) return;
+    $('campVerdict').hidden = true;
+    clearTrail();
+  }, true);
   // A change to the room clears the last verdict and is kept for next time.
   let stamp = '';
   const watch = () => {
@@ -264,10 +253,10 @@ export function buildCampaign(actions, sandbox) {
     const s = JSON.stringify(S.level);
     if (s === stamp) return;
     stamp = s;
-    if (S.camp.ranOn !== s) S.camp.verdict = null;
+    if (S.camp.ranOn !== s) { S.camp.verdict = null; S.trail = null; S.camp.trailOf = null; }
     save(); syncBrief();
   };
   for (const t of ['pointerup', 'keyup', 'click']) addEventListener(t, () => setTimeout(watch, 0));
-  addEventListener('wee:mode', () => { if (S.camp) syncBrief(); });
+  addEventListener('wee:mode', () => { if (S.camp) { if (S.mode !== 'play') S.camp.testing = false; syncBrief(); } });
   addEventListener('pagehide', save);
 }

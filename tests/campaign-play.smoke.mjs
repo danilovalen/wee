@@ -40,8 +40,8 @@ try {
   check('no palette button wears a count', await page.locator('.countDot').count() === 0);
   check('a level opens on a 7x7 room, start and goal one step in from their corners', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.start.x === 1 && l.start.y === 1 && l.cells[40] === 'goal' && l.cells.filter(c => c).length === 1; }));
   check('the card keeps no score', await page.locator('.campScore').count() === 0);
-  check('every level has three optional goals: the exact count, a room size and mix', (await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join())) === 'best=★exactly 6,small=★3×3 or smaller,mix=★any 2 at once', await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join()));
-  check('every row is unmarked before a run', /^steps:-,best:-,small:-,mix:-$/.test(await marks()), await marks());
+  check('level 1 has four optional goals: the exact count, a room size, its own touch goal and mix', (await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join())) === 'best=★exactly 6,small=★3×3 or smaller,touchBlockFourTimes=★touch one  ×4,mix=★any 2 at once', await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join()));
+  check('every row is unmarked before a run', /^steps:-,best:-,small:-,touchBlockFourTimes:-,mix:-$/.test(await marks()), await marks());
   // Move: press on the start, release two tiles down; then the goal, one tile left.
   await page.click('[data-tool="move"]');
   const tile = async (x, y) => { const b = await page.locator('#game').boundingBox(); const l = await page.evaluate(() => [window.wee.getLevel().w, window.wee.getLevel().h]); return [b.x + (x + 0.5) * b.width / l[0], b.y + (y + 0.5) * b.height / l[1]]; };
@@ -66,13 +66,31 @@ try {
   check('a run too short marks the moves row', (await marks()).startsWith('steps:unmet'), await marks());
   check('an empty 5x5 is too short and says so', /takes at least 4 moves/.test(lost) && /Watch the robot/.test(lost), lost);
   check('the robot plays the failing path', await page.evaluate(() => document.getElementById('mode').textContent === 'Edit'), await page.locator('#mode').textContent());
-  await page.click('#mode');
+  // F1: a tap on the failed row draws a shortest path that missed it on the room.
+  // Back in edit first, so the room is compared with itself and not with the robot playing.
+  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  await page.waitForTimeout(100);
+  // The pixel under the first move's number (the middle of the first move), before and after.
+  const badge = at => page.evaluate(([mx, my]) => { const c = document.getElementById('game'), l = window.wee.getLevel(), t = c.width / l.w, d = c.getContext('2d').getImageData(Math.floor((mx + 0.5) * t), Math.floor((my + 0.5) * t), 1, 1).data; return [d[0], d[1], d[2]].join(); }, at);
+  await page.click('.campReqs li[data-req="steps"]');
+  await page.waitForTimeout(150);
+  const trail = await page.evaluate(() => window.wee.trail());
+  check('a tap on a failed row draws the path that missed it', trail && trail.robot.length === 3 && await page.locator('.campReqs li[data-req="steps"].shown').count() === 1, JSON.stringify(trail));
+  check('and says which goal it missed', /misses it, 2 moves/.test(await page.locator('#campVerdictText').textContent()) && await page.locator('#campVerdict').isVisible());
+  const mid = [(trail.robot[0].x + trail.robot[1].x) / 2, (trail.robot[0].y + trail.robot[1].y) / 2];
+  const drawn = await badge(mid);
+  await page.mouse.click(5, 5);
+  check('a touch elsewhere clears it', (await page.evaluate(() => window.wee.trail())) === null && await page.locator('.campReqs li.shown').count() === 0);
+  await page.waitForTimeout(100);
+  const plain = await badge(mid);
+  check('the path is painted on the room: a numbered move where the floor was', drawn !== plain, plain + ' -> ' + drawn);
+  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
   await load(WIN);
   await page.click('#campRun');
   await page.waitForTimeout(200);
   const won = await verdict();
   check('a room in range wins and the card marks every row', /Made it in 4 moves/.test(won) && (await marks()).startsWith('steps:met') && (await page.locator('#campLast').textContent()) === 'won in 4', won + ' ' + await marks());
-  check('a 5x5 win misses the 3x3 goal', (await marks()).endsWith('small:unmet,mix:unmet'), await marks());
+  check('a 5x5 win misses the 3x3 goal', (await marks()).endsWith('small:unmet,touchBlockFourTimes:unmet,mix:unmet'), await marks());
   await page.click('#campVerdictClose');
   check('the verdict closes', await page.locator('#campVerdict').isHidden());
   // Without the close button: the next touch elsewhere puts it away; a touch on it keeps it.
@@ -84,7 +102,7 @@ try {
   check('the next touch anywhere else puts the verdict away', await page.locator('#campVerdict').isHidden());
   await page.click('#campBack');
   const row = await page.locator('.campRow[data-level="1"] small').textContent();
-  check('the list keeps a beaten level and how many optional goals it met', /Beaten · optional 0\/3 · moves 4 · tiles 7 at area 25$/.test(row) && !/cost/.test(row), row);
+  check('the list keeps a beaten level and how many optional goals it met', /Beaten · optional 0\/4 · moves 4 · tiles 7 at area 25$/.test(row) && !/cost/.test(row), row);
   check('the level you were on is selected', await page.locator('.campRow[data-level="1"]').evaluate(b => b.classList.contains('sel')));
   await page.click('.campRow[data-level="1"]');
   const kept = await page.evaluate(() => { const l = window.wee.getLevel(); return [l.w, l.h, l.cells.filter(c => c === 'wall').length].join(); });
@@ -92,7 +110,7 @@ try {
   // A 3x3 win, found by tools/tilesArea.mjs, meets the room-size goal, and the list keeps it.
   await load(['.GP', '...', '..#']);
   await page.click('#campRun'); await page.waitForTimeout(200);
-  check('a 3x3 win meets the room-size goal', (await marks()).endsWith('small:met,mix:unmet'), await marks());
+  check('a 3x3 win meets the room-size goal', (await marks()).endsWith('small:met,touchBlockFourTimes:unmet,mix:unmet'), await marks());
   if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
   await page.click('#campBack');
   const row2 = await page.locator('.campRow[data-level="1"] small').textContent();
@@ -110,8 +128,20 @@ try {
   await page.click('#campBack');
   const row4 = await page.locator('.campRow[data-level="1"] small').textContent();
   check('a longer win widens the moves; tiles stay at the smallest area won', /moves 4–11/.test(row4) && /tiles 1 at area 9/.test(row4), row4);
-  check('a met optional goal stays met after a later win misses it', /optional [12]\/3/.test(row2) && row3.replace(/ · moves.*/, '') === row2.replace(/ · moves.*/, ''), row2 + ' / ' + row3);
+  check('a met optional goal stays met after a later win misses it', /optional [12]\/4/.test(row2) && row3.replace(/ · moves.*/, '') === row2.replace(/ · moves.*/, ''), row2 + ' / ' + row3);
   await page.click('.campRow[data-level="1"]');
+  // Test: the room played by hand; reaching the goal says so and nothing is judged or saved.
+  await load(['P....', '.....', '.....', '.....', '....G']);
+  const kept0 = await page.evaluate(() => localStorage.getItem('wee.campaign'));
+  await page.click('#campTest');
+  check('Test plays the room by hand, with no robot', await page.evaluate(() => document.body.classList.contains('play')) && await page.locator('#campVerdict').isHidden());
+  await page.keyboard.press('ArrowRight'); await page.waitForTimeout(700);
+  await page.keyboard.press('ArrowDown'); await page.waitForTimeout(900);
+  const said = await page.locator('#campVerdictText').textContent();
+  check('reaching the goal in a test says so, and that it does not count', /You reached the goal in 2 moves/.test(said) && /does not count/.test(said), said);
+  const kept1 = await page.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')).levels['1']);
+  check('a test changes no record', JSON.stringify(kept1.goals) === JSON.stringify(JSON.parse(kept0).levels['1'].goals) && JSON.stringify(kept1.stats) === JSON.stringify(JSON.parse(kept0).levels['1'].stats));
+  await page.click('#mode');
   // A room saved before rooms lost their border comes back without it.
   await page.click('#campBack');
   await page.evaluate(() => {
