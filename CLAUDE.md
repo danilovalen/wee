@@ -41,3 +41,4 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
 - Draw rooms in tests with `room([...])` from `tests/lib.mjs`.
 - Player-facing text: condition first, imperative, no em dashes. Flag new copy as a draft.
 - Every playtest report gets a numbered item in `docs/REGISTER.md` and closes with an outcome.
+- Menus are full pages, never a box over the game (owner, 2026-10-18, row 220). A ruling about one screen covers every screen of its kind: ask before treating it as narrower.
