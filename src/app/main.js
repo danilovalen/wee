@@ -14,6 +14,7 @@ import { setMode, frame, render, tick, report, copyReport } from './play.js';
 import { buildRooms, bootRooms } from './rooms.js';
 import { buildGenerator } from './generator.js';
 import { buildCampaign, openMenu } from './campaign.js';
+import { bindDebug } from './debug.js';
 
 S.level = starterLevel(portrait());
 
@@ -28,6 +29,7 @@ window.wee = { draws: () => S.draws, trail: () => S.trail, blank: (w, h) => empt
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
+bindDebug();
 buildCampaign({ setMode, syncPanel, fit }, () => { window.wee.roomsReady = bootRooms(); return window.wee.roomsReady; });
 bindInput();
 syncPanel();

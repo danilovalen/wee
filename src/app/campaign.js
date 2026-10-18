@@ -9,6 +9,7 @@ import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { $, portrait, now } from './dom.js';
 import { icon } from './icons.js';
+import { noteLeaving, copyDebug } from './debug.js';
 
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
@@ -176,7 +177,7 @@ export function run() {
   }
   S.camp.ranOn = JSON.stringify(S.level);
   const show = v.ok ? (v.won ? v.path : v.fail.path) : null;
-  if (show) { A.setMode('play'); S.demo = [...show]; }
+  if (show) { A.setMode('play'); S.demo = [...show]; S.demoRunning = true; }
   else flashStuck(v);
   syncBrief();
   return v;
@@ -230,10 +231,13 @@ export function buildCampaign(actions, sandbox) {
   $('menuCampaign').onclick = openList;
   $('menuSandbox').onclick = () => { closeAll(); boot(); };
   $('campMenu').onclick = openMenu;
-  $('campBack').onclick = () => { leaveLevel(); openList(); };
+  $('campBack').onclick = () => { noteLeaving(); leaveLevel(); openList(); };
+  $('menuDebug').onclick = copyDebug;
   $('campRun').onclick = () => { S.camp.testing = false; run(); };
   // Test: the room played by hand, the robot not involved; nothing is judged or saved.
   $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.verdictGone = true; S.camp.testing = true; A.setMode('play'); };
+  // After a Run the robot has shown its path: back to editing, so a tap on the room places again.
+  addEventListener('wee:demoDone', () => setTimeout(() => { if (S.camp && !S.camp.testing && S.mode === 'play') A.setMode('edit'); }, 900));
   addEventListener('wee:win', ev => {
     if (!S.camp || !S.camp.testing) return;
     const out = $('campVerdict');

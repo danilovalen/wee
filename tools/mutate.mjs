@@ -741,6 +741,8 @@ const M = [
   ['src', ".every(e => !(room.cells[e.y * room.w + e.x] || '').startsWith('button:'));", ".length >= 0;", 'campaign'],
   ['style.css', "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }", "display: grid; gap: 8px; }", 'campaign-play'],
   ['src', "${statsText(rec.stats)}` : '';", "${statsText(rec.stats)}` : `${stepsText(def.steps)}`;", 'campaign-play'],
+  ['src', "    dispatchEvent(new Event('wee:demoDone'));", "", 'campaign-play'],
+  ['src', "$('campBack').onclick = () => { noteLeaving(); leaveLevel(); openList(); };", "$('campBack').onclick = () => { leaveLevel(); openList(); };", 'campaign-play'],
   ['style.css', ".campMust { grid-template-columns: repeat(2, minmax(0, 1fr)); }", "", 'campaign-play'],
   ['src', "    const list = r.optional ? opt : must;", "    const list = must;", 'campaign-play'],
   ['style.css', ".sizeBand[hidden] { display: none; }", "", 'size-band'],

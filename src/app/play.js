@@ -49,6 +49,11 @@ export function tick() {
     else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
   }
   watchStuck(game);
+  // A Run's robot has played its whole path: say so once, so the level can go back to editing.
+  if (S.demoRunning && !(S.demo && S.demo.length) && !S.demoWait && !game.player.dir && !game.entities.some(e => !e.dead && (e.rush || e.slide))) {
+    S.demoRunning = false;
+    dispatchEvent(new Event('wee:demoDone'));
+  }
 }
 
 // A key as the rules should take it, given where you are drawn right now.

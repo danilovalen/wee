@@ -713,6 +713,7 @@ body:not(.campaign) [data-camp] { display: none !important; }
     <div class="menuList">
       <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
       <button id="menuSandbox" type="button">Sandbox</button>
+      <button id="menuDebug" type="button" title="If something stops working, copy this and paste it in the chat.">Report a problem</button>
     </div>
   </dialog>
   <dialog id="campBox" class="rooms">
@@ -4905,8 +4906,55 @@ function icon(tool, colour = 'red') {
 }
 return { icon };
 })();
-// ---- src/app/campaign.js
+// ---- src/app/debug.js
 const m45 = (() => {
+const { S } = m11;
+const { $ } = m12;
+// A report for a bug that only shows on a real device: the last taps and keys, and the
+// game's state the moment the player left a level, to copy from the menu and paste in chat.
+
+
+const LAST = 40, log = [];
+let left = null;
+const name = el => !el || !el.closest ? String(el) : el.id ? '#' + el.id : el.dataset && (el.dataset.plus || el.dataset.tool || el.dataset.req) ? `[${el.dataset.plus || el.dataset.tool || el.dataset.req}]` : el.className ? '.' + String(el.className).split(' ')[0] : el.tagName;
+
+// What sits on top of the room's middle and of each grip: the tap goes there.
+function onTop() {
+  const at = (x, y) => name(document.elementFromPoint(x, y)), g = $('game').getBoundingClientRect();
+  const out = { room: at(g.x + g.width / 2, g.y + g.height / 2) };
+  for (const b of document.querySelectorAll('[data-plus]')) {
+    const r = b.getBoundingClientRect();
+    out[b.dataset.plus] = getComputedStyle(b).display === 'none' ? 'hidden' : at(r.x + r.width / 2, r.y + r.height / 2);
+  }
+  return out;
+}
+const state = () => ({
+  mode: S.mode, body: document.body.className, level: S.camp && S.camp.def.id, testing: !!(S.camp && S.camp.testing),
+  tool: S.ui.tool, carry: S.carry, painting: S.painting, editOpen: S.before !== null && S.before !== undefined, swipe: !!S.swipe,
+  demo: S.demo ? S.demo.length : null, verdictShown: !$('campVerdict').hidden, size: [S.level.w, S.level.h],
+  window: [innerWidth, innerHeight, devicePixelRatio], onTop: onTop(),
+});
+
+// The game's state as the player leaves a level, before leaving resets it.
+function noteLeaving() { left = { at: Math.round(performance.now()), ...state() }; }
+
+function bindDebug() {
+  for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'keydown']) addEventListener(type, ev => {
+    log.push({ t: Math.round(performance.now()), type, on: type === 'keydown' ? ev.key : name(ev.target), mode: S.mode, ...(ev.clientX !== undefined ? { x: Math.round(ev.clientX), y: Math.round(ev.clientY) } : {}) });
+    if (log.length > LAST) log.shift();
+  }, true);
+}
+
+// Shown first, then offered to the clipboard: a clipboard that never answers must not hide it.
+function copyDebug() {
+  const text = JSON.stringify({ format: 'wee-debug', version: 1, now: state(), leftLevel: left, events: log });
+  $('reportText').value = text; $('reportBox').showModal(); $('reportText').select();
+  try { navigator.clipboard.writeText(text).catch(() => {}); } catch { /* no clipboard here */ }
+}
+return { noteLeaving, bindDebug, copyDebug };
+})();
+// ---- src/app/campaign.js
+const m46 = (() => {
 const { LEVELS } = m35;
 const { roomOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } = m38;
 const { REQUIREMENTS, trailOf } = m37;
@@ -4914,10 +4962,12 @@ const { newHistory } = m10;
 const { S, starterLevel } = m11;
 const { $, portrait, now } = m12;
 const { icon } = m44;
+const { noteLeaving, copyDebug } = m45;
 // The campaign: a main menu at launch, the level list, and building a level's room for the
 // robot. Run judges the room (src/campaign/rules.js) and the robot plays a shortest path:
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
+
 
 
 
@@ -5091,7 +5141,7 @@ function run() {
   }
   S.camp.ranOn = JSON.stringify(S.level);
   const show = v.ok ? (v.won ? v.path : v.fail.path) : null;
-  if (show) { A.setMode('play'); S.demo = [...show]; }
+  if (show) { A.setMode('play'); S.demo = [...show]; S.demoRunning = true; }
   else flashStuck(v);
   syncBrief();
   return v;
@@ -5145,10 +5195,13 @@ function buildCampaign(actions, sandbox) {
   $('menuCampaign').onclick = openList;
   $('menuSandbox').onclick = () => { closeAll(); boot(); };
   $('campMenu').onclick = openMenu;
-  $('campBack').onclick = () => { leaveLevel(); openList(); };
+  $('campBack').onclick = () => { noteLeaving(); leaveLevel(); openList(); };
+  $('menuDebug').onclick = copyDebug;
   $('campRun').onclick = () => { S.camp.testing = false; run(); };
   // Test: the room played by hand, the robot not involved; nothing is judged or saved.
   $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.verdictGone = true; S.camp.testing = true; A.setMode('play'); };
+  // After a Run the robot has shown its path: back to editing, so a tap on the room places again.
+  addEventListener('wee:demoDone', () => setTimeout(() => { if (S.camp && !S.camp.testing && S.mode === 'play') A.setMode('edit'); }, 900));
   addEventListener('wee:win', ev => {
     if (!S.camp || !S.camp.testing) return;
     const out = $('campVerdict');
@@ -5180,7 +5233,7 @@ function buildCampaign(actions, sandbox) {
 return { TOOL, progress, unframe, toolsFor, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
 })();
 // ---- src/solve/lenses.js
-const m46 = (() => {
+const m47 = (() => {
 const { createGame } = m8;
 const { computeBeams } = m3;
 const { successors, stateKey, unsearchable, MAX_STATES } = m15;
@@ -5265,10 +5318,10 @@ function* lensData(level, max = MAX_STATES) {
 return { lensData };
 })();
 // ---- src/app/lenses.js
-const m47 = (() => {
+const m48 = (() => {
 const { reach } = m15;
 const { routes } = m17;
-const { lensData } = m46;
+const { lensData } = m47;
 const { INK } = m14;
 const { S } = m11;
 const { $ } = m12;
@@ -5464,7 +5517,7 @@ function buildLenses() {
 return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
 // ---- src/editor/edit.js
-const m48 = (() => {
+const m49 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
 const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m34;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
@@ -5641,12 +5694,12 @@ function place(level, ui, x, y, how) {
 return { moveAt, holds, describe, place };
 })();
 // ---- src/app/chips.js
-const m49 = (() => {
-const { describe } = m48;
+const m50 = (() => {
+const { describe } = m49;
 const { S } = m11;
 const { INK } = m14;
 const { $, touch } = m12;
-const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m47;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m48;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
@@ -5708,7 +5761,7 @@ function syncInfo() {
 return { buildChips, syncChips };
 })();
 // ---- src/app/sheets.js
-const m50 = (() => {
+const m51 = (() => {
 const { $ } = m12;
 const { closeWell } = m18;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
@@ -5736,7 +5789,7 @@ function buildSheets() {
 return { openSheet, buildSheets };
 })();
 // ---- src/app/keys.js
-const m51 = (() => {
+const m52 = (() => {
 const { TOOLS } = m34;
 const { $ } = m12;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
@@ -5789,7 +5842,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m52 = (() => {
+const m53 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -5854,8 +5907,8 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m53 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m52;
+const m54 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m53;
 const { S } = m11;
 const { change } = m31;
 const { $ } = m12;
@@ -5978,24 +6031,24 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/panels.js
-const m54 = (() => {
+const m55 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m9;
 const { INK } = m14;
 const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m34;
-const { toolsFor, syncBrief } = m45;
+const { toolsFor, syncBrief } = m46;
 const { S } = m11;
 const { $, canvas, touch } = m12;
 const { change, step: undoStep, syncUndo } = m31;
 const { runCheck, syncCheck, syncLint } = m21;
-const { buildLenses, syncLenses } = m47;
+const { buildLenses, syncLenses } = m48;
 const { buildWell, openWell } = m18;
-const { buildChips } = m49;
+const { buildChips } = m50;
 const { buildSize } = m32;
-const { buildSheets } = m50;
-const { buildKeys } = m51;
+const { buildSheets } = m51;
+const { buildKeys } = m52;
 const { syncRoomsButton } = m30;
-const { buildSelect, syncSelect } = m53;
+const { buildSelect, syncSelect } = m54;
 const { icon } = m44;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
@@ -6188,9 +6241,9 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/app/campaignMove.js
-const m55 = (() => {
+const m56 = (() => {
 const { placementErrors } = m38;
-const { place, moveAt } = m48;
+const { place, moveAt } = m49;
 const { S } = m11;
 const { $, now } = m12;
 // Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
@@ -6240,7 +6293,7 @@ function refuse(x, y, why) {
 return { moveIn, refusal, allows, moveRefusal, refuse };
 })();
 // ---- src/app/stuck.js
-const m56 = (() => {
+const m57 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m15;
 const { S } = m11;
 const { $ } = m12;
@@ -6275,22 +6328,22 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m57 = (() => {
+const m58 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m43;
 const { S } = m11;
 const { $, g, now } = m12;
-const { openSheet } = m50;
-const { syncPanel, keysText } = m54;
+const { openSheet } = m51;
+const { syncPanel, keysText } = m55;
 const { feedDemo } = m21;
-const { selectOverlay } = m53;
-const { moveRefusal } = m55;
-const { watchStuck, resetStuck } = m56;
-const { lensMarks, lensBusy } = m47;
+const { selectOverlay } = m54;
+const { moveRefusal } = m56;
+const { watchStuck, resetStuck } = m57;
+const { lensMarks, lensBusy } = m48;
 const { syncWell } = m18;
-const { syncChips } = m49;
+const { syncChips } = m50;
 const { gust } = m13;
 const { stateKey } = m15;
 const { respawn } = m2;
@@ -6345,6 +6398,11 @@ function tick() {
     else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
   }
   watchStuck(game);
+  // A Run's robot has played its whole path: say so once, so the level can go back to editing.
+  if (S.demoRunning && !(S.demo && S.demo.length) && !S.demoWait && !game.player.dir && !game.entities.some(e => !e.dead && (e.rush || e.slide))) {
+    S.demoRunning = false;
+    dispatchEvent(new Event('wee:demoDone'));
+  }
 }
 
 // A key as the rules should take it, given where you are drawn right now.
@@ -6437,20 +6495,20 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m58 = (() => {
-const { describe, holds, place } = m48;
+const m59 = (() => {
+const { describe, holds, place } = m49;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m57;
+const { setMode, aim } = m58;
 const { begin, end, change, step: undoStep } = m31;
 const { save } = m30;
-const { selectDown, selectMove, selectUp, selectKey } = m53;
-const { LENS_GROUPS, cycleLens, lensesOff } = m47;
-const { syncPanel } = m54;
+const { selectDown, selectMove, selectUp, selectKey } = m54;
+const { LENS_GROUPS, cycleLens, lensesOff } = m48;
+const { syncPanel } = m55;
 const { fit } = m33;
-const { toolForKey, bareKey, showKeys } = m51;
+const { toolForKey, bareKey, showKeys } = m52;
 const { TOOLS } = m34;
-const { refusal, moveRefusal, moveIn, refuse } = m55;
+const { refusal, moveRefusal, moveIn, refuse } = m56;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -6576,7 +6634,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m59 = (() => {
+const m60 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -6688,12 +6746,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m60 = (() => {
+const m61 = (() => {
 const { search, move, stateKey } = m15;
 const { createGame } = m8;
 const { elementCheck, idleElements, NOTES_MAX } = m17;
 const { contains } = m27;
-const { ING, variants } = m59;
+const { ING, variants } = m60;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -6779,7 +6837,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m61 = (() => {
+const m62 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -6796,13 +6854,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m62 = (() => {
+const m63 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
-const { INGREDIENTS, ING, spot } = m59;
-const { judge, lockedIn } = m60;
+const { INGREDIENTS, ING, spot } = m60;
+const { judge, lockedIn } = m61;
 const { contains } = m27;
-const { rng } = m61;
+const { rng } = m62;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -6957,9 +7015,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m63 = (() => {
-const { INGREDIENTS } = m59;
-const { generate, normalize, recipeLabel, LIMITS } = m62;
+const m64 = (() => {
+const { INGREDIENTS } = m60;
+const { generate, normalize, recipeLabel, LIMITS } = m63;
 const { stampOf } = m24;
 const { S } = m11;
 const { thumbURL } = m25;
@@ -7153,7 +7211,7 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m64 = (() => {
+const m65 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -7162,14 +7220,16 @@ const { S, starterLevel } = m11;
 const { portrait, $ } = m12;
 const { startSnow, windNow } = m13;
 const { fit, watchStage } = m33;
-const { buildPanels, syncPanel } = m54;
-const { bindInput } = m58;
-const { setMode, frame, render, tick, report, copyReport } = m57;
+const { buildPanels, syncPanel } = m55;
+const { bindInput } = m59;
+const { setMode, frame, render, tick, report, copyReport } = m58;
 const { buildRooms, bootRooms } = m30;
-const { buildGenerator } = m63;
-const { buildCampaign, openMenu } = m45;
+const { buildGenerator } = m64;
+const { buildCampaign, openMenu } = m46;
+const { bindDebug } = m45;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
+
 
 
 
@@ -7197,6 +7257,7 @@ window.wee = { draws: () => S.draws, trail: () => S.trail, blank: (w, h) => empt
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
+bindDebug();
 buildCampaign({ setMode, syncPanel, fit }, () => { window.wee.roomsReady = bootRooms(); return window.wee.roomsReady; });
 bindInput();
 syncPanel();

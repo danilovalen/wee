@@ -234,6 +234,26 @@ try {
   await page.mouse.up();
   check('over a tile it cannot take, the copy is red', red.join() !== wallPx.join() && red[0] > red[1] + 40, wallPx + ' -> ' + red);
   check('and releasing there leaves the room and says why', (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === busy && await page.locator('#campTip').isVisible());
+  // 213: after a Run the robot plays its path, then the level is back in editing by itself.
+  await page.click('#campBack'); await page.click('.campRow[data-level="1"]');
+  await load(WIN);
+  await page.click('#campRun');
+  const editing = await page.waitForFunction(() => !document.body.classList.contains('play'), null, { timeout: 15000 }).then(() => true).catch(() => false);
+  check('after a Run the robot plays, then the level is back in editing by itself', editing);
+  const hRun = await page.evaluate(() => window.wee.getLevel().h);
+  await page.click('[data-plus="bottom"]'); await page.waitForTimeout(150);
+  check('and the grips work again', (await page.evaluate(() => window.wee.getLevel().h)) === hRun + 1);
+  await page.click('#undo');
+  await page.click('#campTest'); await page.keyboard.press('ArrowRight'); await page.waitForTimeout(2500);
+  check('a Test stays in play until the player leaves it', await page.evaluate(() => document.body.classList.contains('play')));
+  await page.click('#mode');
+  // The report: the state as the level was left, and the last taps.
+  await page.click('#campBack'); await page.click('#campMenu'); await page.click('#menuDebug');
+  const rep = JSON.parse(await page.evaluate(() => document.getElementById('reportText').value));
+  check('Report a problem shows the level as it was left and the last taps', rep.format === 'wee-debug' && rep.leftLevel && rep.leftLevel.level === '1' && rep.leftLevel.mode === 'edit' && rep.leftLevel.onTop.room === '#game' && rep.events.some(e => e.type === 'pointerdown'), JSON.stringify(rep.leftLevel));
+  await page.click('#reportBox form button');
+  check('closing the report leaves the menu open', await page.locator('#menuBox').isVisible());
+  await page.click('#menuCampaign'); await page.click('.campRow[data-level="1"]');
   await page.click('#campBack');
   await page.click('#campMenu');
   await page.click('#menuSandbox');
