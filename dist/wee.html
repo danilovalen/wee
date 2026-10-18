@@ -460,10 +460,50 @@ body.campaign #wellBtn, body.campaign #sizeBtn, body.campaign #well, body.campai
 body.campaign #checkText, body.campaign #showSolution, body.campaign #lintBox, body.campaign #designBox,
 body.campaign #hideBtn, body.campaign #respawnBtn, body.campaign #reportBtn, body.campaign #phoneNav { display: none !important; }
 body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play #campTest { display: none; }
-.menu { text-align: center; min-width: 240px; }
-.menuLogo { display: block; font-size: 2.4em; margin: 8px 0 16px; }
-.menuList { display: grid; gap: 10px; }
-.menuList button { font-size: 1.15em; padding: 12px; }
+/* The main menu is a screen of its own: a room the robot plays behind a fade, the wordmark on top,
+   the choices at the bottom. */
+.menu { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; padding: 0; border-radius: 0; overflow: hidden; background: #dde1e8; color: var(--ink); text-align: center; }
+.menu::backdrop { background: var(--paper); }
+.menu::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(238,240,244,.15) 0%, rgba(238,240,244,.1) 50%, rgba(238,240,244,.94) 76%); }
+.menu .menuLogo { display: block; position: absolute; z-index: 1; left: 0; right: 0; top: 24px; font-size: 64px; margin: 0; }
+.menuList { position: absolute; z-index: 1; left: 50%; bottom: max(40px, env(safe-area-inset-bottom)); width: min(300px, 100vw - 64px); transform: translateX(-50%); display: grid; gap: 12px; }
+.menuList button { font: 800 20px var(--label-face); height: 56px; border-radius: var(--r-l); }
+.menuList button.primary { background: var(--accent); color: var(--on-accent); }
+#menuDebug { background: none; box-shadow: none; height: 44px; font: 13px var(--label-face); color: var(--soft); text-decoration: underline; }
+.menuScene { position: absolute; inset: 0; }
+/* The floor runs past the room on every side, so a wide screen shows more floor, not an island. */
+.msRoom { position: absolute; left: 0; top: 0; width: 364px; height: 416px; transform-origin: 0 0; }
+.msRoom::before { content: ''; position: absolute; left: -1040px; top: -1040px; width: 2444px; height: 2496px; z-index: -1; background: #e9ecf1 linear-gradient(#dde1e8 2px, transparent 2px) 0 0 / 52px 52px; }
+.msRoom::after { content: ''; position: absolute; left: -1040px; top: -1040px; width: 2444px; height: 2496px; z-index: -1; background: linear-gradient(90deg, #dde1e8 2px, transparent 2px) 0 0 / 52px 52px; }
+.msRoom > i { position: absolute; display: block; }
+.msWall { width: 48px; height: 48px; border-radius: var(--r-s); background: #a8afbe; }
+.msEmitter { width: 20px; height: 28px; border-radius: var(--r-s); background: #3a3f4d; box-shadow: inset -4px 0 0 #ff3b5c; }
+.msBeam { height: 6px; border-radius: var(--r-pill); background: #ff3b5c; box-shadow: 0 0 8px 2px rgba(255,59,92,.7); animation: msBeam 12s linear infinite, msHum .4s linear infinite; }
+.msSwitch { width: 36px; height: 20px; border-radius: var(--r-pill); animation: msSw 12s linear infinite; }
+.msSwitch b { position: absolute; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #ff6b81; animation: msKnob 12s linear infinite; }
+.msDoor { width: 42px; height: 42px; border-radius: var(--r-s); background: repeating-linear-gradient(90deg, #ff6b81 0 9px, #b23a50 9px 12px); animation: msDoor 12s linear infinite, msBonk 12s linear infinite; }
+.msSpark { width: 40px; color: #f0b429; font: 900 18px var(--label-face); font-style: normal; animation: msSpark 12s linear infinite; }
+.msGoal { width: 36px; height: 36px; border-radius: 50%; box-shadow: inset 0 0 0 4px #f0b429; color: #f0b429; font: 18px/36px sans-serif; font-style: normal; animation: msGoal 12s linear infinite; }
+.msBox, .msRobot { left: 0; top: 0; width: 52px; height: 52px; animation: 12s linear infinite; }
+.msBox { animation-name: msBox; transform: translate(156px,104px); }
+.msBox b { display: block; margin: 8px; width: 36px; height: 36px; border-radius: var(--r-s); background: #f5a33c; box-shadow: inset 0 0 0 3px #c8701d; }
+.msRobot { animation-name: msRobot, msFade; transform: translate(104px,52px); }
+.msRobot svg { display: block; transform-origin: 26px 47px; animation: msSquash 12s linear infinite; }
+.msEyes { transform-origin: 26px 25px; animation: msBlink 3s infinite; }
+@keyframes msRobot { 0% { transform: translate(104px,52px) } 8% { transform: translate(156px,52px) } 14% { transform: translate(156px,104px) } 20% { transform: translate(208px,104px) } 26% { transform: translate(208px,208px) } 28% { transform: translate(208px,222px) } 31% { transform: translate(208px,208px) } 43% { transform: translate(52px,208px) } 55% { transform: translate(208px,208px) } 62%, 100% { transform: translate(208px,312px) } }
+@keyframes msFade { 0%, 86% { opacity: 1 } 90%, 95% { opacity: 0 } 99%, 100% { opacity: 1 } }
+@keyframes msSquash { 0%, 27% { transform: none } 28% { transform: scale(1.12,.8) } 31%, 100% { transform: none } }
+@keyframes msBox { 0%, 8% { transform: translate(156px,104px); opacity: 1 } 14%, 88% { transform: translate(156px,156px); opacity: 1 } 92% { transform: translate(156px,156px); opacity: 0 } 95% { transform: translate(156px,104px); opacity: 0 } 99%, 100% { transform: translate(156px,104px); opacity: 1 } }
+@keyframes msBeam { 0%, 13% { width: 340px } 14%, 90% { width: 136px } 93%, 100% { width: 340px } }
+@keyframes msHum { 0%, 100% { opacity: 1 } 50% { opacity: .6 } }
+@keyframes msSw { 0%, 42% { background: #e9ecf1 } 43%, 92% { background: #ffd1d8 } 94%, 100% { background: #e9ecf1 } }
+@keyframes msKnob { 0%, 42% { left: 6px } 43%, 92% { left: 24px } 94%, 100% { left: 6px } }
+@keyframes msDoor { 0%, 43% { opacity: 1 } 46%, 90% { opacity: .18 } 94%, 100% { opacity: 1 } }
+@keyframes msBonk { 0%, 27% { transform: none; filter: none } 28% { transform: translateY(4px); filter: brightness(1.4) } 29.5% { transform: translateY(-2px) } 31%, 100% { transform: none; filter: none } }
+@keyframes msSpark { 0%, 27.5% { opacity: 0; transform: scale(.4) } 28.5% { opacity: 1; transform: scale(1) } 32%, 100% { opacity: 0; transform: scale(1.3) } }
+@keyframes msGoal { 0%, 61% { transform: scale(1) } 64% { transform: scale(1.35) } 68%, 100% { transform: scale(1) } }
+@keyframes msBlink { 0%, 92%, 100% { transform: scaleY(1) } 95% { transform: scaleY(.1) } }
+@media (prefers-reduced-motion: reduce) { .menuScene * { animation: none !important; } }
 .campList { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .campRow { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; }
 .campParts { display: flex; gap: 4px; }
@@ -708,7 +748,8 @@ body:not(.campaign) [data-camp] { display: none !important; }
     <div class="roomsHead"><b>Keys</b><form method="dialog"><button>Close</button></form></div>
     <div id="keysList" class="keysList"></div>
   </dialog>
-  <dialog id="menuBox" class="rooms menu">
+  <dialog id="menuBox" class="menu">
+    <div id="menuScene" class="menuScene" aria-hidden="true"></div>
     <b class="logo menuLogo">wee</b>
     <div class="menuList">
       <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
@@ -4953,8 +4994,45 @@ function copyDebug() {
 }
 return { noteLeaving, bindDebug, copyDebug };
 })();
-// ---- src/app/campaign.js
+// ---- src/app/menuScene.js
 const m46 = (() => {
+
+// The main menu's background: a small room the robot plays on a loop (the box blocks a laser, the
+// robot bumps the closed door, steps on the switch, goes through). Drawn in CSS, not the game's
+// scene, so it costs nothing while the menu is shut.
+const C = 52;
+const WALLS = [[6, 0], [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [6, 5], [3, 6], [5, 6], [0, 7], [6, 7]];
+const ROBOT = `<svg viewBox="0 0 52 52" width="52" height="52" aria-hidden="true">
+<line x1="26" y1="6" x2="26" y2="13" stroke="#4b3fd6" stroke-width="3" stroke-linecap="round"/><circle cx="26" cy="5" r="3.5" fill="#ff6b81"/>
+<rect x="9" y="13" width="34" height="28" rx="9" fill="#7d6bff"/><rect x="14" y="19" width="24" height="12" rx="6" fill="#2a2440"/>
+<g class="msEyes"><circle cx="21" cy="25" r="3" fill="#7ef0ff"/><circle cx="31" cy="25" r="3" fill="#7ef0ff"/></g>
+<rect x="15" y="41" width="7" height="6" rx="2" fill="#4b3fd6"/><rect x="30" y="41" width="7" height="6" rx="2" fill="#4b3fd6"/></svg>`;
+
+const at = (c, r, dx = 0, dy = 0) => `left:${c * C + dx}px;top:${r * C + dy}px`;
+
+function buildMenuScene(host) {
+  host.innerHTML = `<div class="msRoom">${WALLS.map(([c, r]) => `<i class="msWall" style="${at(c, r, 2, 2)}"></i>`).join('')}
+<i class="msEmitter" style="${at(0, 3, 4, 12)}"></i><i class="msBeam" style="${at(0, 3, 24, 23)}"></i>
+<i class="msSwitch" style="${at(1, 4, 8, 16)}"><b></b></i>
+<i class="msDoor" style="${at(4, 5, 5, 5)}"></i><i class="msSpark" style="${at(4, 5, 6, -10)}">✱ ✱</i>
+<i class="msGoal" style="${at(4, 6, 8, 8)}">★</i>
+<i class="msBox"><b></b></i><i class="msRobot">${ROBOT}</i></div>`;
+  const room = host.firstElementChild;
+  // Fit: the robot's corner of the room (columns 0 to 5) fills a phone's width, and the goal row
+  // always ends above the buttons; on a wide screen it is centred with floor around it.
+  const fit = () => {
+    const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight, top = Math.min(56, h * 0.07);
+    const s = Math.max(1, Math.min(w / 260, (h - 230 - top) / 364));
+    room.style.transform = `translate(${w / 2 - 143 * s}px, ${top}px) scale(${s})`;
+  };
+  fit();
+  addEventListener('resize', fit);
+  return fit;
+}
+return { buildMenuScene };
+})();
+// ---- src/app/campaign.js
+const m47 = (() => {
 const { LEVELS } = m35;
 const { roomOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } = m38;
 const { REQUIREMENTS, trailOf } = m37;
@@ -4963,10 +5041,12 @@ const { S, starterLevel } = m11;
 const { $, portrait, now } = m12;
 const { icon } = m44;
 const { noteLeaving, copyDebug } = m45;
+const { buildMenuScene } = m46;
 // The campaign: a main menu at launch, the level list, and building a level's room for the
 // robot. Run judges the room (src/campaign/rules.js) and the robot plays a shortest path:
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
+
 
 
 
@@ -4980,7 +5060,7 @@ const KEY = 'wee.campaign';
 const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle' };
 // Every level hands you Move, to carry anything placed (the start and goal too) elsewhere.
 const ALWAYS = ['move'];
-let A = null, boot = null;
+let A = null, boot = null, fitScene = null;
 
 function progress() {
   try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return p; } catch { /* storage off */ }
@@ -5187,11 +5267,12 @@ function openList() {
   if (sel) { sel.focus(); sel.scrollIntoView({ block: 'nearest' }); }
 }
 
-function openMenu() { closeAll(); $('menuBox').showModal(); }
+function openMenu() { closeAll(); $('menuBox').showModal(); fitScene?.(); }
 
 // actions: setMode, syncPanel, fit; sandbox(): starts the sandbox (the Rooms list).
 function buildCampaign(actions, sandbox) {
   A = actions; boot = sandbox;
+  fitScene = buildMenuScene($('menuScene'));
   $('menuCampaign').onclick = openList;
   $('menuSandbox').onclick = () => { closeAll(); boot(); };
   $('campMenu').onclick = openMenu;
@@ -5233,7 +5314,7 @@ function buildCampaign(actions, sandbox) {
 return { TOOL, progress, unframe, toolsFor, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
 })();
 // ---- src/solve/lenses.js
-const m47 = (() => {
+const m48 = (() => {
 const { createGame } = m8;
 const { computeBeams } = m3;
 const { successors, stateKey, unsearchable, MAX_STATES } = m15;
@@ -5318,10 +5399,10 @@ function* lensData(level, max = MAX_STATES) {
 return { lensData };
 })();
 // ---- src/app/lenses.js
-const m48 = (() => {
+const m49 = (() => {
 const { reach } = m15;
 const { routes } = m17;
-const { lensData } = m47;
+const { lensData } = m48;
 const { INK } = m14;
 const { S } = m11;
 const { $ } = m12;
@@ -5517,7 +5598,7 @@ function buildLenses() {
 return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
 // ---- src/editor/edit.js
-const m49 = (() => {
+const m50 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
 const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m34;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
@@ -5694,12 +5775,12 @@ function place(level, ui, x, y, how) {
 return { moveAt, holds, describe, place };
 })();
 // ---- src/app/chips.js
-const m50 = (() => {
-const { describe } = m49;
+const m51 = (() => {
+const { describe } = m50;
 const { S } = m11;
 const { INK } = m14;
 const { $, touch } = m12;
-const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m48;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m49;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
@@ -5761,7 +5842,7 @@ function syncInfo() {
 return { buildChips, syncChips };
 })();
 // ---- src/app/sheets.js
-const m51 = (() => {
+const m52 = (() => {
 const { $ } = m12;
 const { closeWell } = m18;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
@@ -5789,7 +5870,7 @@ function buildSheets() {
 return { openSheet, buildSheets };
 })();
 // ---- src/app/keys.js
-const m52 = (() => {
+const m53 = (() => {
 const { TOOLS } = m34;
 const { $ } = m12;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
@@ -5842,7 +5923,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m53 = (() => {
+const m54 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -5907,8 +5988,8 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m54 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m53;
+const m55 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m54;
 const { S } = m11;
 const { change } = m31;
 const { $ } = m12;
@@ -6031,24 +6112,24 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/panels.js
-const m55 = (() => {
+const m56 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m9;
 const { INK } = m14;
 const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m34;
-const { toolsFor, syncBrief } = m46;
+const { toolsFor, syncBrief } = m47;
 const { S } = m11;
 const { $, canvas, touch } = m12;
 const { change, step: undoStep, syncUndo } = m31;
 const { runCheck, syncCheck, syncLint } = m21;
-const { buildLenses, syncLenses } = m48;
+const { buildLenses, syncLenses } = m49;
 const { buildWell, openWell } = m18;
-const { buildChips } = m50;
+const { buildChips } = m51;
 const { buildSize } = m32;
-const { buildSheets } = m51;
-const { buildKeys } = m52;
+const { buildSheets } = m52;
+const { buildKeys } = m53;
 const { syncRoomsButton } = m30;
-const { buildSelect, syncSelect } = m54;
+const { buildSelect, syncSelect } = m55;
 const { icon } = m44;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
@@ -6241,9 +6322,9 @@ function syncPanel() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/app/campaignMove.js
-const m56 = (() => {
+const m57 = (() => {
 const { placementErrors } = m38;
-const { place, moveAt } = m49;
+const { place, moveAt } = m50;
 const { S } = m11;
 const { $, now } = m12;
 // Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
@@ -6293,7 +6374,7 @@ function refuse(x, y, why) {
 return { moveIn, refusal, allows, moveRefusal, refuse };
 })();
 // ---- src/app/stuck.js
-const m57 = (() => {
+const m58 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m15;
 const { S } = m11;
 const { $ } = m12;
@@ -6328,22 +6409,22 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m58 = (() => {
+const m59 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m43;
 const { S } = m11;
 const { $, g, now } = m12;
-const { openSheet } = m51;
-const { syncPanel, keysText } = m55;
+const { openSheet } = m52;
+const { syncPanel, keysText } = m56;
 const { feedDemo } = m21;
-const { selectOverlay } = m54;
-const { moveRefusal } = m56;
-const { watchStuck, resetStuck } = m57;
-const { lensMarks, lensBusy } = m48;
+const { selectOverlay } = m55;
+const { moveRefusal } = m57;
+const { watchStuck, resetStuck } = m58;
+const { lensMarks, lensBusy } = m49;
 const { syncWell } = m18;
-const { syncChips } = m50;
+const { syncChips } = m51;
 const { gust } = m13;
 const { stateKey } = m15;
 const { respawn } = m2;
@@ -6495,20 +6576,20 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m59 = (() => {
-const { describe, holds, place } = m49;
+const m60 = (() => {
+const { describe, holds, place } = m50;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m58;
+const { setMode, aim } = m59;
 const { begin, end, change, step: undoStep } = m31;
 const { save } = m30;
-const { selectDown, selectMove, selectUp, selectKey } = m54;
-const { LENS_GROUPS, cycleLens, lensesOff } = m48;
-const { syncPanel } = m55;
+const { selectDown, selectMove, selectUp, selectKey } = m55;
+const { LENS_GROUPS, cycleLens, lensesOff } = m49;
+const { syncPanel } = m56;
 const { fit } = m33;
-const { toolForKey, bareKey, showKeys } = m52;
+const { toolForKey, bareKey, showKeys } = m53;
 const { TOOLS } = m34;
-const { refusal, moveRefusal, moveIn, refuse } = m56;
+const { refusal, moveRefusal, moveIn, refuse } = m57;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -6634,7 +6715,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m60 = (() => {
+const m61 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -6746,12 +6827,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m61 = (() => {
+const m62 = (() => {
 const { search, move, stateKey } = m15;
 const { createGame } = m8;
 const { elementCheck, idleElements, NOTES_MAX } = m17;
 const { contains } = m27;
-const { ING, variants } = m60;
+const { ING, variants } = m61;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -6837,7 +6918,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m62 = (() => {
+const m63 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -6854,13 +6935,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m63 = (() => {
+const m64 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
-const { INGREDIENTS, ING, spot } = m60;
-const { judge, lockedIn } = m61;
+const { INGREDIENTS, ING, spot } = m61;
+const { judge, lockedIn } = m62;
 const { contains } = m27;
-const { rng } = m62;
+const { rng } = m63;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -7015,9 +7096,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m64 = (() => {
-const { INGREDIENTS } = m60;
-const { generate, normalize, recipeLabel, LIMITS } = m63;
+const m65 = (() => {
+const { INGREDIENTS } = m61;
+const { generate, normalize, recipeLabel, LIMITS } = m64;
 const { stampOf } = m24;
 const { S } = m11;
 const { thumbURL } = m25;
@@ -7211,7 +7292,7 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m65 = (() => {
+const m66 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -7220,12 +7301,12 @@ const { S, starterLevel } = m11;
 const { portrait, $ } = m12;
 const { startSnow, windNow } = m13;
 const { fit, watchStage } = m33;
-const { buildPanels, syncPanel } = m55;
-const { bindInput } = m59;
-const { setMode, frame, render, tick, report, copyReport } = m58;
+const { buildPanels, syncPanel } = m56;
+const { bindInput } = m60;
+const { setMode, frame, render, tick, report, copyReport } = m59;
 const { buildRooms, bootRooms } = m30;
-const { buildGenerator } = m64;
-const { buildCampaign, openMenu } = m46;
+const { buildGenerator } = m65;
+const { buildCampaign, openMenu } = m47;
 const { bindDebug } = m45;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
