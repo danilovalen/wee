@@ -151,3 +151,33 @@ dashed frame where the thing was. Row wording is a draft.
 - ⚠ Retracted 2026-10-17: "the robot counts a key pressed again mid-slide as a separate path".
   That only happens with the dive or boomerang power on, which test rooms had and no campaign
   level has. In a level, two routes are two paths.
+
+## Open work, in order (2026-10-18)
+
+His reports not yet fixed, grouped and ordered by how much they get in the way of play. Row numbers are `docs/REGISTER.md`. Each item closes with a gate and a mutant.
+
+**1. Stop the screen moving (rows 222, 235, 221).**
+1. Sweep first: a browser test records the box of every visible element (room, goal card, palette, top bar, grips) on a phone and a desktop, across Edit → Run → the robot's demo → back to Edit → Test → back, a goal turning met, a level switch, and a resize tap. Every change that is not the room's own content is a defect.
+2. The room keeps its place and size from Edit to Run to Test (222): the palette's space is kept, not freed, while playing.
+3. The goal card keeps its height when marks change (✓ and ✕ in place of empty circles) and when the "last run" note appears.
+4. The verdict pop-up goes (221). Today it covers the room after every Run and only repeats the card. To put to him before building: drop it and let the card's marks and the trail say it, or a one-line strip in a fixed place that never covers the room.
+5. The + grips stop jumping when pressed (227, part 1).
+
+**2. Resizing that stops working (rows 153, 213, 227).**
+1. Treat a cancelled touch on a + that never moved half a tile as a tap (the leading hypothesis: his phone's file viewer cancels some touches).
+2. If it still happens, the Report a problem output decides the next step.
+
+**3. Menus as full pages (rows 220, 218, 219).**
+1. Every menu is a page, never a box over the game: level list, Rooms, New room, Room info, Generator, Keys, Report a problem.
+2. Sandbox looks exactly like Campaign (218).
+3. The menu's robot slides like the game's robot, each move a slide to the next obstacle (219).
+
+**4. Editing (rows 230, 234).**
+1. Moving a box onto a button or switch swaps them, as does the robot.
+2. One-way: the tip goes; the palette label reads "ONE-WAY (TAP TO ROTATE; HOLD TO REMOVE)"; a hold on a placed one-way removes it.
+
+**5. Levels (rows 223 to 229, 225's rule).**
+1. Re-measure every level's size goal and exact count under today's rules (row 225: numbers measured under old rules are stale).
+2. Today's level 7 goes; level 8, re-measured and with an exact count of 7 if he confirms (224), becomes level 7 (226).
+3. His new level 8 (228): a box through a door, two boxes; his 7×9 room as its known win; a new optional goal, a box crushed by a closing door (229).
+4. Exact counts for 9 and 10 (mine, provisional) wait for his numbers; "a box ends on a one-way" is a goal only if he says.
