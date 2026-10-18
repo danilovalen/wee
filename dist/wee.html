@@ -5203,6 +5203,11 @@ function run() {
   if (v.ok && v.won) {
     const p = progress(), rec = p.levels[def.id] ||= {}, goals = rec.goals || {};
     rec.goals = Object.fromEntries(v.optional.map(o => [o.id, !!goals[o.id] || o.met]));
+    // Statistics to compare with other players: every win's moves, and per room area the tiles
+    // placed (the start and the goal not counted). Fewest and most of each.
+    const st = rec.stats ||= { moves: null, tiles: {} }, span = (r, n) => r ? [Math.min(r[0], n), Math.max(r[1], n)] : [n, n];
+    const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);
+    st.moves = span(st.moves, v.length); st.tiles[v.area] = span(st.tiles[v.area], tiles);
     rec.beaten = true; rec.room = S.level;
     write(p);
   }
@@ -5214,6 +5219,14 @@ function run() {
   return v;
 }
 
+// A beaten level's statistics, short: moves fewest to most, and tiles at the smallest area won.
+const range = ([a, b]) => a === b ? `${a}` : `${a}–${b}`;
+function statsText(st) {
+  if (!st || !st.moves) return '';
+  const area = Math.min(...Object.keys(st.tiles).map(Number));
+  return ` · moves ${range(st.moves)} · tiles ${range(st.tiles[area])} at area ${area}`;
+}
+
 function renderList() {
   const p = progress(), list = $('campList');
   list.replaceChildren(...LEVELS.map(def => {
@@ -5221,7 +5234,7 @@ function renderList() {
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten · optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}` : `${stepsText(def.steps)}`;
+    small.textContent = rec.beaten ? `Beaten · optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}` : `${stepsText(def.steps)}`;
     // The elements the level hands you, as the palette draws them.
     const parts = document.createElement('span'); parts.className = 'campParts';
     for (const el of Object.keys(def.palette)) {

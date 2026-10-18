@@ -725,6 +725,8 @@ const M = [
   ['style.css', ".campMust li[data-req=\"steps\"] { grid-column: 1 / -1; font-size: 1.08em; }", "", 'campaign-play'],
   ['src', "        if (on && !was) passes++;", "        if (on) passes++;", 'campaign'],
   ['src', "r.paths.every(path => REQUIREMENTS[id].judge(room, path))", "r.paths.some(path => REQUIREMENTS[id].judge(room, path))", 'campaign'],
+  ['src', "r ? [Math.min(r[0], n), Math.max(r[1], n)] : [n, n];", "r ? [Math.min(r[0], n), r[1]] : [n, n];", 'campaign-play'],
+  ['src', "const area = Math.min(...Object.keys(st.tiles).map(Number));", "const area = Math.max(...Object.keys(st.tiles).map(Number));", 'campaign-play'],
   ['style.css', ".campMust { grid-template-columns: repeat(2, minmax(0, 1fr)); }", "", 'campaign-play'],
   ['src', "    const list = r.optional ? opt : must;", "    const list = must;", 'campaign-play'],
   ['style.css', ".sizeBand[hidden] { display: none; }", "", 'size-band'],

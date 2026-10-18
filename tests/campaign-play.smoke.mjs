@@ -84,7 +84,7 @@ try {
   check('the next touch anywhere else puts the verdict away', await page.locator('#campVerdict').isHidden());
   await page.click('#campBack');
   const row = await page.locator('.campRow[data-level="1"] small').textContent();
-  check('the list keeps a beaten level and how many optional goals it met', /Beaten · optional 0\/3/.test(row) && !/cost|area/.test(row), row);
+  check('the list keeps a beaten level and how many optional goals it met', /Beaten · optional 0\/3 · moves 4 · tiles 7 at area 25$/.test(row) && !/cost/.test(row), row);
   check('the level you were on is selected', await page.locator('.campRow[data-level="1"]').evaluate(b => b.classList.contains('sel')));
   await page.click('.campRow[data-level="1"]');
   const kept = await page.evaluate(() => { const l = window.wee.getLevel(); return [l.w, l.h, l.cells.filter(c => c === 'wall').length].join(); });
@@ -102,7 +102,15 @@ try {
   if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
   await page.click('#campBack');
   const row3 = await page.locator('.campRow[data-level="1"] small').textContent();
-  check('a met optional goal stays met after a later win misses it', /optional [12]\/3/.test(row2) && row3 === row2, row2 + ' / ' + row3);
+  check('the list keeps the fewest and most moves, and tiles at the smallest area won', /moves 4\b/.test(row3) && /tiles 1 at area 9/.test(row3), row3);
+  await page.click('.campRow[data-level="1"]');
+  await page.evaluate(() => { const rows = ['..##P#.', '.#.G...', '....#..', '#.....#', '...#...', '.#...#.', '.......'], l = window.wee.blank(7, 7); l.start = null; for (const p of Object.keys(l.powers)) l.powers[p] = false; rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '#') l.cells[y * 7 + x] = 'wall'; if (c === 'G') l.cells[y * 7 + x] = 'goal'; if (c === 'P') l.start = { x, y }; })); window.wee.loadLevel(l); });
+  await page.click('#campRun'); await page.waitForTimeout(200);
+  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  await page.click('#campBack');
+  const row4 = await page.locator('.campRow[data-level="1"] small').textContent();
+  check('a longer win widens the moves; tiles stay at the smallest area won', /moves 4–11/.test(row4) && /tiles 1 at area 9/.test(row4), row4);
+  check('a met optional goal stays met after a later win misses it', /optional [12]\/3/.test(row2) && row3.replace(/ · moves.*/, '') === row2.replace(/ · moves.*/, ''), row2 + ' / ' + row3);
   await page.click('.campRow[data-level="1"]');
   // A room saved before rooms lost their border comes back without it.
   await page.click('#campBack');

@@ -25,7 +25,9 @@ the conversation that day. Rulings are restated, not quoted, unless in quotes.
   have to do all objectives in the same run"*; mix tells the player two may fit one room and all
   of them probably not. Today only levels 4 and 5 have a known room meeting both (register 179). A×B
   is the smallest winning room `tools/tilesArea.mjs` found for that level. The level list keeps
-  how many optional goals a level has ever met. Owner, 2026-10-17: *"drop both area and tile...
+  how many optional goals a level has ever met, and statistics for comparing with other players:
+  the fewest and most moves of any win, and per room area the fewest and most tiles placed
+  (shown at the smallest area won). Owner, 2026-10-17: *"drop both area and tile...
   one of the optional goals permanently be an area one... no more ZACHTRONICS evaluation"*,
   then *"A x B or smaller, use your smallest area search found"*. Before that a win was scored on
   cost and area (cost removed first, then area once a measurement showed the fewest-tiles win
