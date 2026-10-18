@@ -9,9 +9,13 @@ const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y 
 
 // Does (x, y) already hold the kind of thing this tool places?
 // Moves whatever stands on one tile to another: the start, a piece, or a tile's contents.
-// Returns the moved level, or null when the target cannot take it.
+// Onto a tile that holds something, the two swap. Returns the new level, or null when
+// either would end up where it cannot stand.
 const UNDER = c => c === '' || c.startsWith('toggle:') || c.startsWith('button:');
 export function moveAt(level, from, to) {
+  return moveOnto(level, from, to) || swapAt(level, from, to);
+}
+function moveOnto(level, from, to) {
   if (from.x === to.x && from.y === to.y) return null;
   const l = structuredClone(level), fi = idx(l, from.x, from.y), ti = idx(l, to.x, to.y);
   const isStart = p => !!l.start && l.start.x === p.x && l.start.y === p.y;
@@ -27,6 +31,33 @@ export function moveAt(level, from, to) {
     l.cells[ti] = l.cells[fi]; l.cells[fi] = '';
   } else return null;
   return l;
+}
+
+// What is on top of a tile goes first (the start, then a piece), else the tile itself.
+function swapAt(level, from, to) {
+  if (from.x === to.x && from.y === to.y) return null;
+  const l = structuredClone(level);
+  const grab = p => {
+    const i = idx(l, p.x, p.y);
+    if (l.start && l.start.x === p.x && l.start.y === p.y) { l.start = null; return { start: true }; }
+    const k = pieceAt(l, p.x, p.y);
+    if (k >= 0) return { piece: l.entities.splice(k, 1)[0] };
+    if (l.cells[i]) { const cell = l.cells[i]; l.cells[i] = ''; return { cell }; }
+    return null;
+  };
+  const a = grab(from), b = grab(to);
+  if (!a || !b) return null;
+  const put = (t, p) => {
+    const i = idx(l, p.x, p.y);
+    if (t.start) l.start = { x: p.x, y: p.y };
+    else if (t.piece) l.entities.push({ ...t.piece, x: p.x, y: p.y });
+    else if (l.cells[i]) return false;
+    else l.cells[i] = t.cell;
+    return true;
+  };
+  // A swap frees both tiles first, so the robot or a piece always lands where one stood or on
+  // bare floor; the one refusal is a tile landing under a robot or piece left on a switch or button.
+  return put(a, to) && put(b, from) ? l : null;
 }
 
 export function holds(level, x, y, tool) {

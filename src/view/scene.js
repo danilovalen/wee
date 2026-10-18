@@ -55,16 +55,22 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     g.strokeRect(f.x * T + 2 + dx, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
   }
   if (over && over.carry) {
-    // Move: a dashed frame where the thing was, a see-through copy where it lands, red and
-    // crossed where it cannot.
-    const { from, to, ok } = over.carry, i = from.y * level.w + from.x;
+    // Move: a dashed frame where the thing was, a see-through copy where it lands (and, for a
+    // swap, of what it trades places with), red and crossed where it cannot.
+    const { from, to, ok } = over.carry;
     g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([4, 3]);
     g.strokeRect(from.x * T + 3, from.y * T + 3, T - 6, T - 6); g.setLineDash([]);
     g.globalAlpha = 0.5;
-    const e = level.entities.find(e => e.x === from.x && e.y === from.y);
-    if (level.start && level.start.x === from.x && level.start.y === from.y) drawPlayer(g, to.x * T, to.y * T, false, 0.9, 0.9, level.powers.armored);
-    else if (e) drawPiece(g, e, to.x * T, to.y * T);
-    else if (level.cells[i]) drawCell(g, level.cells[i], to.x, to.y, null);
+    // What stands on a tile, as Move takes it: the start, else a piece, else the tile.
+    const ghost = (p, at) => {
+      const e = level.entities.find(e => e.x === p.x && e.y === p.y), c = level.cells[p.y * level.w + p.x];
+      if (level.start && level.start.x === p.x && level.start.y === p.y) drawPlayer(g, at.x * T, at.y * T, false, 0.9, 0.9, level.powers.armored);
+      else if (e) drawPiece(g, e, at.x * T, at.y * T);
+      else if (c) drawCell(g, c, at.x, at.y, null);
+    };
+    ghost(from, to);
+    // A swap: what stood on the target goes back where the carried thing came from.
+    if (ok) ghost(to, from);
     g.globalAlpha = 1;
     if (!ok) {
       g.fillStyle = 'rgba(230,80,80,0.35)'; g.fillRect(to.x * T, to.y * T, T, T);

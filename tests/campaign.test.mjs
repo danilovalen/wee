@@ -62,9 +62,18 @@ const build = (def, rows) => {
   ok('the goal moves and leaves floor', g && at(g, 3, 2) === 'goal' && at(g, 4, 4) === '');
   const b = moveAt(r, { x: 1, y: 1 }, { x: 2, y: 0 });
   ok('a box moves onto a switch', b && b.entities[0].x === 2 && b.entities[0].y === 0 && at(b, 2, 0) === 'toggle:red');
-  ok('a block does not land on a switch', moveAt(r, { x: 1, y: 0 }, { x: 2, y: 0 }) === null);
-  ok('nothing lands on the start', moveAt(r, { x: 1, y: 0 }, { x: 0, y: 0 }) === null && moveAt(r, { x: 1, y: 1 }, { x: 0, y: 0 }) === null);
-  ok('the start does not go onto a block', moveAt(r, { x: 0, y: 0 }, { x: 1, y: 0 }) === null);
+  // Onto a tile that holds something, the two swap.
+  const sw = moveAt(r, { x: 1, y: 0 }, { x: 2, y: 0 });
+  ok('a block onto a switch swaps them', sw && at(sw, 2, 0) === 'wall' && at(sw, 1, 0) === 'toggle:red');
+  const sb = moveAt(r, { x: 1, y: 0 }, { x: 0, y: 0 });
+  ok('a block onto the start swaps them', sb && sb.start.x === 1 && sb.start.y === 0 && at(sb, 0, 0) === 'wall');
+  const sx = moveAt(r, { x: 1, y: 1 }, { x: 0, y: 0 });
+  ok('a box onto the start swaps them', sx && sx.start.x === 1 && sx.start.y === 1 && sx.entities[0].x === 0 && sx.entities[0].y === 0);
+  const sg = moveAt(r, { x: 0, y: 0 }, { x: 4, y: 4 });
+  ok('the start onto the goal swaps them', sg && sg.start.x === 4 && sg.start.y === 4 && at(sg, 0, 0) === 'goal' && at(sg, 4, 4) === '');
+  const onSwitch = structuredClone(r); onSwitch.cells[1 * 5 + 1] = 'toggle:red';
+  ok('a swap that would put a block under a box is refused', moveAt(onSwitch, { x: 1, y: 0 }, { x: 1, y: 1 }) === null);
+  ok('a box on a switch swaps with the start, leaving the switch', (() => { const m = moveAt(onSwitch, { x: 1, y: 1 }, { x: 0, y: 0 }); return m && m.start.x === 1 && m.start.y === 1 && at(m, 1, 1) === 'toggle:red' && m.entities[0].x === 0; })());
   ok('an empty tile has nothing to move', moveAt(r, { x: 3, y: 3 }, { x: 2, y: 3 }) === null);
   ok('the original room is untouched', r.start.x === 0 && at(r, 4, 4) === 'goal' && r.entities[0].x === 1);
 }
@@ -112,10 +121,15 @@ const build = (def, rows) => {
   const win = build(d, ['P.#.#', '.....', '.###.', '.#...', '.#..G']);
   const v = check(d, win);
   ok('a room in range wins', v.ok && v.won && v.length === 4, JSON.stringify(v.fail));
+  // No level has a range any more: at least 4 moves for every level, and no most.
+  ok('no level sets a range; every level needs at least 4 moves', LEVELS.every(l => l.steps.range === undefined && l.steps.min === undefined && l.steps.max === undefined));
+  const his11 = build(d, ['..##P#.', '.#.G...', '....#..', '#.....#', '...#...', '.#...#.', '.......']);
+  const long = check(d, his11);
+  ok('a long path wins: his 11-move level 1 room, once refused for passing 8', long.won && long.length === 11, JSON.stringify(long.fail));
   ok('a win reports its area', v.area === 25 && areaOf(win) === 25 && areaOf(roomOf(d)) === 49);
   ok('there is no cost score any more', !('cost' in v) && !('COSTS' in LEVELDATA));
   ok('a win hands the robot its path', v.path && v.path.length === 4);
-  ok('a win scores two optional goals: the exact count and the room size', v.optional.map(o => o.id).join() === 'best,small' && v.optional[0].met === (v.length === d.steps.best) && v.optional[1].met === (v.area <= d.small[0] * d.small[1]) && v.met === v.optional.filter(o => o.met).length);
+  ok('a win scores three optional goals: the exact count, the room size and mix', v.optional.map(o => o.id).join() === 'best,small,mix' && v.optional[2].met === (v.optional[0].met && v.optional[1].met) && v.optional[0].met === (v.length === d.steps.best) && v.optional[1].met === (v.area <= d.small[0] * d.small[1]) && v.met === v.optional.filter(o => o.met).length);
   const bad = check(d, { ...roomOf(d), start: null, cells: roomOf(d).cells.map(() => '') });
   ok('a room without its start and goal cannot run', bad.ok === false && bad.errors.length === 2);
   const walled = build(d, ['P....', '.....', '#####', '.....', '....G']);
@@ -132,6 +146,9 @@ const build = (def, rows) => {
   ok('every toggle on: met', req('everyToggleOn', ['######', '#Pt..#', '#...t#', '######'], ['right', 'down']));
   ok('on then off: not met when it stays on', !req('everyToggleOnThenOff', ['######', '#Pt..#', '######'], ['right']));
   ok('on then off: met', req('everyToggleOnThenOff', ['######', '#Pt..#', '######'], ['right', 'left']));
+  ok('through an open door twice: met going there and back', req('throughOpenDoorTwice', ['#######', '#Pt.D.#', '#######'], ['right', 'left']));
+  ok('through an open door twice: not met with one pass', !req('throughOpenDoorTwice', ['#######', '#Pt.D.#', '#######'], ['right']));
+  ok('through an open door twice: one slide across two doors side by side is one pass', !req('throughOpenDoorTwice', ['#######', '#PtDD.#', '#######'], ['right']));
   ok('collides with a closed door: met when a slide stops against it', req('hitsClosedDoor', ['#######', '#P..D.#', '#######'], ['right']));
   ok('collides with a closed door: not met when the door is open', !req('hitsClosedDoor', ['#######', '#Pt.D.#', '#######'], ['right']));
   ok('collides with a closed door: not met when gravel stops it before an open one', !req('hitsClosedDoor', ['#######', '#PtgD.#', '#######'], ['right']));
@@ -166,7 +183,7 @@ const build = (def, rows) => {
 }
 { // level 5: one box pushed in two moves and run into once without moving
   const d = level('5');
-  ok('level 5 has blocks and a box, nothing else', Object.keys(d.palette).join() === 'block,box' && d.palette.box[0] === 1 && d.require.join() === 'boxPushedTwiceHitOnce' && d.steps.best === 8 && d.steps.range === 2);
+  ok('level 5 has blocks and a box, nothing else', Object.keys(d.palette).join() === 'block,box' && d.palette.box[0] === 1 && d.require.join() === 'boxPushedTwiceHitOnce' && d.steps.best === 8 && d.steps.range === undefined);
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
   ok('a hit: the robot stops against a box that cannot move', req('boxPushedTwiceHitOnce', ['########', '#P.B..#', '#.....#', '########'], ['right', 'right']) === false);
   const one = ['#######', '#.....#', '#P..B.#', '#.....#', '#######'];
@@ -198,10 +215,13 @@ const build = (def, rows) => {
   ok('a door the robot never meets closed fails level 2', lazy.ok && !lazy.won, JSON.stringify(lazy.fail));
 }
 { // every shortest path must meet a requirement, not just one
-  const d = { ...level('1'), require: ['throughOpenDoor'], steps: { best: 2, range: 0 }, palette: { block: [0, 30], toggle: [0, 1], door: [0, 1] } };
+  const d = { ...level('1'), require: ['throughOpenDoor'], steps: { best: 2, min: 2, max: 2 }, palette: { block: [0, 30], toggle: [0, 1], door: [0, 1] } };
   const both = build(d, ['P.t..', '.....', '....D', '.....', '....G']);
   const v = check(d, both);
   ok('one path missing the door fails the room', v.ok && !v.won && /Not met/.test(v.fail.why) && v.fail.path.map(m => m.split('@')[0]).join() === 'down,right', JSON.stringify(v.fail));
+  // An optional path goal is judged like a requirement: met only when every shortest path meets it.
+  const og = check({ ...d, require: [], optional: ['throughOpenDoor'] }, both);
+  ok('a path goal one shortest path misses is not met', og.paths === 2 && og.optional.find(o => o.id === 'throughOpenDoor').met === false, JSON.stringify(og.optional));
   ok('the verdict marks each requirement for the goal card', v.reqs && v.reqs.throughOpenDoor === false && v.inRange === true, JSON.stringify(v.reqs));
   ok('every requirement has a short row, with at least one word', Object.values(REQUIREMENTS).every(r => Array.isArray(r.short) && r.short.some(p => typeof p === 'string')));
   ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.el === 'start' || ELEMENTS[p.el])));
@@ -212,6 +232,15 @@ const build = (def, rows) => {
     5: ['....', '..BP', '.#..', '.G..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['..P', 'GD.', 'oB.'], 8: ['.G.oP', '....D', '.....', '...B.', '....#'] };
   for (const l of LEVELS) {
     const v = check(l, build(l, SMALL[l.id]));
+    // Mix holds where one room meets two goals at once: level 5's smallest room also takes exactly 8.
+    if (l.id === '2') {
+      // Level 2's own path goal, met on every shortest path of a room the search found.
+      const w2 = check(l, build(l, ['....D.', 'DP.D.#', '#.....', '..t.G.']));
+      ok('level 2 has its own optional goal: through an open door twice', l.optional.join() === 'throughOpenDoorTwice' && w2.won && w2.optional.find(o => o.id === 'throughOpenDoorTwice').met, JSON.stringify(w2.fail || w2.optional));
+      ok('a path goal is not met when a shortest path misses it', !v.optional.find(o => o.id === 'throughOpenDoorTwice').met, JSON.stringify(v.optional));
+    }
+    if (l.id === '5') ok('mix: met when one run meets two optional goals', v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.id !== 'mix').every(o => o.met), JSON.stringify(v.optional));
+    if (l.id === '1') ok('mix: not met by one goal alone', !v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.met).length === 1, JSON.stringify(v.optional));
     ok(`level ${l.id}'s ${l.small.join('x')} goal is met by a win`, Array.isArray(l.small) && v.won && v.optional.find(o => o.id === 'small').met, JSON.stringify(v.fail || v.optional));
   }
 }

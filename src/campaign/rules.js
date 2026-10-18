@@ -113,6 +113,21 @@ export const REQUIREMENTS = {
       return ok;
     },
   },
+  throughOpenDoorTwice: {
+    text: 'The robot passes through an open door twice.',
+    short: [{ el: 'start' }, 'through an open', { el: 'door' }, '×2'],
+    // One pass is stepping onto a door tile from a tile that is not one: a slide across two
+    // doors side by side passes once.
+    judge: (room, moves) => {
+      let passes = 0, was = false;
+      replayPath(room, moves, s => {
+        const on = /^door:/.test(room.cells[s.player.y * room.w + s.player.x] || '');
+        if (on && !was) passes++;
+        was = on;
+      });
+      return passes >= 2;
+    },
+  },
   doorClosedAtEnd: {
     text: 'Every door is closed when the robot reaches the goal.',
     short: ['every', { el: 'door' }, 'closed at the end'],
@@ -182,18 +197,35 @@ Object.assign(REQUIREMENTS, {
   },
 });
 
-export const stepsText = st => `The shortest path takes ${st.best - st.range} to ${st.best + st.range} moves.`;
+// Every room in every level needs at least 4 moves: one rule for the campaign, said first.
+// A tool may narrow a search with steps.min and steps.max; a level sets neither.
+export const MIN_MOVES = 4;
+export const bounds = st => ({ min: st.min ?? MIN_MOVES, max: st.max ?? Infinity });
+export const stepsText = st => `The shortest path takes at least ${bounds(st).min} moves.`;
 export const bestText = st => `Exactly ${st.best} moves.`;
 // The same, as the goal card's rows say them.
-export const rangeShort = st => `${st.best - st.range}–${st.best + st.range} moves`;
+export const rangeShort = st => `at least ${bounds(st).min} moves`;
 export const bestShort = st => `exactly ${st.best}`;
 // The two optional goals every level has: the exact move count, and a room no bigger than
 // A x B (its area at most A times B, either way round). A x B is the smallest room a search
 // found that wins the level.
-export const OPTIONAL = [
-  { id: 'best', short: def => bestShort(def.steps), text: def => bestText(def.steps), met: (def, v) => v.length === def.steps.best },
-  { id: 'small', short: def => `${def.small[0]}×${def.small[1]} or smaller`, text: def => `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: (def, v) => v.area <= def.small[0] * def.small[1] },
-];
+// A level's optional goals: the exact count and the room size (every level), the level's own
+// path goals (def.optional: requirement ids, met only when every shortest path meets them),
+// then mix, any two of the others in one run. Not every pair, let alone all, need fit one room.
+export function optionalGoals(def) {
+  return [
+    { id: 'best', parts: [bestShort(def.steps)], text: bestText(def.steps), met: v => v.length === def.steps.best },
+    { id: 'small', parts: [`${def.small[0]}×${def.small[1]} or smaller`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] },
+    ...(def.optional || []).map(id => ({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: v => !!(v.pathGoals && v.pathGoals[id]) })),
+    { id: 'mix', parts: ['any 2 at once'], text: 'Meet two of the other optional goals in the same run.', mix: 2 },
+  ];
+}
+// Each optional goal judged on one run's verdict; mix counts the others.
+export function optionalResults(def, v) {
+  const goals = optionalGoals(def), own = goals.filter(o => !o.mix).map(o => ({ id: o.id, text: o.text, met: !!o.met(v) }));
+  const n = own.filter(o => o.met).length;
+  return [...own, ...goals.filter(o => o.mix).map(o => ({ id: o.id, text: o.text, met: n >= o.mix }))];
+}
 
 // The room's area, the size score.
 export const areaOf = room => room.w * room.h;
@@ -238,10 +270,12 @@ export function check(def, room, opts) {
   const failed = {};
   for (const path of r.paths) for (const id of def.require || []) if (!(id in failed) && !REQUIREMENTS[id].judge(room, path)) failed[id] = path;
   base.reqs = Object.fromEntries((def.require || []).map(id => [id, !(id in failed)]));
-  base.inRange = r.length >= st.best - st.range && r.length <= st.best + st.range;
-  if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: `${stepsText(st)} This one takes ${r.length}.` } };
+  base.pathGoals = Object.fromEntries((def.optional || []).map(id => [id, r.paths.every(path => REQUIREMENTS[id].judge(room, path))]));
+  const { min, max } = bounds(st);
+  base.inRange = r.length >= min && r.length <= max;
+  if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: r.length < min ? `${stepsText(st)} This one takes ${r.length}.` : `The shortest path takes at most ${max} moves. This one takes ${r.length}.` } };
   const first = (def.require || []).find(id => id in failed);
   if (first) return { ...base, won: false, fail: { path: failed[first], why: `Not met: ${REQUIREMENTS[first].text}` } };
-  const optional = OPTIONAL.map(o => ({ id: o.id, text: o.text(def), met: o.met(def, base) }));
+  const optional = optionalResults(def, base);
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }

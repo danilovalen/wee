@@ -15,8 +15,7 @@
   ]
  },
  "steps": {
-  "best": 8,
-  "range": 2
+  "best": 8
  },
  "rules": [],
  "require": [

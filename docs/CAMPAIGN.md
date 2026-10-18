@@ -10,12 +10,20 @@ the conversation that day. Rulings are restated, not quoted, unless in quotes.
 
 - You do not solve the puzzle. **You build the room and a robot plays it.**
 - The robot plays **every shortest path**. A room passes only when all of them pass.
+- **Every room needs at least 4 moves**, in every level: one rule for the whole campaign, the
+  first line of the goal card (owner, 2026-10-18: *"a min 4 for EVERY level, the ultimate
+  unquestionable minimum, high priority info"*). There is no most. Each level's former range
+  x ± y went; its x stays as the optional exact count.
 - Each level sets: the room size, its fixed pieces (possibly none), the robot's powers, a
-  palette of elements with a min/max each, a required move range x ± y, and
+  palette of elements with a min/max each, an exact move count x (an optional goal), and
   requirements the solution must meet. Hitting exactly x moves is optional.
 - On a failure the robot plays the failing path, so you can watch what went wrong.
-- **No scores.** A win is a win; each level then has two optional goals: the **exact move
-  count**, and a **room of A×B or smaller** (its area at most A times B, either way round). A×B
+- **No scores.** A win is a win; each level then has three optional goals: the **exact move
+  count**, a **room of A×B or smaller** (its area at most A times B, either way round), and
+  **mix**: two of the others in the same run. A level may add path goals of its own (level 2:
+  through an open door twice), met only when every shortest path meets them. The game's idea (owner, 2026-10-18): *"you don't
+  have to do all objectives in the same run"*; mix tells the player two may fit one room and all
+  of them probably not. Today only levels 4 and 5 have a known room meeting both (register 179). A×B
   is the smallest winning room `tools/tilesArea.mjs` found for that level. The level list keeps
   how many optional goals a level has ever met. Owner, 2026-10-17: *"drop both area and tile...
   one of the optional goals permanently be an area one... no more ZACHTRONICS evaluation"*,
@@ -71,14 +79,14 @@ ones they had before.
 
 | Level | Palette (min-max) | Moves | Requirements |
 |---|---|---|---|
-| 1 | block 0-10 | 6 ± 2 | none beyond the range |
-| 2 | block 0-10, switch 1-1, door 1-1 | 7 ± 2 | robot collides with a closed door; robot goes through an open door |
-| 3 | block 0-10, switch 1 or more, door 1 or more | 8 ± 2 | through an open door; door closed at the end (every switch on was dropped: the open door implies it) |
-| 4 | block, switch 2 or more, door 1 or more | 8 ± 2 | through an open door; every switch off when the robot reaches the goal |
-| 5 | block, box 1 or more | 8 ± 2 | one box is pushed in at least 2 moves and the robot collides with it once without moving it |
-| 6 | block, box 1 or more, switch 1 or more, door 1 or more | 7 ± 2 | a box passes through an open door; the robot passes through an open door; only boxes flip switches |
-| 7 | block 0-10, box 1-2, button 1-1, door 1-1 | 6 ± 2 | a box cannot start on a button; through an open door |
-| 8 | as 7 | 10 ± 3 | a box cannot start on a button; through an open door; door closed at the end |
+| 1 | block 0-10 | exactly 6 (optional) | none beyond the 4-move minimum |
+| 2 | block 0-10, switch 1-1, door 1-1 | exactly 7 (optional) | robot collides with a closed door; robot goes through an open door |
+| 3 | block 0-10, switch 1 or more, door 1 or more | exactly 8 (optional) | through an open door; door closed at the end (every switch on was dropped: the open door implies it) |
+| 4 | block, switch 2 or more, door 1 or more | exactly 8 (optional) | through an open door; every switch off when the robot reaches the goal |
+| 5 | block, box 1 or more | exactly 8 (optional) | one box is pushed in at least 2 moves and the robot collides with it once without moving it |
+| 6 | block, box 1 or more, switch 1 or more, door 1 or more | exactly 7 (optional) | a box passes through an open door; the robot passes through an open door; only boxes flip switches |
+| 7 | block 0-10, box 1-2, button 1-1, door 1-1 | exactly 6 (optional) | a box cannot start on a button; through an open door |
+| 8 | as 7 | exactly 10 (optional) | a box cannot start on a button; through an open door; door closed at the end |
 
 Level 3 asked for exactly 2 switches until 2026-10-17; now 1 or more of each, with no maximum (owner: *"no limit. it already is an optimization exercise on cost"*). A palette maximum of `null` means no limit.
 
@@ -107,12 +115,13 @@ flash the tiles again. All of this copy is a draft.
 
 Chosen 2026-10-17 from sketches (owner: *"B but using icon instead of name for objects"*, then
 both interactions). Over the room, a goal card: the level's name, then one row per goal, the
-move range first and the optional exact count last. Each row draws its objects as their palette
+4-move minimum first and the optional goals last. Each row draws its objects as their palette
 icons (the robot, a box, a door, a switch, a button) and is marked ✓ or ✕ after a Run; a
 requirement is met only when every shortest path meets it. Under it, the area beside your
 best. The card's height never changes: the verdict's words float over the bottom of the room
-(× closes them) and the room never moves. Each palette button of an element wears how many are
-placed (red until the minimum, written `n/min+`; `n/max` when a level sets a maximum). A tap the level refuses shakes the tile red and says why on it for a moment. Dragging with
+(× closes them) and the room never moves. A minimum of 2 or more is a goal row of its own ("2 or more" and
+the element's icon); a minimum of 1 goes without saying, and no palette button wears a count
+(owner, 2026-10-18). A tap the level refuses shakes the tile red and says why on it for a moment. Dragging with
 Move shows a see-through copy on the landing tile, red with a cross where it cannot land, and a
 dashed frame where the thing was. Row wording is a draft.
 

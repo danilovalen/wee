@@ -23,8 +23,7 @@
   ]
  },
  "steps": {
-  "best": 10,
-  "range": 3
+  "best": 10
  },
  "rules": [
   "noBoxOnButton"

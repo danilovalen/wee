@@ -3,7 +3,7 @@
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS } from '../level/campaign.js';
-import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, stepsText, rangeShort, OPTIONAL } from '../campaign/rules.js';
+import { roomOf, placed, placementErrors, check, ELEMENTS, REQUIREMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } from '../campaign/rules.js';
 import { place, moveAt } from '../editor/edit.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -84,25 +84,6 @@ function save() {
   write(p);
 }
 
-// On each palette button of a level: how many are placed against the minimum (and the
-// maximum, when the level sets one). None outside a level.
-export function syncCounts() {
-  const def = S.camp && S.camp.def, by = def ? placed(def, S.level).by : {};
-  const els = def ? Object.fromEntries(Object.keys(def.palette).map(el => [TOOL[el], el])) : {};
-  document.querySelectorAll('[data-tool]').forEach(b => {
-    const el = els[b.dataset.tool];
-    const d = b.querySelector('.countDot'); if (!el && d) d.remove();
-    b.classList.toggle('full', false);
-    if (!el) return;
-    const [min, max] = def.palette[el], n = by[el].length;
-    const count = b.querySelector('.countDot') || b.appendChild(Object.assign(document.createElement('span'), { className: 'countDot' }));
-    count.textContent = max !== null ? `${n}/${max}` : min ? `${n}/${min}+` : `${n}`;
-    count.title = max !== null ? `${n} placed, ${min} to ${max}` : min ? `${n} placed, at least ${min}` : `${n} placed`;
-    count.classList.toggle('short', n < min);
-    b.classList.toggle('full', max !== null && n >= max);
-  });
-}
-
 // A row's words, with each object drawn as its palette icon.
 function words(parts) {
   const span = document.createElement('span'); span.className = 'words';
@@ -126,8 +107,14 @@ export function syncBrief() {
   const rows = [{ id: 'steps', parts: [rangeShort(def.steps)], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   if ((def.rules || []).includes('noBoxOnButton'))
     rows.push({ id: 'noBoxOnButton', parts: ['no', { el: 'box' }, 'starts on a', { el: 'button' }], text: 'A box cannot start on a button.', met: v && !v.ok && v.errors.some(e => /box cannot start/.test(e.msg)) ? false : null });
+  // A minimum of 2 or more is a goal of its own; a minimum of 1 goes without saying, since a
+  // requirement already needs the piece (Run still names one that is missing).
+  const { by } = placed(def, S.level);
+  for (const [el, [min]] of Object.entries(def.palette)) if (min >= 2)
+    rows.push({ id: 'min-' + el, parts: [`${min} or more`, { el }], text: `Place at least ${min} ${nameOf(el, min)}.`, met: v ? by[el].length >= min : null });
   for (const id of def.require || []) rows.push({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: ran && v.reqs ? v.reqs[id] : null });
-  for (const o of OPTIONAL) rows.push({ id: o.id, parts: [o.short(def)], text: `Optional: ${o.text(def)}`, met: ran ? o.met(def, v) : null, optional: true });
+  const results = ran ? optionalResults(def, v) : [];
+  for (const o of optionalGoals(def)) rows.push({ id: o.id, parts: o.parts, text: `Optional: ${o.text}`, met: ran ? results.find(r => r.id === o.id).met : null, optional: true });
   const card = document.createElement('div'); card.className = 'campGoal';
   const head = document.createElement('p'); head.className = 'campHead';
   const last = document.createElement('span'); last.className = 'campLast'; last.id = 'campLast';
@@ -147,7 +134,6 @@ export function syncBrief() {
   }
   card.append(head, must, opt);
   $('campBrief').replaceChildren(card);
-  syncCounts();
   // The verdict's words, over the room.
   const out = $('campVerdict');
   out.hidden = !v;
@@ -220,7 +206,7 @@ function renderList() {
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten · optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${OPTIONAL.length}` : `${stepsText(def.steps)}`;
+    small.textContent = rec.beaten ? `Beaten · optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}` : `${stepsText(def.steps)}`;
     // The elements the level hands you, as the palette draws them.
     const parts = document.createElement('span'); parts.className = 'campParts';
     for (const el of Object.keys(def.palette)) {
@@ -256,6 +242,8 @@ export function buildCampaign(actions, sandbox) {
   $('campBack').onclick = () => { leaveLevel(); openList(); };
   $('campRun').onclick = run;
   $('campVerdictClose').onclick = () => { $('campVerdict').hidden = true; };
+  // The verdict is read once: the next touch anywhere else puts it away; the card keeps the marks.
+  addEventListener('pointerdown', ev => { if (!$('campVerdict').hidden && !ev.target.closest('#campVerdict')) $('campVerdict').hidden = true; }, true);
   // A change to the room clears the last verdict and is kept for next time.
   let stamp = '';
   const watch = () => {

@@ -62,7 +62,8 @@ try {
     // Over the room, its four "+" show and none is clipped by the room's area.
     const gb = await page.locator('#game').boundingBox();
     await page.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2);
-    await page.waitForTimeout(250);
+    // Wait for the fade-in itself, not a fixed time: a loaded machine finishes it late.
+    await page.waitForFunction(() => [...document.querySelectorAll('[data-plus]')].every(b => getComputedStyle(b).opacity >= 0.9), null, { timeout: 3000 }).catch(() => {});
     const plus = await page.evaluate(() => { const a = document.getElementById('roomArea').getBoundingClientRect(); return [...document.querySelectorAll('[data-plus]')].filter(b => { const r = b.getBoundingClientRect(); return getComputedStyle(b).opacity < 0.9 || r.left < a.left || r.top < a.top || r.right > a.right || r.bottom > a.bottom; }).map(b => b.dataset.plus); });
     check(`${w}x${h}: the room's four + show on hover, none clipped`, !plus.length, plus.join(' '));
     const unnamed = await page.evaluate(() => [...document.querySelectorAll('[data-tool]:not([data-camp])')].filter(b => !b.title || (b.querySelector('.lbl').offsetParent === null) !== (innerWidth <= 1100)).map(b => b.dataset.tool));

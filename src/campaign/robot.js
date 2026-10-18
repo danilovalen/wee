@@ -9,8 +9,9 @@ const KEYS = ['up', 'right', 'down', 'left'];
 
 // Returns { status: 'solved', length, paths, capped } or { status } ('unsolvable', 'capped',
 // or why the room cannot be searched). capped on a solved result means more than maxPaths
-// shortest paths exist and only the first maxPaths came back.
-export function* shortestPaths(level, { max = MAX_STATES, maxPaths = 2000 } = {}) {
+// shortest paths exist and only the first maxPaths came back. With maxDepth, a goal not
+// reached in that many moves stops the search early: { status: 'longer' }.
+export function* shortestPaths(level, { max = MAX_STATES, maxPaths = 2000, maxDepth = Infinity } = {}) {
   const why = unsearchable(level);
   if (why) return { status: why };
   const start = createGame(level), keys = [...KEYS, ...(start.powers.cycle || start.powers.swim ? ['hide'] : [])];
@@ -31,6 +32,7 @@ export function* shortestPaths(level, { max = MAX_STATES, maxPaths = 2000 } = {}
       yield depth.size;
     }
     if (wins.length) return { status: 'solved', length: d + 1, ...walkBack(wins, parents, startKey, maxPaths) };
+    if (d + 1 >= maxDepth) return { status: 'longer' };
     frontier = [...next]; d++;
   }
   return { status: 'unsolvable' };
