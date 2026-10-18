@@ -27,6 +27,15 @@ try {
   await page.goto('http://localhost:5217/');
   check('the game opens on the main menu', await page.locator('#menuBox').isVisible());
   check('the menu offers Campaign and Sandbox', await page.locator('#menuCampaign').isVisible() && await page.locator('#menuSandbox').isVisible());
+  // The menu is a screen of its own, not a box over the editor, with the robot playing behind it.
+  const menuRect = await page.locator('#menuBox').boundingBox();
+  check('the menu fills the whole window', menuRect && menuRect.x === 0 && menuRect.y === 0 && menuRect.width === 1280 && menuRect.height === 800, JSON.stringify(menuRect));
+  const robotAt = () => page.$eval('.msRobot', e => getComputedStyle(e).transform).catch(() => null);
+  const r0 = await robotAt(); await page.waitForTimeout(600);
+  check('the robot behind the menu is moving', !!r0 && r0 !== await robotAt());
+  const deskLay = await page.evaluate(() => [document.querySelector('.msGoal').getBoundingClientRect().bottom, document.getElementById('menuCampaign').getBoundingClientRect().top]);
+  check('on a wide window the goal still ends above the buttons', deskLay[0] < deskLay[1], JSON.stringify(deskLay));
+  check('the room behind the menu has its laser, door and switch', await page.$$eval('.msBeam, .msDoor, .msSwitch', es => es.filter(e => e.getBoundingClientRect().width > 0).length) === 3);
   await page.click('#menuCampaign');
   const rows = await page.$$eval('.campRow', rs => rs.map(r => r.dataset.level));
   check('the level list shows every level', rows.length >= 5 && rows[0] === '1', rows.join());
@@ -264,6 +273,8 @@ try {
   // On a phone, a palette wider than the screen scrolls by itself and the page stays put.
   const phone = await browser.newPage({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true });
   await phone.goto('http://localhost:5217/');
+  const phoneLay = await phone.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(); return { goal: r('.msGoal').bottom, door: r('.msDoor').left, btn: r('#menuCampaign').top, logo: r('.menuLogo').height, w: innerWidth }; });
+  check('on a phone the menu shows the wordmark, and the goal and door sit above the buttons', phoneLay.logo > 0 && phoneLay.goal < phoneLay.btn && phoneLay.door < phoneLay.w, JSON.stringify(phoneLay));
   await phone.click('#menuCampaign'); await phone.click('.campRow[data-level="6"]');
   const fit = await phone.evaluate(() => { const d = document.documentElement, g = document.getElementById('palette'); return { page: [d.scrollWidth, d.clientWidth, d.scrollHeight, d.clientHeight], grid: [g.scrollWidth, g.clientWidth, getComputedStyle(g).overflowX] }; });
   check('on a phone the page never scrolls; the palette row does', fit.page[0] === fit.page[1] && fit.page[2] === fit.page[3] && fit.grid[2] === 'auto', JSON.stringify(fit));

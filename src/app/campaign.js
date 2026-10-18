@@ -10,13 +10,14 @@ import { S, starterLevel } from '../editor/state.js';
 import { $, portrait, now } from './dom.js';
 import { icon } from './icons.js';
 import { noteLeaving, copyDebug } from './debug.js';
+import { buildMenuScene } from './menuScene.js';
 
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
 export const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle' };
 // Every level hands you Move, to carry anything placed (the start and goal too) elsewhere.
 const ALWAYS = ['move'];
-let A = null, boot = null;
+let A = null, boot = null, fitScene = null;
 
 export function progress() {
   try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return p; } catch { /* storage off */ }
@@ -223,11 +224,12 @@ export function openList() {
   if (sel) { sel.focus(); sel.scrollIntoView({ block: 'nearest' }); }
 }
 
-export function openMenu() { closeAll(); $('menuBox').showModal(); }
+export function openMenu() { closeAll(); $('menuBox').showModal(); fitScene?.(); }
 
 // actions: setMode, syncPanel, fit; sandbox(): starts the sandbox (the Rooms list).
 export function buildCampaign(actions, sandbox) {
   A = actions; boot = sandbox;
+  fitScene = buildMenuScene($('menuScene'));
   $('menuCampaign').onclick = openList;
   $('menuSandbox').onclick = () => { closeAll(); boot(); };
   $('campMenu').onclick = openMenu;
