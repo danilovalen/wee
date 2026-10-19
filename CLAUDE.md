@@ -28,6 +28,7 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
 - **Commit only after a green run.** Never chain `npm test | grep ... && git commit`: grep succeeds on a red run too. On 2026-10-17 that pushed three red smokes.
 - **A search that finds nothing proves nothing.** Random or hill-climbing room searches only cover the shapes they generate (small rooms, start and goal in fixed corners, scattered walls). Say "not found in N rooms of this kind", never "impossible". Twice on 2026-10-17 a level was called unwinnable this way; the owner drew a winning room each time.
 - **A gate on whether something shows reads what is painted, never the `hidden` flag.** A class that sets `display` outranks the `hidden` attribute; `.sizeBand` did, so a resize band stayed on screen for good while its gate, reading the flag, stayed green (163, then 170). Any class with a `display` rule on an element the code hides needs its own `[hidden] { display: none; }`.
+- **A palette minimum a required goal already implies is redundant: set it to 1.** "A laser through two open doors" needs two doors, so "2 or more doors" only repeats it on the goal card. Built that way twice (levels 11 and 14, rows 248, 279) because minimums were set apart from the goals. When writing a level, read each minimum against the required goals.
 - **Game design is the owner's.** Levels, mechanics, rules and requirements are his to decide.
   Ask one question at a time; draft a level only when asked, and build it only once approved.
 
