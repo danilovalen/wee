@@ -6,7 +6,7 @@ const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
 const live = (s, x, y) => s.entities.find(e => !e.dead && e.kind === 'box' && e.x === x && e.y === y);
 
 // Every push that ended with its box stopped: the box and the tile past it, with the state then.
-function stoppedPushes(room, moves) {
+export function stoppedPushes(room, moves) {
   const out = [];
   let dir = null, last = {}, before = {};
   const end = replayPath(room, moves, s => {

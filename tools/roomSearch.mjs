@@ -4,11 +4,14 @@
 import { roomOf, placementErrors, bounds, coloursOf } from '../src/campaign/rules.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { allShortest } from '../src/campaign/robot.js';
+import { miss } from './searchScores.mjs';
 
 const CELL = { block: 'wall', toggle: 'toggle', door: 'door', button: 'button' };
 const TINTS = ['toggle', 'door', 'button', 'gate'];
 const DIRS = ['up', 'right', 'down', 'left'];
 const D4 = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+// Rooms up to 16 on a side, 120 tiles (register 272): long thin rooms, like his 6x11 level 5 win, need it.
+export const MAX_SIDE = 16, MAX_AREA = 120;
 
 export function searcher(def, seed = 1) {
   const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
@@ -48,6 +51,18 @@ export function searcher(def, seed = 1) {
     for (let k = 0; k < walls; k++) add(g, 'block');
     return g;
   }
+  // Copies one row or column of the room, pieces and all, over another (register 272): a lane that
+  // works once can be tried twice, as his level 5 room uses one column for both boxes.
+  function copyStrip(g, across = rnd() < 0.5, s = null, t = null) {
+    const n = across ? g.h : g.w;
+    s ??= Math.floor(rnd() * n); t ??= Math.floor(rnd() * n);
+    if (s === t) return false;
+    const on = (i, k) => (across ? i[2] : i[1]) === k;
+    const free = (x, y) => !(g.start.x === x && g.start.y === y) && !(g.goal.x === x && g.goal.y === y);
+    const copies = g.items.filter(i => on(i, s)).map(i => across ? [i[0], i[1], t, i[3], i[4]] : [i[0], t, i[2], i[3], i[4]]);
+    g.items = [...g.items.filter(i => !on(i, t)), ...copies.filter(i => free(i[1], i[2]))];
+    return true;
+  }
   function mutate(g0) {
     const g = structuredClone(g0), r = rnd(), els = Object.keys(def.palette);
     if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if (it[0] === 'gate' && rnd() < 0.5) it[3] = pick(DIRS); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(cols); }
@@ -56,11 +71,13 @@ export function searcher(def, seed = 1) {
       const i = Math.floor(rnd() * g.items.length), [el] = g.items[i];
       if (g.items.filter(t => t[0] === el).length > (def.palette[el] || [0])[0]) g.items.splice(i, 1);
     }
-    else if (r < 0.8) { const f = freeTile(g); if (f) g[rnd() < 0.5 ? 'start' : 'goal'] = { x: f[0], y: f[1] }; }
+    else if (r < 0.72) { if (!copyStrip(g)) return g0; }
+    else if (r < 0.85) { const f = freeTile(g); if (f) g[rnd() < 0.5 ? 'start' : 'goal'] = { x: f[0], y: f[1] }; }
     else {
       // Grow or shrink one side by a line; anything past the new edge goes.
       const dw = rnd() < 0.5 ? (rnd() < 0.5 ? 1 : -1) : 0, dh = dw ? 0 : (rnd() < 0.5 ? 1 : -1);
-      g.w = Math.max(3, Math.min(10, g.w + dw)); g.h = Math.max(3, Math.min(10, g.h + dh));
+      g.w = Math.max(3, Math.min(MAX_SIDE, g.w + dw)); g.h = Math.max(3, Math.min(MAX_SIDE, g.h + dh));
+      if (g.w * g.h > MAX_AREA) return g0;
       const inside = p => p.x < g.w && p.y < g.h;
       if (!inside(g.start) || !inside(g.goal)) return g0;
       g.items = g.items.filter(i => i[1] < g.w && i[2] < g.h);
@@ -75,7 +92,7 @@ export function searcher(def, seed = 1) {
     if (a.status !== 'solved') return 1000;
     const { min, max } = bounds(def.steps);
     let p = Math.max(0, min - a.length, a.length - max) * 10 + (a.capped ? 5 : 0);
-    for (const path of a.paths.slice(0, 60)) for (const id of def.require || []) if (!REQUIREMENTS[id].judge(r, path)) p += 1;
+    for (const path of a.paths.slice(0, 60)) for (const id of def.require || []) if (!REQUIREMENTS[id].judge(r, path)) p += miss(id, r, path);
     return p;
   }
   const show = r => Array.from({ length: r.h }, (_, y) => Array.from({ length: r.w }, (_, x) => {
@@ -97,5 +114,5 @@ export function searcher(def, seed = 1) {
     }));
     return g;
   }
-  return { random, mutate, penalty, make, show, parse };
+  return { random, mutate, penalty, make, show, parse, copyStrip };
 }

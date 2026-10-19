@@ -1,0 +1,46 @@
+// Known winning rooms per level, in the tests' legend (# block, t switch, D door, o button, B box,
+// P start, G goal; blue Q door, q button, T switch; ^>v< one-ways). The campaign tests prove each
+// one wins, and tools/levelSearch.mjs --seeded climbs from them (register 272).
+export const KNOWN = {
+  small: { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
+    5: ['....', '.B#G', '.P..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['...D', '..Bo', '..BG', '#.P.', '....'],
+    9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'], 11: ['...P', 'BBDq', 'o.Q#', '#..G'], 12: ['#P.#..', 'G>.>Bo'], 13: ['PB>..GD', '.......', '#t.....'] },
+  optional: {
+    4: ['PtttD.', '......', '......', '......', '.#.G..'],
+    // His room (2026-10-19, register 271): 19 moves, 16 tiles; the second box is pushed down into the first.
+    5: ['#P.#..', '......', '.B.#..', '##....', '...#.#', '......', '.B.#..', '##....', '.#....', '...G.#', '..##..'],
+    7: ['BP.B.o', '.BB#..', 'D.....', '.oG.#.'],
+    8: ['.G.......', 'Do....B..', '...PD...#', '........D', '#........', '....D....'],
+    9: ['G.<.', '##..', '..^#', 'Pv..', '....', '...#', '....', '.#..', '....'],
+    10: ['^.>..B...>', '..BB......', 'B.........', '#..>.#....', '.BP..B....', '.vG.......', '..v.......', '..........'],
+    11: ['P.QQ.', 'BB.q.', 'oBBQ.', '#DDB.', 'B..#.', '#.BG.', 'BQQ..', '.#...'],
+  },
+  wins: {
+    1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
+    2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
+    3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],
+    4: ['Pt.tD', '.#...', '.....', '###.#', '.#..G'],
+    // One box (register 263: every box must be pushed 2 times and hit once): 8 moves, 4x3.
+    5: ['....', '.B#G', '.P..'],
+    6: ['P....', '....B', 'B..#t', 'D.#.#', '....G'],
+    // His room (2026-10-18): won in 4, the box ends off the button.
+    // His room (2026-10-18), the old level 8 that became 7: won in 5.
+    7: ['P.#.', '.B#.', 'D...', '.oG.'],
+    // Found by tools/levelSearch.mjs (2026-10-19): 7 moves, level 8's exact count.
+    8: ['.#.B.', '#B..G', '.#.B.', '.#...', '.#DPD', '.D...', '....B', '..#..', '..Bo.'],
+    // His room (2026-10-18): 8 moves, level 9's exact count.
+    9: ['G....', '##..#', '..^#.', '.v...', '..#..', '....#', 'P#...'],
+    // Found by tools/levelSearch.mjs (2026-10-19): 10 moves, level 10's exact count (his number, register 240).
+    10: ['#..#.#...', '...B..>..', '.....#.B.', 'B#...G...', '.#P.#..^.'],
+    // Found by tools/levelSearch.mjs --from (2026-10-19): 7 moves, level 11's exact count (mine, provisional).
+    11: ['.Bo#', '....', 'QBP.', '.DQG', '.q#.'],
+    // Found by tools/levelSearch.mjs (2026-10-19): 7 moves, level 12's exact count (mine, provisional).
+    12: ['PBB..', 'BG>.B', '..>.o'],
+    // Built by hand and checked (2026-10-19): the closed door stops the box past the one-way; the
+    // switch opens the door and turns the one-way; the robot comes through the door and pushes it back. 9 moves.
+    13: ['PB>..GD', '.......', '#t.....'],
+  },
+};
+
+// Every known room of a level, as rows.
+export const roomsOf = id => [KNOWN.small, KNOWN.optional, KNOWN.wins].map(m => m[id]).filter(Boolean);

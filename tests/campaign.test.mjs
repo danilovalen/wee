@@ -8,6 +8,7 @@ import * as LEVELDATA from '../src/level/campaign.js';
 import { emptyLevel } from '../src/level/format.js';
 import { moveAt } from '../src/editor/edit.js';
 import { room, suite } from './lib.mjs';
+import { KNOWN } from './knownRooms.mjs';
 
 const { check: ok, done } = suite('campaign');
 const level = id => LEVELS.find(l => l.id === id);
@@ -331,9 +332,7 @@ const build = (def, rows) => {
 }
 { // every level's room-size goal is reachable: the smallest winning room tools/tilesArea.mjs found
   // (levels 11 and 12: his rooms, 2026-10-19, registers 249 and 250)
-  const SMALL = { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
-    5: ['....', '.B#G', '.P..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['...D', '..Bo', '..BG', '#.P.', '....'],
-    9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'], 11: ['...P', 'BBDq', 'o.Q#', '#..G'], 12: ['#P.#..', 'G>.>Bo'], 13: ['PB>..GD', '.......', '#t.....'] };
+  const SMALL = KNOWN.small;
   for (const l of LEVELS) {
     const v = check(l, build(l, SMALL[l.id]));
     // Mix holds where one room meets two goals at once: level 5's smallest room also takes exactly 8.
@@ -354,16 +353,7 @@ const build = (def, rows) => {
   }
 }
 { // every level's own optional goal can be met: a winning room that meets it, found by tools/levelSearch.mjs (registers 262-269)
-  const OPT = {
-    4: ['PtttD.', '......', '......', '......', '.#.G..'],
-    // His room (2026-10-19, register 271): 19 moves, 16 tiles; the second box is pushed down into the first.
-    5: ['#P.#..', '......', '.B.#..', '##....', '...#.#', '......', '.B.#..', '##....', '.#....', '...G.#', '..##..'],
-    7: ['BP.B.o', '.BB#..', 'D.....', '.oG.#.'],
-    8: ['.G.......', 'Do....B..', '...PD...#', '........D', '#........', '....D....'],
-    9: ['G.<.', '##..', '..^#', 'Pv..', '....', '...#', '....', '.#..', '....'],
-    10: ['^.>..B...>', '..BB......', 'B.........', '#..>.#....', '.BP..B....', '.vG.......', '..v.......', '..........'],
-    11: ['P.QQ.', 'BB.q.', 'oBBQ.', '#DDB.', 'B..#.', '#.BG.', 'BQQ..', '.#...'],
-  };
+  const OPT = KNOWN.optional;
   for (const [id, rows] of Object.entries(OPT)) {
     const l = level(id), v = check(l, build(l, rows)), goal = l.optional[0];
     ok(`level ${id}'s optional ${goal} can be met by a win`, v.won && v.optional.find(o => o.id === goal).met, JSON.stringify(v.fail || v.errors || v.optional));
@@ -371,31 +361,7 @@ const build = (def, rows) => {
 }
 { // every level can be won: one known room each (5x5 unless noted), found by search, so a rule change that
   // makes a level impossible goes red
-  const WINS = {
-    1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
-    2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
-    3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],
-    4: ['Pt.tD', '.#...', '.....', '###.#', '.#..G'],
-    // One box (register 263: every box must be pushed 2 times and hit once): 8 moves, 4x3.
-    5: ['....', '.B#G', '.P..'],
-    6: ['P....', '....B', 'B..#t', 'D.#.#', '....G'],
-    // His room (2026-10-18): won in 4, the box ends off the button.
-    // His room (2026-10-18), the old level 8 that became 7: won in 5.
-    7: ['P.#.', '.B#.', 'D...', '.oG.'],
-    // Found by tools/levelSearch.mjs (2026-10-19): 7 moves, level 8's exact count.
-    8: ['.#.B.', '#B..G', '.#.B.', '.#...', '.#DPD', '.D...', '....B', '..#..', '..Bo.'],
-    // His room (2026-10-18): 8 moves, level 9's exact count.
-    9: ['G....', '##..#', '..^#.', '.v...', '..#..', '....#', 'P#...'],
-    // Found by tools/levelSearch.mjs (2026-10-19): 10 moves, level 10's exact count (his number, register 240).
-    10: ['#..#.#...', '...B..>..', '.....#.B.', 'B#...G...', '.#P.#..^.'],
-    // Found by tools/levelSearch.mjs --from (2026-10-19): 7 moves, level 11's exact count (mine, provisional).
-    11: ['.Bo#', '....', 'QBP.', '.DQG', '.q#.'],
-    // Found by tools/levelSearch.mjs (2026-10-19): 7 moves, level 12's exact count (mine, provisional).
-    12: ['PBB..', 'BG>.B', '..>.o'],
-    // Built by hand and checked (2026-10-19): the closed door stops the box past the one-way; the
-    // switch opens the door and turns the one-way; the robot comes through the door and pushes it back. 9 moves.
-    13: ['PB>..GD', '.......', '#t.....'],
-  };
+  const WINS = KNOWN.wins;
   ok('there is a known winning room for every level', LEVELS.every(l => WINS[l.id]), LEVELS.map(l => l.id).join());
   for (const l of LEVELS) {
     const v = WINS[l.id] && check(l, build(l, WINS[l.id]));

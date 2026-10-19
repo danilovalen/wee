@@ -14,6 +14,12 @@ const M = [
   ['src', "v.won ? `won in ${v.length}, ${tiles}", "v.won ? `won in ${v.length} \\u00b7 ${tiles}", 'arch'],
   ['src', '"optional":["hitsClosedDoor"]', '"optional":[]', 'campaign'],
   ['style.css', 'body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin-left: auto; }', 'body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; }', 'campaign-play'],
+  // the room search (register 272)
+  ['tools/roomSearch.mjs', "export const MAX_SIDE = 16, MAX_AREA = 120;", "export const MAX_SIDE = 10, MAX_AREA = 100;", 'search'],
+  ['tools/searchScores.mjs', "export const miss = (id, room, moves) => 1 - Math.min(0.95, SCORES[id] ? SCORES[id](room, moves) : 0);", "export const miss = () => 1;", 'search'],
+  ['tools/searchScores.mjs', "best = Math.max(best, 1 / (1 + Math.abs(e.x - h.x) + Math.abs(e.y - h.y)));", "best = 1;", 'search'],
+  ['tools/roomSearch.mjs', "    g.items = [...g.items.filter(i => !on(i, t)), ...copies.filter(i => free(i[1], i[2]))];", "    g.items = g.items.filter(i => !on(i, t));", 'search'],
+  ['tools/roomSearch.mjs', "o: ['button', 'red'], q: ['button', 'blue'], B: ['box'] };", "o: ['button', 'red'], q: ['button', 'red'], B: ['box'] };", 'search'],
   // the extra goals (registers 262-269)
   ['src', "switches(room).length - replayPath(room, moves, () => {}).toggled.length >= 2,", "switches(room).length >= 2,", 'campaign'],
   ['src', "switches(room).length >= 3 && replayPath(room, moves, () => {}).toggled.length >= 1,", "replayPath(room, moves, () => {}).toggled.length >= 1,", 'campaign'],
@@ -844,7 +850,7 @@ for (const [where, from, to, test] of M) {
   const orig = readFileSync(file, 'utf8');
   writeFileSync(file, orig.replace(from, to));
   try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses', 'size', 'clone', 'roster', 'toggle', 'campaign'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
+    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses', 'size', 'clone', 'roster', 'toggle', 'campaign', 'search'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
     const out = r.stdout + r.stderr;
     const fail = out.split('\n').find(l => l.startsWith('FAIL'));
     if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }
