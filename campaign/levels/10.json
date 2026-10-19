@@ -19,15 +19,15 @@
   ]
  },
  "steps": {
-  "best": 13
+  "best": 8
  },
  "rules": [],
  "require": [
   "boxThroughOneWay",
-  "boxHitsOneWayTwice"
+  "boxHitsOneWay"
  ],
  "small": [
-  8,
-  6
+  6,
+  3
  ]
 }

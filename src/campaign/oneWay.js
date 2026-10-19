@@ -66,6 +66,11 @@ export const ONE_WAY_REQUIREMENTS = {
     short: [{ el: 'box' }, 'through a', { el: 'gate' }],
     judge: (room, moves) => oneWayLog(room, moves).boxThrough > 0,
   },
+  boxHitsOneWay: {
+    text: 'A box collides with a one-way.',
+    short: [{ el: 'box' }, 'collides with a', { el: 'gate' }],
+    judge: (room, moves) => Object.values(oneWayLog(room, moves).boxHits).some(n => n >= 1),
+  },
   boxHitsOneWayTwice: {
     text: 'A box collides with a one-way twice.',
     short: [{ el: 'box' }, 'collides with a', { el: 'gate' }, '×2'],

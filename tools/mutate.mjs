@@ -766,6 +766,7 @@ const M = [
   ['src', "$('moves').textContent = m === 'play' ? 'Moves 0' : '\\u00a0';", "$('moves').textContent = m === 'play' ? 'Moves 0' : '';", 'steady'],
   ['style.css', "body.campaign.play #statusBar { display: revert; visibility: hidden; }", "body.campaign.play #statusBar { display: none; }", 'steady'],
   ['style.css', ".plus, .plus:hover:not(:disabled), .plus:active:not(:disabled) { transform: none; }", "", 'steady'],
+  ['src', "judge: (room, moves) => Object.values(oneWayLog(room, moves).boxHits).some(n => n >= 1),", "judge: (room, moves) => Object.values(oneWayLog(room, moves).boxHits).some(n => n >= 2),", 'campaign'],
   ['src/level/campaign.js', '"require":["boxThroughOpenDoor"],"optional":["boxCrushedByDoor"]', '"require":["boxCrossesOpenDoor"],"optional":["boxCrushedByDoor"]', 'campaign'],
   ['src', "now[e.id] = { x: e.x, y: e.y, din: here ? (moved ? (b.din || d) : b.din) : null };", "now[e.id] = { x: e.x, y: e.y, din: moved ? d : b.din };", 'campaign'],
   ['src', "replayPath(room, moves, s => { if (s.events.some(ev => ev.type === 'kill' && ev.how === 'door'", "replayPath(room, moves, s => { if (s.events.some(ev => ev.type === 'kill' && ev.how === 'nothing'", 'campaign'],

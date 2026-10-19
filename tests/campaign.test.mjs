@@ -274,6 +274,8 @@ const build = (def, rows) => {
   ok('robot collides with every one-way: not met when a block stops it first', !req('robotHitsEveryOneWay', ['########', '#..>#.P#', '########'], ['left']));
   ok('a box through a one-way: met when a pushed box crosses it', req('boxThroughOneWay', ['########', '#PB.>..#', '########'], ['right']));
   ok('a box through a one-way: not met when only the robot crosses', !req('boxThroughOneWay', ['#######', '#P.>..#', '#B....#', '#######'], ['right']));
+  ok('a box collides with a one-way: one hit is enough', req('boxHitsOneWay', ['#######', '#.>.BP#', '#######'], ['left']));
+  ok('a box collides with a one-way: not when nothing stops it', !req('boxHitsOneWay', ['#######', '#...BP#', '#######'], ['left']));
   ok('a box collides with a one-way twice: one hit is not enough', !req('boxHitsOneWayTwice', ['#######', '#.<.BP#', '#######'].map(r => r.replace('<', '>')), ['left']));
   // From a level 10 win the search found: the same box is pushed into a one-way twice, moving each time.
   const twice = '....P. #.B#.. .B>.B. ....G. ....v. ...<.. .B.B.. ..B... ....^. .B....'.split(' ');
@@ -284,7 +286,7 @@ const build = (def, rows) => {
 { // every level's room-size goal is reachable: the smallest winning room tools/tilesArea.mjs found
   const SMALL = { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
     5: ['....', '.B#G', '.P..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['...D', '..Bo', '..BG', '#.P.', '....'],
-    9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..v.....', '........', '.......<', '..^.B...', '......G.', '...<B..P'] };
+    9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'] };
   for (const l of LEVELS) {
     const v = check(l, build(l, SMALL[l.id]));
     // Mix holds where one room meets two goals at once: level 5's smallest room also takes exactly 8.
@@ -315,8 +317,8 @@ const build = (def, rows) => {
     8: ['.#.B.', '#B..G', '.#.B.', '.#...', '.#DPD', '.D...', '....B', '..#..', '..Bo.'],
     // His room (2026-10-18): 8 moves, level 9's exact count.
     9: ['G....', '##..#', '..^#.', '.v...', '..#..', '....#', 'P#...'],
-    // Found by search: 13 moves, level 10's exact count; the same box is pushed into a one-way twice.
-    10: ['....P.', '#.B#..', '.B>.B.', '....G.', '....v.', '...<..', '.B.B..', '..B...', '....^.', '.B....'],
+    // Found by tools/levelSearch.mjs (2026-10-19): 8 moves, level 10's exact count.
+    10: ['P....', '.#>.B', '.#^..', '#G...', '>....', '..>.v', 'B.#..', '.....'],
   };
   ok('there is a known winning room for every level', LEVELS.every(l => WINS[l.id]), LEVELS.map(l => l.id).join());
   for (const l of LEVELS) {
