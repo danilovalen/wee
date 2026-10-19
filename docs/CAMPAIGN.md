@@ -88,9 +88,9 @@ ones they had before.
 | 3 | block 0-10, switch 1 or more, door 1 or more | exactly 8 (optional) | through an open door; door closed at the end (every switch on was dropped: the open door implies it) |
 | 4 | block, switch 2 or more, door 1 or more | exactly 8 (optional) | through an open door; every switch off when the robot reaches the goal |
 | 5 | block, box 1 or more | exactly 8 (optional) | one box is pushed in at least 2 moves and the robot collides with it once without moving it |
-| 6 | block, box 1 or more, switch 1 or more, door 1 or more | exactly 7 (optional) | a box passes through an open door; the robot passes through an open door; only boxes flip switches |
+| 6 | block, box 1 or more, switch 1 or more, door 1 or more | exactly 7 (optional) | a box goes into an open doorway; the robot passes through an open door; only boxes flip switches |
 | 7 | block, box 1 or more, button 1 or more, door 1 or more | exactly 6 (optional; his "maybe 7" has no win found, 6 is the nearest found); 4×4 or smaller | through an open door; door closed at the end (the old level 8, register 226; the old level 7 is gone, it was nearly the same) |
-| 8 | as 7 | exactly 7 (optional, mine, provisional); 7×3 or smaller; a box crushed by a closing door (optional) | a box goes through an open door and out the other side (his design: the trick is two boxes, register 228) |
+| 8 | as 7 | exactly 7 (optional, mine, provisional); 4×5 or smaller; a box crushed by a closing door (optional) | a box goes into an open doorway (his design: a box through a door, the crush an extra optional goal; register 237: a box crushed in the doorway went into it, so his crush run wins too) |
 | 9 | block, one-way 2 or more | exactly 8 (optional, provisional); 3×5 or smaller | the robot goes through every one-way; the robot collides with every one-way |
 | 10 | block, box 1 or more, one-way 1 or more | exactly 13 (optional, provisional); 8×6 or smaller | a box goes through a one-way; the same box collides with a one-way twice |
 
@@ -154,7 +154,7 @@ dashed frame where the thing was. Row wording is a draft.
 
 ## Open work, in order (2026-10-18; built 2026-10-19)
 
-All five groups are built (register rows give the detail). Still open: his final level 8 room (his screenshot room is not winnable today); whether level 8's crossing and crush fit in one run (none found in 5,600 s of search); his exact counts for 7 (6 now), 8, 9 and 10; and the resize report if it ever happens again.
+All five groups are built (register rows give the detail). Still open: his final level 8 room (his screenshot room is not winnable today);  his exact counts for 7 (6 now), 8, 9 and 10; and the resize report if it ever happens again.
 
 His reports not yet fixed, grouped and ordered by how much they get in the way of play. Row numbers are `docs/REGISTER.md`. Each item closes with a gate and a mutant.
 

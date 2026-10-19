@@ -258,6 +258,9 @@ const build = (def, rows) => {
   ok('a box crushed by a door: met when a door closes on it', req('boxCrushedByDoor', crush, ['up', 'left', 'down', 'right']));
   ok('a box crushed by a door: not met when the box only crosses', !req('boxCrushedByDoor', ['##########', '#Pt.B.D..#', '##########'], ['right']));
   ok('and a box left on a door that then closes has not crossed it', !req('boxCrossesOpenDoor', crush, ['up', 'left', 'down', 'right']));
+  // His ruling (register 237): a box crushed in the doorway went into it, so the crush run wins level 8 and meets its optional goal.
+  const l8 = LEVELS.find(l => l.id === '8'), crushWin = check(l8, Object.assign(off(crush), { clock: roomOf(l8).clock }));
+  ok('level 8: a box crushed in the doorway wins the level and meets the crush goal', crushWin.won && crushWin.optional.find(o => o.id === 'boxCrushedByDoor').met, JSON.stringify(crushWin.fail || crushWin.optional));
 }
 { // one-ways: through is in along the arrow and out the far side; colliding is a slide stopped by
   // one from any direction it does not let through
@@ -280,7 +283,7 @@ const build = (def, rows) => {
 }
 { // every level's room-size goal is reachable: the smallest winning room tools/tilesArea.mjs found
   const SMALL = { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
-    5: ['....', '.B#G', '.P..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['.BP#..G', '.BBD...', '#o.B..#'],
+    5: ['....', '.B#G', '.P..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['...D', '..Bo', '..BG', '#.P.', '....'],
     9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..v.....', '........', '.......<', '..^.B...', '......G.', '...<B..P'] };
   for (const l of LEVELS) {
     const v = check(l, build(l, SMALL[l.id]));
@@ -308,7 +311,7 @@ const build = (def, rows) => {
     // His room (2026-10-18): won in 4, the box ends off the button.
     // His room (2026-10-18), the old level 8 that became 7: won in 5.
     7: ['P.#.', '.B#.', 'D...', '.oG.'],
-    // Found by tools/levelSearch.mjs (2026-10-19): 7 moves, level 8's exact count; two boxes.
+    // Found by tools/levelSearch.mjs (2026-10-19): 7 moves, level 8's exact count.
     8: ['.#.B.', '#B..G', '.#.B.', '.#...', '.#DPD', '.D...', '....B', '..#..', '..Bo.'],
     // His room (2026-10-18): 8 moves, level 9's exact count.
     9: ['G....', '##..#', '..^#.', '.v...', '..#..', '....#', 'P#...'],

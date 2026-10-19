@@ -122,8 +122,8 @@ Object.assign(REQUIREMENTS, {
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
   },
   boxThroughOpenDoor: {
-    text: 'A box passes through an open door.',
-    short: [{ el: 'box' }, 'through an open', { el: 'door' }],
+    text: 'A box goes into an open doorway.',
+    short: [{ el: 'box' }, 'into an open', { el: 'door' }],
     // A closed door is solid, so a box on a door tile means it is open.
     judge: (room, moves) => {
       let ok = false;
