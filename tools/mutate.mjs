@@ -9,7 +9,8 @@ const M = [
   ['src', "ui.gateColour = S.camp && S.camp.def.colours ? ui.colour : null;", "ui.gateColour = null;", 'campaign-play'],
   ['src', "if (old) { const c = icon(id, ui.colour, ui.gateColour);", "if (false) { const c = icon(id, ui.colour, ui.gateColour);", 'campaign-play'],
   ['src', "if (el && colourFits(def, c)) out[el].push(i); else stray.push(i);", "if (el) out[el].push(i); else stray.push(i);", 'campaign'],
-  ['src', "  for (let n = 10; n >= 7; n--) if (p.levels[n]) { p.levels[n + 1] = p.levels[n]; delete p.levels[n]; }\n", "", 'campaign-play'],
+  ['src', "    if (was[7]) p.levels[11] = was[7];\n", "", 'campaign-play'],
+  ['src', "    for (const n of [8, 9, 10, 11]) if (was[n]) p.levels[n - 1] = was[n];\n", "", 'campaign-play'],
   ['src', "      replayPath(room, moves, s => { const c = room.cells[s.player.y * room.w + s.player.x] || ''; if (/^door:/.test(c)) seen.add(c.slice(5)); });\n      return seen.size >= 2;", "      replayPath(room, moves, s => { const c = room.cells[s.player.y * room.w + s.player.x] || ''; if (/^door:/.test(c)) seen.add(s.player.x + ',' + s.player.y); });\n      return seen.size >= 2;", 'campaign'],
   ['src', "const both = ways => Object.values(ways).some(set => [...set].some(d => set.has(OPPOSITE[d])));", "const both = ways => Object.values(ways).some(set => set.size > 0);", 'campaign'],
   // coloured one-ways (register 241)

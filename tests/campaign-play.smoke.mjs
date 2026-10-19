@@ -292,12 +292,12 @@ try {
   const fit = await phone.evaluate(() => { const d = document.documentElement, g = document.getElementById('palette'); return { page: [d.scrollWidth, d.clientWidth, d.scrollHeight, d.clientHeight], grid: [g.scrollWidth, g.clientWidth, getComputedStyle(g).overflowX] }; });
   check('on a phone the page never scrolls; the palette row does', fit.page[0] === fit.page[1] && fit.page[2] === fit.page[3] && fit.grid[2] === 'auto', JSON.stringify(fit));
   await phone.close();
-  // 226: level 8 became level 7; then 243: a new level 7 moved 7-10 up one. A v1 save's level 8 record ends on 8, the old 7 dropped.
+  // 226: level 8 became level 7 (243 moved it to 8 for a day; 246 moved it back). A v1 save's level 8 record ends on 7, the old 7 dropped.
   const oldSave = await browser.newPage();
   await oldSave.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ last: '8', levels: { 7: { best: 'old seven' }, 8: { best: 'old eight' } } })); } });
   await oldSave.goto('http://localhost:5217/'); await oldSave.click('#menuCampaign');
   const migrated = await oldSave.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')));
-  check('an old save keeps its level 8 record on the same level and drops the old 7', migrated.v === 3 && migrated.levels['8'] && migrated.levels['8'].best === 'old eight' && !migrated.levels['7'] && migrated.last === '8', JSON.stringify(migrated));
+  check('an old save moves level 8 to 7 and drops the old 7', migrated.v === 4 && migrated.levels['7'] && migrated.levels['7'].best === 'old eight' && !migrated.levels['8'] && migrated.last === '7', JSON.stringify(migrated));
   await oldSave.close();
   const only7 = await browser.newPage();
   await only7.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ last: '7', levels: { 7: { best: 'old seven' } } })); } });
@@ -306,16 +306,16 @@ try {
   check('a save with only the old level 7 loses it', !dropped.levels['7'] && !dropped.levels['8'] && dropped.last === null, JSON.stringify(dropped));
   await only7.close();
   const v2 = await browser.newPage();
-  await v2.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ v: 2, last: '10', levels: { 6: { best: 'six' }, 7: { best: 'seven' }, 10: { best: 'ten' } } })); } });
+  await v2.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ v: 3, last: '7', levels: { 6: { best: 'six' }, 7: { best: 'colours' }, 8: { best: 'seven' }, 11: { best: 'ten' } } })); } });
   await v2.goto('http://localhost:5217/'); await v2.click('#menuCampaign');
   const up = await v2.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')));
-  check('a v2 save moves levels 7 to 10 up one, the new level 7 starting empty', up.v === 3 && up.levels['6'].best === 'six' && up.levels['8'].best === 'seven' && up.levels['11'].best === 'ten' && !up.levels['7'] && up.last === '11', JSON.stringify(up));
+  check('a save from the day the colour level was 7 moves 8-11 back to 7-10 and that level to 11', up.v === 4 && up.levels['6']?.best === 'six' && up.levels['7']?.best === 'seven' && up.levels['10']?.best === 'ten' && up.levels['11']?.best === 'colours' && !up.levels['8'] && up.last === '11', JSON.stringify(up));
   await v2.close();
-  // Level 10: a one-way is placed pointing right, and a tap on it with its tool turns it; the robot is drawn as a robot.
+  // Level 9: a one-way is placed pointing right, and a tap on it with its tool turns it; the robot is drawn as a robot.
   const nine = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   nine.on('pageerror', e => errors.push(e.message));
   await nine.goto('http://localhost:5217/');
-  await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="10"]'); await nine.click('[data-tool="gate"]');
+  await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="9"]'); await nine.click('[data-tool="gate"]');
   const gb = await nine.locator('#game').boundingBox(), gt = gb.width / 7, gateAt = () => nine.evaluate(() => window.wee.getLevel().cells[3 * 7 + 3]);
   await nine.mouse.click(gb.x + 3.5 * gt, gb.y + 3.5 * gt); const g1 = await gateAt();
   const hint = await nine.evaluate(() => [document.getElementById('toolName').textContent, document.getElementById('campTip').hidden]);
@@ -331,7 +331,7 @@ try {
   check('the start is drawn as the robot (its antenna tip shows)', tip > 3, String(tip));
   // Colours (register 245): a level with two shows a row of dots; the pick colours what you place and the palette's pieces.
   await nine.goto('http://localhost:5217/');
-  await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="7"]');
+  await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="11"]');
   const row7 = await nine.evaluate(() => { const r = document.getElementById('campColours'); return { shown: !r.hidden && r.getBoundingClientRect().height > 0, dots: [...r.querySelectorAll('button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '')).join() }; });
   check('a two-colour level shows its colours as a row of dots, the first chosen', row7.shown && row7.dots === 'red*,blue', JSON.stringify(row7));
   await nine.click('[data-camp-colour="blue"]'); await nine.click('[data-tool="door"]');
@@ -343,7 +343,7 @@ try {
   await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);
   const oneCol = await nine.evaluate(() => ({ row: document.getElementById('campColours').hidden, cell: window.wee.getLevel().cells[3 * 7 + 3], icon: document.querySelector('#palette [data-tool="gate"] canvas').dataset.colour }));
   check('a one-colour level shows no colour row; its one-ways go down red and are drawn red', oneCol.row && oneCol.cell === 'gate:right@red' && oneCol.icon === 'red', JSON.stringify(oneCol));
-  await nine.click('#campBack'); await nine.click('.campRow[data-level="10"]');
+  await nine.click('#campBack'); await nine.click('.campRow[data-level="9"]');
   const plainGate = await nine.evaluate(() => document.querySelector(`#palette [data-tool="gate"] canvas`).dataset.colour);
   check('a level that names no colours draws its one-way plain', plainGate === '', plainGate);
   await nine.close();

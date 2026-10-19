@@ -13,21 +13,29 @@
    1,
    null
   ],
-  "gate": [
+  "button": [
    1,
+   null
+  ],
+  "door": [
+   2,
    null
   ]
  },
+ "colours": [
+  "red",
+  "blue"
+ ],
  "steps": {
-  "best": 10
+  "best": 7
  },
  "rules": [],
  "require": [
-  "boxThroughOneWay",
-  "boxHitsOneWay"
+  "throughDoorsOfTwoColours",
+  "boxThroughOpenDoor"
  ],
  "small": [
-  6,
-  3
+  4,
+  5
  ]
 }

@@ -9,9 +9,9 @@ const { check, done } = suite('steady');
 const server = await serve(5219);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
 const WATCH = ['#game', '#campBrief', '#tools', '#campBack', '#campVerdict'];
-// Winning rooms, so Run plays a whole demo and returns to Edit: level 1's (square) and his level 10
+// Winning rooms, so Run plays a whole demo and returns to Edit: level 1's (square) and his level 9
 // win (tall, where the room's height is what limits it).
-const ROOMS = [['1', ['P.#.#', '.....', '.###.', '.#...', '.#..G']], ['10', ['G....', '##..#', '..^#.', '.v...', '..#..', '....#', 'P#...']]];
+const ROOMS = [['1', ['P.#.#', '.....', '.###.', '.#...', '.#..G']], ['9', ['G....', '##..#', '..^#.', '.v...', '..#..', '....#', 'P#...']]];
 const errors = [];
 try {
   // Every menu is a page that fills the window, never a box over the game (register 220).

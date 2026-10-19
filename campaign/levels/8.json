@@ -23,15 +23,17 @@
   ]
  },
  "steps": {
-  "best": 6
+  "best": 7
  },
  "rules": [],
  "require": [
-  "throughOpenDoor",
-  "doorClosedAtEnd"
+  "boxThroughOpenDoor"
+ ],
+ "optional": [
+  "boxCrushedByDoor"
  ],
  "small": [
   4,
-  4
+  5
  ]
 }

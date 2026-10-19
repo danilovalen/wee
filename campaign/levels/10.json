@@ -9,21 +9,25 @@
    0,
    null
   ],
+  "box": [
+   1,
+   null
+  ],
   "gate": [
-   2,
+   1,
    null
   ]
  },
  "steps": {
-  "best": 8
+  "best": 10
  },
  "rules": [],
  "require": [
-  "robotThroughEveryOneWay",
-  "robotHitsEveryOneWay"
+  "boxThroughOneWay",
+  "boxHitsOneWay"
  ],
  "small": [
-  3,
-  5
+  6,
+  3
  ]
 }
