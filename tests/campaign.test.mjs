@@ -356,6 +356,8 @@ const build = (def, rows) => {
 { // every level's own optional goal can be met: a winning room that meets it, found by tools/levelSearch.mjs (registers 262-269)
   const OPT = {
     4: ['PtttD.', '......', '......', '......', '.#.G..'],
+    // His room (2026-10-19, register 271): 19 moves, 16 tiles; the second box is pushed down into the first.
+    5: ['#P.#..', '......', '.B.#..', '##....', '...#.#', '......', '.B.#..', '##....', '.#....', '...G.#', '..##..'],
     7: ['BP.B.o', '.BB#..', 'D.....', '.oG.#.'],
     8: ['.G.......', 'Do....B..', '...PD...#', '........D', '#........', '....D....'],
     9: ['G.<.', '##..', '..^#', 'Pv..', '....', '...#', '....', '.#..', '....'],
