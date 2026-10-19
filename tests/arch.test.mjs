@@ -40,5 +40,8 @@ check('the bundle builds from the entry with no cycle and no missing export', !!
 // Words on screen are separated by commas, never a middle dot (register 260).
 const dotted = [...files, 'index.html'].filter(f => /\u00b7|\\u00b7/.test(readFileSync(f, 'utf8')));
 check('no middle dot in the source or the page', dotted.length === 0, dotted.join(' '));
+// The page is light only, so a browser's forced dark mode leaves it alone (register 285).
+const page = readFileSync('index.html', 'utf8'), sheet = readFileSync('style.css', 'utf8');
+check('the page declares itself light only', page.includes('<meta name="color-scheme" content="only light">') && /:root \{[^}]*color-scheme: only light;/.test(sheet));
 check('the bundle holds every source file', files.every(f => built.includes(`// ---- ${f}`)), files.filter(f => !built.includes(`// ---- ${f}`)).join(' '));
 done();

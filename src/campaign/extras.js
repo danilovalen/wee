@@ -28,18 +28,23 @@ const boxes = room => room.entities.filter(e => e.kind === 'box').length;
 function beams(room, moves, see) {
   replayPath(room, moves, s => { for (const b of s.beams || []) see(b, s); });
 }
+// Every laser in the room had a beam that passed the test at some tick.
+function everyLaser(room, moves, test) {
+  const all = new Set(), met = new Set();
+  beams(room, moves, (b, s) => {
+    for (const e of s.entities) if (e.turret && !e.dead) all.add(e.id);
+    if (test(b)) met.add(b.id);
+  });
+  return all.size > 0 && [...all].every(id => met.has(id));
+}
 const cellOf = (room, at) => at && at[0] >= 0 && at[1] >= 0 && at[0] < room.w && at[1] < room.h ? room.cells[at[1] * room.w + at[0]] || '' : '';
 
 export const EXTRA_REQUIREMENTS = {
   // Lasers (registers 255, 256).
   laserThroughOpenDoor: {
-    text: 'A laser goes through an open door.',
-    short: [{ el: 'laser' }, 'through an open', { el: 'door' }],
-    judge: (room, moves) => {
-      let ok = false;
-      beams(room, moves, b => { if (b.path.slice(1).some(at => cellOf(room, at).startsWith('door:'))) ok = true; });
-      return ok;
-    },
+    text: 'Every laser goes through an open door.',
+    short: ['every', { el: 'laser' }, 'through an open', { el: 'door' }],
+    judge: (room, moves) => everyLaser(room, moves, b => b.path.slice(1).some(at => cellOf(room, at).startsWith('door:'))),
   },
   laserThroughTwoDoors: {
     text: 'A laser goes through two open doors at once.',
@@ -51,13 +56,9 @@ export const EXTRA_REQUIREMENTS = {
     },
   },
   laserBlockedByDoor: {
-    text: 'A closed door stops a laser.',
-    short: [{ el: 'laser' }, 'stopped by a closed', { el: 'door' }],
-    judge: (room, moves) => {
-      let ok = false;
-      beams(room, moves, b => { if (cellOf(room, b.stop).startsWith('door:')) ok = true; });
-      return ok;
-    },
+    text: 'A closed door stops every laser.',
+    short: ['every', { el: 'laser' }, 'stopped by a closed', { el: 'door' }],
+    judge: (room, moves) => everyLaser(room, moves, b => cellOf(room, b.stop).startsWith('door:')),
   },
   laserThroughOneWay: {
     text: 'A laser goes through a one-way.',
@@ -121,6 +122,11 @@ export const EXTRA_REQUIREMENTS = {
     text: 'The one-ways point at least three different ways.',
     short: [{ el: 'gate' }, 'pointing 3 ways'],
     judge: room => new Set(room.cells.filter(c => c.startsWith('gate:')).flatMap(c => c.slice(5).split('@')[0].split(','))).size >= 3,
+  },
+  lasersTwoWays: {
+    text: 'The lasers point at least two different ways.',
+    short: [{ el: 'laser' }, 'pointing 2 ways'],
+    judge: room => new Set(room.entities.filter(e => e.turret).map(e => e.turret.dirs[0])).size >= 2,
   },
   boxHitsTwoDoors: {
     text: 'A box collides with two different closed doors.',

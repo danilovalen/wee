@@ -7,6 +7,8 @@ export const KNOWN = {
     9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'], 11: ['...P', 'BBDq', 'o.Q#', '#..G'], 12: ['#P.#..', 'G>.>Bo'], 13: ['PB>..GD', '.......', '#t.....'],
     14: ['GD.', 'Dw.', 'tP.'], 15: ['w...', '.^.B', 'PBB.', '.B.G', '.^.B', '..e>', 'eve.'] },
   optional: {
+    // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
+    14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
     4: ['PtttD.', '......', '......', '......', '.#.G..'],
     // Found by tools/levelSearch.mjs --seeded (register 276, with boxes pushing boxes): 6 moves.
     6: ['BB#DP.', '..#.B.', 'DBBGt.', '.DDDB.'],

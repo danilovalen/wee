@@ -1,4 +1,5 @@
 :root {
+  color-scheme: only light;
   --paper: #eceef2; --panel: #f8f9fb; --rule: #dde0e6; --ink: #2a2730; --soft: #6f6876; --accent: #7b6cff; --on-accent: #fff; --field: rgba(0,0,0,0.05); --field-rule: rgba(0,0,0,0.12); --sticker: #c8ccd5; --inset-rim: rgba(0,0,0,0.08); --btn-mix: 60%; --selectable: #7b6cff; --r-s: 8px; --r-m: 10px; --r-l: 16px; --r-pill: 999px; --sticker-rest: 4px; --sticker-hover: 6px; --sticker-press: 1px; --ice: #4cc9ff; --frost: 78%;
   --text-face: 'Bitter', Georgia, serif; --label-face: 'Asap', 'Helvetica Neue', Arial, sans-serif; --wee-face: 'Comfortaa', 'Asap', sans-serif;
   /* The names the older rules use, mapped onto the tokens. */

@@ -13,10 +13,6 @@
    1,
    null
   ],
-  "button": [
-   0,
-   null
-  ],
   "door": [
    1,
    null
@@ -38,5 +34,8 @@
  "small": [
   3,
   3
+ ],
+ "optional": [
+  "lasersTwoWays"
  ]
 }

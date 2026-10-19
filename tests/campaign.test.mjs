@@ -319,6 +319,14 @@ const build = (def, rows) => {
   ok('a laser through 2 open doors: not met through one', !req('laserThroughTwoDoors', ['##########', '#T.D.....#', '#Pt......#', '##########'], ['right']));
   ok('a laser through an open door: met once the switch opens it', req('laserThroughOpenDoor', ['##########', '#T.D.....#', '#Pt......#', '##########'], ['right']));
   ok('a laser through an open door: not met while it is closed', !req('laserThroughOpenDoor', D, []));
+  // Two lasers firing right; only the top one's door opens with the switch.
+  const two = ['##########', '#T.D.....#', '#Pt......#', '#T.Q.....#', '##########'];
+  ok('every laser through an open door: not met when one laser never gets through', !req('laserThroughOpenDoor', two, ['right']));
+  ok('a closed door stops every laser: met by both', req('laserBlockedByDoor', two, []));
+  ok('a closed door stops every laser: not met when one hits a wall', !req('laserBlockedByDoor', ['##########', '#T.D.....#', '#P.......#', '#T.......#', '##########'], []));
+  const ways = (a, b) => { const r = off(['######', '#P...#', '#....#', '######']); r.entities.push({ kind: 'turret', x: 2, y: 2, turret: { dirs: [a], mode: 'input' } }, { kind: 'turret', x: 4, y: 2, turret: { dirs: [b], mode: 'input' } }); return REQUIREMENTS.lasersTwoWays.judge(r, []); };
+  ok('lasers pointing 2 ways: met by right and down', ways('right', 'down'));
+  ok('lasers pointing 2 ways: not met when both point right', !ways('right', 'right'));
   ok('a closed door stops a laser: met', req('laserBlockedByDoor', D, []));
   ok('a closed door stops a laser: not met by a wall', !req('laserBlockedByDoor', ['########', '#T.....#', '#P.....#', '########'], []));
   ok('a laser through a one-way: met along its arrow', req('laserThroughOneWay', ['########', '#T.>...#', '#P.....#', '########'], []));
