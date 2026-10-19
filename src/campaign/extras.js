@@ -35,6 +35,21 @@ export const EXTRA_REQUIREMENTS = {
     short: ['a 3rd', { el: 'toggle' }, 'on at the end'],
     judge: (room, moves) => switches(room).length >= 3 && replayPath(room, moves, () => {}).toggled.length >= 1,
   },
+  aToggleOffAtEnd: {
+    text: 'At least one switch is off when the robot reaches the goal.',
+    short: ['a', { el: 'toggle' }, 'off at the end'],
+    judge: (room, moves) => switches(room).length > replayPath(room, moves, () => {}).toggled.length,
+  },
+  // Register 277: a box on a coloured one-way when it turns is thrown out the other way.
+  boxLaunched: {
+    text: 'A one-way turns with a box on it and throws the box out.',
+    short: [{ el: 'gate' }, 'throws a', { el: 'box' }, 'out'],
+    judge: (room, moves) => {
+      let ok = false;
+      replayPath(room, moves, s => { if (s.events.some(e => e.type === 'launch' && live(s, e.x, e.y))) ok = true; });
+      return ok;
+    },
+  },
   boxHitsBox: {
     text: 'A box collides with another box.',
     short: [{ el: 'box' }, 'collides with a', { el: 'box' }],

@@ -21,6 +21,8 @@ const M = [
   ['tools/roomSearch.mjs', "    g.items = [...g.items.filter(i => !on(i, t)), ...copies.filter(i => free(i[1], i[2]))];", "    g.items = g.items.filter(i => !on(i, t));", 'search'],
   ['tools/roomSearch.mjs', "o: ['button', 'red'], q: ['button', 'blue'], B: ['box'] };", "o: ['button', 'red'], q: ['button', 'red'], B: ['box'] };", 'search'],
   // the extra goals (registers 262-269)
+  ['src', "if (s.events.some(e => e.type === 'launch' && live(s, e.x, e.y))) ok = true;", "if (s.events.some(e => e.type === 'launch')) ok = true;", 'campaign'],
+  ['src', "judge: (room, moves) => switches(room).length > replayPath(room, moves, () => {}).toggled.length,", "judge: (room, moves) => switches(room).length > 0,", 'campaign'],
   ['src', "switches(room).length - replayPath(room, moves, () => {}).toggled.length >= 2,", "switches(room).length >= 2,", 'campaign'],
   ['src', "switches(room).length >= 3 && replayPath(room, moves, () => {}).toggled.length >= 1,", "replayPath(room, moves, () => {}).toggled.length >= 1,", 'campaign'],
   ['src', "stoppedPushes(room, moves).out.some(h => live(h.s, h.x, h.y)),", "stoppedPushes(room, moves).out.length > 0,", 'campaign'],

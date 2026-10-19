@@ -2,7 +2,7 @@
 // on a room you built. Requirements are judged on every shortest path, not just one.
 import { stuckText, nameOf, roomOf, placed, placementErrors, check, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
 import { boxMoves, REQUIREMENTS, trailOf } from '../src/campaign/requirements.js';
-import { allShortest } from '../src/campaign/robot.js';
+import { allShortest, replayPath } from '../src/campaign/robot.js';
 import { LEVELS } from '../src/level/campaign.js';
 import * as LEVELDATA from '../src/level/campaign.js';
 import { emptyLevel } from '../src/level/format.js';
@@ -302,6 +302,15 @@ const build = (def, rows) => {
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(off(rows), moves);
   ok('2 switches off at the end: met with two untouched', req('twoTogglesOffAtEnd', ['#######', '#P...##', '#t.t.##', '#######'], ['right']));
   ok('2 switches off at the end: not met when one of two is on', !req('twoTogglesOffAtEnd', ['#######', '#Pt.t.#', '#######'], ['right']));
+  ok('a switch off at the end: met when one of two is still off', req('aToggleOffAtEnd', ['#######', '#Pt...#', '#.t...#', '#######'], ['right']));
+  ok('a switch off at the end: not met when the only switch is on', !req('aToggleOffAtEnd', ['#######', '#Pt...#', '#######'], ['right']));
+  const turning = gate => { const r = off(['#######', '##..B.#', '#o#####', '#P#####', '#######']); r.cells[1 * 7 + 4] = gate; return REQUIREMENTS.boxLaunched.judge(r, ['up']); };
+  ok('a box thrown out by a turning one-way: met when the button turns the red one-way under it', turning('gate:right@red'));
+  ok('a box thrown out by a turning one-way: not met by a plain one-way', !turning('gate:left'));
+  // The robot steps off the button onto the red one-way: letting go turns it, and it throws the robot, not a box.
+  const thrown = off(['######', '#P...#', '#....#', '######']); thrown.cells[1 * 6 + 1] = 'button:red'; thrown.cells[1 * 6 + 2] = 'gate:left@red';
+  const end = replayPath(thrown, ['right'], () => {});
+  ok('a box thrown out by a turning one-way: not met when only the robot is thrown', !REQUIREMENTS.boxLaunched.judge(thrown, ['right']) && end.player.x === 1, JSON.stringify(end.player));
   ok('a 3rd switch on at the end: met with three, one on', req('thirdToggleOnAtEnd', ['########', '#Pt....#', '#t.t...#', '########'], ['right']));
   ok('a 3rd switch on at the end: not met with only two', !req('thirdToggleOnAtEnd', ['#######', '#Pt...#', '#.t...#', '#######'], ['right']));
   ok('every box pushed 2 times: not met by one push', !req('everyBoxPushedTwice', ['#######', '#PB...#', '#######'], ['right']));

@@ -35,5 +35,8 @@
  "small": [
   6,
   2
+ ],
+ "optional": [
+  "boxLaunched"
  ]
 }
