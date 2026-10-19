@@ -28,10 +28,10 @@
  "rules": [],
  "require": [
   "throughOpenDoor",
-  "boxOffButtonAtEnd"
+  "doorClosedAtEnd"
  ],
  "small": [
-  3,
-  5
+  4,
+  4
  ]
 }

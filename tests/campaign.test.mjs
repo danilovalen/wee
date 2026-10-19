@@ -247,6 +247,18 @@ const build = (def, rows) => {
   ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.el === 'start' || ELEMENTS[p.el])));
   ok('collides, not runs into', /collides with/.test(REQUIREMENTS.hitsClosedDoor.text) && !/runs into/.test(REQUIREMENTS.hitsClosedDoor.text));
 }
+{ // level 8's door goals: crossing is in through the open door and off the far side; a crush is a
+  // door closing on the box in its doorway
+  const off = rows => { const r = room(rows); for (const k of Object.keys(r.powers)) r.powers[k] = false; return r; };
+  const req = (id, rows, moves) => REQUIREMENTS[id].judge(off(rows), moves);
+  ok('a box crosses an open door: met when it is pushed through and out', req('boxCrossesOpenDoor', ['##########', '#Pt.B.D..#', '##########'], ['right']));
+  ok('a box crosses an open door: not met when it stops on the door tile', !req('boxCrossesOpenDoor', ['######', '#PtBD#', '######'], ['right']));
+  // The robot holds the button, pushes the box onto the door, steps off: the door closes on it.
+  const crush = ['.....', 'B..P.', '..D.D', '.....', 'o...G', 'D....'];
+  ok('a box crushed by a door: met when a door closes on it', req('boxCrushedByDoor', crush, ['up', 'left', 'down', 'right']));
+  ok('a box crushed by a door: not met when the box only crosses', !req('boxCrushedByDoor', ['##########', '#Pt.B.D..#', '##########'], ['right']));
+  ok('and a box left on a door that then closes has not crossed it', !req('boxCrossesOpenDoor', crush, ['up', 'left', 'down', 'right']));
+}
 { // one-ways: through is in along the arrow and out the far side; colliding is a slide stopped by
   // one from any direction it does not let through
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
@@ -268,7 +280,7 @@ const build = (def, rows) => {
 }
 { // every level's room-size goal is reachable: the smallest winning room tools/tilesArea.mjs found
   const SMALL = { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
-    5: ['....', '..BP', '.#..', '.G..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.D.', 'oBP', '...', 'G..', '...'], 8: ['.G.oP', '....D', '.....', '...B.', '....#'],
+    5: ['....', '.B#G', '.P..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['.BP#..G', '.BBD...', '#o.B..#'],
     9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..v.....', '........', '.......<', '..^.B...', '......G.', '...<B..P'] };
   for (const l of LEVELS) {
     const v = check(l, build(l, SMALL[l.id]));
@@ -294,10 +306,12 @@ const build = (def, rows) => {
     5: WIN5,
     6: ['P....', '....B', 'B..#t', 'D.#.#', '....G'],
     // His room (2026-10-18): won in 4, the box ends off the button.
-    7: ['.....', '..P..', '..B..', '...D.', '.Go..', '..#.#', '.....'],
-    8: ['P.o..', '..B.D', '...##', '#.###', '#...G'],
-    // Found by tools/levelSearch.mjs (2026-10-18): 8 moves, level 9's exact count.
-    9: ['...#.', '..<..', '.G..P', '.#...', 'v....', '....#', '.....', '.....', '.....'],
+    // His room (2026-10-18), the old level 8 that became 7: won in 5.
+    7: ['P.#.', '.B#.', 'D...', '.oG.'],
+    // Found by tools/levelSearch.mjs (2026-10-19): 7 moves, level 8's exact count; two boxes.
+    8: ['.#.B.', '#B..G', '.#.B.', '.#...', '.#DPD', '.D...', '....B', '..#..', '..Bo.'],
+    // His room (2026-10-18): 8 moves, level 9's exact count.
+    9: ['G....', '##..#', '..^#.', '.v...', '..#..', '....#', 'P#...'],
     // Found by search: 13 moves, level 10's exact count; the same box is pushed into a one-way twice.
     10: ['....P.', '#.B#..', '.B>.B.', '....G.', '....v.', '...<..', '.B.B..', '..B...', '....^.', '.B....'],
   };
@@ -305,7 +319,8 @@ const build = (def, rows) => {
   for (const l of LEVELS) {
     const v = WINS[l.id] && check(l, build(l, WINS[l.id]));
     ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
-    if (['9', '10'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
+    if (['8', '9', '10'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
+    if (l.id === '7') { const six = check(l, build(l, ['#B.....o..', '........D.', '.#...#....', '.#B.#..B..', '....DP..D.', '#..G##..#.'])); ok('level 7\'s exact count is reachable: a found room wins in exactly 6', six.won && six.length === l.steps.best, String(six.length)); }
     ok(`level ${l.id}'s win marks every row of its goal card met`, v && v.inRange && (l.require || []).every(id => v.reqs[id] === true), JSON.stringify(v && v.reqs));
   }
 }

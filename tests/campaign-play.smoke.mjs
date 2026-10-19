@@ -292,6 +292,19 @@ try {
   const fit = await phone.evaluate(() => { const d = document.documentElement, g = document.getElementById('palette'); return { page: [d.scrollWidth, d.clientWidth, d.scrollHeight, d.clientHeight], grid: [g.scrollWidth, g.clientWidth, getComputedStyle(g).overflowX] }; });
   check('on a phone the page never scrolls; the palette row does', fit.page[0] === fit.page[1] && fit.page[2] === fit.page[3] && fit.grid[2] === 'auto', JSON.stringify(fit));
   await phone.close();
+  // 226: level 8 became level 7; a save from before moves its level 8 record to 7 and drops the old 7.
+  const oldSave = await browser.newPage();
+  await oldSave.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ last: '8', levels: { 7: { best: 'old seven' }, 8: { best: 'old eight' } } })); } });
+  await oldSave.goto('http://localhost:5217/'); await oldSave.click('#menuCampaign');
+  const migrated = await oldSave.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')));
+  check('an old save moves level 8 to 7 and drops the old 7', migrated.v === 2 && migrated.levels['7'] && migrated.levels['7'].best === 'old eight' && !migrated.levels['8'] && migrated.last === '7', JSON.stringify(migrated));
+  await oldSave.close();
+  const only7 = await browser.newPage();
+  await only7.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ last: '7', levels: { 7: { best: 'old seven' } } })); } });
+  await only7.goto('http://localhost:5217/'); await only7.click('#menuCampaign');
+  const dropped = await only7.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')));
+  check('a save with only the old level 7 loses it', !dropped.levels['7'] && dropped.last === null, JSON.stringify(dropped));
+  await only7.close();
   // Level 9: a one-way is placed pointing right, and a tap on it with its tool turns it; the robot is drawn as a robot.
   const nine = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   nine.on('pageerror', e => errors.push(e.message));

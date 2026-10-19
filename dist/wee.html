@@ -3684,7 +3684,7 @@ return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNE
 const m35 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"],"small":[3,4]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8},"rules":[],"require":["boxPushedTwiceHitOnce"],"small":[4,4]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","boxOffButtonAtEnd"],"small":[3,5]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":10},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[5,5]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"small":[3,5]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":13},"rules":[],"require":["boxThroughOneWay","boxHitsOneWayTwice"],"small":[8,6]}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"],"small":[3,4]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8},"rules":[],"require":["boxPushedTwiceHitOnce"],"small":[4,3]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[4,4]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxCrossesOpenDoor"],"optional":["boxCrushedByDoor"],"small":[7,3]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"small":[3,5]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":13},"rules":[],"require":["boxThroughOneWay","boxHitsOneWayTwice"],"small":[8,6]}];
 return { LEVELS };
 })();
 // ---- src/campaign/robot.js
@@ -4041,6 +4041,39 @@ Object.assign(REQUIREMENTS, {
     text: 'Every switch turns on, then off again.',
     short: ['every', { el: 'toggle' }, 'on, then off'],
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.onOff.has(i)); },
+  },
+  boxCrossesOpenDoor: {
+    text: 'A box goes through an open door and out the other side.',
+    short: [{ el: 'box' }, 'crosses an open', { el: 'door' }],
+    // Like a one-way: in through the door and off the far side; a box left on the door tile has not crossed.
+    judge: (room, moves) => {
+      const isDoor = (x, y) => /^door:/.test(room.cells[y * room.w + x] || '');
+      let ok = false, was = {};
+      replayPath(room, moves, s => {
+        const now = {};
+        for (const e of s.entities) {
+          if (e.dead || e.kind !== 'box') continue;
+          const b = was[e.id], here = isDoor(e.x, e.y);
+          if (!b) { now[e.id] = { x: e.x, y: e.y, din: null }; continue; }
+          const d = [e.x - b.x, e.y - b.y], moved = d[0] || d[1];
+          if (moved && b.din && !here && d[0] === b.din[0] && d[1] === b.din[1]) ok = true;
+          now[e.id] = { x: e.x, y: e.y, din: here ? (moved ? (b.din || d) : b.din) : null };
+        }
+        was = now;
+      });
+      return ok;
+    },
+  },
+  boxCrushedByDoor: {
+    text: 'A box is crushed by a closing door.',
+    short: [{ el: 'box' }, 'crushed by a', { el: 'door' }],
+    // A plain box does not hold a door open: a door closing on its doorway destroys the box in it.
+    judge: (room, moves) => {
+      const boxes = new Set(room.entities.filter(e => e.kind === 'box').map((e, i) => e.id ?? i));
+      let ok = false;
+      replayPath(room, moves, s => { if (s.events.some(ev => ev.type === 'kill' && ev.how === 'door' && s.entities.some(e => e.id === ev.id && e.kind === 'box'))) ok = true; });
+      return ok && boxes.size > 0;
+    },
   },
 }, ONE_WAY_REQUIREMENTS);
 
@@ -5189,8 +5222,19 @@ const ALWAYS = ['move'];
 let A = null, boot = null, fitScene = null;
 
 function progress() {
-  try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return p; } catch { /* storage off */ }
-  return { last: null, levels: {} };
+  try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return migrate(p); } catch { /* storage off */ }
+  return { last: null, levels: {}, v: 2 };
+}
+// v2 (register 226): level 8 became level 7, so its saved room and stats move with it; the old
+// level 7's go, and the new level 8 starts empty.
+function migrate(p) {
+  if ((p.v || 1) >= 2) return p;
+  const old8 = p.levels['8'];
+  delete p.levels['7']; delete p.levels['8'];
+  if (old8) p.levels['7'] = old8;
+  if (p.last === '8') p.last = '7'; else if (p.last === '7') p.last = null;
+  p.v = 2; write(p);
+  return p;
 }
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
 const levelOf = id => LEVELS.find(l => l.id === id);
@@ -5436,7 +5480,7 @@ function buildCampaign(actions, sandbox) {
   addEventListener('wee:mode', () => { if (S.camp) { if (S.mode !== 'play') S.camp.testing = false; syncBrief(); } });
   addEventListener('pagehide', save);
 }
-return { TOOL, progress, unframe, toolsFor, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
+return { TOOL, progress, migrate, unframe, toolsFor, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
 })();
 // ---- src/solve/lenses.js
 const m49 = (() => {

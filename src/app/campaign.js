@@ -20,8 +20,19 @@ const ALWAYS = ['move'];
 let A = null, boot = null, fitScene = null;
 
 export function progress() {
-  try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return p; } catch { /* storage off */ }
-  return { last: null, levels: {} };
+  try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return migrate(p); } catch { /* storage off */ }
+  return { last: null, levels: {}, v: 2 };
+}
+// v2 (register 226): level 8 became level 7, so its saved room and stats move with it; the old
+// level 7's go, and the new level 8 starts empty.
+export function migrate(p) {
+  if ((p.v || 1) >= 2) return p;
+  const old8 = p.levels['8'];
+  delete p.levels['7']; delete p.levels['8'];
+  if (old8) p.levels['7'] = old8;
+  if (p.last === '8') p.last = '7'; else if (p.last === '7') p.last = null;
+  p.v = 2; write(p);
+  return p;
 }
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
 const levelOf = id => LEVELS.find(l => l.id === id);

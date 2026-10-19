@@ -163,6 +163,39 @@ Object.assign(REQUIREMENTS, {
     short: ['every', { el: 'toggle' }, 'on, then off'],
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.onOff.has(i)); },
   },
+  boxCrossesOpenDoor: {
+    text: 'A box goes through an open door and out the other side.',
+    short: [{ el: 'box' }, 'crosses an open', { el: 'door' }],
+    // Like a one-way: in through the door and off the far side; a box left on the door tile has not crossed.
+    judge: (room, moves) => {
+      const isDoor = (x, y) => /^door:/.test(room.cells[y * room.w + x] || '');
+      let ok = false, was = {};
+      replayPath(room, moves, s => {
+        const now = {};
+        for (const e of s.entities) {
+          if (e.dead || e.kind !== 'box') continue;
+          const b = was[e.id], here = isDoor(e.x, e.y);
+          if (!b) { now[e.id] = { x: e.x, y: e.y, din: null }; continue; }
+          const d = [e.x - b.x, e.y - b.y], moved = d[0] || d[1];
+          if (moved && b.din && !here && d[0] === b.din[0] && d[1] === b.din[1]) ok = true;
+          now[e.id] = { x: e.x, y: e.y, din: here ? (moved ? (b.din || d) : b.din) : null };
+        }
+        was = now;
+      });
+      return ok;
+    },
+  },
+  boxCrushedByDoor: {
+    text: 'A box is crushed by a closing door.',
+    short: [{ el: 'box' }, 'crushed by a', { el: 'door' }],
+    // A plain box does not hold a door open: a door closing on its doorway destroys the box in it.
+    judge: (room, moves) => {
+      const boxes = new Set(room.entities.filter(e => e.kind === 'box').map((e, i) => e.id ?? i));
+      let ok = false;
+      replayPath(room, moves, s => { if (s.events.some(ev => ev.type === 'kill' && ev.how === 'door' && s.entities.some(e => e.id === ev.id && e.kind === 'box'))) ok = true; });
+      return ok && boxes.size > 0;
+    },
+  },
 }, ONE_WAY_REQUIREMENTS);
 
 // A path drawn on its room: where the robot is after each move, and each box's places in order.
