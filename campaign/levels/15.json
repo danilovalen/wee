@@ -15,7 +15,7 @@
   ],
   "gate": [
    1,
-   null
+   1
   ],
   "laser": [
    1,
@@ -23,17 +23,19 @@
   ]
  },
  "steps": {
-  "best": 6
+  "best": 14
  },
  "rules": [],
  "require": [
   "laserThroughOneWay",
-  "laserBlockedByOneWay",
   "robotThroughOneWay",
-  "boxThroughOneWay"
+  "boxHitsOneWay"
  ],
  "small": [
-  4,
-  7
+  6,
+  5
+ ],
+ "optional": [
+  "boxThroughOneWay"
  ]
 }

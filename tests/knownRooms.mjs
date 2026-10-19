@@ -5,10 +5,13 @@ export const KNOWN = {
   small: { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
     5: ['...#....', '.....PG.', '..#.B...', '...#....', '....B...', '....#...'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['..P..', '...D.', '...BG', '...Bo'],
     9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'], 11: ['...P', 'BBDq', 'o.Q#', '#..G'], 12: ['#P.#..', 'G>.>Bo'], 13: ['PB>..GD', '.......', '#t.....'],
-    14: ['GD.', 'Dw.', 'tP.'], 15: ['w...', '.^.B', 'PBB.', '.B.G', '.^.B', '..e>', 'eve.'] },
+    14: ['GD.', 'Dw.', 'tP.'], // His 6x5 room (register 293) plus one block from a search: 11 moves.
+    15: ['#..##.', '...P..', '...B..', '#.....', 'e..>G#'] },
   optional: {
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
     14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
+    // His room (register 293): a box goes through the one-way.
+    15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
     4: ['PtttD.', '......', '......', '......', '.#.G..'],
     // Found by tools/levelSearch.mjs --seeded (register 276, with boxes pushing boxes): 6 moves.
     6: ['BB#DP.', '..#.B.', 'DBBGt.', '.DDDB.'],
@@ -44,9 +47,10 @@ export const KNOWN = {
     // Built by hand and checked (2026-10-19): the closed door stops the box past the one-way; the
     // switch opens the door and turns the one-way; the robot comes through the door and pushes it back. 9 moves.
     13: ['PB>..GD', '.......', '#t.....'],
-    // Found by tools/levelSearch.mjs (2026-10-19, registers 255, 256): level 14 in 8 moves, level 15 in 6.
+    // Found by tools/levelSearch.mjs (2026-10-19, registers 255, 256): level 14 in 8 moves.
     14: ['e.D...D', 'D...t..', 'P..tD.G', '.......'],
-    15: ['.#e^', '....', '.#G.', '.<.^', '.<w.', '.^.P', '...B', 'w...'],
+    // His room (register 293): 14 moves, level 15's exact count.
+    15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
   },
 };
 

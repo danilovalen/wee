@@ -90,7 +90,7 @@ const build = (def, rows) => {
   ok('a placed block is counted', placed(d, r).by.block.length === 1);
   const many = roomOf(d); for (let i = 0; i < 11; i++) many.cells[15 + i + Math.floor(i / 5) * 2] = 'wall';
   ok('more than a maximum is refused', placementErrors({ ...d, palette: { block: [0, 10] } }, many).some(e => /at most 10/.test(e.msg)));
-  ok('no level sets a maximum for now', LEVELS.every(l => Object.values(l.palette).every(([, max]) => max === null)));
+  ok('only level 15 sets a maximum: exactly one one-way (register 287)', LEVELS.every(l => Object.entries(l.palette).every(([k, [, max]]) => max === null || (l.id === '15' && k === 'gate' && max === 1))));
   const alien = build(d, ['', '', '..D']);
   ok('an element outside the palette is refused', placementErrors(d, alien).some(e => /no doors/.test(e.msg)));
   const odd = build(d, ['', '', '..k']); odd.cells[2 * 7 + 2] = 'crack';
