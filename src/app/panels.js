@@ -196,7 +196,7 @@ export function syncPanel() {
 // its colours. The palette's coloured pieces are drawn in the colour they will be placed in.
 const TINTED = ['button', 'toggle', 'door', 'idoor', 'receiver', 'sensor', 'gate'];
 let tint = '';
-// In a level, Look, Erase and Move sit on the colours' line; back in the sandbox they return to the palette.
+// In a level, Look, Erase and Move start the colours' line; back in the sandbox they return to the palette.
 const LINE = ['look', 'erase', 'move'];
 function placeTools() {
   const box = $('campTools');

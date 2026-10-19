@@ -147,8 +147,8 @@ function renderList() {
       for (const t of tags) counts[t] = (counts[t] || 0) + 1;
       if (filter && !tags.has(filter)) continue;
       const { meta, level } = splitRoom(r);
-      const par = meta.par ? ` · par ${meta.par}` : ' · not checked';
-      const li = row(level, meta.name || 'Untitled', `${level.w}x${level.h}${par} · ${when(meta.updated)}`, () => { if (leaveOk()) { openRoom(level, meta); closeAll(); } }, versionOf(r));
+      const par = meta.par ? `, par ${meta.par}` : ', not checked';
+      const li = row(level, meta.name || 'Untitled', `${level.w}x${level.h}${par}, ${when(meta.updated)}`, () => { if (leaveOk()) { openRoom(level, meta); closeAll(); } }, versionOf(r));
       menuOn(li.firstChild, r);
       ul.append(li);
       shown++;
@@ -182,7 +182,7 @@ export function buildRooms(actions) {
   A = actions;
   $('templateList').replaceChildren(...TEMPLATES.map(t => {
     const { level } = splitRoom(t.level);
-    return row(level, t.name, `Template · ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } });
+    return row(level, t.name, `Template, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } });
   }));
   // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
   // generate, templates) and This room (name, note, save, share, delete), from the header title.

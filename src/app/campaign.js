@@ -104,7 +104,7 @@ export function syncBrief() {
   const last = document.createElement('span'); last.className = 'campLast'; last.id = 'campLast';
   const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);
   // A win names its tiles too, counted as the stats count them: the start and the goal are not (register 258).
-  last.textContent = !v ? '' : !v.ok ? 'not ready' : v.won ? `won in ${v.length} \u00b7 ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` : v.length != null ? `last run: ${v.length} moves` : 'no way through';
+  last.textContent = !v ? '' : !v.ok ? 'not ready' : v.won ? `won in ${v.length}, ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` : v.length != null ? `last run: ${v.length} moves` : 'no way through';
   head.append(Object.assign(document.createElement('b'), { textContent: def.name }), last);
   // What a level requires, two to a line; what it only rewards, apart beneath.
   const must = document.createElement('ul'); must.className = 'campReqs campMust';
@@ -215,7 +215,7 @@ const range = ([a, b]) => a === b ? `${a}` : `${a}–${b}`;
 function statsText(st) {
   if (!st || !st.moves) return '';
   const area = Math.min(...Object.keys(st.tiles).map(Number));
-  return ` · moves ${range(st.moves)} · tiles ${range(st.tiles[area])} at area ${area}`;
+  return `, moves ${range(st.moves)}, tiles ${range(st.tiles[area])} at area ${area}`;
 }
 
 function renderList() {
@@ -225,7 +225,7 @@ function renderList() {
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten · optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}` : '';
+    small.textContent = rec.beaten ? `Beaten, optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}` : '';
     // The elements the level hands you, as the palette draws them.
     const parts = document.createElement('span'); parts.className = 'campParts';
     for (const el of Object.keys(def.palette)) {

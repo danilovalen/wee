@@ -54,7 +54,7 @@ try {
   await page.click('#genGo');
   await page.waitForSelector('#genResult:not([hidden])', { timeout: 30000 });
   check('a recipe that can fit, fits', (await page.textContent('#genInfo')).startsWith('Fits.'), await page.textContent('#genInfo'));
-  check('the shelf names it by its recipe', (await page.textContent('#genShelf')).includes('7x7 · 3-10 moves · Box'));
+  check('the shelf names it by its recipe', (await page.textContent('#genShelf')).includes('7x7, 3-10 moves, Box'));
   check('nothing reaches your rooms before Save', await page.evaluate(() => JSON.parse(localStorage.getItem('wee.rooms') || '[]').length === 0));
 
   // Stop keeps the closest room so far.

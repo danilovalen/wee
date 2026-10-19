@@ -37,5 +37,8 @@ check(`no source file is over ${MAX_LINES} lines`, long.length === 0, long.join(
 let built = '', err = '';
 try { built = bundle(); } catch (e) { err = e.message; }
 check('the bundle builds from the entry with no cycle and no missing export', !!built && !err, err);
+// Words on screen are separated by commas, never a middle dot (register 260).
+const dotted = [...files, 'index.html'].filter(f => /\u00b7|\\u00b7/.test(readFileSync(f, 'utf8')));
+check('no middle dot in the source or the page', dotted.length === 0, dotted.join(' '));
 check('the bundle holds every source file', files.every(f => built.includes(`// ---- ${f}`)), files.filter(f => !built.includes(`// ---- ${f}`)).join(' '));
 done();

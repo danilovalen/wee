@@ -70,7 +70,7 @@ function renderShelf() {
     img.src = thumbURL(entry.level); img.className = 'thumb'; img.alt = '';
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = recipeLabel(entry.recipe);
-    small.textContent = `${entry.fit ? 'Fits' : 'Closest'} · par ${entry.verdict.par ?? '-'} · seed ${entry.recipe.seed}`;
+    small.textContent = `${entry.fit ? 'Fits' : 'Closest'}, par ${entry.verdict.par ?? '-'}, seed ${entry.recipe.seed}`;
     text.append(name, small);
     b.append(img, text);
     b.onclick = () => { fillForm(entry.recipe); show(entry); };

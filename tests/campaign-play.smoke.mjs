@@ -104,7 +104,7 @@ try {
   await page.click('#campRun');
   await page.waitForTimeout(200);
   const won = await verdict();
-  check('a room in range wins and the card marks every row', /Made it in 4 moves/.test(won) && (await marks()).startsWith('steps:met') && (await page.locator('#campLast').textContent()) === `won in 4 \u00b7 ${await page.evaluate(() => { const l = window.wee.getLevel(); return l.cells.filter(c => c && c !== 'goal').length + l.entities.length; })} tiles`, won + ' ' + await marks() + ' ' + await page.locator('#campLast').textContent());
+  check('a room in range wins and the card marks every row', /Made it in 4 moves/.test(won) && (await marks()).startsWith('steps:met') && (await page.locator('#campLast').textContent()) === `won in 4, ${await page.evaluate(() => { const l = window.wee.getLevel(); return l.cells.filter(c => c && c !== 'goal').length + l.entities.length; })} tiles`, won + ' ' + await marks() + ' ' + await page.locator('#campLast').textContent());
   check('a 5x5 win misses the 3x3 goal', (await marks()).endsWith('small:unmet,touchBlockFourTimes:unmet,mix:unmet'), await marks());
   check('the verdict has no close button: nothing to dismiss', await page.locator('#campVerdict button').count() === 0);
   // The next touch elsewhere puts it away; a touch on it keeps it.
@@ -124,7 +124,7 @@ try {
   await page.mouse.click(5, 5);
   await page.click('#campBack');
   const row = await page.locator('.campRow[data-level="1"] small').textContent();
-  check('the list keeps a beaten level and how many optional goals it met', /Beaten · optional 0\/4 · moves 4 · tiles 7 at area 25$/.test(row) && !/cost/.test(row), row);
+  check('the list keeps a beaten level and how many optional goals it met', /Beaten, optional 0\/4, moves 4, tiles 7 at area 25$/.test(row) && !/cost/.test(row), row);
   check('the level you were on is selected', await page.locator('.campRow[data-level="1"]').evaluate(b => b.classList.contains('sel')));
   await page.click('.campRow[data-level="1"]');
   const kept = await page.evaluate(() => { const l = window.wee.getLevel(); return [l.w, l.h, l.cells.filter(c => c === 'wall').length].join(); });
@@ -150,7 +150,7 @@ try {
   await page.click('#campBack');
   const row4 = await page.locator('.campRow[data-level="1"] small').textContent();
   check('a longer win widens the moves; tiles stay at the smallest area won', /moves 4–11/.test(row4) && /tiles 1 at area 9/.test(row4), row4);
-  check('a met optional goal stays met after a later win misses it', /optional [12]\/4/.test(row2) && row3.replace(/ · moves.*/, '') === row2.replace(/ · moves.*/, ''), row2 + ' / ' + row3);
+  check('a met optional goal stays met after a later win misses it', /optional [12]\/4/.test(row2) && row3.replace(/, moves.*/, '') === row2.replace(/, moves.*/, ''), row2 + ' / ' + row3);
   await page.click('.campRow[data-level="1"]');
   // Test: the room played by hand; reaching the goal says so and nothing is judged or saved.
   await load(['P....', '.....', '.....', '.....', '....G']);
@@ -339,8 +339,8 @@ try {
   await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="11"]');
   const row7 = await nine.evaluate(() => { const r = document.getElementById('campColours'); return { shown: !r.hidden && r.getBoundingClientRect().height > 0, dots: [...r.querySelectorAll('button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '')).join() }; });
   check('a two-colour level shows its colours as a row of dots, the first chosen', row7.shown && row7.dots === 'red*,blue', JSON.stringify(row7));
-  const line = await nine.evaluate(() => { const top = s => document.querySelector(s).getBoundingClientRect(); const tools = ['look', 'erase', 'move'].map(id => document.querySelector(`[data-tool="${id}"]`)); return { inLine: tools.every(b => b.parentNode.id === 'campTools'), right: top('#campTools').right >= top('#campTop').right - 1, same: Math.abs(top('#campColours').top + top('#campColours').height / 2 - (top('#campTools').top + top('#campTools').height / 2)) < 4, below: top('[data-tool="door"]').top > top('#campTools').bottom }; });
-  check('Look, Erase and Move sit on the colours line, to the right; the objects below (register 251)', line.inLine && line.right && line.same && line.below, JSON.stringify(line));
+  const line = await nine.evaluate(() => { const top = s => document.querySelector(s).getBoundingClientRect(); const tools = ['look', 'erase', 'move'].map(id => document.querySelector(`[data-tool="${id}"]`)); return { inLine: tools.every(b => b.parentNode.id === 'campTools'), left: top('#campTools').left <= top('#campTop').left + 1, right: top('#campColours').right >= top('#campTop').right - 1, same: Math.abs(top('#campColours').top + top('#campColours').height / 2 - (top('#campTools').top + top('#campTools').height / 2)) < 4, below: top('[data-tool="door"]').top > top('#campTools').bottom }; });
+  check('Look, Erase and Move start the colours line on the left, the colours on the right; the objects below (registers 251, 261)', line.inLine && line.left && line.right && line.same && line.below, JSON.stringify(line));
   await nine.click('[data-camp-colour="blue"]'); await nine.click('[data-tool="door"]');
   const g7 = await nine.locator('#game').boundingBox(), t7 = g7.width / 7;
   await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);

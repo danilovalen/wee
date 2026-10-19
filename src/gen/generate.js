@@ -39,7 +39,7 @@ export function normalize(recipe) {
 // The shelf's name for a recipe: size, move range, and what it must use.
 export function recipeLabel(recipe) {
   const must = INGREDIENTS.filter(g => recipe.ing[g.id] === 'must').map(g => g.label);
-  return [`${recipe.w}x${recipe.h}`, ...(recipe.base ? ['your room'] : []), `${recipe.min}-${recipe.max} moves`, ...(must.length ? [must.join(', ')] : [])].join(' · ');
+  return [`${recipe.w}x${recipe.h}`, ...(recipe.base ? ['your room'] : []), `${recipe.min}-${recipe.max} moves`, ...(must.length ? [must.join(', ')] : [])].join(', ');
 }
 
 const ctxOf = recipe => ({ many: !!recipe.ing.colours, and: !!recipe.ing.and });

@@ -27,7 +27,7 @@ check('max is never below min', n.min === 20 && n.max === 20);
 check('unknown ingredients and values are dropped', !n.ing.tri && !n.ing.ghost);
 check('an ingredient brings what it needs, as Allowed', n.ing.receiver === 'must' && n.ing.turret === 'allowed' && n.ing.door === 'allowed', JSON.stringify(n.ing));
 check('the seed is a number', n.seed === 12);
-check('the label is size, moves and Must, in the panel\'s order', recipeLabel(normalize({ w: 8, h: 7, min: 6, max: 12, ing: { door: 'must', box: 'must', tri: 'allowed' } })) === '8x7 · 6-12 moves · Box, Door and button', recipeLabel(normalize({ w: 8, h: 7, min: 6, max: 12, ing: { door: 'must', box: 'must' } })));
+check('the label is size, moves and Must, in the panel\'s order', recipeLabel(normalize({ w: 8, h: 7, min: 6, max: 12, ing: { door: 'must', box: 'must', tri: 'allowed' } })) === '8x7, 6-12 moves, Box, Door and button', recipeLabel(normalize({ w: 8, h: 7, min: 6, max: 12, ing: { door: 'must', box: 'must' } })));
 
 const tags = new Set(MECHANISMS.map(m => m[0]));
 const bad = INGREDIENTS.flatMap(g => g.tags.filter(t => !tags.has(t)).map(t => g.id + ':' + t));

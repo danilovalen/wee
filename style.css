@@ -546,10 +546,10 @@ body:not(.campaign) [data-camp] { display: none !important; }
 dialog[id].rooms.gen { --page: 912px; }
 
 /* A level's colours (register 245): a row of dots over its tools; the chosen one is ringed. */
-/* Register 251: the colours on the left and the tools (Look, Erase, Move) on the right of one line; the objects below. */
+/* Registers 251, 261: the tools (Look, Erase, Move) on the left and the colours on the right of one line; the objects below. */
 body.campaign #campTop { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
-body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; }
-#campTools { margin-left: auto; display: flex; gap: 6px; }
+body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin-left: auto; }
+#campTools { display: flex; gap: 6px; }
 /* The tools are the objects' size: 46px square on a phone, a short icon button beside the desktop's text rows. */
 #campTools button { width: 32px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; }
 #campTools canvas { width: 20px; height: 20px; }

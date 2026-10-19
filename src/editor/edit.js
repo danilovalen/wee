@@ -82,9 +82,9 @@ export function describe(level, x, y) {
   if (pc) {
     const name = TOOLS.find(t => t.id === pc.kind)?.label || pc.kind;
     parts.push(['mover', 'enemy', 'strong'].includes(pc.kind)
-      ? `${name} \u00b7 ${pc.mode === 'follow' ? '' : (pc.axis === 'h' ? 'across \u00b7 ' : 'up and down \u00b7 ')}${CLOCK_NAME[pc.mode]}` : name);
+      ? `${name}, ${pc.mode === 'follow' ? '' : (pc.axis === 'h' ? 'across, ' : 'up and down, ')}${CLOCK_NAME[pc.mode]}` : name);
     if (pc.turret && pc.kind !== 'turret') parts.push('carries a turret');
-    if (pc.turret) parts.push(`fires ${pc.turret.dirs.map(d => ARROW[d]).join(' ')} \u00b7 ${CLOCK_NAME[pc.turret.mode]}`);
+    if (pc.turret) parts.push(`fires ${pc.turret.dirs.map(d => ARROW[d]).join(' ')}, ${CLOCK_NAME[pc.turret.mode]}`);
   }
   if (c) {
     const [kind, v] = c.split(':');
@@ -105,7 +105,7 @@ export function describe(level, x, y) {
     else parts.push(`${COLOUR_NAME[v]} ${kind}`);
   }
   if (level.start && level.start.x === x && level.start.y === y) parts.push('Start');
-  return parts.length ? parts.join(' \u00b7 ') : 'Empty floor';
+  return parts.length ? parts.join(', ') : 'Empty floor';
 }
 
 

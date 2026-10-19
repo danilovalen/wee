@@ -10,8 +10,10 @@ const M = [
   ['src', "    else if (!S.camp && b.parentNode === box) b.home.replaceWith(b);", "", 'campaign-play'],
   ['style.css', '@media (max-width: 700px) { #campTools button { width: 46px; height: 46px; }', '@media (max-width: 700px) { #campTools button { width: 52px; height: 52px; }', 'campaign-play'],
   ['src', "short: [{ el: 'start' }, '2 passes through an open', { el: 'door' }],", "short: [{ el: 'start' }, 'through an open', { el: 'door' }, '×2'],", 'campaign'],
-  ['src', "v.won ? `won in ${v.length} \\u00b7 ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` :", "v.won ? `won in ${v.length}` :", 'campaign-play'],
+  ['src', "v.won ? `won in ${v.length}, ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` :", "v.won ? `won in ${v.length}` :", 'campaign-play'],
+  ['src', "v.won ? `won in ${v.length}, ${tiles}", "v.won ? `won in ${v.length} \\u00b7 ${tiles}", 'arch'],
   ['src', '"optional":["hitsClosedDoor"]', '"optional":[]', 'campaign'],
+  ['style.css', 'body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin-left: auto; }', 'body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; }', 'campaign-play'],
   // Debug (register 247)
   ['index.html', 'title="Copies what the game knows about where you are.">Debug</button>', 'title="Copies what the game knows about where you are.">Report a problem</button>', 'campaign-play'],
   // a turning one-way launches (register 253)

@@ -54,6 +54,6 @@ export function syncChips() {
 let info = '';
 function syncInfo() {
   const h = S.mode === 'edit' && !touch ? S.hover : null;
-  const text = h ? `Tile ${h.x}, ${h.y}: ${[describe(S.level, h.x, h.y), ...tileFacts(h.y * S.level.w + h.x)].join(' · ')}` : '';
+  const text = h ? `Tile ${h.x}, ${h.y}: ${[describe(S.level, h.x, h.y), ...tileFacts(h.y * S.level.w + h.x)].join(', ')}` : '';
   if (text !== info) $('info').textContent = info = text;
 }
