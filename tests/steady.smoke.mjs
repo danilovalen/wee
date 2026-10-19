@@ -74,6 +74,13 @@ try {
         const h1 = await page.evaluate(() => window.wee.getLevel().h);
         check(`${name}: a cancelled tap on a + still adds a line`, h1 === h0 + 1, h0 + ' -> ' + h1);
       }
+      if (opts.hasTouch) {
+        // The side grips stay out of the phone's edge swipe zone, and each takes a 44px touch (register 239).
+        const sides = await page.evaluate(() => { const l = document.querySelector('.plus[data-plus="left"]').getBoundingClientRect(), r = document.querySelector('.plus[data-plus="right"]').getBoundingClientRect(); return { left: l.left, right: innerWidth - r.right }; });
+        check(`${name}: the side + grips sit at least 30px from the screen's edges`, sides.left >= 30 && sides.right >= 30, JSON.stringify(sides));
+        const reach = await page.evaluate(() => { const r = document.querySelector('.plus[data-plus="right"]').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; return [[cx - 20, cy], [cx + 20, cy], [cx, cy - 20], [cx, cy + 20]].every(([x, y]) => document.elementFromPoint(x, y)?.dataset?.plus === 'right'); });
+        check(`${name}: a + answers a touch up to 20px from its centre`, reach);
+      }
       check(`${name}: a + stays where it was when hovered and pressed`, rest === hovered && rest === pressed, [rest, hovered, pressed].join(' / '));
     }
     await page.close();

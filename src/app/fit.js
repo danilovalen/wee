@@ -33,13 +33,18 @@ function place(wide) {
 }
 
 const EDGE = 14;
+// On a phone the side + grips stay clear of the screen edge, where a swipe is the phone's back
+// gesture and closes the page (register 239), unless the room is too wide for it.
+const PHONE_SIDE = 46;
 
 export function fit() {
   const level = S.level, wide = innerWidth > 700;
   place(wide);
   const area = $('roomArea');
   // The room keeps a margin for the "+" on each of its edges.
-  const stage = (wide ? area.clientWidth - 2 * EDGE : $('stage').clientWidth - 2 * EDGE) || level.w * T;
+  // A phone's side margin gives way to a wide room: tiles stay at least 28px to tap.
+  const side = Math.max(EDGE, Math.min(PHONE_SIDE, ($('stage').clientWidth - level.w * 28) / 2));
+  const stage = (wide ? area.clientWidth - 2 * EDGE : $('stage').clientWidth - 2 * side) || level.w * T;
   // A phone in play gives the room everything between the header and the play buttons; in a level
   // the room keeps its edit size instead, so nothing moves when the mode changes (register 222).
   const below = $('pad').hidden ? 0 : $('pad').offsetHeight + 16;
