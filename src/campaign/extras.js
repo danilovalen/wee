@@ -32,6 +32,15 @@ const cellOf = (room, at) => at && at[0] >= 0 && at[1] >= 0 && at[0] < room.w &&
 
 export const EXTRA_REQUIREMENTS = {
   // Lasers (registers 255, 256).
+  laserThroughOpenDoor: {
+    text: 'A laser goes through an open door.',
+    short: [{ el: 'laser' }, 'through an open', { el: 'door' }],
+    judge: (room, moves) => {
+      let ok = false;
+      beams(room, moves, b => { if (b.path.slice(1).some(at => cellOf(room, at).startsWith('door:'))) ok = true; });
+      return ok;
+    },
+  },
   laserThroughTwoDoors: {
     text: 'A laser goes through two open doors at once.',
     short: [{ el: 'laser' }, 'through 2 open', { el: 'door' }],

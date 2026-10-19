@@ -317,6 +317,8 @@ const build = (def, rows) => {
   ok('a laser through 2 open doors: met once the switch opens both', req('laserThroughTwoDoors', D, ['right']));
   ok('a laser through 2 open doors: not met while they are closed', !req('laserThroughTwoDoors', D, []));
   ok('a laser through 2 open doors: not met through one', !req('laserThroughTwoDoors', ['##########', '#T.D.....#', '#Pt......#', '##########'], ['right']));
+  ok('a laser through an open door: met once the switch opens it', req('laserThroughOpenDoor', ['##########', '#T.D.....#', '#Pt......#', '##########'], ['right']));
+  ok('a laser through an open door: not met while it is closed', !req('laserThroughOpenDoor', D, []));
   ok('a closed door stops a laser: met', req('laserBlockedByDoor', D, []));
   ok('a closed door stops a laser: not met by a wall', !req('laserBlockedByDoor', ['########', '#T.....#', '#P.....#', '########'], []));
   ok('a laser through a one-way: met along its arrow', req('laserThroughOneWay', ['########', '#T.>...#', '#P.....#', '########'], []));

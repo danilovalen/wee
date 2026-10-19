@@ -758,6 +758,7 @@ const M = [
   ['src', "if (was && (was.x !== p.x || was.y !== p.y) && isGate(was.x, was.y))", "if (was && isGate(was.x, was.y))", 'campaign'],
   ['src/campaign/oneWay.js', "    if (p.dir && !dir) before = last;\n", "", 'campaign'],
   ['src/campaign/extras.js', "    if (p.dir && !dir) before = last;\n", "", 'campaign'],
+  ['src/campaign/extras.js', "if (b.path.slice(1).some(at => cellOf(room, at).startsWith('door:'))) ok = true;", "ok = true;", 'campaign'],
   ['src', "(!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind))", "false", 'campaign'],
   ['src', "    if (S.camp && (S.ui.tool === 'gate' || S.ui.tool === 'turret') && ev.button !== 2 && holds(S.level, c.x, c.y, S.ui.tool)) {", "    if (false) {", 'campaign-play'],
   ['src', "  drawRobot(g, hidden);\n", "  g.fillStyle = INK.player; g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill();\n", 'campaign-play'],
