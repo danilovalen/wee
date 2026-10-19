@@ -6,10 +6,14 @@ export const KNOWN = {
     5: ['...#....', '.....PG.', '..#.B...', '...#....', '....B...', '....#...'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['..P..', '...D.', '...BG', '...Bo'],
     9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'], 11: ['...P', 'BBDq', 'o.Q#', '#..G'], 12: ['#P.#..', 'G>.>Bo'], 13: ['PB>..GD', '.......', '#t.....'],
     14: ['GD.', 'Dw.', 'tP.'], // His 6x5 room (register 293) plus one block from a search: 11 moves.
-    15: ['#..##.', '...P..', '...B..', '#.....', 'e..>G#'] },
+    15: ['#..##.', '...P..', '...B..', '#.....', 'e..>G#'],
+    // Built by hand (register 301): the box shields the robot from the top laser while it holds the button. 4 moves.
+    16: ['e..o.G', '....#.', '.B..Dw', '.P....'] },
   optional: {
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
     14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
+    // Found by tools/levelSearch.mjs --from (register 301): the lasers cross, 4 moves.
+    16: ['e.o.Gs', '...#..', '.B..D.', '.Pe.Dw'],
     // His room (register 293): a box goes through the one-way.
     15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
     4: ['PtttD.', '......', '......', '......', '.#.G..'],
@@ -51,6 +55,7 @@ export const KNOWN = {
     14: ['e.D...D', 'D...t..', 'P..tD.G', '.......'],
     // His room (register 293): 14 moves, level 15's exact count.
     15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
+    16: ['e..o.G', '....#.', '.B..Dw', '.P....'],
   },
 };
 

@@ -46,6 +46,30 @@ export const EXTRA_REQUIREMENTS = {
     short: ['every', { el: 'laser' }, 'through an open', { el: 'door' }],
     judge: (room, moves) => everyLaser(room, moves, b => b.path.slice(1).some(at => cellOf(room, at).startsWith('door:'))),
   },
+  laserThroughADoor: {
+    text: 'A laser goes through an open door.',
+    short: [{ el: 'laser' }, 'through an open', { el: 'door' }],
+    judge: (room, moves) => { let ok = false; beams(room, moves, b => { if (b.path.slice(1).some(at => cellOf(room, at).startsWith('door:'))) ok = true; }); return ok; },
+  },
+  laserThroughButton: {
+    text: 'A laser goes through a button.',
+    short: [{ el: 'laser' }, 'through a', { el: 'button' }],
+    judge: (room, moves) => { let ok = false; beams(room, moves, b => { if (b.path.slice(1).some(at => cellOf(room, at).startsWith('button:'))) ok = true; }); return ok; },
+  },
+  // Two beams lit on the same tile at the same tick, one across and one up or down.
+  lasersCross: {
+    text: 'Two lasers cross at a right angle.',
+    short: [{ el: 'laser' }, 'crosses a', { el: 'laser' }],
+    judge: (room, moves) => {
+      let ok = false;
+      replayPath(room, moves, s => {
+        const lit = d => new Set((s.beams || []).filter(b => (b.d === 'left' || b.d === 'right') === d).flatMap(b => b.path.slice(1).map(String)));
+        const across = lit(true);
+        for (const at of lit(false)) if (across.has(at)) ok = true;
+      });
+      return ok;
+    },
+  },
   laserThroughTwoDoors: {
     text: 'A laser goes through two open doors at once.',
     short: [{ el: 'laser' }, 'through 2 open', { el: 'door' }],

@@ -90,7 +90,7 @@ const build = (def, rows) => {
   ok('a placed block is counted', placed(d, r).by.block.length === 1);
   const many = roomOf(d); for (let i = 0; i < 11; i++) many.cells[15 + i + Math.floor(i / 5) * 2] = 'wall';
   ok('more than a maximum is refused', placementErrors({ ...d, palette: { block: [0, 10] } }, many).some(e => /at most 10/.test(e.msg)));
-  ok('only level 15 sets a maximum: exactly one one-way (register 287)', LEVELS.every(l => Object.entries(l.palette).every(([k, [, max]]) => max === null || (l.id === '15' && k === 'gate' && max === 1))));
+  ok('only levels 15 and 16 set a maximum: one one-way, one box (registers 287, 294)', LEVELS.every(l => Object.entries(l.palette).every(([k, [, max]]) => max === null || (max === 1 && ((l.id === '15' && k === 'gate') || (l.id === '16' && k === 'box'))))));
   const alien = build(d, ['', '', '..D']);
   ok('an element outside the palette is refused', placementErrors(d, alien).some(e => /no doors/.test(e.msg)));
   const odd = build(d, ['', '', '..k']); odd.cells[2 * 7 + 2] = 'crack';
@@ -322,6 +322,12 @@ const build = (def, rows) => {
   // Two lasers firing right; only the top one's door opens with the switch.
   const two = ['##########', '#T.D.....#', '#Pt......#', '#T.Q.....#', '##########'];
   ok('every laser through an open door: not met when one laser never gets through', !req('laserThroughOpenDoor', two, ['right']));
+  ok('a laser through a button: met', req('laserThroughButton', ['########', '#T.o...#', '#P.....#', '########'], []));
+  ok('a laser through a button: not met when the button is behind it', !req('laserThroughButton', ['########', '#oT....#', '#P.....#', '########'], []));
+  // An across beam on row 2 and an up beam from row 4; a block at (3, 2) keeps them apart.
+  const crossing = mid => { const r = off(['#######', '#P....#', '#..' + mid + '..#', '#.....#', '#.....#', '#######']); r.entities.push({ kind: 'turret', x: 1, y: 2, turret: { dirs: ['right'], mode: 'input' } }, { kind: 'turret', x: 3, y: 4, turret: { dirs: ['up'], mode: 'input' } }); return REQUIREMENTS.lasersCross.judge(r, []); };
+  ok('two lasers cross: met by an across beam and an up beam', crossing('.'));
+  ok('two lasers cross: not met when a block keeps the beams apart', !crossing('#'));
   ok('a closed door stops every laser: met by both', req('laserBlockedByDoor', two, []));
   ok('a closed door stops every laser: not met when one hits a wall', !req('laserBlockedByDoor', ['##########', '#T.D.....#', '#P.......#', '#T.......#', '##########'], []));
   const ways = (a, b) => { const r = off(['######', '#P...#', '#....#', '######']); r.entities.push({ kind: 'turret', x: 2, y: 2, turret: { dirs: [a], mode: 'input' } }, { kind: 'turret', x: 4, y: 2, turret: { dirs: [b], mode: 'input' } }); return REQUIREMENTS.lasersTwoWays.judge(r, []); };
@@ -401,7 +407,7 @@ const build = (def, rows) => {
   for (const l of LEVELS) {
     const v = WINS[l.id] && check(l, build(l, WINS[l.id]));
     ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
-    if (['5', '8', '9', '10', '11', '12', '13', '14', '15'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
+    if (['5', '8', '9', '10', '11', '12', '13', '14', '15', '16'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
     if (l.id === '7') { const six = check(l, build(l, ['#B.....o..', '........D.', '.#...#....', '.#B.#..B..', '....DP..D.', '#..G##..#.'])); ok('level 7\'s exact count is reachable: a found room wins in exactly 6', six.won && six.length === l.steps.best, String(six.length)); }
     ok(`level ${l.id}'s win marks every row of its goal card met`, v && v.inRange && (l.require || []).every(id => v.reqs[id] === true), JSON.stringify(v && v.reqs));
   }
