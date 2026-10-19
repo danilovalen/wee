@@ -1,6 +1,6 @@
 // Geometry: what is on a tile, and where one step from a tile lands (walls, doors,
 // triangles, one-way tiles, water).
-import { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, OPPOSITE, openFaces, turn } from './base.js';
+import { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, OPPOSITE, breaks, openFaces, turn, wades } from './base.js';
 
 export const inb = (s, x, y) => x >= 0 && y >= 0 && x < s.w && y < s.h;
 export const cellAt = (s, x, y) => s.cells[y * s.w + x];
@@ -71,4 +71,20 @@ export function shift(s, x, y, dx, dy, wet, not) {
   if (!t || t.x !== x + dx || t.y !== y + dy) return null;
   if (!t.death && entAt(s, t.x, t.y, not)) return null;
   return t;
+}
+
+// Sends you and the piece standing on (x, y) sliding d, each if it can move that way and is not
+// already going d: a spring in front of it, or a one-way under it that turned. type names the event.
+export function fling(s, x, y, d, type) {
+  const p = s.player;
+  if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d, p.swimming)) {
+    if (!p.dir) p.moved = 0;
+    p.dir = d;
+    s.events.push({ type, x, y, d });
+  }
+  const e = entAt(s, x, y);
+  if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e), breaks(e))) {
+    e.slide = d; e.rush = false; e.rushDir = null;
+    s.events.push({ type, x, y, d });
+  }
 }

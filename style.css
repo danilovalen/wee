@@ -546,7 +546,15 @@ body:not(.campaign) [data-camp] { display: none !important; }
 dialog[id].rooms.gen { --page: 912px; }
 
 /* A level's colours (register 245): a row of dots over its tools; the chosen one is ringed. */
-body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin: 0 0 8px; }
+/* Register 251: the colours on the left and the tools (Look, Erase, Move) on the right of one line; the objects below. */
+body.campaign #campTop { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
+body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; }
+#campTools { margin-left: auto; display: flex; gap: 6px; }
+/* The tools are the objects' size: 46px square on a phone, a short icon button beside the desktop's text rows. */
+#campTools button { width: 32px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; }
+#campTools canvas { width: 20px; height: 20px; }
+@media (max-width: 700px) { #campTools button { width: 46px; height: 46px; } #campTools canvas { width: 28px; height: 28px; } }
+#campTools .lbl, #campTools .key { display: none; }
 #campColours button { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 0; position: relative; }
 #campColours button::after { content: ''; position: absolute; inset: -9px; }
 #campColours button.on { box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px #2a2440; }

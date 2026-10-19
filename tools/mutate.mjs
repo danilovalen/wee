@@ -4,6 +4,17 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 const M = [
+  // resize blockers, tools line (registers 252, 251)
+  ['src', "    if (want < n && from.flashed !== n) {", "    if (false) {", 'steady'],
+  ['src', "    if (S.camp && b.parentNode !== box) {", "    if (false) {", 'campaign-play'],
+  ['src', "    else if (!S.camp && b.parentNode === box) b.home.replaceWith(b);", "", 'campaign-play'],
+  ['style.css', '@media (max-width: 700px) { #campTools button { width: 46px; height: 46px; }', '@media (max-width: 700px) { #campTools button { width: 52px; height: 52px; }', 'campaign-play'],
+  // Debug (register 247)
+  ['index.html', 'title="Copies what the game knows about where you are.">Debug</button>', 'title="Copies what the game knows about where you are.">Report a problem</button>', 'campaign-play'],
+  // a turning one-way launches (register 253)
+  ['src', "  launch(s, turned);\n", "", 'sim'],
+  ['src', "  s.toggled = []; s.open = {}; flipToggles(s, false);", "  s.toggled = []; flipToggles(s, false);", 'sim'],
+  ['src', "if (!c.startsWith('gate:') || !cols.includes(c.split('@')[1])) return;", "if (!c.startsWith('gate:')) return;", 'sim'],
   // the colour row (register 245)
   ['src', "row.hidden = !cols || cols.length < 2;", "row.hidden = true;", 'campaign-play'],
   ['src', "ui.gateColour = S.camp && S.camp.def.colours ? ui.colour : null;", "ui.gateColour = null;", 'campaign-play'],
@@ -608,7 +619,7 @@ const M = [
   ['src/rules/player.js', "stepTo(s, p.x, p.y, d, p.swimming, diving)", "stepTo(s, p.x, p.y, d, p.swimming)", 'sim'],
   ['src/rules/pieces.js', "stepTo(s, e.x, e.y, d || patrolDir(e), wades(e), breaks(e))", "stepTo(s, e.x, e.y, d || patrolDir(e), wades(e))", 'sim'],
   ['src/rules/pieces.js', "stepTo(s, e.x, e.y, e.slide, wades(e), breaks(e))", "stepTo(s, e.x, e.y, e.slide, wades(e))", 'sim'],
-  ['src/rules/pieces.js', "e.slide !== d && stepTo(s, x, y, d, wades(e), breaks(e))", "e.slide !== d && stepTo(s, x, y, d, wades(e))", 'sim'],
+  ['src/rules/grid.js', "e.slide !== d && stepTo(s, x, y, d, wades(e), breaks(e))", "e.slide !== d && stepTo(s, x, y, d, wades(e))", 'sim'],
   ['src/rules/base.js', "export const BREAKS = ['strong', 'heavy'];", "export const BREAKS = ['strong', 'heavy', 'enemy', 'box'];", 'sim'],
   ['src/solve/solve.js', "  if (s.broken.length) k += '|' + [...s.broken].sort((a, b) => a - b).join(',');\n", "", 'clone'],
   ['src/rules/game.js', "    ...(s.broken.length ? { broken: s.broken.map(i => [i % s.w, Math.floor(i / s.w)]) } : {}),\n", "", 'sim'],
@@ -680,7 +691,7 @@ const M = [
   ['src/rules/life.js', "if (playerAt(s, x, y) && !s.powers.armored) you = true;", "if (playerAt(s, x, y)) you = true;", 'sim'],
   // toggle
   ['src', "if (flip) for (const id of ids) if (!(was[i] || []).includes(id))", "if (flip) for (const id of ids) if (true)", 'toggle'],
-  ['src', "  s.toggled = []; flipToggles(s, false);", "  flipToggles(s, false);", 'toggle'],
+  ['src', "  s.toggled = []; s.open = {}; flipToggles(s, false);", "  s.open = {}; flipToggles(s, false);", 'toggle'],
   ['src', "const down = toggle ? s.toggled.includes(i) :", "const down = toggle ? true :", 'toggle'],
   ['src', "  if (s.toggled.length) k += '|t' + s.toggled.join(',');\n", "", 'toggle'],
   // campaign

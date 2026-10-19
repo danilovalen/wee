@@ -8,7 +8,7 @@ import { drawTurret } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
 import { newHistory, record, undo, redo, LIMIT } from '../src/editor/history.js';
 import { RT_PERIOD } from '../src/rules/base.js';
-import { explode } from '../src/rules/life.js';
+import { explode, respawn } from '../src/rules/life.js';
 
 // One move of yours, as the world sees it: pieces on your move start their slide, then
 // every slide and push runs to its end before the test looks.
@@ -472,6 +472,32 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('placing a one-way with a colour chosen gives it that colour', put.cells[8] === 'gate:left@blue', put.cells[8]);
   turnGate(put, 3, 1);
   check('turning it keeps its colour', put.cells[8] === 'gate:up@blue', put.cells[8]);
+}
+
+{ // a one-way that turns launches what stands on it along its new arrow, until something stops it (register 253)
+  const l = room(['#######', '##..B.#', '#o#####', '#P#####', '#######']);
+  l.cells[1 * 7 + 4] = 'gate:right@red'; l.cells[2 * 7 + 1] = 'button:red';
+  const g = createGame(l);
+  slide(g, 'up'); for (let i = 0; i < 20; i++) step(g);
+  check('the box on it slides out the new way when the button goes down', at(g.entities[0], 2, 1), JSON.stringify(g.entities[0]));
+  const r = room(['########', '#....P.#', '#B.....#', '#o######', '########']);
+  r.cells[1 * 8 + 5] = 'gate:right@red'; r.cells[3 * 8 + 1] = 'button:red';
+  const h = createGame(r);
+  h.entities[0].y = 3; for (let i = 0; i < 20; i++) step(h);
+  check('the robot on it is launched too, sliding until a wall stops it', at(h.player, 1, 1), JSON.stringify(h.player));
+  const k = room(['#######', '##..B.#', '#o.####', '#P#####', '#######']);
+  k.cells[1 * 7 + 4] = 'gate:right@red'; k.cells[2 * 7 + 1] = 'button:red';
+  const off = createGame(k);
+  const plain = room(['#######', '##..B.#', '#o#####', '#P#####', '#######']);
+  plain.cells[1 * 7 + 4] = 'gate:left'; plain.cells[2 * 7 + 1] = 'button:red';
+  const pg = createGame(plain);
+  slide(pg, 'up'); for (let i = 0; i < 20; i++) step(pg);
+  check('a plain one-way launches nothing when a colour turns', at(pg.entities[0], 4, 1), JSON.stringify(pg.entities[0]));
+  const rs = room(['#######', '##..B.#', '#o#####', '#P#####', '#######']);
+  rs.cells[1 * 7 + 4] = 'gate:right@red'; rs.cells[2 * 7 + 1] = 'button:red';
+  const re = createGame(rs); re.open.red = true; respawn(re); for (let i = 0; i < 20; i++) step(re);
+  check('a reset launches nothing: the doors start over as a new room\'s do', at(re.entities.find(e => !e.dead), 4, 1), JSON.stringify(re.entities.find(e => !e.dead)));
+  check('nothing is launched while the colour stays as it is', (() => { for (let i = 0; i < 20; i++) step(off); return at(off.entities[0], 4, 1); })(), JSON.stringify(off.entities[0]));
 }
 
 { // a spring launches whatever lands in front of it, the way it faces

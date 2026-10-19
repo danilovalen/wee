@@ -304,9 +304,10 @@ const build = (def, rows) => {
   ok('a level naming no colours takes a plain one-way and not a red one', stray('9', 'gate:up') === 0 && stray('9', 'gate:up@red') === 1);
 }
 { // every level's room-size goal is reachable: the smallest winning room tools/tilesArea.mjs found
+  // (levels 11 and 12: his rooms, 2026-10-19, registers 249 and 250)
   const SMALL = { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
     5: ['....', '.B#G', '.P..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['...D', '..Bo', '..BG', '#.P.', '....'],
-    9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'], 11: ['.Bo#', 'P...', '.B..', '.DQG', '.q#.'], 12: ['.G...', 'P....', '.B>.o'], 13: ['PB>..GD', '.......', '#t.....'] };
+    9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'], 11: ['...P', 'BBDq', 'o.Q#', '#..G'], 12: ['#P.#..', 'G>.>Bo'], 13: ['PB>..GD', '.......', '#t.....'] };
   for (const l of LEVELS) {
     const v = check(l, build(l, SMALL[l.id]));
     // Mix holds where one room meets two goals at once: level 5's smallest room also takes exactly 8.

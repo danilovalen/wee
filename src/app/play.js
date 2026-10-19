@@ -139,7 +139,7 @@ export function report() {
 }
 export async function copyReport() {
   const text = report();
-  try { await navigator.clipboard.writeText(text); flash('Report copied. Paste it in the chat.'); }
+  try { await navigator.clipboard.writeText(text); flash('Copied.'); }
   catch { $('reportText').value = text; $('reportBox').showModal(); $('reportText').select(); }
 }
 function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mode, true), 2500); }

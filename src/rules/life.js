@@ -1,6 +1,6 @@
 // Doors and switches, dying, and the room reset.
 import { CLOCKWISE, COLOURS, FUSE, HOLDS_DOOR } from './base.js';
-import { cellAt, entAt, inb, playerAt } from './grid.js';
+import { cellAt, entAt, fling, gateDirs, inb, playerAt } from './grid.js';
 
 // Which of its directions, in clockwise order, a turret aims first.
 export const startAim = t => Math.max(0, CLOCKWISE.filter(d => t.dirs.includes(d)).indexOf(t.start));
@@ -69,6 +69,7 @@ export function refreshDoors(s) {
     pressed[col] = (pressed[col] ?? true) && down;
   }
   let squashed = false;
+  const turned = [];
   for (const col of COLOURS) {
     const want = !!(any[col] && pressed[col]);
     if (want !== !!s.open[col]) {
@@ -81,9 +82,22 @@ export function refreshDoors(s) {
         if (youIn(d) && !s.player.hidden) squashed = true;
       }
     }
+    if (want !== !!s.open[col]) turned.push(col);
     s.open[col] = want;
   }
+  launch(s, turned);
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
+}
+
+// A one-way of a colour that just turned launches what stands on it along its new arrow, sliding
+// on until something stops it (register 253), as if it had kept moving that way.
+function launch(s, cols) {
+  if (!cols.length) return;
+  s.cells.forEach((c, i) => {
+    if (!c.startsWith('gate:') || !cols.includes(c.split('@')[1])) return;
+    const x = i % s.w, y = (i - x) / s.w;
+    fling(s, x, y, gateDirs(s, c)[0], 'launch');
+  });
 }
 
 // Dying or pressing Reset puts the whole room back as it started, with you on your last
@@ -93,7 +107,8 @@ export function respawn(s) {
   s.entities = freshPieces(s.origin);
   s.broken = [];
   Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, pushing: null, snap: true });
-  s.toggled = []; flipToggles(s, false);
+  // Doors start over as a new room's do, so a one-way that turns back on reset launches nothing a start would not.
+  s.toggled = []; s.open = {}; flipToggles(s, false);
   refreshDoors(s);
 }
 

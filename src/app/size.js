@@ -1,6 +1,6 @@
 // The room's size: a "+" on each edge of the room adds a row or a column there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
-import { $, canvas } from './dom.js';
+import { $, canvas, now } from './dom.js';
 import { S } from '../editor/state.js';
 import { moveSide } from '../level/format.js';
 import { change } from './undo.js';
@@ -23,6 +23,19 @@ function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('ar
 const OUT = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] };
 // In a campaign level the start is the level's, so a cut may not take it.
 const keeps = l => !!l && !(S.camp && S.level.start && !l.start);
+// The tiles of the line a cut of k lines would take next that hold something: what stops the drag
+// there (register 252). Empty when the room's own 2x2 floor is what stops it.
+function blockers(level, side, k) {
+  const { w, h } = level, at = side === 'top' ? k : side === 'bottom' ? h - 1 - k : side === 'left' ? k : w - 1 - k;
+  const across = side === 'top' || side === 'bottom', out = [];
+  for (let i = 0; i < (across ? w : h); i++) {
+    const x = across ? i : at, y = across ? at : i;
+    if (x < 0 || y < 0 || x >= w || y >= h) continue;
+    const full = level.cells[y * w + x] || level.entities.some(e => e.x === x && e.y === y) || (level.start && level.start.x === x && level.start.y === y);
+    if (full) out.push({ x, y });
+  }
+  return out;
+}
 function grip(b, after) {
   const side = b.dataset.plus, wrap = $('roomWrap');
   let from = null, n = 0;
@@ -45,8 +58,12 @@ function grip(b, after) {
     if (Math.abs(d) > 6) from.moved = true;
     from.far = Math.max(from.far, Math.abs(d));
     if (!from.moved) return;
-    n = Math.round(d / tile()) || 0;
+    const want = Math.round(d / tile()) || 0;
+    n = want;
     while (n && !keeps(moveSide(S.level, side, n))) n -= Math.sign(n);
+    // A cut held back by a placed thing flashes what is in the way, once per line reached.
+    if (want < n && from.flashed !== n) { from.flashed = n; for (const b of blockers(S.level, side, -n)) S.fx.push({ type: 'flash', x: b.x, y: b.y, at: now() }); S.redraw = true; }
+    if (want >= n) from.flashed = null;
     show();
   });
   const done = ev => {

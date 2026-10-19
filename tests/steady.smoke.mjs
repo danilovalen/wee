@@ -81,6 +81,15 @@ try {
         const reach = await page.evaluate(() => { const r = document.querySelector('.plus[data-plus="right"]').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; return [[cx - 20, cy], [cx + 20, cy], [cx, cy - 20], [cx, cy + 20]].every(([x, y]) => document.elementFromPoint(x, y)?.dataset?.plus === 'right'); });
         check(`${name}: a + answers a touch up to 20px from its centre`, reach);
       }
+      if (!opts.hasTouch) {
+        // A cut held back by a placed thing flashes what is in the way (register 252).
+        const h0 = await page.evaluate(() => window.wee.getLevel().h);
+        const bot = await page.locator('.plus[data-plus="bottom"]').boundingBox(), t = (await page.locator('#game').boundingBox()).height / h0;
+        await page.mouse.move(bot.x + 12, bot.y + 12); await page.mouse.down(); await page.mouse.move(bot.x + 12, bot.y + 12 - t * 1.4, { steps: 6 });
+        const fx = await page.evaluate(() => window.wee.fxTypes()); await page.mouse.up();
+        const h = await page.evaluate(() => window.wee.getLevel().h);
+        check(`${name}: a cut stopped by something in its way flashes it, and cuts nothing`, fx.includes('flash') && h === h0, JSON.stringify({ fx, h, h0 }));
+      }
       check(`${name}: a + stays where it was when hovered and pressed`, rest === hovered && rest === pressed, [rest, hovered, pressed].join(' / '));
     }
     await page.close();

@@ -196,7 +196,19 @@ export function syncPanel() {
 // its colours. The palette's coloured pieces are drawn in the colour they will be placed in.
 const TINTED = ['button', 'toggle', 'door', 'idoor', 'receiver', 'sensor', 'gate'];
 let tint = '';
+// In a level, Look, Erase and Move sit on the colours' line; back in the sandbox they return to the palette.
+const LINE = ['look', 'erase', 'move'];
+function placeTools() {
+  const box = $('campTools');
+  for (const id of LINE) {
+    const b = document.querySelector(`[data-tool="${id}"]`);
+    // A comment keeps each one's place in the palette while it is away.
+    if (S.camp && b.parentNode !== box) { b.home ||= document.createComment(id); b.replaceWith(b.home); box.append(b); }
+    else if (!S.camp && b.parentNode === box) b.home.replaceWith(b);
+  }
+}
 function syncColours() {
+  placeTools();
   const ui = S.ui, cols = S.camp ? coloursOf(S.camp.def) : null, row = $('campColours');
   if (cols && !cols.includes(ui.colour)) ui.colour = cols[0];
   ui.gateColour = S.camp && S.camp.def.colours ? ui.colour : null;

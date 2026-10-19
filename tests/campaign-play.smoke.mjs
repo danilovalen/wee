@@ -272,7 +272,9 @@ try {
   // The report: the state as the level was left, and the last taps.
   await page.click('#campBack'); await page.click('#campMenu'); await page.click('#menuDebug');
   const rep = JSON.parse(await page.evaluate(() => document.getElementById('reportText').value));
-  check('Report a problem shows the level as it was left and the last taps', rep.format === 'wee-debug' && rep.leftLevel && rep.leftLevel.level === '1' && rep.leftLevel.mode === 'edit' && rep.leftLevel.onTop.room === '#game' && rep.events.some(e => e.type === 'pointerdown'), JSON.stringify(rep.leftLevel));
+  check('Debug shows the level as it was left and the last taps', rep.format === 'wee-debug' && rep.leftLevel && rep.leftLevel.level === '1' && rep.leftLevel.mode === 'edit' && rep.leftLevel.onTop.room === '#game' && rep.events.some(e => e.type === 'pointerdown'), JSON.stringify(rep.leftLevel));
+  const dbg = await page.evaluate(() => [document.getElementById('menuDebug').textContent, /chat/i.test(document.body.innerText + document.getElementById('menuDebug').title)]);
+  check('the button says Debug and nothing on screen mentions a chat (register 247)', dbg[0] === 'Debug' && !dbg[1], JSON.stringify(dbg));
   await page.click('#reportBox form button');
   check('closing the report leaves the menu open', await page.locator('#menuBox').isVisible());
   await page.click('#menuCampaign'); await page.click('.campRow[data-level="1"]');
@@ -282,6 +284,7 @@ try {
   await page.waitForFunction(() => document.getElementById('roomsBox').open, null, { timeout: 5000 });
   check('Sandbox opens the rooms list', true);
   check('the sandbox has no Move tool', await page.locator('[data-tool="move"]').isHidden());
+  check('in the sandbox Look, Erase and Move are back in the palette', await page.evaluate(() => ['look', 'erase', 'move'].every(id => document.querySelector(`#palette [data-tool="${id}"]`))));
   check('the sandbox shows the whole palette again', !(await page.evaluate(() => document.body.classList.contains('campaign'))) && (await page.locator('[data-tool="wall"] .countDot').count()) === 0);
   // On a phone, a palette wider than the screen scrolls by itself and the page stays put.
   const phone = await browser.newPage({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true });
@@ -290,6 +293,8 @@ try {
   check('on a phone the menu shows the wordmark, and the goal and door sit above the buttons', phoneLay.logo > 0 && phoneLay.goal < phoneLay.btn && phoneLay.door < phoneLay.w, JSON.stringify(phoneLay));
   await phone.click('#menuCampaign'); await phone.click('.campRow[data-level="6"]');
   const fit = await phone.evaluate(() => { const d = document.documentElement, g = document.getElementById('palette'); return { page: [d.scrollWidth, d.clientWidth, d.scrollHeight, d.clientHeight], grid: [g.scrollWidth, g.clientWidth, getComputedStyle(g).overflowX] }; });
+  const toolSize = await phone.evaluate(() => ['look', 'wall'].map(id => { const r = document.querySelector(`[data-tool="${id}"]`).getBoundingClientRect(), c = document.querySelector(`[data-tool="${id}"] canvas`).getBoundingClientRect(); return [r.width, r.height, c.width].map(Math.round).join('x'); }));
+  check('on a phone the tools are the objects\' size, icons too (register 251)', toolSize[0] === toolSize[1], toolSize.join(' vs '));
   check('on a phone the page never scrolls; the palette row does', fit.page[0] === fit.page[1] && fit.page[2] === fit.page[3] && fit.grid[2] === 'auto', JSON.stringify(fit));
   await phone.close();
   // 226: level 8 became level 7 (243 moved it to 8 for a day; 246 moved it back). A v1 save's level 8 record ends on 7, the old 7 dropped.
@@ -334,6 +339,8 @@ try {
   await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="11"]');
   const row7 = await nine.evaluate(() => { const r = document.getElementById('campColours'); return { shown: !r.hidden && r.getBoundingClientRect().height > 0, dots: [...r.querySelectorAll('button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '')).join() }; });
   check('a two-colour level shows its colours as a row of dots, the first chosen', row7.shown && row7.dots === 'red*,blue', JSON.stringify(row7));
+  const line = await nine.evaluate(() => { const top = s => document.querySelector(s).getBoundingClientRect(); const tools = ['look', 'erase', 'move'].map(id => document.querySelector(`[data-tool="${id}"]`)); return { inLine: tools.every(b => b.parentNode.id === 'campTools'), right: top('#campTools').right >= top('#campTop').right - 1, same: Math.abs(top('#campColours').top + top('#campColours').height / 2 - (top('#campTools').top + top('#campTools').height / 2)) < 4, below: top('[data-tool="door"]').top > top('#campTools').bottom }; });
+  check('Look, Erase and Move sit on the colours line, to the right; the objects below (register 251)', line.inLine && line.right && line.same && line.below, JSON.stringify(line));
   await nine.click('[data-camp-colour="blue"]'); await nine.click('[data-tool="door"]');
   const g7 = await nine.locator('#game').boundingBox(), t7 = g7.width / 7;
   await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);

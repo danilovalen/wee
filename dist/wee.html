@@ -563,7 +563,15 @@ body:not(.campaign) [data-camp] { display: none !important; }
 dialog[id].rooms.gen { --page: 912px; }
 
 /* A level's colours (register 245): a row of dots over its tools; the chosen one is ringed. */
-body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin: 0 0 8px; }
+/* Register 251: the colours on the left and the tools (Look, Erase, Move) on the right of one line; the objects below. */
+body.campaign #campTop { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
+body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; }
+#campTools { margin-left: auto; display: flex; gap: 6px; }
+/* The tools are the objects' size: 46px square on a phone, a short icon button beside the desktop's text rows. */
+#campTools button { width: 32px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; }
+#campTools canvas { width: 20px; height: 20px; }
+@media (max-width: 700px) { #campTools button { width: 46px; height: 46px; } #campTools canvas { width: 28px; height: 28px; } }
+#campTools .lbl, #campTools .key { display: none; }
 #campColours button { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 0; position: relative; }
 #campColours button::after { content: ''; position: absolute; inset: -9px; }
 #campColours button.on { box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px #2a2440; }
@@ -592,7 +600,7 @@ body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin: 0 0
     <aside id="tools">
       <h2>Build</h2>
       <p id="toolName" class="toolName"></p>
-      <div id="campColours" class="campColours camp-only" role="radiogroup" aria-label="Colour" hidden></div>
+      <div id="campTop" class="campTop camp-only"><div id="campColours" class="campColours" role="radiogroup" aria-label="Colour" hidden></div><div id="campTools" class="campTools"></div></div>
       <div id="groups" class="tabs" role="tablist"></div>
       <div id="palette" class="grid"></div>
       <div id="options">
@@ -692,7 +700,6 @@ body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin: 0 0
         <button id="winEdit" type="button">Edit</button>
       </div>
       <dialog id="reportBox">
-        <p>Copy all of this and paste it in the chat.</p>
         <textarea id="reportText" rows="8" readonly></textarea>
         <form method="dialog"><button>Close</button></form>
       </dialog>
@@ -781,7 +788,7 @@ body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin: 0 0
     <div class="menuList">
       <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
       <button id="menuSandbox" type="button" class="primary">Sandbox</button>
-      <button id="menuDebug" type="button" title="If something stops working, copy this and paste it in the chat.">Report a problem</button>
+      <button id="menuDebug" type="button" title="Copies what the game knows about where you are.">Debug</button>
     </div>
   </dialog>
   <dialog id="campBox" class="rooms">
@@ -937,7 +944,7 @@ return { TICK_MS, RT_PERIOD, HIDE_TICKS, LASER_TICKS, DIRS, OPPOSITE, COLOURS, C
 })();
 // ---- src/rules/grid.js
 const m1 = (() => {
-const { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, OPPOSITE, openFaces, turn } = m0;
+const { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, OPPOSITE, breaks, openFaces, turn, wades } = m0;
 // Geometry: what is on a tile, and where one step from a tile lands (walls, doors,
 // triangles, one-way tiles, water).
 
@@ -1011,12 +1018,28 @@ function shift(s, x, y, dx, dy, wet, not) {
   if (!t.death && entAt(s, t.x, t.y, not)) return null;
   return t;
 }
-return { inb, cellAt, onGravel, solidCell, triAt, facing, gateOf, gateDirs, gateAt, stepTo, pushTo, inWater, entAt, playerAt, crushes, shift };
+
+// Sends you and the piece standing on (x, y) sliding d, each if it can move that way and is not
+// already going d: a spring in front of it, or a one-way under it that turned. type names the event.
+function fling(s, x, y, d, type) {
+  const p = s.player;
+  if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d, p.swimming)) {
+    if (!p.dir) p.moved = 0;
+    p.dir = d;
+    s.events.push({ type, x, y, d });
+  }
+  const e = entAt(s, x, y);
+  if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e), breaks(e))) {
+    e.slide = d; e.rush = false; e.rushDir = null;
+    s.events.push({ type, x, y, d });
+  }
+}
+return { inb, cellAt, onGravel, solidCell, triAt, facing, gateOf, gateDirs, gateAt, stepTo, pushTo, inWater, entAt, playerAt, crushes, shift, fling };
 })();
 // ---- src/rules/life.js
 const m2 = (() => {
 const { CLOCKWISE, COLOURS, FUSE, HOLDS_DOOR } = m0;
-const { cellAt, entAt, inb, playerAt } = m1;
+const { cellAt, entAt, fling, gateDirs, inb, playerAt } = m1;
 // Doors and switches, dying, and the room reset.
 
 
@@ -1087,6 +1110,7 @@ function refreshDoors(s) {
     pressed[col] = (pressed[col] ?? true) && down;
   }
   let squashed = false;
+  const turned = [];
   for (const col of COLOURS) {
     const want = !!(any[col] && pressed[col]);
     if (want !== !!s.open[col]) {
@@ -1099,9 +1123,22 @@ function refreshDoors(s) {
         if (youIn(d) && !s.player.hidden) squashed = true;
       }
     }
+    if (want !== !!s.open[col]) turned.push(col);
     s.open[col] = want;
   }
+  launch(s, turned);
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
+}
+
+// A one-way of a colour that just turned launches what stands on it along its new arrow, sliding
+// on until something stops it (register 253), as if it had kept moving that way.
+function launch(s, cols) {
+  if (!cols.length) return;
+  s.cells.forEach((c, i) => {
+    if (!c.startsWith('gate:') || !cols.includes(c.split('@')[1])) return;
+    const x = i % s.w, y = (i - x) / s.w;
+    fling(s, x, y, gateDirs(s, c)[0], 'launch');
+  });
 }
 
 // Dying or pressing Reset puts the whole room back as it started, with you on your last
@@ -1111,7 +1148,8 @@ function respawn(s) {
   s.entities = freshPieces(s.origin);
   s.broken = [];
   Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, pushing: null, snap: true });
-  s.toggled = []; flipToggles(s, false);
+  // Doors start over as a new room's do, so a one-way that turns back on reset launches nothing a start would not.
+  s.toggled = []; s.open = {}; flipToggles(s, false);
   refreshDoors(s);
 }
 
@@ -1392,7 +1430,7 @@ return { partnerOf, meet, unglue, lead, follow, partnerAt, checkGlue };
 const m6 = (() => {
 const { DIRS, ENEMY, LIGHT, MOVES, breaks, wades } = m0;
 const { turnTurrets } = m3;
-const { crushes, entAt, inb, onGravel, playerAt, pushTo, stepTo } = m1;
+const { crushes, entAt, fling, inb, onGravel, playerAt, pushTo, stepTo } = m1;
 const { die, kill, land, light, refreshDoors, smash } = m2;
 const { carry, entered, stick, stuckTo } = m4;
 const { follow, lead, meet, partnerAt, partnerOf } = m5;
@@ -1535,20 +1573,7 @@ function springsOf(s) {
   return list;
 }
 function fireSprings(s) {
-  for (const { d, x, y } of springsOf(s)) {
-    if (!inb(s, x, y)) continue;
-    const p = s.player;
-    if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d, p.swimming)) {
-      if (!p.dir) p.moved = 0;
-      p.dir = d;
-      s.events.push({ type: 'spring', x, y, d });
-    }
-    const e = entAt(s, x, y);
-    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e), breaks(e))) {
-      e.slide = d; e.rush = false; e.rushDir = null;
-      s.events.push({ type: 'spring', x, y, d });
-    }
-  }
+  for (const { d, x, y } of springsOf(s)) if (inb(s, x, y)) fling(s, x, y, d, 'spring');
 }
 return { burnFuses, hideCycle, rushOnce, launch, worldStep, patrolDir, moveMover, slidePiece, springsOf, fireSprings };
 })();
@@ -3481,7 +3506,7 @@ return { syncUndo, begin, end, change, step };
 })();
 // ---- src/app/size.js
 const m32 = (() => {
-const { $, canvas } = m12;
+const { $, canvas, now } = m12;
 const { S } = m11;
 const { moveSide } = m9;
 const { change } = m31;
@@ -3509,6 +3534,19 @@ function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('ar
 const OUT = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] };
 // In a campaign level the start is the level's, so a cut may not take it.
 const keeps = l => !!l && !(S.camp && S.level.start && !l.start);
+// The tiles of the line a cut of k lines would take next that hold something: what stops the drag
+// there (register 252). Empty when the room's own 2x2 floor is what stops it.
+function blockers(level, side, k) {
+  const { w, h } = level, at = side === 'top' ? k : side === 'bottom' ? h - 1 - k : side === 'left' ? k : w - 1 - k;
+  const across = side === 'top' || side === 'bottom', out = [];
+  for (let i = 0; i < (across ? w : h); i++) {
+    const x = across ? i : at, y = across ? at : i;
+    if (x < 0 || y < 0 || x >= w || y >= h) continue;
+    const full = level.cells[y * w + x] || level.entities.some(e => e.x === x && e.y === y) || (level.start && level.start.x === x && level.start.y === y);
+    if (full) out.push({ x, y });
+  }
+  return out;
+}
 function grip(b, after) {
   const side = b.dataset.plus, wrap = $('roomWrap');
   let from = null, n = 0;
@@ -3531,8 +3569,12 @@ function grip(b, after) {
     if (Math.abs(d) > 6) from.moved = true;
     from.far = Math.max(from.far, Math.abs(d));
     if (!from.moved) return;
-    n = Math.round(d / tile()) || 0;
+    const want = Math.round(d / tile()) || 0;
+    n = want;
     while (n && !keeps(moveSide(S.level, side, n))) n -= Math.sign(n);
+    // A cut held back by a placed thing flashes what is in the way, once per line reached.
+    if (want < n && from.flashed !== n) { from.flashed = n; for (const b of blockers(S.level, side, -n)) S.fx.push({ type: 'flash', x: b.x, y: b.y, at: now() }); S.redraw = true; }
+    if (want >= n) from.flashed = null;
     show();
   });
   const done = ev => {
@@ -3701,7 +3743,7 @@ return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNE
 const m35 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"],"small":[3,4]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8},"rules":[],"require":["boxPushedTwiceHitOnce"],"small":[4,3]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[4,4]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["boxCrushedByDoor"],"small":[4,5]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"small":[3,5]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"small":[6,3]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[2,null]},"colours":["red","blue"],"steps":{"best":7},"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"small":[4,5]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"rules":[],"require":["robotThroughOneWayBothWays"],"small":[5,3]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"small":[7,3]}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"],"small":[3,4]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8},"rules":[],"require":["boxPushedTwiceHitOnce"],"small":[4,3]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[4,4]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["boxCrushedByDoor"],"small":[4,5]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"small":[3,5]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"small":[6,3]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"small":[4,4]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"rules":[],"require":["robotThroughOneWayBothWays"],"small":[6,2]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"small":[7,3]}];
 return { LEVELS };
 })();
 // ---- src/campaign/robot.js
@@ -6585,7 +6627,19 @@ function syncPanel() {
 // its colours. The palette's coloured pieces are drawn in the colour they will be placed in.
 const TINTED = ['button', 'toggle', 'door', 'idoor', 'receiver', 'sensor', 'gate'];
 let tint = '';
+// In a level, Look, Erase and Move sit on the colours' line; back in the sandbox they return to the palette.
+const LINE = ['look', 'erase', 'move'];
+function placeTools() {
+  const box = $('campTools');
+  for (const id of LINE) {
+    const b = document.querySelector(`[data-tool="${id}"]`);
+    // A comment keeps each one's place in the palette while it is away.
+    if (S.camp && b.parentNode !== box) { b.home ||= document.createComment(id); b.replaceWith(b.home); box.append(b); }
+    else if (!S.camp && b.parentNode === box) b.home.replaceWith(b);
+  }
+}
 function syncColours() {
+  placeTools();
   const ui = S.ui, cols = S.camp ? coloursOf(S.camp.def) : null, row = $('campColours');
   if (cols && !cols.includes(ui.colour)) ui.colour = cols[0];
   ui.gateColour = S.camp && S.camp.def.colours ? ui.colour : null;
@@ -6871,7 +6925,7 @@ function report() {
 }
 async function copyReport() {
   const text = report();
-  try { await navigator.clipboard.writeText(text); flash('Report copied. Paste it in the chat.'); }
+  try { await navigator.clipboard.writeText(text); flash('Copied.'); }
   catch { $('reportText').value = text; $('reportBox').showModal(); $('reportText').select(); }
 }
 function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mode, true), 2500); }

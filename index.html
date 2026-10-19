@@ -30,7 +30,7 @@
     <aside id="tools">
       <h2>Build</h2>
       <p id="toolName" class="toolName"></p>
-      <div id="campColours" class="campColours camp-only" role="radiogroup" aria-label="Colour" hidden></div>
+      <div id="campTop" class="campTop camp-only"><div id="campColours" class="campColours" role="radiogroup" aria-label="Colour" hidden></div><div id="campTools" class="campTools"></div></div>
       <div id="groups" class="tabs" role="tablist"></div>
       <div id="palette" class="grid"></div>
       <div id="options">
@@ -130,7 +130,6 @@
         <button id="winEdit" type="button">Edit</button>
       </div>
       <dialog id="reportBox">
-        <p>Copy all of this and paste it in the chat.</p>
         <textarea id="reportText" rows="8" readonly></textarea>
         <form method="dialog"><button>Close</button></form>
       </dialog>
@@ -219,7 +218,7 @@
     <div class="menuList">
       <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
       <button id="menuSandbox" type="button" class="primary">Sandbox</button>
-      <button id="menuDebug" type="button" title="If something stops working, copy this and paste it in the chat.">Report a problem</button>
+      <button id="menuDebug" type="button" title="Copies what the game knows about where you are.">Debug</button>
     </div>
   </dialog>
   <dialog id="campBox" class="rooms">

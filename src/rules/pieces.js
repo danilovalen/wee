@@ -1,7 +1,7 @@
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
 import { DIRS, ENEMY, LIGHT, MOVES, breaks, wades } from './base.js';
 import { turnTurrets } from './beams.js';
-import { crushes, entAt, inb, onGravel, playerAt, pushTo, stepTo } from './grid.js';
+import { crushes, entAt, fling, inb, onGravel, playerAt, pushTo, stepTo } from './grid.js';
 import { die, kill, land, light, refreshDoors, smash } from './life.js';
 import { carry, entered, stick, stuckTo } from './sticky.js';
 import { follow, lead, meet, partnerAt, partnerOf } from './glue.js';
@@ -138,18 +138,5 @@ export function springsOf(s) {
   return list;
 }
 export function fireSprings(s) {
-  for (const { d, x, y } of springsOf(s)) {
-    if (!inb(s, x, y)) continue;
-    const p = s.player;
-    if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d, p.swimming)) {
-      if (!p.dir) p.moved = 0;
-      p.dir = d;
-      s.events.push({ type: 'spring', x, y, d });
-    }
-    const e = entAt(s, x, y);
-    if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e), breaks(e))) {
-      e.slide = d; e.rush = false; e.rushDir = null;
-      s.events.push({ type: 'spring', x, y, d });
-    }
-  }
+  for (const { d, x, y } of springsOf(s)) if (inb(s, x, y)) fling(s, x, y, d, 'spring');
 }
