@@ -154,7 +154,7 @@ dashed frame where the thing was. Row wording is a draft.
 
 ## Open work, in order (2026-10-18; built 2026-10-19)
 
-All five groups are built (register rows give the detail). Still open: his final level 8 room (his screenshot room is not winnable today); whether level 8's crossing and crush fit in one run (search running); his exact counts for 7 (6 now), 8, 9 and 10; and the resize report if it ever happens again.
+All five groups are built (register rows give the detail). Still open: his final level 8 room (his screenshot room is not winnable today); whether level 8's crossing and crush fit in one run (none found in 5,600 s of search); his exact counts for 7 (6 now), 8, 9 and 10; and the resize report if it ever happens again.
 
 His reports not yet fixed, grouped and ordered by how much they get in the way of play. Row numbers are `docs/REGISTER.md`. Each item closes with a gate and a mutant.
 
