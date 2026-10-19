@@ -5415,7 +5415,9 @@ function syncBrief() {
   const card = document.createElement('div'); card.className = 'campGoal';
   const head = document.createElement('p'); head.className = 'campHead';
   const last = document.createElement('span'); last.className = 'campLast'; last.id = 'campLast';
-  last.textContent = !v ? '' : !v.ok ? 'not ready' : v.won ? `won in ${v.length}` : v.length != null ? `last run: ${v.length} moves` : 'no way through';
+  const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);
+  // A win names its tiles too, counted as the stats count them: the start and the goal are not (register 258).
+  last.textContent = !v ? '' : !v.ok ? 'not ready' : v.won ? `won in ${v.length} \u00b7 ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` : v.length != null ? `last run: ${v.length} moves` : 'no way through';
   head.append(Object.assign(document.createElement('b'), { textContent: def.name }), last);
   // What a level requires, two to a line; what it only rewards, apart beneath.
   const must = document.createElement('ul'); must.className = 'campReqs campMust';
