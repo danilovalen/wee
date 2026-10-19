@@ -54,7 +54,7 @@ export function isCell(c) {
   if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
   if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
-  if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
+  if (c.startsWith('gate:')) { const [d, col, extra] = c.slice(5).split('@'), ds = d.split(','); return extra === undefined && (col === undefined || COLOURS.includes(col)) && new Set(ds).size === ds.length && ds.every(x => CLOCKWISE.includes(x)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
   return (kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor') && COLOURS.includes(colour);

@@ -561,6 +561,12 @@ body:not(.campaign) [data-camp] { display: none !important; }
    readable width, centred by the padding. */
 #reportBox, dialog[id].rooms { --page: 720px; width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; box-sizing: border-box; overflow: auto; padding: 16px max(16px, (100vw - var(--page)) / 2); }
 dialog[id].rooms.gen { --page: 912px; }
+
+/* A level's colours (register 245): a row of dots over its tools; the chosen one is ringed. */
+body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin: 0 0 8px; }
+#campColours button { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 0; position: relative; }
+#campColours button::after { content: ''; position: absolute; inset: -9px; }
+#campColours button.on { box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px #2a2440; }
 </style>
 </head>
 <body>
@@ -586,6 +592,7 @@ dialog[id].rooms.gen { --page: 912px; }
     <aside id="tools">
       <h2>Build</h2>
       <p id="toolName" class="toolName"></p>
+      <div id="campColours" class="campColours camp-only" role="radiogroup" aria-label="Colour" hidden></div>
       <div id="groups" class="tabs" role="tablist"></div>
       <div id="palette" class="grid"></div>
       <div id="options">
@@ -930,7 +937,7 @@ return { TICK_MS, RT_PERIOD, HIDE_TICKS, LASER_TICKS, DIRS, OPPOSITE, COLOURS, C
 })();
 // ---- src/rules/grid.js
 const m1 = (() => {
-const { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, openFaces, turn } = m0;
+const { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, OPPOSITE, openFaces, turn } = m0;
 // Geometry: what is on a tile, and where one step from a tile lands (walls, doors,
 // triangles, one-way tiles, water).
 
@@ -961,8 +968,11 @@ function facing(s, x, y, d) {
 }
 
 // A one-way tile ('gate:right', 'gate:right,left') lets things move onto it and off
-// it only along its listed directions; any other way, it is a wall.
-const gateAt = (s, x, y) => { const c = inb(s, x, y) && cellAt(s, x, y); return c && c.startsWith('gate:') ? c.slice(5).split(',') : null; };
+// it only along its listed directions; any other way, it is a wall. A coloured one
+// ('gate:right@red') points the other way while its colour's doors are open.
+const gateOf = c => { if (!c || !c.startsWith('gate:')) return null; const [ds, col] = c.slice(5).split('@'); return { dirs: ds.split(','), col: col || null }; };
+const gateDirs = (s, c) => { const g = gateOf(c); return g && (g.col && s.open[g.col] ? g.dirs.map(d => OPPOSITE[d]) : g.dirs); };
+const gateAt = (s, x, y) => inb(s, x, y) ? gateDirs(s, cellAt(s, x, y)) : null;
 
 // wet: whether this mover may enter water (beams always may). heavy: whether it breaks a
 // breakable block; the step then lands on it, marked crack, and the mover breaks it on arrival.
@@ -1001,7 +1011,7 @@ function shift(s, x, y, dx, dy, wet, not) {
   if (!t.death && entAt(s, t.x, t.y, not)) return null;
   return t;
 }
-return { inb, cellAt, onGravel, solidCell, triAt, facing, gateAt, stepTo, pushTo, inWater, entAt, playerAt, crushes, shift };
+return { inb, cellAt, onGravel, solidCell, triAt, facing, gateOf, gateDirs, gateAt, stepTo, pushTo, inWater, entAt, playerAt, crushes, shift };
 })();
 // ---- src/rules/life.js
 const m2 = (() => {
@@ -1867,7 +1877,7 @@ function isCell(c) {
   if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
   if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
-  if (c.startsWith('gate:')) { const ds = c.slice(5).split(','); return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d)); }
+  if (c.startsWith('gate:')) { const [d, col, extra] = c.slice(5).split('@'), ds = d.split(','); return extra === undefined && (col === undefined || COLOURS.includes(col)) && new Set(ds).size === ds.length && ds.every(x => CLOCKWISE.includes(x)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
   return (kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor') && COLOURS.includes(colour);
@@ -3691,7 +3701,7 @@ return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNE
 const m35 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"],"small":[3,4]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8},"rules":[],"require":["boxPushedTwiceHitOnce"],"small":[4,3]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[4,4]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["boxCrushedByDoor"],"small":[4,5]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"small":[3,5]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"small":[6,3]}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","everyToggleOffAtEnd"],"small":[3,4]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8},"rules":[],"require":["boxPushedTwiceHitOnce"],"small":[4,3]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[2,null]},"colours":["red","blue"],"steps":{"best":7},"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"small":[4,5]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[4,4]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["boxCrushedByDoor"],"small":[4,5]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"small":[3,5]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"small":[6,3]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"rules":[],"require":["robotThroughOneWayBothWays"],"small":[5,3]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"small":[7,3]}];
 return { LEVELS };
 })();
 // ---- src/campaign/robot.js
@@ -3802,48 +3812,58 @@ return { shortestPaths, allShortest, replayPath, whyStuck };
 // ---- src/campaign/oneWay.js
 const m37 = (() => {
 const { replayPath } = m36;
+const { gateDirs } = m1;
+const { OPPOSITE } = m0;
 // What a level can require of one-way tiles. Going through one is entering it along its arrow
 // and leaving off the far side; colliding with one is a slide that ends against it, from any
 // direction it does not let through. A box collides when a push ends with a one-way stopping it.
 // All copy is draft.
 
+
+
 const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
 const gates = room => room.cells.flatMap((c, i) => c.startsWith('gate:') ? [i] : []);
 // The one-way that stopped a slide going d from (x, y), or -1. With the campaign's pieces a slide
 // never ends before a one-way it could enter; the arrow check keeps a future piece honest.
-function blocker(room, x, y, d) {
+// A coloured one-way is read as it points at that tick.
+function blocker(room, s, x, y, d) {
   const [dx, dy] = STEP[d] || [0, 0], nx = x + dx, ny = y + dy;
   if (nx < 0 || ny < 0 || nx >= room.w || ny >= room.h) return -1;
-  const c = room.cells[ny * room.w + nx] || '';
-  return c.startsWith('gate:') && !c.slice(5).split(',').includes(d) ? ny * room.w + nx : -1;
+  const ds = gateDirs(s, room.cells[ny * room.w + nx] || '');
+  return ds && !ds.includes(d) ? ny * room.w + nx : -1;
 }
+// The way a piece left (a, b): one tile, or a slide's last tile.
+const way = (a, b) => b.x > a.x ? 'right' : b.x < a.x ? 'left' : b.y > a.y ? 'down' : 'up';
+const both = ways => Object.values(ways).some(set => [...set].some(d => set.has(OPPOSITE[d])));
 
-// Per path: which one-ways the robot went through and how often it collided with each; how many
-// times a box went through one, how often each box collided with one, and whether one ends on one.
+// Per path: which one-ways the robot went through, which ways, and how often it collided with each;
+// how many times a box went through one and which ways, how often each box collided with one, and
+// whether one ends on one.
 function oneWayLog(room, moves) {
-  const log = { robotThrough: new Set(), robotHits: {}, boxThrough: 0, boxHits: {}, boxStuck: false };
+  const log = { robotThrough: new Set(), robotWays: {}, robotHits: {}, boxThrough: 0, boxWays: {}, boxHits: {}, boxStuck: false };
+  const pass = (ways, a, b) => (ways[a.y * room.w + a.x] ||= new Set()).add(way(a, b));
   const isGate = (x, y) => (room.cells[y * room.w + x] || '').startsWith('gate:');
   let was = null, dir = null, boxes = {}, before = {}, last = {};
   const end = replayPath(room, moves, s => {
     const p = s.player;
     // Where each box stood when this slide began: a box that never moved did not collide.
     if (p.dir && !dir) before = last;
-    if (was && (was.x !== p.x || was.y !== p.y) && isGate(was.x, was.y)) log.robotThrough.add(was.y * room.w + was.x);
+    if (was && (was.x !== p.x || was.y !== p.y) && isGate(was.x, was.y)) { log.robotThrough.add(was.y * room.w + was.x); pass(log.robotWays, was, p); }
     if (dir && !p.dir) {
-      const g = blocker(room, p.x, p.y, dir), [dx, dy] = STEP[dir];
+      const g = blocker(room, s, p.x, p.y, dir), [dx, dy] = STEP[dir];
       if (g >= 0) log.robotHits[g] = (log.robotHits[g] || 0) + 1;
       // A push ends when the box ahead is stopped: a one-way past it is what the box collided with,
       // when the box moved in this push.
       const box = s.entities.find(e => !e.dead && e.kind === 'box' && e.x === p.x + dx && e.y === p.y + dy);
-      if (box && blocker(room, box.x, box.y, dir) >= 0 && before[box.id] !== box.x + ',' + box.y) log.boxHits[box.id] = (log.boxHits[box.id] || 0) + 1;
+      if (box && blocker(room, s, box.x, box.y, dir) >= 0 && before[box.id] !== box.x + ',' + box.y) log.boxHits[box.id] = (log.boxHits[box.id] || 0) + 1;
     }
     was = { x: p.x, y: p.y }; dir = p.dir;
     const now = {};
     for (const e of s.entities) {
       if (e.dead || e.kind !== 'box') continue;
       const b = boxes[e.id];
-      if (b && (b.x !== e.x || b.y !== e.y) && isGate(b.x, b.y)) log.boxThrough++;
-      if (b && b.slide && !e.slide && blocker(room, e.x, e.y, b.slide) >= 0) log.boxHits[e.id] = (log.boxHits[e.id] || 0) + 1;
+      if (b && (b.x !== e.x || b.y !== e.y) && isGate(b.x, b.y)) { log.boxThrough++; pass(log.boxWays, b, e); }
+      if (b && b.slide && !e.slide && blocker(room, s, e.x, e.y, b.slide) >= 0) log.boxHits[e.id] = (log.boxHits[e.id] || 0) + 1;
       now[e.id] = { x: e.x, y: e.y, slide: e.slide };
     }
     boxes = now;
@@ -3854,6 +3874,16 @@ function oneWayLog(room, moves) {
 }
 
 const ONE_WAY_REQUIREMENTS = {
+  robotThroughOneWayBothWays: {
+    text: 'The robot goes through a one-way both ways.',
+    short: [{ el: 'start' }, 'through a', { el: 'gate' }, 'both ways'],
+    judge: (room, moves) => both(oneWayLog(room, moves).robotWays),
+  },
+  boxThroughOneWayBothWays: {
+    text: 'A box goes through a one-way both ways.',
+    short: [{ el: 'box' }, 'through a', { el: 'gate' }, 'both ways'],
+    judge: (room, moves) => both(oneWayLog(room, moves).boxWays),
+  },
   robotThroughEveryOneWay: {
     text: 'The robot goes through every one-way.',
     short: [{ el: 'start' }, 'through every', { el: 'gate' }],
@@ -3927,6 +3957,16 @@ const REQUIREMENTS = {
       let ok = false;
       replayPath(room, moves, s => { if (/^door:/.test(room.cells[s.player.y * room.w + s.player.x] || '')) ok = true; });
       return ok;
+    },
+  },
+  throughDoorsOfTwoColours: {
+    text: 'The robot passes through doors of two colours.',
+    short: [{ el: 'start' }, 'through', { el: 'door' }, 'of two colours'],
+    // Standing on a door tile means it is open (register 243).
+    judge: (room, moves) => {
+      const seen = new Set();
+      replayPath(room, moves, s => { const c = room.cells[s.player.y * room.w + s.player.x] || ''; if (/^door:/.test(c)) seen.add(c.slice(5)); });
+      return seen.size >= 2;
     },
   },
   hitsClosedDoor: {
@@ -4119,14 +4159,22 @@ const { REQUIREMENTS } = m38;
 // What each palette element is in the room.
 const ELEMENTS = {
   block: { label: 'Block', cell: 'wall' },
-  button: { label: 'Button', cell: 'button:red' },
-  door: { label: 'Door', cell: 'door:red' },
+  button: { label: 'Button', cell: 'button:red', kind: 'button:' },
+  door: { label: 'Door', cell: 'door:red', kind: 'door:' },
   box: { label: 'Box', piece: 'box' },
-  toggle: { label: 'Switch', cell: 'toggle:red' },
+  toggle: { label: 'Switch', cell: 'toggle:red', kind: 'toggle:' },
   // Placed pointing right; a tap on one with its tool turns it. Any direction is the same element.
   gate: { label: 'One-way', cell: 'gate:right', kind: 'gate:' },
 };
 const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind));
+// A level's colours (def.colours, red when it names none). A one-way takes one only in a level
+// that names its colours (register 241); elsewhere it has none.
+const coloursOf = def => def.colours || ['red'];
+function colourFits(def, c) {
+  if (c.startsWith('gate:')) { const col = c.split('@')[1] || null; return def.colours ? def.colours.includes(col) : col === null; }
+  const [kind, col] = c.split(':');
+  return !['button', 'door', 'toggle'].includes(kind) || coloursOf(def).includes(col);
+}
 
 // The level's room: empty at its starting size, with no border (the room's edge stops the
 // robot like a wall), the start one diagonal step in from the top left corner and the goal one
@@ -4145,7 +4193,7 @@ function placed(def, room) {
   room.cells.forEach((c, i) => {
     if (!c || c === 'goal') return;
     const el = Object.keys(ELEMENTS).find(k => isEl(k, c));
-    if (el) out[el].push(i); else stray.push(i);
+    if (el && colourFits(def, c)) out[el].push(i); else stray.push(i);
   });
   for (const e of room.entities) {
     const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].piece === e.kind), i = e.y * room.w + e.x;
@@ -4263,7 +4311,7 @@ function check(def, room, opts) {
   const optional = optionalResults(def, base);
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, roomOf, placed, nameOf, START_ON, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, bestShort, optionalGoals, optionalResults, areaOf, stuckText, check };
+return { ELEMENTS, coloursOf, roomOf, placed, nameOf, START_ON, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, bestShort, optionalGoals, optionalResults, areaOf, stuckText, check };
 })();
 // ---- src/view/pieces.js
 const m40 = (() => {
@@ -4427,7 +4475,9 @@ return { modeBadge, drawTurret, drawPiece, drawRobot, drawPlayer };
 // ---- src/view/tiles.js
 const m41 = (() => {
 const { INK, T, frame, roundRect } = m14;
+const { gateOf, gateDirs } = m1;
 // Tiles: floor, walls and every cell type, drawn in place.
+
 
 // bare: a block in the wall mass, so only what sits on it is drawn.
 // Gravel's grit: the same scatter of dark and light stones on every tile, at (X, Y).
@@ -4502,13 +4552,18 @@ function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     g.fillStyle = INK.spring; g.fillRect(10, -10, 4, 20);
     g.restore();
   } else if (c.startsWith('gate:')) {
-    // Rails along the sides it blocks, and a chevron for each way it lets through.
-    const ds = c.slice(5).split(','), across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
+    // Rails along the sides it blocks, and a chevron for each way it lets through. A coloured one
+    // draws its chevrons in its colour, and while that colour is pressed it lights up: tinted, ringed
+    // and pointing the other way.
+    const { col } = gateOf(c), on = !!(s && col && s.open[col]), ds = s ? gateDirs(s, c) : gateOf(c).dirs;
+    const across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
     g.fillStyle = INK.gateBg; g.fillRect(1, 1, T - 2, T - 2);
+    if (on) { g.fillStyle = INK[col]; g.globalAlpha = 0.3; g.fillRect(1, 1, T - 2, T - 2); g.globalAlpha = 1; }
     g.fillStyle = INK.wall;
     if (!upDown) { g.fillRect(1, 1, T - 2, 5); g.fillRect(1, T - 6, T - 2, 5); }
     if (!across) { g.fillRect(1, 1, 5, T - 2); g.fillRect(T - 6, 1, 5, T - 2); }
-    g.strokeStyle = INK.gateArrow; g.lineWidth = 2.6; g.lineJoin = 'round';
+    if (on) { g.strokeStyle = INK[col]; g.lineWidth = 2; roundRect(g, 2, 2, T - 4, T - 4, 4); g.stroke(); }
+    g.strokeStyle = col ? INK[col] : INK.gateArrow; g.lineWidth = on ? 3.2 : 2.6; g.lineJoin = 'round';
     for (const d of ds) {
       g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
       g.beginPath(); g.moveTo(2, -6); g.lineTo(8, 0); g.lineTo(2, 6); g.stroke();
@@ -5079,12 +5134,13 @@ const { drawEdit } = m44;
 
 
 
-function icon(tool, colour = 'red') {
+// gateColour: a one-way drawn in that colour; none, a plain one.
+function icon(tool, colour = 'red', gateColour = null) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' : tool === 'spring' ? 'spring:up' : tool + ':' + colour;
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' + (gateColour ? '@' + gateColour : '') : tool === 'spring' ? 'spring:up' : tool + ':' + colour;
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'select') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
@@ -5205,7 +5261,7 @@ return { buildMenuScene };
 // ---- src/app/campaign.js
 const m48 = (() => {
 const { LEVELS } = m35;
-const { roomOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } = m39;
+const { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } = m39;
 const { REQUIREMENTS, trailOf } = m38;
 const { newHistory } = m10;
 const { S, starterLevel } = m11;
@@ -5235,17 +5291,23 @@ let A = null, boot = null, fitScene = null;
 
 function progress() {
   try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return migrate(p); } catch { /* storage off */ }
-  return { last: null, levels: {}, v: 2 };
+  return { last: null, levels: {}, v: 3 };
 }
 // v2 (register 226): level 8 became level 7, so its saved room and stats move with it; the old
-// level 7's go, and the new level 8 starts empty.
+// level 7's go, and the new level 8 starts empty. v3 (register 243): a new level 7, so levels 7
+// to 10 move up one.
 function migrate(p) {
-  if ((p.v || 1) >= 2) return p;
-  const old8 = p.levels['8'];
-  delete p.levels['7']; delete p.levels['8'];
-  if (old8) p.levels['7'] = old8;
-  if (p.last === '8') p.last = '7'; else if (p.last === '7') p.last = null;
-  p.v = 2; write(p);
+  const v = p.v || 1;
+  if (v >= 3) return p;
+  if (v < 2) {
+    const old8 = p.levels['8'];
+    delete p.levels['7']; delete p.levels['8'];
+    if (old8) p.levels['7'] = old8;
+    if (p.last === '8') p.last = '7'; else if (p.last === '7') p.last = null;
+  }
+  for (let n = 10; n >= 7; n--) if (p.levels[n]) { p.levels[n + 1] = p.levels[n]; delete p.levels[n]; }
+  if (p.last && +p.last >= 7 && +p.last <= 10) p.last = String(+p.last + 1);
+  p.v = 3; write(p);
   return p;
 }
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
@@ -5362,7 +5424,7 @@ function enterLevel(id) {
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
   S.level = kept && placementErrors(def, kept).every(e => /^(Place at least|Place the |Nothing can start)/.test(e.msg)) ? kept : roomOf(def);
   S.history = newHistory();
-  S.ui.tool = 'look'; S.ui.colour = 'red';
+  S.ui.tool = 'look'; S.ui.colour = coloursOf(def)[0];
   p.last = id; write(p);
   document.body.classList.add('campaign');
   syncBrief();
@@ -5845,8 +5907,8 @@ function swapAt(level, from, to) {
 
 // Turns a one-way a quarter clockwise, every direction it lets through.
 function turnGate(level, x, y) {
-  const i = idx(level, x, y), dirs = level.cells[i].slice(5).split(',');
-  level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',');
+  const i = idx(level, x, y), [ds, col] = level.cells[i].slice(5).split('@'), dirs = ds.split(',');
+  level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',') + (col ? '@' + col : '');
 }
 
 function holds(level, x, y, tool) {
@@ -5881,7 +5943,7 @@ function describe(level, x, y) {
     else if (kind === 'gravel') parts.push('Gravel');
     else if (kind === 'goal') parts.push('Goal');
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
-    else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
+    else if (kind === 'gate') { const [ds, col] = v.split('@'); parts.push(`${col ? COLOUR_NAME[col] + ' one-way' : 'One-way'} ${ds.split(',').map(d => ARROW[d]).join(' ')}`); }
     else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser relay`);
     else if (kind === 'receiver') parts.push(`${COLOUR_NAME[v]} laser catcher`);
     else if (kind === 'idoor') parts.push(`${COLOUR_NAME[v]} inverted door`);
@@ -5918,7 +5980,7 @@ function place(level, ui, x, y, how) {
     setCell(t);
   } else if (t === 'gate') {
     if (isStart) return out;
-    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
+    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(',') + (ui.gateColour ? '@' + ui.gateColour : ''));
   } else if (t === 'tri') {
     if (isStart) return out;
     removePiece(); setCell('tri:' + ui.corner);
@@ -6141,7 +6203,7 @@ function turnCell(c) {
   const [kind, v] = c.split(':');
   if (kind === 'spring') return 'spring:' + cw(v);
   if (kind === 'tri') return 'tri:' + CORNER_CW[v];
-  if (kind === 'gate') return 'gate:' + CLOCKWISE.filter(d => v.split(',').map(cw).includes(d)).join(',');
+  if (kind === 'gate') { const [ds, col] = v.split('@'); return 'gate:' + CLOCKWISE.filter(d => ds.split(',').map(cw).includes(d)).join(',') + (col ? '@' + col : ''); }
   return c;
 }
 function turnPiece(e, h) {
@@ -6305,6 +6367,7 @@ const { resizeLevel, moveSide, wallBorder } = m9;
 const { INK } = m14;
 const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m34;
 const { toolsFor, syncBrief } = m48;
+const { coloursOf } = m39;
 const { S } = m11;
 const { $, canvas, touch } = m12;
 const { change, step: undoStep, syncUndo } = m31;
@@ -6320,6 +6383,7 @@ const { buildSelect, syncSelect } = m56;
 const { icon } = m45;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -6470,6 +6534,7 @@ function syncPanel() {
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   // In a campaign level the palette is the level's: its elements, Look and Erase, in one list.
   const only = S.camp ? toolsFor(S.camp.def) : null;
+  syncColours();
   if (only && !only.includes(ui.tool)) ui.tool = 'look';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp; });
   syncBrief();
@@ -6506,6 +6571,36 @@ function syncPanel() {
   document.querySelectorAll('[data-start]').forEach(b => { b.classList.toggle('on', b.dataset.start === first); b.disabled = !ui.aim.includes(b.dataset.start); });
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
+}
+
+// A level with more than one colour shows them as a row of dots over its tools (register 245):
+// what you place takes the chosen one, and a one-way takes a colour only in a level that names
+// its colours. The palette's coloured pieces are drawn in the colour they will be placed in.
+const TINTED = ['button', 'toggle', 'door', 'idoor', 'receiver', 'sensor', 'gate'];
+let tint = '';
+function syncColours() {
+  const ui = S.ui, cols = S.camp ? coloursOf(S.camp.def) : null, row = $('campColours');
+  if (cols && !cols.includes(ui.colour)) ui.colour = cols[0];
+  ui.gateColour = S.camp && S.camp.def.colours ? ui.colour : null;
+  row.hidden = !cols || cols.length < 2;
+  if (cols && row.dataset.cols !== cols.join()) {
+    row.dataset.cols = cols.join();
+    row.replaceChildren(...cols.map(col => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.dataset.campColour = col; b.title = col; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', col);
+      b.style.background = INK[col];
+      b.onclick = () => { S.ui.colour = col; syncPanel(); };
+      return b;
+    }));
+  }
+  row.querySelectorAll('[data-camp-colour]').forEach(b => { const on = b.dataset.campColour === ui.colour; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+  const key = ui.colour + '|' + ui.gateColour;
+  if (key === tint) return;
+  tint = key;
+  for (const id of TINTED) {
+    const b = document.querySelector(`#palette [data-tool="${id}"]`), old = b && b.querySelector('canvas');
+    if (old) { const c = icon(id, ui.colour, ui.gateColour); c.dataset.colour = id === 'gate' ? ui.gateColour || '' : ui.colour; old.replaceWith(c); }
+  }
 }
 return { keysText, buildPanels, syncPanel };
 })();

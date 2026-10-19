@@ -28,7 +28,7 @@ function turnCell(c) {
   const [kind, v] = c.split(':');
   if (kind === 'spring') return 'spring:' + cw(v);
   if (kind === 'tri') return 'tri:' + CORNER_CW[v];
-  if (kind === 'gate') return 'gate:' + CLOCKWISE.filter(d => v.split(',').map(cw).includes(d)).join(',');
+  if (kind === 'gate') { const [ds, col] = v.split('@'); return 'gate:' + CLOCKWISE.filter(d => ds.split(',').map(cw).includes(d)).join(',') + (col ? '@' + col : ''); }
   return c;
 }
 function turnPiece(e, h) {

@@ -16,7 +16,8 @@ const level = id => LEVELS.find(l => l.id === id);
 const WIN5 = ['....', '....', '....', '....', '.BB.', 'PB..', '..G.', '....'];
 const boxCounts = (rows, moves) => boxMoves(room(rows), moves);
 const HIS = ['.#..#.....', '....#.....', '....#.....', '....#.....', '.#.BP#....', '....#.....', '..........', '..........', '........G.', '###.......', '..........', '..........'];
-// A room in the level's legend: # block, t switch, D door, o button, B box, P start, G goal.
+// A room in the level's legend: # block, t switch, D door, o button, B box, P start, G goal; blue
+// Q door, q button, T switch. A one-way takes the level's first colour when it names colours.
 // Full rows (all one length) set the room's size; otherwise the level's size is used. With no
 // P or G the start goes top left and the goal bottom right, one tile in.
 const build = (def, rows) => {
@@ -30,7 +31,10 @@ const build = (def, rows) => {
     if (c === 't') r.cells[i] = 'toggle:red';
     if (c === 'D') r.cells[i] = 'door:red';
     if (c === 'o') r.cells[i] = 'button:red';
-    if ('^>v<'.includes(c)) r.cells[i] = 'gate:' + { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c];
+    if (c === 'T') r.cells[i] = 'toggle:blue';
+    if (c === 'Q') r.cells[i] = 'door:blue';
+    if (c === 'q') r.cells[i] = 'button:blue';
+    if ('^>v<'.includes(c)) r.cells[i] = 'gate:' + { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c] + (def.colours ? '@' + def.colours[0] : '');
     if (c === 'G') { r.cells[i] = 'goal'; goal = true; }
     if (c === 'P') r.start = { x, y };
     if (c === 'B') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
@@ -94,7 +98,7 @@ const build = (def, rows) => {
   ok('too few of a required element is refused', placementErrors(d3, roomOf(d3)).some(e => /at least 1 switch\./.test(e.msg)));
   const lots = build(d3, ['']); for (let x = 1; x <= 5; x++) { lots.cells[2 * 7 + x] = 'toggle:red'; lots.cells[3 * 7 + x] = 'door:red'; }
   ok('a level with no maximum takes any number', placementErrors(d3, lots).length === 0, JSON.stringify(placementErrors(d3, lots)));
-  const d4 = level('7'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
+  const d4 = level('8'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
   ok('a box cannot start on a button', placementErrors(d4, onButton).some(e => /Nothing can start on a button or a switch/.test(e.msg)));
   const d6 = level('6'), onSwitch = build(d6, ['', '', '..t']); onSwitch.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
   ok('a box cannot start on a switch, in any level', placementErrors(d6, onSwitch).some(e => /Nothing can start on a button or a switch/.test(e.msg)));
@@ -245,9 +249,13 @@ const build = (def, rows) => {
   ok('the verdict marks each requirement for the goal card', v.reqs && v.reqs.throughOpenDoor === false && v.inRange === true, JSON.stringify(v.reqs));
   ok('every requirement has a short row, with at least one word', Object.values(REQUIREMENTS).every(r => Array.isArray(r.short) && r.short.some(p => typeof p === 'string')));
   ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.el === 'start' || ELEMENTS[p.el])));
+  // Doors of two colours (register 243): two switches open a red and a blue door the robot slides through.
+  const doors = (cells) => { const r = room(['#P......#']); for (const k of Object.keys(r.powers)) r.powers[k] = false; cells.forEach(([x, c]) => { r.cells[x] = c; }); return r; };
+  ok('through doors of two colours: met by a red door and a blue one', REQUIREMENTS.throughDoorsOfTwoColours.judge(doors([[2, 'toggle:red'], [3, 'toggle:blue'], [4, 'door:red'], [6, 'door:blue']]), ['right']));
+  ok('through doors of two colours: not met by two red doors', !REQUIREMENTS.throughDoorsOfTwoColours.judge(doors([[2, 'toggle:red'], [4, 'door:red'], [6, 'door:red']]), ['right']));
   ok('collides, not runs into', /collides with/.test(REQUIREMENTS.hitsClosedDoor.text) && !/runs into/.test(REQUIREMENTS.hitsClosedDoor.text));
 }
-{ // level 8's door goals: crossing is in through the open door and off the far side; a crush is a
+{ // level 9's door goals: crossing is in through the open door and off the far side; a crush is a
   // door closing on the box in its doorway
   const off = rows => { const r = room(rows); for (const k of Object.keys(r.powers)) r.powers[k] = false; return r; };
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(off(rows), moves);
@@ -258,9 +266,9 @@ const build = (def, rows) => {
   ok('a box crushed by a door: met when a door closes on it', req('boxCrushedByDoor', crush, ['up', 'left', 'down', 'right']));
   ok('a box crushed by a door: not met when the box only crosses', !req('boxCrushedByDoor', ['##########', '#Pt.B.D..#', '##########'], ['right']));
   ok('and a box left on a door that then closes has not crossed it', !req('boxCrossesOpenDoor', crush, ['up', 'left', 'down', 'right']));
-  // His ruling (register 237): a box crushed in the doorway went into it, so the crush run wins level 8 and meets its optional goal.
-  const l8 = LEVELS.find(l => l.id === '8'), crushWin = check(l8, Object.assign(off(crush), { clock: roomOf(l8).clock }));
-  ok('level 8: a box crushed in the doorway wins the level and meets the crush goal', crushWin.won && crushWin.optional.find(o => o.id === 'boxCrushedByDoor').met, JSON.stringify(crushWin.fail || crushWin.optional));
+  // His ruling (register 237): a box crushed in the doorway went into it, so the crush run wins level 9 (then 8) and meets its optional goal.
+  const l8 = LEVELS.find(l => l.id === '9'), crushWin = check(l8, Object.assign(off(crush), { clock: roomOf(l8).clock }));
+  ok('level 9: a box crushed in the doorway wins the level and meets the crush goal', crushWin.won && crushWin.optional.find(o => o.id === 'boxCrushedByDoor').met, JSON.stringify(crushWin.fail || crushWin.optional));
 }
 { // one-ways: through is in along the arrow and out the far side; colliding is a slide stopped by
   // one from any direction it does not let through
@@ -281,12 +289,24 @@ const build = (def, rows) => {
   const twice = '....P. #.B#.. .B>.B. ....G. ....v. ...<.. .B.B.. ..B... ....^. .B....'.split(' ');
   ok('a box collides with a one-way twice: the same box, moving into it each time', req('boxHitsOneWayTwice', twice, ['down@5:up', 'left', 'down', 'right', 'up@2:down', 'left', 'up@1:down', 'left', 'up', 'right']));
   ok('a box collides with a one-way: not when the box is already against it and does not move', !req('boxHitsOneWayTwice', ['########', '#.>..BP#', '########'], ['left', 'right', 'left']));
+  // Both ways (registers 241, 242): the same one-way left in two opposite directions.
+  ok('robot through a one-way both ways: met going over and back', req('robotThroughOneWayBothWays', ['#######', '#P.=..#', '#######'], ['right', 'left']));
+  ok('robot through a one-way both ways: not met going one way', !req('robotThroughOneWayBothWays', ['#######', '#P.=..#', '#######'], ['right']));
+  ok('a box through a one-way both ways: not met by one crossing', !req('boxThroughOneWayBothWays', ['########', '#PB.>..#', '########'], ['right']));
   ok('a box ends on a one-way: met when it stops on one', req('boxStuckOnOneWay', ['#######', '#PB.>#', '#######'].map(r => r.slice(0, 6)), ['right']));
+}
+{ // a level's colours (registers 241-245): pieces in other colours are not the level's, and a one-way
+  // carries a colour only in a level that names its colours
+  const stray = (id, cell) => { const r = roomOf(level(id)); r.cells[10] = cell; return placed(level(id), r).stray.length; };
+  ok('a blue door is not in a red level', stray('4', 'door:blue') === 1 && stray('4', 'door:red') === 0);
+  ok('a two-colour level takes red and blue doors and buttons', stray('7', 'door:blue') === 0 && stray('7', 'button:red') === 0 && stray('7', 'door:green') === 1);
+  ok('a level naming red takes a red one-way and not a plain one', stray('12', 'gate:up@red') === 0 && stray('12', 'gate:up') === 1);
+  ok('a level naming no colours takes a plain one-way and not a red one', stray('10', 'gate:up') === 0 && stray('10', 'gate:up@red') === 1);
 }
 { // every level's room-size goal is reachable: the smallest winning room tools/tilesArea.mjs found
   const SMALL = { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
-    5: ['....', '.B#G', '.P..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['...D', '..Bo', '..BG', '#.P.', '....'],
-    9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'] };
+    5: ['....', '.B#G', '.P..'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.Bo#', 'P...', '.B..', '.DQG', '.q#.'], 8: ['.GoD', '....', '..B.', '..P.'], 9: ['...D', '..Bo', '..BG', '#.P.', '....'],
+    10: ['#..', '.v.', '.G.', '...', 'P>.'], 11: ['..P<B.', '.B.G.^', '......'], 12: ['.G...', 'P....', '.B>.o'], 13: ['PB>..GD', '.......', '#t.....'] };
   for (const l of LEVELS) {
     const v = check(l, build(l, SMALL[l.id]));
     // Mix holds where one room meets two goals at once: level 5's smallest room also takes exactly 8.
@@ -310,22 +330,29 @@ const build = (def, rows) => {
     4: ['Pt.tD', '.#...', '.....', '###.#', '.#..G'],
     5: WIN5,
     6: ['P....', '....B', 'B..#t', 'D.#.#', '....G'],
+    // Found by tools/levelSearch.mjs --from (2026-10-19): 7 moves, level 7's exact count (mine, provisional).
+    7: ['.Bo#', '....', 'QBP.', '.DQG', '.q#.'],
     // His room (2026-10-18): won in 4, the box ends off the button.
     // His room (2026-10-18), the old level 8 that became 7: won in 5.
-    7: ['P.#.', '.B#.', 'D...', '.oG.'],
-    // Found by tools/levelSearch.mjs (2026-10-19): 7 moves, level 8's exact count.
-    8: ['.#.B.', '#B..G', '.#.B.', '.#...', '.#DPD', '.D...', '....B', '..#..', '..Bo.'],
-    // His room (2026-10-18): 8 moves, level 9's exact count.
-    9: ['G....', '##..#', '..^#.', '.v...', '..#..', '....#', 'P#...'],
-    // Found by tools/levelSearch.mjs (2026-10-19): 10 moves, level 10's exact count (his number, register 240).
-    10: ['#..#.#...', '...B..>..', '.....#.B.', 'B#...G...', '.#P.#..^.'],
+    8: ['P.#.', '.B#.', 'D...', '.oG.'],
+    // Found by tools/levelSearch.mjs (2026-10-19): 7 moves, level 9's exact count.
+    9: ['.#.B.', '#B..G', '.#.B.', '.#...', '.#DPD', '.D...', '....B', '..#..', '..Bo.'],
+    // His room (2026-10-18): 8 moves, level 10's exact count.
+    10: ['G....', '##..#', '..^#.', '.v...', '..#..', '....#', 'P#...'],
+    // Found by tools/levelSearch.mjs (2026-10-19): 10 moves, level 11's exact count (his number, register 240).
+    // Found by tools/levelSearch.mjs (2026-10-19): 7 moves, level 12's exact count (mine, provisional).
+    12: ['PBB..', 'BG>.B', '..>.o'],
+    // Built by hand and checked (2026-10-19): the closed door stops the box past the one-way; the
+    // switch opens the door and turns the one-way; the robot comes through the door and pushes it back. 9 moves.
+    13: ['PB>..GD', '.......', '#t.....'],
+    11: ['#..#.#...', '...B..>..', '.....#.B.', 'B#...G...', '.#P.#..^.'],
   };
   ok('there is a known winning room for every level', LEVELS.every(l => WINS[l.id]), LEVELS.map(l => l.id).join());
   for (const l of LEVELS) {
     const v = WINS[l.id] && check(l, build(l, WINS[l.id]));
     ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
-    if (['8', '9', '10'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
-    if (l.id === '7') { const six = check(l, build(l, ['#B.....o..', '........D.', '.#...#....', '.#B.#..B..', '....DP..D.', '#..G##..#.'])); ok('level 7\'s exact count is reachable: a found room wins in exactly 6', six.won && six.length === l.steps.best, String(six.length)); }
+    if (['7', '9', '10', '11', '12', '13'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
+    if (l.id === '8') { const six = check(l, build(l, ['#B.....o..', '........D.', '.#...#....', '.#B.#..B..', '....DP..D.', '#..G##..#.'])); ok('level 8\'s exact count is reachable: a found room wins in exactly 6', six.won && six.length === l.steps.best, String(six.length)); }
     ok(`level ${l.id}'s win marks every row of its goal card met`, v && v.inRange && (l.require || []).every(id => v.reqs[id] === true), JSON.stringify(v && v.reqs));
   }
 }

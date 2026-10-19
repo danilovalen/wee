@@ -1,0 +1,33 @@
+{
+ "name": "Level 11",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "box": [
+   1,
+   null
+  ],
+  "gate": [
+   1,
+   null
+  ]
+ },
+ "steps": {
+  "best": 10
+ },
+ "rules": [],
+ "require": [
+  "boxThroughOneWay",
+  "boxHitsOneWay"
+ ],
+ "small": [
+  6,
+  3
+ ]
+}

@@ -4,6 +4,21 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 const M = [
+  // the colour row (register 245)
+  ['src', "row.hidden = !cols || cols.length < 2;", "row.hidden = true;", 'campaign-play'],
+  ['src', "ui.gateColour = S.camp && S.camp.def.colours ? ui.colour : null;", "ui.gateColour = null;", 'campaign-play'],
+  ['src', "if (old) { const c = icon(id, ui.colour, ui.gateColour);", "if (false) { const c = icon(id, ui.colour, ui.gateColour);", 'campaign-play'],
+  ['src', "if (el && colourFits(def, c)) out[el].push(i); else stray.push(i);", "if (el) out[el].push(i); else stray.push(i);", 'campaign'],
+  ['src', "  for (let n = 10; n >= 7; n--) if (p.levels[n]) { p.levels[n + 1] = p.levels[n]; delete p.levels[n]; }\n", "", 'campaign-play'],
+  ['src', "      replayPath(room, moves, s => { const c = room.cells[s.player.y * room.w + s.player.x] || ''; if (/^door:/.test(c)) seen.add(c.slice(5)); });\n      return seen.size >= 2;", "      replayPath(room, moves, s => { const c = room.cells[s.player.y * room.w + s.player.x] || ''; if (/^door:/.test(c)) seen.add(s.player.x + ',' + s.player.y); });\n      return seen.size >= 2;", 'campaign'],
+  ['src', "const both = ways => Object.values(ways).some(set => [...set].some(d => set.has(OPPOSITE[d])));", "const both = ways => Object.values(ways).some(set => set.size > 0);", 'campaign'],
+  // coloured one-ways (register 241)
+  ['src', "return g && (g.col && s.open[g.col] ? g.dirs.map(d => OPPOSITE[d]) : g.dirs); };", "return g && g.dirs; };", 'sim'],
+  ['src', "return extra === undefined && (col === undefined || COLOURS.includes(col)) &&", "return (col === undefined || COLOURS.includes(col) || true) &&", 'sim'],
+  ['src', "+ (ui.gateColour ? '@' + ui.gateColour : ''));", ");", 'sim'],
+  ['src', "parts.push(`${col ? COLOUR_NAME[col] + ' one-way' : 'One-way'}", "parts.push(`${'One-way'}", 'sim'],
+  ['src', "join(',') + (col ? '@' + col : ''); }\n  return c;", "join(','); }\n  return c;", 'region'],
+  ['src', "join(',') + (col ? '@' + col : '');\n}", "join(',');\n}", 'sim'],
   // rules
   ['src', "    if (s.clock === 'tile') worldStep(s, d);\n", "", 'sim'],
   ['src', "if (o.kind === 'enemy') { kill(s, o, how); return true; }", "if (false) { kill(s, o, how); return true; }", 'sim'],
@@ -56,8 +71,8 @@ const M = [
   ['src', "  if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }\n", "", 'phone'],
   ['src', "if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;", "if (to && !to.includes(d)) return null;", 'sim'],
   ['src', "if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;", "if (from && !from.includes(d)) return null;", 'sim'],
-  ['src', "return ds.length > 0 && new Set(ds).size === ds.length && ds.every(d => CLOCKWISE.includes(d));", "return true;", 'sim'],
-  ['src', "removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));", "removePiece(); setCell('gate:right');", 'browser'],
+  ['src', "new Set(ds).size === ds.length && ds.every(x => CLOCKWISE.includes(x)); }", "true; }", 'sim'],
+  ['src', "removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(',') + (ui.gateColour", "removePiece(); setCell('gate:right' + (ui.gateColour", 'browser'],
   ['src', "b.disabled = on && ui.pass.length === 1;", "b.disabled = false;", 'browser'],
   ['src', "if (cellAt(s, nx, ny) === 'death') return { x: nx, y: ny, d, death: true };", "", 'sim'],
   ['src', "  if (t.death) { die(s); return 'died'; }\n", "", 'sim'],

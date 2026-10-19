@@ -1,0 +1,39 @@
+{
+ "name": "Level 12",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "box": [
+   1,
+   null
+  ],
+  "button": [
+   1,
+   null
+  ],
+  "gate": [
+   1,
+   null
+  ]
+ },
+ "colours": [
+  "red"
+ ],
+ "steps": {
+  "best": 7
+ },
+ "rules": [],
+ "require": [
+  "robotThroughOneWayBothWays"
+ ],
+ "small": [
+  5,
+  3
+ ]
+}

@@ -1,6 +1,6 @@
 // Geometry: what is on a tile, and where one step from a tile lands (walls, doors,
 // triangles, one-way tiles, water).
-import { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, openFaces, turn } from './base.js';
+import { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, OPPOSITE, openFaces, turn } from './base.js';
 
 export const inb = (s, x, y) => x >= 0 && y >= 0 && x < s.w && y < s.h;
 export const cellAt = (s, x, y) => s.cells[y * s.w + x];
@@ -29,8 +29,11 @@ export function facing(s, x, y, d) {
 }
 
 // A one-way tile ('gate:right', 'gate:right,left') lets things move onto it and off
-// it only along its listed directions; any other way, it is a wall.
-export const gateAt = (s, x, y) => { const c = inb(s, x, y) && cellAt(s, x, y); return c && c.startsWith('gate:') ? c.slice(5).split(',') : null; };
+// it only along its listed directions; any other way, it is a wall. A coloured one
+// ('gate:right@red') points the other way while its colour's doors are open.
+export const gateOf = c => { if (!c || !c.startsWith('gate:')) return null; const [ds, col] = c.slice(5).split('@'); return { dirs: ds.split(','), col: col || null }; };
+export const gateDirs = (s, c) => { const g = gateOf(c); return g && (g.col && s.open[g.col] ? g.dirs.map(d => OPPOSITE[d]) : g.dirs); };
+export const gateAt = (s, x, y) => inb(s, x, y) ? gateDirs(s, cellAt(s, x, y)) : null;
 
 // wet: whether this mover may enter water (beams always may). heavy: whether it breaks a
 // breakable block; the step then lands on it, marked crack, and the mover breaks it on arrival.

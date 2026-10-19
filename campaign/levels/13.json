@@ -1,0 +1,44 @@
+{
+ "name": "Level 13",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "box": [
+   1,
+   null
+  ],
+  "toggle": [
+   1,
+   null
+  ],
+  "gate": [
+   1,
+   null
+  ],
+  "door": [
+   1,
+   null
+  ]
+ },
+ "colours": [
+  "red"
+ ],
+ "steps": {
+  "best": 9
+ },
+ "rules": [],
+ "require": [
+  "boxThroughOneWayBothWays",
+  "throughOpenDoor"
+ ],
+ "small": [
+  7,
+  3
+ ]
+}

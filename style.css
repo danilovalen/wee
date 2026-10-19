@@ -544,3 +544,9 @@ body:not(.campaign) [data-camp] { display: none !important; }
    readable width, centred by the padding. */
 #reportBox, dialog[id].rooms { --page: 720px; width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; box-sizing: border-box; overflow: auto; padding: 16px max(16px, (100vw - var(--page)) / 2); }
 dialog[id].rooms.gen { --page: 912px; }
+
+/* A level's colours (register 245): a row of dots over its tools; the chosen one is ringed. */
+body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin: 0 0 8px; }
+#campColours button { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 0; position: relative; }
+#campColours button::after { content: ''; position: absolute; inset: -9px; }
+#campColours button.on { box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px #2a2440; }

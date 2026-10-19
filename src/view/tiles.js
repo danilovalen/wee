@@ -1,5 +1,6 @@
 // Tiles: floor, walls and every cell type, drawn in place.
 import { INK, T, frame, roundRect } from './ink.js';
+import { gateOf, gateDirs } from '../rules/grid.js';
 
 // bare: a block in the wall mass, so only what sits on it is drawn.
 // Gravel's grit: the same scatter of dark and light stones on every tile, at (X, Y).
@@ -74,13 +75,18 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     g.fillStyle = INK.spring; g.fillRect(10, -10, 4, 20);
     g.restore();
   } else if (c.startsWith('gate:')) {
-    // Rails along the sides it blocks, and a chevron for each way it lets through.
-    const ds = c.slice(5).split(','), across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
+    // Rails along the sides it blocks, and a chevron for each way it lets through. A coloured one
+    // draws its chevrons in its colour, and while that colour is pressed it lights up: tinted, ringed
+    // and pointing the other way.
+    const { col } = gateOf(c), on = !!(s && col && s.open[col]), ds = s ? gateDirs(s, c) : gateOf(c).dirs;
+    const across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
     g.fillStyle = INK.gateBg; g.fillRect(1, 1, T - 2, T - 2);
+    if (on) { g.fillStyle = INK[col]; g.globalAlpha = 0.3; g.fillRect(1, 1, T - 2, T - 2); g.globalAlpha = 1; }
     g.fillStyle = INK.wall;
     if (!upDown) { g.fillRect(1, 1, T - 2, 5); g.fillRect(1, T - 6, T - 2, 5); }
     if (!across) { g.fillRect(1, 1, 5, T - 2); g.fillRect(T - 6, 1, 5, T - 2); }
-    g.strokeStyle = INK.gateArrow; g.lineWidth = 2.6; g.lineJoin = 'round';
+    if (on) { g.strokeStyle = INK[col]; g.lineWidth = 2; roundRect(g, 2, 2, T - 4, T - 4, 4); g.stroke(); }
+    g.strokeStyle = col ? INK[col] : INK.gateArrow; g.lineWidth = on ? 3.2 : 2.6; g.lineJoin = 'round';
     for (const d of ds) {
       g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
       g.beginPath(); g.moveTo(2, -6); g.lineTo(8, 0); g.lineTo(2, 6); g.stroke();

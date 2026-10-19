@@ -28,6 +28,7 @@ check('a quarter turn swaps width and height', t.w === 2 && t.h === 3);
 check('the top-left cell goes to the top-right', t.cells[1] === 'spring:right');
 check('a triangle turns its corner', t.cells[3] === 'tri:ne');
 check('a one-way turns its directions', t.cells[5] === 'gate:down');
+check('a coloured one-way keeps its colour as it turns', rotateClip({ w: 1, h: 1, cells: ['gate:right,up@blue'], entities: [] }).cells[0] === 'gate:right,down@blue');
 check('a door is a door', t.cells.includes('door:red') && t.cells.includes('wall'));
 const mv = t.entities.find(e => e.kind === 'mover'), en = t.entities.find(e => e.kind === 'enemy'), tu = t.entities.find(e => e.kind === 'turret');
 check('a piece moves with its cell', mv.x === 0 && mv.y === 0 && en.x === 1 && en.y === 2);

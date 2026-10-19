@@ -18,20 +18,24 @@
    null
   ],
   "door": [
-   1,
+   2,
    null
   ]
  },
+ "colours": [
+  "red",
+  "blue"
+ ],
  "steps": {
-  "best": 6
+  "best": 7
  },
  "rules": [],
  "require": [
-  "throughOpenDoor",
-  "doorClosedAtEnd"
+  "throughDoorsOfTwoColours",
+  "boxThroughOpenDoor"
  ],
  "small": [
   4,
-  4
+  5
  ]
 }

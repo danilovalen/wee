@@ -62,8 +62,8 @@ export function swapAt(level, from, to) {
 
 // Turns a one-way a quarter clockwise, every direction it lets through.
 export function turnGate(level, x, y) {
-  const i = idx(level, x, y), dirs = level.cells[i].slice(5).split(',');
-  level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',');
+  const i = idx(level, x, y), [ds, col] = level.cells[i].slice(5).split('@'), dirs = ds.split(',');
+  level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',') + (col ? '@' + col : '');
 }
 
 export function holds(level, x, y, tool) {
@@ -98,7 +98,7 @@ export function describe(level, x, y) {
     else if (kind === 'gravel') parts.push('Gravel');
     else if (kind === 'goal') parts.push('Goal');
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
-    else if (kind === 'gate') parts.push(`One-way ${v.split(',').map(d => ARROW[d]).join(' ')}`);
+    else if (kind === 'gate') { const [ds, col] = v.split('@'); parts.push(`${col ? COLOUR_NAME[col] + ' one-way' : 'One-way'} ${ds.split(',').map(d => ARROW[d]).join(' ')}`); }
     else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser relay`);
     else if (kind === 'receiver') parts.push(`${COLOUR_NAME[v]} laser catcher`);
     else if (kind === 'idoor') parts.push(`${COLOUR_NAME[v]} inverted door`);
@@ -135,7 +135,7 @@ export function place(level, ui, x, y, how) {
     setCell(t);
   } else if (t === 'gate') {
     if (isStart) return out;
-    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(','));
+    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(',') + (ui.gateColour ? '@' + ui.gateColour : ''));
   } else if (t === 'tri') {
     if (isStart) return out;
     removePiece(); setCell('tri:' + ui.corner);

@@ -1,25 +1,30 @@
 // The room search shared by tools/levelSearch.mjs and tools/tilesArea.mjs. A genome is what a
 // player can vary: the room's size, where the start and the goal stand, and what goes in.
 // searcher(def, seed) returns its moves: random(), mutate(g), penalty(g), make(g), show(room).
-import { roomOf, placementErrors, bounds } from '../src/campaign/rules.js';
+import { roomOf, placementErrors, bounds, coloursOf } from '../src/campaign/rules.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { allShortest } from '../src/campaign/robot.js';
 
-const CELL = { block: 'wall', toggle: 'toggle:red', door: 'door:red', button: 'button:red' };
+const CELL = { block: 'wall', toggle: 'toggle', door: 'door', button: 'button' };
+const TINTS = ['toggle', 'door', 'button', 'gate'];
 const DIRS = ['up', 'right', 'down', 'left'];
 const D4 = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
 export function searcher(def, seed = 1) {
   const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
   const pick = a => a[Math.floor(rnd() * a.length)];
+  // An item is [element, x, y, direction, colour]; a level's colours tint its buttons, doors,
+  // switches and (in a level that names its colours) one-ways.
+  const cols = coloursOf(def);
   function make(g) {
     const r = roomOf({ ...def, size: [g.w, g.h] });
     r.cells.fill(''); r.start = { ...g.start };
     r.cells[g.goal.y * g.w + g.goal.x] = 'goal';
-    for (const [el, x, y, d] of g.items) {
-      if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right');
+    for (const [el, x, y, d, c] of g.items) {
+      const col = cols.includes(c) ? c : cols[0];
+      if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right') + (def.colours ? '@' + col : '');
       else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
-      else r.cells[y * g.w + x] = CELL[el];
+      else r.cells[y * g.w + x] = el === 'block' ? 'wall' : CELL[el] + ':' + col;
     }
     return r;
   }
@@ -28,7 +33,7 @@ export function searcher(def, seed = 1) {
     for (let t = 0; t < 50; t++) { const x = Math.floor(rnd() * g.w), y = Math.floor(rnd() * g.h); if (!taken(g, x, y)) return [x, y]; }
     return null;
   }
-  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push(el === 'gate' ? [el, ...f, pick(DIRS)] : [el, ...f]); };
+  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push([el, ...f, el === 'gate' ? pick(DIRS) : null, TINTS.includes(el) ? pick(cols) : null]); };
   function random() {
     const w = 4 + Math.floor(rnd() * 5), h = 4 + Math.floor(rnd() * 5);
     const g = { w, h, start: { x: Math.floor(rnd() * w), y: Math.floor(rnd() * h) }, goal: null, items: [] };
@@ -36,7 +41,7 @@ export function searcher(def, seed = 1) {
     // Half the starts box the robot in on two or three sides, leaving the rest to the search.
     if (rnd() < 0.5) for (const [dx, dy] of D4) {
       const x = g.start.x + dx, y = g.start.y + dy;
-      if (x >= 0 && y >= 0 && x < w && y < h && !taken(g, x, y) && rnd() < 0.7) g.items.push(['block', x, y]);
+      if (x >= 0 && y >= 0 && x < w && y < h && !taken(g, x, y) && rnd() < 0.7) g.items.push(['block', x, y, null, null]);
     }
     for (const [el, [min]] of Object.entries(def.palette)) for (let k = 0; k < min; k++) add(g, el);
     const walls = Math.floor(rnd() * w * h * 0.3);
@@ -45,7 +50,7 @@ export function searcher(def, seed = 1) {
   }
   function mutate(g0) {
     const g = structuredClone(g0), r = rnd(), els = Object.keys(def.palette);
-    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if (it[0] === 'gate' && rnd() < 0.5) it[3] = pick(DIRS); }
+    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if (it[0] === 'gate' && rnd() < 0.5) it[3] = pick(DIRS); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(cols); }
     else if (r < 0.5) add(g, pick(els));
     else if (r < 0.65 && g.items.length) {
       const i = Math.floor(rnd() * g.items.length), [el] = g.items[i];
@@ -77,7 +82,20 @@ export function searcher(def, seed = 1) {
     const c = r.cells[y * r.w + x];
     if (r.start.x === x && r.start.y === y) return 'P';
     if (r.entities.some(e => e.x === x && e.y === y)) return 'B';
-    return c === 'wall' ? '#' : c.startsWith('gate:') ? { up: '^', right: '>', down: 'v', left: '<' }[c.slice(5)] : c === 'goal' ? 'G' : c.startsWith('toggle') ? 't' : c.startsWith('door') ? 'D' : c.startsWith('button') ? 'o' : '.';
+    // Blue in the tests' legend: Q door, q button, T switch.
+    const blue = /:blue$/.test(c);
+    return c === 'wall' ? '#' : c.startsWith('gate:') ? { up: '^', right: '>', down: 'v', left: '<' }[c.slice(5).split('@')[0]] : c === 'goal' ? 'G' : c.startsWith('toggle') ? (blue ? 'T' : 't') : c.startsWith('door') ? (blue ? 'Q' : 'D') : c.startsWith('button') ? (blue ? 'q' : 'o') : '.';
   }).join('')).join(' ');
-  return { random, mutate, penalty, make, show };
+  // A genome from rows in show()'s legend, so a climb can start from a known room.
+  function parse(rows) {
+    const g = { w: rows[0].length, h: rows.length, start: null, goal: null, items: [] };
+    const EL = { '#': ['block'], t: ['toggle', 'red'], T: ['toggle', 'blue'], D: ['door', 'red'], Q: ['door', 'blue'], o: ['button', 'red'], q: ['button', 'blue'], B: ['box'] };
+    rows.forEach((row, y) => [...row].forEach((c, x) => {
+      if (c === 'P') g.start = { x, y }; else if (c === 'G') g.goal = { x, y };
+      else if (EL[c]) g.items.push([EL[c][0], x, y, null, EL[c][1] || null]);
+      else if ('^>v<'.includes(c)) g.items.push(['gate', x, y, { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c], cols[0]]);
+    }));
+    return g;
+  }
+  return { random, mutate, penalty, make, show, parse };
 }

@@ -2,7 +2,8 @@
 // Each try starts from a random room (tools/roomSearch.mjs) and keeps small changes that do
 // not score worse. Usage: node tools/levelSearch.mjs <level> [--seconds S] [--seed N] [--all]
 // --all keeps going and prints every distinct win with its length; otherwise it stops at one.
-// --require a,b and --steps min,max try the level with other requirements or other bounds on moves.
+// --require a,b and --steps min,max try the level with other requirements or other bounds on moves;
+// --from 'rows' starts every climb from that room.
 import { check } from '../src/campaign/rules.js';
 import { LEVELS } from '../src/level/campaign.js';
 import { searcher } from './roomSearch.mjs';
@@ -12,7 +13,9 @@ const base = LEVELS.find(l => l.id === process.argv[2]);
 const def = base && { ...base, ...(arg('--require') ? { require: arg('--require').split(',') } : {}), ...(arg('--steps') ? { steps: { ...base.steps, min: +arg('--steps').split(',')[0], max: +arg('--steps').split(',')[1] } } : {}) };
 if (!def) { console.log('Usage: node tools/levelSearch.mjs <level> [--seconds S] [--seed N] [--all]'); process.exit(1); }
 const seconds = +arg('--seconds', 60), all = process.argv.includes('--all');
-const { random, mutate, penalty, make, show } = searcher(def, +arg('--seed', 1));
+const { random: fresh, mutate, penalty, make, show, parse } = searcher(def, +arg('--seed', 1));
+// --from 'rows ...' climbs from a known room (show()'s legend) instead of random ones.
+const random = arg('--from') ? () => parse(arg('--from').split(' ')) : fresh;
 
 const end = Date.now() + seconds * 1000, seen = new Set();
 let tries = 0, best = Infinity;

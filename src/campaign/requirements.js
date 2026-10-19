@@ -38,6 +38,16 @@ export const REQUIREMENTS = {
       return ok;
     },
   },
+  throughDoorsOfTwoColours: {
+    text: 'The robot passes through doors of two colours.',
+    short: [{ el: 'start' }, 'through', { el: 'door' }, 'of two colours'],
+    // Standing on a door tile means it is open (register 243).
+    judge: (room, moves) => {
+      const seen = new Set();
+      replayPath(room, moves, s => { const c = room.cells[s.player.y * room.w + s.player.x] || ''; if (/^door:/.test(c)) seen.add(c.slice(5)); });
+      return seen.size >= 2;
+    },
+  },
   hitsClosedDoor: {
     text: 'The robot collides with a closed door.',
     short: [{ el: 'start' }, 'collides with a closed', { el: 'door' }],

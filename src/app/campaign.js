@@ -3,7 +3,7 @@
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS } from '../level/campaign.js';
-import { roomOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } from '../campaign/rules.js';
+import { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } from '../campaign/rules.js';
 import { REQUIREMENTS, trailOf } from '../campaign/requirements.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -21,17 +21,23 @@ let A = null, boot = null, fitScene = null;
 
 export function progress() {
   try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return migrate(p); } catch { /* storage off */ }
-  return { last: null, levels: {}, v: 2 };
+  return { last: null, levels: {}, v: 3 };
 }
 // v2 (register 226): level 8 became level 7, so its saved room and stats move with it; the old
-// level 7's go, and the new level 8 starts empty.
+// level 7's go, and the new level 8 starts empty. v3 (register 243): a new level 7, so levels 7
+// to 10 move up one.
 export function migrate(p) {
-  if ((p.v || 1) >= 2) return p;
-  const old8 = p.levels['8'];
-  delete p.levels['7']; delete p.levels['8'];
-  if (old8) p.levels['7'] = old8;
-  if (p.last === '8') p.last = '7'; else if (p.last === '7') p.last = null;
-  p.v = 2; write(p);
+  const v = p.v || 1;
+  if (v >= 3) return p;
+  if (v < 2) {
+    const old8 = p.levels['8'];
+    delete p.levels['7']; delete p.levels['8'];
+    if (old8) p.levels['7'] = old8;
+    if (p.last === '8') p.last = '7'; else if (p.last === '7') p.last = null;
+  }
+  for (let n = 10; n >= 7; n--) if (p.levels[n]) { p.levels[n + 1] = p.levels[n]; delete p.levels[n]; }
+  if (p.last && +p.last >= 7 && +p.last <= 10) p.last = String(+p.last + 1);
+  p.v = 3; write(p);
   return p;
 }
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
@@ -148,7 +154,7 @@ export function enterLevel(id) {
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
   S.level = kept && placementErrors(def, kept).every(e => /^(Place at least|Place the |Nothing can start)/.test(e.msg)) ? kept : roomOf(def);
   S.history = newHistory();
-  S.ui.tool = 'look'; S.ui.colour = 'red';
+  S.ui.tool = 'look'; S.ui.colour = coloursOf(def)[0];
   p.last = id; write(p);
   document.body.classList.add('campaign');
   syncBrief();

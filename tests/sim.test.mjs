@@ -3,7 +3,7 @@ import { worldStep as rawWorldStep } from '../src/rules/pieces.js';
 import { aimKey } from '../src/rules/player.js';
 import { parseLevel, emptyLevel, isCell, resizeSide, wallBorder } from '../src/level/format.js';
 import { solidCell } from '../src/rules/grid.js';
-import { place, describe } from '../src/editor/edit.js';
+import { place, describe, turnGate } from '../src/editor/edit.js';
 import { drawTurret } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
 import { newHistory, record, undo, redo, LIMIT } from '../src/editor/history.js';
@@ -445,6 +445,33 @@ const LONG = ['##########', '#..P....##', '##########'];
     try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: [c, ...Array(8).fill('')] })); } catch { refused++; }
   }
   check('a one-way tile with bad directions is refused', refused === 3, refused + '/3');
+}
+
+{ // a coloured one-way points the other way while its colour is pressed (register 241)
+  const make = held => {
+    const l = room(['#######', '#..>.P#', '#.B...#', '#######']);
+    l.cells[1 * 7 + 3] = 'gate:right@red'; l.cells[2 * 7 + (held ? 2 : 4)] = 'button:red';
+    return createGame(l);
+  };
+  const off = slide(make(false), 'left');
+  check('a red one-way keeps its way while red is not pressed', at(off.player, 4, 1), JSON.stringify(off.player));
+  const on = slide(make(true), 'left');
+  check('and turns round while the red button is held', at(on.player, 1, 1), JSON.stringify(on.player));
+  const back = make(true); back.player.x = 1;
+  slide(back, 'right');
+  check('then refuses its old way', at(back.player, 2, 1), JSON.stringify(back.player));
+  let bad = 0;
+  for (const c of ['gate:right@pink', 'gate:right@red@blue', 'gate:@red']) {
+    try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: [c, ...Array(8).fill('')] })); } catch { bad++; }
+  }
+  check('a one-way with a bad colour is refused', bad === 3 && isCell('gate:right,left@blue'), bad + '/3');
+  const d = room(['#####', '#P..#', '#####']); d.cells[7] = 'gate:up@red';
+  check('the Look tool names its colour', describe(d, 2, 1).startsWith('Red one-way'), describe(d, 2, 1));
+  const put = room(['#####', '#P..#', '#####']);
+  place(put, { tool: 'gate', pass: ['left'], gateColour: 'blue' }, 3, 1, 'place');
+  check('placing a one-way with a colour chosen gives it that colour', put.cells[8] === 'gate:left@blue', put.cells[8]);
+  turnGate(put, 3, 1);
+  check('turning it keeps its colour', put.cells[8] === 'gate:up@blue', put.cells[8]);
 }
 
 { // a spring launches whatever lands in front of it, the way it faces

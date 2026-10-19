@@ -7,14 +7,22 @@ import { REQUIREMENTS } from './requirements.js';
 // What each palette element is in the room.
 export const ELEMENTS = {
   block: { label: 'Block', cell: 'wall' },
-  button: { label: 'Button', cell: 'button:red' },
-  door: { label: 'Door', cell: 'door:red' },
+  button: { label: 'Button', cell: 'button:red', kind: 'button:' },
+  door: { label: 'Door', cell: 'door:red', kind: 'door:' },
   box: { label: 'Box', piece: 'box' },
-  toggle: { label: 'Switch', cell: 'toggle:red' },
+  toggle: { label: 'Switch', cell: 'toggle:red', kind: 'toggle:' },
   // Placed pointing right; a tap on one with its tool turns it. Any direction is the same element.
   gate: { label: 'One-way', cell: 'gate:right', kind: 'gate:' },
 };
 const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind));
+// A level's colours (def.colours, red when it names none). A one-way takes one only in a level
+// that names its colours (register 241); elsewhere it has none.
+export const coloursOf = def => def.colours || ['red'];
+function colourFits(def, c) {
+  if (c.startsWith('gate:')) { const col = c.split('@')[1] || null; return def.colours ? def.colours.includes(col) : col === null; }
+  const [kind, col] = c.split(':');
+  return !['button', 'door', 'toggle'].includes(kind) || coloursOf(def).includes(col);
+}
 
 // The level's room: empty at its starting size, with no border (the room's edge stops the
 // robot like a wall), the start one diagonal step in from the top left corner and the goal one
@@ -33,7 +41,7 @@ export function placed(def, room) {
   room.cells.forEach((c, i) => {
     if (!c || c === 'goal') return;
     const el = Object.keys(ELEMENTS).find(k => isEl(k, c));
-    if (el) out[el].push(i); else stray.push(i);
+    if (el && colourFits(def, c)) out[el].push(i); else stray.push(i);
   });
   for (const e of room.entities) {
     const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].piece === e.kind), i = e.y * room.w + e.x;

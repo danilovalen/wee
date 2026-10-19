@@ -5,6 +5,7 @@ import { resizeLevel, moveSide, wallBorder } from '../level/format.js';
 import { INK } from '../view/ink.js';
 import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
 import { toolsFor, syncBrief } from './campaign.js';
+import { coloursOf } from '../campaign/rules.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch } from './dom.js';
 import { change, step as undoStep, syncUndo } from './undo.js';
@@ -151,6 +152,7 @@ export function syncPanel() {
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   // In a campaign level the palette is the level's: its elements, Look and Erase, in one list.
   const only = S.camp ? toolsFor(S.camp.def) : null;
+  syncColours();
   if (only && !only.includes(ui.tool)) ui.tool = 'look';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp; });
   syncBrief();
@@ -187,4 +189,34 @@ export function syncPanel() {
   document.querySelectorAll('[data-start]').forEach(b => { b.classList.toggle('on', b.dataset.start === first); b.disabled = !ui.aim.includes(b.dataset.start); });
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
+}
+
+// A level with more than one colour shows them as a row of dots over its tools (register 245):
+// what you place takes the chosen one, and a one-way takes a colour only in a level that names
+// its colours. The palette's coloured pieces are drawn in the colour they will be placed in.
+const TINTED = ['button', 'toggle', 'door', 'idoor', 'receiver', 'sensor', 'gate'];
+let tint = '';
+function syncColours() {
+  const ui = S.ui, cols = S.camp ? coloursOf(S.camp.def) : null, row = $('campColours');
+  if (cols && !cols.includes(ui.colour)) ui.colour = cols[0];
+  ui.gateColour = S.camp && S.camp.def.colours ? ui.colour : null;
+  row.hidden = !cols || cols.length < 2;
+  if (cols && row.dataset.cols !== cols.join()) {
+    row.dataset.cols = cols.join();
+    row.replaceChildren(...cols.map(col => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.dataset.campColour = col; b.title = col; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', col);
+      b.style.background = INK[col];
+      b.onclick = () => { S.ui.colour = col; syncPanel(); };
+      return b;
+    }));
+  }
+  row.querySelectorAll('[data-camp-colour]').forEach(b => { const on = b.dataset.campColour === ui.colour; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+  const key = ui.colour + '|' + ui.gateColour;
+  if (key === tint) return;
+  tint = key;
+  for (const id of TINTED) {
+    const b = document.querySelector(`#palette [data-tool="${id}"]`), old = b && b.querySelector('canvas');
+    if (old) { const c = icon(id, ui.colour, ui.gateColour); c.dataset.colour = id === 'gate' ? ui.gateColour || '' : ui.colour; old.replaceWith(c); }
+  }
 }
