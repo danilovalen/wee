@@ -66,8 +66,9 @@ export const REQUIREMENTS = {
     },
   },
   throughOpenDoorTwice: {
-    text: 'The robot passes through an open door twice.',
-    short: [{ el: 'start' }, 'through an open', { el: 'door' }, '×2'],
+    // Two passes, not two doors (register 257): the row says so.
+    text: 'The robot passes through an open door twice, the same door or another.',
+    short: [{ el: 'start' }, '2 passes through an open', { el: 'door' }],
     // One pass is stepping onto a door tile from a tile that is not one: a slide across two
     // doors side by side passes once.
     judge: (room, moves) => {

@@ -168,6 +168,7 @@ const build = (def, rows) => {
   ok('on then off: met', req('everyToggleOnThenOff', ['######', '#Pt..#', '######'], ['right', 'left']));
   ok('through an open door twice: met going there and back', req('throughOpenDoorTwice', ['#######', '#Pt.D.#', '#######'], ['right', 'left']));
   ok('through an open door twice: not met with one pass', !req('throughOpenDoorTwice', ['#######', '#Pt.D.#', '#######'], ['right']));
+  ok('its row counts passes, not doors (register 257)', REQUIREMENTS.throughOpenDoorTwice.short.join(' ').includes('2 passes') && /same door or another/.test(REQUIREMENTS.throughOpenDoorTwice.text));
   ok('through an open door twice: one slide across two doors side by side is one pass', !req('throughOpenDoorTwice', ['#######', '#PtDD.#', '#######'], ['right']));
   ok('collides with a closed door: met when a slide stops against it', req('hitsClosedDoor', ['#######', '#P..D.#', '#######'], ['right']));
   ok('collides with a closed door: not met when the door is open', !req('hitsClosedDoor', ['#######', '#Pt.D.#', '#######'], ['right']));
