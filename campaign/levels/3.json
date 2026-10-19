@@ -29,5 +29,8 @@
  "small": [
   3,
   3
+ ],
+ "optional": [
+  "hitsClosedDoor"
  ]
 }

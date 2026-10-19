@@ -318,6 +318,11 @@ const build = (def, rows) => {
       ok('level 2 has its own optional goal: through an open door twice', l.optional.join() === 'throughOpenDoorTwice' && w2.won && w2.optional.find(o => o.id === 'throughOpenDoorTwice').met, JSON.stringify(w2.fail || w2.optional));
       ok('a path goal is not met when a shortest path misses it', !v.optional.find(o => o.id === 'throughOpenDoorTwice').met, JSON.stringify(v.optional));
     }
+    if (l.id === '3') {
+      // His extra goal (register 259), met on every shortest path of a room the search found (9 moves).
+      const w3 = check(l, build(l, ['.D.t#', '.....', '.....', '....D', '#G...', '...D#', '....P', '.....']));
+      ok('level 3 has an optional goal: the robot collides with a closed door', l.optional.join() === 'hitsClosedDoor' && w3.won && w3.optional.find(o => o.id === 'hitsClosedDoor').met, JSON.stringify(w3.fail || w3.optional));
+    }
     if (l.id === '5') ok('mix: met when one run meets two optional goals', v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.id !== 'mix').every(o => o.met), JSON.stringify(v.optional));
     if (l.id === '1') ok('mix: not met by one goal alone', !v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.met).length === 1, JSON.stringify(v.optional));
     ok(`level ${l.id}'s ${l.small.join('x')} goal is met by a win`, Array.isArray(l.small) && v.won && v.optional.find(o => o.id === 'small').met, JSON.stringify(v.fail || v.optional));

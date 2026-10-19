@@ -85,7 +85,7 @@ ones they had before.
 |---|---|---|---|
 | 1 | block 0-10 | exactly 6 (optional) | none beyond the 4-move minimum |
 | 2 | block 0-10, switch 1-1, door 1-1 | exactly 7 (optional) | robot collides with a closed door; robot goes through an open door |
-| 3 | block 0-10, switch 1 or more, door 1 or more | exactly 8 (optional) | through an open door; door closed at the end (every switch on was dropped: the open door implies it) |
+| 3 | block 0-10, switch 1 or more, door 1 or more | exactly 8 (optional); the robot collides with a closed door (optional, his, register 259) | through an open door; door closed at the end (every switch on was dropped: the open door implies it) |
 | 4 | block, switch 2 or more, door 1 or more | exactly 8 (optional) | through an open door; every switch off when the robot reaches the goal |
 | 5 | block, box 1 or more | exactly 8 (optional) | one box is pushed in at least 2 moves and the robot collides with it once without moving it |
 | 6 | block, box 1 or more, switch 1 or more, door 1 or more | exactly 7 (optional) | a box goes into an open doorway; the robot passes through an open door; only boxes flip switches |

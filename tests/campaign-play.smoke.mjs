@@ -185,7 +185,7 @@ try {
   const sizes = await page.$$eval('.campReqs li', ls => [...new Set(ls.map(l => getComputedStyle(l).fontSize))]);
   check('every goal row has the same type size', sizes.length === 1, sizes.join());
   check('the 4-move minimum comes first, across the whole card', first.first && first.full && first.text.endsWith('at least 4 moves'), JSON.stringify(first));
-  check('the optional goal sits apart, below the required ones', lay.opt === 'best,small,mix' && !lay.must.includes('best') && lay.below, JSON.stringify(lay));
+  check('the optional goal sits apart, below the required ones', lay.opt === 'best,small,hitsClosedDoor,mix' && !lay.must.includes('best') && lay.below, JSON.stringify(lay));
   check('the goal card names its sections: goals, and optional goals', (await page.locator('.campLabel').textContent()) === 'Goals' && (await page.locator('.campOpt').getAttribute('data-label')) === 'Optional goals');
   check('requirement rows draw objects as icons', reqRows.includes('throughOpenDoor=start+door') && reqRows.includes('doorClosedAtEnd=door'), reqRows.join());
   await page.click('#campBack');

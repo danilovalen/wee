@@ -11,6 +11,7 @@ const M = [
   ['style.css', '@media (max-width: 700px) { #campTools button { width: 46px; height: 46px; }', '@media (max-width: 700px) { #campTools button { width: 52px; height: 52px; }', 'campaign-play'],
   ['src', "short: [{ el: 'start' }, '2 passes through an open', { el: 'door' }],", "short: [{ el: 'start' }, 'through an open', { el: 'door' }, '×2'],", 'campaign'],
   ['src', "v.won ? `won in ${v.length} \\u00b7 ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` :", "v.won ? `won in ${v.length}` :", 'campaign-play'],
+  ['src', '"optional":["hitsClosedDoor"]', '"optional":[]', 'campaign'],
   // Debug (register 247)
   ['index.html', 'title="Copies what the game knows about where you are.">Debug</button>', 'title="Copies what the game knows about where you are.">Report a problem</button>', 'campaign-play'],
   // a turning one-way launches (register 253)
