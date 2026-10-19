@@ -5903,7 +5903,7 @@ function place(level, ui, x, y, how) {
   if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
   return out;
 }
-return { moveAt, turnGate, holds, describe, place };
+return { moveAt, swapAt, turnGate, holds, describe, place };
 })();
 // ---- src/app/chips.js
 const m52 = (() => {
@@ -6419,7 +6419,8 @@ function syncPanel() {
   syncBrief();
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
-  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label;
+  // In a level the one-way says how it is turned and taken away (register 234); draft copy.
+  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + (S.camp && ui.tool === 'gate' ? ' (tap to rotate; hold to remove)' : '');
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
@@ -6455,7 +6456,7 @@ return { keysText, buildPanels, syncPanel };
 // ---- src/app/campaignMove.js
 const m58 = (() => {
 const { placementErrors } = m39;
-const { place, moveAt } = m51;
+const { place, moveAt, swapAt } = m51;
 const { S } = m11;
 const { $, now } = m12;
 // Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
@@ -6464,9 +6465,17 @@ const { $, now } = m12;
 
 
 // Move: carries the thing on one tile to another, when the target can take it and the room
-// breaks no rule it kept before. Returns the moved room or null.
+// breaks no rule it kept before. Where a plain move would break one (a box or the robot left on a
+// button or a switch), the two swap instead (register 230). Returns the moved room or null.
 function moveIn(level, from, to) {
-  return moveRefusal(level, from, to) ? null : moveAt(level, from, to);
+  return tries(level, from, to).find(next => !newError(level, next)) || null;
+}
+const tries = (level, from, to) => [moveAt(level, from, to), swapAt(level, from, to)].filter(Boolean);
+// The first rule a change breaks that the room kept before, or null.
+function newError(level, next) {
+  if (!S.camp) return null;
+  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg));
+  return placementErrors(S.camp.def, next).find(e => !before.has(e.msg)) || null;
 }
 
 // Why a tap may not change the room, or null when it may: placing must not break a rule the
@@ -6485,11 +6494,10 @@ const tipOf = msg => msg === 'Place the goal.' ? 'The goal stays. Use Move.' : m
 
 // Why Move cannot carry a thing from one tile to another, or null when it can.
 function moveRefusal(level, from, to) {
-  const next = moveAt(level, from, to);
-  if (!next) return 'Cannot go there.';
-  if (!S.camp) return null;
-  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg)), e = placementErrors(S.camp.def, next).find(e => !before.has(e.msg));
-  return e ? tipOf(e.msg) : null;
+  const all = tries(level, from, to);
+  if (!all.length) return 'Cannot go there.';
+  if (all.some(next => !newError(level, next))) return null;
+  return tipOf(newError(level, all[0]).msg);
 }
 
 // Says why a tap was refused, on the tile, for a moment; the room does not change.
@@ -6507,14 +6515,7 @@ function say(x, y, why, ms = 1500) {
   tip.hidden = false;
   clearTimeout(say.t); say.t = setTimeout(() => { tip.hidden = true; }, ms);
 }
-
-// The first one-way placed in a level says how to turn it; once per browser.
-const TURN_HINT = 'wee.hint.turnOneWay';
-function hintTurn(x, y) {
-  try { if (localStorage.getItem(TURN_HINT)) return; localStorage.setItem(TURN_HINT, '1'); } catch { /* no storage: say it every time */ }
-  say(x, y, 'Tap it again to turn it.', 3000);
-}
-return { moveIn, refusal, allows, moveRefusal, refuse, say, hintTurn };
+return { moveIn, refusal, allows, moveRefusal, refuse, say };
 })();
 // ---- src/app/stuck.js
 const m59 = (() => {
@@ -6732,7 +6733,7 @@ const { syncPanel } = m57;
 const { fit } = m33;
 const { toolForKey, bareKey, showKeys } = m54;
 const { TOOLS } = m34;
-const { refusal, moveRefusal, moveIn, refuse, hintTurn } = m58;
+const { refusal, moveRefusal, moveIn, refuse } = m58;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -6764,6 +6765,8 @@ function paint(x, y, how, fresh) {
 
 // In play, a swipe is an arrow key: each new direction within one drag sends once.
 const SWIPE_PX = 24;
+// How long a press on a one-way lasts before it removes it instead of turning it.
+const GATE_HOLD_MS = 500;
 const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', ' ': 'hide', r: 'respawn', R: 'respawn' };
 
 function bindInput() {
@@ -6798,13 +6801,16 @@ function bindInput() {
     if (S.ui.tool === 'select') { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }
     // Move: press on a thing, release on the tile it goes to; the outline shows where.
     if (S.ui.tool === 'move') { canvas.setPointerCapture(ev.pointerId); S.carry = c; S.hover = c; return; }
+    // In a level, the one-way tool on a one-way: a tap turns it, a hold removes it (register 234).
+    if (S.camp && S.ui.tool === 'gate' && ev.button !== 2 && holds(S.level, c.x, c.y, 'gate')) {
+      const at = c;
+      S.gateHold = { at, timer: setTimeout(() => { S.gateHold = null; change(() => { S.level.cells[at.y * S.level.w + at.x] = ''; }); S.fx.push({ type: 'erase', x: at.x, y: at.y, at: now() }); S.redraw = true; }, GATE_HOLD_MS) };
+      return;
+    }
     begin();
-    // In a level, a tap with the one-way tool on a one-way turns it; Erase takes it away.
-    if (S.camp && S.ui.tool === 'gate' && ev.button !== 2 && holds(S.level, c.x, c.y, 'gate')) { turnGate(S.level, c.x, c.y); end(); return; }
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
     paint(c.x, c.y, S.painting, true);
-    if (S.camp && S.ui.tool === 'gate' && S.painting === 'place' && holds(S.level, c.x, c.y, 'gate')) hintTurn(c.x, c.y);
   });
   canvas.addEventListener('pointermove', ev => {
     if (S.mode === 'play') return;
@@ -6814,7 +6820,10 @@ function bindInput() {
     if (c && S.ui.tool === 'select' && ev.buttons) selectMove(c);
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
-  const lift = () => { S.painting = 0; S.swipe = null; selectUp(); end(); };
+  const lift = () => {
+    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at } = S.gateHold; S.gateHold = null; change(() => turnGate(S.level, at.x, at.y)); S.redraw = true; return; }
+    S.painting = 0; S.swipe = null; selectUp(); end();
+  };
   canvas.addEventListener('pointerup', ev => {
     if (S.carry) {
       const from = S.carry, to = cellFromEvent(ev), moved = to && (to.x !== from.x || to.y !== from.y);

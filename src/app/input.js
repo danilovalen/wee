@@ -11,7 +11,7 @@ import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
 import { toolForKey, bareKey, showKeys } from './keys.js';
 import { TOOLS } from '../editor/palette.js';
-import { refusal, moveRefusal, moveIn, refuse, hintTurn } from './campaignMove.js';
+import { refusal, moveRefusal, moveIn, refuse } from './campaignMove.js';
 
 function cellFromEvent(ev) {
   const r = canvas.getBoundingClientRect(), level = S.level;
@@ -30,6 +30,8 @@ function paint(x, y, how, fresh) {
 
 // In play, a swipe is an arrow key: each new direction within one drag sends once.
 const SWIPE_PX = 24;
+// How long a press on a one-way lasts before it removes it instead of turning it.
+const GATE_HOLD_MS = 500;
 const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', ' ': 'hide', r: 'respawn', R: 'respawn' };
 
 export function bindInput() {
@@ -64,13 +66,16 @@ export function bindInput() {
     if (S.ui.tool === 'select') { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }
     // Move: press on a thing, release on the tile it goes to; the outline shows where.
     if (S.ui.tool === 'move') { canvas.setPointerCapture(ev.pointerId); S.carry = c; S.hover = c; return; }
+    // In a level, the one-way tool on a one-way: a tap turns it, a hold removes it (register 234).
+    if (S.camp && S.ui.tool === 'gate' && ev.button !== 2 && holds(S.level, c.x, c.y, 'gate')) {
+      const at = c;
+      S.gateHold = { at, timer: setTimeout(() => { S.gateHold = null; change(() => { S.level.cells[at.y * S.level.w + at.x] = ''; }); S.fx.push({ type: 'erase', x: at.x, y: at.y, at: now() }); S.redraw = true; }, GATE_HOLD_MS) };
+      return;
+    }
     begin();
-    // In a level, a tap with the one-way tool on a one-way turns it; Erase takes it away.
-    if (S.camp && S.ui.tool === 'gate' && ev.button !== 2 && holds(S.level, c.x, c.y, 'gate')) { turnGate(S.level, c.x, c.y); end(); return; }
     S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
     paint(c.x, c.y, S.painting, true);
-    if (S.camp && S.ui.tool === 'gate' && S.painting === 'place' && holds(S.level, c.x, c.y, 'gate')) hintTurn(c.x, c.y);
   });
   canvas.addEventListener('pointermove', ev => {
     if (S.mode === 'play') return;
@@ -80,7 +85,10 @@ export function bindInput() {
     if (c && S.ui.tool === 'select' && ev.buttons) selectMove(c);
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
-  const lift = () => { S.painting = 0; S.swipe = null; selectUp(); end(); };
+  const lift = () => {
+    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at } = S.gateHold; S.gateHold = null; change(() => turnGate(S.level, at.x, at.y)); S.redraw = true; return; }
+    S.painting = 0; S.swipe = null; selectUp(); end();
+  };
   canvas.addEventListener('pointerup', ev => {
     if (S.carry) {
       const from = S.carry, to = cellFromEvent(ev), moved = to && (to.x !== from.x || to.y !== from.y);

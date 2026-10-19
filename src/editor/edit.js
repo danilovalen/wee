@@ -34,7 +34,7 @@ function moveOnto(level, from, to) {
 }
 
 // What is on top of a tile goes first (the start, then a piece), else the tile itself.
-function swapAt(level, from, to) {
+export function swapAt(level, from, to) {
   if (from.x === to.x && from.y === to.y) return null;
   const l = structuredClone(level);
   const grab = p => {

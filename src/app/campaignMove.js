@@ -1,13 +1,21 @@
 // Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
 import { placementErrors } from '../campaign/rules.js';
-import { place, moveAt } from '../editor/edit.js';
+import { place, moveAt, swapAt } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
 
 // Move: carries the thing on one tile to another, when the target can take it and the room
-// breaks no rule it kept before. Returns the moved room or null.
+// breaks no rule it kept before. Where a plain move would break one (a box or the robot left on a
+// button or a switch), the two swap instead (register 230). Returns the moved room or null.
 export function moveIn(level, from, to) {
-  return moveRefusal(level, from, to) ? null : moveAt(level, from, to);
+  return tries(level, from, to).find(next => !newError(level, next)) || null;
+}
+const tries = (level, from, to) => [moveAt(level, from, to), swapAt(level, from, to)].filter(Boolean);
+// The first rule a change breaks that the room kept before, or null.
+function newError(level, next) {
+  if (!S.camp) return null;
+  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg));
+  return placementErrors(S.camp.def, next).find(e => !before.has(e.msg)) || null;
 }
 
 // Why a tap may not change the room, or null when it may: placing must not break a rule the
@@ -26,11 +34,10 @@ const tipOf = msg => msg === 'Place the goal.' ? 'The goal stays. Use Move.' : m
 
 // Why Move cannot carry a thing from one tile to another, or null when it can.
 export function moveRefusal(level, from, to) {
-  const next = moveAt(level, from, to);
-  if (!next) return 'Cannot go there.';
-  if (!S.camp) return null;
-  const before = new Set(placementErrors(S.camp.def, level).map(e => e.msg)), e = placementErrors(S.camp.def, next).find(e => !before.has(e.msg));
-  return e ? tipOf(e.msg) : null;
+  const all = tries(level, from, to);
+  if (!all.length) return 'Cannot go there.';
+  if (all.some(next => !newError(level, next))) return null;
+  return tipOf(newError(level, all[0]).msg);
 }
 
 // Says why a tap was refused, on the tile, for a moment; the room does not change.
@@ -49,9 +56,3 @@ export function say(x, y, why, ms = 1500) {
   clearTimeout(say.t); say.t = setTimeout(() => { tip.hidden = true; }, ms);
 }
 
-// The first one-way placed in a level says how to turn it; once per browser.
-const TURN_HINT = 'wee.hint.turnOneWay';
-export function hintTurn(x, y) {
-  try { if (localStorage.getItem(TURN_HINT)) return; localStorage.setItem(TURN_HINT, '1'); } catch { /* no storage: say it every time */ }
-  say(x, y, 'Tap it again to turn it.', 3000);
-}

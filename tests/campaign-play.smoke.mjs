@@ -245,6 +245,17 @@ try {
   await page.mouse.up();
   check('over a tile it cannot take, the copy is red', red.join() !== wallPx.join() && red[0] > red[1] + 40, wallPx + ' -> ' + red);
   check('and releasing there leaves the room and says why', (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === busy && await page.locator('#campTip').isVisible());
+  // 230: a box or the robot moved onto a switch swaps with it instead of being refused.
+  await page.evaluate(() => { const l = window.wee.getLevel(); l.cells[3 * 7 + 3] = ''; l.cells[3 * 7 + 4] = ''; l.entities = []; l.cells[5 * 7 + 3] = 'toggle:red'; l.entities.push({ kind: 'box', x: 2, y: 5, dir: 1, mode: 'input' }); window.wee.loadLevel(l); });
+  await page.mouse.move(...await tile(2, 5)); await page.mouse.down();
+  await page.mouse.move(...await tile(3, 5), { steps: 4 }); await page.waitForTimeout(80); await page.mouse.up();
+  const boxSwap = await page.evaluate(() => { const l = window.wee.getLevel(), b = l.entities.find(e => e.kind === 'box'); return [b.x, b.y, l.cells[5 * 7 + 2], l.cells[5 * 7 + 3]].join(); });
+  check('a box moved onto a switch swaps with it', boxSwap === '3,5,toggle:red,', boxSwap);
+  const st = await page.evaluate(() => window.wee.getLevel().start);
+  await page.mouse.move(...await tile(st.x, st.y)); await page.mouse.down();
+  await page.mouse.move(...await tile(2, 5), { steps: 4 }); await page.waitForTimeout(80); await page.mouse.up();
+  const robotSwap = await page.evaluate(([x, y]) => { const l = window.wee.getLevel(); return [l.start.x, l.start.y, l.cells[y * 7 + x]].join(); }, [st.x, st.y]);
+  check('the robot moved onto a switch swaps with it too', robotSwap === '2,5,toggle:red', robotSwap);
   // 213: after a Run the robot plays its path, then the level is back in editing by itself.
   await page.click('#campBack'); await page.click('.campRow[data-level="1"]');
   await load(WIN);
@@ -288,10 +299,14 @@ try {
   await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="9"]'); await nine.click('[data-tool="gate"]');
   const gb = await nine.locator('#game').boundingBox(), gt = gb.width / 7, gateAt = () => nine.evaluate(() => window.wee.getLevel().cells[3 * 7 + 3]);
   await nine.mouse.click(gb.x + 3.5 * gt, gb.y + 3.5 * gt); const g1 = await gateAt();
-  const hint = await nine.evaluate(() => { const t = document.getElementById('campTip'); return t.hidden ? '' : t.textContent; });
-  check('the first one-way placed says a tap turns it', hint === 'Tap it again to turn it.', hint);
-  await nine.mouse.click(gb.x + 3.5 * gt, gb.y + 3.5 * gt); const g2 = await gateAt();
+  const hint = await nine.evaluate(() => [document.getElementById('toolName').textContent, document.getElementById('campTip').hidden]);
+  check('the one-way tool says how to turn and remove one, and no tip pops up', hint[0] === 'One-way (tap to rotate; hold to remove)' && hint[1] === true, JSON.stringify(hint));
+  await nine.mouse.click(gb.x + 3.5 * gt, gb.y + 3.5 * gt); await nine.waitForTimeout(700); const g2 = await gateAt();
   check('a one-way goes down pointing right, and a tap on it turns it a quarter clockwise', g1 === 'gate:right' && g2 === 'gate:down', g1 + ' ' + g2);
+  await nine.mouse.move(gb.x + 3.5 * gt, gb.y + 3.5 * gt); await nine.mouse.down(); await nine.waitForTimeout(800); await nine.mouse.up();
+  const g3 = await gateAt();
+  await nine.click('#undo'); const g4 = await gateAt();
+  check('a hold on a one-way removes it, and undo brings it back', g3 === '' && g4 === 'gate:down', JSON.stringify([g3, g4]));
   // The robot's antenna tip is the one pink on its tile.
   const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 230 && d[i + 1] > 90 && d[i + 1] < 130 && d[i + 2] > 110 && d[i + 2] < 150) n++; return n; });
   check('the start is drawn as the robot (its antenna tip shows)', tip > 3, String(tip));

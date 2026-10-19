@@ -156,7 +156,8 @@ export function syncPanel() {
   syncBrief();
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
-  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label;
+  // In a level the one-way says how it is turned and taken away (register 234); draft copy.
+  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + (S.camp && ui.tool === 'gate' ? ' (tap to rotate; hold to remove)' : '');
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
