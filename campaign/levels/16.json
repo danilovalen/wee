@@ -33,13 +33,13 @@
  "require": [
   "laserThroughADoor",
   "boxOffButtonAtEnd",
-  "laserThroughButton"
+  "laserThroughEveryButton"
  ],
  "small": [
-  5,
-  3
+  6,
+  2
  ],
  "optional": [
-  "lasersCross"
+  "robotOnButton"
  ]
 }

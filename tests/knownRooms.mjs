@@ -7,13 +7,13 @@ export const KNOWN = {
     9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'], 11: ['...P', 'BBDq', 'o.Q#', '#..G'], 12: ['#P.#..', 'G>.>Bo'], 13: ['PB>..GD', '.......', '#t.....'],
     14: ['GD.', 'Dw.', 'tP.'], // His 6x5 room (register 293) plus one block from a search: 11 moves.
     15: ['#..##.', '...P..', '...B..', '#.....', 'e..>G#'],
-    // His room (register 304): 4 moves, 5x3, 4 tiles.
-    16: ['...P.', '...B.', 'eDGo.'] },
+    // His room (register 305): 4 moves, 6x2.
+    16: ['P.G...', 'eD.oB.'] },
   optional: {
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
     14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
-    // Found by tools/levelSearch.mjs --from (register 301): the lasers cross, 4 moves.
-    16: ['e.o.Gs', '...#..', '.B..D.', '.Pe.Dw'],
+    // His room (register 304): the robot steps on the button, 4 moves.
+    16: ['...P.', '...B.', 'eDGo.'],
     // His room (register 293): a box goes through the one-way.
     15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
     4: ['PtttD.', '......', '......', '......', '.#.G..'],

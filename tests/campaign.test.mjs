@@ -322,12 +322,10 @@ const build = (def, rows) => {
   // Two lasers firing right; only the top one's door opens with the switch.
   const two = ['##########', '#T.D.....#', '#Pt......#', '#T.Q.....#', '##########'];
   ok('every laser through an open door: not met when one laser never gets through', !req('laserThroughOpenDoor', two, ['right']));
-  ok('a laser through a button: met', req('laserThroughButton', ['########', '#T.o...#', '#P.....#', '########'], []));
-  ok('a laser through a button: not met when the button is behind it', !req('laserThroughButton', ['########', '#oT....#', '#P.....#', '########'], []));
-  // An across beam on row 2 and an up beam from row 4; a block at (3, 2) keeps them apart.
-  const crossing = mid => { const r = off(['#######', '#P....#', '#..' + mid + '..#', '#.....#', '#.....#', '#######']); r.entities.push({ kind: 'turret', x: 1, y: 2, turret: { dirs: ['right'], mode: 'input' } }, { kind: 'turret', x: 3, y: 4, turret: { dirs: ['up'], mode: 'input' } }); return REQUIREMENTS.lasersCross.judge(r, []); };
-  ok('two lasers cross: met by an across beam and an up beam', crossing('.'));
-  ok('two lasers cross: not met when a block keeps the beams apart', !crossing('#'));
+  ok('a laser through every button: met by one beam over both', req('laserThroughEveryButton', ['########', '#T.o.o.#', '#P.....#', '########'], []));
+  ok('a laser through every button: not met when one is out of the beam', !req('laserThroughEveryButton', ['########', '#T.o...#', '#P...o.#', '########'], []));
+  ok('the robot steps on a button: met when it slides over one', req('robotOnButton', ['#######', '#P.o..#', '#######'], ['right']));
+  ok('the robot steps on a button: not met when it passes beside it', !req('robotOnButton', ['#######', '#P....#', '#..o..#', '#######'], ['right']));
   ok('a closed door stops every laser: met by both', req('laserBlockedByDoor', two, []));
   ok('a closed door stops every laser: not met when one hits a wall', !req('laserBlockedByDoor', ['##########', '#T.D.....#', '#P.......#', '#T.......#', '##########'], []));
   const ways = (a, b) => { const r = off(['######', '#P...#', '#....#', '######']); r.entities.push({ kind: 'turret', x: 2, y: 2, turret: { dirs: [a], mode: 'input' } }, { kind: 'turret', x: 4, y: 2, turret: { dirs: [b], mode: 'input' } }); return REQUIREMENTS.lasersTwoWays.judge(r, []); };
