@@ -91,11 +91,13 @@ export function syncBrief() {
   const def = S.camp.def, v = S.camp.verdict;
   const ran = v && v.ok && v.length != null;
   const rows = [{ id: 'steps', parts: [rangeShort(def.steps)], text: stepsText(def.steps), met: ran ? v.inRange : null }];
-  // A minimum of 2 or more is a goal of its own; a minimum of 1 goes without saying, since a
-  // requirement already needs the piece (Run still names one that is missing).
+  // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
+  // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
   const { by } = placed(def, S.level);
-  for (const [el, [min]] of Object.entries(def.palette)) if (min >= 2)
-    rows.push({ id: 'min-' + el, parts: [`${min} or more`, { el }], text: `Place at least ${min} ${nameOf(el, min)}.`, met: v ? by[el].length >= min : null });
+  for (const [el, [min, max]] of Object.entries(def.palette)) {
+    if (max !== null && max !== undefined) rows.push({ id: 'max-' + el, parts: [min === max ? `exactly ${max}` : `at most ${max}`, { el }], text: min === max ? `Place exactly ${max} ${nameOf(el, max)}.` : `Place at most ${max} ${nameOf(el, max)}.`, met: v ? by[el].length >= min && by[el].length <= max : null });
+    else if (min >= 2) rows.push({ id: 'min-' + el, parts: [`${min} or more`, { el }], text: `Place at least ${min} ${nameOf(el, min)}.`, met: v ? by[el].length >= min : null });
+  }
   for (const id of def.require || []) rows.push({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: ran && v.reqs ? v.reqs[id] : null });
   const results = ran ? optionalResults(def, v) : [];
   for (const o of optionalGoals(def)) rows.push({ id: o.id, parts: o.parts, text: `Optional: ${o.text}`, met: ran ? results.find(r => r.id === o.id).met : null, optional: true });

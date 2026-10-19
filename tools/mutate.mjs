@@ -762,6 +762,7 @@ const M = [
   ['src/campaign/extras.js', "if (b.path.slice(1).some(at => cellOf(room, at).startsWith('button:'))) ok = true;", "ok = true;", 'campaign'],
   ['src/campaign/extras.js', "for (const at of lit(false)) if (across.has(at)) ok = true;", "for (const at of lit(false)) ok = true;", 'campaign'],
   ['src/campaign/extras.js', "(b.d === 'left' || b.d === 'right') === d", "d", 'campaign'],
+  ['src/app/campaign.js', "    if (max !== null && max !== undefined) rows.push(", "    if (false) rows.push(", 'campaign-play'],
   ['src/campaign/extras.js', "  return all.size > 0 && [...all].every(id => met.has(id));", "  return met.size > 0;", 'campaign'],
   ['src/campaign/extras.js', "e.turret.dirs[0])).size >= 2", "e.turret.dirs[0])).size >= 1", 'campaign'],
   ['src', "(!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind))", "false", 'campaign'],

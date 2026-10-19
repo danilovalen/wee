@@ -211,6 +211,10 @@ try {
   await page.click('#campRun'); await page.waitForTimeout(150);
   check('the minimum row is marked after a run on an empty room', await page.locator('.campReqs li[data-req="min-toggle"].unmet').count() === 1);
   if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  // A maximum shows as a goal while playing (register 299): level 16 allows exactly one box.
+  await page.click('#campBack'); await page.click('.campRow[data-level="16"]');
+  const max16 = await page.locator('.campReqs li[data-req="max-box"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');
+  check('level 16 lists its one-box limit as a goal, drawn as the box', max16 === 'exactly 1|box', max16);
   await page.click('#campBack'); await page.click('.campRow[data-level="2"]');
   // A refused tap: a block on the goal. The room stays, the tile says why.
   const room = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));
