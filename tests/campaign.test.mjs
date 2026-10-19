@@ -18,7 +18,7 @@ const WIN5 = ['....', '....', '....', '....', '.BB.', 'PB..', '..G.', '....'];
 const boxCounts = (rows, moves) => boxMoves(room(rows), moves);
 const HIS = ['.#..#.....', '....#.....', '....#.....', '....#.....', '.#.BP#....', '....#.....', '..........', '..........', '........G.', '###.......', '..........', '..........'];
 // A room in the level's legend: # block, t switch, D door, o button, B box, P start, G goal; blue
-// Q door, q button, T switch. A one-way takes the level's first colour when it names colours.
+// Q door, q button, T switch; a laser n, e, s or w (the way it fires). A one-way takes the level's first colour when it names colours.
 // Full rows (all one length) set the room's size; otherwise the level's size is used. With no
 // P or G the start goes top left and the goal bottom right, one tile in.
 const build = (def, rows) => {
@@ -39,6 +39,7 @@ const build = (def, rows) => {
     if (c === 'G') { r.cells[i] = 'goal'; goal = true; }
     if (c === 'P') r.start = { x, y };
     if (c === 'B') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
+    if ('nesw'.includes(c)) r.entities.push({ kind: 'turret', x, y, turret: { dirs: [{ n: 'up', e: 'right', s: 'down', w: 'left' }[c]], mode: 'input' } });
   }));
   if (!r.start) r.start = { x: 1, y: 1 };
   if (!goal) r.cells[(r.h - 2) * r.w + r.w - 2] = 'goal';
@@ -311,6 +312,19 @@ const build = (def, rows) => {
   const thrown = off(['######', '#P...#', '#....#', '######']); thrown.cells[1 * 6 + 1] = 'button:red'; thrown.cells[1 * 6 + 2] = 'gate:left@red';
   const end = replayPath(thrown, ['right'], () => {});
   ok('a box thrown out by a turning one-way: not met when only the robot is thrown', !REQUIREMENTS.boxLaunched.judge(thrown, ['right']) && end.player.x === 1, JSON.stringify(end.player));
+  // Lasers (registers 255, 256): T is a laser firing right.
+  const D = ['##########', '#T.D.D...#', '#Pt......#', '##########'];
+  ok('a laser through 2 open doors: met once the switch opens both', req('laserThroughTwoDoors', D, ['right']));
+  ok('a laser through 2 open doors: not met while they are closed', !req('laserThroughTwoDoors', D, []));
+  ok('a laser through 2 open doors: not met through one', !req('laserThroughTwoDoors', ['##########', '#T.D.....#', '#Pt......#', '##########'], ['right']));
+  ok('a closed door stops a laser: met', req('laserBlockedByDoor', D, []));
+  ok('a closed door stops a laser: not met by a wall', !req('laserBlockedByDoor', ['########', '#T.....#', '#P.....#', '########'], []));
+  ok('a laser through a one-way: met along its arrow', req('laserThroughOneWay', ['########', '#T.>...#', '#P.....#', '########'], []));
+  ok('a laser through a one-way: not met against it', !req('laserThroughOneWay', ['########', '#T.<...#', '#P.....#', '########'], []));
+  ok('a one-way stops a laser: met against its arrow', req('laserBlockedByOneWay', ['########', '#T.<...#', '#P.....#', '########'], []));
+  ok('a one-way stops a laser: not met along it', !req('laserBlockedByOneWay', ['########', '#T.>...#', '#P.....#', '########'], []));
+  ok('the robot through a one-way: met', req('robotThroughOneWay', ['#######', '#P.>..#', '#######'], ['right']));
+  ok('the robot through a one-way: not met when it stops on it', !req('robotThroughOneWay', ['######', '#P.>#', '######'].map(r => r.slice(0, 5)), ['right']));
   ok('a 3rd switch on at the end: met with three, one on', req('thirdToggleOnAtEnd', ['########', '#Pt....#', '#t.t...#', '########'], ['right']));
   ok('a 3rd switch on at the end: not met with only two', !req('thirdToggleOnAtEnd', ['#######', '#Pt...#', '#.t...#', '#######'], ['right']));
   ok('every box pushed 2 times: not met by one push', !req('everyBoxPushedTwice', ['#######', '#PB...#', '#######'], ['right']));
@@ -377,7 +391,7 @@ const build = (def, rows) => {
   for (const l of LEVELS) {
     const v = WINS[l.id] && check(l, build(l, WINS[l.id]));
     ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
-    if (['5', '8', '9', '10', '11', '12', '13'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
+    if (['5', '8', '9', '10', '11', '12', '13', '14', '15'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
     if (l.id === '7') { const six = check(l, build(l, ['#B.....o..', '........D.', '.#...#....', '.#B.#..B..', '....DP..D.', '#..G##..#.'])); ok('level 7\'s exact count is reachable: a found room wins in exactly 6', six.won && six.length === l.steps.best, String(six.length)); }
     ok(`level ${l.id}'s win marks every row of its goal card met`, v && v.inRange && (l.require || []).every(id => v.reqs[id] === true), JSON.stringify(v && v.reqs));
   }

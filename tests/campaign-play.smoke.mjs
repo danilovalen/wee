@@ -334,6 +334,18 @@ try {
   // The robot's antenna tip is the one pink on its tile.
   const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 230 && d[i + 1] > 90 && d[i + 1] < 130 && d[i + 2] > 110 && d[i + 2] < 150) n++; return n; });
   check('the start is drawn as the robot (its antenna tip shows)', tip > 3, String(tip));
+  // Level 15's laser (registers 255, 256): placed firing right, a tap turns it, a hold removes it.
+  await nine.click('#campBack'); await nine.click('.campRow[data-level="15"]'); await nine.click('[data-tool="turret"]');
+  const gl = await nine.locator('#game').boundingBox(), tl = gl.width / 7;
+  const laserAt = () => nine.evaluate(() => { const e = window.wee.getLevel().entities.find(p => p.x === 3 && p.y === 3); return e ? e.kind + ':' + e.turret.dirs.join() : ''; });
+  await nine.mouse.click(gl.x + 3.5 * tl, gl.y + 3.5 * tl); const l1 = await laserAt();
+  await nine.mouse.click(gl.x + 3.5 * tl, gl.y + 3.5 * tl); await nine.waitForTimeout(700); const l2 = await laserAt();
+  await nine.mouse.move(gl.x + 3.5 * tl, gl.y + 3.5 * tl); await nine.mouse.down(); await nine.waitForTimeout(800); await nine.mouse.up(); const l3 = await laserAt();
+  check('a laser goes down firing right; a tap turns it; a hold removes it', l1 === 'turret:right' && l2 === 'turret:down' && l3 === '', JSON.stringify([l1, l2, l3]));
+  await nine.click('[data-tool="box"]'); await nine.mouse.click(gl.x + 2.5 * tl, gl.y + 2.5 * tl);
+  await nine.click('[data-tool="turret"]'); await nine.mouse.click(gl.x + 2.5 * tl, gl.y + 2.5 * tl);
+  const onBox = await nine.evaluate(() => window.wee.getLevel().entities.filter(p => p.x === 2 && p.y === 2).map(p => p.kind + (p.turret ? '+laser' : '')).join());
+  check('in a level a laser stands alone: placed on a box it takes the box\'s place, it does not ride it', onBox === 'turret+laser', onBox);
   // Colours (register 245): a level with two shows a row of dots; the pick colours what you place and the palette's pieces.
   await nine.goto('http://localhost:5217/');
   await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="11"]');

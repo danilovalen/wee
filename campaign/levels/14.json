@@ -1,0 +1,42 @@
+{
+ "name": "Level 14",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "toggle": [
+   1,
+   null
+  ],
+  "button": [
+   0,
+   null
+  ],
+  "door": [
+   2,
+   null
+  ],
+  "laser": [
+   1,
+   null
+  ]
+ },
+ "steps": {
+  "best": 8
+ },
+ "rules": [],
+ "require": [
+  "laserThroughTwoDoors",
+  "laserBlockedByDoor",
+  "throughOpenDoor"
+ ],
+ "small": [
+  6,
+  3
+ ]
+}

@@ -1,12 +1,15 @@
 // Known winning rooms per level, in the tests' legend (# block, t switch, D door, o button, B box,
-// P start, G goal; blue Q door, q button, T switch; ^>v< one-ways). The campaign tests prove each
+// P start, G goal; blue Q door, q button, T switch; ^>v< one-ways; n e s w a laser firing that way). The campaign tests prove each
 // one wins, and tools/levelSearch.mjs --seeded climbs from them (register 272).
 export const KNOWN = {
   small: { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
     5: ['...#....', '.....PG.', '..#.B...', '...#....', '....B...', '....#...'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['..P..', '...D.', '...BG', '...Bo'],
-    9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'], 11: ['...P', 'BBDq', 'o.Q#', '#..G'], 12: ['#P.#..', 'G>.>Bo'], 13: ['PB>..GD', '.......', '#t.....'] },
+    9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'], 11: ['...P', 'BBDq', 'o.Q#', '#..G'], 12: ['#P.#..', 'G>.>Bo'], 13: ['PB>..GD', '.......', '#t.....'],
+    14: ['tttt.s', 'D..tPD', 'G#.ttD'], 15: ['w...', '.^.B', 'PBB.', '.B.G', '.^.B', '..e>', 'eve.'] },
   optional: {
     4: ['PtttD.', '......', '......', '......', '.#.G..'],
+    // Found by tools/levelSearch.mjs --seeded (register 276, with boxes pushing boxes): 6 moves.
+    6: ['BB#DP.', '..#.B.', 'DBBGt.', '.DDDB.'],
     7: ['BP.B.o', '.BB#..', 'D.....', '.oG.#.'],
     8: ['.G.......', 'Do....B..', '...PD...#', '........D', '#........', '....D....'],
     9: ['G.<.', '##..', '..^#', 'Pv..', '....', '...#', '....', '.#..', '....'],
@@ -39,6 +42,9 @@ export const KNOWN = {
     // Built by hand and checked (2026-10-19): the closed door stops the box past the one-way; the
     // switch opens the door and turns the one-way; the robot comes through the door and pushes it back. 9 moves.
     13: ['PB>..GD', '.......', '#t.....'],
+    // Found by tools/levelSearch.mjs (2026-10-19, registers 255, 256): level 14 in 8 moves, level 15 in 6.
+    14: ['e.D...D', 'D...t..', 'P..tD.G', '.......'],
+    15: ['.#e^', '....', '.#G.', '.<.^', '.<w.', '.^.P', '...B', 'w...'],
   },
 };
 

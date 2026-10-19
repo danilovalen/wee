@@ -13,6 +13,8 @@ export const ELEMENTS = {
   toggle: { label: 'Switch', cell: 'toggle:red', kind: 'toggle:' },
   // Placed pointing right; a tap on one with its tool turns it. Any direction is the same element.
   gate: { label: 'One-way', cell: 'gate:right', kind: 'gate:' },
+  // A turret on its own, firing one way; a tap with its tool turns it (register 255).
+  laser: { label: 'Laser', piece: 'turret' },
 };
 const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind));
 // A level's colours (def.colours, red when it names none). A one-way takes one only in a level

@@ -24,7 +24,50 @@ export function stoppedPushes(room, moves) {
 const switches = room => room.cells.flatMap((c, i) => c.startsWith('toggle:') ? [i] : []);
 const boxes = room => room.entities.filter(e => e.kind === 'box').length;
 
+// Every laser beam at every tick of a path: its cells (the turret's own first) and the cell that stopped it.
+function beams(room, moves, see) {
+  replayPath(room, moves, s => { for (const b of s.beams || []) see(b, s); });
+}
+const cellOf = (room, at) => at && at[0] >= 0 && at[1] >= 0 && at[0] < room.w && at[1] < room.h ? room.cells[at[1] * room.w + at[0]] || '' : '';
+
 export const EXTRA_REQUIREMENTS = {
+  // Lasers (registers 255, 256).
+  laserThroughTwoDoors: {
+    text: 'A laser goes through two open doors at once.',
+    short: [{ el: 'laser' }, 'through 2 open', { el: 'door' }],
+    judge: (room, moves) => {
+      let ok = false;
+      beams(room, moves, b => { if (new Set(b.path.slice(1).filter(at => cellOf(room, at).startsWith('door:')).map(String)).size >= 2) ok = true; });
+      return ok;
+    },
+  },
+  laserBlockedByDoor: {
+    text: 'A closed door stops a laser.',
+    short: [{ el: 'laser' }, 'stopped by a closed', { el: 'door' }],
+    judge: (room, moves) => {
+      let ok = false;
+      beams(room, moves, b => { if (cellOf(room, b.stop).startsWith('door:')) ok = true; });
+      return ok;
+    },
+  },
+  laserThroughOneWay: {
+    text: 'A laser goes through a one-way.',
+    short: [{ el: 'laser' }, 'through a', { el: 'gate' }],
+    judge: (room, moves) => {
+      let ok = false;
+      beams(room, moves, b => { if (b.path.slice(1).some(at => cellOf(room, at).startsWith('gate:'))) ok = true; });
+      return ok;
+    },
+  },
+  laserBlockedByOneWay: {
+    text: 'A one-way stops a laser.',
+    short: [{ el: 'laser' }, 'stopped by a', { el: 'gate' }],
+    judge: (room, moves) => {
+      let ok = false;
+      beams(room, moves, b => { if (cellOf(room, b.stop).startsWith('gate:')) ok = true; });
+      return ok;
+    },
+  },
   twoTogglesOffAtEnd: {
     text: 'At least 2 switches are off when the robot reaches the goal.',
     short: ['2', { el: 'toggle' }, 'off at the end'],

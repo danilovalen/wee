@@ -74,6 +74,11 @@ export const ONE_WAY_REQUIREMENTS = {
     short: [{ el: 'start' }, 'through every', { el: 'gate' }],
     judge: (room, moves) => { const all = gates(room), l = oneWayLog(room, moves); return all.length > 0 && all.every(i => l.robotThrough.has(i)); },
   },
+  robotThroughOneWay: {
+    text: 'The robot goes through a one-way.',
+    short: [{ el: 'start' }, 'through a', { el: 'gate' }],
+    judge: (room, moves) => oneWayLog(room, moves).robotThrough.size > 0,
+  },
   robotHitsEveryOneWay: {
     text: 'The robot collides with every one-way.',
     short: [{ el: 'start' }, 'collides with every', { el: 'gate' }],

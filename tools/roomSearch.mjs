@@ -8,6 +8,8 @@ import { miss } from './searchScores.mjs';
 
 const CELL = { block: 'wall', toggle: 'toggle', door: 'door', button: 'button' };
 const TINTS = ['toggle', 'door', 'button', 'gate'];
+// A laser in the legend: n, e, s or w, the way it fires.
+const LASER = { up: 'n', right: 'e', down: 's', left: 'w' }, FROM_LASER = { n: 'up', e: 'right', s: 'down', w: 'left' };
 const DIRS = ['up', 'right', 'down', 'left'];
 const D4 = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 // Rooms up to 16 on a side, 120 tiles (register 272): long thin rooms, like his 6x11 level 5 win, need it.
@@ -27,6 +29,7 @@ export function searcher(def, seed = 1) {
       const col = cols.includes(c) ? c : cols[0];
       if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right') + (def.colours ? '@' + col : '');
       else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
+      else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, turret: { dirs: [d || 'right'], mode: 'input' } });
       else r.cells[y * g.w + x] = el === 'block' ? 'wall' : CELL[el] + ':' + col;
     }
     return r;
@@ -36,7 +39,7 @@ export function searcher(def, seed = 1) {
     for (let t = 0; t < 50; t++) { const x = Math.floor(rnd() * g.w), y = Math.floor(rnd() * g.h); if (!taken(g, x, y)) return [x, y]; }
     return null;
   }
-  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push([el, ...f, el === 'gate' ? pick(DIRS) : null, TINTS.includes(el) ? pick(cols) : null]); };
+  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push([el, ...f, el === 'gate' || el === 'laser' ? pick(DIRS) : null, TINTS.includes(el) ? pick(cols) : null]); };
   function random() {
     const w = 4 + Math.floor(rnd() * 5), h = 4 + Math.floor(rnd() * 5);
     const g = { w, h, start: { x: Math.floor(rnd() * w), y: Math.floor(rnd() * h) }, goal: null, items: [] };
@@ -65,7 +68,7 @@ export function searcher(def, seed = 1) {
   }
   function mutate(g0) {
     const g = structuredClone(g0), r = rnd(), els = Object.keys(def.palette);
-    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if (it[0] === 'gate' && rnd() < 0.5) it[3] = pick(DIRS); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(cols); }
+    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if ((it[0] === 'gate' || it[0] === 'laser') && rnd() < 0.5) it[3] = pick(DIRS); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(cols); }
     else if (r < 0.5) add(g, pick(els));
     else if (r < 0.65 && g.items.length) {
       const i = Math.floor(rnd() * g.items.length), [el] = g.items[i];
@@ -98,7 +101,8 @@ export function searcher(def, seed = 1) {
   const show = r => Array.from({ length: r.h }, (_, y) => Array.from({ length: r.w }, (_, x) => {
     const c = r.cells[y * r.w + x];
     if (r.start.x === x && r.start.y === y) return 'P';
-    if (r.entities.some(e => e.x === x && e.y === y)) return 'B';
+    const ent = r.entities.find(e => e.x === x && e.y === y);
+    if (ent) return ent.turret ? LASER[ent.turret.dirs[0]] : 'B';
     // Blue in the tests' legend: Q door, q button, T switch.
     const blue = /:blue$/.test(c);
     return c === 'wall' ? '#' : c.startsWith('gate:') ? { up: '^', right: '>', down: 'v', left: '<' }[c.slice(5).split('@')[0]] : c === 'goal' ? 'G' : c.startsWith('toggle') ? (blue ? 'T' : 't') : c.startsWith('door') ? (blue ? 'Q' : 'D') : c.startsWith('button') ? (blue ? 'q' : 'o') : '.';
@@ -111,6 +115,7 @@ export function searcher(def, seed = 1) {
       if (c === 'P') g.start = { x, y }; else if (c === 'G') g.goal = { x, y };
       else if (EL[c]) g.items.push([EL[c][0], x, y, null, EL[c][1] || null]);
       else if ('^>v<'.includes(c)) g.items.push(['gate', x, y, { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c], cols[0]]);
+      else if ('nesw'.includes(c)) g.items.push(['laser', x, y, FROM_LASER[c], null]);
     }));
     return g;
   }

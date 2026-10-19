@@ -159,7 +159,7 @@ export function syncPanel() {
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   // In a level the one-way says how it is turned and taken away (register 234); draft copy.
-  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + (S.camp && ui.tool === 'gate' ? ' (tap to rotate; hold to remove)' : '');
+  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + (S.camp && (ui.tool === 'gate' || ui.tool === 'turret') ? ' (tap to rotate; hold to remove)' : '');
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
@@ -212,6 +212,8 @@ function syncColours() {
   const ui = S.ui, cols = S.camp ? coloursOf(S.camp.def) : null, row = $('campColours');
   if (cols && !cols.includes(ui.colour)) ui.colour = cols[0];
   ui.gateColour = S.camp && S.camp.def.colours ? ui.colour : null;
+  // In a level a laser stands alone, fires one way and turns with its clock: no mounting, no aim list.
+  if (S.camp) { ui.mount = false; if (ui.aim.length !== 1) ui.aim = ['right']; ui.mode = 'input'; } else ui.mount = true;
   row.hidden = !cols || cols.length < 2;
   if (cols && row.dataset.cols !== cols.join()) {
     row.dataset.cols = cols.join();

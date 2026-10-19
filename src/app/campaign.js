@@ -14,7 +14,7 @@ import { buildMenuScene } from './menuScene.js';
 
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
-export const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle', gate: 'gate' };
+export const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle', gate: 'gate', laser: 'turret' };
 // Every level hands you Move, to carry anything placed (the start and goal too) elsewhere.
 const ALWAYS = ['move'];
 let A = null, boot = null, fitScene = null;

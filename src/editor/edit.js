@@ -66,6 +66,12 @@ export function turnGate(level, x, y) {
   level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',') + (col ? '@' + col : '');
 }
 
+// Turns a laser a quarter clockwise: the way it fires (register 255).
+export function turnLaser(level, x, y) {
+  const e = level.entities[pieceAt(level, x, y)];
+  if (e && e.turret) e.turret = { ...e.turret, dirs: e.turret.dirs.map(d => CLOCKWISE[(CLOCKWISE.indexOf(d) + 1) % 4]), start: undefined };
+}
+
 export function holds(level, x, y, tool) {
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
@@ -156,7 +162,7 @@ export function place(level, ui, x, y, how) {
     const dirs = CLOCKWISE.filter(d => ui.aim.includes(d));
     const turret = { dirs, mode: ui.mode, ...(dirs.includes(ui.start) && ui.start !== dirs[0] ? { start: ui.start } : {}) };
     const host = pi >= 0 ? level.entities[pi] : null;
-    if (host && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
+    if (host && ui.mount !== false && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {
       if (JSON.stringify(host.turret) === JSON.stringify(turret)) return out;
       host.turret = turret;
     } else {
