@@ -25,5 +25,8 @@
  "small": [
   3,
   5
+ ],
+ "optional": [
+  "oneWaysThreeWays"
  ]
 }

@@ -2,6 +2,7 @@
 // tick of its replay; and a path drawn on its room. All copy is draft.
 import { replayPath } from './robot.js';
 import { ONE_WAY_REQUIREMENTS } from './oneWay.js';
+import { EXTRA_REQUIREMENTS } from './extras.js';
 
 
 // What each move of a path did to each box: a push slides it at least one tile; a hit is a
@@ -164,6 +165,17 @@ Object.assign(REQUIREMENTS, {
     short: [{ el: 'box' }, 'pushed ×2, collided ×1'],
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2 && b.hits >= 1),
   },
+  // Level 5 (register 263): each box must do both, so a second box cannot share the work.
+  everyBoxPushedTwice: {
+    text: 'Every box is pushed in at least 2 moves.',
+    short: ['every', { el: 'box' }, 'pushed 2 times'],
+    judge: (room, moves) => { const b = boxMoves(room, moves); return b.length > 0 && b.every(x => x.pushes >= 2); },
+  },
+  everyBoxHitOnce: {
+    text: 'The robot collides with every box without moving it.',
+    short: [{ el: 'start' }, 'collides with every', { el: 'box' }],
+    judge: (room, moves) => { const b = boxMoves(room, moves); return b.length > 0 && b.every(x => x.hits >= 1); },
+  },
   everyToggleOffAtEnd: {
     text: 'Every switch is off when the robot reaches the goal.',
     short: ['every', { el: 'toggle' }, 'off at the end'],
@@ -207,7 +219,7 @@ Object.assign(REQUIREMENTS, {
       return ok && boxes.size > 0;
     },
   },
-}, ONE_WAY_REQUIREMENTS);
+}, ONE_WAY_REQUIREMENTS, EXTRA_REQUIREMENTS);
 
 // A path drawn on its room: where the robot is after each move, and each box's places in order.
 export function trailOf(room, moves) {

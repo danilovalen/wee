@@ -30,7 +30,7 @@
   "boxThroughOpenDoor"
  ],
  "optional": [
-  "boxCrushedByDoor"
+  "noBoxAtEnd"
  ],
  "small": [
   4,

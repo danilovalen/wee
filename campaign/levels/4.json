@@ -24,10 +24,13 @@
  "rules": [],
  "require": [
   "throughOpenDoor",
-  "everyToggleOffAtEnd"
+  "twoTogglesOffAtEnd"
  ],
  "small": [
   3,
   4
+ ],
+ "optional": [
+  "thirdToggleOnAtEnd"
  ]
 }

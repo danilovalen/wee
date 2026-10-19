@@ -199,12 +199,12 @@ const build = (def, rows) => {
 }
 { // level 4: two switches at least, through the door, every switch off at the end
   const d = level('4');
-  ok('level 4 needs two switches and a door', d.palette.toggle[0] === 2 && d.palette.door[0] === 1 && d.require.join() === 'throughOpenDoor,everyToggleOffAtEnd');
+  ok('level 4 needs two switches and a door', d.palette.toggle[0] === 2 && d.palette.door[0] === 1 && d.require.join() === 'throughOpenDoor,twoTogglesOffAtEnd' && d.optional.join() === 'thirdToggleOnAtEnd');
   ok('a one-switch room no longer fits level 4', placementErrors(d, build(d, ['#######', '#P.#..#', '#....##', '#...t.#', '#..#.##', '##...G#', '#######'].map((r, y) => y === 1 ? '#P.#D.#' : r))).some(e => /at least 2 switches/.test(e.msg)));
 }
 { // level 5: one box pushed in two moves and run into once without moving
   const d = level('5');
-  ok('level 5 has blocks and a box, nothing else', Object.keys(d.palette).join() === 'block,box' && d.palette.box[0] === 1 && d.require.join() === 'boxPushedTwiceHitOnce' && d.steps.best === 8 && d.steps.range === undefined);
+  ok('level 5 has blocks and a box, nothing else', Object.keys(d.palette).join() === 'block,box' && d.palette.box[0] === 1 && d.require.join() === 'everyBoxPushedTwice,everyBoxHitOnce' && d.optional.join() === 'boxHitsBox' && d.steps.best === 8 && d.steps.range === undefined);
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
   ok('a hit: the robot stops against a box that cannot move', req('boxPushedTwiceHitOnce', ['########', '#P.B..#', '#.....#', '########'], ['right', 'right']) === false);
   const one = ['#######', '#.....#', '#P..B.#', '#.....#', '#######'];
@@ -269,7 +269,7 @@ const build = (def, rows) => {
   ok('and a box left on a door that then closes has not crossed it', !req('boxCrossesOpenDoor', crush, ['up', 'left', 'down', 'right']));
   // His ruling (register 237): a box crushed in the doorway went into it, so the crush run wins level 8 and meets its optional goal.
   const l8 = LEVELS.find(l => l.id === '8'), crushWin = check(l8, Object.assign(off(crush), { clock: roomOf(l8).clock }));
-  ok('level 8: a box crushed in the doorway wins the level and meets the crush goal', crushWin.won && crushWin.optional.find(o => o.id === 'boxCrushedByDoor').met, JSON.stringify(crushWin.fail || crushWin.optional));
+  ok('level 8: a box crushed in the doorway wins the level and leaves no box (register 266)', crushWin.won && crushWin.optional.find(o => o.id === 'noBoxAtEnd').met, JSON.stringify(crushWin.fail || crushWin.optional));
 }
 { // one-ways: through is in along the arrow and out the far side; colliding is a slide stopped by
   // one from any direction it does not let through
@@ -295,6 +295,31 @@ const build = (def, rows) => {
   ok('robot through a one-way both ways: not met going one way', !req('robotThroughOneWayBothWays', ['#######', '#P.=..#', '#######'], ['right']));
   ok('a box through a one-way both ways: not met by one crossing', !req('boxThroughOneWayBothWays', ['########', '#PB.>..#', '########'], ['right']));
   ok('a box ends on a one-way: met when it stops on one', req('boxStuckOnOneWay', ['#######', '#PB.>#', '#######'].map(r => r.slice(0, 6)), ['right']));
+}
+{ // the extra goals of registers 262-269, each met and missed on a small room
+  const off = rows => { const r = room(rows); for (const k of Object.keys(r.powers)) r.powers[k] = false; return r; };
+  const req = (id, rows, moves) => REQUIREMENTS[id].judge(off(rows), moves);
+  ok('2 switches off at the end: met with two untouched', req('twoTogglesOffAtEnd', ['#######', '#P...##', '#t.t.##', '#######'], ['right']));
+  ok('2 switches off at the end: not met when one of two is on', !req('twoTogglesOffAtEnd', ['#######', '#Pt.t.#', '#######'], ['right']));
+  ok('a 3rd switch on at the end: met with three, one on', req('thirdToggleOnAtEnd', ['########', '#Pt....#', '#t.t...#', '########'], ['right']));
+  ok('a 3rd switch on at the end: not met with only two', !req('thirdToggleOnAtEnd', ['#######', '#Pt...#', '#.t...#', '#######'], ['right']));
+  ok('every box pushed 2 times: not met by one push', !req('everyBoxPushedTwice', ['#######', '#PB...#', '#######'], ['right']));
+  ok('the robot collides with every box: not met by a push', !req('everyBoxHitOnce', ['#######', '#PB...#', '#######'], ['right']));
+  // The old level 5 win: one of its three boxes is pushed twice and hit, the others are not (register 263).
+  const v5 = check(level('5'), build(level('5'), WIN5));
+  ok('every box, not one: the old three-box win of level 5 meets neither box row now', v5.reqs && v5.reqs.everyBoxPushedTwice === false && v5.reqs.everyBoxHitOnce === false, JSON.stringify(v5.reqs || v5.errors));
+  ok('a box collides with a box: met when a pushed box stops against another', req('boxHitsBox', ['#######', '#PB..B#', '#######'], ['right']));
+  ok('a box collides with a box: not met when the box ahead never moved', !req('boxHitsBox', ['#######', '#P..BB#', '#######'], ['right']));
+  ok('a box collides with a box: not met against a wall', !req('boxHitsBox', ['#######', '#PB...#', '#######'], ['right']));
+  ok('a box on a button at the end: met', req('boxOnButtonAtEnd', ['######', '#PB.o#', '######'], ['right']));
+  ok('a box on a button at the end: not met with no button under it', !req('boxOnButtonAtEnd', ['######', '#PB..#', '######'], ['right']));
+  ok('no box at the end: met when the door crushes the only box', req('noBoxAtEnd', ['.....', 'B..P.', '..D.D', '.....', 'o...G', 'D....'], ['up', 'left', 'down', 'right']));
+  ok('no box at the end: not met while a box is left', !req('noBoxAtEnd', ['#######', '#PB...#', '#######'], ['right']));
+  ok('one-ways pointing 3 ways: met by up, right and down', req('oneWaysThreeWays', ['#####', '#P^>#', '#v..#', '#####'], []));
+  ok('one-ways pointing 3 ways: not met by two ways', !req('oneWaysThreeWays', ['#####', '#P^>#', '#^..#', '#####'], []));
+  const doors = ['########', '#...#..#', '#PB.D..#', '#......#', '#..D...#', '########'];
+  ok('a box collides with 2 closed doors: met by two different doors', req('boxHitsTwoDoors', doors, ['right', 'up', 'right', 'down']));
+  ok('a box collides with 2 closed doors: not met by one', !req('boxHitsTwoDoors', doors, ['right']));
 }
 { // a level's colours (registers 241-245): pieces in other colours are not the level's, and a one-way
   // carries a colour only in a level that names its colours
@@ -323,9 +348,23 @@ const build = (def, rows) => {
       const w3 = check(l, build(l, ['.D.t#', '.....', '.....', '....D', '#G...', '...D#', '....P', '.....']));
       ok('level 3 has an optional goal: the robot collides with a closed door', l.optional.join() === 'hitsClosedDoor' && w3.won && w3.optional.find(o => o.id === 'hitsClosedDoor').met, JSON.stringify(w3.fail || w3.optional));
     }
-    if (l.id === '5') ok('mix: met when one run meets two optional goals', v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.id !== 'mix').every(o => o.met), JSON.stringify(v.optional));
+    if (l.id === '5') ok('mix: met when one run meets two optional goals', v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.id !== 'mix' && o.met).length >= 2, JSON.stringify(v.optional));
     if (l.id === '1') ok('mix: not met by one goal alone', !v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.met).length === 1, JSON.stringify(v.optional));
     ok(`level ${l.id}'s ${l.small.join('x')} goal is met by a win`, Array.isArray(l.small) && v.won && v.optional.find(o => o.id === 'small').met, JSON.stringify(v.fail || v.optional));
+  }
+}
+{ // every level's own optional goal can be met: a winning room that meets it, found by tools/levelSearch.mjs (registers 262-269)
+  const OPT = {
+    4: ['PtttD.', '......', '......', '......', '.#.G..'],
+    7: ['BP.B.o', '.BB#..', 'D.....', '.oG.#.'],
+    8: ['.G.......', 'Do....B..', '...PD...#', '........D', '#........', '....D....'],
+    9: ['G.<.', '##..', '..^#', 'Pv..', '....', '...#', '....', '.#..', '....'],
+    10: ['^.>..B...>', '..BB......', 'B.........', '#..>.#....', '.BP..B....', '.vG.......', '..v.......', '..........'],
+    11: ['P.QQ.', 'BB.q.', 'oBBQ.', '#DDB.', 'B..#.', '#.BG.', 'BQQ..', '.#...'],
+  };
+  for (const [id, rows] of Object.entries(OPT)) {
+    const l = level(id), v = check(l, build(l, rows)), goal = l.optional[0];
+    ok(`level ${id}'s optional ${goal} can be met by a win`, v.won && v.optional.find(o => o.id === goal).met, JSON.stringify(v.fail || v.errors || v.optional));
   }
 }
 { // every level can be won: one known room each (5x5 unless noted), found by search, so a rule change that
@@ -335,7 +374,8 @@ const build = (def, rows) => {
     2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
     3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],
     4: ['Pt.tD', '.#...', '.....', '###.#', '.#..G'],
-    5: WIN5,
+    // One box (register 263: every box must be pushed 2 times and hit once): 8 moves, 4x3.
+    5: ['....', '.B#G', '.P..'],
     6: ['P....', '....B', 'B..#t', 'D.#.#', '....G'],
     // His room (2026-10-18): won in 4, the box ends off the button.
     // His room (2026-10-18), the old level 8 that became 7: won in 5.

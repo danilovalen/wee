@@ -43,7 +43,7 @@ try {
   const box = await page.locator('#game').boundingBox(), lv = await page.evaluate(() => window.wee.getLevel());
   await page.mouse.move(box.x + 4.5 * box.width / lv.w, box.y + 1.5 * box.height / lv.h);
   await page.waitForTimeout(120);
-  check('hovering a tile names it and what the lenses know', /^Tile 4, 1: Empty floor .*a laser reaches here/.test(await page.textContent('#info')) && await page.locator('#keys').isHidden(), await page.textContent('#info'));
+  check('hovering a tile names it and what the lenses know', /^Tile 4, 1: Empty floor, .*a laser reaches here/.test(await page.textContent('#info')) && await page.locator('#keys').isHidden(), await page.textContent('#info'));
   const beam = await pixel(4, 1);
   check('and the beam\'s tiles turn red', beam[0] - beam[1] > floor[0] - floor[1] + 30, JSON.stringify([floor, beam]));
   await page.click('[data-tool=box]');

@@ -19,10 +19,14 @@
  },
  "rules": [],
  "require": [
-  "boxPushedTwiceHitOnce"
+  "everyBoxPushedTwice",
+  "everyBoxHitOnce"
  ],
  "small": [
   4,
   3
+ ],
+ "optional": [
+  "boxHitsBox"
  ]
 }

@@ -29,5 +29,8 @@
  "small": [
   6,
   3
+ ],
+ "optional": [
+  "boxStuckOnOneWay"
  ]
 }
