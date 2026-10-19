@@ -205,7 +205,7 @@ const build = (def, rows) => {
 }
 { // level 5: one box pushed in two moves and run into once without moving
   const d = level('5');
-  ok('level 5 has blocks and a box, nothing else', Object.keys(d.palette).join() === 'block,box' && d.palette.box[0] === 1 && d.require.join() === 'everyBoxPushedTwice,everyBoxHitOnce' && d.optional.join() === 'boxHitsBox' && d.steps.best === 8 && d.steps.range === undefined);
+  ok('level 5 has blocks and a box, nothing else', Object.keys(d.palette).join() === 'block,box' && d.palette.box[0] === 1 && d.require.join() === 'everyBoxPushedTwice,everyBoxHitOnce,boxHitsBox' && d.optional.length === 0 && d.steps.range === undefined);
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
   ok('a hit: the robot stops against a box that cannot move', req('boxPushedTwiceHitOnce', ['########', '#P.B..#', '#.....#', '########'], ['right', 'right']) === false);
   const one = ['#######', '#.....#', '#P..B.#', '#.....#', '#######'];
@@ -318,6 +318,8 @@ const build = (def, rows) => {
   // The old level 5 win: one of its three boxes is pushed twice and hit, the others are not (register 263).
   const v5 = check(level('5'), build(level('5'), WIN5));
   ok('every box, not one: the old three-box win of level 5 meets neither box row now', v5.reqs && v5.reqs.everyBoxPushedTwice === false && v5.reqs.everyBoxHitOnce === false, JSON.stringify(v5.reqs || v5.errors));
+  const trainMoves = boxMoves(off(['#######', '#PBB..#', '#######']), ['right']).map(x => x.pushes).join();
+  ok('in a train only the box the robot touches is pushed (register 278)', trainMoves === '1,0', trainMoves);
   ok('a box collides with a box: met when a pushed box stops against another', req('boxHitsBox', ['#######', '#PB..B#', '#######'], ['right']));
   ok('a box collides with a box: not met when the box ahead never moved', !req('boxHitsBox', ['#######', '#P..BB#', '#######'], ['right']));
   ok('a box collides with a box: not met against a wall', !req('boxHitsBox', ['#######', '#PB...#', '#######'], ['right']));
@@ -356,7 +358,7 @@ const build = (def, rows) => {
       const w3 = check(l, build(l, ['.D.t#', '.....', '.....', '....D', '#G...', '...D#', '....P', '.....']));
       ok('level 3 has an optional goal: the robot collides with a closed door', l.optional.join() === 'hitsClosedDoor' && w3.won && w3.optional.find(o => o.id === 'hitsClosedDoor').met, JSON.stringify(w3.fail || w3.optional));
     }
-    if (l.id === '5') ok('mix: met when one run meets two optional goals', v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.id !== 'mix' && o.met).length >= 2, JSON.stringify(v.optional));
+    if (l.id === '4') ok('mix: met when one run meets two optional goals', v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.id !== 'mix' && o.met).length >= 2, JSON.stringify(v.optional));
     if (l.id === '1') ok('mix: not met by one goal alone', !v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.met).length === 1, JSON.stringify(v.optional));
     ok(`level ${l.id}'s ${l.small.join('x')} goal is met by a win`, Array.isArray(l.small) && v.won && v.optional.find(o => o.id === 'small').met, JSON.stringify(v.fail || v.optional));
   }
@@ -375,7 +377,7 @@ const build = (def, rows) => {
   for (const l of LEVELS) {
     const v = WINS[l.id] && check(l, build(l, WINS[l.id]));
     ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
-    if (['8', '9', '10', '11', '12', '13'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
+    if (['5', '8', '9', '10', '11', '12', '13'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
     if (l.id === '7') { const six = check(l, build(l, ['#B.....o..', '........D.', '.#...#....', '.#B.#..B..', '....DP..D.', '#..G##..#.'])); ok('level 7\'s exact count is reachable: a found room wins in exactly 6', six.won && six.length === l.steps.best, String(six.length)); }
     ok(`level ${l.id}'s win marks every row of its goal card met`, v && v.inRange && (l.require || []).every(id => v.reqs[id] === true), JSON.stringify(v && v.reqs));
   }

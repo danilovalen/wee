@@ -474,6 +474,20 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('turning it keeps its colour', put.cells[8] === 'gate:up@blue', put.cells[8]);
 }
 
+{ // boxes push boxes (register 278): pushed, a row of boxes goes as a train; sliding on its own, a box hands its slide on
+  const tr = slide(createGame(room(['#######', '#PBB..#', '#######'])), 'right');
+  check('pushing a box into another pushes both, a train', at(tr.entities[0], 4, 1) && at(tr.entities[1], 5, 1) && at(tr.player, 3, 1), JSON.stringify([tr.entities, tr.player]));
+  const three = slide(createGame(room(['########', '#PBBB..#', '########'])), 'right');
+  check('a train of three moves as one', three.entities.map(e => e.x).join() === '4,5,6' && at(three.player, 3, 1), JSON.stringify(three.entities.map(e => e.x)));
+  const stuck = slide(createGame(room(['######', '#PBB#', '######'].map(r => r.slice(0, 5)))), 'right');
+  check('a train against a wall does not move', at(stuck.entities[0], 2, 1) && at(stuck.entities[1], 3, 1) && at(stuck.player, 1, 1), JSON.stringify(stuck.entities));
+  const l = room(['#######', '#.B.B##', '#####o#', '#####P#', '#######']);
+  l.cells[1 * 7 + 4] = 'gate:right@red'; l.cells[2 * 7 + 5] = 'button:red';
+  const g = createGame(l); slide(g, 'up'); for (let i = 0; i < 20; i++) step(g);
+  const [a, b] = [...g.entities].sort((p, q) => p.x - q.x);
+  check('a box thrown out stops at the box it meets, which slides on', at(a, 1, 1) && at(b, 3, 1), JSON.stringify(g.entities));
+}
+
 { // a one-way that turns launches what stands on it along its new arrow, until something stops it (register 253)
   const l = room(['#######', '##..B.#', '#o#####', '#P#####', '#######']);
   l.cells[1 * 7 + 4] = 'gate:right@red'; l.cells[2 * 7 + 1] = 'button:red';

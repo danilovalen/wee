@@ -103,6 +103,8 @@ export function slidePiece(s, e) {
   if (o) {
     if (meet(s, e, o)) { e.slide = null; return; }
     if (e.kind === 'heavy' && CRUSHABLE.includes(o.kind)) kill(s, o, 'squash');
+    // A box sliding on its own hands its slide to the box it meets, which slides on (register 278).
+    else if (LIGHT.includes(e.kind) && LIGHT.includes(o.kind) && !o.glue) { e.slide = null; o.slide = t.d; o.rush = false; return; }
     else { e.slide = null; return; }
   }
   const p = s.player, ridden = stuckTo(s) === e;

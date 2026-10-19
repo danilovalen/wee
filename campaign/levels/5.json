@@ -15,18 +15,17 @@
   ]
  },
  "steps": {
-  "best": 8
+  "best": 19
  },
  "rules": [],
  "require": [
   "everyBoxPushedTwice",
-  "everyBoxHitOnce"
+  "everyBoxHitOnce",
+  "boxHitsBox"
  ],
  "small": [
-  4,
-  3
+  8,
+  6
  ],
- "optional": [
-  "boxHitsBox"
- ]
+ "optional": []
 }

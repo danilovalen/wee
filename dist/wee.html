@@ -1538,6 +1538,8 @@ function slidePiece(s, e) {
   if (o) {
     if (meet(s, e, o)) { e.slide = null; return; }
     if (e.kind === 'heavy' && CRUSHABLE.includes(o.kind)) kill(s, o, 'squash');
+    // A box sliding on its own hands its slide to the box it meets, which slides on (register 278).
+    else if (LIGHT.includes(e.kind) && LIGHT.includes(o.kind) && !o.glue) { e.slide = null; o.slide = t.d; o.rush = false; return; }
     else { e.slide = null; return; }
   }
   const p = s.player, ridden = stuckTo(s) === e;
@@ -1594,6 +1596,20 @@ const { follow, lead, meet, partnerAt } = m5;
 
 
 
+// Boxes in a row ahead of the one you push go with it, a train (register 278): the front one moves on
+// if it can and each of the rest takes the tile ahead of it. Returns where the pushed box goes, or null.
+function train(s, e, dx, dy, d) {
+  const list = [e];
+  for (let o; (o = entAt(s, list.at(-1).x + dx, list.at(-1).y + dy, list.at(-1))) && LIGHT.includes(o.kind) && !o.glue && !e.glue;) list.push(o);
+  if (list.length < 2) return null;
+  const front = list.at(-1), go = pushTo(s, front.x, front.y, d, wades(front));
+  if (!go) return null;
+  const at = list.map(o => ({ x: o.x, y: o.y, d }));
+  land(s, front, go);
+  for (let i = list.length - 2; i >= 1; i--) land(s, list[i], at[i + 1]);
+  return at[1];
+}
+
 // One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
 function playerStep(s, d, diving) {
   const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming, diving);
@@ -1620,7 +1636,7 @@ function playerStep(s, d, diving) {
     } else if (LIGHT.includes(e.kind)) {
       // A box glued to another piece: the one ahead goes first, the one behind follows.
       const led = !!partnerAt(s, e, nx + dx, ny + dy) && lead(s, e, dx, dy);
-      if (!(b = pushTo(s, nx, ny, t.d, wades(e)))) { const o = entAt(s, nx + dx, ny + dy, e); if (o) meet(s, e, o); return 'blocked'; }
+      if (!(b = pushTo(s, nx, ny, t.d, wades(e)))) { const o = entAt(s, nx + dx, ny + dy, e); if (o && meet(s, e, o)) return 'blocked'; if (!(b = train(s, e, dx, dy, t.d))) return 'blocked'; }
       if (land(s, e, b)) { pushed = { id: e.id, d: b.d }; light(s, e); if (!led) follow(s, e, dx, dy); }
     } else return 'blocked';
   }
@@ -3743,7 +3759,7 @@ return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNE
 const m35 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"small":[3,4],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":8},"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce"],"small":[4,3],"optional":["boxHitsBox"]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[4,4],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"],"small":[4,5]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"small":[3,5],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"small":[6,3],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"small":[4,4],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"rules":[],"require":["robotThroughOneWayBothWays"],"small":[6,2],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"small":[7,3]}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"small":[3,4],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"small":[8,6],"optional":[]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[4,4],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"],"small":[4,5]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"small":[3,5],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"small":[6,3],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"small":[4,4],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"rules":[],"require":["robotThroughOneWayBothWays"],"small":[6,2],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"small":[7,3]}];
 return { LEVELS };
 })();
 // ---- src/campaign/robot.js
@@ -4058,22 +4074,24 @@ const { EXTRA_REQUIREMENTS } = m38;
 
 
 
-// What each move of a path did to each box: a push slides it at least one tile; a hit is a
-// slide of the robot (it moved) that ends against the box without moving it. Each move is replayed alone.
+// What each move of a path did to each box: a push is the robot moving the box it touches at least
+// one tile (a box carried along in a train is not pushed, register 278); a hit is a slide of the robot
+// (it moved) that ends against the box without moving it. Each move is replayed alone.
 function boxMoves(room, moves) {
-  const at = n => {
-    let dir = null;
-    const s = replayPath(room, moves.slice(0, n), t => { if (t.player.dir) dir = t.player.dir; });
-    return { s, dir, boxes: Object.fromEntries(s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.id, e.x + ',' + e.y])) };
+  const at = (n, from = 0) => {
+    let dir = null, tick = 0;
+    const touched = new Set();
+    const s = replayPath(room, moves.slice(0, n), t => { if (t.player.dir) dir = t.player.dir; if (tick++ >= from && t.player.pushing) touched.add(String(t.player.pushing.id)); });
+    return { s, dir, ticks: tick, touched, boxes: Object.fromEntries(s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.id, e.x + ',' + e.y])) };
   };
   const out = {};
   let was = at(0);
   for (let n = 1; n <= moves.length; n++) {
-    const now = at(n), [dx, dy] = STEP[now.dir] || [0, 0], p = now.s.player;
+    const now = at(n, was.ticks), [dx, dy] = STEP[now.dir] || [0, 0], p = now.s.player;
     const ahead = now.s.entities.find(e => !e.dead && e.kind === 'box' && e.x === p.x + dx && e.y === p.y + dy);
     for (const id of Object.keys(was.boxes)) {
       const b = out[id] ||= { pushes: 0, hits: 0 };
-      if (now.boxes[id] !== undefined && now.boxes[id] !== was.boxes[id]) b.pushes++;
+      if (now.boxes[id] !== undefined && now.boxes[id] !== was.boxes[id]) { if (now.touched.has(id)) b.pushes++; }
       else if (ahead && String(ahead.id) === id && (p.x !== was.s.player.x || p.y !== was.s.player.y)) b.hits++;
     }
     was = now;

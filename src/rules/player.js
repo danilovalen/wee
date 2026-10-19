@@ -7,6 +7,20 @@ import { burnFuses, hideCycle, worldStep } from './pieces.js';
 import { STICKS, drag, entered, stick, stuckTo, unstick } from './sticky.js';
 import { follow, lead, meet, partnerAt } from './glue.js';
 
+// Boxes in a row ahead of the one you push go with it, a train (register 278): the front one moves on
+// if it can and each of the rest takes the tile ahead of it. Returns where the pushed box goes, or null.
+function train(s, e, dx, dy, d) {
+  const list = [e];
+  for (let o; (o = entAt(s, list.at(-1).x + dx, list.at(-1).y + dy, list.at(-1))) && LIGHT.includes(o.kind) && !o.glue && !e.glue;) list.push(o);
+  if (list.length < 2) return null;
+  const front = list.at(-1), go = pushTo(s, front.x, front.y, d, wades(front));
+  if (!go) return null;
+  const at = list.map(o => ({ x: o.x, y: o.y, d }));
+  land(s, front, go);
+  for (let i = list.length - 2; i >= 1; i--) land(s, list[i], at[i + 1]);
+  return at[1];
+}
+
 // One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
 export function playerStep(s, d, diving) {
   const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming, diving);
@@ -33,7 +47,7 @@ export function playerStep(s, d, diving) {
     } else if (LIGHT.includes(e.kind)) {
       // A box glued to another piece: the one ahead goes first, the one behind follows.
       const led = !!partnerAt(s, e, nx + dx, ny + dy) && lead(s, e, dx, dy);
-      if (!(b = pushTo(s, nx, ny, t.d, wades(e)))) { const o = entAt(s, nx + dx, ny + dy, e); if (o) meet(s, e, o); return 'blocked'; }
+      if (!(b = pushTo(s, nx, ny, t.d, wades(e)))) { const o = entAt(s, nx + dx, ny + dy, e); if (o && meet(s, e, o)) return 'blocked'; if (!(b = train(s, e, dx, dy, t.d))) return 'blocked'; }
       if (land(s, e, b)) { pushed = { id: e.id, d: b.d }; light(s, e); if (!led) follow(s, e, dx, dy); }
     } else return 'blocked';
   }
