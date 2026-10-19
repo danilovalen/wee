@@ -317,8 +317,8 @@ const build = (def, rows) => {
     8: ['.#.B.', '#B..G', '.#.B.', '.#...', '.#DPD', '.D...', '....B', '..#..', '..Bo.'],
     // His room (2026-10-18): 8 moves, level 9's exact count.
     9: ['G....', '##..#', '..^#.', '.v...', '..#..', '....#', 'P#...'],
-    // Found by tools/levelSearch.mjs (2026-10-19): 8 moves, level 10's exact count.
-    10: ['P....', '.#>.B', '.#^..', '#G...', '>....', '..>.v', 'B.#..', '.....'],
+    // Found by tools/levelSearch.mjs (2026-10-19): 10 moves, level 10's exact count (his number, register 240).
+    10: ['#..#.#...', '...B..>..', '.....#.B.', 'B#...G...', '.#P.#..^.'],
   };
   ok('there is a known winning room for every level', LEVELS.every(l => WINS[l.id]), LEVELS.map(l => l.id).join());
   for (const l of LEVELS) {
