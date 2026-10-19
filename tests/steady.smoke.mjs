@@ -14,6 +14,19 @@ const WATCH = ['#game', '#campBrief', '#tools', '#campBack', '#campVerdict'];
 const ROOMS = [['1', ['P.#.#', '.....', '.###.', '.#...', '.#..G']], ['9', ['G....', '##..#', '..^#.', '.v...', '..#..', '....#', 'P#...']]];
 const errors = [];
 try {
+  // Every menu is a page that fills the window, never a box over the game (register 220).
+  for (const viewport of [{ width: 393, height: 852 }, { width: 1280, height: 800 }]) {
+    const page = await browser.newPage({ viewport });
+    page.on('pageerror', e => errors.push(e.message));
+    await page.goto('http://localhost:5219/');
+    const sizes = await page.evaluate(() => [...document.querySelectorAll('dialog')].map(d => {
+      for (const o of document.querySelectorAll('dialog[open]')) o.close();
+      d.showModal(); const r = d.getBoundingClientRect(), out = `${d.id} ${Math.round(r.x)},${Math.round(r.y)} ${Math.round(r.width)}x${Math.round(r.height)}`; d.close();
+      return { id: d.id, full: r.x === 0 && r.y === 0 && Math.round(r.width) === innerWidth && Math.round(r.height) === innerHeight, out };
+    }));
+    check(`${viewport.width}px: every menu fills the window`, sizes.length >= 8 && sizes.every(x => x.full), sizes.filter(x => !x.full).map(x => x.out).join(' | '));
+    await page.close();
+  }
   for (const [name, viewport, opts] of [['phone', { width: 393, height: 852 }, { hasTouch: true, isMobile: true }], ['desktop', { width: 1280, height: 800 }, {}]]) for (const [id, rows] of ROOMS) {
     const page = await browser.newPage({ viewport, ...opts });
     page.on('pageerror', e => errors.push(e.message));
@@ -51,6 +64,16 @@ try {
       const grip = page.locator('.plus[data-plus="top"]'), at = () => grip.boundingBox().then(b => [b.x, b.y].map(Math.round).join());
       const g = await grip.boundingBox(), rest = await at();
       await page.mouse.move(g.x + 12, g.y + 12); const hovered = await at(); await page.mouse.down(); const pressed = await at(); await page.mouse.up();
+      if (opts.hasTouch) {
+        // A tap the phone cancels (some viewers do) still adds a line (register 227).
+        const cdp = await page.context().newCDPSession(page), h0 = await page.evaluate(() => window.wee.getLevel().h);
+        const g2 = await grip.boundingBox(), pt = [{ x: g2.x + 12, y: g2.y + 12 }];
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt });
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+        await page.waitForTimeout(100);
+        const h1 = await page.evaluate(() => window.wee.getLevel().h);
+        check(`${name}: a cancelled tap on a + still adds a line`, h1 === h0 + 1, h0 + ' -> ' + h1);
+      }
       check(`${name}: a + stays where it was when hovered and pressed`, rest === hovered && rest === pressed, [rest, hovered, pressed].join(' / '));
     }
     await page.close();

@@ -27,12 +27,15 @@ try {
   await page.goto('http://localhost:5217/');
   check('the game opens on the main menu', await page.locator('#menuBox').isVisible());
   check('the menu offers Campaign and Sandbox', await page.locator('#menuCampaign').isVisible() && await page.locator('#menuSandbox').isVisible());
+  const look = sel => page.$eval(sel, b => { const c = getComputedStyle(b); return [c.backgroundColor, c.color, c.boxShadow, c.font, c.height].join(' | '); });
+  check('Sandbox looks exactly like Campaign (register 218)', await look('#menuCampaign') === await look('#menuSandbox'), await look('#menuSandbox'));
   // The menu is a screen of its own, not a box over the editor, with the robot playing behind it.
   const menuRect = await page.locator('#menuBox').boundingBox();
   check('the menu fills the whole window', menuRect && menuRect.x === 0 && menuRect.y === 0 && menuRect.width === 1280 && menuRect.height === 800, JSON.stringify(menuRect));
   const robotAt = () => page.$eval('.msRobot', e => getComputedStyle(e).transform).catch(() => null);
-  const r0 = await robotAt(); await page.waitForTimeout(600);
-  check('the robot behind the menu is moving', !!r0 && r0 !== await robotAt());
+  // Sampled over 3 s: the loop rests between slides, so two close samples can match.
+  const seenAt = new Set(); for (let i = 0; i < 10; i++) { seenAt.add(await robotAt()); await page.waitForTimeout(300); }
+  check('the robot behind the menu is moving', !seenAt.has(null) && seenAt.size > 2, [...seenAt].join(' / '));
   const deskLay = await page.evaluate(() => [document.querySelector('.msGoal').getBoundingClientRect().bottom, document.getElementById('menuCampaign').getBoundingClientRect().top]);
   check('on a wide window the goal still ends above the buttons', deskLay[0] < deskLay[1], JSON.stringify(deskLay));
   check('the room behind the menu has its laser, door and switch', await page.$$eval('.msBeam, .msDoor, .msSwitch', es => es.filter(e => e.getBoundingClientRect().width > 0).length) === 3);

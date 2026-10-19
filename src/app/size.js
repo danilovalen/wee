@@ -52,8 +52,9 @@ function grip(b, after) {
   const done = ev => {
     if (!from) return;
     // A press that never went half a tile is a tap, however much the finger drifted.
-    const k = from.far >= tile() / 2 ? n : 1; from = null; band.hidden = true;
-    if (!k || ev.type === 'pointercancel') return;
+    // A cancel that never went half a tile is a tap too: some phone viewers cancel a plain tap.
+    const tap = from.far < tile() / 2, k = tap ? 1 : n; from = null; band.hidden = true;
+    if (!k || (ev.type === 'pointercancel' && !tap)) return;
     const l = moveSide(S.level, side, k);
     if (!keeps(l)) return;
     const lost = S.level.start && !l.start;

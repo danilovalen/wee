@@ -494,7 +494,7 @@ const M = [
   ['src/level/format.js', "  if (!clear || l.entities.some(at)) return null;", "  if (l.entities.some(at)) return null;", 'size'],
   ['src/level/format.js', "const wall = bordered(l, side), k = wall ?", "const wall = false, k = wall ?", 'size'],
   ['src/level/format.js', "  if (!bordered(l, side)) return resizeSide(l, side, 1);", "  return resizeSide(l, side, 1);", 'size'],
-  ['src/app/size.js', "const k = from.far >= tile() / 2 ? n : 1;", "const k = 1;", 'browser'],
+  ['src/app/size.js', "const tap = from.far < tile() / 2, k = tap ? 1 : n;", "const tap = true, k = 1;", 'browser'],
   ['style.css', "  .grid button .lbl { display: none; }\n  .grid canvas { width: 28px; height: 28px; }", "  .grid canvas { width: 28px; height: 28px; }", 'phone'],
   ['src/app/fit.js', "    if (!wide) inside(el, sheet);\n", "", 'phone'],
   ['src/app/sheets.js', "  sheet.hidden = !name || name === 'build';", "  sheet.hidden = false;", 'phone'],
@@ -701,7 +701,7 @@ const M = [
   ['style.css', ".menu { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0;", ".menu { width: min(92vw, 520px); margin: auto;", 'campaign-play'],
   ['style.css', ".msRobot { animation-name: msRobot, msFade;", ".msRobot { animation-name: msFade;", 'campaign-play'],
   ['src', "  fitScene = buildMenuScene($('menuScene'));\n", "", 'campaign-play'],
-  ['src', "Math.min(w / 260, (h - 230 - top) / 364)", "Math.min(w / 260, (h - 120 - top) / 364)", 'campaign-play'],
+  ['src', "Math.min(w / 316, (h - 230 - top) / 364)", "Math.min(w / 316, (h - 120 - top) / 364)", 'campaign-play'],
   ['style.css', ".menu .menuLogo { display: block;", ".menu .menuLogo {", 'campaign-play'],
   ['src', "    if (there || isStart(to) || !UNDER(l.cells[ti])) return null;", "    if (there || !UNDER(l.cells[ti])) return null;", 'campaign'],
   ['src', "    if (l.cells[ti] || there || isStart(to)) return null;", "    if (there || isStart(to)) return null;", 'campaign'],
@@ -758,8 +758,8 @@ const M = [
   ['style.css', ".campMust { grid-template-columns: repeat(2, minmax(0, 1fr)); }", "", 'campaign-play'],
   ['src', "    const list = r.optional ? opt : must;", "    const list = must;", 'campaign-play'],
   ['style.css', ".sizeBand[hidden] { display: none; }", "", 'size-band'],
-  ['src/app/size.js', "const k = from.far >= tile() / 2 ? n : 1;", "const k = from.moved ? n : 1;", 'size-band'],
-  ['src/app/size.js', "const k = from.far >= tile() / 2 ? n : 1;", "const k = from.far >= 0 ? 1 : n;", 'size-band'],
+  ['src/app/size.js', "const tap = from.far < tile() / 2, k = tap ? 1 : n;", "const tap = !from.moved, k = tap ? 1 : n;", 'size-band'],
+  ['src/app/size.js', "const tap = from.far < tile() / 2, k = tap ? 1 : n;", "const tap = from.far >= 0, k = tap ? 1 : n;", 'size-band'],
   ['style.css', "box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px;", "box-sizing: border-box; margin: 0 0 6px;", 'steady'],
   ['style.css', "body.campaign #campVerdict[hidden] { visibility: hidden; }", "", 'campaign-play'],
   ['src', "    : S.mode === 'play' && !S.camp ? innerHeight", "    : S.mode === 'play' ? innerHeight", 'steady'],
@@ -767,6 +767,9 @@ const M = [
   ['src', "$('moves').textContent = m === 'play' ? 'Moves 0' : '\\u00a0';", "$('moves').textContent = m === 'play' ? 'Moves 0' : '';", 'steady'],
   ['style.css', "body.campaign.play #statusBar { display: revert; visibility: hidden; }", "body.campaign.play #statusBar { display: none; }", 'steady'],
   ['style.css', ".plus, .plus:hover:not(:disabled), .plus:active:not(:disabled) { transform: none; }", "", 'steady'],
+  ['index.html', '<button id="menuSandbox" type="button" class="primary">', '<button id="menuSandbox" type="button">', 'campaign-play'],
+  ['style.css', "#reportBox, dialog[id].rooms { --page: 720px; width: 100vw;", "#reportBox, dialog[id].rooms { --page: 720px;", 'steady'],
+  ['src', "if (!k || (ev.type === 'pointercancel' && !tap)) return;", "if (!k || ev.type === 'pointercancel') return;", 'steady'],
 ];
 
 let caught = 0, crashed = 0;
