@@ -942,6 +942,12 @@ const M = [
 
 ];
 
+// SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.
+if (process.env.SINCE) {
+  const added = spawnSync('git', ['diff', process.env.SINCE, '--', 'tools/mutate.mjs'], { encoding: 'utf8' }).stdout.split('\n').filter(l => l.startsWith('+  [')).map(l => l.slice(1));
+  const keep = new Function('return [' + added.join('\n') + ']')();
+  M.splice(0, M.length, ...keep);
+}
 let caught = 0, crashed = 0;
 // 'src' as the file means: whichever source file holds the text, which must be exactly one.
 const walk = d => readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(d + '/' + e.name) : /\.js$/.test(e.name) ? [d + '/' + e.name] : []);
