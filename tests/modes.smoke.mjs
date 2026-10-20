@@ -46,6 +46,7 @@ try {
   await page.fill('#makerName', 'Door test');
   await page.click('#makerBuild');
   check('Build it opens the level like a campaign one, with its palette and goal', await page.evaluate(() => document.body.classList.contains('campaign')) && await page.locator('#palette [data-tool="door"]').isVisible() && await page.locator('.campReqs li[data-req="throughOpenDoor"]').count() === 1);
+  check('in a made level the back button says Maker', (await page.locator('#campBack').textContent()) === 'Maker');
   await page.click('#campBack');
   check('Levels from a made level goes back to the maker, which lists it', await page.locator('#makerBox').isVisible() && (await page.$$eval('#madeList .campRow b', bs => bs.map(b => b.textContent).join())) === 'Door test');
   // One progress code carries the made levels and the Puzzles bests too (question 4).

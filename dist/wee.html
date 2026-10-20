@@ -4362,7 +4362,7 @@ function enterLevel(id) {
   if (!def) return false;
   const p = progress(), rec = p.levels[id];
   closeAll();
-  S.camp = { def, verdict: null }; S.trail = null;
+  S.camp = { def, verdict: null }; S.trail = null; $('campBack').textContent = def.made ? 'Maker' : 'Levels';
   const kept = rec && rec.room && unframe(rec.room);
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
   S.level = kept && placementErrors(def, kept).every(e => /^(Place at least|Place the |Nothing can start)/.test(e.msg)) ? kept : roomOf(def);
