@@ -1,7 +1,8 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
 import { scoreText, underLimits, colouringsOf, stuckText, nameOf, roomOf, placed, placementErrors, overLimits, check, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
-import { boxMoves, REQUIREMENTS, trailOf } from '../src/campaign/requirements.js';
+import { REQUIREMENTS, trailOf } from '../src/campaign/requirements.js';
+import { boxMoves } from '../src/campaign/pushes.js';
 import { allShortest, replayPath } from '../src/campaign/robot.js';
 import { LEVELS } from '../src/level/campaign.js';
 import * as LEVELDATA from '../src/level/campaign.js';
@@ -45,6 +46,8 @@ const build = (def, rows) => {
     if (c === 'P') r.start = { x, y };
     if (c === 'B') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
     if ('nesw'.includes(c)) r.entities.push({ kind: 'turret', x, y, turret: { dirs: [{ n: 'up', e: 'right', s: 'down', w: 'left' }[c]], mode: 'input' } });
+    // N E S W: a pushable laser (register 336).
+    if ('NESW'.includes(c)) r.entities.push({ kind: 'turret', x, y, crate: true, turret: { dirs: [{ N: 'up', E: 'right', S: 'down', W: 'left' }[c]], mode: 'input' } });
   }));
   if (!r.start) r.start = { x: 1, y: 1 };
   if (!goal) r.cells[(r.h - 2) * r.w + r.w - 2] = 'goal';
@@ -61,7 +64,7 @@ const build = (def, rows) => {
   const two = build(d, ['', '', '', '', '', 'G', 'G']);
   ok('only one goal', placementErrors(d, two).some(e => e.msg === 'Place only one goal.'));
   ok('a level has no powers', Object.values(r.powers).every(p => !p));
-  ok('levels are numbered from 1 in order', LEVELS.map(l => l.id).join() === LEVELS.map((_, i) => String(i + 1)).join());
+  ok('levels are numbered from 1 in order, a hidden one after them', LEVELS.filter(l => !l.hidden).map(l => l.id).join() === LEVELS.filter(l => !l.hidden).map((_, i) => String(i + 1)).join());
   ok('every level starts 7x7', LEVELS.every(l => l.size.join() === '7,7'));
   // Through an open door already turns every switch on: every switch and door in a level is red.
   ok('level 3 does not ask for what the open door already implies', level('3').require.join() === 'throughOpenDoor,doorClosedAtEnd', level('3').require.join());
@@ -355,6 +358,10 @@ const build = (def, rows) => {
   // Inverted doors, relays and the two-colour door (registers 311-313).
   ok('robot through an inverted door: met while it is open', req('robotThroughIdoor', ['#######', '#P.N.G#', '#######'], ['right']));
   ok('robot through an inverted door: not met with none', !req('robotThroughIdoor', ['#######', '#P...G#', '#######'], ['right']));
+  // Register 341: a pushable laser pushed in 3 moves.
+  ok('laser pushed ×3: met by three pushes', req('laserPushedThrice', ['###########', '#PK.g.g.g.#', '###########'], ['right', 'right', 'right']));
+  ok('laser pushed ×3: not met by two', !req('laserPushedThrice', ['###########', '#PK.g.g.g.#', '###########'], ['right', 'right']));
+  ok('laser pushed ×3: a box pushed three times is not a laser', !req('laserPushedThrice', ['###########', '#PB.g.g.g.#', '###########'], ['right', 'right', 'right']));
   // Register 329: every relay lit when the run ends.
   ok('every relay lit at the end: met while the beam reaches it', req('allRelaysLitAtEnd', ['#######', '#T.s..#', '#P...G#', '#######'], ['right']));
   ok('every relay lit at the end: not met when one relay is dark', !req('allRelaysLitAtEnd', ['#######', '#T.s..#', '#P..sG#', '#######'], ['right']));
@@ -408,9 +415,13 @@ const build = (def, rows) => {
   ok('a two-colour level takes red and blue doors and buttons', stray('11', 'door:blue') === 0 && stray('11', 'button:red') === 0 && stray('11', 'door:green') === 1);
   ok('a level naming red takes a red one-way and not a plain one', stray('12', 'gate:up@red') === 0 && stray('12', 'gate:up') === 1);
   ok('a level naming no colours takes a plain one-way and not a red one', stray('9', 'gate:up') === 0 && stray('9', 'gate:up@red') === 1);
-  // Two colours are offered per piece (register 316): level 19's door only in red+blue, its buttons and relays never.
-  ok('a level offering a piece only in two colours refuses it in one', stray('19', 'door:red|blue') === 0 && stray('19', 'door:red') === 1 && stray('19', 'door:blue') === 1);
-  ok('a piece the level does not offer in two colours is refused in two', stray('19', 'button:red|blue') === 1 && stray('19', 'sensor:red|blue') === 1 && stray('11', 'door:red|blue') === 1);
+  // Pushable lasers are offered per level (register 336): level 19's only pushable, level 14's only plain.
+  const strayLaser = (id, crate) => { const d = level(id), r = roomOf(d); r.entities.push({ kind: 'turret', x: 3, y: 3, ...(crate ? { crate: true } : {}), turret: { dirs: ['up'], mode: 'input' } }); return placed(d, r).stray.length; };
+  ok('a level offering a laser only pushable refuses a plain one', strayLaser('19', true) === 0 && strayLaser('19', false) === 1);
+  ok('a level not offering a pushable laser refuses one', strayLaser('14', false) === 0 && strayLaser('14', true) === 1);
+  // Two colours are offered per piece (register 316): the two-colour level's door only in red+blue, its buttons and relays never.
+  ok('a level offering a piece only in two colours refuses it in one', stray('twocolour', 'door:red|blue') === 0 && stray('twocolour', 'door:red') === 1 && stray('twocolour', 'door:blue') === 1);
+  ok('a piece the level does not offer in two colours is refused in two', stray('twocolour', 'button:red|blue') === 1 && stray('twocolour', 'sensor:red|blue') === 1 && stray('11', 'door:red|blue') === 1);
   const also = { ...level('11'), twoColour: { button: 'also' } }, r = roomOf(also);
   r.cells[10] = 'button:red|blue'; r.cells[12] = 'button:red';
   ok('a piece offered "also" comes in one colour or two', placed(also, r).stray.length === 0);
@@ -452,7 +463,7 @@ const build = (def, rows) => {
   for (const l of LEVELS) {
     const v = WINS[l.id] && check(l, build(l, WINS[l.id]));
     ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
-    if (['5', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
+    if (['5', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', 'twocolour'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
     if (l.id === '7') { const six = check(l, build(l, ['#B.....o..', '........D.', '.#...#....', '.#B.#..B..', '....DP..D.', '#..G##..#.'])); ok('level 7\'s exact count is reachable: a found room wins in exactly 6', six.won && six.length === l.steps.best, String(six.length)); }
     ok(`level ${l.id}'s win marks every row of its goal card met`, v && v.inRange && (l.require || []).every(id => v.reqs[id] === true), JSON.stringify(v && v.reqs));
   }

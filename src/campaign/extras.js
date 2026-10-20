@@ -1,6 +1,7 @@
 // More goals a level can ask of a path or of the room (registers 262-269). A box collides when the
 // robot's push ends with something stopping the box, and the box moved in that push. All copy is draft.
 import { replayPath } from './robot.js';
+import { boxMoves } from './pushes.js';
 
 const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
 const live = (s, x, y) => s.entities.find(e => !e.dead && e.kind === 'box' && e.x === x && e.y === y);
@@ -170,6 +171,12 @@ export const EXTRA_REQUIREMENTS = {
     text: 'Every laser relay lit at the end.',
     short: ['every', { el: 'relay' }, 'lit at the end'],
     judge: (room, moves) => { const end = replayPath(room, moves, () => {}), relays = room.cells.flatMap((c, i) => c.startsWith('sensor:') ? [i] : []); return relays.length > 0 && relays.every(i => end.lit.has(i)); },
+  },
+  // Register 341: one laser pushed in 3 moves (a push slides it at least one tile).
+  laserPushedThrice: {
+    text: 'One laser pushed in at least 3 moves.',
+    short: [{ el: 'laser' }, 'pushed ×3'],
+    judge: (room, moves) => boxMoves(room, moves, 'turret').some(b => b.pushes >= 3),
   },
   boxHitsIdoor: {
     text: 'Box collides with a closed inverted door.',

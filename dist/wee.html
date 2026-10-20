@@ -645,6 +645,11 @@ body.campaign #campReset { order: 6; margin-left: auto; }
   .campOpt { margin-top: 4px; padding-top: 4px; }
   .campVerdict { margin: 0 0 4px; }
 }
+
+/* The Pushable chip (register 336): at the end of the tools row; on, what you place is pushable. */
+body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 10px; border-radius: var(--r-pill); font-size: 13px; }
+#campCrate.on { background: #ffe2c2; box-shadow: inset 0 0 0 2px #c97326, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); color: #7a4512; }
+#campCrate:disabled { opacity: .5; }
 </style>
 </head>
 <body>
@@ -672,7 +677,7 @@ body.campaign #campReset { order: 6; margin-left: auto; }
     <aside id="tools">
       <h2>Build</h2>
       <p id="toolName" class="toolName"></p>
-      <div id="campTop" class="campTop camp-only"><div id="campTools" class="campTools" data-join></div><div id="campColours" class="campColours" role="radiogroup" aria-label="Colour" hidden></div></div>
+      <div id="campTop" class="campTop camp-only"><div id="campTools" class="campTools" data-join></div><div id="campColours" class="campColours" role="radiogroup" aria-label="Colour" hidden></div><button id="campCrate" type="button" class="crateChip" aria-pressed="false" title="What you place comes out pushable" hidden>Pushable</button></div>
       <div id="groups" class="tabs" role="tablist"></div>
       <div id="palette" class="grid" data-join></div>
       <div id="options">
@@ -1025,6 +1030,8 @@ const CLOCKWISE = ['up', 'right', 'down', 'left'];
 const KINDS = ['mover', 'enemy', 'strong', 'box', 'heavy', 'turret', 'bomb'];
 // Pushed like a light box: a box, and a bomb.
 const LIGHT = ['box', 'bomb'];
+// What a push moves: a light piece, or a pushable laser (register 336), which keeps its aim.
+const PUSHED = o => LIGHT.includes(o.kind) || !!o.crate;
 // A bomb goes off at the end of your second move after the push that lit it.
 const FUSE = 2;
 const MOVES = ['mover', 'enemy', 'strong'];
@@ -1051,7 +1058,7 @@ const BREAKS = ['strong', 'heavy'];
 const breaks = e => BREAKS.includes(e.kind);
 
 const DIR_OF = (dx, dy) => Object.keys(DIRS).find(k => DIRS[k][0] === dx && DIRS[k][1] === dy);
-return { TICK_MS, RT_PERIOD, HIDE_TICKS, LASER_TICKS, DIRS, OPPOSITE, COLOURS, CORNERS, EXIT_FACE, ENTRY_FACE, OUT, OPP, openFaces, turn, CLOCKWISE, KINDS, LIGHT, FUSE, MOVES, ENEMY, MODES, CARRIES_TURRET, POWERS, NEEDS, WADES, wades, HOLDS_DOOR, BREAKS, breaks, DIR_OF };
+return { TICK_MS, RT_PERIOD, HIDE_TICKS, LASER_TICKS, DIRS, OPPOSITE, COLOURS, CORNERS, EXIT_FACE, ENTRY_FACE, OUT, OPP, openFaces, turn, CLOCKWISE, KINDS, LIGHT, PUSHED, FUSE, MOVES, ENEMY, MODES, CARRIES_TURRET, POWERS, NEEDS, WADES, wades, HOLDS_DOOR, BREAKS, breaks, DIR_OF };
 })();
 // ---- src/level/format.js
 const m1 = (() => {
@@ -1314,6 +1321,7 @@ const startAim = t => Math.max(0, CLOCKWISE.filter(d => t.dirs.includes(d)).inde
 const freshPieces = list => list.map((e, i) => ({
   id: i + 1, kind: e.kind, x: e.x, y: e.y, ...(e.kind === 'bomb' ? { fuse: null } : {}),
   axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
+  ...(e.crate ? { crate: true } : {}),
   turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: startAim(e.turret) } : null,
 }));
 
@@ -1701,7 +1709,7 @@ return { partnerOf, meet, unglue, lead, follow, partnerAt, checkGlue };
 })();
 // ---- src/rules/pieces.js
 const m7 = (() => {
-const { DIRS, ENEMY, LIGHT, MOVES, breaks, wades } = m0;
+const { DIRS, ENEMY, MOVES, PUSHED, breaks, wades } = m0;
 const { turnTurrets } = m4;
 const { crushes, entAt, fling, inb, onGravel, playerAt, pushTo, stepTo } = m2;
 const { die, kill, land, light, refreshDoors, smash } = m3;
@@ -1773,7 +1781,7 @@ function moveMover(s, e, d) {
   const o = entAt(s, t.x, t.y, e);
   let b;
   if (o) {
-    if (LIGHT.includes(o.kind) && (b = pushTo(s, t.x, t.y, t.d, wades(o)))) { if (land(s, o, b)) { light(s, o); follow(s, o, mx, my); } }
+    if (PUSHED(o) && (b = pushTo(s, t.x, t.y, t.d, wades(o)))) { if (land(s, o, b)) { light(s, o); follow(s, o, mx, my); } }
     else { meet(s, e, o); blocked(); return; }
   }
   if (playerAt(s, t.x, t.y)) {
@@ -1812,7 +1820,7 @@ function slidePiece(s, e) {
     if (meet(s, e, o)) { e.slide = null; return; }
     if (e.kind === 'heavy' && CRUSHABLE.includes(o.kind)) kill(s, o, 'squash');
     // A box sliding on its own hands its slide to the box it meets, which slides on (register 278).
-    else if (LIGHT.includes(e.kind) && LIGHT.includes(o.kind) && !o.glue) { e.slide = null; o.slide = t.d; o.rush = false; return; }
+    else if (PUSHED(e) && PUSHED(o) && !o.glue) { e.slide = null; o.slide = t.d; o.rush = false; return; }
     else { e.slide = null; return; }
   }
   const p = s.player, ridden = stuckTo(s) === e;
@@ -1854,7 +1862,7 @@ return { burnFuses, hideCycle, rushOnce, launch, worldStep, patrolDir, moveMover
 })();
 // ---- src/rules/player.js
 const m8 = (() => {
-const { DIRS, ENEMY, HIDE_TICKS, LIGHT, OPPOSITE, POWERS, wades } = m0;
+const { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS, PUSHED, wades } = m0;
 const { inBeam, laser, turnTurrets } = m4;
 const { cellAt, crushes, entAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } = m2;
 const { die, kill, land, light, refreshDoors, respawn, smash } = m3;
@@ -1873,7 +1881,7 @@ const { follow, lead, meet, partnerAt } = m6;
 // if it can and each of the rest takes the tile ahead of it. Returns where the pushed box goes, or null.
 function train(s, e, dx, dy, d) {
   const list = [e];
-  for (let o; (o = entAt(s, list.at(-1).x + dx, list.at(-1).y + dy, list.at(-1))) && LIGHT.includes(o.kind) && !o.glue && !e.glue;) list.push(o);
+  for (let o; (o = entAt(s, list.at(-1).x + dx, list.at(-1).y + dy, list.at(-1))) && PUSHED(o) && !o.glue && !e.glue;) list.push(o);
   if (list.length < 2) return null;
   const front = list.at(-1), go = pushTo(s, front.x, front.y, d, wades(front));
   if (!go) return null;
@@ -1906,7 +1914,7 @@ function playerStep(s, d, diving) {
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (LIGHT.includes(e.kind)) {
+    } else if (PUSHED(e)) {
       // A box glued to another piece: the one ahead goes first, the one behind follows.
       const led = !!partnerAt(s, e, nx + dx, ny + dy) && lead(s, e, dx, dy);
       if (!(b = pushTo(s, nx, ny, t.d, wades(e)))) { const o = entAt(s, nx + dx, ny + dy, e); if (o && meet(s, e, o)) return 'blocked'; if (!(b = train(s, e, dx, dy, t.d))) return 'blocked'; }
@@ -2560,11 +2568,46 @@ const ONE_WAY_REQUIREMENTS = {
 };
 return { oneWayLog, ONE_WAY_REQUIREMENTS };
 })();
-// ---- src/campaign/extras.js
+// ---- src/campaign/pushes.js
 const m13 = (() => {
 const { replayPath } = m11;
+// How each move of a path pushed or hit each box, in its own module so both goal files can count it.
+
+const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
+// What each move of a path did to each box: a push is the robot moving the box it touches at least
+// one tile (a box carried along in a train is not pushed, register 278); a hit is a slide of the robot
+// (it moved) that ends against the box without moving it. Each move is replayed alone. kind counts
+// another piece the same way: a pushable laser is 'turret' (register 341).
+function boxMoves(room, moves, kind = 'box') {
+  const at = (n, from = 0) => {
+    let dir = null, tick = 0;
+    const touched = new Set();
+    const s = replayPath(room, moves.slice(0, n), t => { if (t.player.dir) dir = t.player.dir; if (tick++ >= from && t.player.pushing) touched.add(String(t.player.pushing.id)); });
+    return { s, dir, ticks: tick, touched, boxes: Object.fromEntries(s.entities.filter(e => !e.dead && e.kind === kind).map(e => [e.id, e.x + ',' + e.y])) };
+  };
+  const out = {};
+  let was = at(0);
+  for (let n = 1; n <= moves.length; n++) {
+    const now = at(n, was.ticks), [dx, dy] = STEP[now.dir] || [0, 0], p = now.s.player;
+    const ahead = now.s.entities.find(e => !e.dead && e.kind === kind && e.x === p.x + dx && e.y === p.y + dy);
+    for (const id of Object.keys(was.boxes)) {
+      const b = out[id] ||= { pushes: 0, hits: 0 };
+      if (now.boxes[id] !== undefined && now.boxes[id] !== was.boxes[id]) { if (now.touched.has(id)) b.pushes++; }
+      else if (ahead && String(ahead.id) === id && (p.x !== was.s.player.x || p.y !== was.s.player.y)) b.hits++;
+    }
+    was = now;
+  }
+  return Object.values(out);
+}
+return { boxMoves };
+})();
+// ---- src/campaign/extras.js
+const m14 = (() => {
+const { replayPath } = m11;
+const { boxMoves } = m13;
 // More goals a level can ask of a path or of the room (registers 262-269). A box collides when the
 // robot's push ends with something stopping the box, and the box moved in that push. All copy is draft.
+
 
 const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
 const live = (s, x, y) => s.entities.find(e => !e.dead && e.kind === 'box' && e.x === x && e.y === y);
@@ -2735,6 +2778,12 @@ const EXTRA_REQUIREMENTS = {
     short: ['every', { el: 'relay' }, 'lit at the end'],
     judge: (room, moves) => { const end = replayPath(room, moves, () => {}), relays = room.cells.flatMap((c, i) => c.startsWith('sensor:') ? [i] : []); return relays.length > 0 && relays.every(i => end.lit.has(i)); },
   },
+  // Register 341: one laser pushed in 3 moves (a push slides it at least one tile).
+  laserPushedThrice: {
+    text: 'One laser pushed in at least 3 moves.',
+    short: [{ el: 'laser' }, 'pushed ×3'],
+    judge: (room, moves) => boxMoves(room, moves, 'turret').some(b => b.pushes >= 3),
+  },
   boxHitsIdoor: {
     text: 'Box collides with a closed inverted door.',
     short: [{ el: 'box' }, 'collides with a closed', { el: 'idoor' }],
@@ -2771,39 +2820,17 @@ const EXTRA_REQUIREMENTS = {
 return { stoppedPushes, EXTRA_REQUIREMENTS };
 })();
 // ---- src/campaign/requirements.js
-const m14 = (() => {
+const m15 = (() => {
 const { replayPath } = m11;
 const { ONE_WAY_REQUIREMENTS } = m12;
-const { EXTRA_REQUIREMENTS } = m13;
+const { EXTRA_REQUIREMENTS } = m14;
+const { boxMoves } = m13;
 // What a level can require of the robot's shortest paths, each judged on one path from every
 // tick of its replay; and a path drawn on its room. All copy is draft.
 
 
 
-// What each move of a path did to each box: a push is the robot moving the box it touches at least
-// one tile (a box carried along in a train is not pushed, register 278); a hit is a slide of the robot
-// (it moved) that ends against the box without moving it. Each move is replayed alone.
-function boxMoves(room, moves) {
-  const at = (n, from = 0) => {
-    let dir = null, tick = 0;
-    const touched = new Set();
-    const s = replayPath(room, moves.slice(0, n), t => { if (t.player.dir) dir = t.player.dir; if (tick++ >= from && t.player.pushing) touched.add(String(t.player.pushing.id)); });
-    return { s, dir, ticks: tick, touched, boxes: Object.fromEntries(s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.id, e.x + ',' + e.y])) };
-  };
-  const out = {};
-  let was = at(0);
-  for (let n = 1; n <= moves.length; n++) {
-    const now = at(n, was.ticks), [dx, dy] = STEP[now.dir] || [0, 0], p = now.s.player;
-    const ahead = now.s.entities.find(e => !e.dead && e.kind === 'box' && e.x === p.x + dx && e.y === p.y + dy);
-    for (const id of Object.keys(was.boxes)) {
-      const b = out[id] ||= { pushes: 0, hits: 0 };
-      if (now.boxes[id] !== undefined && now.boxes[id] !== was.boxes[id]) { if (now.touched.has(id)) b.pushes++; }
-      else if (ahead && String(ahead.id) === id && (p.x !== was.s.player.x || p.y !== was.s.player.y)) b.hits++;
-    }
-    was = now;
-  }
-  return Object.values(out);
-}
+
 const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
 const REQUIREMENTS = {
   throughOpenDoor: {
@@ -3014,13 +3041,13 @@ function trailOf(room, moves) {
   }).filter(spots => spots.length > 1);
   return { robot, boxes };
 }
-return { boxMoves, REQUIREMENTS, trailOf };
+return { REQUIREMENTS, trailOf };
 })();
 // ---- src/campaign/rules.js
-const m15 = (() => {
+const m16 = (() => {
 const { emptyLevel } = m1;
 const { allShortest, whyStuck } = m11;
-const { REQUIREMENTS } = m14;
+const { REQUIREMENTS } = m15;
 // A campaign level: the room it gives you, what you may place and how many, and what the
 // robot's shortest paths must do. check() judges a room you built against it. All copy is draft.
 
@@ -3051,6 +3078,12 @@ function colouringsOf(def, el) {
   const one = coloursOf(def), two = def.twoColour && def.twoColour[el], pair = one.length > 1 ? one.slice(0, 2).join('|') : null;
   return !pair || !two ? one : two === 'only' ? [pair] : [...one, pair];
 }
+// Whether a piece may come pushable (true) or plain (false): plain only, unless def.pushable names it,
+// 'only' pushable or 'also' both (register 336).
+function pushingsOf(def, el) {
+  const p = def.pushable && def.pushable[el];
+  return p === 'only' ? [true] : p === 'also' ? [false, true] : [false];
+}
 const COLOURED = { button: 'button', door: 'door', toggle: 'toggle', idoor: 'idoor', sensor: 'relay' };
 function colourFits(def, c) {
   if (c.startsWith('gate:')) { const col = c.split('@')[1] || null; return def.colours ? colouringsOf(def, 'gate').includes(col) : col === null; }
@@ -3079,7 +3112,7 @@ function placed(def, room) {
   });
   for (const e of room.entities) {
     const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].piece === e.kind), i = e.y * room.w + e.x;
-    if (el) out[el].push(i); else stray.push(i);
+    if (el && pushingsOf(def, el).includes(!!e.crate)) out[el].push(i); else stray.push(i);
   }
   return { by: out, stray };
 }
@@ -3220,10 +3253,10 @@ function check(def, room, opts) {
   const optional = optionalResults(def, base);
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, coloursOf, colouringsOf, roomOf, placed, nameOf, START_ON, overLimits, underLimits, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, bestShort, optionalGoals, scoreText, optionalResults, areaOf, tilesOf, stuckText, check };
+return { ELEMENTS, coloursOf, colouringsOf, pushingsOf, roomOf, placed, nameOf, START_ON, overLimits, underLimits, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, bestShort, optionalGoals, scoreText, optionalResults, areaOf, tilesOf, stuckText, check };
 })();
 // ---- src/app/made.js
-const m16 = (() => {
+const m17 = (() => {
 
 // Levels made in the Level maker (register 302), kept in this browser. Their ids are 'm' + a number.
 const KEY = 'wee-made';
@@ -3237,14 +3270,14 @@ const onMakerBack = f => { back = f; };
 return { madeLevels, saveMade, madeLevel, backToMaker, onMakerBack };
 })();
 // ---- src/level/campaign.js
-const m17 = (() => {
+const m18 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"small":[3,3],"rules":[],"require":[],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,3],"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,4],"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"small":[8,6],"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"optional":[]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,5],"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"small":[4,4],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"small":[4,5],"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"small":[3,5],"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"small":[6,3],"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"small":[4,4],"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"small":[6,2],"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"small":[7,3],"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"small":[6,5],"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":7},"small":[5,4],"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["robotOnButton"]},{"id":"17","name":"Level 17","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"idoor":[1,1],"laser":[1,null]},"steps":{"best":7},"small":[5,6],"rules":[],"require":["laserStoppedByIdoor","robotThroughIdoor"]},{"id":"18","name":"Level 18","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"idoor":[1,null],"relay":[1,null],"laser":[1,null]},"steps":{"best":11},"small":[4,5],"rules":[],"require":["boxHitsIdoor","allRelaysLitAtEnd"]},{"id":"19","name":"Level 19","size":[7,7],"palette":{"block":[0,null],"button":[1,null],"door":[1,null],"relay":[1,null],"laser":[1,null]},"colours":["red","blue"],"twoColour":{"door":"only"},"steps":{"best":9},"small":[4,5],"rules":[],"require":[],"hidden":true}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"small":[3,3],"rules":[],"require":[],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,3],"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,4],"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"small":[8,6],"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"optional":[]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,5],"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"small":[4,4],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"small":[4,5],"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"small":[3,5],"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"small":[6,3],"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"small":[4,4],"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"small":[6,2],"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"small":[7,3],"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"small":[6,5],"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":7},"small":[5,4],"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["robotOnButton"]},{"id":"17","name":"Level 17","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"idoor":[1,1],"laser":[1,null]},"steps":{"best":7},"small":[5,6],"rules":[],"require":["laserStoppedByIdoor","robotThroughIdoor"]},{"id":"18","name":"Level 18","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"idoor":[1,null],"relay":[1,null],"laser":[1,null]},"steps":{"best":11},"small":[4,5],"rules":[],"require":["boxHitsIdoor","allRelaysLitAtEnd"]},{"id":"19","name":"Level 19","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[1,null],"door":[1,null]},"pushable":{"laser":"only"},"steps":{},"small":[5,6],"rules":[],"require":["laserPushedThrice","laserThroughADoor","throughOpenDoor"]},{"id":"twocolour","name":"Two colours","size":[7,7],"palette":{"block":[0,null],"button":[1,null],"door":[1,null],"relay":[1,null],"laser":[1,null]},"colours":["red","blue"],"twoColour":{"door":"only"},"steps":{"best":9},"small":[4,5],"rules":[],"require":[],"hidden":true}];
 return { LEVELS };
 })();
 // ---- src/editor/history.js
-const m18 = (() => {
+const m19 = (() => {
 
 // Undo and redo: a stack of whole levels, as text. An edit is recorded only when it
 // changed the level, so a click that did nothing leaves nothing to undo.
@@ -3275,9 +3308,9 @@ function redo(h, level) {
 return { LIMIT, newHistory, record, undo, redo };
 })();
 // ---- src/editor/state.js
-const m19 = (() => {
+const m20 = (() => {
 const { emptyLevel } = m1;
-const { newHistory } = m18;
+const { newHistory } = m19;
 // The one shared state of the page: the level being edited, the editor's settings and
 // the run being played. Every app file reads and writes it here, never in a copy.
 
@@ -3303,7 +3336,7 @@ const S = {
 return { starterLevel, S };
 })();
 // ---- src/app/dom.js
-const m20 = (() => {
+const m21 = (() => {
 
 // The page: the elements the app talks to, and what kind of screen it is on.
 const $ = id => document.getElementById(id);
@@ -3315,7 +3348,7 @@ const now = () => performance.now();
 return { $, canvas, g, touch, portrait, now };
 })();
 // ---- src/view/ink.js
-const m21 = (() => {
+const m22 = (() => {
 const { TICK_MS } = m0;
 // The palette, the tile size and the small drawing helpers every view file shares.
 
@@ -3356,8 +3389,8 @@ const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9, 5], [0
 return { AIM, T, INK, ease, lerp, frame, roundRect, LASER_MS, PUFF_MS, PUFFS };
 })();
 // ---- src/view/pieces.js
-const m22 = (() => {
-const { AIM, INK, T, frame, roundRect } = m21;
+const m23 = (() => {
+const { AIM, INK, T, frame, roundRect } = m22;
 // Pieces and the player.
 
 // The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
@@ -3425,8 +3458,11 @@ function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
     modeBadge(g, e.mode);
   } else if (e.kind === 'turret') {
+    // A pushable laser wears the box's brown border, its base cut to fit inside (registers 336-338).
+    if (e.crate) { g.save(); roundRect(g, 4, 4, T - 8, T - 8, 3); g.clip(); }
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+    if (e.crate) { g.restore(); g.strokeStyle = INK.boxEdge; g.lineWidth = 2; roundRect(g, 3, 3, T - 6, T - 6, 3.5); g.stroke(); }
   } else if (e.kind === 'box') {
     g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
     g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();
@@ -3524,8 +3560,8 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
 return { modeBadge, drawTurret, drawPiece, drawRobot, drawYou, drawPlayer };
 })();
 // ---- src/view/tiles.js
-const m23 = (() => {
-const { INK, T, frame, roundRect } = m21;
+const m24 = (() => {
+const { INK, T, frame, roundRect } = m22;
 const { gateOf, gateDirs } = m2;
 // Tiles: floor, walls and every cell type, drawn in place.
 
@@ -3731,9 +3767,9 @@ function drawFloor(g, w, h) {
 return { grit, drawCell, pressedAt, drawFloor };
 })();
 // ---- src/view/masses.js
-const m24 = (() => {
-const { INK, T, frame } = m21;
-const { grit } = m23;
+const m25 = (() => {
+const { INK, T, frame } = m22;
+const { grit } = m24;
 // Joined-up tiles: neighbouring walls, water, sticky puddles and death blocks are drawn as
 // one mass each. Every cell is four quarters; a quarter reads its two side neighbours and
 // the diagonal between them, so outer corners round, inner corners get a fillet and a
@@ -3850,8 +3886,8 @@ function drawMasses(g, cells, w, h, skip = () => false) {
 return { MASSES, RADIUS, joins, inMass, overlay, quarter, kindIn, drawMasses };
 })();
 // ---- src/view/lenses.js
-const m25 = (() => {
-const { INK, T } = m21;
+const m26 = (() => {
+const { INK, T } = m22;
 // The editor's lenses, drawn over the room. A heat lens recolours tiles under the pieces; dots,
 // lines and frames are marks on top. One lens per group, so nothing here paints over its own kind.
 
@@ -3928,13 +3964,13 @@ function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses } = {}
 return { drawHeat, drawLensMarks };
 })();
 // ---- src/view/scene.js
-const m26 = (() => {
+const m27 = (() => {
 const { DIRS } = m0;
-const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m21;
-const { drawPiece, drawPlayer } = m22;
-const { drawCell, drawFloor } = m23;
-const { drawMasses, inMass, overlay } = m24;
-const { drawHeat, drawLensMarks } = m25;
+const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m22;
+const { drawPiece, drawPlayer } = m23;
+const { drawCell, drawFloor } = m24;
+const { drawMasses, inMass, overlay } = m25;
+const { drawHeat, drawLensMarks } = m26;
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
 
@@ -4202,11 +4238,11 @@ function drawPlay(g, s, prev, alpha, fx, now) {
 return { drawEdit, drawPlay };
 })();
 // ---- src/app/icons.js
-const m27 = (() => {
+const m28 = (() => {
 const { emptyLevel } = m1;
-const { T, INK } = m21;
-const { drawPiece, drawRobot, drawYou } = m22;
-const { drawEdit } = m26;
+const { T, INK } = m22;
+const { drawPiece, drawRobot, drawYou } = m23;
+const { drawEdit } = m27;
 // A tool's icon, drawn the way the room draws the thing: the palette and the generator's
 // ingredients share it.
 
@@ -4214,7 +4250,7 @@ const { drawEdit } = m26;
 
 
 // gateColour: a one-way drawn in that colour; none, a plain one.
-function icon(tool, colour = 'red', gateColour = null) {
+function icon(tool, colour = 'red', gateColour = null, crate = false) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40; c.dataset.icon = tool;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
@@ -4242,7 +4278,7 @@ function icon(tool, colour = 'red', gateColour = null) {
   } else if (tool === 'start' || tool === 'robot') {
     // The campaign's goal rows name the robot, which plays them (register 323); a room's start is you.
     x.save(); x.translate(16, 16); x.scale(1.3, 1.3); (tool === 'robot' ? drawRobot : drawYou)(x); x.restore();
-  } else if (tool === 'turret') drawPiece(x, { kind: 'turret', turret: { dirs: ['up', 'right'], mode: 'input' } }, 0, 0);
+  } else if (tool === 'turret') drawPiece(x, { kind: 'turret', crate, turret: { dirs: ['up', 'right'], mode: 'input' } }, 0, 0);
   // Two ingredients that are a tool with a twist: a turret riding a box, a block that copies you.
   else if (tool === 'mounted') drawPiece(x, { kind: 'box', turret: { dirs: ['up'], mode: 'input' } }, 0, 0);
   else if (tool === 'follow') drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);
@@ -4252,9 +4288,9 @@ function icon(tool, colour = 'red', gateColour = null) {
 return { icon };
 })();
 // ---- src/app/debug.js
-const m28 = (() => {
-const { S } = m19;
-const { $ } = m20;
+const m29 = (() => {
+const { S } = m20;
+const { $ } = m21;
 // A report for a bug that only shows on a real device: the last taps and keys, and the
 // game's state the moment the player left a level, to copy from the menu and paste in chat.
 
@@ -4299,7 +4335,7 @@ function copyDebug() {
 return { noteLeaving, bindDebug, copyDebug };
 })();
 // ---- src/app/menuScene.js
-const m29 = (() => {
+const m30 = (() => {
 
 // The main menu's background: a small room the robot plays on a loop (the box blocks a laser, the
 // robot bumps the closed door, steps on the switch, goes through). Drawn in CSS, not the game's
@@ -4339,17 +4375,17 @@ function buildMenuScene(host) {
 return { buildMenuScene };
 })();
 // ---- src/app/campaign.js
-const m30 = (() => {
-const { LEVELS } = m17;
-const { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, scoreText } = m15;
-const { REQUIREMENTS, trailOf } = m14;
-const { newHistory } = m18;
-const { S, starterLevel } = m19;
-const { $, portrait, now } = m20;
-const { icon } = m27;
-const { noteLeaving, copyDebug } = m28;
-const { buildMenuScene } = m29;
-const { madeLevel, backToMaker } = m16;
+const m31 = (() => {
+const { LEVELS } = m18;
+const { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, scoreText } = m16;
+const { REQUIREMENTS, trailOf } = m15;
+const { newHistory } = m19;
+const { S, starterLevel } = m20;
+const { $, portrait, now } = m21;
+const { icon } = m28;
+const { noteLeaving, copyDebug } = m29;
+const { buildMenuScene } = m30;
+const { madeLevel, backToMaker } = m17;
 // The campaign: a main menu at launch, the level list, and building a level's room for the
 // robot. Run judges the room (src/campaign/rules.js) and the robot plays a shortest path:
 // the failing one when it fails. Progress and each level's room stay in this browser.
@@ -4649,12 +4685,12 @@ function buildCampaign(actions, sandbox) {
 return { TOOL, progress, migrate, write, unframe, toolsFor, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
 })();
 // ---- src/app/maker.js
-const m31 = (() => {
-const { ELEMENTS } = m15;
-const { REQUIREMENTS } = m14;
-const { madeLevels, saveMade, onMakerBack } = m16;
-const { enterLevel } = m30;
-const { $ } = m20;
+const m32 = (() => {
+const { ELEMENTS } = m16;
+const { REQUIREMENTS } = m15;
+const { madeLevels, saveMade, onMakerBack } = m17;
+const { enterLevel } = m31;
+const { $ } = m21;
 // The Level maker (register 302): pick the palette (in or out, a minimum, a maximum), the goals
 // and the optional goals; Build it opens it like a campaign level, judged by the robot.
 
@@ -4747,7 +4783,7 @@ function buildMaker() {
 return { openMaker, buildMaker };
 })();
 // ---- src/app/store.js
-const m32 = (() => {
+const m33 = (() => {
 
 // Where rooms are kept: on the server when the page is served by one, otherwise in this
 // browser's local storage. A room is a level file with id, name, note and updated added.
@@ -4803,7 +4839,7 @@ async function remove(id) {
 return { where, detect, newId, list, put, remove };
 })();
 // ---- src/level/room.js
-const m33 = (() => {
+const m34 = (() => {
 const { parseLevel } = m1;
 // A room is a level plus what the person wrote about it. These split and join the two.
 
@@ -4837,12 +4873,12 @@ function unpack(text) {
 return { META, splitRoom, joinRoom, stampOf, pack, unpack };
 })();
 // ---- src/app/puzzles.js
-const m34 = (() => {
-const { S } = m19;
-const { list } = m32;
-const { splitRoom } = m33;
+const m35 = (() => {
+const { S } = m20;
+const { list } = m33;
+const { splitRoom } = m34;
 const { allShortest } = m11;
-const { $ } = m20;
+const { $ } = m21;
 // Puzzles (register 302): rooms marked in the Sandbox, played by hand as the little circle.
 // Your best is kept; the fewest moves come from the robot's own search.
 
@@ -4895,12 +4931,12 @@ function buildPuzzles(actions) {
 return { bests, keep, openPuzzles, buildPuzzles };
 })();
 // ---- src/app/progressCode.js
-const m35 = (() => {
-const { progress, write, migrate, openList } = m30;
-const { list, put } = m32;
-const { bests, keep } = m34;
-const { madeLevels, saveMade } = m16;
-const { $ } = m20;
+const m36 = (() => {
+const { progress, write, migrate, openList } = m31;
+const { list, put } = m33;
+const { bests, keep } = m35;
+const { madeLevels, saveMade } = m17;
+const { $ } = m21;
 // Progress you carry yourself (register 254): a code to copy out and paste back, for a viewer that
 // keeps no storage, and a reset after a yes. One code carries everything (question 4): the campaign,
 // Sandbox rooms, Puzzles bests and made levels. A code from before holds the campaign alone.
@@ -4948,7 +4984,7 @@ function buildProgress() {
 return { toCode, fromCode, buildProgress };
 })();
 // ---- src/app/snow.js
-const m36 = (() => {
+const m37 = (() => {
 
 // Drift: snow behind the shell. It falls slowly, and when the player starts a slide it rushes the
 // same way for a moment, then settles. Still under reduced motion.
@@ -4991,7 +5027,7 @@ function startSnow(cv) {
 return { gust, windNow, startSnow };
 })();
 // ---- src/solve/lint.js
-const m37 = (() => {
+const m38 = (() => {
 const { DIRS } = m0;
 const { createGame, step } = m9;
 const { parseMove } = m10;
@@ -5043,7 +5079,7 @@ function brokenAt(level, moves) {
 return { lint, brokenAt };
 })();
 // ---- src/solve/design.js
-const m38 = (() => {
+const m39 = (() => {
 const { createGame } = m9;
 const { NEEDS, POWERS } = m0;
 const { search, successors, stateKey, unsearchable, MAX_STATES } = m10;
@@ -5153,9 +5189,9 @@ function* routes(level, max = MAX_STATES) {
 return { powerCheck, elementCheck, NOTES_MAX, idleElements, routes };
 })();
 // ---- src/app/well.js
-const m39 = (() => {
-const { S } = m19;
-const { $ } = m20;
+const m40 = (() => {
+const { S } = m20;
+const { $ } = m21;
 // The well: a fixed-height drawer under the room, with a tab for findings (warnings and
 // design notes) and one for lenses. It never pushes anything off the screen, it only takes
 // height from the room. All copy is draft.
@@ -5207,11 +5243,11 @@ function buildWell() {
 return { WELL, openWell, closeWell, syncWell, buildWell };
 })();
 // ---- src/app/design.js
-const m40 = (() => {
-const { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } = m38;
-const { S } = m19;
-const { $, now } = m20;
-const { syncWell } = m39;
+const m41 = (() => {
+const { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } = m39;
+const { S } = m20;
+const { $, now } = m21;
+const { syncWell } = m40;
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
 // how many shortest routes there are, and how many positions trap you. Runs a slice at a
 // time and stops when the room changes. All copy is draft.
@@ -5289,9 +5325,9 @@ function runDesign(par) {
 return { sliced, clearDesign, runDesign };
 })();
 // ---- src/app/enabled.js
-const m41 = (() => {
-const { S } = m19;
-const { $ } = m20;
+const m42 = (() => {
+const { S } = m20;
+const { $ } = m21;
 const { moveSide } = m1;
 const { stateKey } = m10;
 // A control that would do nothing right now is greyed out, never left to refuse a click.
@@ -5322,14 +5358,14 @@ function syncEnabled() {
 return { syncEnabled };
 })();
 // ---- src/app/check.js
-const m42 = (() => {
+const m43 = (() => {
 const { search, parseMove } = m10;
-const { lint, brokenAt } = m37;
-const { now } = m20;
-const { S } = m19;
-const { $ } = m20;
-const { runDesign, clearDesign } = m40;
-const { syncEnabled } = m41;
+const { lint, brokenAt } = m38;
+const { now } = m21;
+const { S } = m20;
+const { $ } = m21;
+const { runDesign, clearDesign } = m41;
+const { syncEnabled } = m42;
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
 
@@ -5453,14 +5489,14 @@ function syncLint() {
 return { checkText, runCheck, syncCheck, feedDemo, syncLint };
 })();
 // ---- src/level/templates.js
-const m43 = (() => {
+const m44 = (() => {
 
 // Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.
 const TEMPLATES = [{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Overshoot","level":{"format":"wee-level","version":1,"name":"Overshoot","w":7,"h":7,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","","","","","","wall","wall","","","wall","","","wall","wall","wall","goal","","","","wall","wall","wall","","","","wall","wall","wall","","","","","","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":2,"y":4},"entities":[{"kind":"box","x":4,"y":3,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"swim":false,"light":false},"clock":"tile"}},{"name":"Short fuse","level":{"format":"wee-level","version":1,"name":"Short fuse","w":8,"h":8,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","wall","","wall","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","wall","","crack","","wall","wall","wall","wall","wall","wall","goal","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"bomb","x":4,"y":4,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":true,"swim":false,"light":false,"armored":false},"clock":"tile"}}];
 return { TEMPLATES };
 })();
 // ---- src/level/code.js
-const m44 = (() => {
+const m45 = (() => {
 const { parseLevel } = m1;
 // A share code: the level as compressed, URL-safe text, so a room fits in a message or
 // a link (#room=<code>). Uses the platform's own deflate, in the page and in Node.
@@ -5491,8 +5527,8 @@ async function decodeRoom(code) {
 return { encodeRoom, decodeRoom };
 })();
 // ---- src/view/thumb.js
-const m45 = (() => {
-const { INK } = m21;
+const m46 = (() => {
+const { INK } = m22;
 // A room's thumbnail: one small square per tile in the tile's main colour, so a list of
 // many rooms costs little to draw. Returns a data URL.
 
@@ -5519,7 +5555,7 @@ function thumbURL(level) {
 return { thumbURL };
 })();
 // ---- src/solve/tags.js
-const m46 = (() => {
+const m47 = (() => {
 const { createGame, step } = m9;
 const { parseMove } = m10;
 // The mechanism index: what a room contains, and what its solution actually does.
@@ -5604,8 +5640,8 @@ function uses(level, moves) {
 return { MECHANISMS, LABEL, contains, uses };
 })();
 // ---- src/app/draft.js
-const m47 = (() => {
-const { S } = m19;
+const m48 = (() => {
+const { S } = m20;
 // Autosave: the room being edited, with its name and note, kept in this browser after
 // every change, so a closed tab or a phone that drops the page loses nothing. Saving the
 // room clears it; a reload with a draft newer than the saved room brings the draft back.
@@ -5637,12 +5673,12 @@ function flushDraft(dirty) { if (dirty && timer) { clearTimeout(timer); write();
 return { readDraft, clearDraft, noteChange, flushDraft };
 })();
 // ---- src/app/tilemenu.js
-const m48 = (() => {
-const { encodeRoom } = m44;
-const { splitRoom } = m33;
-const { S } = m19;
-const { put, remove, newId } = m32;
-const { $ } = m20;
+const m49 = (() => {
+const { encodeRoom } = m45;
+const { splitRoom } = m34;
+const { S } = m20;
+const { put, remove, newId } = m33;
+const { $ } = m21;
 // A saved room's own menu in the Library: Rename, Duplicate, Copy code and Delete, without
 // opening the room. Right-click, or hold on a touch screen.
 
@@ -5725,19 +5761,19 @@ function buildTileMenu(lib) {
 return { menuOn, buildTileMenu };
 })();
 // ---- src/app/rooms.js
-const m49 = (() => {
-const { TEMPLATES } = m43;
-const { encodeRoom, decodeRoom } = m44;
-const { splitRoom, joinRoom, stampOf, pack, unpack } = m33;
-const { starterLevel } = m19;
-const { newHistory } = m18;
-const { S } = m19;
-const { thumbURL } = m45;
-const { list, put, remove, where, newId, detect } = m32;
-const { contains, uses, MECHANISMS } = m46;
-const { $ } = m20;
-const { readDraft, noteChange, flushDraft, clearDraft } = m47;
-const { menuOn, buildTileMenu } = m48;
+const m50 = (() => {
+const { TEMPLATES } = m44;
+const { encodeRoom, decodeRoom } = m45;
+const { splitRoom, joinRoom, stampOf, pack, unpack } = m34;
+const { starterLevel } = m20;
+const { newHistory } = m19;
+const { S } = m20;
+const { thumbURL } = m46;
+const { list, put, remove, where, newId, detect } = m33;
+const { contains, uses, MECHANISMS } = m47;
+const { $ } = m21;
+const { readDraft, noteChange, flushDraft, clearDraft } = m48;
+const { menuOn, buildTileMenu } = m49;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
 
@@ -6022,13 +6058,13 @@ async function bootRooms() {
 return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, fillCurrent, say, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m50 = (() => {
-const { record, undo, redo } = m18;
-const { S } = m19;
-const { $ } = m20;
-const { syncCheck, syncLint } = m42;
-const { syncRoomsButton, followUndo } = m49;
-const { syncEnabled } = m41;
+const m51 = (() => {
+const { record, undo, redo } = m19;
+const { S } = m20;
+const { $ } = m21;
+const { syncCheck, syncLint } = m43;
+const { syncRoomsButton, followUndo } = m50;
+const { syncEnabled } = m42;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -6069,11 +6105,11 @@ function step(back, after) {
 return { syncUndo, begin, end, change, step };
 })();
 // ---- src/app/size.js
-const m51 = (() => {
-const { $, now } = m20;
-const { S } = m19;
+const m52 = (() => {
+const { $, now } = m21;
+const { S } = m20;
 const { moveSide } = m1;
-const { change } = m50;
+const { change } = m51;
 // The room's size: a + and a − for each side add or cut a row or a column there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
 
@@ -6139,11 +6175,11 @@ function buildSize({ after }) {
 return { syncSize, closeSize, buildSize };
 })();
 // ---- src/app/fit.js
-const m52 = (() => {
-const { T } = m21;
-const { S } = m19;
-const { $, canvas, g } = m20;
-const { syncSize } = m51;
+const m53 = (() => {
+const { T } = m22;
+const { S } = m20;
+const { $, canvas, g } = m21;
+const { syncSize } = m52;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 
 
@@ -6215,7 +6251,7 @@ function watchStage() {
 return { fit, watchStage };
 })();
 // ---- src/editor/palette.js
-const m53 = (() => {
+const m54 = (() => {
 
 // The palette: every tool, its group and label, and the words the editor uses for
 // powers, colours, clocks and directions. Draft copy throughout.
@@ -6272,7 +6308,7 @@ const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'b
 return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/solve/lenses.js
-const m54 = (() => {
+const m55 = (() => {
 const { createGame } = m9;
 const { computeBeams } = m4;
 const { successors, stateKey, unsearchable, MAX_STATES } = m10;
@@ -6357,15 +6393,15 @@ function* lensData(level, max = MAX_STATES) {
 return { lensData };
 })();
 // ---- src/app/lenses.js
-const m55 = (() => {
+const m56 = (() => {
 const { reach } = m10;
-const { routes } = m38;
-const { lensData } = m54;
-const { INK } = m21;
-const { S } = m19;
-const { $ } = m20;
-const { sliced } = m40;
-const { WELL, closeWell } = m39;
+const { routes } = m39;
+const { lensData } = m55;
+const { INK } = m22;
+const { S } = m20;
+const { $ } = m21;
+const { sliced } = m41;
+const { WELL, closeWell } = m40;
 // Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
 // you pick one in that group. Data comes from searches run a slice at a time, again whenever
@@ -6556,9 +6592,9 @@ function buildLenses() {
 return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
 // ---- src/editor/edit.js
-const m56 = (() => {
+const m57 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
-const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m53;
+const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m54;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -6731,7 +6767,7 @@ function place(level, ui, x, y, how) {
     } else {
       removePiece();
       if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
-      level.entities.push({ kind: 'turret', x, y, turret });
+      level.entities.push({ kind: 'turret', x, y, ...(ui.crate ? { crate: true } : {}), turret });
     }
   } else {
     if (isStart) return out;
@@ -6748,12 +6784,12 @@ function place(level, ui, x, y, how) {
 return { moveAt, swapAt, turnGate, turnLaser, holds, describe, place };
 })();
 // ---- src/app/chips.js
-const m57 = (() => {
-const { describe } = m56;
-const { S } = m19;
-const { INK } = m21;
-const { $, touch } = m20;
-const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m55;
+const m58 = (() => {
+const { describe } = m57;
+const { S } = m20;
+const { INK } = m22;
+const { $, touch } = m21;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m56;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
@@ -6815,11 +6851,11 @@ function syncInfo() {
 return { buildChips, syncChips };
 })();
 // ---- src/app/reset.js
-const m58 = (() => {
-const { S } = m19;
-const { roomOf } = m15;
-const { $ } = m20;
-const { change } = m50;
+const m59 = (() => {
+const { S } = m20;
+const { roomOf } = m16;
+const { $ } = m21;
+const { change } = m51;
 // Reset: the room goes back to the level's start, after a yes (register 291). One undo step.
 
 
@@ -6834,9 +6870,9 @@ function buildReset(after) {
 return { buildReset };
 })();
 // ---- src/app/sheets.js
-const m59 = (() => {
-const { $ } = m20;
-const { closeWell } = m39;
+const m60 = (() => {
+const { $ } = m21;
+const { closeWell } = m40;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
 // Rooms opens the rooms list. One sheet at a time; Build, Escape or play closes it.
 
@@ -6862,9 +6898,9 @@ function buildSheets() {
 return { openSheet, buildSheets };
 })();
 // ---- src/app/keys.js
-const m60 = (() => {
-const { TOOLS } = m53;
-const { $ } = m20;
+const m61 = (() => {
+const { TOOLS } = m54;
+const { $ } = m21;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
 // every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
 
@@ -6915,7 +6951,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m61 = (() => {
+const m62 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -6980,11 +7016,11 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m62 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m61;
-const { S } = m19;
-const { change } = m50;
-const { $ } = m20;
+const m63 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m62;
+const { S } = m20;
+const { change } = m51;
+const { $ } = m21;
 // The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
 // it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
 // undo step each.
@@ -7104,7 +7140,7 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/join.js
-const m63 = (() => {
+const m64 = (() => {
 
 // A strip of buttons reads as one object (register 322): square seams inside, round only at its two
 // ends. Which buttons are the ends depends on what shows, so they are marked again on every sync.
@@ -7121,28 +7157,28 @@ function joinEnds() {
 return { joinEnds };
 })();
 // ---- src/app/panels.js
-const m64 = (() => {
+const m65 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m1;
-const { INK } = m21;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m53;
-const { toolsFor, syncBrief, TOOL } = m30;
-const { coloursOf, colouringsOf } = m15;
-const { S } = m19;
-const { $, canvas, touch } = m20;
-const { change, step: undoStep, syncUndo } = m50;
-const { runCheck, syncCheck, syncLint } = m42;
-const { buildLenses, syncLenses } = m55;
-const { buildWell, openWell } = m39;
-const { buildChips } = m57;
-const { buildReset } = m58;
-const { buildSize } = m51;
-const { buildSheets } = m59;
-const { buildKeys } = m60;
-const { syncRoomsButton } = m49;
-const { buildSelect, syncSelect } = m62;
-const { icon } = m27;
-const { joinEnds } = m63;
+const { INK } = m22;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m54;
+const { toolsFor, syncBrief, TOOL } = m31;
+const { coloursOf, colouringsOf, pushingsOf } = m16;
+const { S } = m20;
+const { $, canvas, touch } = m21;
+const { change, step: undoStep, syncUndo } = m51;
+const { runCheck, syncCheck, syncLint } = m43;
+const { buildLenses, syncLenses } = m56;
+const { buildWell, openWell } = m40;
+const { buildChips } = m58;
+const { buildReset } = m59;
+const { buildSize } = m52;
+const { buildSheets } = m60;
+const { buildKeys } = m61;
+const { syncRoomsButton } = m50;
+const { buildSelect, syncSelect } = m63;
+const { icon } = m28;
+const { joinEnds } = m64;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -7389,6 +7425,16 @@ function syncColours() {
   }
   // A colour the chosen tool cannot take is greyed: level 19's door comes only in red+blue.
   row.querySelectorAll('[data-camp-colour]').forEach(b => { const on = b.dataset.campColour === ui.colour; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); b.disabled = !!fits && !fits.includes(b.dataset.campColour); });
+  // The Pushable chip (register 336) shows where the level offers a pushable piece; the chosen tool
+  // decides whether it may be on, off, or either.
+  const chip = $('campCrate'), def = S.camp && S.camp.def, offers = el => S.simple ? (el === 'laser' ? [false, true] : [false]) : def && def.palette[el] ? pushingsOf(def, el) : [false];
+  const crateFits = offers(ELEMENT_OF[ui.tool]);
+  chip.hidden = !(S.simple || (def && Object.keys(def.palette).some(k => pushingsOf(def, k).includes(true))));
+  if (!crateFits.includes(!!ui.crate)) ui.crate = crateFits[0];
+  chip.disabled = crateFits.length < 2; chip.classList.toggle('on', !!ui.crate); chip.setAttribute('aria-pressed', String(!!ui.crate));
+  chip.onclick ||= () => { S.ui.crate = !S.ui.crate; syncPanel(); };
+  const laserFits = offers('laser'), crateIcon = laserFits.length === 1 ? laserFits[0] : !!ui.crate, tb = document.querySelector('#palette [data-tool="turret"] canvas');
+  if (tb && tb.dataset.crate !== String(crateIcon)) { const c = icon('turret', 'red', null, crateIcon); c.dataset.crate = String(crateIcon); tb.replaceWith(c); }
   // Each tool is drawn in the chosen colour, or in its own first one when it cannot take that.
   const own = id => { const el = ELEMENT_OF[id], c = S.camp && el && S.camp.def.palette[el] ? colouringsOf(S.camp.def, el) : null; return c && !c.includes(ui.colour) ? c[0] : ui.colour; };
   const key = TINTED.map(own).join() + '|' + ui.gateColour;
@@ -7402,11 +7448,11 @@ function syncColours() {
 return { keysText, buildPanels, syncPanel, pairInk };
 })();
 // ---- src/app/campaignMove.js
-const m65 = (() => {
-const { placementErrors } = m15;
-const { place, moveAt, swapAt } = m56;
-const { S } = m19;
-const { $, now } = m20;
+const m66 = (() => {
+const { placementErrors } = m16;
+const { place, moveAt, swapAt } = m57;
+const { S } = m20;
+const { $, now } = m21;
 // Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
 
 
@@ -7466,10 +7512,10 @@ function say(x, y, why, ms = 1500) {
 return { moveIn, refusal, allows, moveRefusal, refuse, say };
 })();
 // ---- src/app/stuck.js
-const m66 = (() => {
+const m67 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m10;
-const { S } = m19;
-const { $ } = m20;
+const { S } = m20;
+const { $ } = m21;
 // While you play: once everything has come to rest, a search in the background asks whether
 // the goal can still be reached, and says so when it cannot. All copy is draft.
 
@@ -7501,27 +7547,27 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m67 = (() => {
-const { frame: look } = m21;
+const m68 = (() => {
+const { frame: look } = m22;
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m9;
 const { aimKey } = m8;
-const { drawEdit, drawPlay } = m26;
-const { S } = m19;
-const { $, g, now } = m20;
-const { openSheet } = m59;
-const { syncPanel, keysText } = m64;
-const { feedDemo } = m42;
-const { selectOverlay } = m62;
-const { moveRefusal } = m65;
-const { watchStuck, resetStuck } = m66;
-const { lensMarks, lensBusy } = m55;
-const { syncWell } = m39;
-const { syncChips } = m57;
-const { gust } = m36;
+const { drawEdit, drawPlay } = m27;
+const { S } = m20;
+const { $, g, now } = m21;
+const { openSheet } = m60;
+const { syncPanel, keysText } = m65;
+const { feedDemo } = m43;
+const { selectOverlay } = m63;
+const { moveRefusal } = m66;
+const { watchStuck, resetStuck } = m67;
+const { lensMarks, lensBusy } = m56;
+const { syncWell } = m40;
+const { syncChips } = m58;
+const { gust } = m37;
 const { stateKey } = m10;
 const { respawn } = m3;
-const { syncEnabled } = m41;
+const { syncEnabled } = m42;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
 
@@ -7671,20 +7717,20 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m68 = (() => {
-const { describe, holds, place, turnGate, turnLaser } = m56;
-const { S } = m19;
-const { $, canvas, touch, now } = m20;
-const { setMode, aim } = m67;
-const { begin, end, change, step: undoStep } = m50;
-const { save } = m49;
-const { selectDown, selectMove, selectUp, selectKey } = m62;
-const { LENS_GROUPS, cycleLens, lensesOff } = m55;
-const { syncPanel } = m64;
-const { fit } = m52;
-const { toolForKey, bareKey, showKeys } = m60;
-const { TOOLS } = m53;
-const { refusal, moveRefusal, moveIn, refuse } = m65;
+const m69 = (() => {
+const { describe, holds, place, turnGate, turnLaser } = m57;
+const { S } = m20;
+const { $, canvas, touch, now } = m21;
+const { setMode, aim } = m68;
+const { begin, end, change, step: undoStep } = m51;
+const { save } = m50;
+const { selectDown, selectMove, selectUp, selectKey } = m63;
+const { LENS_GROUPS, cycleLens, lensesOff } = m56;
+const { syncPanel } = m65;
+const { fit } = m53;
+const { toolForKey, bareKey, showKeys } = m61;
+const { TOOLS } = m54;
+const { refusal, moveRefusal, moveIn, refuse } = m66;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -7821,7 +7867,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m69 = (() => {
+const m70 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -7933,12 +7979,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m70 = (() => {
+const m71 = (() => {
 const { search, move, stateKey } = m10;
 const { createGame } = m9;
-const { elementCheck, idleElements, NOTES_MAX } = m38;
-const { contains } = m46;
-const { ING, variants } = m69;
+const { elementCheck, idleElements, NOTES_MAX } = m39;
+const { contains } = m47;
+const { ING, variants } = m70;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -8024,7 +8070,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m71 = (() => {
+const m72 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -8041,13 +8087,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m72 = (() => {
+const m73 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m1;
-const { INGREDIENTS, ING, spot } = m69;
-const { judge, lockedIn } = m70;
-const { contains } = m46;
-const { rng } = m71;
+const { INGREDIENTS, ING, spot } = m70;
+const { judge, lockedIn } = m71;
+const { contains } = m47;
+const { rng } = m72;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -8202,17 +8248,17 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m73 = (() => {
-const { INGREDIENTS } = m69;
-const { generate, normalize, recipeLabel, LIMITS } = m72;
-const { stampOf } = m33;
-const { S } = m19;
-const { thumbURL } = m45;
-const { $ } = m20;
-const { change } = m50;
-const { dirty, remember, syncRoomsButton } = m49;
-const { icon } = m27;
-const { TOOLS, GROUPS } = m53;
+const m74 = (() => {
+const { INGREDIENTS } = m70;
+const { generate, normalize, recipeLabel, LIMITS } = m73;
+const { stampOf } = m34;
+const { S } = m20;
+const { thumbURL } = m46;
+const { $ } = m21;
+const { change } = m51;
+const { dirty, remember, syncRoomsButton } = m50;
+const { icon } = m28;
+const { TOOLS, GROUPS } = m54;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
@@ -8398,25 +8444,25 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m74 = (() => {
-const { buildMaker } = m31;
-const { buildPuzzles } = m34;
-const { buildProgress } = m35;
+const m75 = (() => {
+const { buildMaker } = m32;
+const { buildPuzzles } = m35;
+const { buildProgress } = m36;
 const { TICK_MS } = m0;
 const { replay, gameText } = m9;
 const { parseLevel, emptyLevel } = m1;
-const { newHistory } = m18;
-const { S, starterLevel } = m19;
-const { portrait, $ } = m20;
-const { startSnow, windNow } = m36;
-const { fit, watchStage } = m52;
-const { buildPanels, syncPanel } = m64;
-const { bindInput } = m68;
-const { setMode, frame, render, tick, report, copyReport } = m67;
-const { buildRooms, bootRooms } = m49;
-const { buildGenerator } = m73;
-const { buildCampaign, openMenu } = m30;
-const { bindDebug } = m28;
+const { newHistory } = m19;
+const { S, starterLevel } = m20;
+const { portrait, $ } = m21;
+const { startSnow, windNow } = m37;
+const { fit, watchStage } = m53;
+const { buildPanels, syncPanel } = m65;
+const { bindInput } = m69;
+const { setMode, frame, render, tick, report, copyReport } = m68;
+const { buildRooms, bootRooms } = m50;
+const { buildGenerator } = m74;
+const { buildCampaign, openMenu } = m31;
+const { bindDebug } = m29;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 

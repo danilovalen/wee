@@ -41,6 +41,7 @@ export function room(rows, opts = {}) {
       case 'F': put('enemy', 'v'); break;
       case 'S': put('strong', 'h'); break;
       case 'T': l.entities.push({ kind: 'turret', x, y, turret: { dirs: ['right'], mode } }); break;
+      case 'K': l.entities.push({ kind: 'turret', x, y, crate: true, turret: { dirs: ['up'], mode } }); break;
       case 'B': put('box'); break;
       case 'H': put('heavy'); break;
       case 'O': put('bomb'); break;

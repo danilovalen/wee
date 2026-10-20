@@ -1213,6 +1213,17 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('every coloured piece reads back in two colours, in the palette\'s order', ['button:red|blue', 'toggle:red|blue', 'idoor:red|blue', 'sensor:red|blue', 'gate:right@red|blue'].every(isCell) && !isCell('button:blue|red') && !isCell('gate:right@red|red'));
 }
 
+{ // a pushable laser (register 336): pushed like a box, keeps its aim, joins a train; a plain one is a wall
+  const turret = g => g.entities.find(e => e.kind === 'turret');
+  const a = createGame(room(['#######', '#P.K..#', '#######'])); slide(a, 'right');
+  check('the robot pushes a pushable laser, which keeps its aim', turret(a).x === 5 && a.player.x === 4 && turret(a).turret.dirs[0] === 'up', JSON.stringify([turret(a).x, a.player.x]));
+  const b = createGame(room(['#######', '#P.T..#', '#######'])); slide(b, 'right');
+  check('a plain laser stops the robot', turret(b).x === 3 && b.player.x === 2);
+  const c = createGame(room(['#######', '#PBK..#', '#######'])); slide(c, 'right');
+  check('a box pushes a pushable laser ahead of it, as a train', turret(c).x === 5 && c.entities.find(e => e.kind === 'box').x === 4, JSON.stringify(c.entities.map(e => [e.kind, e.x])));
+  check('a pushable laser reads back', parseLevel(JSON.stringify(room(['#P.K#']))).entities[0].crate === true);
+}
+
 { // gravel stops what slides onto it
   const r = room(['#######', '#P.g..#', '#######']);
   check('a slide stops on gravel', at(slide(createGame(r), 'right').player, 3, 1));

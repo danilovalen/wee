@@ -29,6 +29,12 @@ export function colouringsOf(def, el) {
   const one = coloursOf(def), two = def.twoColour && def.twoColour[el], pair = one.length > 1 ? one.slice(0, 2).join('|') : null;
   return !pair || !two ? one : two === 'only' ? [pair] : [...one, pair];
 }
+// Whether a piece may come pushable (true) or plain (false): plain only, unless def.pushable names it,
+// 'only' pushable or 'also' both (register 336).
+export function pushingsOf(def, el) {
+  const p = def.pushable && def.pushable[el];
+  return p === 'only' ? [true] : p === 'also' ? [false, true] : [false];
+}
 const COLOURED = { button: 'button', door: 'door', toggle: 'toggle', idoor: 'idoor', sensor: 'relay' };
 function colourFits(def, c) {
   if (c.startsWith('gate:')) { const col = c.split('@')[1] || null; return def.colours ? colouringsOf(def, 'gate').includes(col) : col === null; }
@@ -57,7 +63,7 @@ export function placed(def, room) {
   });
   for (const e of room.entities) {
     const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].piece === e.kind), i = e.y * room.w + e.x;
-    if (el) out[el].push(i); else stray.push(i);
+    if (el && pushingsOf(def, el).includes(!!e.crate)) out[el].push(i); else stray.push(i);
   }
   return { by: out, stray };
 }

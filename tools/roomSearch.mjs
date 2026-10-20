@@ -1,7 +1,7 @@
 // The room search shared by tools/levelSearch.mjs and tools/tilesArea.mjs. A genome is what a
 // player can vary: the room's size, where the start and the goal stand, and what goes in.
 // searcher(def, seed) returns its moves: random(), mutate(g), penalty(g), make(g), show(room).
-import { roomOf, placementErrors, bounds, coloursOf, colouringsOf } from '../src/campaign/rules.js';
+import { roomOf, placementErrors, bounds, coloursOf, colouringsOf, pushingsOf } from '../src/campaign/rules.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { miss } from './searchScores.mjs';
@@ -29,7 +29,7 @@ export function searcher(def, seed = 1) {
       const col = choices(el).includes(c) ? c : choices(el)[0];
       if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right') + (def.colours ? '@' + col : '');
       else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
-      else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, turret: { dirs: [d || 'right'], mode: 'input' } });
+      else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, ...(pushingsOf(def, 'laser')[0] ? { crate: true } : {}), turret: { dirs: [d || 'right'], mode: 'input' } });
       else r.cells[y * g.w + x] = el === 'block' ? 'wall' : CELL[el] + ':' + col;
     }
     return r;
@@ -102,7 +102,7 @@ export function searcher(def, seed = 1) {
     const c = r.cells[y * r.w + x];
     if (r.start.x === x && r.start.y === y) return 'P';
     const ent = r.entities.find(e => e.x === x && e.y === y);
-    if (ent) return ent.turret ? LASER[ent.turret.dirs[0]] : 'B';
+    if (ent) return ent.turret ? (ent.crate ? LASER[ent.turret.dirs[0]].toUpperCase() : LASER[ent.turret.dirs[0]]) : 'B';
     // Blue in the tests' legend: Q door, q button, T switch, J inverted door, R relay; X a two-colour door.
     const blue = /:blue$/.test(c);
     if (c.includes('|')) return 'X';
@@ -118,7 +118,7 @@ export function searcher(def, seed = 1) {
       if (c === 'P') g.start = { x, y }; else if (c === 'G') g.goal = { x, y };
       else if (EL[c]) g.items.push([EL[c][0], x, y, null, EL[c][1] || null]);
       else if ('^>v<'.includes(c)) g.items.push(['gate', x, y, { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c], cols[0]]);
-      else if ('nesw'.includes(c)) g.items.push(['laser', x, y, FROM_LASER[c], null]);
+      else if ('nesw'.includes(c) || 'NESW'.includes(c)) g.items.push(['laser', x, y, FROM_LASER[c.toLowerCase()], null]);
     }));
     return g;
   }

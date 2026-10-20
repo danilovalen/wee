@@ -24,7 +24,7 @@ const M = [
   // boxes push boxes (register 278)
   ['src', "if (o && meet(s, e, o)) return 'blocked'; if (!(b = train(s, e, dx, dy, t.d))) return 'blocked'; }", "if (o) meet(s, e, o); return 'blocked'; }", 'sim'],
   ['src', "  for (let i = list.length - 2; i >= 1; i--) land(s, list[i], at[i + 1]);\n", "", 'sim'],
-  ['src', "    else if (LIGHT.includes(e.kind) && LIGHT.includes(o.kind) && !o.glue) { e.slide = null; o.slide = t.d; o.rush = false; return; }\n", "", 'sim'],
+  ['src', "    else if (PUSHED(e) && PUSHED(o) && !o.glue) { e.slide = null; o.slide = t.d; o.rush = false; return; }\n", "", 'sim'],
   ['src', "{ if (now.touched.has(id)) b.pushes++; }", "b.pushes++;", 'campaign'],
   // the room search (register 272)
   ['tools/roomSearch.mjs', "export const MAX_SIDE = 16, MAX_AREA = 120;", "export const MAX_SIDE = 10, MAX_AREA = 100;", 'search'],
@@ -70,7 +70,7 @@ const M = [
   ['src', "    if (s.clock === 'tile') worldStep(s, d);\n", "", 'sim'],
   ['src', "if (o.kind === 'enemy') { kill(s, o, how); return true; }", "if (false) { kill(s, o, how); return true; }", 'sim'],
   ['src', "if (o.kind === 'enemy') { kill(s, o, how); return true; }", "if (['enemy', 'strong'].includes(o.kind)) { kill(s, o, how); return true; }", 'sim'],
-  ['src', "    } else if (LIGHT.includes(e.kind)) {\n      // A box glued", "    } else if (false) {\n      // A box glued", 'sim'],
+  ['src', "    } else if (PUSHED(e)) {\n      // A box glued", "    } else if (false) {\n      // A box glued", 'sim'],
   ['src', "if (e.kind === 'heavy' && CRUSHABLE.includes(o.kind)) kill(s, o, 'squash');", "if (false) kill(s, o, 'squash');", 'sim'],
   ['src', "if (e.kind === 'heavy' && CRUSHABLE.includes(o.kind)) kill(s, o, 'squash');", "if (e.kind === 'heavy' && ['enemy', 'strong'].includes(o.kind)) kill(s, o, 'squash');", 'sim'],
   ['src', "else { e.x = t.x; e.y = t.y; die(s); return; }", "else { e.dir = -e.dir; return; }", 'sim'],
@@ -92,7 +92,7 @@ const M = [
   ['src', "if (s.player.moved === 1) { turnTurrets(s, 'input'); if (s.clock === 'slide') worldStep(s, d); }", "if (s.player.moved === 1) turnTurrets(s, 'input');", 'sim'],
   ['src', "return !c.slice(5).split('|').some(col => s.open[col]);", "return false;", 'sim'],
   ['src', "  if (playerAt(s, t.x, t.y)) die(s);\n  else if (ridden", "  if (ridden", 'sim'],
-  ['src', "if (LIGHT.includes(o.kind) && (b = pushTo(s, t.x, t.y, t.d, wades(o)))) { if (land(s, o, b)) { light(s, o); follow(s, o, mx, my); } }", "if (false) {}", 'sim'],
+  ['src', "if (PUSHED(o) && (b = pushTo(s, t.x, t.y, t.d, wades(o)))) { if (land(s, o, b)) { light(s, o); follow(s, o, mx, my); } }", "if (false) {}", 'sim'],
   ['src', "if (diving) { e.slide = t.d;", "if (false) { e.slide = t.d;", 'sim'],
   ['src', "if (e.kind === 'enemy' && diving) kill(s, e, 'dive');", "if (false) kill(s, e, 'dive');", 'sim'],
   ['src', "if (e.kind === 'enemy' && diving) kill(s, e, 'dive');", "if (ENEMY.includes(e.kind) && diving) kill(s, e, 'dive');", 'sim'],
@@ -799,6 +799,15 @@ const M = [
   ['style.css', ".plus { background: var(--add-bg); color: var(--add-ink); }", ".plus { background: var(--cut-bg); color: var(--cut-ink); }", 'size-buttons'],
   ['src/app/campaign.js', "const c = icon(p.el === 'start' ? 'robot' : TOOL[p.el])", "const c = icon(p.el === 'start' ? 'start' : TOOL[p.el])", 'campaign-play'],
   ['src/app/icons.js', "(tool === 'robot' ? drawRobot : drawYou)(x)", "drawYou(x)", 'campaign-play'],
+  // Registers 336-338, 341: the pushable laser, its offer per level, its look, and level 19's goal.
+  ['src/rules/base.js', "export const PUSHED = o => LIGHT.includes(o.kind) || !!o.crate;", "export const PUSHED = o => LIGHT.includes(o.kind);", 'sim'],
+  ['src/rules/life.js', "  ...(e.crate ? { crate: true } : {}),\n", "", 'sim'],
+  ['src/campaign/rules.js', "return p === 'only' ? [true] : p === 'also' ? [false, true] : [false];", "return p === 'only' ? [true, false] : p === 'also' ? [false, true] : [false];", 'campaign'],
+  ['src/campaign/rules.js', "if (el && pushingsOf(def, el).includes(!!e.crate)) out[el].push(i)", "if (el) out[el].push(i)", 'campaign'],
+  ['src/campaign/pushes.js', "s.entities.filter(e => !e.dead && e.kind === kind)", "s.entities.filter(e => !e.dead && e.kind === 'box')", 'campaign'],
+  ['src/editor/edit.js', "...(ui.crate ? { crate: true } : {}), turret", "turret", 'campaign-play'],
+  ['src/app/panels.js', "  if (!crateFits.includes(!!ui.crate)) ui.crate = crateFits[0];\n", "", 'campaign-play'],
+  ['src/view/pieces.js', "if (e.crate) { g.restore(); g.strokeStyle = INK.boxEdge;", "if (e.crate) { g.restore(); g.strokeStyle = INK.wall;", 'campaign-play'],
   // Registers 330, 339, 340: a gold laser; the relay a soft eight-point star.
   ['src/view/pieces.js', "g.fillStyle = d === next ? INK.zap : INK.barrel;", "g.fillStyle = d === next ? INK.beam : INK.barrel;", 'sim'],
   ['src/app/lenses.js', "colour: INK.zap }", "colour: INK.beam }", 'lensui'],

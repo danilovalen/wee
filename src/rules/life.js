@@ -9,6 +9,7 @@ export const startAim = t => Math.max(0, CLOCKWISE.filter(d => t.dirs.includes(d
 export const freshPieces = list => list.map((e, i) => ({
   id: i + 1, kind: e.kind, x: e.x, y: e.y, ...(e.kind === 'bomb' ? { fuse: null } : {}),
   axis: e.axis || 'h', dir: e.dir || 1, mode: e.mode || 'input', slide: null, dead: false, rush: false,
+  ...(e.crate ? { crate: true } : {}),
   turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: startAim(e.turret) } : null,
 }));
 

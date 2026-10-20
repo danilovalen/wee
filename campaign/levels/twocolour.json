@@ -1,0 +1,46 @@
+{
+ "name": "Two colours",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "button": [
+   1,
+   null
+  ],
+  "door": [
+   1,
+   null
+  ],
+  "relay": [
+   1,
+   null
+  ],
+  "laser": [
+   1,
+   null
+  ]
+ },
+ "colours": [
+  "red",
+  "blue"
+ ],
+ "twoColour": {
+  "door": "only"
+ },
+ "steps": {
+  "best": 9
+ },
+ "small": [
+  4,
+  5
+ ],
+ "rules": [],
+ "require": [],
+ "hidden": true
+}

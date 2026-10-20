@@ -1,5 +1,5 @@
 // You: one slide step at a time, dive, hide, and what each key does.
-import { DIRS, ENEMY, HIDE_TICKS, LIGHT, OPPOSITE, POWERS, wades } from './base.js';
+import { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS, PUSHED, wades } from './base.js';
 import { inBeam, laser, turnTurrets } from './beams.js';
 import { cellAt, crushes, entAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } from './grid.js';
 import { die, kill, land, light, refreshDoors, respawn, smash } from './life.js';
@@ -11,7 +11,7 @@ import { follow, lead, meet, partnerAt } from './glue.js';
 // if it can and each of the rest takes the tile ahead of it. Returns where the pushed box goes, or null.
 function train(s, e, dx, dy, d) {
   const list = [e];
-  for (let o; (o = entAt(s, list.at(-1).x + dx, list.at(-1).y + dy, list.at(-1))) && LIGHT.includes(o.kind) && !o.glue && !e.glue;) list.push(o);
+  for (let o; (o = entAt(s, list.at(-1).x + dx, list.at(-1).y + dy, list.at(-1))) && PUSHED(o) && !o.glue && !e.glue;) list.push(o);
   if (list.length < 2) return null;
   const front = list.at(-1), go = pushTo(s, front.x, front.y, d, wades(front));
   if (!go) return null;
@@ -44,7 +44,7 @@ export function playerStep(s, d, diving) {
     else if (e.kind === 'heavy') {
       if (diving) { e.slide = t.d; s.events.push({ type: 'crash', x: nx, y: ny }); }
       return 'blocked';
-    } else if (LIGHT.includes(e.kind)) {
+    } else if (PUSHED(e)) {
       // A box glued to another piece: the one ahead goes first, the one behind follows.
       const led = !!partnerAt(s, e, nx + dx, ny + dy) && lead(s, e, dx, dy);
       if (!(b = pushTo(s, nx, ny, t.d, wades(e)))) { const o = entAt(s, nx + dx, ny + dy, e); if (o && meet(s, e, o)) return 'blocked'; if (!(b = train(s, e, dx, dy, t.d))) return 'blocked'; }

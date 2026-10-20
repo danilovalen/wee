@@ -66,8 +66,11 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
     modeBadge(g, e.mode);
   } else if (e.kind === 'turret') {
+    // A pushable laser wears the box's brown border, its base cut to fit inside (registers 336-338).
+    if (e.crate) { g.save(); roundRect(g, 4, 4, T - 8, T - 8, 3); g.clip(); }
     g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
     g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+    if (e.crate) { g.restore(); g.strokeStyle = INK.boxEdge; g.lineWidth = 2; roundRect(g, 3, 3, T - 6, T - 6, 3.5); g.stroke(); }
   } else if (e.kind === 'box') {
     g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
     g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();

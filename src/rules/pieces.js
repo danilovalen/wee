@@ -1,5 +1,5 @@
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
-import { DIRS, ENEMY, LIGHT, MOVES, breaks, wades } from './base.js';
+import { DIRS, ENEMY, MOVES, PUSHED, breaks, wades } from './base.js';
 import { turnTurrets } from './beams.js';
 import { crushes, entAt, fling, inb, onGravel, playerAt, pushTo, stepTo } from './grid.js';
 import { die, kill, land, light, refreshDoors, smash } from './life.js';
@@ -65,7 +65,7 @@ export function moveMover(s, e, d) {
   const o = entAt(s, t.x, t.y, e);
   let b;
   if (o) {
-    if (LIGHT.includes(o.kind) && (b = pushTo(s, t.x, t.y, t.d, wades(o)))) { if (land(s, o, b)) { light(s, o); follow(s, o, mx, my); } }
+    if (PUSHED(o) && (b = pushTo(s, t.x, t.y, t.d, wades(o)))) { if (land(s, o, b)) { light(s, o); follow(s, o, mx, my); } }
     else { meet(s, e, o); blocked(); return; }
   }
   if (playerAt(s, t.x, t.y)) {
@@ -104,7 +104,7 @@ export function slidePiece(s, e) {
     if (meet(s, e, o)) { e.slide = null; return; }
     if (e.kind === 'heavy' && CRUSHABLE.includes(o.kind)) kill(s, o, 'squash');
     // A box sliding on its own hands its slide to the box it meets, which slides on (register 278).
-    else if (LIGHT.includes(e.kind) && LIGHT.includes(o.kind) && !o.glue) { e.slide = null; o.slide = t.d; o.rush = false; return; }
+    else if (PUSHED(e) && PUSHED(o) && !o.glue) { e.slide = null; o.slide = t.d; o.rush = false; return; }
     else { e.slide = null; return; }
   }
   const p = s.player, ridden = stuckTo(s) === e;

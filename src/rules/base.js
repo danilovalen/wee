@@ -29,6 +29,8 @@ export const CLOCKWISE = ['up', 'right', 'down', 'left'];
 export const KINDS = ['mover', 'enemy', 'strong', 'box', 'heavy', 'turret', 'bomb'];
 // Pushed like a light box: a box, and a bomb.
 export const LIGHT = ['box', 'bomb'];
+// What a push moves: a light piece, or a pushable laser (register 336), which keeps its aim.
+export const PUSHED = o => LIGHT.includes(o.kind) || !!o.crate;
 // A bomb goes off at the end of your second move after the push that lit it.
 export const FUSE = 2;
 export const MOVES = ['mover', 'enemy', 'strong'];

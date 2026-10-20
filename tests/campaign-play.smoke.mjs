@@ -412,10 +412,15 @@ try {
     return [...document.querySelectorAll('.campReqs [data-part=start]')].map(c => c.dataset.icon + (c.toDataURL() === you ? ':you' : '')).join(); });
   check('a goal row names the robot with the robot, not your circle (register 323)', /^robot(,robot)*$/.test(robotIcon), robotIcon);
   // Two colours per piece (register 316): level 19 offers red+blue as a third dot, only for its door.
+  // Level 19: the laser is only pushable (register 341); the chip shows on and fixed, and a placed laser is pushable.
+  await nine.click('#campBack'); await nine.click('.campRow[data-level="19"]'); await nine.click('[data-tool="turret"]');
+  await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);
+  const crate = await nine.evaluate(() => ({ chip: !document.getElementById('campCrate').hidden, on: document.getElementById('campCrate').classList.contains('on'), fixed: document.getElementById('campCrate').disabled, laser: window.wee.getLevel().entities.some(e => e.kind === 'turret' && e.crate) }));
+  check('level 19 places only pushable lasers, the Pushable chip on and fixed (register 336)', crate.chip && crate.on && crate.fixed && crate.laser, JSON.stringify(crate));
   // The two-colour level is hidden from the list (register 334); it still opens by its id.
   await nine.click('#campBack');
-  check('the two-colour level 19 is hidden from the list', await nine.locator('.campRow[data-level="19"]').count() === 0 && await nine.locator('.campRow[data-level="18"]').count() === 1);
-  await nine.evaluate(async () => (await import('/src/app/campaign.js')).enterLevel('19')); await nine.click('[data-tool="door"]');
+  check('the two-colour level is hidden from the list', await nine.locator('.campRow[data-level="twocolour"]').count() === 0 && await nine.locator('.campRow[data-level="18"]').count() === 1);
+  await nine.evaluate(async () => (await import('/src/app/campaign.js')).enterLevel('twocolour')); await nine.click('[data-tool="door"]');
   const dots = () => nine.evaluate(() => [...document.querySelectorAll('#campColours button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '') + (b.disabled ? '-' : '')).join());
   const doorDots = await dots();
   await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);

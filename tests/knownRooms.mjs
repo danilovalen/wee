@@ -10,7 +10,9 @@ export const KNOWN = {
     // His room (registers 304, 306): 7 moves, 5x4, two lasers; the robot steps on the button.
     16: ['..#P#', 'G..B.', 'D....', 'ne.o.'],
     // 17 built by hand (register 325): one inverted door, 7 moves; 18 found by tools/levelSearch.mjs (register 329): 4x5 in 4 moves, and 6x9 in 11.
-    17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['.I.#', 'r.#I', 'nB.#', '...e', '#.GP'], 19: ['....', '.r..', '.X.q', '....', 'PnG.'] },
+    17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['.I.#', 'r.#I', 'nB.#', '...e', '#.GP'], twocolour: ['....', '.r..', '.X.q', '....', 'PnG.'],
+    // Found by tools/levelSearch.mjs (register 341): pushable lasers, 9 moves.
+    19: ['#D..D', 'N.D##', 'rD.W.', '...P.', 'N.D##', '.G...'] },
   optional: {
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
     14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
@@ -59,7 +61,7 @@ export const KNOWN = {
     15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
     // His room (registers 304, 306): 7 moves, 5x4, two lasers; the robot steps on the button.
     16: ['..#P#', 'G..B.', 'D....', 'ne.o.'],
-    17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['e..r.w', '.#....', 'PB.I..', '....BI', '.#....', '.n....', '......', '.#..G.', '......'], 19: ['..eXqR', '.G.#P#', 'wX..o.', '..#...'],
+    17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['e..r.w', '.#....', 'PB.I..', '....BI', '.#....', '.n....', '......', '.#..G.', '......'], 19: ['#D..D', 'N.D##', 'rD.W.', '...P.', 'N.D##', '.G...'], twocolour: ['..eXqR', '.G.#P#', 'wX..o.', '..#...'],
   },
 };
 

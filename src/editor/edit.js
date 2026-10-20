@@ -171,7 +171,7 @@ export function place(level, ui, x, y, how) {
     } else {
       removePiece();
       if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
-      level.entities.push({ kind: 'turret', x, y, turret });
+      level.entities.push({ kind: 'turret', x, y, ...(ui.crate ? { crate: true } : {}), turret });
     }
   } else {
     if (isStart) return out;

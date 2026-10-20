@@ -1,7 +1,7 @@
 // Partial credit for the room search (register 272): how close a path comes to a goal it misses,
 // from 0 (nowhere near) toward 1, so a climb can tell "warmer" from "colder". Only the search reads
 // these; the game judges goals as met or not.
-import { boxMoves } from '../src/campaign/requirements.js';
+import { boxMoves } from '../src/campaign/pushes.js';
 import { stoppedPushes } from '../src/campaign/extras.js';
 import { replayPath } from '../src/campaign/robot.js';
 

@@ -5,7 +5,7 @@ import { resizeLevel, moveSide, wallBorder } from '../level/format.js';
 import { INK } from '../view/ink.js';
 import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
 import { toolsFor, syncBrief, TOOL } from './campaign.js';
-import { coloursOf, colouringsOf } from '../campaign/rules.js';
+import { coloursOf, colouringsOf, pushingsOf } from '../campaign/rules.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch } from './dom.js';
 import { change, step as undoStep, syncUndo } from './undo.js';
@@ -245,6 +245,16 @@ function syncColours() {
   }
   // A colour the chosen tool cannot take is greyed: level 19's door comes only in red+blue.
   row.querySelectorAll('[data-camp-colour]').forEach(b => { const on = b.dataset.campColour === ui.colour; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); b.disabled = !!fits && !fits.includes(b.dataset.campColour); });
+  // The Pushable chip (register 336) shows where the level offers a pushable piece; the chosen tool
+  // decides whether it may be on, off, or either.
+  const chip = $('campCrate'), def = S.camp && S.camp.def, offers = el => S.simple ? (el === 'laser' ? [false, true] : [false]) : def && def.palette[el] ? pushingsOf(def, el) : [false];
+  const crateFits = offers(ELEMENT_OF[ui.tool]);
+  chip.hidden = !(S.simple || (def && Object.keys(def.palette).some(k => pushingsOf(def, k).includes(true))));
+  if (!crateFits.includes(!!ui.crate)) ui.crate = crateFits[0];
+  chip.disabled = crateFits.length < 2; chip.classList.toggle('on', !!ui.crate); chip.setAttribute('aria-pressed', String(!!ui.crate));
+  chip.onclick ||= () => { S.ui.crate = !S.ui.crate; syncPanel(); };
+  const laserFits = offers('laser'), crateIcon = laserFits.length === 1 ? laserFits[0] : !!ui.crate, tb = document.querySelector('#palette [data-tool="turret"] canvas');
+  if (tb && tb.dataset.crate !== String(crateIcon)) { const c = icon('turret', 'red', null, crateIcon); c.dataset.crate = String(crateIcon); tb.replaceWith(c); }
   // Each tool is drawn in the chosen colour, or in its own first one when it cannot take that.
   const own = id => { const el = ELEMENT_OF[id], c = S.camp && el && S.camp.def.palette[el] ? colouringsOf(S.camp.def, el) : null; return c && !c.includes(ui.colour) ? c[0] : ui.colour; };
   const key = TINTED.map(own).join() + '|' + ui.gateColour;

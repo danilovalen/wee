@@ -627,3 +627,8 @@ body.campaign #campReset { order: 6; margin-left: auto; }
   .campOpt { margin-top: 4px; padding-top: 4px; }
   .campVerdict { margin: 0 0 4px; }
 }
+
+/* The Pushable chip (register 336): at the end of the tools row; on, what you place is pushable. */
+body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 10px; border-radius: var(--r-pill); font-size: 13px; }
+#campCrate.on { background: #ffe2c2; box-shadow: inset 0 0 0 2px #c97326, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); color: #7a4512; }
+#campCrate:disabled { opacity: .5; }
