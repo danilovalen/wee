@@ -840,6 +840,11 @@ const M = [
   ['src/app/panels.js', "  if (lined() && ui.tool === 'wire') {", "  if (false) {", 'wires'],
   // Register 351: a pushed grey piece takes the wires where it lands.
   ['src/rules/crates.js', "cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from];", "cells[to] = cells[from];", 'sim'],
+  // Register 352: grey pieces wear their wire; Look and hover show what one reaches.
+  ['src/view/scene.js', "    if (isGrey(c)) drawTrim(g, x, y, wireColoursAt(level.wires, x, y));\n", "", 'wires'],
+  ['src/view/wires.js', "g.strokeStyle = cols.length ? INK[cols[0]] : '#6b7280';", "g.strokeStyle = '#6b7280';", 'wires'],
+  ['src/view/scene.js', "  if (reach && reach.x < level.w && reach.y < level.h) drawReach(g, level, reach, netsOf(level));\n", "", 'wires'],
+  ['src/app/input.js', "      S.lookTile = c;\n", "", 'wires'],
   // Registers 330, 339, 340: a gold laser; the relay a soft eight-point star.
   ['src/view/pieces.js', "g.fillStyle = d === next ? INK.zap : INK.barrel;", "g.fillStyle = d === next ? INK.beam : INK.barrel;", 'sim'],
   ['src/app/lenses.js', "colour: INK.zap }", "colour: INK.beam }", 'lensui'],

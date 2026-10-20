@@ -4163,7 +4163,32 @@ function drawWires(g, w, wires, live = null) {
   }
   g.restore();
 }
-return { drawWires };
+
+// A grey piece wears its wire (register 352): a dashed, colourless trim until it sits on one, then the
+// wire's colour, so a grey button and door that share no wire look apart.
+const GREY = /^[a-z]+:(wire|wnone|w\d+(\|w\d+)*)$/;
+const isGrey = c => GREY.test(c);
+const wireColoursAt = (wires, x, y) => (wires || []).filter(r => r.x === x && r.y === y).map(r => r.w);
+function drawTrim(g, x, y, cols) {
+  g.save(); g.lineWidth = cols.length ? 2.5 : 2; g.strokeStyle = cols.length ? INK[cols[0]] : '#6b7280';
+  if (!cols.length) g.setLineDash([4, 3]);
+  g.beginPath(); g.roundRect(x * T + 2, y * T + 2, T - 4, T - 4, 5); g.stroke(); g.restore();
+}
+
+// In the editor, a focused grey piece (hovered, or tapped with Look) lights its wires and every piece on
+// them, and dims the rest; on no wire, only itself lights.
+function drawReach(g, level, at, nets) {
+  const i = at.y * level.w + at.x, cell = level.cells[i];
+  if (!isGrey(cell) && !(nets.at[i].length && /^(button|toggle|receiver|sensor):/.test(cell))) return;
+  const ids = new Set(nets.at[i]), lit = new Set([i]);
+  nets.at.forEach((list, k) => { if (list.some(id => ids.has(id))) lit.add(k); });
+  g.save(); g.fillStyle = INK.floor; g.globalAlpha = 0.6;
+  for (let k = 0; k < level.cells.length; k++) if (!lit.has(k)) g.fillRect((k % level.w) * T, Math.floor(k / level.w) * T, T, T);
+  g.globalAlpha = 1; g.strokeStyle = INK.goal; g.lineWidth = 3;
+  for (const k of lit) if (level.cells[k] || k === i) { g.beginPath(); g.roundRect((k % level.w) * T + 1, Math.floor(k / level.w) * T + 1, T - 2, T - 2, 6); g.stroke(); }
+  g.restore();
+}
+return { drawWires, isGrey, wireColoursAt, drawTrim, drawReach };
 })();
 // ---- src/view/scene.js
 const m30 = (() => {
@@ -4173,9 +4198,11 @@ const { drawPiece, drawPlayer } = m25;
 const { drawCell, drawFloor } = m26;
 const { drawMasses, inMass, overlay } = m27;
 const { drawHeat, drawLensMarks } = m28;
-const { drawWires } = m29;
+const { drawReach, drawTrim, drawWires, isGrey, wireColoursAt } = m29;
+const { netsOf } = m1;
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
+
 
 
 
@@ -4198,7 +4225,7 @@ const crateSet = level => new Set((level.crates || []).map(c => c.y * level.w + 
 // answer does not depend on, framed red).
 // over: { sel: box } or { paste: clip, x, y } from the Select tool, or null.
 function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
-  const { lens = {}, unused = [] } = marks;
+  const { lens = {}, unused = [], reach = null } = marks;
   frame.clock = now;
   drawFloor(g, level.w, level.h);
   drawHeat(g, level.w, lens.heat);
@@ -4213,6 +4240,7 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
     if (crated.has(i)) drawCrated(g, c, x, y, null, k);
     else if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);
+    if (isGrey(c)) drawTrim(g, x, y, wireColoursAt(level.wires, x, y));
     else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
   });
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
@@ -4223,6 +4251,7 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     if (f.piece) drawPiece(g, f.piece, f.x * T, f.y * T, 1 - ease(t) * 0.8, 1 - t);
   }
   drawLensMarks(g, level.w, lens);
+  if (reach && reach.x < level.w && reach.y < level.h) drawReach(g, level, reach, netsOf(level));
   // A piece or tile the room's answer does not depend on gets a dashed red frame.
   if (unused.length) {
     g.strokeStyle = INK.beam; g.lineWidth = 2; g.setLineDash([5, 4]);
@@ -4330,6 +4359,7 @@ function drawPlay(g, s, prev, alpha, fx, now) {
       const f = fx.find(f => f.type === 'tilePush' && f.x + DIRS[f.d][0] === x && f.y + DIRS[f.d][1] === y && now - f.at < TICK_MS), k = f ? 1 - ease((now - f.at) / TICK_MS) : 0;
       drawCrated(g, c, x, y, s, 1, f ? -DIRS[f.d][0] * T * k : 0, f ? -DIRS[f.d][1] * T * k : 0);
     } else if (!inMass(c) || overlay(c)) drawCell(g, c, x, y, s, 1, overlay(c));
+    if (isGrey(c)) drawTrim(g, x, y, wireColoursAt(s.wires, x, y));
   });
   // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
   // as its beam touches, yours for a moment.
@@ -7985,7 +8015,7 @@ function carryOverlay() {
 // found change nothing.
 function marks() {
   const stamp = JSON.stringify(S.level);
-  return { lens: lensMarks(), unused: S.design && S.design.stamp === stamp ? S.design.unused : [] };
+  return { lens: lensMarks(), unused: S.design && S.design.stamp === stamp ? S.design.unused : [], reach: S.hover || (S.ui.tool === 'look' ? S.lookTile : null) };
 }
 
 // A report is the room as it was when play began, every key with its tick, and the
@@ -8073,6 +8103,8 @@ function bindInput() {
     const c = cellFromEvent(ev); if (!c) return;
     if (S.ui.tool === 'look') {
       $('placeHint').textContent = describe(S.level, c.x, c.y);
+      // On a phone there is no hover: a Look tap shows what a grey piece reaches (register 352).
+      S.lookTile = c;
       // You can start a run from any tile you could stand on.
       const cell = S.level.cells[c.y * S.level.w + c.x];
       const open = !/^(wall|receiver:|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);

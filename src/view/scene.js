@@ -6,7 +6,8 @@ import { drawPiece, drawPlayer } from './pieces.js';
 import { drawCell, drawFloor } from './tiles.js';
 import { drawMasses, inMass, overlay } from './masses.js';
 import { drawHeat, drawLensMarks } from './lenses.js';
-import { drawWires } from './wires.js';
+import { drawReach, drawTrim, drawWires, isGrey, wireColoursAt } from './wires.js';
+import { netsOf } from '../rules/wires.js';
 
 const GHOST_MS = 360;
 
@@ -23,7 +24,7 @@ const crateSet = level => new Set((level.crates || []).map(c => c.y * level.w + 
 // answer does not depend on, framed red).
 // over: { sel: box } or { paste: clip, x, y } from the Select tool, or null.
 export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
-  const { lens = {}, unused = [] } = marks;
+  const { lens = {}, unused = [], reach = null } = marks;
   frame.clock = now;
   drawFloor(g, level.w, level.h);
   drawHeat(g, level.w, lens.heat);
@@ -38,6 +39,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
     if (crated.has(i)) drawCrated(g, c, x, y, null, k);
     else if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);
+    if (isGrey(c)) drawTrim(g, x, y, wireColoursAt(level.wires, x, y));
     else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
   });
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
@@ -48,6 +50,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     if (f.piece) drawPiece(g, f.piece, f.x * T, f.y * T, 1 - ease(t) * 0.8, 1 - t);
   }
   drawLensMarks(g, level.w, lens);
+  if (reach && reach.x < level.w && reach.y < level.h) drawReach(g, level, reach, netsOf(level));
   // A piece or tile the room's answer does not depend on gets a dashed red frame.
   if (unused.length) {
     g.strokeStyle = INK.beam; g.lineWidth = 2; g.setLineDash([5, 4]);
@@ -155,6 +158,7 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
       const f = fx.find(f => f.type === 'tilePush' && f.x + DIRS[f.d][0] === x && f.y + DIRS[f.d][1] === y && now - f.at < TICK_MS), k = f ? 1 - ease((now - f.at) / TICK_MS) : 0;
       drawCrated(g, c, x, y, s, 1, f ? -DIRS[f.d][0] * T * k : 0, f ? -DIRS[f.d][1] * T * k : 0);
     } else if (!inMass(c) || overlay(c)) drawCell(g, c, x, y, s, 1, overlay(c));
+    if (isGrey(c)) drawTrim(g, x, y, wireColoursAt(s.wires, x, y));
   });
   // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
   // as its beam touches, yours for a moment.

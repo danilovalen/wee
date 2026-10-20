@@ -56,6 +56,8 @@ export function bindInput() {
     const c = cellFromEvent(ev); if (!c) return;
     if (S.ui.tool === 'look') {
       $('placeHint').textContent = describe(S.level, c.x, c.y);
+      // On a phone there is no hover: a Look tap shows what a grey piece reaches (register 352).
+      S.lookTile = c;
       // You can start a run from any tile you could stand on.
       const cell = S.level.cells[c.y * S.level.w + c.x];
       const open = !/^(wall|receiver:|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);
