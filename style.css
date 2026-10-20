@@ -560,6 +560,7 @@ body.campaign #campColours:not([hidden]), body.simple #campColours:not([hidden])
 #campTools .lbl, #campTools .key { display: none; }
 #campColours button { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 0; position: relative; }
 #campColours button::after { content: ''; position: absolute; inset: -9px; }
+#campColours button:disabled { opacity: 0.25; }
 #campColours button.on { box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px #2a2440; }
 
 /* A yes-or-no question over the room (register 291): small and centred, not a page. */

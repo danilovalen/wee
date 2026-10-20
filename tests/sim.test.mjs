@@ -2,7 +2,7 @@ import { createGame, step, gameText, replay, cloneGame } from "../src/rules/game
 import { worldStep as rawWorldStep } from '../src/rules/pieces.js';
 import { aimKey } from '../src/rules/player.js';
 import { parseLevel, emptyLevel, isCell, resizeSide, wallBorder } from '../src/level/format.js';
-import { solidCell } from '../src/rules/grid.js';
+import { solidCell, gateDirs } from '../src/rules/grid.js';
 import { place, describe, turnGate } from '../src/editor/edit.js';
 import { drawTurret } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
@@ -1189,6 +1189,18 @@ const LONG = ['##########', '#..P....##', '##########'];
   const shut = solidCell(d, 2, 1); d.open.blue = true; const blue = solidCell(d, 2, 1); d.open = { red: true }; const red = solidCell(d, 2, 1);
   check('a two-colour door is shut with neither colour, open with either', shut && !blue && !red);
   check('a room with a two-colour door reads back', isCell('door:red|blue') && !isCell('door:red|red') && !isCell('door:red|pink'));
+  // Any coloured piece may take two colours (register 316): a sensor counts in both colours' AND.
+  const two = (extra) => { const l = room(['#######', '#PB...#', '#######']); l.cells[9] = 'button:red|blue'; l.cells[11] = 'door:red'; l.cells[12] = 'door:blue'; if (extra) l.cells[10] = extra; return createGame(l); };
+  const both = two();
+  check('a held two-colour button opens both colours', both.open.red && both.open.blue, JSON.stringify(both.open));
+  const half = two('button:red');
+  check('a held two-colour button still waits on the other red buttons', !half.open.red && half.open.blue, JSON.stringify(half.open));
+  const i2 = createGame(room(['#####', '#P..#', '#####'])); i2.cells[2 + 5] = 'idoor:red|blue';
+  const iOpen = !solidCell(i2, 2, 1); i2.open = { blue: true }; const iShut = solidCell(i2, 2, 1);
+  check('a two-colour inverted door is passable with neither colour, solid with either', iOpen && iShut);
+  const gd = { open: { blue: true } };
+  check('a two-colour one-way turns while either colour is pressed', gateDirs(gd, 'gate:right@red|blue')[0] === 'left' && gateDirs({ open: {} }, 'gate:right@red|blue')[0] === 'right');
+  check('every coloured piece reads back in two colours, in the palette\'s order', ['button:red|blue', 'toggle:red|blue', 'idoor:red|blue', 'sensor:red|blue', 'gate:right@red|blue'].every(isCell) && !isCell('button:blue|red') && !isCell('gate:right@red|red'));
 }
 
 { // gravel stops what slides onto it

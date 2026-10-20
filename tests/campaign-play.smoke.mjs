@@ -401,6 +401,16 @@ try {
   await nine.click('#campBack'); await nine.click('.campRow[data-level="9"]');
   const plainGate = await nine.evaluate(() => document.querySelector(`#palette [data-tool="gate"] canvas`).dataset.colour);
   check('a level that names no colours draws its one-way plain', plainGate === '', plainGate);
+  // Two colours per piece (register 316): level 19 offers red+blue as a third dot, only for its door.
+  await nine.click('#campBack'); await nine.click('.campRow[data-level="19"]'); await nine.click('[data-tool="door"]');
+  const dots = () => nine.evaluate(() => [...document.querySelectorAll('#campColours button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '') + (b.disabled ? '-' : '')).join());
+  const doorDots = await dots();
+  await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);
+  const pair = await nine.evaluate(() => ({ cell: window.wee.getLevel().cells[3 * 7 + 3], icon: document.querySelector('#palette [data-tool="door"] canvas').dataset.colour }));
+  check('with the door chosen, red+blue is picked and the single colours are greyed; the door goes down in both', doorDots === 'red-,blue-,red|blue*' && pair.cell === 'door:red|blue' && pair.icon === 'red|blue', doorDots + ' ' + JSON.stringify(pair));
+  await nine.click('[data-tool="button"]');
+  const buttonDots = await dots(), doorIcon = await nine.evaluate(() => document.querySelector('#palette [data-tool="door"] canvas').dataset.colour);
+  check('with a button chosen, red is picked back and red+blue is greyed; the door stays drawn in both', buttonDots === 'red*,blue,red|blue-' && doorIcon === 'red|blue', buttonDots + ' ' + doorIcon);
   await nine.close();
   check('no page errors', errors.length === 0, errors.join(' | '));
 } finally {

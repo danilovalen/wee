@@ -1,7 +1,7 @@
 // The room search shared by tools/levelSearch.mjs and tools/tilesArea.mjs. A genome is what a
 // player can vary: the room's size, where the start and the goal stand, and what goes in.
 // searcher(def, seed) returns its moves: random(), mutate(g), penalty(g), make(g), show(room).
-import { roomOf, placementErrors, bounds, coloursOf } from '../src/campaign/rules.js';
+import { roomOf, placementErrors, bounds, coloursOf, colouringsOf } from '../src/campaign/rules.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { miss } from './searchScores.mjs';
@@ -20,16 +20,15 @@ export function searcher(def, seed = 1) {
   const pick = a => a[Math.floor(rnd() * a.length)];
   // An item is [element, x, y, direction, colour]; a level's colours tint its buttons, doors,
   // switches and (in a level that names its colours) one-ways.
-  const cols = coloursOf(def);
+  const cols = coloursOf(def), choices = el => colouringsOf(def, el);
   function make(g) {
     const r = roomOf({ ...def, size: [g.w, g.h] });
     r.cells.fill(''); r.start = { ...g.start };
     r.cells[g.goal.y * g.w + g.goal.x] = 'goal';
     for (const [el, x, y, d, c] of g.items) {
-      const col = cols.includes(c) ? c : cols[0];
+      const col = choices(el).includes(c) ? c : choices(el)[0];
       if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right') + (def.colours ? '@' + col : '');
       else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
-      else if (el === 'ddoor') r.cells[y * g.w + x] = 'door:red|blue';
       else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, turret: { dirs: [d || 'right'], mode: 'input' } });
       else r.cells[y * g.w + x] = el === 'block' ? 'wall' : CELL[el] + ':' + col;
     }
@@ -40,7 +39,7 @@ export function searcher(def, seed = 1) {
     for (let t = 0; t < 50; t++) { const x = Math.floor(rnd() * g.w), y = Math.floor(rnd() * g.h); if (!taken(g, x, y)) return [x, y]; }
     return null;
   }
-  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push([el, ...f, el === 'gate' || el === 'laser' ? pick(DIRS) : null, TINTS.includes(el) ? pick(cols) : null]); };
+  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push([el, ...f, el === 'gate' || el === 'laser' ? pick(DIRS) : null, TINTS.includes(el) ? pick(choices(el)) : null]); };
   function random() {
     const w = 4 + Math.floor(rnd() * 5), h = 4 + Math.floor(rnd() * 5);
     const g = { w, h, start: { x: Math.floor(rnd() * w), y: Math.floor(rnd() * h) }, goal: null, items: [] };
@@ -69,7 +68,7 @@ export function searcher(def, seed = 1) {
   }
   function mutate(g0) {
     const g = structuredClone(g0), r = rnd(), els = Object.keys(def.palette);
-    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if ((it[0] === 'gate' || it[0] === 'laser') && rnd() < 0.5) it[3] = pick(DIRS); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(cols); }
+    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if ((it[0] === 'gate' || it[0] === 'laser') && rnd() < 0.5) it[3] = pick(DIRS); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(choices(it[0])); }
     else if (r < 0.5) add(g, pick(els));
     else if (r < 0.65 && g.items.length) {
       const i = Math.floor(rnd() * g.items.length), [el] = g.items[i];
@@ -114,7 +113,7 @@ export function searcher(def, seed = 1) {
   // A genome from rows in show()'s legend, so a climb can start from a known room.
   function parse(rows) {
     const g = { w: rows[0].length, h: rows.length, start: null, goal: null, items: [] };
-    const EL = { '#': ['block'], t: ['toggle', 'red'], T: ['toggle', 'blue'], D: ['door', 'red'], Q: ['door', 'blue'], o: ['button', 'red'], q: ['button', 'blue'], B: ['box'], I: ['idoor', 'red'], J: ['idoor', 'blue'], r: ['relay', 'red'], R: ['relay', 'blue'], X: ['ddoor'] };
+    const EL = { '#': ['block'], t: ['toggle', 'red'], T: ['toggle', 'blue'], D: ['door', 'red'], Q: ['door', 'blue'], o: ['button', 'red'], q: ['button', 'blue'], B: ['box'], I: ['idoor', 'red'], J: ['idoor', 'blue'], r: ['relay', 'red'], R: ['relay', 'blue'], X: ['door', 'red|blue'] };
     rows.forEach((row, y) => [...row].forEach((c, x) => {
       if (c === 'P') g.start = { x, y }; else if (c === 'G') g.goal = { x, y };
       else if (EL[c]) g.items.push([EL[c][0], x, y, null, EL[c][1] || null]);

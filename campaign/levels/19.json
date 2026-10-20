@@ -13,7 +13,7 @@
    1,
    null
   ],
-  "ddoor": [
+  "door": [
    1,
    null
   ],
@@ -30,6 +30,9 @@
   "red",
   "blue"
  ],
+ "twoColour": {
+  "door": "only"
+ },
  "steps": {
   "best": 9
  },

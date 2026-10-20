@@ -168,18 +168,18 @@ export const EXTRA_REQUIREMENTS = {
   boxHitsIdoor: {
     text: 'Box collides with a closed inverted door.',
     short: [{ el: 'box' }, 'collides with a closed', { el: 'idoor' }],
-    judge: (room, moves) => stoppedPushes(room, moves).out.some(h => { const c = cellOf(room, [h.x, h.y]); return c.startsWith('idoor:') && !!h.open[c.slice(6)]; }),
+    judge: (room, moves) => stoppedPushes(room, moves).out.some(h => { const c = cellOf(room, [h.x, h.y]); return c.startsWith('idoor:') && c.slice(6).split('|').some(col => h.open[col]); }),
   },
   // The beam goes through a door, then lights a relay of one of that door's colours: it holds the
   // door it passes through (register 313). A relay before the door would open it for any beam.
   laserHoldsOwnDoor: {
     text: 'Laser through a door that its own relay holds open.',
-    short: [{ el: 'laser' }, 'holds its own', { el: 'ddoor' }],
+    short: [{ el: 'laser' }, 'holds its own', { el: 'door' }],
     judge: (room, moves) => {
       let ok = false;
       beams(room, moves, (b, s) => {
         const at = through(b, s).map(p => cellOf(room, p));
-        at.forEach((c, i) => { if (c.startsWith('door:') && at.slice(i + 1).some(r => r.startsWith('sensor:') && c.slice(5).split('|').includes(r.slice(7)))) ok = true; });
+        at.forEach((c, i) => { if (c.startsWith('door:') && at.slice(i + 1).some(r => r.startsWith('sensor:') && r.slice(7).split('|').some(col => c.slice(5).split('|').includes(col)))) ok = true; });
       });
       return ok;
     },
@@ -192,7 +192,7 @@ export const EXTRA_REQUIREMENTS = {
       const hit = new Set();
       for (const h of stoppedPushes(room, moves).out) {
         const c = h.x >= 0 && h.y >= 0 && h.x < room.w && h.y < room.h ? room.cells[h.y * room.w + h.x] || '' : '';
-        if (c.startsWith('door:') && !h.open[c.slice(5)]) hit.add(h.y * room.w + h.x);
+        if (c.startsWith('door:') && !c.slice(5).split('|').some(col => h.open[col])) hit.add(h.y * room.w + h.x);
       }
       return hit.size >= 2;
     },

@@ -1,6 +1,6 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { stuckText, nameOf, roomOf, placed, placementErrors, overLimits, check, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
+import { colouringsOf, stuckText, nameOf, roomOf, placed, placementErrors, overLimits, check, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
 import { boxMoves, REQUIREMENTS, trailOf } from '../src/campaign/requirements.js';
 import { allShortest, replayPath } from '../src/campaign/robot.js';
 import { LEVELS } from '../src/level/campaign.js';
@@ -397,6 +397,13 @@ const build = (def, rows) => {
   ok('a two-colour level takes red and blue doors and buttons', stray('11', 'door:blue') === 0 && stray('11', 'button:red') === 0 && stray('11', 'door:green') === 1);
   ok('a level naming red takes a red one-way and not a plain one', stray('12', 'gate:up@red') === 0 && stray('12', 'gate:up') === 1);
   ok('a level naming no colours takes a plain one-way and not a red one', stray('9', 'gate:up') === 0 && stray('9', 'gate:up@red') === 1);
+  // Two colours are offered per piece (register 316): level 19's door only in red+blue, its buttons and relays never.
+  ok('a level offering a piece only in two colours refuses it in one', stray('19', 'door:red|blue') === 0 && stray('19', 'door:red') === 1 && stray('19', 'door:blue') === 1);
+  ok('a piece the level does not offer in two colours is refused in two', stray('19', 'button:red|blue') === 1 && stray('19', 'sensor:red|blue') === 1 && stray('11', 'door:red|blue') === 1);
+  const also = { ...level('11'), twoColour: { button: 'also' } }, r = roomOf(also);
+  r.cells[10] = 'button:red|blue'; r.cells[12] = 'button:red';
+  ok('a piece offered "also" comes in one colour or two', placed(also, r).stray.length === 0);
+  ok('one colour offers no pair', colouringsOf({ ...level('4'), twoColour: { door: 'only' } }, 'door').join() === 'red');
 }
 { // every level's room-size goal is reachable: the smallest winning room tools/tilesArea.mjs found
   // (levels 11 and 12: his rooms, 2026-10-19, registers 249 and 250)

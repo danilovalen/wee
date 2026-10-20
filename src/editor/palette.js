@@ -29,7 +29,6 @@ export const TOOLS = [
   { id: 'toggle', label: 'Switch', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'idoor', label: 'Inverted door', group: 'switches' },
-  { id: 'ddoor', label: 'Two-colour door', group: 'switches', campaign: true },
   { id: 'receiver', label: 'Laser catcher', group: 'switches' },
   { id: 'sensor', label: 'Laser relay', group: 'switches' },
 ];

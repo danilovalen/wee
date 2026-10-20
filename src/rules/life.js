@@ -65,8 +65,7 @@ export function refreshDoors(s) {
   // A receiver or a sensor is a button that a turret beam holds down; a toggle is held while on.
   for (const { i, x, y, col, button, toggle } of switchesOf(s)) {
     const down = toggle ? s.toggled.includes(i) : button ? playerAt(s, x, y) || !!entAt(s, x, y) : s.lit.has(i);
-    any[col] = true;
-    pressed[col] = (pressed[col] ?? true) && down;
+    for (const c of col.split('|')) { any[c] = true; pressed[c] = (pressed[c] ?? true) && down; }
   }
   let squashed = false;
   const turned = [], was = { ...s.open };
@@ -85,24 +84,28 @@ export function refreshDoors(s) {
     if (want !== !!s.open[col]) turned.push(col);
     s.open[col] = want;
   }
-  // A door of two colours closes only when both have: then it squashes what is in it.
+  // A door of two colours closes only when both have, an inverted one the moment either opens:
+  // then it squashes what is in it.
   s.cells.forEach((c, i) => {
-    if (!/^door:\w+\|/.test(c)) return;
-    const cols = c.slice(5).split('|'), x = i % s.w, y = Math.floor(i / s.w);
-    if (!cols.some(col => was[col]) || cols.some(col => s.open[col])) return;
+    const m = /^(i?)door:(\w+\|\w+)$/.exec(c);
+    if (!m) return;
+    const cols = m[2].split('|'), x = i % s.w, y = Math.floor(i / s.w), before = cols.some(col => was[col]), after = cols.some(col => s.open[col]);
+    if (m[1] ? before || !after : !before || after) return;
     for (const e of s.entities.filter(e => !e.dead && e.x === x && e.y === y)) kill(s, e, 'door');
     if (s.player.x === x && s.player.y === y && !s.player.hidden) squashed = true;
   });
-  launch(s, turned);
+  launch(s, turned, was);
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
 }
 
 // A one-way of a colour that just turned launches what stands on it along its new arrow, sliding
 // on until something stops it (register 253), as if it had kept moving that way.
-function launch(s, cols) {
+function launch(s, cols, was) {
   if (!cols.length) return;
   s.cells.forEach((c, i) => {
-    if (!c.startsWith('gate:') || !cols.includes(c.split('@')[1])) return;
+    const own = c.startsWith('gate:') && c.split('@')[1] ? c.split('@')[1].split('|') : [];
+    // A one-way of two colours turns only when the pair goes from neither open to either, or back.
+    if (!own.some(col => cols.includes(col)) || own.some(col => was[col]) === own.some(col => s.open[col])) return;
     const x = i % s.w, y = (i - x) / s.w;
     fling(s, x, y, gateDirs(s, c)[0], 'launch');
   });

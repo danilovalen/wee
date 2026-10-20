@@ -17,7 +17,7 @@ export function solidCell(s, x, y, beam = false) {
   if (c.startsWith('sensor:')) return !beam;
   if (c === 'crack') return !s.broken.includes(y * s.w + x);
   if (c.startsWith('door:')) return !c.slice(5).split('|').some(col => s.open[col]);
-  if (c.startsWith('idoor:')) return !!s.open[c.slice(6)];
+  if (c.startsWith('idoor:')) return c.slice(6).split('|').some(col => s.open[col]);
   return false;
 }
 
@@ -35,7 +35,7 @@ export function facing(s, x, y, d) {
 // it only along its listed directions; any other way, it is a wall. A coloured one
 // ('gate:right@red') points the other way while its colour's doors are open.
 export const gateOf = c => { if (!c || !c.startsWith('gate:')) return null; const [ds, col] = c.slice(5).split('@'); return { dirs: ds.split(','), col: col || null }; };
-export const gateDirs = (s, c) => { const g = gateOf(c); return g && (g.col && s.open[g.col] ? g.dirs.map(d => OPPOSITE[d]) : g.dirs); };
+export const gateDirs = (s, c) => { const g = gateOf(c); return g && (g.col && g.col.split('|').some(col => s.open[col]) ? g.dirs.map(d => OPPOSITE[d]) : g.dirs); };
 export const gateAt = (s, x, y) => inb(s, x, y) ? gateDirs(s, cellAt(s, x, y)) : null;
 
 // wet: whether this mover may enter water (beams always may). heavy: whether it breaks a

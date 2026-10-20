@@ -51,15 +51,20 @@ export function parseLevel(text) {
 export function isCell(c) {
   if (c === '' || c === 'wall' || c === 'crack' || c === 'checkpoint') return true;
   if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
-  if (c.startsWith('sensor:')) return COLOURS.includes(c.slice(7));
+  if (c.startsWith('sensor:')) return colourOk(c.slice(7));
   if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
-  if (c.startsWith('gate:')) { const [d, col, extra] = c.slice(5).split('@'), ds = d.split(','); return extra === undefined && (col === undefined || COLOURS.includes(col)) && new Set(ds).size === ds.length && ds.every(x => CLOCKWISE.includes(x)); }
+  if (c.startsWith('gate:')) { const [d, col, extra] = c.slice(5).split('@'), ds = d.split(','); return extra === undefined && (col === undefined || colourOk(col)) && new Set(ds).size === ds.length && ds.every(x => CLOCKWISE.includes(x)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
-  // A door may take two colours, 'door:red|blue' (register 313).
-  if (kind === 'door' && colour && colour.includes('|')) { const [a, b] = colour.split('|'); return a !== b && COLOURS.includes(a) && COLOURS.includes(b); }
-  return (kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor') && COLOURS.includes(colour);
+  return (kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor') && colourOk(colour);
+}
+
+// A colour, or two in the palette's order, 'red|blue' (registers 313, 316).
+function colourOk(col) {
+  if (!col) return false;
+  const [a, b, extra] = col.split('|');
+  return extra === undefined && COLOURS.includes(a) && (b === undefined || COLOURS.indexOf(b) > COLOURS.indexOf(a));
 }
 
 // Adds (delta 1) or cuts (delta -1) one row or column on a side, moving everything with

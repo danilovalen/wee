@@ -4,8 +4,8 @@ import { CLOCKWISE, COLOURS, POWERS, NEEDS } from '../rules/base.js';
 import { resizeLevel, moveSide, wallBorder } from '../level/format.js';
 import { INK } from '../view/ink.js';
 import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
-import { toolsFor, syncBrief } from './campaign.js';
-import { coloursOf } from '../campaign/rules.js';
+import { toolsFor, syncBrief, TOOL } from './campaign.js';
+import { coloursOf, colouringsOf } from '../campaign/rules.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch } from './dom.js';
 import { change, step as undoStep, syncUndo } from './undo.js';
@@ -201,7 +201,7 @@ let tint = '';
 // In a level, Look, Erase and Move start the colours' line; back in the sandbox they return to the palette.
 const LINE = ['look', 'erase', 'move'];
 // The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
-const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'ddoor', 'sensor', 'gate', 'turret'];
+const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'sensor', 'gate', 'turret'];
 const lined = () => !!(S.camp || S.simple);
 function placeTools() {
   const box = $('campTools');
@@ -212,10 +212,21 @@ function placeTools() {
     else if (!lined() && b.parentNode === box) b.home.replaceWith(b);
   }
 }
+// What the chosen tool may come in, and every choice the row offers: a level's colours, then red+blue
+// as a third dot where the level offers some piece in two (register 316); the simple Sandbox offers all three.
+const ELEMENT_OF = Object.fromEntries(Object.entries(TOOL).map(([el, t]) => [t, el]));
+function colourChoices() {
+  if (S.simple) return { all: ['red', 'blue', 'red|blue'], fits: ['red', 'blue', 'red|blue'] };
+  if (!S.camp) return { all: null, fits: null };
+  const def = S.camp.def, el = ELEMENT_OF[S.ui.tool], each = Object.keys(def.palette).flatMap(k => colouringsOf(def, k));
+  const all = [...coloursOf(def), ...new Set(each.filter(c => c.includes('|')))];
+  return { all, fits: el && TINTED.includes(S.ui.tool) ? colouringsOf(def, el) : all };
+}
+export const pairInk = col => col.includes('|') ? `linear-gradient(90deg, ${col.split('|').map((c, i) => `${INK[c]} ${i * 50}% ${i * 50 + 50}%`).join(', ')})` : INK[col];
 function syncColours() {
   placeTools();
-  const ui = S.ui, cols = S.camp ? coloursOf(S.camp.def) : S.simple ? ['red', 'blue'] : null, row = $('campColours');
-  if (cols && !cols.includes(ui.colour)) ui.colour = cols[0];
+  const ui = S.ui, { all: cols, fits } = colourChoices(), row = $('campColours');
+  if (fits && !fits.includes(ui.colour)) ui.colour = fits[0];
   ui.gateColour = (S.camp && S.camp.def.colours) || S.simple ? ui.colour : null;
   // In a level a laser stands alone, fires one way and turns with its clock: no mounting, no aim list.
   if (lined()) { ui.mount = false; if (ui.aim.length !== 1) ui.aim = ['right']; ui.mode = 'input'; } else ui.mount = true;
@@ -224,18 +235,21 @@ function syncColours() {
     row.dataset.cols = cols.join();
     row.replaceChildren(...cols.map(col => {
       const b = document.createElement('button');
-      b.type = 'button'; b.dataset.campColour = col; b.title = col; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', col);
-      b.style.background = INK[col];
+      b.type = 'button'; b.dataset.campColour = col; const name = col.replace('|', ' and '); b.title = name; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', name);
+      b.style.background = pairInk(col);
       b.onclick = () => { S.ui.colour = col; syncPanel(); };
       return b;
     }));
   }
-  row.querySelectorAll('[data-camp-colour]').forEach(b => { const on = b.dataset.campColour === ui.colour; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
-  const key = ui.colour + '|' + ui.gateColour;
+  // A colour the chosen tool cannot take is greyed: level 19's door comes only in red+blue.
+  row.querySelectorAll('[data-camp-colour]').forEach(b => { const on = b.dataset.campColour === ui.colour; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); b.disabled = !!fits && !fits.includes(b.dataset.campColour); });
+  // Each tool is drawn in the chosen colour, or in its own first one when it cannot take that.
+  const own = id => { const el = ELEMENT_OF[id], c = S.camp && el && S.camp.def.palette[el] ? colouringsOf(S.camp.def, el) : null; return c && !c.includes(ui.colour) ? c[0] : ui.colour; };
+  const key = TINTED.map(own).join() + '|' + ui.gateColour;
   if (key === tint) return;
   tint = key;
   for (const id of TINTED) {
-    const b = document.querySelector(`#palette [data-tool="${id}"]`), old = b && b.querySelector('canvas');
-    if (old) { const c = icon(id, ui.colour, ui.gateColour); c.dataset.colour = id === 'gate' ? ui.gateColour || '' : ui.colour; old.replaceWith(c); }
+    const b = document.querySelector(`#palette [data-tool="${id}"]`), old = b && b.querySelector('canvas'), col = own(id), gate = ui.gateColour && own('gate');
+    if (old) { const c = icon(id, col, gate); c.dataset.colour = id === 'gate' ? gate || '' : col; old.replaceWith(c); }
   }
 }

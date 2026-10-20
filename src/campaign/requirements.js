@@ -62,7 +62,7 @@ export const REQUIREMENTS = {
         const p = s.player;
         if (dir && !p.dir) {
           const [dx, dy] = STEP[dir], c = room.cells[(p.y + dy) * room.w + p.x + dx] || '';
-          if (/^door:/.test(c) && !s.open[c.slice(5)]) ok = true;
+          if (/^door:/.test(c) && !c.slice(5).split('|').some(col => s.open[col])) ok = true;
         }
         dir = p.dir;
       });

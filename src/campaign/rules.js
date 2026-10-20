@@ -18,18 +18,22 @@ export const ELEMENTS = {
   idoor: { label: 'Inverted door', cell: 'idoor:red', kind: 'idoor:' },
   // A block a beam goes through, lighting it (register 312).
   relay: { label: 'Laser relay', cell: 'sensor:red', kind: 'sensor:' },
-  // Open while either colour is held, like an OR (register 313).
-  ddoor: { label: 'Two-colour door', cell: 'door:red|blue', kind: 'door:', two: true },
 };
-// A plain door and a two-colour one share 'door:'; the '|' tells them apart.
-const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind) && c.includes('|') === !!ELEMENTS[k].two);
+const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind));
 // A level's colours (def.colours, red when it names none). A one-way takes one only in a level
 // that names its colours (register 241); elsewhere it has none.
 export const coloursOf = def => def.colours || ['red'];
+// What a piece may come in: each of the level's colours, and the first two together ('red|blue')
+// where def.twoColour names the piece, 'also' beside the single ones or 'only' (register 316).
+export function colouringsOf(def, el) {
+  const one = coloursOf(def), two = def.twoColour && def.twoColour[el], pair = one.length > 1 ? one.slice(0, 2).join('|') : null;
+  return !pair || !two ? one : two === 'only' ? [pair] : [...one, pair];
+}
+const COLOURED = { button: 'button', door: 'door', toggle: 'toggle', idoor: 'idoor', sensor: 'relay' };
 function colourFits(def, c) {
-  if (c.startsWith('gate:')) { const col = c.split('@')[1] || null; return def.colours ? def.colours.includes(col) : col === null; }
+  if (c.startsWith('gate:')) { const col = c.split('@')[1] || null; return def.colours ? colouringsOf(def, 'gate').includes(col) : col === null; }
   const [kind, col] = c.split(':');
-  return !['button', 'door', 'toggle', 'idoor', 'sensor'].includes(kind) || col.split('|').every(c2 => coloursOf(def).includes(c2));
+  return !COLOURED[kind] || colouringsOf(def, COLOURED[kind]).includes(col);
 }
 
 // The level's room: empty at its starting size, with no border (the room's edge stops the
@@ -139,8 +143,9 @@ export function stuckText(room) {
   const lasers = () => room.entities.filter(e => e.turret).map(e => ({ x: e.x, y: e.y }));
   if (!w.door && w.hit) return { why: 'The robot cannot reach the goal: a laser hits it on the way.', at: lasers() };
   if (!w.door) return { why: 'The robot cannot reach the goal from anywhere it can get to.', at: [] };
-  const doors = room.cells.flatMap((c, i) => c === 'door:' + w.door ? [xy(i)] : []);
-  const own = room.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.endsWith(':' + w.door) ? [i] : []);
+  const has = c => c.split(':')[1].split('|').includes(w.door);
+  const doors = room.cells.flatMap((c, i) => c.startsWith('door:') && has(c) ? [xy(i)] : []);
+  const own = room.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && has(c) ? [i] : []);
   const head = `The robot cannot reach the goal: the ${w.door} door never opens`;
   if (!own.length) return { why: `${head}, because nothing ${w.door} opens it.`, at: doors };
   if (w.apart) return { why: `${head}. It needs everything ${w.door} held at once, and that never happens.`, at: [...doors, ...own.map(xy)] };

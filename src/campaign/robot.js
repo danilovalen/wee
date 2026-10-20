@@ -95,10 +95,11 @@ export function whyStuck(level, { max = MAX_STATES } = {}) {
     }
     frontier = next;
   }
-  const colours = [...new Set(start.cells.filter(c => /^door:/.test(c)).map(c => c.slice(5)))];
-  const door = colours.find(c => !opened.has(c)) ?? null;
+  // A door of two colours is stuck only when neither of them ever opens.
+  const sets = [...new Set(start.cells.filter(c => /^door:/.test(c)).map(c => c.slice(5)))].map(c => c.split('|'));
+  const door = (sets.find(cs => !cs.some(c => opened.has(c))) || [null])[0];
   if (door === null) return { door, stuck: [], apart: false, hit };
-  const own = start.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.endsWith(':' + door) ? [i] : []);
+  const own = start.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.split(':')[1].split('|').includes(door) ? [i] : []);
   const stuck = own.filter(i => !held.has(i));
   return { door, stuck, apart: own.length > 0 && stuck.length === 0, hit };
 }
