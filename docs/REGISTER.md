@@ -341,3 +341,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 333 | "Level 19: kill the 'laser holds its own door' requirement. That is bad puzzle practice, telling the solution for a problem" | **logged (2026-10-20).** Lesson for future goals: a requirement must not state the solution's trick. |
 | 334 | "Hide level 19 for now" | **logged (2026-10-20).** |
 | 335 | "Your searches are failing quite a lot" | **logged (2026-10-20).** The room search found no win for levels 18, and for 17 under the new goals, where hand-built rooms exist. To diagnose. |
+| 336 | "Pushable should become a visible state. So lasers, relays and in the future other solid stuff can be pushable. One ways too (as long as it is pushed in the correct direction). Even doors. They will have a 'boxy variant'. Sketch and propose how should they look like and how that should be toggled" (the next level 19; multicolour waits) | **sketching (2026-10-20).** Sketch and proposal only. |
