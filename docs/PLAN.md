@@ -1,199 +1,27 @@
-# wee: ice slider sandbox, plan
+# Plan: everything still open (2026-10-20)
 
-Status: first slice built 2026-10-08 (steps 1 to 7 below). Swim and water are built too. Hook, Light and the
-blocks they need are not built yet. First test bed for the `game-skills` layer-1 skills.
+From `docs/REGISTER.md`. Numbers are register rows. Nothing below is built.
 
-## What it is
+## 1. Quick fixes (one slice, about an hour)
+1. **300** Remove the laser's mode badge (the dot with a triangle) in the campaign.
+2. **292** Copy pass on every on-screen string, starting with "The goal stays. Use Move." (dev notes, retro-explaining, condition first).
+3. **286** A "no way through" card says why, e.g. "The robot starts in a laser beam."
+4. **280** Gate: a palette minimum a required goal already implies fails a test.
 
-A Mario Maker style sandbox on a web canvas. You build a room, play it on the same screen,
-and switch player powers on and off, to feel them out before committing to a set.
+## 2. Editing comfort (one slice)
+5. **298 / 288 / 297** Resize with a + and − pair on each edge, outside the room, tap only, never over a tile; side margins shrink so tiles grow (estimate 28 → 31px on his 10×4).
+6. **291** Reset-room button with a confirmation dialog; Undo brings the room back.
+7. **273-275** His level 6 softlock and "Run says no way, Test finds 4": waiting on a Debug copy from him.
 
-## Dying and Reset
+## 3. Progress (one slice)
+8. **254** Keep progress between visits (rooms, wins, goals, stats) with a Reset progress button and a confirmation.
 
-Dying, the Reset button and R all put every piece, door and turret back as the room starts, with
-you on your last checkpoint.
+## 4. The four modes (several slices, the big one)
+9. **302** Menu with two sections. For the robot: Campaign (today) and a Level maker (palette min and max, requirements, optional goals). For you: Puzzles (you play as the little circle, same sliding rules) and Sandbox (today's sandbox, trimmed to the seven campaign elements, the circle instead of the robot). He builds the Puzzles levels in the Sandbox. Sketch: `docs/modes-sketch.png`.
 
-## Movement (decided)
+## 5. Levels
+10. **Level 16** exact 7 and 5×4 are his; a smaller or shorter win would lower them.
+11. **270** Level 12 has its extra goal (row 277); nothing left.
 
-- Top-down, four directions, **Pokemon ice**: one press and you slide tile by tile until a block
-  stops you. Grid exact.
-- A slide takes real time, one tile per tick, and accepts key presses while it runs. Most
-  powers act mid-slide.
-- **R** respawns you at the last checkpoint. Dying sends you there too. With no checkpoint
-  touched yet, the checkpoint is the player start.
-- Noted for later, not built: side view with gravity after a slide (VVVVVV style).
-- Noted for later, not built: height, the way 2D Zelda fakes 3D (ledges, jumping down a level).
-
-## World clock (decided: both, a toggle on the panel)
-
-1. **Per tile:** the world takes one step for every tile you slide.
-2. **Per slide:** the world takes one step per slide, however long.
-
-This clock drives the **on input** movers below. The **real time** movers ignore it.
-
-## Movers: moving block and enemy
-
-Both patrol in a straight line, **horizontal or vertical, wall to wall**, and turn back at a block.
-Each one placed in the editor picks its axis and its mode:
-
-| Mode | Speed | When it moves |
-|---|---|---|
-| Real time | slower | on its own clock, whether you move or not |
-| On input | faster, immediate | one step each time the world clock steps (per tile or per slide) |
-| Same way as you | faster, immediate | one step each world step, **the way you moved**, ignoring its patrol axis. Blocked, it waits. A jump has no direction, so it stays. |
-
-- **Moving block:** stops a slide like a base block. When it moves into you, it **pushes** you one
-  tile; if a block is behind you, it **crushes** you and you go back to the last checkpoint.
-- **Weak enemy:** touching it kills you, and you go back to the last checkpoint. A **laser** or a
-  **dive** into it kills it, and so does landing a jump as it steps under you.
-- **Strong enemy:** only a **thrown heavy box** kills it. It is immune to every laser and stops beams. A laser stops on it; diving into it kills
-  you; it steps under a jump and kills you (my call).
-
-## Triangles
-
-A triangle tile is solid in one corner. Anything entering through an open face leaves through
-the other, turned 90 degrees: you, boxes, heavy boxes, movers, enemies, lasers, turret beams.
-Its solid sides stop things like a wall.
-
-## Laser turret
-
-- Its beam is **on all the time** (like Portal), recomputed every tick, turned by triangles.
-- It points one of its chosen barrels at a time. **Real time**: turns clockwise on its own clock.
-  **On your move**: turns once per world step. **Same way as you**: points the way you moved, if
-  it has that barrel.
-- Stands alone like a block, or **mounts on a box, a heavy box or an enemy** and rides it.
-- The beam kills you (unless you are in the air) and weak enemies. Blocks, boxes, movers and
-  strong enemies stop it.
-
-## One-way tile
-
-Lets things move onto it and off it only along its chosen directions (one way, two ways, up to
-four); any other way it is a wall. You, boxes, heavy boxes, movers, enemies and beams all obey it.
-
-## Spring
-
-A solid tile facing one way. Whatever stands or passes on the tile in front of it is launched its
-way and slides until something stops it: you, boxes, heavy boxes, movers, enemies. A beam passes
-it by. It only fires when the way ahead is free, and not at you while airborne.
-
-## Death block
-
-Anything moving into it is destroyed: you, boxes, heavy boxes, movers, weak and strong enemies. A
-beam stops at it.
-
-## Water and swimming
-
-Water stops you like a block unless you are swimming, and stops weak enemies, light boxes and lone
-turrets; strong enemies, heavy boxes and blocks go through it. The tap (Space) starts or stops
-swimming with the Swim power, never while in water; with Cycle as well it also hides you, and
-either way the world takes one step. In water you move a tile every other tick. A beam that
-touches water passes on and shocks the whole body of water (cells joined side by side): you die,
-armored or not, unless hidden; weak enemies die; strong enemies, blocks and boxes are untouched.
-No flowing water: it is a top-down tile.
-
-## Sticky puddle
-
-Passing it makes you sticky until water washes it off or you stick to something, which uses it
-up. You stop at what you meet: a moving block or sliding box carries you until you move (any
-press lets go); a light box glues to you and comes along until the first move it cannot follow.
-A still heavy box does not stick. One check at the end of each tick lets go whenever you and
-what you hold came apart.
-
-Pieces get sticky too. Any piece but a turret that crosses a puddle is sticky until water washes
-it off or it runs into another piece, and then the two are glued (one partner each). A glued pair
-moves as one, whatever moves it (its own slide, a push from you or a block, a spring): a partner in
-the way goes first, the other follows, and the first time one cannot, they come apart. Two glued
-pieces that both slide on your move start one slide between them. A sticky heavy box glues to the
-box it hits instead of breaking it, and a light box glued to a heavy one brings it along when you
-push. A partner never follows onto you. Drawn as goo on top, and a goo bridge between a pair.
-
-## Laser relay ("sensor" in level files)
-
-A coloured floor plate, held down while a turret beam crosses it; the beam goes on. A piece on it
-keeps the beam off. It joins its colour's buttons and receivers: every one must be held.
-
-## Laser catcher ("receiver" in level files)
-
-A block with a coloured eye. While a turret beam ends on it, it counts as a pressed button of its
-colour, so it combines with that colour's buttons (all must be held).
-
-## Armored (status, a toggle for now)
-
-Weak enemies, blocks and closing doors cannot crush you: an enemy turns back, a block that cannot
-push you stops, a door stays open. A bomb's blast cannot hurt you either. Strong enemies, heavy boxes, beams and death
-blocks still kill you. Drawn as a steel rim with rivets.
-
-## Puzzle pieces: box, button, door
-
-A closing door squashes you, weak enemies, light boxes and lone turrets. A strong enemy, a heavy
-box or a block in it holds that colour's doors open.
-
-- **Box (light):** sliding into it pushes it, and it slides on ahead of you. You both keep
-  going until the box hits a block; you stop on the tile behind it. Moving blocks and enemies
-  push it too. It cannot squash an enemy.
-- **Heavy box:** a slide does not move it; only a **Dive** crash into it does. A moving heavy box
-  squashes an enemy in its way, and squashes you if it moves against you.
-- **Button:** pressed while a box or you stand on it. Released, its doors close again.
-- **Door:** a block while closed.
-- **Inverted door:** the opposite. Open until every switch of its colour is held, then closed. Drawn as a door's negative: dark with coloured bars, a minus sign when open. It squashes and is held like a door; a held one keeps the whole colour as it was, so its plain doors stay shut too.
-- **Wiring is by colour.** A colour's doors open only while **every** button of that colour is
-  pressed (AND), and one colour's buttons open **all** its doors.
-
-## Powers (his list, his words in brackets where kept)
-
-| Power | Rule | Needs |
-|---|---|---|
-| Boomerang | Mid-slide, press the reverse arrow to slide back. You stop at the far wall, past where you started. | nothing |
-| Dive | Mid-slide, press the same arrow again to arrive at the stopping tile at once and crash. Skipped tiles still give the world its steps, all at once. The crash moves a heavy box. It damages nothing for now; breaking blocks comes later. | heavy box; breakable block later |
-| Laser | Mid-slide, press the clockwise or counterclockwise arrow to fire a beam perpendicular to you. You keep sliding. Kills an enemy it hits. | laser targets for puzzles |
-| ~~Hook~~ | Removed 2026-10-11: gravel stops everything by default, so no power is needed. | |
-| Light | You emit light in dark levels, only while you are not moving. | a dark-level setting |
-| Swim | The tap starts or stops swimming; swimming, you can go into water, at half speed. See Water. | water tile (built) |
-| Cycle | Space **hides** you: you stay on your tile and the world takes one step, its on-your-move pieces sliding until they stop. Meanwhile nothing meets you and beams pass over. You come back when they have stopped (at least 4 ticks); anything on your tile then, or a door closed on it, squashes you. Hidden, you are a dashed outline. | movers to show it |
-
-## The editor
-
-The palette is four tabs (Basics, Pieces, Tiles, Switches), so on a phone the room, one tab and
-the chosen tool's options fit without scrolling.
-
-1. Edit and play on one screen; one key switches, no reload.
-2. Click adds a block, right click or the eraser removes it. Base block first; the palette is
-   data, so a new block type is a new row.
-3. Drag the player start. Place a checkpoint.
-4. Powers panel: one checkbox per power, plus the clock toggle. A change applies at once.
-5. **Save and Open work on a local file, like manga-tools' project file.** Save downloads a
-   `.wee` file (JSON: the room, the pieces, the powers panel, the clock). Open picks a `.wee`
-   file from disk. The file is the level; nothing depends on the browser keeping it.
-
-## Block palette, in build order
-
-1. Base block (stops a slide).
-2. Checkpoint (R and death return here).
-3. Moving block and enemy, each horizontal or vertical, each real time or on input.
-4. Box, heavy box, button, door.
-5. Water (Swim passes it, a beam shocks it). Built.
-6. Gravel (stops anything that slides onto it; was Grapple).
-7. Breakable (Dive breaks it).
-8. Laser target, dark level: later.
-
-## Layer-1 rules this build must prove
-
-- Fixed timestep and `renderGameToText()` from day one; every gate reads the text state.
-- Input replay: a recorded key log replays to the same final state.
-- Everything that appears or leaves moves; motion only on a change.
-- Gates print `N/N passed`, a missing total is red, every gate is mutation-tested.
-- A playtest register from the first session.
-
-## First slice
-
-1. Canvas grid, base block, place and erase, player start.
-2. Slide until a wall, on a fixed tick, with key input mid-slide.
-3. Checkpoint, R to respawn.
-4. Boomerang and Dive (no new blocks needed), the clock toggle.
-5. Moving block and enemy, both modes.
-6. Box, heavy box, button, door.
-7. Save and load, then the first gates.
-
-## Open
-
-- Room size and tile size.
+## 6. Older open rows, from before the campaign (his call whether they still matter)
+- **27** a 7×12 room as a template; **58** generator linearity; **76 / 82 / 90 / 92** lens and look decisions; **106** Rooms dialog; **118** flicker diagnosis; **215 / 216 / 218** menu screen polish; **227** resize lost while editing.
