@@ -5,7 +5,7 @@ import { emptyLevel } from '../src/level/format.js';
 //   M  mover, h      V  mover, v         E  enemy, h     F  enemy, v
 //   S  strong enemy, h                  T  laser turret (fires right)
 //   B  box           H  heavy box       O  bomb
-//   o  red button    D  red door         u  blue button  Q  blue door    N  red inverted door    r  red receiver  s  red laser sensor  w  water  %  sticky puddle
+//   o  red button    D  red door         u  blue button  Q  blue door    N  red inverted door    r  red laser relay (as s)  s  red laser relay  w  water  %  sticky puddle
 //   > < ^ v  one-way tile (that way)      =  two-way, across      |  two-way, up and down
 //   g  gravel        k  breakable block   t  red toggle   G  goal
 //   Y  two-colour door, red and blue
@@ -29,7 +29,7 @@ export function room(rows, opts = {}) {
       case 'o': l.cells[i] = 'button:red'; break;
       case 'D': l.cells[i] = 'door:red'; break;
       case 'u': l.cells[i] = 'button:blue'; break;
-      case 'r': l.cells[i] = 'receiver:red'; break;
+      case 'r': l.cells[i] = 'sensor:red'; break;
       case 's': l.cells[i] = 'sensor:red'; break;
       case 'Y': l.cells[i] = 'door:red|blue'; break;
       case 'w': l.cells[i] = 'water'; break;

@@ -316,20 +316,22 @@ const LONG = ['##########', '#..P....##', '##########'];
   }
   check('a turret with bad directions is refused', refused === 4, refused + '/4');
 }
-{ // a receiver is a button that a beam holds down
-  const s = createGame(room(['########', '#T..r..#', '#.oD...#', '#P.....#', '########']));
+{ // a relay is a button that a beam holds down; with a wall behind it does what a catcher did (register 353)
+  const s = createGame(room(['########', '#T..s#.#', '#.oD...#', '#P.....#', '########']));
   step(s);
-  check('a lit receiver alone is not enough when its colour has a button', !s.open.red);
+  check('a lit relay alone is not enough when its colour has a button', !s.open.red);
   s.player.x = 2; s.player.y = 2; step(s);
-  check('lit receiver plus pressed button opens the door', s.open.red);
+  check('lit relay plus pressed button opens the door', s.open.red);
   s.entities.push({ id: 99, kind: 'box', x: 2, y: 1, dead: false, turret: null });
   step(s);
   check('blocking the beam closes the door again', !s.open.red && s.lit.size === 0);
-  const t = createGame(room(['#######', '#T..r.#', '#..D..#', '#P....#', '#######']));
-  check('a lone receiver opens its colour from the start', t.open.red);
+  const t = createGame(room(['#######', '#T..s#', '#..D..#', '#P....#', '#######'].map(r => r.padEnd(7, '#').slice(0, 7))));
+  check('a lone relay opens its colour from the start', t.open.red);
   let refused = 0;
-  try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: ['receiver:pink', ...Array(8).fill('')] })); } catch { refused++; }
-  check('a receiver of an unknown colour is refused', refused === 1);
+  try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: ['sensor:pink', ...Array(8).fill('')] })); } catch { refused++; }
+  check('a relay of an unknown colour is refused', refused === 1);
+  let old = null; try { old = parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: ['receiver:blue', ...Array(8).fill('')] })); } catch { /* reported below */ }
+  check('an old room\'s laser catcher loads as a relay of its colour', old?.cells[0] === 'sensor:blue');
 }
 { // follow: pieces move the way you moved, one tile per world step, and wait when blocked
   const F = ['##########', '#M.......#', '#P.......#', '##########'];

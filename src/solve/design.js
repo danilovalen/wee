@@ -39,7 +39,7 @@ export function* elementCheck(level, max) {
     if (!c || c === 'wall' || c === 'goal') continue;
     const cells = [...level.cells]; cells[i] = '';
     const without = answer(yield* search({ ...level, cells }, max));
-    const stand = held.has(i) || c.startsWith('receiver:') ? null : answer(yield* search({ ...level, cells: walled(i) }, max));
+    const stand = held.has(i) ? null : answer(yield* search({ ...level, cells: walled(i) }, max));
     out.push({ x: i % level.w, y: Math.floor(i / level.w), what: c.split(':')[0], without, standIn: stand, as: 'wall' });
   }
   return out;

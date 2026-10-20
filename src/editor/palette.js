@@ -31,7 +31,6 @@ export const TOOLS = [
   { id: 'toggle', label: 'Switch', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'idoor', label: 'Inverted door', group: 'switches' },
-  { id: 'receiver', label: 'Laser catcher', group: 'switches' },
   { id: 'sensor', label: 'Laser relay', group: 'switches' },
 ];
 export const POWER_TEXT = {

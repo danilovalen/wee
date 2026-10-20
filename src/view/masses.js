@@ -12,7 +12,7 @@ const LIP = 6;
 
 // Blocks with something on them (a spring, a laser catcher, cracks) are still walls, and a
 // triangle is a wall along its two straight sides.
-const BLOCK = /^(spring:|receiver:|crack$)/;
+const BLOCK = /^(spring:|crack$)/;
 const OPPOSITE = { nw: 'se', ne: 'sw', sw: 'ne', se: 'nw' };
 const member = (c, kind) => kind === 'wall' ? c === 'wall' || BLOCK.test(c) || /^tri:/.test(c) : c === kind;
 // Does cell c belong to the mass on its side (n, e, s, w) or corner (nw ...) facing the asker?

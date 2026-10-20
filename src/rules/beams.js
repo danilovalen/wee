@@ -67,15 +67,14 @@ export function turnTurrets(s, mode) {
 }
 
 // Every turret beam is on all the time, recomputed each tick. With harm, it kills
-// you (unless you are hidden) and weak enemies. A beam that ends on a receiver lights
-// it; so does one crossing a sensor nothing stands on.
+// you (unless you are hidden) and weak enemies. A beam crossing a relay nothing
+// stands on lights it (register 353: catchers are gone; a relay with a wall behind does their job).
 export function computeBeams(s, harm) {
   s.beams = []; s.lit = new Set(); s.shocked = new Set();
   let hitYou = false;
   for (const e of s.entities) {
     if (e.dead || !e.turret) continue;
     const r = trace(s, e.x, e.y, aimOf(e.turret), o => harm ? laserHit(s, o, 'turret') : o.kind === 'enemy', true);
-    if (r.stop && inb(s, ...r.stop) && cellAt(s, ...r.stop).startsWith('receiver:')) s.lit.add(r.stop[1] * s.w + r.stop[0]);
     for (const [x, y] of r.path) if (cellAt(s, x, y).startsWith('sensor:') && !entAt(s, x, y) && !playerAt(s, x, y)) s.lit.add(y * s.w + x);
     if (r.player) hitYou = true;
     for (const i of shockPools(s, r.path)) s.shocked.add(i);

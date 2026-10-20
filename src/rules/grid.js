@@ -13,7 +13,7 @@ export const onGravel = (s, o) => cellAt(s, o.x, o.y) === 'gravel';
 export function solidCell(s, x, y, beam = false) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
-  if (c === 'wall' || c.startsWith('receiver:') || c.startsWith('spring:')) return true;
+  if (c === 'wall' || c.startsWith('spring:')) return true;
   if (c.startsWith('sensor:')) return !beam;
   if (c === 'crack') return !s.broken.includes(y * s.w + x);
   if (c.startsWith('door:')) return !c.slice(5).split('|').some(col => s.open[col]);

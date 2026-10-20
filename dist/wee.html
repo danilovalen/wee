@@ -1097,7 +1097,7 @@ function netsOf(level) {
   return { at, of, ids };
 }
 
-const SWITCH = /^(button|toggle|receiver|sensor):/;
+const SWITCH = /^(button|toggle|sensor):/;
 // The cells a run plays with: a grey piece takes its tile's networks as its colours, and a switch of
 // any colour adds them to its own. A grey piece on no wire reads a network that never opens.
 function wireCells(cells, at) {
@@ -1110,7 +1110,7 @@ function wireCells(cells, at) {
 }
 
 // A piece pushed onto another tile takes that tile's wires instead of the ones it left.
-const WIRED = /^(button|toggle|receiver|sensor|door|idoor):/;
+const WIRED = /^(button|toggle|sensor|door|idoor):/;
 function rewire(c, here) {
   if (!WIRED.test(c)) return c;
   const [kind, cols] = c.split(':'), real = cols.split('|').filter(k => !/^w(\d+|none)$/.test(k));
@@ -1167,6 +1167,8 @@ function resizeLevel(level, w, h) {
 function parseLevel(text) {
   const l = JSON.parse(text);
   if (l.format !== 'wee-level') throw new Error('Not a wee level file.');
+  // Laser catchers are gone (register 353): an old room's catcher loads as a relay of its colour.
+  if (Array.isArray(l.cells)) l.cells = l.cells.map(c => typeof c === 'string' && c.startsWith('receiver:') ? 'sensor:' + c.slice(9) : c);
   if (!(l.w > 0 && l.h > 0) || !Array.isArray(l.cells) || l.cells.length !== l.w * l.h)
     throw new Error('The room size does not match its cells.');
   for (const c of l.cells) if (!isCell(c)) throw new Error('Unknown tile: ' + c);
@@ -1193,7 +1195,6 @@ const CRATED = c => !!c && ['sensor:', 'gate:', 'door:', 'idoor:'].some(k => c.s
 
 function isCell(c) {
   if (c === '' || c === 'wall' || c === 'crack' || c === 'checkpoint') return true;
-  if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9)) || c.slice(9) === 'wire';
   if (c.startsWith('sensor:')) return colourOk(c.slice(7));
   if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
@@ -1308,7 +1309,7 @@ const onGravel = (s, o) => cellAt(s, o.x, o.y) === 'gravel';
 function solidCell(s, x, y, beam = false) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
-  if (c === 'wall' || c.startsWith('receiver:') || c.startsWith('spring:')) return true;
+  if (c === 'wall' || c.startsWith('spring:')) return true;
   if (c.startsWith('sensor:')) return !beam;
   if (c === 'crack') return !s.broken.includes(y * s.w + x);
   if (c.startsWith('door:')) return !c.slice(5).split('|').some(col => s.open[col]);
@@ -1406,7 +1407,7 @@ const freshPieces = list => list.map((e, i) => ({
   turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: startAim(e.turret) } : null,
 }));
 
-// A colour's doors open only while every button, receiver and sensor of that colour
+// A colour's doors open only while every button, switch and relay of that colour
 // is held; its inverted doors close then. A closing door of either kind squashes you,
 // weak enemies, boxes and lone turrets, unless a strong enemy, a heavy box or a block
 // stands in it (or you, armored): then the colour keeps its state, so both kinds hold.
@@ -1419,7 +1420,6 @@ function switchesOf(s) {
     s.cells.forEach((c, i) => {
       const x = i % s.w, y = (i - x) / s.w;
       if (c.startsWith('button:')) list.push({ i, x, y, col: c.slice(7), button: true });
-      else if (c.startsWith('receiver:')) list.push({ i, x, y, col: c.slice(9), button: false });
       else if (c.startsWith('sensor:')) list.push({ i, x, y, col: c.slice(7), button: false });
       else if (c.startsWith('toggle:')) list.push({ i, x, y, col: c.slice(7), toggle: true });
     });
@@ -1462,7 +1462,7 @@ function flipToggles(s, flip = true) {
 function refreshDoors(s) {
   const pressed = {}, any = {};
   flipToggles(s);
-  // A receiver or a sensor is a button that a turret beam holds down; a toggle is held while on.
+  // A relay is a button that a turret beam holds down; a toggle is held while on.
   for (const { i, x, y, col, button, toggle } of switchesOf(s)) {
     const down = toggle ? s.toggled.includes(i) : button ? playerAt(s, x, y) || !!entAt(s, x, y) : s.lit.has(i);
     for (const c of col.split('|')) { any[c] = true; pressed[c] = (pressed[c] ?? true) && down; }
@@ -1651,15 +1651,14 @@ function turnTurrets(s, mode) {
 }
 
 // Every turret beam is on all the time, recomputed each tick. With harm, it kills
-// you (unless you are hidden) and weak enemies. A beam that ends on a receiver lights
-// it; so does one crossing a sensor nothing stands on.
+// you (unless you are hidden) and weak enemies. A beam crossing a relay nothing
+// stands on lights it (register 353: catchers are gone; a relay with a wall behind does their job).
 function computeBeams(s, harm) {
   s.beams = []; s.lit = new Set(); s.shocked = new Set();
   let hitYou = false;
   for (const e of s.entities) {
     if (e.dead || !e.turret) continue;
     const r = trace(s, e.x, e.y, aimOf(e.turret), o => harm ? laserHit(s, o, 'turret') : o.kind === 'enemy', true);
-    if (r.stop && inb(s, ...r.stop) && cellAt(s, ...r.stop).startsWith('receiver:')) s.lit.add(r.stop[1] * s.w + r.stop[0]);
     for (const [x, y] of r.path) if (cellAt(s, x, y).startsWith('sensor:') && !entAt(s, x, y) && !playerAt(s, x, y)) s.lit.add(y * s.w + x);
     if (r.player) hitYou = true;
     for (const i of shockPools(s, r.path)) s.shocked.add(i);
@@ -2380,7 +2379,7 @@ function powerMoves(s) {
 // A laser only matters in a room with something it can change: an enemy, a switch it
 // lights, or water it shocks.
 const laserMatters = s => s.entities.some(e => !e.dead && (e.kind === 'enemy' || e.kind === 'strong')) ||
-  s.cells.some(c => c === 'water' || c.startsWith('sensor:') || c.startsWith('receiver:'));
+  s.cells.some(c => c === 'water' || c.startsWith('sensor:'));
 
 // Settles a state already stepped once; null when it died, never settled, or changed nothing.
 function settleFrom(t, deaths, before, at = 0, then = null, from = 1) {
@@ -2590,7 +2589,7 @@ function whyStuck(level, { max = MAX_STATES } = {}) {
     for (const [c, on] of Object.entries(s.open)) if (on) opened.add(c);
     s.cells.forEach((c, i) => {
       const x = i % s.w, y = Math.floor(i / s.w);
-      if (c.startsWith('toggle:') ? s.toggled.includes(i) : c.startsWith('button:') ? playerAt(s, x, y) || !!entAt(s, x, y) : /^(receiver|sensor):/.test(c) && s.lit.has(i)) held.add(i);
+      if (c.startsWith('toggle:') ? s.toggled.includes(i) : c.startsWith('button:') ? playerAt(s, x, y) || !!entAt(s, x, y) : /^sensor:/.test(c) && s.lit.has(i)) held.add(i);
     });
   };
   note(start);
@@ -2614,7 +2613,7 @@ function whyStuck(level, { max = MAX_STATES } = {}) {
   const sets = [...new Set(start.cells.filter(c => /^door:/.test(c)).map(c => c.slice(5)))].map(c => c.split('|'));
   const door = (sets.find(cs => !cs.some(c => opened.has(c))) || [null])[0];
   if (door === null) return { door, stuck: [], apart: false, hit };
-  const own = start.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.split(':')[1].split('|').includes(door) ? [i] : []);
+  const own = start.cells.flatMap((c, i) => /^(button|toggle|sensor):/.test(c) && c.split(':')[1].split('|').includes(door) ? [i] : []);
   const stuck = own.filter(i => !held.has(i));
   return { door, stuck, apart: own.length > 0 && stuck.length === 0, hit };
 }
@@ -3365,7 +3364,6 @@ const tilesOf = (def, room) => Object.values(placed(def, room).by).reduce((n, l)
 const HOLD = {
   button: ['button', 'buttons', 'is never pressed', 'are never pressed', 'is ever pressed'],
   toggle: ['switch', 'switches', 'never turns on', 'never turn on', 'ever turns on'],
-  receiver: ['laser catcher', 'laser catchers', 'is never lit', 'are never lit', 'is ever lit'],
   sensor: ['laser relay', 'laser relays', 'is never lit', 'are never lit', 'is ever lit'],
 };
 function stuckText(room) {
@@ -3377,7 +3375,7 @@ function stuckText(room) {
   if (!w.door) return { why: 'The robot cannot reach the goal from anywhere it can get to.', at: [] };
   const has = c => c.split(':')[1].split('|').includes(w.door);
   const doors = room.cells.flatMap((c, i) => c.startsWith('door:') && has(c) ? [xy(i)] : []);
-  const own = room.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && has(c) ? [i] : []);
+  const own = room.cells.flatMap((c, i) => /^(button|toggle|sensor):/.test(c) && has(c) ? [i] : []);
   const head = `The robot cannot reach the goal: the ${w.door} door never opens`;
   if (!own.length) return { why: `${head}, because nothing ${w.door} opens it.`, at: doors };
   if (w.apart) return { why: `${head}. It needs everything ${w.door} held at once, and that never happens.`, at: [...doors, ...own.map(xy)] };
@@ -3530,7 +3528,7 @@ const INK = {
   armor: '#b9c7e6',
   floor: '#e4e7ec', grid: '#d6dae2', wall: '#a9b0bf', wallTop: '#c3c9d5', crack: '#5b6070',
   player: '#7b6cff', start: '#7b6cff', robotDark: '#4b3fd6', robotTip: '#ff6b81', robotVisor: '#2a2440', robotEye: '#7ef0ff', shadow: 'rgba(40,44,60,0.22)',
-  mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff4d6d', zap: '#ffb400', zapCore: '#fff4c2', barrel: '#8f86d9', box: '#ffa94d', boxEdge: '#c97326',
+  mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff4d6d', zap: '#ff5722', zapCore: '#ffd8c4', barrel: '#8f86d9', box: '#ffa94d', boxEdge: '#c97326',
   heavy: '#9b8cff', heavyEdge: '#5b4fc8', bomb: '#3d4256', bombHi: '#7d8399', fuse: '#b08a5c', spark: '#ff9a3d', blast: '#ff8a3d', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
   red: '#ff6b81', blue: '#5aa9ff', yellow: '#ffd84d', green: '#5edc9a',
   // Grey pieces read wires (register 347); the wires' own three colours are none of the doors'.
@@ -3865,15 +3863,6 @@ function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     g.globalAlpha = lit ? 1 : 0.25; star(g, 0.5); g.fill();
     if (lit) { g.globalAlpha = 0.3; star(g, 1.25); g.fill(); }
     g.globalAlpha = 1;
-  } else if (c.startsWith('receiver:')) {
-    // A catcher: a block with a coloured eye that glows while a beam holds it.
-    const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
-    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
-    // A grey catcher glows white, or lit and unlit would both read grey.
-    g.fillStyle = lit ? (col === 'wire' ? '#ffffff' : INK[col]) : INK.unlit;
-    g.beginPath(); g.arc(16, 16, 8.5, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = INK[col]; g.lineWidth = 3; g.stroke();
-    if (lit) { g.globalAlpha = 0.35; g.fillStyle = INK[col]; g.beginPath(); g.arc(16, 16, 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
   } else if (c === 'goal') {
     // A gold ring with a star in it, pulsing slowly.
     const k = 0.5 + 0.5 * Math.sin(frame.clock / 400);
@@ -3960,7 +3949,7 @@ const LIP = 6;
 
 // Blocks with something on them (a spring, a laser catcher, cracks) are still walls, and a
 // triangle is a wall along its two straight sides.
-const BLOCK = /^(spring:|receiver:|crack$)/;
+const BLOCK = /^(spring:|crack$)/;
 const OPPOSITE = { nw: 'se', ne: 'sw', sw: 'ne', se: 'nw' };
 const member = (c, kind) => kind === 'wall' ? c === 'wall' || BLOCK.test(c) || /^tri:/.test(c) : c === kind;
 // Does cell c belong to the mass on its side (n, e, s, w) or corner (nw ...) facing the asker?
@@ -4179,7 +4168,7 @@ function drawTrim(g, x, y, cols) {
 // them, and dims the rest; on no wire, only itself lights.
 function drawReach(g, level, at, nets) {
   const i = at.y * level.w + at.x, cell = level.cells[i];
-  if (!isGrey(cell) && !(nets.at[i].length && /^(button|toggle|receiver|sensor):/.test(cell))) return;
+  if (!isGrey(cell) && !(nets.at[i].length && /^(button|toggle|sensor):/.test(cell))) return;
   const ids = new Set(nets.at[i]), lit = new Set([i]);
   nets.at.forEach((list, k) => { if (list.some(id => ids.has(id))) lit.add(k); });
   g.save(); g.fillStyle = INK.floor; g.globalAlpha = 0.6;
@@ -4520,8 +4509,6 @@ function icon(tool, colour = 'red', gateColour = null, crate = false) {
   } else if (tool === 'look') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 2.5;
     x.beginPath(); x.arc(14, 14, 7, 0, Math.PI * 2); x.moveTo(19, 19); x.lineTo(26, 26); x.stroke();
-  } else if (tool === 'receiver') {
-    const l = emptyLevel(1, 1); l.cells[0] = 'receiver:red'; l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'move') {
     // Four arrows out from the middle.
     x.strokeStyle = '#6f6876'; x.lineWidth = 2.5; x.lineCap = 'round'; x.lineJoin = 'round';
@@ -5295,7 +5282,7 @@ const { parseMove } = m12;
 
 
 // A tile nothing will ever move into: outside, a block, a catcher or a spring.
-const fixed = (l, x, y) => x < 0 || y < 0 || x >= l.w || y >= l.h || /^(wall|receiver:|spring:)/.test(l.cells[y * l.w + x]);
+const fixed = (l, x, y) => x < 0 || y < 0 || x >= l.w || y >= l.h || /^(wall|spring:)/.test(l.cells[y * l.w + x]);
 
 function lint(level) {
   const out = [], at = i => ({ x: i % level.w, y: Math.floor(i / level.w) });
@@ -5303,7 +5290,7 @@ function lint(level) {
   level.cells.forEach((c, i) => {
     const [kind, col] = c.split(':');
     if (kind === 'door' || kind === 'idoor') (doors[col] ||= []).push(i);
-    if (kind === 'button' || kind === 'toggle' || kind === 'receiver' || kind === 'sensor') (switches[col] ||= []).push(i);
+    if (kind === 'button' || kind === 'toggle' || kind === 'sensor') (switches[col] ||= []).push(i);
   });
   for (const col in doors) if (!switches[col]) out.push({ ...at(doors[col][0]), msg: `A ${col} door with no ${col} switch never changes.` });
   for (const col in switches) if (!doors[col]) out.push({ ...at(switches[col][0]), msg: `A ${col} switch with no ${col} door does nothing.` });
@@ -5381,7 +5368,7 @@ function* elementCheck(level, max) {
     if (!c || c === 'wall' || c === 'goal') continue;
     const cells = [...level.cells]; cells[i] = '';
     const without = answer(yield* search({ ...level, cells }, max));
-    const stand = held.has(i) || c.startsWith('receiver:') ? null : answer(yield* search({ ...level, cells: walled(i) }, max));
+    const stand = held.has(i) ? null : answer(yield* search({ ...level, cells: walled(i) }, max));
     out.push({ x: i % level.w, y: Math.floor(i / level.w), what: c.split(':')[0], without, standIn: stand, as: 'wall' });
   }
   return out;
@@ -5515,7 +5502,7 @@ const { syncWell } = m43;
 
 const SLICE_MS = 25, MAX = NOTES_MAX;
 const NAME = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', armored: 'Armored' };
-const PIECE = { box: 'box', heavy: 'heavy box', bomb: 'bomb', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', toggle: 'switch', door: 'door', idoor: 'inverted door', receiver: 'laser catcher', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', gravel: 'gravel', checkpoint: 'checkpoint' };
+const PIECE = { box: 'box', heavy: 'heavy box', bomb: 'bomb', mover: 'moving block', enemy: 'weak enemy', strong: 'strong enemy', turret: 'turret', button: 'button', toggle: 'switch', door: 'door', idoor: 'inverted door', sensor: 'laser relay', tri: 'triangle', gate: 'one-way', spring: 'spring', death: 'death block', water: 'water', sticky: 'sticky puddle', gravel: 'gravel', checkpoint: 'checkpoint' };
 const moves = n => typeof n === 'number' ? `${n} ${n === 1 ? 'move' : 'moves'}` : n === 'unsolvable' ? 'no solution' : 'too many positions to tell';
 
 // Runs one generator to the end in slices, then calls done; gives up when the room changes.
@@ -5750,7 +5737,7 @@ return { checkText, runCheck, syncCheck, feedDemo, syncLint };
 const m47 = (() => {
 
 // Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.
-const TEMPLATES = [{"name":"4-bit counter","level":{"format":"wee-level","version":1,"w":31,"h":19,"cells":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","receiver:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","idoor:wire","receiver:yellow","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","receiver:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","receiver:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:yellow","","","","","idoor:yellow","","","","","","idoor:yellow","","","","","idoor:yellow","","","","","","","door:wire","receiver:wire","","","","","","","door:wire","","","","","door:green","","","","","","door:blue","","","","","door:red","","","","","","","","","","","","","","","receiver:wire","idoor:wire","door:yellow","door:wire","","receiver:green","door:blue","door:red","door:yellow","idoor:green","","receiver:blue","door:red","door:yellow","idoor:blue","","receiver:red","door:yellow","idoor:red","","","","","door:wire","receiver:wire","","","","","","","door:wire","","","","","door:green","","","","","","door:blue","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","","idoor:wire","","","","","","idoor:red","","","","","","","","","","","","door:wire","receiver:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","receiver:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","receiver:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"start":{"x":8,"y":18},"entities":[{"kind":"turret","x":1,"y":2,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":4,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":6,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":8,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":12,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":14,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":4,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":29,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":26,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":25,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":21,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":21,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":20,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":15,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":15,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":14,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":10,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":10,"y":12,"turret":{"dirs":["up"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile","wires":[{"x":3,"y":2,"w":"teal"},{"x":3,"y":3,"w":"teal"},{"x":2,"y":3,"w":"teal"},{"x":2,"y":4,"w":"teal"},{"x":3,"y":4,"w":"violet"},{"x":3,"y":5,"w":"violet"},{"x":2,"y":5,"w":"violet"},{"x":2,"y":6,"w":"violet"},{"x":3,"y":6,"w":"teal"},{"x":3,"y":7,"w":"teal"},{"x":2,"y":7,"w":"teal"},{"x":2,"y":8,"w":"teal"},{"x":3,"y":8,"w":"violet"},{"x":3,"y":9,"w":"violet"},{"x":2,"y":9,"w":"violet"},{"x":2,"y":10,"w":"violet"},{"x":3,"y":10,"w":"teal"},{"x":3,"y":11,"w":"teal"},{"x":2,"y":11,"w":"teal"},{"x":2,"y":12,"w":"teal"},{"x":3,"y":12,"w":"violet"},{"x":3,"y":13,"w":"violet"},{"x":2,"y":13,"w":"violet"},{"x":2,"y":14,"w":"violet"},{"x":3,"y":14,"w":"teal"},{"x":3,"y":15,"w":"teal"},{"x":2,"y":15,"w":"teal"},{"x":2,"y":16,"w":"teal"},{"x":3,"y":16,"w":"charcoal"},{"x":3,"y":17,"w":"charcoal"},{"x":2,"y":17,"w":"charcoal"},{"x":1,"y":17,"w":"charcoal"},{"x":0,"y":17,"w":"charcoal"},{"x":0,"y":16,"w":"charcoal"},{"x":0,"y":15,"w":"charcoal"},{"x":0,"y":14,"w":"charcoal"},{"x":0,"y":13,"w":"charcoal"},{"x":0,"y":12,"w":"charcoal"},{"x":0,"y":11,"w":"charcoal"},{"x":0,"y":10,"w":"charcoal"},{"x":0,"y":9,"w":"charcoal"},{"x":0,"y":8,"w":"charcoal"},{"x":0,"y":7,"w":"charcoal"},{"x":0,"y":6,"w":"charcoal"},{"x":0,"y":5,"w":"charcoal"},{"x":0,"y":4,"w":"charcoal"},{"x":0,"y":3,"w":"charcoal"},{"x":0,"y":2,"w":"charcoal"},{"x":0,"y":1,"w":"charcoal"},{"x":1,"y":1,"w":"charcoal"},{"x":2,"y":1,"w":"charcoal"},{"x":2,"y":2,"w":"charcoal"},{"x":4,"y":3,"w":"teal"},{"x":5,"y":3,"w":"teal"},{"x":4,"y":4,"w":"violet"},{"x":5,"y":4,"w":"violet"},{"x":6,"y":4,"w":"violet"},{"x":6,"y":3,"w":"violet"},{"x":26,"y":9,"w":"teal"},{"x":25,"y":9,"w":"teal"},{"x":24,"y":9,"w":"teal"},{"x":23,"y":9,"w":"teal"},{"x":22,"y":9,"w":"teal"},{"x":21,"y":9,"w":"teal"},{"x":20,"y":9,"w":"teal"},{"x":19,"y":9,"w":"teal"},{"x":18,"y":9,"w":"teal"},{"x":17,"y":9,"w":"teal"},{"x":16,"y":9,"w":"teal"},{"x":16,"y":10,"w":"teal"},{"x":16,"y":11,"w":"teal"},{"x":15,"y":11,"w":"teal"},{"x":26,"y":9,"w":"violet"},{"x":25,"y":9,"w":"violet"},{"x":24,"y":9,"w":"violet"},{"x":23,"y":9,"w":"violet"},{"x":22,"y":9,"w":"violet"},{"x":21,"y":9,"w":"violet"},{"x":20,"y":9,"w":"violet"},{"x":19,"y":9,"w":"violet"},{"x":18,"y":9,"w":"violet"},{"x":17,"y":9,"w":"violet"},{"x":16,"y":9,"w":"violet"},{"x":15,"y":9,"w":"violet"},{"x":14,"y":9,"w":"violet"},{"x":13,"y":9,"w":"violet"},{"x":13,"y":10,"w":"violet"},{"x":13,"y":11,"w":"violet"},{"x":12,"y":11,"w":"violet"},{"x":11,"y":11,"w":"violet"},{"x":10,"y":11,"w":"violet"},{"x":10,"y":9,"w":"charcoal"},{"x":10,"y":8,"w":"charcoal"},{"x":10,"y":10,"w":"charcoal"},{"x":11,"y":9,"w":"charcoal"}],"name":"4-bit counter"}},{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Overshoot","level":{"format":"wee-level","version":1,"name":"Overshoot","w":7,"h":7,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","","","","","","wall","wall","","","wall","","","wall","wall","wall","goal","","","","wall","wall","wall","","","","wall","wall","wall","","","","","","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":2,"y":4},"entities":[{"kind":"box","x":4,"y":3,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"swim":false,"light":false},"clock":"tile"}},{"name":"Short fuse","level":{"format":"wee-level","version":1,"name":"Short fuse","w":8,"h":8,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","wall","","wall","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","wall","","crack","","wall","wall","wall","wall","wall","wall","goal","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"bomb","x":4,"y":4,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":true,"swim":false,"light":false,"armored":false},"clock":"tile"}}];
+const TEMPLATES = [{"name":"4-bit counter","level":{"format":"wee-level","version":1,"w":31,"h":19,"cells":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","idoor:wire","sensor:yellow","wall","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:yellow","","","","","idoor:yellow","","","","","","idoor:yellow","","","","","idoor:yellow","","","","","","","door:wire","sensor:wire","wall","","","","","","door:wire","","","","","door:green","","","","","","door:blue","","","","","door:red","","","","","","","","","","","","","","wall","sensor:wire","idoor:wire","door:yellow","door:wire","","sensor:green","door:blue","door:red","door:yellow","idoor:green","","sensor:blue","door:red","door:yellow","idoor:blue","","sensor:red","door:yellow","idoor:red","","","","","door:wire","sensor:wire","wall","","","","","","door:wire","","","","","door:green","","","","","","door:blue","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","","idoor:wire","","","","","","idoor:red","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"start":{"x":8,"y":18},"entities":[{"kind":"turret","x":1,"y":2,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":4,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":6,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":8,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":12,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":14,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":4,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":29,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":26,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":25,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":21,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":21,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":20,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":15,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":15,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":14,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":10,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":10,"y":12,"turret":{"dirs":["up"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile","wires":[{"x":3,"y":2,"w":"teal"},{"x":3,"y":3,"w":"teal"},{"x":2,"y":3,"w":"teal"},{"x":2,"y":4,"w":"teal"},{"x":3,"y":4,"w":"violet"},{"x":3,"y":5,"w":"violet"},{"x":2,"y":5,"w":"violet"},{"x":2,"y":6,"w":"violet"},{"x":3,"y":6,"w":"teal"},{"x":3,"y":7,"w":"teal"},{"x":2,"y":7,"w":"teal"},{"x":2,"y":8,"w":"teal"},{"x":3,"y":8,"w":"violet"},{"x":3,"y":9,"w":"violet"},{"x":2,"y":9,"w":"violet"},{"x":2,"y":10,"w":"violet"},{"x":3,"y":10,"w":"teal"},{"x":3,"y":11,"w":"teal"},{"x":2,"y":11,"w":"teal"},{"x":2,"y":12,"w":"teal"},{"x":3,"y":12,"w":"violet"},{"x":3,"y":13,"w":"violet"},{"x":2,"y":13,"w":"violet"},{"x":2,"y":14,"w":"violet"},{"x":3,"y":14,"w":"teal"},{"x":3,"y":15,"w":"teal"},{"x":2,"y":15,"w":"teal"},{"x":2,"y":16,"w":"teal"},{"x":3,"y":16,"w":"charcoal"},{"x":3,"y":17,"w":"charcoal"},{"x":2,"y":17,"w":"charcoal"},{"x":1,"y":17,"w":"charcoal"},{"x":0,"y":17,"w":"charcoal"},{"x":0,"y":16,"w":"charcoal"},{"x":0,"y":15,"w":"charcoal"},{"x":0,"y":14,"w":"charcoal"},{"x":0,"y":13,"w":"charcoal"},{"x":0,"y":12,"w":"charcoal"},{"x":0,"y":11,"w":"charcoal"},{"x":0,"y":10,"w":"charcoal"},{"x":0,"y":9,"w":"charcoal"},{"x":0,"y":8,"w":"charcoal"},{"x":0,"y":7,"w":"charcoal"},{"x":0,"y":6,"w":"charcoal"},{"x":0,"y":5,"w":"charcoal"},{"x":0,"y":4,"w":"charcoal"},{"x":0,"y":3,"w":"charcoal"},{"x":0,"y":2,"w":"charcoal"},{"x":0,"y":1,"w":"charcoal"},{"x":1,"y":1,"w":"charcoal"},{"x":2,"y":1,"w":"charcoal"},{"x":2,"y":2,"w":"charcoal"},{"x":4,"y":3,"w":"teal"},{"x":5,"y":3,"w":"teal"},{"x":4,"y":4,"w":"violet"},{"x":5,"y":4,"w":"violet"},{"x":6,"y":4,"w":"violet"},{"x":6,"y":3,"w":"violet"},{"x":26,"y":9,"w":"teal"},{"x":25,"y":9,"w":"teal"},{"x":24,"y":9,"w":"teal"},{"x":23,"y":9,"w":"teal"},{"x":22,"y":9,"w":"teal"},{"x":21,"y":9,"w":"teal"},{"x":20,"y":9,"w":"teal"},{"x":19,"y":9,"w":"teal"},{"x":18,"y":9,"w":"teal"},{"x":17,"y":9,"w":"teal"},{"x":16,"y":9,"w":"teal"},{"x":16,"y":10,"w":"teal"},{"x":16,"y":11,"w":"teal"},{"x":15,"y":11,"w":"teal"},{"x":26,"y":9,"w":"violet"},{"x":25,"y":9,"w":"violet"},{"x":24,"y":9,"w":"violet"},{"x":23,"y":9,"w":"violet"},{"x":22,"y":9,"w":"violet"},{"x":21,"y":9,"w":"violet"},{"x":20,"y":9,"w":"violet"},{"x":19,"y":9,"w":"violet"},{"x":18,"y":9,"w":"violet"},{"x":17,"y":9,"w":"violet"},{"x":16,"y":9,"w":"violet"},{"x":15,"y":9,"w":"violet"},{"x":14,"y":9,"w":"violet"},{"x":13,"y":9,"w":"violet"},{"x":13,"y":10,"w":"violet"},{"x":13,"y":11,"w":"violet"},{"x":12,"y":11,"w":"violet"},{"x":11,"y":11,"w":"violet"},{"x":10,"y":11,"w":"violet"},{"x":10,"y":9,"w":"charcoal"},{"x":10,"y":8,"w":"charcoal"},{"x":10,"y":10,"w":"charcoal"},{"x":11,"y":9,"w":"charcoal"}],"name":"4-bit counter"}},{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Overshoot","level":{"format":"wee-level","version":1,"name":"Overshoot","w":7,"h":7,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","","","","","","wall","wall","","","wall","","","wall","wall","wall","goal","","","","wall","wall","wall","","","","wall","wall","wall","","","","","","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":2,"y":4},"entities":[{"kind":"box","x":4,"y":3,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","sensor:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","sensor:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","sensor:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"swim":false,"light":false},"clock":"tile"}},{"name":"Short fuse","level":{"format":"wee-level","version":1,"name":"Short fuse","w":8,"h":8,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","wall","","wall","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","wall","","crack","","wall","wall","wall","wall","wall","wall","goal","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"bomb","x":4,"y":4,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":true,"swim":false,"light":false,"armored":false},"clock":"tile"}}];
 return { TEMPLATES };
 })();
 // ---- src/level/code.js
@@ -5825,7 +5812,7 @@ const { parseMove } = m12;
 const MECHANISMS = [
   ['tile:goal', 'Goal'], ['tile:checkpoint', 'Checkpoint'], ['tile:tri', 'Triangle'], ['tile:gate', 'One-way'],
   ['tile:spring', 'Spring'], ['tile:death', 'Death block'], ['tile:water', 'Water'], ['tile:sticky', 'Sticky puddle'], ['tile:gravel', 'Gravel'], ['tile:crack', 'Breakable block'],
-  ['tile:button', 'Button'], ['tile:toggle', 'Switch'], ['tile:door', 'Door'], ['tile:idoor', 'Inverted door'], ['tile:receiver', 'Laser catcher'], ['tile:sensor', 'Laser relay'],
+  ['tile:button', 'Button'], ['tile:toggle', 'Switch'], ['tile:door', 'Door'], ['tile:idoor', 'Inverted door'], ['tile:sensor', 'Laser relay'],
   ['piece:mover', 'Moving block'], ['piece:enemy', 'Weak enemy'], ['piece:strong', 'Strong enemy'], ['piece:turret', 'Laser turret'],
   ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'], ['piece:bomb', 'Bomb'],
   ['clock:input', 'On your move'], ['clock:follow', 'Same way as you'], ['clock:realtime', 'Real time'],
@@ -5850,7 +5837,7 @@ function contains(level) {
     if (!c || c === 'wall') continue;
     const [kind, v] = c.split(':');
     if (LABEL['tile:' + kind]) tags.add('tile:' + kind);
-    if (['button', 'toggle', 'receiver', 'sensor'].includes(kind)) colours[v] = (colours[v] || 0) + 1;
+    if (['button', 'toggle', 'sensor'].includes(kind)) colours[v] = (colours[v] || 0) + 1;
   }
   for (const e of level.entities) {
     if (LABEL['piece:' + e.kind]) tags.add('piece:' + e.kind);
@@ -5886,7 +5873,7 @@ function uses(level, moves) {
       if (s.cells.includes('door:' + col)) tags.add('use:door-opens');
       if (s.cells.includes('idoor:' + col)) tags.add('use:idoor-closes');
     }
-    for (const i of s.lit) if (/^(sensor|receiver):/.test(s.cells[i])) tags.add('use:lit');
+    for (const i of s.lit) if (/^sensor:/.test(s.cells[i])) tags.add('use:lit');
     if (s.toggled.length) tags.add('use:toggle');
   };
   for (const m of moves) {
@@ -6545,7 +6532,6 @@ const TOOLS = [
   { id: 'toggle', label: 'Switch', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'idoor', label: 'Inverted door', group: 'switches' },
-  { id: 'receiver', label: 'Laser catcher', group: 'switches' },
   { id: 'sensor', label: 'Laser relay', group: 'switches' },
 ];
 const POWER_TEXT = {
@@ -6698,7 +6684,7 @@ const LENS_TIPS = {
 };
 // The lens a tool opens by itself, while it is in hand.
 const PIECE = { colour: 'pieces' }, BEAM = { colour: 'beams' }, AIM = { colour: 'distance', lines: 'solution' };
-const AUTO = { turret: BEAM, receiver: BEAM, sensor: BEAM, box: PIECE, heavy: PIECE, mover: PIECE, enemy: PIECE, strong: PIECE, goal: AIM, start: AIM };
+const AUTO = { turret: BEAM, sensor: BEAM, box: PIECE, heavy: PIECE, mover: PIECE, enemy: PIECE, strong: PIECE, goal: AIM, start: AIM };
 const SEARCHED = ['distance', 'beams', 'pieces', 'solution', 'passes', 'moves', 'danger'];
 
 const L = () => S.lens;
@@ -6954,7 +6940,7 @@ function holds(level, x, y, tool, wire) {
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
-  if (tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
+  if (tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;
 }
@@ -6987,7 +6973,6 @@ function describe(level, x, y) {
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') { const [ds, col] = v.split('@'); parts.push(`${col ? cname(col) + ' one-way' : 'One-way'} ${ds.split(',').map(d => ARROW[d]).join(' ')}`); }
     else if (kind === 'sensor') parts.push(`${cname(v)} laser relay`);
-    else if (kind === 'receiver') parts.push(`${cname(v)} laser catcher`);
     else if (kind === 'idoor') parts.push(`${cname(v)} inverted door`);
     else parts.push(`${cname(v)} ${kind}`);
   }
@@ -7021,7 +7006,7 @@ function place(level, ui, x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'crack', 'checkpoint', 'button', 'toggle', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
+    else if (['wall', 'crack', 'checkpoint', 'button', 'toggle', 'door', 'idoor', 'tri', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
     if (isStart) return out;
@@ -7042,8 +7027,8 @@ function place(level, ui, x, y, how) {
   } else if (t === 'wall' || t === 'crack') {
     if (isStart) return out;
     removePiece(); setCell(t);
-  } else if (t === 'checkpoint' || t === 'button' || t === 'toggle' || t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor') {
-    const solid = t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor';
+  } else if (t === 'checkpoint' || t === 'button' || t === 'toggle' || t === 'door' || t === 'idoor' || t === 'sensor') {
+    const solid = t === 'door' || t === 'idoor' || t === 'sensor';
     if (solid && isStart) return out;
     if (solid) removePiece();
     setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
@@ -7673,12 +7658,12 @@ function syncPanel() {
 // A level with more than one colour shows them as a row of dots over its tools (register 245):
 // what you place takes the chosen one, and a one-way takes a colour only in a level that names
 // its colours. The palette's coloured pieces are drawn in the colour they will be placed in.
-const TINTED = ['button', 'toggle', 'door', 'idoor', 'receiver', 'sensor', 'gate'];
+const TINTED = ['button', 'toggle', 'door', 'idoor', 'sensor', 'gate'];
 let tint = '';
 // In a level, Look, Erase and Move start the colours' line; back in the sandbox they return to the palette.
 const LINE = ['look', 'erase', 'move'];
 // The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
-const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'sensor', 'gate', 'turret', 'receiver', 'wire'];
+const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'sensor', 'gate', 'turret', 'wire'];
 const lined = () => !!(S.camp || S.simple);
 function placeTools() {
   const box = $('campTools');
@@ -8107,7 +8092,7 @@ function bindInput() {
       S.lookTile = c;
       // You can start a run from any tile you could stand on.
       const cell = S.level.cells[c.y * S.level.w + c.x];
-      const open = !/^(wall|receiver:|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);
+      const open = !/^(wall|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);
       S.lookAt = open ? c : null;
       $('playHere').hidden = !open;
       return;
@@ -8205,7 +8190,7 @@ const tile = (l, r, c) => { const i = spot(l, r); if (i >= 0) l.cells[i] = c; re
 const piece = (l, r, e) => { const i = spot(l, r); if (i >= 0) l.entities.push({ x: i % l.w, y: (i - i % l.w) / l.w, dir: 1, mode: 'input', ...e }); return i; };
 // ctx.many: more than one colour is allowed; ctx.and: two switches of one colour are.
 // Without them every switch shares red, and a colour that has a switch gets no second one.
-const switchOf = (l, col) => l.cells.some(c => /^(button|receiver|sensor):/.test(c) && c.endsWith(':' + col));
+const switchOf = (l, col) => l.cells.some(c => /^(button|sensor):/.test(c) && c.endsWith(':' + col));
 const colour = (l, r, ctx) => ctx.many ? r.pick(COLOURS.filter(c => !l.cells.some(x => x.endsWith(':' + c)))) || r.pick(COLOURS) : 'red';
 const switches = (l, r, col, n, ctx, door = 'door') => {
   for (let k = 0; k < n; k++) if (ctx.and || !switchOf(l, col)) tile(l, r, 'button:' + col);
@@ -8263,7 +8248,6 @@ const INGREDIENTS = [
   { id: 'box', label: 'Box', tags: ['piece:box'], place: (l, r) => piece(l, r, { kind: 'box' }) },
   { id: 'bomb', label: 'Bomb', tags: ['piece:bomb'], standIn: l => ({ ...l, entities: l.entities.map(e => e.kind === 'bomb' ? { ...e, kind: 'box' } : e) }), place: (l, r) => piece(l, r, { kind: 'bomb' }) },
   { id: 'heavy', label: 'Heavy box', tags: ['piece:heavy'], with: ['spring'], place: (l, r) => piece(l, r, { kind: 'heavy' }) },
-  { id: 'receiver', label: 'Laser catcher', tags: ['tile:receiver'], with: ['turret', 'door'], knock: l => ({ ...l, cells: l.cells.map(c => c.startsWith('receiver:') ? 'wall' : c) }), standIn: null, place: beamSwitch('receiver') },
   { id: 'sensor', label: 'Laser relay', tags: ['tile:sensor'], with: ['turret', 'door'], place: beamSwitch('sensor') },
   { id: 'door', label: 'Door and button', tags: ['tile:door'], with: ['box'], knock: noButtons, standIn: l => open(l, 'door'), place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 1, ctx) },
   { id: 'idoor', label: 'Inverted door', tags: ['tile:idoor'], knock: noButtons, standIn: l => asWall(l, 'idoor'), place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 1, ctx, 'idoor') },

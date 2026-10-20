@@ -75,7 +75,7 @@ export function whyStuck(level, { max = MAX_STATES } = {}) {
     for (const [c, on] of Object.entries(s.open)) if (on) opened.add(c);
     s.cells.forEach((c, i) => {
       const x = i % s.w, y = Math.floor(i / s.w);
-      if (c.startsWith('toggle:') ? s.toggled.includes(i) : c.startsWith('button:') ? playerAt(s, x, y) || !!entAt(s, x, y) : /^(receiver|sensor):/.test(c) && s.lit.has(i)) held.add(i);
+      if (c.startsWith('toggle:') ? s.toggled.includes(i) : c.startsWith('button:') ? playerAt(s, x, y) || !!entAt(s, x, y) : /^sensor:/.test(c) && s.lit.has(i)) held.add(i);
     });
   };
   note(start);
@@ -99,7 +99,7 @@ export function whyStuck(level, { max = MAX_STATES } = {}) {
   const sets = [...new Set(start.cells.filter(c => /^door:/.test(c)).map(c => c.slice(5)))].map(c => c.split('|'));
   const door = (sets.find(cs => !cs.some(c => opened.has(c))) || [null])[0];
   if (door === null) return { door, stuck: [], apart: false, hit };
-  const own = start.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.split(':')[1].split('|').includes(door) ? [i] : []);
+  const own = start.cells.flatMap((c, i) => /^(button|toggle|sensor):/.test(c) && c.split(':')[1].split('|').includes(door) ? [i] : []);
   const stuck = own.filter(i => !held.has(i));
   return { door, stuck, apart: own.length > 0 && stuck.length === 0, hit };
 }

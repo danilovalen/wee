@@ -132,15 +132,6 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     g.globalAlpha = lit ? 1 : 0.25; star(g, 0.5); g.fill();
     if (lit) { g.globalAlpha = 0.3; star(g, 1.25); g.fill(); }
     g.globalAlpha = 1;
-  } else if (c.startsWith('receiver:')) {
-    // A catcher: a block with a coloured eye that glows while a beam holds it.
-    const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
-    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
-    // A grey catcher glows white, or lit and unlit would both read grey.
-    g.fillStyle = lit ? (col === 'wire' ? '#ffffff' : INK[col]) : INK.unlit;
-    g.beginPath(); g.arc(16, 16, 8.5, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = INK[col]; g.lineWidth = 3; g.stroke();
-    if (lit) { g.globalAlpha = 0.35; g.fillStyle = INK[col]; g.beginPath(); g.arc(16, 16, 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
   } else if (c === 'goal') {
     // A gold ring with a star in it, pulsing slowly.
     const k = 0.5 + 0.5 * Math.sin(frame.clock / 400);

@@ -7,7 +7,7 @@ import { parseMove } from './solve.js';
 export const MECHANISMS = [
   ['tile:goal', 'Goal'], ['tile:checkpoint', 'Checkpoint'], ['tile:tri', 'Triangle'], ['tile:gate', 'One-way'],
   ['tile:spring', 'Spring'], ['tile:death', 'Death block'], ['tile:water', 'Water'], ['tile:sticky', 'Sticky puddle'], ['tile:gravel', 'Gravel'], ['tile:crack', 'Breakable block'],
-  ['tile:button', 'Button'], ['tile:toggle', 'Switch'], ['tile:door', 'Door'], ['tile:idoor', 'Inverted door'], ['tile:receiver', 'Laser catcher'], ['tile:sensor', 'Laser relay'],
+  ['tile:button', 'Button'], ['tile:toggle', 'Switch'], ['tile:door', 'Door'], ['tile:idoor', 'Inverted door'], ['tile:sensor', 'Laser relay'],
   ['piece:mover', 'Moving block'], ['piece:enemy', 'Weak enemy'], ['piece:strong', 'Strong enemy'], ['piece:turret', 'Laser turret'],
   ['piece:mounted', 'Mounted turret'], ['piece:box', 'Box'], ['piece:heavy', 'Heavy box'], ['piece:bomb', 'Bomb'],
   ['clock:input', 'On your move'], ['clock:follow', 'Same way as you'], ['clock:realtime', 'Real time'],
@@ -32,7 +32,7 @@ export function contains(level) {
     if (!c || c === 'wall') continue;
     const [kind, v] = c.split(':');
     if (LABEL['tile:' + kind]) tags.add('tile:' + kind);
-    if (['button', 'toggle', 'receiver', 'sensor'].includes(kind)) colours[v] = (colours[v] || 0) + 1;
+    if (['button', 'toggle', 'sensor'].includes(kind)) colours[v] = (colours[v] || 0) + 1;
   }
   for (const e of level.entities) {
     if (LABEL['piece:' + e.kind]) tags.add('piece:' + e.kind);
@@ -68,7 +68,7 @@ export function uses(level, moves) {
       if (s.cells.includes('door:' + col)) tags.add('use:door-opens');
       if (s.cells.includes('idoor:' + col)) tags.add('use:idoor-closes');
     }
-    for (const i of s.lit) if (/^(sensor|receiver):/.test(s.cells[i])) tags.add('use:lit');
+    for (const i of s.lit) if (/^sensor:/.test(s.cells[i])) tags.add('use:lit');
     if (s.toggled.length) tags.add('use:toggle');
   };
   for (const m of moves) {

@@ -33,7 +33,7 @@ export const LENS_TIPS = {
 };
 // The lens a tool opens by itself, while it is in hand.
 const PIECE = { colour: 'pieces' }, BEAM = { colour: 'beams' }, AIM = { colour: 'distance', lines: 'solution' };
-export const AUTO = { turret: BEAM, receiver: BEAM, sensor: BEAM, box: PIECE, heavy: PIECE, mover: PIECE, enemy: PIECE, strong: PIECE, goal: AIM, start: AIM };
+export const AUTO = { turret: BEAM, sensor: BEAM, box: PIECE, heavy: PIECE, mover: PIECE, enemy: PIECE, strong: PIECE, goal: AIM, start: AIM };
 const SEARCHED = ['distance', 'beams', 'pieces', 'solution', 'passes', 'moves', 'danger'];
 
 const L = () => S.lens;

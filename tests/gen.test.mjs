@@ -21,11 +21,11 @@ check('one seed gives one sequence', xs.every(x => x === b.next()));
 check('numbers fall in [0, 1)', xs.every(x => x >= 0 && x < 1) && new Set(xs).size > 45);
 check('another seed gives other numbers', rng(8).next() !== xs[0]);
 
-const n = normalize({ w: 99, h: 1, min: 20, max: 3, ing: { receiver: 'must', tri: 'nope', ghost: 'must' }, seed: '12' });
+const n = normalize({ w: 99, h: 1, min: 20, max: 3, ing: { sensor: 'must', tri: 'nope', ghost: 'must' }, seed: '12' });
 check('sizes stay in range', n.w === 14 && n.h === 5, JSON.stringify(n));
 check('max is never below min', n.min === 20 && n.max === 20);
 check('unknown ingredients and values are dropped', !n.ing.tri && !n.ing.ghost);
-check('an ingredient brings what it needs, as Allowed', n.ing.receiver === 'must' && n.ing.turret === 'allowed' && n.ing.door === 'allowed', JSON.stringify(n.ing));
+check('an ingredient brings what it needs, as Allowed', n.ing.sensor === 'must' && n.ing.turret === 'allowed' && n.ing.door === 'allowed', JSON.stringify(n.ing));
 check('the seed is a number', n.seed === 12);
 check('the label is size, moves and Must, in the panel\'s order', recipeLabel(normalize({ w: 8, h: 7, min: 6, max: 12, ing: { door: 'must', box: 'must', tri: 'allowed' } })) === '8x7, 6-12 moves, Box, Door and button', recipeLabel(normalize({ w: 8, h: 7, min: 6, max: 12, ing: { door: 'must', box: 'must' } })));
 
@@ -67,7 +67,6 @@ mixed.entities.push({ kind: 'box', x: 5, y: 2, turret: { dirs: ['up'], mode: 'in
 const kept = JSON.stringify(mixed);
 check('a door is taken out by losing its buttons, so it stays shut', !knock(ING.door, mixed).cells.some(c => c.startsWith('button:')) && knock(ING.door, mixed).cells.includes('door:red'));
 check('a power is switched off', knock(ING.laser, mixed).powers.laser === false);
-check('a laser catcher becomes wall', knock(ING.receiver, mixed).cells.filter(c => c === 'wall').length === mixed.cells.filter(c => c === 'wall').length + 1);
 check('a follower moves on your move instead', knock(ING.follow, mixed).entities.every(e => e.mode !== 'follow') && knock(ING.follow, mixed).entities.length === mixed.entities.length);
 check('a mounted turret leaves its box behind', knock(ING.mounted, mixed).entities.filter(e => e.kind === 'box').length === 2 && knock(ING.mounted, mixed).entities.filter(e => e.turret).length === 1);
 check('anything else goes, every one of its kind', !knock(ING.enemy, mixed).entities.some(e => e.kind === 'enemy') && !knock(ING.turret, mixed).entities.some(e => e.kind === 'turret') && knock(ING.box, mixed).entities.every(e => e.kind !== 'box'));
@@ -125,7 +124,7 @@ const lean = tidy(still, { plain: [{ piece: true, x: 5, y: 1, as: 'wall' }] });
 check('tidying turns a piece that does a wall\'s job into a wall', !lean.entities.length && lean.cells[1 * 7 + 5] === 'wall');
 
 // The walk: same recipe, same room; each fit verified on its own.
-const easy = [{ box: 'must' }, { door: 'must' }, { tri: 'must', box: 'allowed' }, { spring: 'must' }, { water: 'must', swim: 'allowed' }, { sticky: 'must' }, { receiver: 'must' }, { enemy: 'must' }, { laser: 'must' }];
+const easy = [{ box: 'must' }, { door: 'must' }, { tri: 'must', box: 'allowed' }, { spring: 'must' }, { water: 'must', swim: 'allowed' }, { sticky: 'must' }, { sensor: 'must' }, { enemy: 'must' }, { laser: 'must' }];
 const fails = [], unfit = [], again = [];
 for (const ing of easy) for (const seed of [1, 2]) {
   const recipe = { ing, min: 3, max: 12, seed };

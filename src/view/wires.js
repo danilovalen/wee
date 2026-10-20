@@ -35,7 +35,7 @@ export function drawTrim(g, x, y, cols) {
 // them, and dims the rest; on no wire, only itself lights.
 export function drawReach(g, level, at, nets) {
   const i = at.y * level.w + at.x, cell = level.cells[i];
-  if (!isGrey(cell) && !(nets.at[i].length && /^(button|toggle|receiver|sensor):/.test(cell))) return;
+  if (!isGrey(cell) && !(nets.at[i].length && /^(button|toggle|sensor):/.test(cell))) return;
   const ids = new Set(nets.at[i]), lit = new Set([i]);
   nets.at.forEach((list, k) => { if (list.some(id => ids.has(id))) lit.add(k); });
   g.save(); g.fillStyle = INK.floor; g.globalAlpha = 0.6;

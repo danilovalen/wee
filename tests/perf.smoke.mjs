@@ -71,7 +71,7 @@ try {
   // a generator run: turret rooms are the slowest to judge
   await page.click('#navRooms'); await page.click('#roomNew'); await page.click('#roomGen');
   await page.locator('.genIngBox summary').click();
-  for (const id of ['receiver', 'box', 'enemy']) await page.selectOption(`#genIng select[data-id=${id}]`, 'must');
+  for (const id of ['sensor', 'box', 'enemy']) await page.selectOption(`#genIng select[data-id=${id}]`, 'must');
   for (const [id, v] of [['genW', 12], ['genH', 12], ['genMin', 8], ['genMax', 14], ['genSeed', 4], ['genTime', 5]]) await page.fill('#' + id, String(v));
   w = await worst(async () => { await page.click('#genGo'); await page.waitForSelector('#genResult:not([hidden])', { timeout: 30000 }); });
   check(`a generator run never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);

@@ -151,7 +151,6 @@ export const tilesOf = (def, room) => Object.values(placed(def, room).by).reduce
 const HOLD = {
   button: ['button', 'buttons', 'is never pressed', 'are never pressed', 'is ever pressed'],
   toggle: ['switch', 'switches', 'never turns on', 'never turn on', 'ever turns on'],
-  receiver: ['laser catcher', 'laser catchers', 'is never lit', 'are never lit', 'is ever lit'],
   sensor: ['laser relay', 'laser relays', 'is never lit', 'are never lit', 'is ever lit'],
 };
 export function stuckText(room) {
@@ -163,7 +162,7 @@ export function stuckText(room) {
   if (!w.door) return { why: 'The robot cannot reach the goal from anywhere it can get to.', at: [] };
   const has = c => c.split(':')[1].split('|').includes(w.door);
   const doors = room.cells.flatMap((c, i) => c.startsWith('door:') && has(c) ? [xy(i)] : []);
-  const own = room.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && has(c) ? [i] : []);
+  const own = room.cells.flatMap((c, i) => /^(button|toggle|sensor):/.test(c) && has(c) ? [i] : []);
   const head = `The robot cannot reach the goal: the ${w.door} door never opens`;
   if (!own.length) return { why: `${head}, because nothing ${w.door} opens it.`, at: doors };
   if (w.apart) return { why: `${head}. It needs everything ${w.door} held at once, and that never happens.`, at: [...doors, ...own.map(xy)] };

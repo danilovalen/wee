@@ -23,8 +23,6 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
   } else if (tool === 'look') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 2.5;
     x.beginPath(); x.arc(14, 14, 7, 0, Math.PI * 2); x.moveTo(19, 19); x.lineTo(26, 26); x.stroke();
-  } else if (tool === 'receiver') {
-    const l = emptyLevel(1, 1); l.cells[0] = 'receiver:red'; l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'move') {
     // Four arrows out from the middle.
     x.strokeStyle = '#6f6876'; x.lineWidth = 2.5; x.lineCap = 'round'; x.lineJoin = 'round';

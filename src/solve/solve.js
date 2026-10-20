@@ -70,7 +70,7 @@ export function powerMoves(s) {
 // A laser only matters in a room with something it can change: an enemy, a switch it
 // lights, or water it shocks.
 const laserMatters = s => s.entities.some(e => !e.dead && (e.kind === 'enemy' || e.kind === 'strong')) ||
-  s.cells.some(c => c === 'water' || c.startsWith('sensor:') || c.startsWith('receiver:'));
+  s.cells.some(c => c === 'water' || c.startsWith('sensor:'));
 
 // Settles a state already stepped once; null when it died, never settled, or changed nothing.
 function settleFrom(t, deaths, before, at = 0, then = null, from = 1) {

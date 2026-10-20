@@ -200,12 +200,12 @@ export function syncPanel() {
 // A level with more than one colour shows them as a row of dots over its tools (register 245):
 // what you place takes the chosen one, and a one-way takes a colour only in a level that names
 // its colours. The palette's coloured pieces are drawn in the colour they will be placed in.
-const TINTED = ['button', 'toggle', 'door', 'idoor', 'receiver', 'sensor', 'gate'];
+const TINTED = ['button', 'toggle', 'door', 'idoor', 'sensor', 'gate'];
 let tint = '';
 // In a level, Look, Erase and Move start the colours' line; back in the sandbox they return to the palette.
 const LINE = ['look', 'erase', 'move'];
 // The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
-const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'sensor', 'gate', 'turret', 'receiver', 'wire'];
+const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'sensor', 'gate', 'turret', 'wire'];
 const lined = () => !!(S.camp || S.simple);
 function placeTools() {
   const box = $('campTools');

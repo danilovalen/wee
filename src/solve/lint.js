@@ -5,7 +5,7 @@ import { createGame, step } from '../rules/game.js';
 import { parseMove } from './solve.js';
 
 // A tile nothing will ever move into: outside, a block, a catcher or a spring.
-const fixed = (l, x, y) => x < 0 || y < 0 || x >= l.w || y >= l.h || /^(wall|receiver:|spring:)/.test(l.cells[y * l.w + x]);
+const fixed = (l, x, y) => x < 0 || y < 0 || x >= l.w || y >= l.h || /^(wall|spring:)/.test(l.cells[y * l.w + x]);
 
 export function lint(level) {
   const out = [], at = i => ({ x: i % level.w, y: Math.floor(i / level.w) });
@@ -13,7 +13,7 @@ export function lint(level) {
   level.cells.forEach((c, i) => {
     const [kind, col] = c.split(':');
     if (kind === 'door' || kind === 'idoor') (doors[col] ||= []).push(i);
-    if (kind === 'button' || kind === 'toggle' || kind === 'receiver' || kind === 'sensor') (switches[col] ||= []).push(i);
+    if (kind === 'button' || kind === 'toggle' || kind === 'sensor') (switches[col] ||= []).push(i);
   });
   for (const col in doors) if (!switches[col]) out.push({ ...at(doors[col][0]), msg: `A ${col} door with no ${col} switch never changes.` });
   for (const col in switches) if (!doors[col]) out.push({ ...at(switches[col][0]), msg: `A ${col} switch with no ${col} door does nothing.` });

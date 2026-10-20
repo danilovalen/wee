@@ -45,7 +45,7 @@ try {
   await page.waitForTimeout(120);
   check('hovering a tile names it and what the lenses know', /^Tile 4, 1: Empty floor, .*a laser reaches here/.test(await page.textContent('#info')) && await page.locator('#keys').isHidden(), await page.textContent('#info'));
   const beam = await pixel(4, 1);
-  check('and the beam\'s tiles turn the laser\'s gold (register 330)', beam[3] > 0 && beam[1] - beam[2] > 30 && beam[0] > beam[2], JSON.stringify([floor, beam]));
+  check('and the beam\'s tiles turn the laser\'s orange-red (register 354)', beam[3] > 0 && beam[0] - beam[2] > 50 && beam[0] > beam[1] + 30, JSON.stringify([floor, beam]));
   await page.click('[data-tool=box]');
   await settle();
   check('picking a box opens Pieces instead', await on('colour') === 'pieces' && (await legend()).includes('box, block or enemy'), await legend());

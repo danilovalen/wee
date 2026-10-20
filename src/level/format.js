@@ -37,6 +37,8 @@ export function resizeLevel(level, w, h) {
 export function parseLevel(text) {
   const l = JSON.parse(text);
   if (l.format !== 'wee-level') throw new Error('Not a wee level file.');
+  // Laser catchers are gone (register 353): an old room's catcher loads as a relay of its colour.
+  if (Array.isArray(l.cells)) l.cells = l.cells.map(c => typeof c === 'string' && c.startsWith('receiver:') ? 'sensor:' + c.slice(9) : c);
   if (!(l.w > 0 && l.h > 0) || !Array.isArray(l.cells) || l.cells.length !== l.w * l.h)
     throw new Error('The room size does not match its cells.');
   for (const c of l.cells) if (!isCell(c)) throw new Error('Unknown tile: ' + c);
@@ -63,7 +65,6 @@ export const CRATED = c => !!c && ['sensor:', 'gate:', 'door:', 'idoor:'].some(k
 
 export function isCell(c) {
   if (c === '' || c === 'wall' || c === 'crack' || c === 'checkpoint') return true;
-  if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9)) || c.slice(9) === 'wire';
   if (c.startsWith('sensor:')) return colourOk(c.slice(7));
   if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));

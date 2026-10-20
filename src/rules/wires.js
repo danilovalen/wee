@@ -27,7 +27,7 @@ export function netsOf(level) {
   return { at, of, ids };
 }
 
-const SWITCH = /^(button|toggle|receiver|sensor):/;
+const SWITCH = /^(button|toggle|sensor):/;
 // The cells a run plays with: a grey piece takes its tile's networks as its colours, and a switch of
 // any colour adds them to its own. A grey piece on no wire reads a network that never opens.
 export function wireCells(cells, at) {
@@ -40,7 +40,7 @@ export function wireCells(cells, at) {
 }
 
 // A piece pushed onto another tile takes that tile's wires instead of the ones it left.
-const WIRED = /^(button|toggle|receiver|sensor|door|idoor):/;
+const WIRED = /^(button|toggle|sensor|door|idoor):/;
 export function rewire(c, here) {
   if (!WIRED.test(c)) return c;
   const [kind, cols] = c.split(':'), real = cols.split('|').filter(k => !/^w(\d+|none)$/.test(k));

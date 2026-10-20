@@ -95,7 +95,7 @@ export function holds(level, x, y, tool, wire) {
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
-  if (tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
+  if (tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;
 }
@@ -128,7 +128,6 @@ export function describe(level, x, y) {
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') { const [ds, col] = v.split('@'); parts.push(`${col ? cname(col) + ' one-way' : 'One-way'} ${ds.split(',').map(d => ARROW[d]).join(' ')}`); }
     else if (kind === 'sensor') parts.push(`${cname(v)} laser relay`);
-    else if (kind === 'receiver') parts.push(`${cname(v)} laser catcher`);
     else if (kind === 'idoor') parts.push(`${cname(v)} inverted door`);
     else parts.push(`${cname(v)} ${kind}`);
   }
@@ -162,7 +161,7 @@ export function place(level, ui, x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'crack', 'checkpoint', 'button', 'toggle', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
+    else if (['wall', 'crack', 'checkpoint', 'button', 'toggle', 'door', 'idoor', 'tri', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
     if (isStart) return out;
@@ -183,8 +182,8 @@ export function place(level, ui, x, y, how) {
   } else if (t === 'wall' || t === 'crack') {
     if (isStart) return out;
     removePiece(); setCell(t);
-  } else if (t === 'checkpoint' || t === 'button' || t === 'toggle' || t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor') {
-    const solid = t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor';
+  } else if (t === 'checkpoint' || t === 'button' || t === 'toggle' || t === 'door' || t === 'idoor' || t === 'sensor') {
+    const solid = t === 'door' || t === 'idoor' || t === 'sensor';
     if (solid && isStart) return out;
     if (solid) removePiece();
     setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);

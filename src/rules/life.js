@@ -13,7 +13,7 @@ export const freshPieces = list => list.map((e, i) => ({
   turret: e.turret ? { dirs: CLOCKWISE.filter(d => e.turret.dirs.includes(d)), mode: e.turret.mode, aim: startAim(e.turret) } : null,
 }));
 
-// A colour's doors open only while every button, receiver and sensor of that colour
+// A colour's doors open only while every button, switch and relay of that colour
 // is held; its inverted doors close then. A closing door of either kind squashes you,
 // weak enemies, boxes and lone turrets, unless a strong enemy, a heavy box or a block
 // stands in it (or you, armored): then the colour keeps its state, so both kinds hold.
@@ -26,7 +26,6 @@ export function switchesOf(s) {
     s.cells.forEach((c, i) => {
       const x = i % s.w, y = (i - x) / s.w;
       if (c.startsWith('button:')) list.push({ i, x, y, col: c.slice(7), button: true });
-      else if (c.startsWith('receiver:')) list.push({ i, x, y, col: c.slice(9), button: false });
       else if (c.startsWith('sensor:')) list.push({ i, x, y, col: c.slice(7), button: false });
       else if (c.startsWith('toggle:')) list.push({ i, x, y, col: c.slice(7), toggle: true });
     });
@@ -69,7 +68,7 @@ export function flipToggles(s, flip = true) {
 export function refreshDoors(s) {
   const pressed = {}, any = {};
   flipToggles(s);
-  // A receiver or a sensor is a button that a turret beam holds down; a toggle is held while on.
+  // A relay is a button that a turret beam holds down; a toggle is held while on.
   for (const { i, x, y, col, button, toggle } of switchesOf(s)) {
     const down = toggle ? s.toggled.includes(i) : button ? playerAt(s, x, y) || !!entAt(s, x, y) : s.lit.has(i);
     for (const c of col.split('|')) { any[c] = true; pressed[c] = (pressed[c] ?? true) && down; }

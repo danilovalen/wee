@@ -18,7 +18,7 @@ const tile = (l, r, c) => { const i = spot(l, r); if (i >= 0) l.cells[i] = c; re
 const piece = (l, r, e) => { const i = spot(l, r); if (i >= 0) l.entities.push({ x: i % l.w, y: (i - i % l.w) / l.w, dir: 1, mode: 'input', ...e }); return i; };
 // ctx.many: more than one colour is allowed; ctx.and: two switches of one colour are.
 // Without them every switch shares red, and a colour that has a switch gets no second one.
-const switchOf = (l, col) => l.cells.some(c => /^(button|receiver|sensor):/.test(c) && c.endsWith(':' + col));
+const switchOf = (l, col) => l.cells.some(c => /^(button|sensor):/.test(c) && c.endsWith(':' + col));
 const colour = (l, r, ctx) => ctx.many ? r.pick(COLOURS.filter(c => !l.cells.some(x => x.endsWith(':' + c)))) || r.pick(COLOURS) : 'red';
 const switches = (l, r, col, n, ctx, door = 'door') => {
   for (let k = 0; k < n; k++) if (ctx.and || !switchOf(l, col)) tile(l, r, 'button:' + col);
@@ -76,7 +76,6 @@ export const INGREDIENTS = [
   { id: 'box', label: 'Box', tags: ['piece:box'], place: (l, r) => piece(l, r, { kind: 'box' }) },
   { id: 'bomb', label: 'Bomb', tags: ['piece:bomb'], standIn: l => ({ ...l, entities: l.entities.map(e => e.kind === 'bomb' ? { ...e, kind: 'box' } : e) }), place: (l, r) => piece(l, r, { kind: 'bomb' }) },
   { id: 'heavy', label: 'Heavy box', tags: ['piece:heavy'], with: ['spring'], place: (l, r) => piece(l, r, { kind: 'heavy' }) },
-  { id: 'receiver', label: 'Laser catcher', tags: ['tile:receiver'], with: ['turret', 'door'], knock: l => ({ ...l, cells: l.cells.map(c => c.startsWith('receiver:') ? 'wall' : c) }), standIn: null, place: beamSwitch('receiver') },
   { id: 'sensor', label: 'Laser relay', tags: ['tile:sensor'], with: ['turret', 'door'], place: beamSwitch('sensor') },
   { id: 'door', label: 'Door and button', tags: ['tile:door'], with: ['box'], knock: noButtons, standIn: l => open(l, 'door'), place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 1, ctx) },
   { id: 'idoor', label: 'Inverted door', tags: ['tile:idoor'], knock: noButtons, standIn: l => asWall(l, 'idoor'), place: (l, r, ctx) => switches(l, r, colour(l, r, ctx), 1, ctx, 'idoor') },

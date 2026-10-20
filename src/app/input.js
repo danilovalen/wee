@@ -60,7 +60,7 @@ export function bindInput() {
       S.lookTile = c;
       // You can start a run from any tile you could stand on.
       const cell = S.level.cells[c.y * S.level.w + c.x];
-      const open = !/^(wall|receiver:|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);
+      const open = !/^(wall|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);
       S.lookAt = open ? c : null;
       $('playHere').hidden = !open;
       return;
