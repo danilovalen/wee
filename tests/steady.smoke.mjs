@@ -79,8 +79,10 @@ try {
         // The side grips stay out of the phone's edge swipe zone, and each takes a 44px touch (register 239).
         const sides = await page.evaluate(() => { const l = document.querySelector('.plus[data-plus="left"]').getBoundingClientRect(), r = document.querySelector('.plus[data-plus="right"]').getBoundingClientRect(); return { left: l.left, right: innerWidth - r.right }; });
         check(`${name}: the side + grips sit at least 30px from the screen's edges`, sides.left >= 30 && sides.right >= 30, JSON.stringify(sides));
-        const reach = await page.evaluate(() => { const r = document.querySelector('.plus[data-plus="right"]').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; return [[cx - 20, cy], [cx + 20, cy], [cx, cy - 20], [cx, cy + 20]].every(([x, y]) => document.elementFromPoint(x, y)?.dataset?.plus === 'right'); });
-        check(`${name}: a + answers a touch up to 20px from its centre`, reach);
+        // An ear's touch grows outward only (register 320): 20px out still adds, 20px in is the room.
+        const reach = await page.evaluate(() => { const r = document.querySelector('.plus[data-plus="right"]').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, at = (x, y) => document.elementFromPoint(x, y);
+          return [[cx + 20, cy], [cx, r.top + 2], [cx, r.bottom - 2]].every(([x, y]) => at(x, y)?.dataset?.plus === 'right') && at(cx - 20, cy)?.id === 'game'; });
+        check(`${name}: a + answers a touch up to 20px outward, and a touch 20px in lands on the room`, reach);
       }
       if (!opts.hasTouch) {
         // A − held back by a placed thing flashes what is in the way (registers 252, 298).

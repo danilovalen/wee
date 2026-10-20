@@ -34,6 +34,12 @@ try {
   const sides = await page.evaluate(() => { const g = document.getElementById('game').getBoundingClientRect(), r = s => [...document.querySelectorAll(`[data-plus=${s}], [data-minus=${s}]`)].map(b => b.getBoundingClientRect());
     return { left: r('left').every(b => b.right <= g.left && b.top >= g.top && b.bottom <= g.bottom), right: r('right').every(b => b.left >= g.right && b.top >= g.top && b.bottom <= g.bottom), top: r('top').every(b => b.bottom <= g.top), bottom: r('bottom').every(b => b.top >= g.bottom) }; });
   check('each side\'s + and − sit on that side of the room (register 318)', Object.values(sides).every(Boolean), JSON.stringify(sides));
+  // Ears (register 320): green adds, red cuts, each flush against the room.
+  const ears = await page.evaluate(() => { const g = document.getElementById('game').getBoundingClientRect(), rgb = b => getComputedStyle(b).backgroundColor.match(/\d+/g).map(Number);
+    const all = [...document.querySelectorAll('.plus, .minus')];
+    return { green: [...document.querySelectorAll('.plus')].every(b => { const [r, gr] = rgb(b); return gr > r; }), red: [...document.querySelectorAll('.minus')].every(b => { const [r, gr] = rgb(b); return r > gr; }),
+      flush: all.every(b => { const r = b.getBoundingClientRect(), s = b.dataset.plus || b.dataset.minus; return Math.abs(s === 'top' ? r.bottom - g.top : s === 'bottom' ? r.top - g.bottom : s === 'left' ? r.right - g.left : r.left - g.right) < 1.5; }) }; });
+  check('green ears add, red ears cut, each flush against the room (register 320)', ears.green && ears.red && ears.flush, JSON.stringify(ears));
   const edge = await page.evaluate(() => Math.min(...[...document.querySelectorAll('.plus, .minus')].map(b => { const r = b.getBoundingClientRect(); return Math.min(r.left, innerWidth - r.right); })));
   // Beside the room, 14px from the screen's sides: his call over the back-swipe margin (register 318).
   check('every + and − keeps 14px from the screen\'s sides', edge >= 14, String(edge));

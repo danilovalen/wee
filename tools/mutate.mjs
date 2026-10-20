@@ -795,7 +795,8 @@ const M = [
   ['src', "return !pair || !two ? one : two === 'only' ? [pair] : [...one, pair];", "return !pair || !two ? one : [...one, pair];", 'campaign'],
   // Register 318: the side pairs sit beside the room, which leaves them the width.
   ['src/app/fit.js', "  const side = EDGE + SIDE;", "  const side = EDGE;", 'size-buttons'],
-  ['style.css', ".growBar[data-bar=left] { right: calc(100% + 6px); }", ".growBar[data-bar=left] { right: calc(100% - 36px); }", 'size-buttons'],
+  ['style.css', ".growBar[data-bar=left] { right: 100%; }", ".growBar[data-bar=left] { right: calc(100% + 6px); }", 'size-buttons'],
+  ['style.css', ".plus { background: var(--add-bg); color: var(--add-ink); }", ".plus { background: var(--cut-bg); color: var(--cut-ink); }", 'size-buttons'],
   // Register 316: two colours on any piece, offered per level, picked with a third dot.
   ['src/rules/life.js', "doorsOf(s, kind + col), ...pairsOf(s, kind, col)]", "doorsOf(s, kind + col)]", 'sim'],
   ['src/rules/life.js', "return cols.includes(col) && !cols.some(k => k !== col && s.open[k]) ? at : [];", "return cols.includes(col) ? at : [];", 'sim'],
@@ -865,7 +866,7 @@ const M = [
   ['src', "const made = S.camp && S.camp.def.made; noteLeaving(); leaveLevel();", "const made = S.camp && S.camp.def.made; leaveLevel();", 'campaign-play'],
   ['style.css', ".campMust { grid-template-columns: repeat(2, minmax(0, 1fr)); }", "", 'campaign-play'],
   ['src', "    const list = r.optional ? opt : must;", "    const list = must;", 'campaign-play'],
-  ['style.css', ".growBar[data-bar=top] { bottom: calc(100% + 8px);", ".growBar[data-bar=top] { bottom: calc(100% - 20px);", 'size-buttons'],
+  ['style.css', ".growBar[data-bar=top] { bottom: 100%; left: 50%;", ".growBar[data-bar=top] { bottom: calc(100% - 20px); left: 50%;", 'size-buttons'],
 
   ['style.css', "box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px;", "box-sizing: border-box; margin: 0 0 6px;", 'steady'],
   ['style.css', "body.campaign #campVerdict[hidden] { visibility: hidden; }", "", 'campaign-play'],
@@ -873,9 +874,9 @@ const M = [
   ['style.css', "body.campaign .pad[hidden] { display: flex; visibility: hidden; }", "", 'steady'],
   ['src', "$('moves').textContent = m === 'play' ? 'Moves 0' : '\\u00a0';", "$('moves').textContent = m === 'play' ? 'Moves 0' : '';", 'steady'],
   ['style.css', "body.campaign.play #statusBar { display: revert; visibility: hidden; }", "body.campaign.play #statusBar { display: none; }", 'steady'],
-  ['style.css', ".plus, .plus:hover:not(:disabled), .plus:active:not(:disabled), .minus, .minus:hover:not(:disabled), .minus:active:not(:disabled) { transform: none; }", "", 'steady'],
-  ['style.css', ".growBar { position: absolute; left: 50%; translate: -50% 0; width: max(calc(100% - 16px), 270px);", ".growBar { position: absolute; left: 50%; translate: -50% 0; width: max(calc(100% + 40px), 270px);", 'size-buttons'],
-  ['style.css', ".plus::after, .minus::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; }", "", 'steady'],
+  ['style.css', ".plus, .plus:hover:not(:disabled), .plus:active:not(:disabled), .minus, .minus:hover:not(:disabled), .minus:active:not(:disabled) { transform: none; box-shadow: none; }", "", 'steady'],
+  ['style.css', ".growBar[data-bar=right] { left: 100%; }", ".growBar[data-bar=right] { left: calc(100% - 10px); }", 'size-buttons'],
+  ['style.css', ".growBar[data-bar=right] :is(.plus, .minus)::after { right: -26px; }", "", 'steady'],
   ['src', "judge: (room, moves) => Object.values(oneWayLog(room, moves).boxHits).some(n => n >= 1),", "judge: (room, moves) => Object.values(oneWayLog(room, moves).boxHits).some(n => n >= 2),", 'campaign'],
   ['src/level/campaign.js', '"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"]', '"require":["boxCrossesOpenDoor"],"optional":["noBoxAtEnd"]', 'campaign'],
   ['src', "now[e.id] = { x: e.x, y: e.y, din: here ? (moved ? (b.din || d) : b.din) : null };", "now[e.id] = { x: e.x, y: e.y, din: moved ? d : b.din };", 'campaign'],

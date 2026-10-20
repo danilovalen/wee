@@ -33,10 +33,10 @@ function place(wide) {
 }
 
 const EDGE = 14;
-// Above and below the room, a bar of + and − buttons (register 298): the room keeps that much free.
-const BAR = 40;
-// Left and right of it, a + over a − (register 318): a 30px button and its 6px gap.
-const SIDE = 36;
+// The resize ears stand 18px off each side of the room (registers 298, 318, 320); above and below,
+// the room keeps a little more, so an ear never touches the card over it.
+const BAR = 30;
+const SIDE = 18;
 
 export function fit() {
   const level = S.level, wide = innerWidth > 700;

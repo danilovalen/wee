@@ -303,24 +303,35 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .chip .n { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 }
 
-/* The room's size: a + and a − on each side of the room, beside the line it adds or cuts (register 318).
-   Tap only. Never over a tile (register 298), and the side pairs keep clear of the screen's edge, where
-   a swipe is the phone's back gesture (register 239). */
-.roomWrap { position: relative; line-height: 0; }
-.growBar { position: absolute; left: 50%; translate: -50% 0; width: max(calc(100% - 16px), 270px); display: flex; justify-content: center; gap: 16px; z-index: 2; }
-.growBar[data-bar=top] { bottom: calc(100% + 8px); }
-.growBar[data-bar=left], .growBar[data-bar=right] { width: auto; left: auto; translate: 0 -50%; top: 50%; }
-.growBar[data-bar=left] { right: calc(100% + 6px); }
-.growBar[data-bar=right] { left: calc(100% + 6px); }
+/* The room's size: on each side an ear joined to the room, a green half that adds a line (arrow out)
+   and a red half that cuts one (arrow in) (registers 318, 320). Tap only. Never over a tile (register
+   298); they sit 14px from the screen's edge, his call over the back-swipe margin (register 239). */
+.roomWrap { position: relative; line-height: 0; --ear: 18px; --ear-long: 32px; --add-bg: #e1ece3; --add-ink: #5b8a69; --cut-bg: #f2e1df; --cut-ink: #ad6a64; }
+.growBar { position: absolute; display: flex; z-index: 2; }
+.growBar[data-bar=top] { bottom: 100%; left: 50%; translate: -50% 0; }
+.growBar[data-bar=bottom] { top: 100%; left: 50%; translate: -50% 0; }
+.growBar[data-bar=left], .growBar[data-bar=right] { top: 50%; translate: 0 -50%; }
+.growBar[data-bar=left] { right: 100%; }
+.growBar[data-bar=right] { left: 100%; }
+.grow { display: flex; overflow: visible; }
 .growBar[data-bar=left] .grow, .growBar[data-bar=right] .grow { flex-direction: column; }
-.growBar[data-bar=bottom] { top: calc(100% + 8px); }
-.grow { display: flex; gap: 14px; }
-.plus, .minus { position: relative; width: 30px; height: 30px; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 17px; line-height: 1; opacity: .9; touch-action: manipulation; }
+.plus, .minus { position: relative; width: var(--ear-long); height: var(--ear); padding: 0; border-radius: 0; display: grid; place-items: center; line-height: 1; touch-action: manipulation; box-shadow: none; }
+.growBar[data-bar=left] :is(.plus, .minus), .growBar[data-bar=right] :is(.plus, .minus) { width: var(--ear); height: var(--ear-long); }
+.plus { background: var(--add-bg); color: var(--add-ink); } .minus { background: var(--cut-bg); color: var(--cut-ink); }
+.plus svg, .minus svg { width: 9px; height: 9px; }
+/* Round on the outside, flat where the ear meets the room. */
+.growBar[data-bar=top] .grow > :first-child { border-top-left-radius: 9px; } .growBar[data-bar=top] .grow > :last-child { border-top-right-radius: 9px; }
+.growBar[data-bar=bottom] .grow > :first-child { border-bottom-left-radius: 9px; } .growBar[data-bar=bottom] .grow > :last-child { border-bottom-right-radius: 9px; }
+.growBar[data-bar=left] .grow > :first-child { border-top-left-radius: 9px; } .growBar[data-bar=left] .grow > :last-child { border-bottom-left-radius: 9px; }
+.growBar[data-bar=right] .grow > :first-child { border-top-right-radius: 9px; } .growBar[data-bar=right] .grow > :last-child { border-bottom-right-radius: 9px; }
 /* Never lifted or pressed: the house button motion would move it under the finger (register 227). */
-.plus, .plus:hover:not(:disabled), .plus:active:not(:disabled), .minus, .minus:hover:not(:disabled), .minus:active:not(:disabled) { transform: none; }
-@media (pointer: fine) { .plus, .minus { opacity: 0; transition: opacity .12s; } .roomWrap:hover .plus, .roomWrap:hover .minus, .plus:focus-visible, .minus:focus-visible { opacity: 1; } }
-/* A 44px touch target around each 30px button, inside the bar's own gaps. */
-.plus::after, .minus::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; }
+.plus, .plus:hover:not(:disabled), .plus:active:not(:disabled), .minus, .minus:hover:not(:disabled), .minus:active:not(:disabled) { transform: none; box-shadow: none; }
+.plus:active:not(:disabled), .minus:active:not(:disabled) { filter: brightness(.94); }
+@media (pointer: fine) { .plus, .minus { opacity: .45; transition: opacity .12s; } .roomWrap:hover .plus, .roomWrap:hover .minus, .plus:focus-visible, .minus:focus-visible { opacity: 1; } }
+/* A 44px-deep touch target, grown outward only, so it never covers a tile. */
+.plus::after, .minus::after { content: ''; position: absolute; inset: 0; }
+.growBar[data-bar=top] :is(.plus, .minus)::after { top: -26px; } .growBar[data-bar=bottom] :is(.plus, .minus)::after { bottom: -26px; }
+.growBar[data-bar=left] :is(.plus, .minus)::after { left: -26px; } .growBar[data-bar=right] :is(.plus, .minus)::after { right: -26px; }
 body.play .growBar, body.play #sizeBtn, body.play .sizePop { display: none; }
 .roomArea { padding: 0; }
 @media (max-width: 700px) { .roomArea { padding: 0 0 8px; } }
@@ -715,10 +726,10 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
       <div id="campVerdict" class="campVerdict camp-only" role="status" hidden><span id="campVerdictText"></span></div>
       <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="game"></canvas>
         <div id="campTip" class="campTip" role="status" hidden></div>
-        <div class="growBar" data-bar="top"><div class="grow" data-grow="top"><button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button><button type="button" class="minus" data-minus="top" title="Remove the top row" aria-label="Remove the top row">&minus;</button></div></div>
-        <div class="growBar" data-bar="left"><div class="grow" data-grow="left"><button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left">+</button><button type="button" class="minus" data-minus="left" title="Remove the column on the left" aria-label="Remove the column on the left">&minus;</button></div></div>
-        <div class="growBar" data-bar="right"><div class="grow" data-grow="right"><button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right">+</button><button type="button" class="minus" data-minus="right" title="Remove the column on the right" aria-label="Remove the column on the right">&minus;</button></div></div>
-        <div class="growBar" data-bar="bottom"><div class="grow" data-grow="bottom"><button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom">+</button><button type="button" class="minus" data-minus="bottom" title="Remove the bottom row" aria-label="Remove the bottom row">&minus;</button></div></div>
+        <div class="growBar" data-bar="top"><div class="grow" data-grow="top"><button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1 9 8 1 8Z" fill="currentColor"/></svg></button><button type="button" class="minus" data-minus="top" title="Remove the top row" aria-label="Remove the top row"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 9 9 2 1 2Z" fill="currentColor"/></svg></button></div></div>
+        <div class="growBar" data-bar="left"><div class="grow" data-grow="left"><button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 5 8 1 8 9Z" fill="currentColor"/></svg></button><button type="button" class="minus" data-minus="left" title="Remove the column on the left" aria-label="Remove the column on the left"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M9 5 2 1 2 9Z" fill="currentColor"/></svg></button></div></div>
+        <div class="growBar" data-bar="right"><div class="grow" data-grow="right"><button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M9 5 2 1 2 9Z" fill="currentColor"/></svg></button><button type="button" class="minus" data-minus="right" title="Remove the column on the right" aria-label="Remove the column on the right"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 5 8 1 8 9Z" fill="currentColor"/></svg></button></div></div>
+        <div class="growBar" data-bar="bottom"><div class="grow" data-grow="bottom"><button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 9 9 2 1 2Z" fill="currentColor"/></svg></button><button type="button" class="minus" data-minus="bottom" title="Remove the bottom row" aria-label="Remove the bottom row"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1 9 8 1 8Z" fill="currentColor"/></svg></button></div></div>
       </div>
 </div>
       <div id="lensChips" class="chips" hidden></div>
@@ -6112,10 +6123,10 @@ function place(wide) {
 }
 
 const EDGE = 14;
-// Above and below the room, a bar of + and − buttons (register 298): the room keeps that much free.
-const BAR = 40;
-// Left and right of it, a + over a − (register 318): a 30px button and its 6px gap.
-const SIDE = 36;
+// The resize ears stand 18px off each side of the room (registers 298, 318, 320); above and below,
+// the room keeps a little more, so an ear never touches the card over it.
+const BAR = 30;
+const SIDE = 18;
 
 function fit() {
   const level = S.level, wide = innerWidth > 700;

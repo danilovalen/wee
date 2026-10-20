@@ -285,24 +285,35 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .chip .n { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 }
 
-/* The room's size: a + and a − on each side of the room, beside the line it adds or cuts (register 318).
-   Tap only. Never over a tile (register 298), and the side pairs keep clear of the screen's edge, where
-   a swipe is the phone's back gesture (register 239). */
-.roomWrap { position: relative; line-height: 0; }
-.growBar { position: absolute; left: 50%; translate: -50% 0; width: max(calc(100% - 16px), 270px); display: flex; justify-content: center; gap: 16px; z-index: 2; }
-.growBar[data-bar=top] { bottom: calc(100% + 8px); }
-.growBar[data-bar=left], .growBar[data-bar=right] { width: auto; left: auto; translate: 0 -50%; top: 50%; }
-.growBar[data-bar=left] { right: calc(100% + 6px); }
-.growBar[data-bar=right] { left: calc(100% + 6px); }
+/* The room's size: on each side an ear joined to the room, a green half that adds a line (arrow out)
+   and a red half that cuts one (arrow in) (registers 318, 320). Tap only. Never over a tile (register
+   298); they sit 14px from the screen's edge, his call over the back-swipe margin (register 239). */
+.roomWrap { position: relative; line-height: 0; --ear: 18px; --ear-long: 32px; --add-bg: #e1ece3; --add-ink: #5b8a69; --cut-bg: #f2e1df; --cut-ink: #ad6a64; }
+.growBar { position: absolute; display: flex; z-index: 2; }
+.growBar[data-bar=top] { bottom: 100%; left: 50%; translate: -50% 0; }
+.growBar[data-bar=bottom] { top: 100%; left: 50%; translate: -50% 0; }
+.growBar[data-bar=left], .growBar[data-bar=right] { top: 50%; translate: 0 -50%; }
+.growBar[data-bar=left] { right: 100%; }
+.growBar[data-bar=right] { left: 100%; }
+.grow { display: flex; overflow: visible; }
 .growBar[data-bar=left] .grow, .growBar[data-bar=right] .grow { flex-direction: column; }
-.growBar[data-bar=bottom] { top: calc(100% + 8px); }
-.grow { display: flex; gap: 14px; }
-.plus, .minus { position: relative; width: 30px; height: 30px; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 17px; line-height: 1; opacity: .9; touch-action: manipulation; }
+.plus, .minus { position: relative; width: var(--ear-long); height: var(--ear); padding: 0; border-radius: 0; display: grid; place-items: center; line-height: 1; touch-action: manipulation; box-shadow: none; }
+.growBar[data-bar=left] :is(.plus, .minus), .growBar[data-bar=right] :is(.plus, .minus) { width: var(--ear); height: var(--ear-long); }
+.plus { background: var(--add-bg); color: var(--add-ink); } .minus { background: var(--cut-bg); color: var(--cut-ink); }
+.plus svg, .minus svg { width: 9px; height: 9px; }
+/* Round on the outside, flat where the ear meets the room. */
+.growBar[data-bar=top] .grow > :first-child { border-top-left-radius: 9px; } .growBar[data-bar=top] .grow > :last-child { border-top-right-radius: 9px; }
+.growBar[data-bar=bottom] .grow > :first-child { border-bottom-left-radius: 9px; } .growBar[data-bar=bottom] .grow > :last-child { border-bottom-right-radius: 9px; }
+.growBar[data-bar=left] .grow > :first-child { border-top-left-radius: 9px; } .growBar[data-bar=left] .grow > :last-child { border-bottom-left-radius: 9px; }
+.growBar[data-bar=right] .grow > :first-child { border-top-right-radius: 9px; } .growBar[data-bar=right] .grow > :last-child { border-bottom-right-radius: 9px; }
 /* Never lifted or pressed: the house button motion would move it under the finger (register 227). */
-.plus, .plus:hover:not(:disabled), .plus:active:not(:disabled), .minus, .minus:hover:not(:disabled), .minus:active:not(:disabled) { transform: none; }
-@media (pointer: fine) { .plus, .minus { opacity: 0; transition: opacity .12s; } .roomWrap:hover .plus, .roomWrap:hover .minus, .plus:focus-visible, .minus:focus-visible { opacity: 1; } }
-/* A 44px touch target around each 30px button, inside the bar's own gaps. */
-.plus::after, .minus::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; }
+.plus, .plus:hover:not(:disabled), .plus:active:not(:disabled), .minus, .minus:hover:not(:disabled), .minus:active:not(:disabled) { transform: none; box-shadow: none; }
+.plus:active:not(:disabled), .minus:active:not(:disabled) { filter: brightness(.94); }
+@media (pointer: fine) { .plus, .minus { opacity: .45; transition: opacity .12s; } .roomWrap:hover .plus, .roomWrap:hover .minus, .plus:focus-visible, .minus:focus-visible { opacity: 1; } }
+/* A 44px-deep touch target, grown outward only, so it never covers a tile. */
+.plus::after, .minus::after { content: ''; position: absolute; inset: 0; }
+.growBar[data-bar=top] :is(.plus, .minus)::after { top: -26px; } .growBar[data-bar=bottom] :is(.plus, .minus)::after { bottom: -26px; }
+.growBar[data-bar=left] :is(.plus, .minus)::after { left: -26px; } .growBar[data-bar=right] :is(.plus, .minus)::after { right: -26px; }
 body.play .growBar, body.play #sizeBtn, body.play .sizePop { display: none; }
 .roomArea { padding: 0; }
 @media (max-width: 700px) { .roomArea { padding: 0 0 8px; } }
