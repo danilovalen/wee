@@ -6,6 +6,7 @@ import { drawPiece, drawPlayer } from './pieces.js';
 import { drawCell, drawFloor } from './tiles.js';
 import { drawMasses, inMass, overlay } from './masses.js';
 import { drawHeat, drawLensMarks } from './lenses.js';
+import { drawWires } from './wires.js';
 
 const GHOST_MS = 360;
 
@@ -26,6 +27,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   frame.clock = now;
   drawFloor(g, level.w, level.h);
   drawHeat(g, level.w, lens.heat);
+  drawWires(g, level.w, level.wires);
   const pop = (x, y) => {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
     return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
@@ -144,6 +146,7 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
   drawFloor(g, s.w, s.h);
   // A broken block is floor for the rest of the run.
   const cells = s.broken.length ? s.cells.map((c, i) => s.broken.includes(i) ? '' : c) : s.cells;
+  drawWires(g, s.w, s.wires, r => !!s.open[s.wireOf[`${r.w}:${r.y * s.w + r.x}`]]);
   drawMasses(g, s.crates.size ? cells.map((c, i) => s.crates.has(i) ? '' : c) : cells, s.w, s.h);
   cells.forEach((c, i) => {
     const x = i % s.w, y = Math.floor(i / s.w);

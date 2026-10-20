@@ -38,6 +38,10 @@ A grey "wired" colour for the editor, and three wire colours painted Terraria-st
 - **Gates that drive gates.** A gate's output is a wire, a wire opens a door, and the door lets a beam reach the next gate's relay. Each step is a piece that exists today, so this should chain without anything new.
 - **An endless room.** Already true in his reading, so nothing to build.
 
+## The wires are built (register 349)
+
+A 4-bit counter that loops, `rooms/4-bit-counter.wee`, runs from gates, wires and a clock alone: an 8-stage ring for the clock, a pulse gate, and a 3-line gate per bit. Every gate takes exactly one tick, so the room is a synchronous circuit. With wires and an endless room nothing in this list is missing any more.
+
 ## Register 343: "if you can beat a level in X moves, you can in X+1"
 
 A room's score is its robot's shortest path, so the claim is: if a room of some size has a shortest path of X, another room of that size has X+1.

@@ -4,6 +4,7 @@ import { aimKey } from '../src/rules/player.js';
 import { parseLevel, emptyLevel, isCell, resizeSide, wallBorder, moveSide } from '../src/level/format.js';
 import { solidCell, gateDirs, cellAt } from '../src/rules/grid.js';
 import { stateKey } from '../src/solve/solve.js';
+import { counterRoom, countOf } from '../tools/counterRoom.mjs';
 import { place, describe, turnGate, moveAt } from '../src/editor/edit.js';
 import { drawTurret } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
@@ -1271,6 +1272,52 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('pushable tiles read back', parseLevel(JSON.stringify(room(['#P.s#'], { crates: [[3, 0]] }))).crates[0].x === 3);
   let bad = ''; try { parseLevel(JSON.stringify(room(['#P..#'], { crates: [[3, 0]] }))); } catch (e) { bad = e.message; }
   check('a pushable mark on a tile that cannot be pushed is refused', /pushable/i.test(bad), bad);
+}
+
+{ // wires (register 347): a network per colour of touching wire tiles; grey pieces read only theirs
+  const line = (x0, x1, y, w) => Array.from({ length: x1 - x0 + 1 }, (_, i) => ({ x: x0 + i, y, w }));
+  const make = (rows, wires, set = {}) => { const l = room(rows); l.wires = wires; for (const [i, c] of Object.entries(set)) l.cells[+i] = c; return createGame(l); };
+  // Row 1: a box on a grey button at (2,1); row 2: a grey door at (5,2); a teal wire joins them.
+  const rows = ['#######', '#PB...#', '#.....#', '#######'];
+  const set = { 9: 'button:wire', 19: 'door:wire' };
+  const on = make(rows, [...line(2, 5, 1, 'teal'), { x: 5, y: 2, w: 'teal' }], set);
+  check('a grey door opens while a switch on its wire holds', !solidCell(on, 5, 2), JSON.stringify(on.open));
+  const off = make(rows, [...line(2, 4, 1, 'teal'), { x: 5, y: 2, w: 'teal' }], set);
+  check('a grey door on another wire stays shut', solidCell(off, 5, 2));
+  const crossed = make(rows, [...line(2, 5, 1, 'violet'), { x: 5, y: 2, w: 'teal' }], set);
+  check('wires of different colours on touching tiles do not join', solidCell(crossed, 5, 2));
+  const red = make(rows, [...line(2, 5, 1, 'teal'), { x: 5, y: 2, w: 'teal' }], { 9: 'button:red', 19: 'door:wire', 12: 'door:red' });
+  check('a coloured switch on a wire powers the wire and still its colour', !solidCell(red, 5, 2) && !solidCell(red, 5, 1) && red.open.red);
+  const two = make(['#######', '#PB..B#', '#.....#', '#######'], [...line(2, 5, 1, 'teal'), { x: 5, y: 2, w: 'teal' }], { 9: 'button:wire', 12: 'button:wire', 19: 'door:wire' });
+  check('a wire is on only while every switch on it holds', !solidCell(two, 5, 2));
+  const half = make(['#######', '#PB...#', '#.....#', '#######'], [...line(2, 5, 1, 'teal'), { x: 5, y: 2, w: 'teal' }], { 9: 'button:wire', 12: 'button:wire', 19: 'door:wire' });
+  check('one switch of two is not enough', solidCell(half, 5, 2));
+  const bare = make(rows, [], { 19: 'door:wire', 9: 'button:wire' });
+  check('a grey door on no wire never opens', solidCell(bare, 5, 2));
+  const inv = make(rows, [...line(2, 5, 1, 'teal'), { x: 5, y: 2, w: 'teal' }], { 9: 'button:wire', 19: 'idoor:wire' });
+  check('a grey inverted door is solid while its wire is on', solidCell(inv, 5, 2));
+  check('wires read back; a bad one is refused', parseLevel(JSON.stringify({ ...room(rows), wires: [{ x: 1, y: 1, w: 'teal' }] })).wires.length === 1 && (() => { try { parseLevel(JSON.stringify({ ...room(rows), wires: [{ x: 1, y: 1, w: 'red' }] })); return false; } catch { return true; } })());
+  check('a grey one-way is refused', !isCell('gate:right@wire') && isCell('door:wire') && !isCell('door:red|wire'));
+  const grown = resizeSide({ ...room(rows), wires: [{ x: 2, y: 1, w: 'teal' }] }, 'left', 1);
+  check('resizing carries the wires', grown.wires[0].x === 3);
+  const ed = room(['#P...#']), ui = { tool: 'wire', wire: 'violet' };
+  place(ed, ui, 3, 0, 'place'); place(ed, { ...ui, wire: 'teal' }, 3, 0, 'place');
+  check('the Wire tool lays a wire of its colour; two colours share a tile', ed.wires.length === 2 && /violet and teal wires/.test(describe(ed, 3, 0)), describe(ed, 3, 0));
+  place(ed, ui, 3, 0, 'remove');
+  check('removing takes only that colour', ed.wires.length === 1 && ed.wires[0].w === 'teal');
+  place(ed, { tool: 'box' }, 3, 0, 'place'); const mv = moveAt(ed, { x: 3, y: 0 }, { x: 4, y: 0 });
+  check('a piece moved off a wire leaves the wire where it was', mv.wires[0].x === 3 && mv.entities[0].x === 4);
+  place(ed, ui, 3, 0, 'erase'); const first = ed.entities.length === 0 && ed.wires?.length === 1;
+  place(ed, ui, 3, 0, 'erase');
+  check('erase takes the piece first, then the wires', first && !ed.wires);
+}
+
+{ // the 4-bit counter room (register 349): wires, gates and a clock count 0 to 15 and round again
+  const c = createGame(counterRoom()), seen = [];
+  for (let t = 0; t < 560; t++) { step(c); const n = countOf(c); if (seen.at(-1)?.n !== n) seen.push({ t, n }); }
+  const steps = seen.slice(1).map(e => e.n), gaps = seen.slice(2).map((e, i) => e.t - seen[i + 1].t);
+  check('the counter room counts 0 to 15 and loops, one step every 16 ticks', steps.slice(0, 33).join() === [...Array(33).keys()].map(k => (k + 1) % 16).join() && gaps.every(g => g === 16), JSON.stringify(seen.slice(0, 20)));
+  check('the saved counter room is the generated one', JSON.stringify(parseLevel(readFileSync('rooms/4-bit-counter.wee', 'utf8')).wires) === JSON.stringify(counterRoom().wires));
 }
 
 { // gravel stops what slides onto it

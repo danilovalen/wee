@@ -68,9 +68,9 @@ export function buildPanels(actions) {
     b.onclick = () => { S.ui.tool = t.id; syncPanel(); };
     $('palette').append(b);
   }
-  for (const col of COLOURS) {
+  for (const col of [...COLOURS, 'wire']) {
     const b = document.createElement('button');
-    b.type = 'button'; b.dataset.colour = col; b.title = col;
+    b.type = 'button'; b.dataset.colour = col; b.title = col === 'wire' ? 'grey: reads only the wires under it' : col;
     b.style.background = INK[col];
     b.onclick = () => { S.ui.colour = col; syncPanel(); };
     $('colours').append(b);
@@ -80,6 +80,7 @@ export function buildPanels(actions) {
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { S.ui.mode = b.dataset.mode; syncPanel(); });
   document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { S.ui.corner = b.dataset.corner; syncPanel(); });
   document.querySelectorAll('[data-face]').forEach(b => b.onclick = () => { S.ui.face = b.dataset.face; syncPanel(); });
+  document.querySelectorAll('[data-wire]').forEach(b => { b.style.background = INK[b.dataset.wire]; b.onclick = () => { S.ui.wire = b.dataset.wire; syncPanel(); }; });
   document.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => {
     const d = b.dataset.pass, ui = S.ui;
     if (ui.pass.includes(d)) { if (ui.pass.length > 1) ui.pass = ui.pass.filter(p => p !== d); }
@@ -173,6 +174,7 @@ export function syncPanel() {
   document.querySelectorAll('[data-colour]').forEach(b => b.classList.toggle('on', b.dataset.colour === ui.colour));
   document.querySelectorAll('[data-corner]').forEach(b => b.classList.toggle('on', b.dataset.corner === ui.corner));
   document.querySelectorAll('[data-face]').forEach(b => b.classList.toggle('on', b.dataset.face === ui.face));
+  document.querySelectorAll('[data-wire]').forEach(b => b.classList.toggle('on', b.dataset.wire === ui.wire));
   document.querySelectorAll('[data-pass]').forEach(b => {
     const on = ui.pass.includes(b.dataset.pass);
     b.classList.toggle('on', on);
@@ -203,7 +205,7 @@ let tint = '';
 // In a level, Look, Erase and Move start the colours' line; back in the sandbox they return to the palette.
 const LINE = ['look', 'erase', 'move'];
 // The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
-const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'sensor', 'gate', 'turret'];
+const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'sensor', 'gate', 'turret', 'receiver', 'wire'];
 const lined = () => !!(S.camp || S.simple);
 function placeTools() {
   const box = $('campTools');
@@ -220,7 +222,8 @@ function placeTools() {
 const PUSHABLE = ['laser', 'relay', 'gate', 'door', 'idoor'];
 const ELEMENT_OF = Object.fromEntries(Object.entries(TOOL).map(([el, t]) => [t, el]));
 function colourChoices() {
-  if (S.simple) return { all: ['red', 'blue', 'red|blue'], fits: ['red', 'blue', 'red|blue'] };
+  // Grey (register 347) is a Sandbox and editor colour only; a one-way never takes it.
+  if (S.simple) return { all: ['red', 'blue', 'red|blue', 'wire'], fits: S.ui.tool === 'gate' ? ['red', 'blue', 'red|blue'] : ['red', 'blue', 'red|blue', 'wire'] };
   if (!S.camp) return { all: null, fits: null };
   const def = S.camp.def, el = ELEMENT_OF[S.ui.tool], each = Object.keys(def.palette).flatMap(k => colouringsOf(def, k));
   const all = [...coloursOf(def), ...new Set(each.filter(c => c.includes('|')))];
@@ -234,6 +237,20 @@ function syncColours() {
   ui.gateColour = (S.camp && S.camp.def.colours) || S.simple ? ui.colour : null;
   // In a level a laser stands alone, fires one way and turns with its clock: no mounting, no aim list.
   if (lined()) { ui.mount = false; if (ui.aim.length !== 1) ui.aim = ['right']; ui.mode = 'input'; } else ui.mount = true;
+  // With the Wire tool, the dots are the three wire colours (register 347).
+  if (lined() && ui.tool === 'wire') {
+    row.hidden = false;
+    if (row.dataset.cols !== 'wires') {
+      row.dataset.cols = 'wires';
+      row.replaceChildren(...['teal', 'violet', 'charcoal'].map(w => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.dataset.campWire = w; b.title = w; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', w + ' wire');
+        b.style.background = INK[w]; b.onclick = () => { S.ui.wire = w; syncPanel(); };
+        return b;
+      }));
+    }
+    row.querySelectorAll('[data-camp-wire]').forEach(b => { const on = b.dataset.campWire === ui.wire; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+  } else {
   row.hidden = !cols || cols.length < 2;
   if (cols && row.dataset.cols !== cols.join()) {
     row.dataset.cols = cols.join();
@@ -247,6 +264,7 @@ function syncColours() {
   }
   // A colour the chosen tool cannot take is greyed: level 19's door comes only in red+blue.
   row.querySelectorAll('[data-camp-colour]').forEach(b => { const on = b.dataset.campColour === ui.colour; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); b.disabled = !!fits && !fits.includes(b.dataset.campColour); });
+  }
   // The Pushable chip (register 336) shows where the level offers a pushable piece; the chosen tool
   // decides whether it may be on, off, or either.
   const chip = $('campCrate'), def = S.camp && S.camp.def, offers = el => S.simple ? (PUSHABLE.includes(el) ? [false, true] : [false]) : def && def.palette[el] ? pushingsOf(def, el) : [false];

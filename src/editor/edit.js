@@ -2,7 +2,7 @@
 // with the current tool. Returns what changed so the caller can animate it.
 import { CLOCKWISE, CARRIES_TURRET } from '../rules/base.js';
 import { CRATED } from '../level/format.js';
-import { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } from './palette.js';
+import { TOOLS, WIRE_NAME, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } from './palette.js';
 
 const idx = (level, x, y) => y * level.w + x;
 const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');
@@ -82,7 +82,16 @@ export function turnLaser(level, x, y) {
   if (e && e.turret) e.turret = { ...e.turret, dirs: e.turret.dirs.map(d => CLOCKWISE[(CLOCKWISE.indexOf(d) + 1) % 4]), start: undefined };
 }
 
-export function holds(level, x, y, tool) {
+// Wires (register 347) lie under everything and stay put when a piece or tile moves.
+export const wiresAt = (level, x, y) => (level.wires || []).filter(r => r.x === x && r.y === y);
+function setWire(level, x, y, w, on) {
+  const k = (level.wires || []).filter(r => r.x !== x || r.y !== y || r.w !== w);
+  if (on) k.push({ x, y, w });
+  if (k.length) level.wires = k; else delete level.wires;
+}
+
+export function holds(level, x, y, tool, wire) {
+  if (tool === 'wire') return wiresAt(level, x, y).some(r => r.w === wire);
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
@@ -124,6 +133,8 @@ export function describe(level, x, y) {
     else parts.push(`${cname(v)} ${kind}`);
   }
   if (crateAt(level, x, y)) parts.push('pushable');
+  const ws = wiresAt(level, x, y).map(r => WIRE_NAME[r.w].toLowerCase());
+  if (ws.length) parts.push(ws.join(' and ') + (ws.length > 1 ? ' wires' : ' wire'));
   if (level.start && level.start.x === x && level.start.y === y) parts.push('Start');
   return parts.length ? parts.join(', ') : 'Empty floor';
 }
@@ -133,7 +144,12 @@ export function describe(level, x, y) {
 // Returns the effects to show: what was taken off the tile, and a pop where it placed.
 export function place(level, ui, x, y, how) {
   const out = [];
-  if (how === 'remove' && !holds(level, x, y, ui.tool)) return out;
+  if (how === 'remove' && !holds(level, x, y, ui.tool, ui.wire)) return out;
+  if (ui.tool === 'wire' && how !== 'erase') {
+    if (holds(level, x, y, 'wire', ui.wire) === (how === 'place')) return out;
+    setWire(level, x, y, ui.wire, how === 'place');
+    return how === 'place' ? [{ type: 'place', x, y }] : [{ type: 'erase', x, y }];
+  }
   if (how === 'place' && holds(level, x, y, ui.tool) && (!CRATE_TOOLS.includes(ui.tool) || crateAt(level, x, y) === !!ui.crate)) return out;
   const t = how === 'erase' ? 'erase' : how === 'remove' ? 'remove' : ui.tool, i = idx(level, x, y), pi = pieceAt(level, x, y);
   const gone = { type: 'erase', x, y };
@@ -141,7 +157,8 @@ export function place(level, ui, x, y, how) {
   const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
   const isStart = !!level.start && level.start.x === x && level.start.y === y;
   if (t === 'erase') {
-    if (pi >= 0) removePiece(); else setCell('');
+    // Erase takes the top thing first: a piece, then a tile, then the wires under them.
+    if (pi >= 0) removePiece(); else if (level.cells[i]) setCell(''); else for (const r of wiresAt(level, x, y)) setWire(level, x, y, r.w, false);
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }

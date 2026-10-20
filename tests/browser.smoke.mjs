@@ -27,7 +27,7 @@ try {
   check('wee starts on the library', await page.locator('#roomsBox').isVisible());
   check('focus starts on New room, not on Close', await page.evaluate(() => document.activeElement.id) === 'roomNew', await page.evaluate(() => document.activeElement.id));
   check('a fresh start has no unsaved tile', await page.locator('#openNow').isHidden());
-  check('floors are their own section: water, sticky puddle and gravel', (await page.$$eval('[data-tool][data-in=floors]', bs => bs.map(b => b.dataset.tool).join())) === 'water,sticky,gravel' && await page.locator('[data-group=floors]').count() === 1);
+  check('floors are their own section: water, sticky puddle, gravel and wire', (await page.$$eval('[data-tool][data-in=floors]', bs => bs.map(b => b.dataset.tool).join())) === 'water,sticky,gravel,wire' && await page.locator('[data-group=floors]').count() === 1);
   await page.click('#roomsBox .roomsHead button');
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.

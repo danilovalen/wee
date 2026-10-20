@@ -25,6 +25,8 @@ export const TOOLS = [
   { id: 'water', label: 'Water', group: 'floors' },
   { id: 'sticky', label: 'Sticky puddle', group: 'floors' },
   { id: 'gravel', label: 'Gravel', group: 'floors' },
+  // Wires lie on the floor, under everything (register 347).
+  { id: 'wire', label: 'Wire', group: 'floors' },
   { id: 'button', label: 'Button', group: 'switches' },
   { id: 'toggle', label: 'Switch', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
@@ -46,7 +48,8 @@ export const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cyc
 
 // The palette shows one group at a time on a phone, so it fits without scrolling.
 export const GROUPS = [['basic', 'Basics'], ['pieces', 'Pieces'], ['tiles', 'Tiles'], ['floors', 'Floors'], ['switches', 'Switches']];
-export const COLOUR_NAME = { red: 'Red', blue: 'Blue', yellow: 'Yellow', green: 'Green' };
+export const COLOUR_NAME = { red: 'Red', blue: 'Blue', yellow: 'Yellow', green: 'Green', wire: 'Grey' };
+export const WIRE_NAME = { teal: 'Teal', violet: 'Violet', charcoal: 'Charcoal' };
 export const CLOCK_NAME = { realtime: 'real time', input: 'on your move', follow: 'same way as you' };
 export const ARROW = { up: '\u2191', right: '\u2192', down: '\u2193', left: '\u2190' };
 export const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'bottom right' };

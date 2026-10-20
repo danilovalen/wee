@@ -25,6 +25,10 @@ check('a code from somewhere else says so', err.includes('Not a wee room code'),
 err = '';
 try { await decodeRoom(await encodeRoom({ ...first, cells: first.cells.map(() => 'lava') })); } catch (e) { err = e.message; }
 check('a code for a room the game cannot read is refused', err.includes('Unknown tile'), err);
+// Wires and pushable tiles travel too (registers 336, 347).
+const wired = JSON.parse(readFileSync('rooms/4-bit-counter.wee', 'utf8'));
+const wback = await decodeRoom(await encodeRoom({ ...wired, crates: [{ x: 2, y: 4 }] }));
+check('a code keeps the wires and the pushable tiles', JSON.stringify(wback.wires) === JSON.stringify(wired.wires) && wback.crates?.length === 1);
 // Hook and the boots are gone; a room saved with either loads without it.
 const old = parseLevel(JSON.stringify({ ...first, powers: { ...first.powers, hook: true, boots: true } }));
 check('a room saved with Hook or the boots loads without them', !('hook' in old.powers) && !('boots' in old.powers) && old.powers.dive === first.powers.dive, JSON.stringify(old.powers));

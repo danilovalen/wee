@@ -1,5 +1,6 @@
 // Tiles: floor, walls and every cell type, drawn in place.
 import { INK, T, frame, roundRect } from './ink.js';
+import { drawnColour } from '../rules/wires.js';
 import { gateOf, gateDirs } from '../rules/grid.js';
 
 // bare: a block in the wall mass, so only what sits on it is drawn.
@@ -21,6 +22,12 @@ function star(g, k) {
 
 export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   if (!c) return;
+  // In a run, a grey piece's colours are its wires' networks ('w0'): drawn grey, open while any is.
+  if (/[:|@]w(\d+|none)/.test(c)) {
+    const cut = Math.max(c.indexOf(':'), c.indexOf('@')) + 1, d = drawnColour(c.slice(cut).split('|'), s && s.open);
+    const open = d.on !== undefined ? { ...(s && s.open), wire: d.on } : s && s.open;
+    return drawCell(g, c.slice(0, cut) + d.cols.join('|'), x, y, s && { ...s, open }, scale, bare);
+  }
   // A piece of two colours is drawn twice, each colour on its half, both showing the pair's state:
   // open, or turned, while either colour is (registers 313, 316).
   const bar = c.indexOf('|');
@@ -129,7 +136,8 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     // A catcher: a block with a coloured eye that glows while a beam holds it.
     const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
     if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
-    g.fillStyle = lit ? INK[col] : INK.unlit;
+    // A grey catcher glows white, or lit and unlit would both read grey.
+    g.fillStyle = lit ? (col === 'wire' ? '#ffffff' : INK[col]) : INK.unlit;
     g.beginPath(); g.arc(16, 16, 8.5, 0, Math.PI * 2); g.fill();
     g.strokeStyle = INK[col]; g.lineWidth = 3; g.stroke();
     if (lit) { g.globalAlpha = 0.35; g.fillStyle = INK[col]; g.beginPath(); g.arc(16, 16, 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }

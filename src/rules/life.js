@@ -76,7 +76,7 @@ export function refreshDoors(s) {
   }
   let squashed = false;
   const turned = [], was = { ...s.open };
-  for (const col of COLOURS) {
+  for (const col of s.colours || COLOURS) {
     const want = !!(any[col] && pressed[col]);
     if (want !== !!s.open[col]) {
       // The doors this change closes: its own colour's, and a two-colour one whose other colour is

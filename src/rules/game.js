@@ -8,9 +8,11 @@ import { fireSprings, rushOnce, slidePiece } from './pieces.js';
 import { input, slideOnce, unhide } from './player.js';
 import { checkStuck } from './sticky.js';
 import { checkGlue, partnerOf } from './glue.js';
+import { netsOf, wireCells } from './wires.js';
 
 export function createGame(level) {
-  const l = JSON.parse(JSON.stringify(level));
+  const l = JSON.parse(JSON.stringify(level)), nets = netsOf(l);
+  if (nets.ids.length || l.cells.some(c => c.endsWith(':wire'))) l.cells = wireCells(l.cells, nets.at);
   const s = {
     origin: l.entities,
     w: l.w, h: l.h, cells: l.cells, originCells: l.cells, powers: l.powers, clock: l.clock,
@@ -18,6 +20,7 @@ export function createGame(level) {
     checkpoint: { ...l.start },
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
     entities: freshPieces(l.entities),
+    colours: [...COLOURS, ...nets.ids], wires: l.wires || [], wireOf: nets.of,
     crates: new Set((l.crates || []).map(c => c.y * l.w + c.x)),
     open: {}, broken: [], toggled: [], onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };

@@ -14,6 +14,10 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
     const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' + (gateColour ? '@' + gateColour : '') : tool === 'spring' ? 'spring:up' : tool + ':' + colour;
     if (crate) l.crates = [{ x: 0, y: 0 }];
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
+  } else if (tool === 'wire') {
+    // Three wires in their lanes, one bending, as the Wire tool (register 347).
+    x.lineCap = 'round'; x.lineWidth = 3;
+    for (const [col, o] of [['teal', -6], ['violet', 0], ['charcoal', 6]]) { x.strokeStyle = INK[col]; x.beginPath(); x.moveTo(4, 16 + o); x.lineTo(16 + o, 16 + o); x.lineTo(16 + o, 28); x.stroke(); }
   } else if (tool === 'select') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
   } else if (tool === 'look') {

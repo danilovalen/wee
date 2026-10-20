@@ -12,8 +12,9 @@ async function pipe(bytes, stream) {
 
 // Only the level travels: no name, note or solution.
 export async function encodeRoom(level) {
-  const { format, version, w, h, cells, start, entities, powers, clock } = level;
-  const text = JSON.stringify({ format, version, w, h, cells, start, entities, powers, clock });
+  const { format, version, w, h, cells, start, entities, powers, clock, crates, wires } = level;
+  // Pushable tiles and wires travel too (registers 336, 347); a code without them was a different room.
+  const text = JSON.stringify({ format, version, w, h, cells, start, entities, powers, clock, ...(crates ? { crates } : {}), ...(wires ? { wires } : {}) });
   return 'w1' + b64url(await pipe(new TextEncoder().encode(text), new CompressionStream('deflate-raw')));
 }
 

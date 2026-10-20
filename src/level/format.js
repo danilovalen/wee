@@ -1,5 +1,6 @@
 // The level file: an empty room, resizing, and parsing that refuses what it does not know.
 import { CLOCKWISE, COLOURS, CORNERS, KINDS, MODES, MOVES, POWERS } from '../rules/base.js';
+import { WIRES } from '../rules/wires.js';
 
 export function checkTurret(t) {
   if (!Array.isArray(t.dirs) || t.dirs.length < 1 || t.dirs.length > 4 || t.dirs.some(d => !CLOCKWISE.includes(d)) || new Set(t.dirs).size !== t.dirs.length)
@@ -28,6 +29,7 @@ export function resizeLevel(level, w, h) {
     start: level.start && { x: Math.min(level.start.x, w - 1), y: Math.min(level.start.y, h - 1) },
     entities: level.entities.filter(e => e.x < w && e.y < h),
     ...(level.crates ? { crates: level.crates.filter(c => c.x < w && c.y < h) } : {}),
+    ...(level.wires ? { wires: level.wires.filter(c => c.x < w && c.y < h) } : {}),
   };
 }
 
@@ -44,6 +46,12 @@ export function parseLevel(text) {
     if (MOVES.includes(e.kind) && e.mode && !MODES.includes(e.mode)) throw new Error('Unknown clock: ' + e.mode);
   }
   for (const c of l.crates || []) if (!(c.x >= 0 && c.y >= 0 && c.x < l.w && c.y < l.h) || !CRATED(l.cells[c.y * l.w + c.x])) throw new Error('Only a relay, a one-way or a door can be pushable.');
+  const wireKeys = new Set();
+  for (const r of l.wires || []) {
+    const k = `${r.x},${r.y},${r.w}`;
+    if (!(r.x >= 0 && r.y >= 0 && r.x < l.w && r.y < l.h) || !WIRES.includes(r.w) || wireKeys.has(k)) throw new Error('A wire must be teal, violet or charcoal, inside the room, once per tile.');
+    wireKeys.add(k);
+  }
   if (!['tile', 'slide'].includes(l.clock)) throw new Error('Unknown clock: ' + l.clock);
   // Powers that no longer exist (Hook, the boots) are dropped from old rooms.
   const powers = Object.fromEntries(Object.entries(l.powers || {}).filter(([p]) => POWERS.includes(p)));
@@ -55,11 +63,11 @@ export const CRATED = c => !!c && ['sensor:', 'gate:', 'door:', 'idoor:'].some(k
 
 export function isCell(c) {
   if (c === '' || c === 'wall' || c === 'crack' || c === 'checkpoint') return true;
-  if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9));
+  if (c.startsWith('receiver:')) return COLOURS.includes(c.slice(9)) || c.slice(9) === 'wire';
   if (c.startsWith('sensor:')) return colourOk(c.slice(7));
   if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
-  if (c.startsWith('gate:')) { const [d, col, extra] = c.slice(5).split('@'), ds = d.split(','); return extra === undefined && (col === undefined || colourOk(col)) && new Set(ds).size === ds.length && ds.every(x => CLOCKWISE.includes(x)); }
+  if (c.startsWith('gate:')) { const [d, col, extra] = c.slice(5).split('@'), ds = d.split(','); return extra === undefined && (col === undefined || (col !== 'wire' && colourOk(col))) && new Set(ds).size === ds.length && ds.every(x => CLOCKWISE.includes(x)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
   return (kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor') && colourOk(colour);
@@ -68,6 +76,8 @@ export function isCell(c) {
 // A colour, or two in the palette's order, 'red|blue' (registers 313, 316).
 function colourOk(col) {
   if (!col) return false;
+  // Grey (register 347): a piece that reads only the wires under it. It never pairs with a colour.
+  if (col === 'wire') return true;
   const [a, b, extra] = col.split('|');
   return extra === undefined && COLOURS.includes(a) && (b === undefined || COLOURS.indexOf(b) > COLOURS.indexOf(a));
 }
@@ -84,7 +94,7 @@ export function resizeSide(level, side, delta) {
   const cells = Array(w * h).fill('');
   for (let y = 0; y < level.h; y++) for (let x = 0; x < level.w; x++) if (inside(x + dx, y + dy)) cells[(y + dy) * w + x + dx] = level.cells[y * level.w + x];
   const entities = level.entities.map(e => ({ ...e, x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y));
-  return { ...level, w, h, cells, start, entities, ...(level.crates ? { crates: level.crates.map(e => ({ x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y)) } : {}) };
+  return { ...level, w, h, cells, start, entities, ...(level.crates ? { crates: level.crates.map(e => ({ x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y)) } : {}), ...(level.wires ? { wires: level.wires.map(e => ({ ...e, x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y)) } : {}) };
 }
 
 // A side's grip: n > 0 adds n lines, n < 0 cuts them. When that edge is a wall border, the
@@ -119,7 +129,7 @@ function cutOnce(l, side) {
   const shift = o => ({ ...o, x: across(side) && o.x > k ? o.x - 1 : o.x, y: !across(side) && o.y > k ? o.y - 1 : o.y });
   const cells = [];
   for (let y = 0; y < l.h; y++) for (let x = 0; x < l.w; x++) if (keep(x, y)) cells.push(l.cells[y * l.w + x]);
-  return { ...l, w, h, cells, start: l.start && !at(l.start) ? shift(l.start) : null, entities: l.entities.map(shift), ...(l.crates ? { crates: l.crates.map(shift) } : {}) };
+  return { ...l, w, h, cells, start: l.start && !at(l.start) ? shift(l.start) : null, entities: l.entities.map(shift), ...(l.crates ? { crates: l.crates.map(shift) } : {}), ...(l.wires ? { wires: l.wires.filter(e => !at(e)).map(shift) } : {}) };
 }
 
 function growOnce(l, side) {
@@ -136,7 +146,7 @@ function growOnce(l, side) {
     const ox = across(side) && x > k ? x - 1 : x, oy = !across(side) && y > k ? y - 1 : y;
     cells.push(l.cells[oy * l.w + ox]);
   }
-  return { ...l, w, h, cells, start: l.start && shift(l.start), entities: l.entities.map(shift), ...(l.crates ? { crates: l.crates.map(shift) } : {}) };
+  return { ...l, w, h, cells, start: l.start && shift(l.start), entities: l.entities.map(shift), ...(l.crates ? { crates: l.crates.map(shift) } : {}), ...(l.wires ? { wires: l.wires.map(shift) } : {}) };
 }
 
 // Walls on every edge tile, except where the start stands.
