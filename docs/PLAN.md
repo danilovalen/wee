@@ -22,15 +22,13 @@ From `docs/REGISTER.md`; numbers are register rows. The first plan (sections 1 t
 11. **326 / 339 / 340** The relay becomes a soft eight-point star (outer radius 12, inner 10.5, rounded corners), same outline and faint core as today. Sketch: `docs/relay-sketch-3.png`, version S5c.
 
 ## 5. Pushable pieces (the big one)
-12. **336-338** (sketch: `docs/pushable-sketch.png`) Laser, relay, one-way, door and inverted door get a pushable version: the box's brown border around the piece's own drawing. A "Pushable" chip at the end of the tools row places it; a level offers it per piece (like two colours). Pushed like a box; a pushable one-way only along its arrow; a pushable door or inverted door is walked through while open and pushed while closed. *Open: does a pushed laser keep its aim; do pushable pieces push each other as a train, like boxes.*
+12. **336-338** (sketch: `docs/pushable-sketch.png`) Laser, relay, one-way, door and inverted door get a pushable version: the box's brown border around the piece's own drawing. A "Pushable" chip at the end of the tools row places it; a level offers it per piece (like two colours). Pushed like a box; a pushable one-way only along its arrow; a pushable door or inverted door is walked through while open and pushed while closed. A pushed laser keeps its aim; pushable pieces and boxes push each other as one train, like boxes (his answers).
 
 ## 5b. Laser colour
 12b. **330** The laser (turret and beam) turns an electric gold, a colour no button, door or switch uses.
 
 ## 6. Search (diagnosis first)
 13. **335** Find why the room search misses wins that exist (levels 17, 18): likely the climb's partial credit gives nothing for goals that need an order of events. Fix, then re-run it on every level as a check.
-
-## 7. To ask before building
 
 ## 8. Older open rows, from before the campaign (his call whether they still matter)
 - **27** a 7×12 room as a template; **58** generator linearity; **76 / 82 / 90 / 92** lens and look decisions; **106** Rooms dialog; **118** flicker diagnosis; **215 / 216 / 218** menu screen polish; **227** resize lost while editing.
