@@ -32,7 +32,8 @@ export function drawTurret(g, t, badge, mounted) {
   g.strokeStyle = INK.beam; g.lineWidth = 1.5; g.stroke();
   g.fillStyle = INK.beam; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
   g.restore();
-  if (badge) modeBadge(g, t.mode, badge[0], badge[1]);
+  // One direction always fires the same way, so how it turns says nothing (register 300).
+  if (badge && t.dirs.length > 1) modeBadge(g, t.mode, badge[0], badge[1]);
 }
 
 export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {

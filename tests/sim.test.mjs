@@ -1174,6 +1174,12 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('the editor lights the barrel a turret fires first', lit.length === 1 && Math.abs(lit[0] - Math.PI / 2) < 1e-9, JSON.stringify(lit));
 }
 
+{ // the mode badge (a 5.5 dot) only on a turret that turns (register 300)
+  const dots = t => { let n = 0; const g = new Proxy({}, { get: (o, k) => k === 'arc' ? (x, y, r) => { if (r === 5.5) n++; } : k in o ? o[k] : () => {}, set: (o, k, v) => { o[k] = v; return true; } }); drawTurret(g, t, [24, 8]); return n; };
+  check('a one-way laser wears no mode badge', dots({ dirs: ['right'], mode: 'input' }) === 0);
+  check('a turning turret still wears its mode badge', dots({ dirs: ['up', 'down'], mode: 'realtime' }) === 1);
+}
+
 { // gravel stops what slides onto it
   const r = room(['#######', '#P.g..#', '#######']);
   check('a slide stops on gravel', at(slide(createGame(r), 'right').player, 3, 1));
