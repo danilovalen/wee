@@ -76,7 +76,7 @@ function grip(b, after) {
     if (!keeps(l)) return;
     const lost = S.level.start && !l.start;
     change(() => { S.level = l; }); after();
-    if (lost) $('placeHint').textContent = 'The cut took the start. To play, place it again.';
+    if (lost) $('placeHint').textContent = 'To play, place the start again.';
   };
   // A release anywhere ends the drag, even off the grip, outside the window, or where the
   // browser never gave the grip its capture (some phone webviews): the window hears it too.

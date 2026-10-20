@@ -148,7 +148,7 @@ export function check(def, room, opts) {
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
-  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'The robot gave up: this room is too big to search.' } };
+  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'This room is too big for the robot to search. Make it smaller.' } };
   const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
   // Each requirement holds on every shortest path or it is not met; the card marks each one.

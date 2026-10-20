@@ -328,7 +328,7 @@ try {
   const gb = await nine.locator('#game').boundingBox(), gt = gb.width / 7, gateAt = () => nine.evaluate(() => window.wee.getLevel().cells[3 * 7 + 3]);
   await nine.mouse.click(gb.x + 3.5 * gt, gb.y + 3.5 * gt); const g1 = await gateAt();
   const hint = await nine.evaluate(() => [document.getElementById('toolName').textContent, document.getElementById('campTip').hidden]);
-  check('the one-way tool says how to turn and remove one, and no tip pops up', hint[0] === 'One-way (tap to rotate; hold to remove)' && hint[1] === true, JSON.stringify(hint));
+  check('the one-way tool says how to turn and remove one, and no tip pops up', hint[0] === 'One-way (tap one to turn it, hold to remove it)' && hint[1] === true, JSON.stringify(hint));
   await nine.mouse.click(gb.x + 3.5 * gt, gb.y + 3.5 * gt); await nine.waitForTimeout(700); const g2 = await gateAt();
   check('a one-way goes down pointing right, and a tap on it turns it a quarter clockwise', g1 === 'gate:right' && g2 === 'gate:down', g1 + ' ' + g2);
   await nine.mouse.move(gb.x + 3.5 * gt, gb.y + 3.5 * gt); await nine.mouse.down(); await nine.waitForTimeout(800); await nine.mouse.up();

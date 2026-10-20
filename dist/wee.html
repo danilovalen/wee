@@ -3605,7 +3605,7 @@ function grip(b, after) {
     if (!keeps(l)) return;
     const lost = S.level.start && !l.start;
     change(() => { S.level = l; }); after();
-    if (lost) $('placeHint').textContent = 'The cut took the start. To play, place it again.';
+    if (lost) $('placeHint').textContent = 'To play, place the start again.';
   };
   // A release anywhere ends the drag, even off the grip, outside the window, or where the
   // browser never gave the grip its capture (some phone webviews): the window hears it too.
@@ -4549,7 +4549,7 @@ function check(def, room, opts) {
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
-  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'The robot gave up: this room is too big to search.' } };
+  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'This room is too big for the robot to search. Make it smaller.' } };
   const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
   // Each requirement holds on every shortest path or it is not met; the card marks each one.
@@ -6819,7 +6819,7 @@ function syncPanel() {
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   // In a level the one-way says how it is turned and taken away (register 234); draft copy.
-  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + (S.camp && (ui.tool === 'gate' || ui.tool === 'turret') ? ' (tap to rotate; hold to remove)' : '');
+  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + (S.camp && (ui.tool === 'gate' || ui.tool === 'turret') ? ' (tap one to turn it, hold to remove it)' : '');
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
@@ -6933,7 +6933,7 @@ function refusal(level, ui, x, y, how) {
 }
 const allows = (level, ui, x, y, how) => !refusal(level, ui, x, y, how);
 // A refusal said on the tile: the start and goal are never removed, only moved.
-const tipOf = msg => msg === 'Place the goal.' ? 'The goal stays. Use Move.' : msg === 'Place the start.' ? 'The start stays. Use Move.' : msg;
+const tipOf = msg => msg === 'Place the goal.' ? 'To move the goal, use Move.' : msg === 'Place the start.' ? 'To move the start, use Move.' : msg;
 
 // Why Move cannot carry a thing from one tile to another, or null when it can.
 function moveRefusal(level, from, to) {
