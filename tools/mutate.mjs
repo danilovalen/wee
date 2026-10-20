@@ -841,6 +841,9 @@ const M = [
   ['src/app/input.js', "      S.lookTile = c;\n", "", 'wires'],
   // Register 353: catchers are gone; an old room's catcher loads as a relay.
   ['src/level/format.js', "c.startsWith('receiver:') ? 'sensor:' + c.slice(9) : c", "c", 'sim'],
+  // Register 355: the 7-segment display; its d segment is the AND of two relays.
+  ['tools/displayRoom.mjs', "  { seg: 'd', lines: [[L(1, false)], [L(0, false)], [L(2, false)]] },\n", "", 'sim'],
+  ['tools/displayRoom.mjs', "[L(2), L(0)], [L(2, false), L(0, false)]] },", "[L(2), L(0)]] },", 'sim'],
   // Registers 330, 339, 340: a gold laser; the relay a soft eight-point star.
   ['src/view/pieces.js', "g.fillStyle = d === next ? INK.zap : INK.barrel;", "g.fillStyle = d === next ? INK.beam : INK.barrel;", 'sim'],
   ['src/app/lenses.js', "colour: INK.zap }", "colour: INK.beam }", 'lensui'],

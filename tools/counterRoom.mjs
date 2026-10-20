@@ -32,7 +32,7 @@ export function counterRoom() {
   const c = (u, v, s) => cell(mx(u), v, s), L = (u, v, d) => laser(mx(u), v, md(d)), w = (col, ...pts) => wire(col, ...pts.map(([u, v]) => [mx(u), v]));
   // b0 at u 3: left line not-b0 and E; top line b0 and not-E.
   L(0, Y, 'right'); c(1, Y, 'idoor:red'); c(2, Y, 'door:yellow'); c(3, Y, 'sensor:red');
-  c(3, Y - 1, 'door:red'); c(3, Y - 2, 'idoor:yellow'); L(3, Y - 3, 'down');
+  c(3, Y - 1, 'door:red'); c(3, Y - 2, 'idoor:yellow'); L(3, Y - 3, 'down'); c(3, Y + 1, 'wall');
   // b1 at u 8: not-b1, E, b0 | b1, not-E | b1, not-b0.
   L(4, Y, 'right'); c(5, Y, 'idoor:blue'); c(6, Y, 'door:yellow'); c(7, Y, 'door:red'); c(8, Y, 'sensor:blue');
   c(8, Y - 1, 'door:blue'); c(8, Y - 2, 'idoor:yellow'); L(8, Y - 3, 'down');

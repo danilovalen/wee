@@ -5,6 +5,7 @@ import { parseLevel, emptyLevel, isCell, resizeSide, wallBorder, moveSide } from
 import { solidCell, gateDirs, cellAt } from '../src/rules/grid.js';
 import { stateKey } from '../src/solve/solve.js';
 import { counterRoom, countOf } from '../tools/counterRoom.mjs';
+import { displayRoom, digitOf } from '../tools/displayRoom.mjs';
 import { place, describe, turnGate, moveAt } from '../src/editor/edit.js';
 import { drawTurret } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
@@ -1327,6 +1328,14 @@ const LONG = ['##########', '#..P....##', '##########'];
   const steps = seen.slice(1).map(e => e.n), gaps = seen.slice(2).map((e, i) => e.t - seen[i + 1].t);
   check('the counter room counts 0 to 15 and loops, one step every 16 ticks', steps.slice(0, 33).join() === [...Array(33).keys()].map(k => (k + 1) % 16).join() && gaps.every(g => g === 16), JSON.stringify(seen.slice(0, 20)));
   check('the saved counter room is the generated one', JSON.stringify(parseLevel(readFileSync('rooms/4-bit-counter.wee', 'utf8')).wires) === JSON.stringify(counterRoom().wires));
+}
+
+{ // a 3-bit counter on a 7-segment display of doors (register 355): it shows 0 to 7 and loops, never garbled
+  const r = displayRoom(), c = createGame(r), seen = [];
+  for (let t = 0; t < 280; t++) { step(c); const d = digitOf(c); if (seen.at(-1)?.d !== d) seen.push({ t, d }); }
+  const ds = seen.map(e => e.d).join('');
+  check('the 7-segment room shows 0 to 7 and loops, one digit every 16 ticks', ds.startsWith('01234567012345670') && !ds.includes('?') && seen.slice(2).every((e, i) => e.t - seen[i + 1].t === 16), ds);
+  check('the saved 7-segment room is the generated one', JSON.stringify(parseLevel(readFileSync('rooms/7-segment-counter.wee', 'utf8')).wires) === JSON.stringify(r.wires));
 }
 
 { // gravel stops what slides onto it
