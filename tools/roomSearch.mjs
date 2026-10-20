@@ -1,7 +1,7 @@
 // The room search shared by tools/levelSearch.mjs and tools/tilesArea.mjs. A genome is what a
 // player can vary: the room's size, where the start and the goal stand, and what goes in.
 // searcher(def, seed) returns its moves: random(), mutate(g), penalty(g), make(g), show(room).
-import { roomOf, placementErrors, overLimits, underLimits, bounds, coloursOf, colouringsOf, pushingsOf } from '../src/campaign/rules.js';
+import { roomOf, placementErrors, check, bounds, coloursOf, colouringsOf, pushingsOf } from '../src/campaign/rules.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { miss } from './searchScores.mjs';
@@ -91,14 +91,15 @@ export function searcher(def, seed = 1) {
   // How far a room is from winning: 0 is a win. Each failed requirement on each path counts.
   function penalty(g) {
     const r = make(g);
-    // The palette's counts are part of a win (check reads them), so a room off them is refused here too.
-    if (placementErrors(def, r).length || overLimits(def, r).length || underLimits(def, r).length) return 1e9;
+    if (placementErrors(def, r).length) return 1e9;
     const a = allShortest(r, { maxPaths: 300 });
     if (a.status !== 'solved') return 1000;
     const { min, max } = bounds(def.steps);
     let p = Math.max(0, min - a.length, a.length - max) * 10 + (a.capped ? 5 : 0);
     for (const path of a.paths.slice(0, 60)) for (const id of def.require || []) if (!REQUIREMENTS[id].judge(r, path)) p += miss(id, r, path);
-    return p;
+    // A climb stops at 0, so 0 is only for a room the game itself calls a win: one off the palette's
+    // counts scores 1 and the climb goes on (register 335). Refusing such rooms outright cost wins.
+    return p === 0 && !check(def, r).won ? 1 : p;
   }
   const show = r => Array.from({ length: r.h }, (_, y) => Array.from({ length: r.w }, (_, x) => {
     const c = r.cells[y * r.w + x];

@@ -824,7 +824,7 @@ const M = [
   ['src/level/format.js', "entities: l.entities.map(shift), ...(l.crates ? { crates: l.crates.map(shift) } : {}) };\n}\n\n// Walls", "entities: l.entities.map(shift) };\n}\n\n// Walls", 'sim'],
   ['src/campaign/rules.js', "pushingsOf(def, el).includes(crate)) out[el].push(i); else stray.push(i);", "true) out[el].push(i); else stray.push(i);", 'campaign'],
   // Register 335: the search refuses rooms off the palette's counts, and gives partial credit.
-  ['tools/roomSearch.mjs', "if (placementErrors(def, r).length || overLimits(def, r).length || underLimits(def, r).length) return 1e9;", "if (placementErrors(def, r).length) return 1e9;", 'search'],
+  ['tools/roomSearch.mjs', "return p === 0 && !check(def, r).won ? 1 : p;", "return p;", 'search'],
   ['tools/searchScores.mjs', "  robotThroughIdoor: (room, moves) => nearest(room, moves, you, 'idoor:'),\n", "", 'search'],
   ['tools/searchScores.mjs', "return relays.length ? 0.9 * relays.filter(i => end.lit.has(i)).length / relays.length : 0;", "return 0;", 'search'],
   // Registers 330, 339, 340: a gold laser; the relay a soft eight-point star.

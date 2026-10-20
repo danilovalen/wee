@@ -43,7 +43,7 @@ const level = id => LEVELS.find(l => l.id === id);
   for (const l of LEVELS) for (const rows of roomsOf(l.id)) { const s = searcher(l, 1); if (s.penalty(s.parse(rows)) !== 0) nonzero.push(l.id); }
   ok('every known winning room scores 0 in the search', nonzero.length === 0, nonzero.join());
   const s17 = searcher(level('17'), 1), two = s17.parse(['.#...', '...#.', 'PBo#.', 'e...I', '..#.I', '....G']);
-  ok('a room past the palette\'s maximum is refused by the search, as the game refuses it', s17.penalty(two) >= 1e9 && !check(level('17'), s17.make(two)).won);
+  ok('a room past the palette\'s maximum never scores 0 in the search, as the game refuses it', s17.penalty(two) > 0 && !check(level('17'), s17.make(two)).won, String(s17.penalty(two)));
 }
 { // partial credit for the laser and inverted-door goals (register 335)
   const off = rows => { const r = room(rows); for (const k of Object.keys(r.powers)) r.powers[k] = false; return r; };
