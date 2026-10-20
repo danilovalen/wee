@@ -1,6 +1,6 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { stuckText, nameOf, roomOf, placed, placementErrors, check, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
+import { stuckText, nameOf, roomOf, placed, placementErrors, overLimits, check, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
 import { boxMoves, REQUIREMENTS, trailOf } from '../src/campaign/requirements.js';
 import { allShortest, replayPath } from '../src/campaign/robot.js';
 import { LEVELS } from '../src/level/campaign.js';
@@ -89,7 +89,11 @@ const build = (def, rows) => {
   const d = level('1'), r = build(d, ['', '', '..#']);
   ok('a placed block is counted', placed(d, r).by.block.length === 1);
   const many = roomOf(d); for (let i = 0; i < 11; i++) many.cells[15 + i + Math.floor(i / 5) * 2] = 'wall';
-  ok('more than a maximum is refused', placementErrors({ ...d, palette: { block: [0, 10] } }, many).some(e => /at most 10/.test(e.msg)));
+  // A maximum is a goal judged at Run, not a rule that stops building (register 306).
+  ok('more than a maximum may be placed', !placementErrors({ ...d, palette: { block: [0, 10] } }, many).some(e => /at most 10/.test(e.msg)));
+  { const l = level('16'), two = build(l, ['B.#P#', 'G..B.', 'D....', 'ne.o.']), v = check(l, two);
+    ok('a second box in level 16 is built and run, then missed at Run', v.ok && !v.won && /at most 1 box/.test(v.fail.why), JSON.stringify(v.fail || v.errors)); }
+  ok('more than a maximum is a missed goal at Run', overLimits({ ...d, palette: { block: [0, 10] } }, many).some(e => /at most 10/.test(e.msg)));
   ok('only levels 15 and 16 set a maximum: one one-way, one box (registers 287, 294)', LEVELS.every(l => Object.entries(l.palette).every(([k, [, max]]) => max === null || (max === 1 && ((l.id === '15' && k === 'gate') || (l.id === '16' && k === 'box'))))));
   const alien = build(d, ['', '', '..D']);
   ok('an element outside the palette is refused', placementErrors(d, alien).some(e => /no doors/.test(e.msg)));
@@ -322,8 +326,9 @@ const build = (def, rows) => {
   // Two lasers firing right; only the top one's door opens with the switch.
   const two = ['##########', '#T.D.....#', '#Pt......#', '#T.Q.....#', '##########'];
   ok('every laser through an open door: not met when one laser never gets through', !req('laserThroughOpenDoor', two, ['right']));
-  ok('a laser through every button: met by one beam over both', req('laserThroughEveryButton', ['########', '#T.o.o.#', '#P.....#', '########'], []));
-  ok('a laser through every button: not met when one is out of the beam', !req('laserThroughEveryButton', ['########', '#T.o...#', '#P...o.#', '########'], []));
+  ok('a laser through a button: met over an empty one', req('laserThroughButton', ['########', '#T.o...#', '#P.....#', '########'], []));
+  const boxed = off(['########', '#T.....#', '#P.....#', '########']); boxed.cells[1 * 8 + 3] = 'button:red'; boxed.entities.push({ kind: 'box', x: 3, y: 1, dir: 1, mode: 'input' });
+  ok('a laser through a button: not met when a box on it stops the beam', !REQUIREMENTS.laserThroughButton.judge(boxed, []));
   ok('the robot steps on a button: met when it slides over one', req('robotOnButton', ['#######', '#P.o..#', '#######'], ['right']));
   ok('the robot steps on a button: not met when it passes beside it', !req('robotOnButton', ['#######', '#P....#', '#..o..#', '#######'], ['right']));
   ok('a closed door stops every laser: met by both', req('laserBlockedByDoor', two, []));

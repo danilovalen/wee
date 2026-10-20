@@ -27,17 +27,17 @@
   ]
  },
  "steps": {
-  "best": 4
+  "best": 7
  },
  "rules": [],
  "require": [
   "laserThroughADoor",
   "boxOffButtonAtEnd",
-  "laserThroughEveryButton"
+  "laserThroughButton"
  ],
  "small": [
-  6,
-  2
+  5,
+  4
  ],
  "optional": [
   "robotOnButton"

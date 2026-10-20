@@ -37,6 +37,8 @@ function everyLaser(room, moves, test) {
   });
   return all.size > 0 && [...all].every(id => met.has(id));
 }
+// The tiles a beam goes through: past the turret, and not the one where a piece or the robot stops it.
+const through = (b, s) => b.path.slice(1).filter(([x, y]) => !(s.player.x === x && s.player.y === y) && !s.entities.some(e => !e.dead && !e.turret && e.x === x && e.y === y));
 const cellOf = (room, at) => at && at[0] >= 0 && at[1] >= 0 && at[0] < room.w && at[1] < room.h ? room.cells[at[1] * room.w + at[0]] || '' : '';
 
 export const EXTRA_REQUIREMENTS = {
@@ -49,16 +51,12 @@ export const EXTRA_REQUIREMENTS = {
   laserThroughADoor: {
     text: 'A laser goes through an open door.',
     short: [{ el: 'laser' }, 'through an open', { el: 'door' }],
-    judge: (room, moves) => { let ok = false; beams(room, moves, b => { if (b.path.slice(1).some(at => cellOf(room, at).startsWith('door:'))) ok = true; }); return ok; },
+    judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at).startsWith('door:'))) ok = true; }); return ok; },
   },
-  laserThroughEveryButton: {
-    text: 'A laser goes through every button.',
-    short: [{ el: 'laser' }, 'through every', { el: 'button' }],
-    judge: (room, moves) => {
-      const want = new Set(room.cells.flatMap((c, i) => c.startsWith('button:') ? [i % room.w + ',' + Math.floor(i / room.w)] : [])), seen = new Set();
-      beams(room, moves, b => { for (const at of b.path.slice(1)) if (want.has(String(at))) seen.add(String(at)); });
-      return want.size > 0 && seen.size === want.size;
-    },
+  laserThroughButton: {
+    text: 'A laser goes through a button.',
+    short: [{ el: 'laser' }, 'through a', { el: 'button' }],
+    judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at).startsWith('button:'))) ok = true; }); return ok; },
   },
   robotOnButton: {
     text: 'The robot steps on a button.',

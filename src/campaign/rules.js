@@ -57,6 +57,12 @@ export const nameOf = (el, n) => { const w = ELEMENTS[el].label.toLowerCase(); r
 
 export const START_ON = 'Nothing can start on a button or a switch.';
 // Why the room cannot be run yet: each is { msg, at? }. Empty when it can.
+// The maximums a room goes over: each a goal row, missed at Run.
+export function overLimits(def, room) {
+  const { by } = placed(def, room);
+  return Object.entries(by).flatMap(([el, list]) => { const max = (def.palette[el] || [0, 0])[1]; return max && list.length > max ? [{ el, msg: `Place at most ${max} ${nameOf(el, max)}.` }] : []; });
+}
+
 export function placementErrors(def, room) {
   const errs = [], { by, stray } = placed(def, room);
   for (const i of stray) errs.push({ msg: 'This level does not have that.', at: i });
@@ -68,7 +74,8 @@ export function placementErrors(def, room) {
     // A null maximum is no limit: cost is what keeps the count down.
     const [min, max] = def.palette[el] || [0, 0];
     if (list.length < min) errs.push({ msg: `Place at least ${min} ${nameOf(el, min)}.` });
-    if (max !== null && list.length > max) errs.push({ msg: max ? `Place at most ${max} ${nameOf(el, max)}.` : `This level has no ${nameOf(el, 2)}.` });
+    // A maximum above 0 is a goal, judged at Run, not a rule that stops building (register 306).
+    if (max === 0 && list.length) errs.push({ msg: `This level has no ${nameOf(el, 2)}.` });
   }
   // Nothing starts on a button or a switch, in every level: no box, and not the robot.
   const under = (x, y) => /^(button|toggle):/.test(room.cells[y * room.w + x] || '');
@@ -156,6 +163,8 @@ export function check(def, room, opts) {
   for (const id of def.optional || []) if (!base.pathGoals[id]) base.missed[id] = r.paths.find(path => !REQUIREMENTS[id].judge(room, path));
   if (!base.inRange) base.missed.steps = r.paths[0];
   if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: r.length < min ? `${stepsText(st)} This one takes ${r.length}.` : `The shortest path takes at most ${max} moves. This one takes ${r.length}.` } };
+  const over = overLimits(def, room)[0];
+  if (over) return { ...base, won: false, fail: { path: r.paths[0], why: `Not met: ${over.msg}` } };
   const first = (def.require || []).find(id => id in failed);
   if (first) return { ...base, won: false, fail: { path: failed[first], why: `Not met: ${REQUIREMENTS[first].text}` } };
   const optional = optionalResults(def, base);
