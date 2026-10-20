@@ -16,6 +16,8 @@ A colour is a wire. Its switches decide it, its doors read it (`refreshDoors` in
 
 So his hunch is right about the parts: NAND plus a clock is the textbook starting kit.
 
+Sketch: `docs/turing-sketch.png`. Panels 1 and 2 are the game's own renders of real rooms: the NAND gate and two gates sharing red. Panel 3 is the proposed wire, drawn over a room.
+
 ## Why that is not enough
 
 1. **Four wires, for the whole room.** There are four colours and every door of a colour reads the same value. However big the room, a circuit has at most four independent signals, so at most four gate outputs. A computer needs as many wires as the program needs; this caps them at four.
