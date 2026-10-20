@@ -55,7 +55,8 @@ try {
     // The room's share of the height; a room held back by the window's width loses nothing to height, so it counts as whole.
     const share = () => page.evaluate(() => { const a = document.getElementById('roomArea'), c = document.getElementById('game').getBoundingClientRect(); return c.width >= a.clientWidth - 40 && c.height < a.clientHeight - 40 ? 1 : a.clientHeight / innerHeight; });
     // The room takes the area it is given, less the margin its "+" handles sit in, and no more.
-    const fills = () => page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), a = document.getElementById('roomArea'); return (c.width >= a.clientWidth - 40 || c.height >= a.clientHeight - 40) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
+    // Fills its area, less the bars of + and − above and below it (register 298).
+    const fills = () => page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), a = document.getElementById('roomArea'); return (c.width >= a.clientWidth - 40 || c.height >= a.clientHeight - 90) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
     const ctxOpts = await page.evaluate(() => [...document.querySelectorAll('#ctx .opt')].filter(o => !o.hidden).length);
     check(`${w}x${h}: the turret's options sit in the context bar`, ctxOpts >= 3, String(ctxOpts));
     const open = await share();

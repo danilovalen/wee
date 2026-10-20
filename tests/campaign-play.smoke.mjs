@@ -72,6 +72,10 @@ try {
   await page.click('[data-plus="bottom"]');
   await page.waitForTimeout(100);
   check('a tap on a grip adds a line and the area follows', (await page.evaluate(() => window.wee.getLevel().h)) === 8 );
+  // A − may not cut the level's start away: the start is at row 1, so the second top cut is refused.
+  await page.click('[data-minus="top"]'); await page.click('[data-minus="top"]'); await page.waitForTimeout(100);
+  check('a cut that would take the start does nothing in a level', await page.evaluate(() => { const l = window.wee.getLevel(); return l.h === 7 && !!l.start && l.start.y === 0; }), await page.evaluate(() => JSON.stringify([window.wee.getLevel().h, window.wee.getLevel().start])));
+  await page.click('[data-plus="top"]'); await page.click('#undo'); await page.click('#undo');
   await load(['P....', '.....', '.....', '.....', '....G']);
   const before = await box();
   await page.click('#campRun');

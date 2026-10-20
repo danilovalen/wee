@@ -33,24 +33,22 @@ function place(wide) {
 }
 
 const EDGE = 14;
-// On a phone the side + grips stay clear of the screen edge, where a swipe is the phone's back
-// gesture and closes the page (register 239), unless the room is too wide for it.
-const PHONE_SIDE = 46;
+// Above and below the room, a bar of + and − buttons (register 298): the room keeps that much free.
+const BAR = 40;
 
 export function fit() {
   const level = S.level, wide = innerWidth > 700;
   place(wide);
   const area = $('roomArea');
-  // The room keeps a margin for the "+" on each of its edges.
-  // A phone's side margin gives way to a wide room: tiles stay at least 28px to tap.
-  const side = Math.max(EDGE, Math.min(PHONE_SIDE, ($('stage').clientWidth - level.w * 28) / 2));
+  // The side pairs live in the bar above the room, so the room may come within EDGE of the sides.
+  const side = EDGE;
   const stage = (wide ? area.clientWidth - 2 * EDGE : $('stage').clientWidth - 2 * side) || level.w * T;
   // A phone in play gives the room everything between the header and the play buttons; in a level
   // the room keeps its edit size instead, so nothing moves when the mode changes (register 222).
   const below = $('pad').hidden ? 0 : $('pad').offsetHeight + 16;
-  const room = wide ? area.clientHeight - 2 * EDGE
+  const room = wide ? area.clientHeight - 2 * BAR
     : S.mode === 'play' && !S.camp ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
-      : area.clientHeight - 2 * EDGE;
+      : area.clientHeight - 2 * BAR;
   const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
   const k = (window.devicePixelRatio || 1) * zoom;
   // Setting a canvas size clears it, even to the same size, so only a real change is written.

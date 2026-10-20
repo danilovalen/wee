@@ -303,25 +303,21 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .chip .n { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 }
 
-/* The room's edges: a "+" on each adds a row or column there. Shown on hover, always on touch. */
+/* The room's size: a + and a − for each side, in a bar above the room (left column, top row, right
+   column) and one below it (bottom row). Tap only. Never over a tile (register 298), and the side pairs
+   keep clear of the screen's edge, where a swipe is the phone's back gesture (register 239). */
 .roomWrap { position: relative; line-height: 0; }
-.plus { position: absolute; width: 24px; height: 24px; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 15px; line-height: 1; opacity: 0; transition: opacity .12s; z-index: 2; }
-/* Centred with translate, not transform, and never lifted or pressed: the house button motion would
-   replace the centring and the grip would jump under the finger (register 227). */
-.plus[data-plus=top] { left: 50%; top: -12px; translate: -50% 0; }
-.plus[data-plus=bottom] { left: 50%; bottom: -12px; translate: -50% 0; }
-.plus[data-plus=left] { top: 50%; left: -12px; translate: 0 -50%; }
-.plus[data-plus=right] { top: 50%; right: -12px; translate: 0 -50%; }
-.plus, .plus:hover:not(:disabled), .plus:active:not(:disabled) { transform: none; }
-.roomWrap:hover .plus, .plus:focus-visible { opacity: 1; }
-@media (pointer: coarse) { .plus { opacity: .85; } }
-.plus { touch-action: none; cursor: grab; }
-/* A 44px touch target around the 24px grip. */
-.plus::after { content: ''; position: absolute; inset: -10px; border-radius: 50%; }
-.sizeBand { position: absolute; z-index: 1; pointer-events: none; display: grid; place-items: center; font: 800 13px var(--label-face); color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 0 0 0 2px var(--accent); border-radius: var(--r-s); }
-.sizeBand[hidden] { display: none; }
-.sizeBand.cut { background: color-mix(in srgb, var(--paper) 70%, transparent); }
-body.play .plus, body.play #sizeBtn, body.play .sizePop { display: none; }
+.growBar { position: absolute; left: 50%; translate: -50% 0; width: max(calc(100% - 16px), 270px); display: flex; justify-content: center; gap: 16px; z-index: 2; }
+.growBar[data-bar=top] { bottom: calc(100% + 8px); justify-content: space-between; }
+.growBar[data-bar=bottom] { top: calc(100% + 8px); }
+.grow { display: flex; gap: 14px; }
+.plus, .minus { position: relative; width: 30px; height: 30px; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 17px; line-height: 1; opacity: .9; touch-action: manipulation; }
+/* Never lifted or pressed: the house button motion would move it under the finger (register 227). */
+.plus, .plus:hover:not(:disabled), .plus:active:not(:disabled), .minus, .minus:hover:not(:disabled), .minus:active:not(:disabled) { transform: none; }
+@media (pointer: fine) { .plus, .minus { opacity: 0; transition: opacity .12s; } .roomWrap:hover .plus, .roomWrap:hover .minus, .plus:focus-visible, .minus:focus-visible { opacity: 1; } }
+/* A 44px touch target around each 30px button, inside the bar's own gaps. */
+.plus::after, .minus::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; }
+body.play .growBar, body.play #sizeBtn, body.play .sizePop { display: none; }
 .roomArea { padding: 0; }
 @media (max-width: 700px) { .roomArea { padding: 0 0 8px; } }
 #sizeBtn { font-variant-numeric: tabular-nums; }
@@ -371,7 +367,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   body.play #tools, body.play #powers, body.play #lensChips, body.play #statusBar { display: none; }
   /* In a level they are hidden, not removed, so the room keeps its place and size from Edit to play (register 222). */
   body.campaign.play #tools, body.campaign.play #powers, body.campaign.play #lensChips, body.campaign.play #statusBar { display: revert; visibility: hidden; }
-  body.play .plus { display: none !important; }
+  body.play .growBar { display: none !important; }
 }
 
 /* A phone editor is one screen (register 105): header, the room, a check line, the tool's name
@@ -679,10 +675,8 @@ body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin-left
       <div id="campVerdict" class="campVerdict camp-only" role="status" hidden><span id="campVerdictText"></span></div>
       <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="game"></canvas>
         <div id="campTip" class="campTip" role="status" hidden></div>
-        <button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button>
-        <button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom">+</button>
-        <button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left">+</button>
-        <button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right">+</button>
+        <div class="growBar" data-bar="top"><div class="grow" data-grow="left"><button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left">+</button><button type="button" class="minus" data-minus="left" title="Remove the column on the left" aria-label="Remove the column on the left">&minus;</button></div><div class="grow" data-grow="top"><button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button><button type="button" class="minus" data-minus="top" title="Remove the top row" aria-label="Remove the top row">&minus;</button></div><div class="grow" data-grow="right"><button type="button" class="minus" data-minus="right" title="Remove the column on the right" aria-label="Remove the column on the right">&minus;</button><button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right">+</button></div></div>
+        <div class="growBar" data-bar="bottom"><div class="grow" data-grow="bottom"><button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom">+</button><button type="button" class="minus" data-minus="bottom" title="Remove the bottom row" aria-label="Remove the bottom row">&minus;</button></div></div>
       </div>
 </div>
       <div id="lensChips" class="chips" hidden></div>
@@ -3524,11 +3518,11 @@ return { syncUndo, begin, end, change, step };
 })();
 // ---- src/app/size.js
 const m32 = (() => {
-const { $, canvas, now } = m12;
+const { $, now } = m12;
 const { S } = m11;
 const { moveSide } = m9;
 const { change } = m31;
-// The room's size: a "+" on each edge of the room adds a row or a column there, and the size
+// The room's size: a + and a − for each side add or cut a row or a column there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
 
 
@@ -3546,77 +3540,45 @@ function place() {
 function closeSize() { $('sizePop').hidden = true; $('sizeBtn').setAttribute('aria-expanded', 'false'); }
 function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('aria-expanded', 'true'); place(); }
 
-// A grip on each edge: a tap adds a line, a drag outward adds as many as it covers and a drag
-// inward cuts them. While dragging, a band shows the lines that will come or go; it stops at
-// the last line that can go (a placed thing, 2x2 inside) or come (40x30), so no drag fails.
-const OUT = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] };
+// A + or a − on each side: a tap adds or cuts one line there. A cut that would take a placed thing
+// (or the room's 2x2 floor) does nothing and flashes what is in the way (register 252).
 // In a campaign level the start is the level's, so a cut may not take it.
 const keeps = l => !!l && !(S.camp && S.level.start && !l.start);
-// The tiles of the line a cut of k lines would take next that hold something: what stops the drag
-// there (register 252). Empty when the room's own 2x2 floor is what stops it.
-function blockers(level, side, k) {
-  const { w, h } = level, at = side === 'top' ? k : side === 'bottom' ? h - 1 - k : side === 'left' ? k : w - 1 - k;
+// The tiles of the line a cut would take that hold something. Empty when the 2x2 floor stops it.
+function blockers(level, side) {
+  const { w, h } = level, at = side === 'top' ? 0 : side === 'bottom' ? h - 1 : side === 'left' ? 0 : w - 1;
   const across = side === 'top' || side === 'bottom', out = [];
   for (let i = 0; i < (across ? w : h); i++) {
     const x = across ? i : at, y = across ? at : i;
-    if (x < 0 || y < 0 || x >= w || y >= h) continue;
     const full = level.cells[y * w + x] || level.entities.some(e => e.x === x && e.y === y) || (level.start && level.start.x === x && level.start.y === y);
     if (full) out.push({ x, y });
   }
   return out;
 }
-function grip(b, after) {
-  const side = b.dataset.plus, wrap = $('roomWrap');
-  let from = null, n = 0;
-  const band = document.createElement('div'); band.className = 'sizeBand'; band.hidden = true; wrap.append(band);
-  const tile = () => canvas.getBoundingClientRect().width / S.level.w;
-  const show = () => {
-    const t = tile(), c = canvas.getBoundingClientRect(), w = wrap.getBoundingClientRect();
-    const len = Math.abs(n) * t, out = n > 0, x0 = c.left - w.left, y0 = c.top - w.top;
-    const box = { top: [x0, out ? y0 - len : y0, c.width, len], bottom: [x0, out ? y0 + c.height : y0 + c.height - len, c.width, len],
-      left: [out ? x0 - len : x0, y0, len, c.height], right: [out ? x0 + c.width : x0 + c.width - len, y0, len, c.height] }[side];
-    Object.assign(band.style, { left: box[0] + 'px', top: box[1] + 'px', width: box[2] + 'px', height: box[3] + 'px' });
-    band.classList.toggle('cut', n < 0);
-    band.textContent = n > 0 ? '+' + n : '\u2212' + -n;
-    band.hidden = n === 0;
-  };
-  b.addEventListener('pointerdown', ev => { from = { x: ev.clientX, y: ev.clientY, moved: false, far: 0 }; n = 0; b.setPointerCapture(ev.pointerId); ev.preventDefault(); });
-  b.addEventListener('pointermove', ev => {
-    if (!from) return;
-    const [ux, uy] = OUT[side], d = (ev.clientX - from.x) * ux + (ev.clientY - from.y) * uy;
-    if (Math.abs(d) > 6) from.moved = true;
-    from.far = Math.max(from.far, Math.abs(d));
-    if (!from.moved) return;
-    const want = Math.round(d / tile()) || 0;
-    n = want;
-    while (n && !keeps(moveSide(S.level, side, n))) n -= Math.sign(n);
-    // A cut held back by a placed thing flashes what is in the way, once per line reached.
-    if (want < n && from.flashed !== n) { from.flashed = n; for (const b of blockers(S.level, side, -n)) S.fx.push({ type: 'flash', x: b.x, y: b.y, at: now() }); S.redraw = true; }
-    if (want >= n) from.flashed = null;
-    show();
-  });
-  const done = ev => {
-    if (!from) return;
-    // A press that never went half a tile is a tap, however much the finger drifted.
-    // A cancel that never went half a tile is a tap too: some phone viewers cancel a plain tap.
-    const tap = from.far < tile() / 2, k = tap ? 1 : n; from = null; band.hidden = true;
-    if (!k || (ev.type === 'pointercancel' && !tap)) return;
-    const l = moveSide(S.level, side, k);
-    if (!keeps(l)) return;
-    const lost = S.level.start && !l.start;
-    change(() => { S.level = l; }); after();
-    if (lost) $('placeHint').textContent = 'To play, place the start again.';
-  };
-  // A release anywhere ends the drag, even off the grip, outside the window, or where the
-  // browser never gave the grip its capture (some phone webviews): the window hears it too.
-  b.addEventListener('pointerup', done); b.addEventListener('pointercancel', done); b.addEventListener('lostpointercapture', done);
-  addEventListener('pointerup', done); addEventListener('pointercancel', done);
-  // A new press anywhere else drops a band left behind by a drag whose release never came.
-  addEventListener('pointerdown', ev => { if (ev.target !== b && (from || !band.hidden)) { from = null; band.hidden = true; } });
+function resize(side, k, after) {
+  const l = moveSide(S.level, side, k);
+  if (!keeps(l)) {
+    if (k < 0) { for (const b of blockers(S.level, side)) S.fx.push({ type: 'flash', x: b.x, y: b.y, at: now() }); S.redraw = true; }
+    return;
+  }
+  const lost = S.level.start && !l.start;
+  change(() => { S.level = l; }); after();
+  if (lost) $('placeHint').textContent = 'To play, place the start again.';
+}
+// A tap: a press and its release on the button. A press the phone cancels counts too, since some
+// viewers cancel a plain tap (register 227); a release elsewhere does not.
+function tapper(b, side, k, after) {
+  let down = false;
+  b.addEventListener('pointerdown', ev => { down = true; ev.preventDefault(); });
+  const go = () => { if (down) { down = false; resize(side, k, after); } };
+  b.addEventListener('pointerup', go); b.addEventListener('pointercancel', go);
+  b.addEventListener('pointerleave', () => { down = false; });
+  b.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); resize(side, k, after); } });
 }
 
 function buildSize({ after }) {
-  document.querySelectorAll('[data-plus]').forEach(b => grip(b, after));
+  document.querySelectorAll('[data-plus]').forEach(b => tapper(b, b.dataset.plus, 1, after));
+  document.querySelectorAll('[data-minus]').forEach(b => tapper(b, b.dataset.minus, -1, after));
   $('sizeBtn').onclick = () => ($('sizePop').hidden ? openSize() : closeSize());
   document.addEventListener('pointerdown', ev => { if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize(); });
   addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSize(); });
@@ -3664,24 +3626,22 @@ function place(wide) {
 }
 
 const EDGE = 14;
-// On a phone the side + grips stay clear of the screen edge, where a swipe is the phone's back
-// gesture and closes the page (register 239), unless the room is too wide for it.
-const PHONE_SIDE = 46;
+// Above and below the room, a bar of + and − buttons (register 298): the room keeps that much free.
+const BAR = 40;
 
 function fit() {
   const level = S.level, wide = innerWidth > 700;
   place(wide);
   const area = $('roomArea');
-  // The room keeps a margin for the "+" on each of its edges.
-  // A phone's side margin gives way to a wide room: tiles stay at least 28px to tap.
-  const side = Math.max(EDGE, Math.min(PHONE_SIDE, ($('stage').clientWidth - level.w * 28) / 2));
+  // The side pairs live in the bar above the room, so the room may come within EDGE of the sides.
+  const side = EDGE;
   const stage = (wide ? area.clientWidth - 2 * EDGE : $('stage').clientWidth - 2 * side) || level.w * T;
   // A phone in play gives the room everything between the header and the play buttons; in a level
   // the room keeps its edit size instead, so nothing moves when the mode changes (register 222).
   const below = $('pad').hidden ? 0 : $('pad').offsetHeight + 16;
-  const room = wide ? area.clientHeight - 2 * EDGE
+  const room = wide ? area.clientHeight - 2 * BAR
     : S.mode === 'play' && !S.camp ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
-      : area.clientHeight - 2 * EDGE;
+      : area.clientHeight - 2 * BAR;
   const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
   const k = (window.devicePixelRatio || 1) * zoom;
   // Setting a canvas size clears it, even to the same size, so only a real change is written.

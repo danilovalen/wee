@@ -108,10 +108,8 @@
       <div id="campVerdict" class="campVerdict camp-only" role="status" hidden><span id="campVerdictText"></span></div>
       <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="game"></canvas>
         <div id="campTip" class="campTip" role="status" hidden></div>
-        <button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button>
-        <button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom">+</button>
-        <button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left">+</button>
-        <button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right">+</button>
+        <div class="growBar" data-bar="top"><div class="grow" data-grow="left"><button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left">+</button><button type="button" class="minus" data-minus="left" title="Remove the column on the left" aria-label="Remove the column on the left">&minus;</button></div><div class="grow" data-grow="top"><button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button><button type="button" class="minus" data-minus="top" title="Remove the top row" aria-label="Remove the top row">&minus;</button></div><div class="grow" data-grow="right"><button type="button" class="minus" data-minus="right" title="Remove the column on the right" aria-label="Remove the column on the right">&minus;</button><button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right">+</button></div></div>
+        <div class="growBar" data-bar="bottom"><div class="grow" data-grow="bottom"><button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom">+</button><button type="button" class="minus" data-minus="bottom" title="Remove the bottom row" aria-label="Remove the bottom row">&minus;</button></div></div>
       </div>
 </div>
       <div id="lensChips" class="chips" hidden></div>

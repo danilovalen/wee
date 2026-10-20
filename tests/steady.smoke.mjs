@@ -82,11 +82,10 @@ try {
         check(`${name}: a + answers a touch up to 20px from its centre`, reach);
       }
       if (!opts.hasTouch) {
-        // A cut held back by a placed thing flashes what is in the way (register 252).
+        // A − held back by a placed thing flashes what is in the way (registers 252, 298).
         const h0 = await page.evaluate(() => window.wee.getLevel().h);
-        const bot = await page.locator('.plus[data-plus="bottom"]').boundingBox(), t = (await page.locator('#game').boundingBox()).height / h0;
-        await page.mouse.move(bot.x + 12, bot.y + 12); await page.mouse.down(); await page.mouse.move(bot.x + 12, bot.y + 12 - t * 1.4, { steps: 6 });
-        const fx = await page.evaluate(() => window.wee.fxTypes()); await page.mouse.up();
+        await page.hover('#game'); await page.click('.minus[data-minus="bottom"]');
+        const fx = await page.evaluate(() => window.wee.fxTypes());
         const h = await page.evaluate(() => window.wee.getLevel().h);
         check(`${name}: a cut stopped by something in its way flashes it, and cuts nothing`, fx.includes('flash') && h === h0, JSON.stringify({ fx, h, h0 }));
       }

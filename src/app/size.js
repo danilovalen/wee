@@ -1,6 +1,6 @@
-// The room's size: a "+" on each edge of the room adds a row or a column there, and the size
+// The room's size: a + and a − for each side add or cut a row or a column there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
-import { $, canvas, now } from './dom.js';
+import { $, now } from './dom.js';
 import { S } from '../editor/state.js';
 import { moveSide } from '../level/format.js';
 import { change } from './undo.js';
@@ -17,77 +17,45 @@ function place() {
 export function closeSize() { $('sizePop').hidden = true; $('sizeBtn').setAttribute('aria-expanded', 'false'); }
 function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('aria-expanded', 'true'); place(); }
 
-// A grip on each edge: a tap adds a line, a drag outward adds as many as it covers and a drag
-// inward cuts them. While dragging, a band shows the lines that will come or go; it stops at
-// the last line that can go (a placed thing, 2x2 inside) or come (40x30), so no drag fails.
-const OUT = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] };
+// A + or a − on each side: a tap adds or cuts one line there. A cut that would take a placed thing
+// (or the room's 2x2 floor) does nothing and flashes what is in the way (register 252).
 // In a campaign level the start is the level's, so a cut may not take it.
 const keeps = l => !!l && !(S.camp && S.level.start && !l.start);
-// The tiles of the line a cut of k lines would take next that hold something: what stops the drag
-// there (register 252). Empty when the room's own 2x2 floor is what stops it.
-function blockers(level, side, k) {
-  const { w, h } = level, at = side === 'top' ? k : side === 'bottom' ? h - 1 - k : side === 'left' ? k : w - 1 - k;
+// The tiles of the line a cut would take that hold something. Empty when the 2x2 floor stops it.
+function blockers(level, side) {
+  const { w, h } = level, at = side === 'top' ? 0 : side === 'bottom' ? h - 1 : side === 'left' ? 0 : w - 1;
   const across = side === 'top' || side === 'bottom', out = [];
   for (let i = 0; i < (across ? w : h); i++) {
     const x = across ? i : at, y = across ? at : i;
-    if (x < 0 || y < 0 || x >= w || y >= h) continue;
     const full = level.cells[y * w + x] || level.entities.some(e => e.x === x && e.y === y) || (level.start && level.start.x === x && level.start.y === y);
     if (full) out.push({ x, y });
   }
   return out;
 }
-function grip(b, after) {
-  const side = b.dataset.plus, wrap = $('roomWrap');
-  let from = null, n = 0;
-  const band = document.createElement('div'); band.className = 'sizeBand'; band.hidden = true; wrap.append(band);
-  const tile = () => canvas.getBoundingClientRect().width / S.level.w;
-  const show = () => {
-    const t = tile(), c = canvas.getBoundingClientRect(), w = wrap.getBoundingClientRect();
-    const len = Math.abs(n) * t, out = n > 0, x0 = c.left - w.left, y0 = c.top - w.top;
-    const box = { top: [x0, out ? y0 - len : y0, c.width, len], bottom: [x0, out ? y0 + c.height : y0 + c.height - len, c.width, len],
-      left: [out ? x0 - len : x0, y0, len, c.height], right: [out ? x0 + c.width : x0 + c.width - len, y0, len, c.height] }[side];
-    Object.assign(band.style, { left: box[0] + 'px', top: box[1] + 'px', width: box[2] + 'px', height: box[3] + 'px' });
-    band.classList.toggle('cut', n < 0);
-    band.textContent = n > 0 ? '+' + n : '\u2212' + -n;
-    band.hidden = n === 0;
-  };
-  b.addEventListener('pointerdown', ev => { from = { x: ev.clientX, y: ev.clientY, moved: false, far: 0 }; n = 0; b.setPointerCapture(ev.pointerId); ev.preventDefault(); });
-  b.addEventListener('pointermove', ev => {
-    if (!from) return;
-    const [ux, uy] = OUT[side], d = (ev.clientX - from.x) * ux + (ev.clientY - from.y) * uy;
-    if (Math.abs(d) > 6) from.moved = true;
-    from.far = Math.max(from.far, Math.abs(d));
-    if (!from.moved) return;
-    const want = Math.round(d / tile()) || 0;
-    n = want;
-    while (n && !keeps(moveSide(S.level, side, n))) n -= Math.sign(n);
-    // A cut held back by a placed thing flashes what is in the way, once per line reached.
-    if (want < n && from.flashed !== n) { from.flashed = n; for (const b of blockers(S.level, side, -n)) S.fx.push({ type: 'flash', x: b.x, y: b.y, at: now() }); S.redraw = true; }
-    if (want >= n) from.flashed = null;
-    show();
-  });
-  const done = ev => {
-    if (!from) return;
-    // A press that never went half a tile is a tap, however much the finger drifted.
-    // A cancel that never went half a tile is a tap too: some phone viewers cancel a plain tap.
-    const tap = from.far < tile() / 2, k = tap ? 1 : n; from = null; band.hidden = true;
-    if (!k || (ev.type === 'pointercancel' && !tap)) return;
-    const l = moveSide(S.level, side, k);
-    if (!keeps(l)) return;
-    const lost = S.level.start && !l.start;
-    change(() => { S.level = l; }); after();
-    if (lost) $('placeHint').textContent = 'To play, place the start again.';
-  };
-  // A release anywhere ends the drag, even off the grip, outside the window, or where the
-  // browser never gave the grip its capture (some phone webviews): the window hears it too.
-  b.addEventListener('pointerup', done); b.addEventListener('pointercancel', done); b.addEventListener('lostpointercapture', done);
-  addEventListener('pointerup', done); addEventListener('pointercancel', done);
-  // A new press anywhere else drops a band left behind by a drag whose release never came.
-  addEventListener('pointerdown', ev => { if (ev.target !== b && (from || !band.hidden)) { from = null; band.hidden = true; } });
+function resize(side, k, after) {
+  const l = moveSide(S.level, side, k);
+  if (!keeps(l)) {
+    if (k < 0) { for (const b of blockers(S.level, side)) S.fx.push({ type: 'flash', x: b.x, y: b.y, at: now() }); S.redraw = true; }
+    return;
+  }
+  const lost = S.level.start && !l.start;
+  change(() => { S.level = l; }); after();
+  if (lost) $('placeHint').textContent = 'To play, place the start again.';
+}
+// A tap: a press and its release on the button. A press the phone cancels counts too, since some
+// viewers cancel a plain tap (register 227); a release elsewhere does not.
+function tapper(b, side, k, after) {
+  let down = false;
+  b.addEventListener('pointerdown', ev => { down = true; ev.preventDefault(); });
+  const go = () => { if (down) { down = false; resize(side, k, after); } };
+  b.addEventListener('pointerup', go); b.addEventListener('pointercancel', go);
+  b.addEventListener('pointerleave', () => { down = false; });
+  b.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); resize(side, k, after); } });
 }
 
 export function buildSize({ after }) {
-  document.querySelectorAll('[data-plus]').forEach(b => grip(b, after));
+  document.querySelectorAll('[data-plus]').forEach(b => tapper(b, b.dataset.plus, 1, after));
+  document.querySelectorAll('[data-minus]').forEach(b => tapper(b, b.dataset.minus, -1, after));
   $('sizeBtn').onclick = () => ($('sizePop').hidden ? openSize() : closeSize());
   document.addEventListener('pointerdown', ev => { if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize(); });
   addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSize(); });
