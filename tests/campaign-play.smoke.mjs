@@ -220,7 +220,7 @@ try {
   const room = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));
   await page.click('[data-tool="wall"]');
   const g = await tile(5, 5); await page.mouse.click(...g);
-  check('a refused tap changes nothing and says why on the tile', (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === room && await page.locator('#campTip').isVisible() && /goal stays/.test(await page.locator('#campTip').textContent()) && (await page.evaluate(() => window.wee.fxTypes())).includes('refuse'), await page.locator('#campTip').textContent());
+  check('a refused tap changes nothing and says why on the tile', (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === room && await page.locator('#campTip').isVisible() && /move the goal, use Move/.test(await page.locator("#campTip").textContent()) && (await page.evaluate(() => window.wee.fxTypes())).includes('refuse'), await page.locator('#campTip').textContent());
   // Move's preview: the tile under a carried start changes while held; over the goal the two
   // swap, so the copy is not red; releasing swaps them, one undo step.
   await page.click('[data-tool="move"]');
