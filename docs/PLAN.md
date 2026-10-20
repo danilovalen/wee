@@ -5,7 +5,7 @@ From `docs/REGISTER.md`; numbers are register rows. The first plan (sections 1 t
 ## 1. Goals and scoring (one slice)
 1. **321** Run never refuses a room for its palette: minimums ("place at least one") stop being placement errors and stay as goal rows, which the run marks met or not.
 2. **327** The size optional goal reads in area again: "W×H or smaller", measured on the room (reverses the card half of row 314).
-3. **328** The level's record keeps tiles as the score: the fewest tiles in a win with no optional goal, and the fewest for each optional goal met. Shown in the level list. *Reading to confirm.*
+3. **328** The level's record keeps tiles as the score: the fewest tiles in a win with no optional goal, and the fewest for each optional goal met. Shown in the level list. (Confirmed.)
 
 ## 2. Levels (one slice, after slice 1)
 4. **325** Level 17: exactly 1 inverted door; requirements "laser stopped by a closed inverted door" (any time) and "robot through an inverted door". Known win: `.#... / ...#. / PBo#. / e...I / ..#.. / ....G`, exactly 7 moves. Exact count stays 7; size goal re-measured.
@@ -24,12 +24,13 @@ From `docs/REGISTER.md`; numbers are register rows. The first plan (sections 1 t
 ## 5. Pushable pieces (the big one)
 12. **336-338** (sketch: `docs/pushable-sketch.png`) Laser, relay, one-way, door and inverted door get a pushable version: the box's brown border around the piece's own drawing. A "Pushable" chip at the end of the tools row places it; a level offers it per piece (like two colours). Pushed like a box; a pushable one-way only along its arrow; a pushable door or inverted door is walked through while open and pushed while closed. *Open: does a pushed laser keep its aim; do pushable pieces push each other as a train, like boxes.*
 
+## 5b. Laser colour
+12b. **330** The laser (turret and beam) turns an electric gold, a colour no button, door or switch uses.
+
 ## 6. Search (diagnosis first)
 13. **335** Find why the room search misses wins that exist (levels 17, 18): likely the climb's partial credit gives nothing for goals that need an order of events. Fix, then re-run it on every level as a check.
 
 ## 7. To ask before building
-- **330** "Laser object colour isn't reflecting its palette": lasers have no colour today (the beam is always red). Is it the palette icon, the placed laser, or should lasers take a colour?
-- **328** The reading above.
 
 ## 8. Older open rows, from before the campaign (his call whether they still matter)
 - **27** a 7×12 room as a template; **58** generator linearity; **76 / 82 / 90 / 92** lens and look decisions; **106** Rooms dialog; **118** flicker diagnosis; **215 / 216 / 218** menu screen polish; **227** resize lost while editing.
