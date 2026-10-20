@@ -18,8 +18,8 @@ From `docs/REGISTER.md`; numbers are register rows. The first plan (sections 1 t
 9. **332** Buttons that cannot be used in the current mode are hidden, not greyed.
 10. **322** The room takes more of the screen and everything else gets tighter: smaller margins, buttons joined into one strip with square seams and one shared shadow (as in the MANGA engine's footer), the goal card's padding halved.
 
-## 4. Relay look (small, sketch: `docs/relay-sketch.png`)
-11. **326** The relay stops looking like a mirror: a shape that reads as "the beam passes through and lights it". Pick from the sketch.
+## 4. Relay look (small, decided)
+11. **326 / 339 / 340** The relay becomes a soft eight-point star (outer radius 12, inner 10.5, rounded corners), same outline and faint core as today. Sketch: `docs/relay-sketch-3.png`, version S5c.
 
 ## 5. Pushable pieces (the big one)
 12. **336-338** (sketch: `docs/pushable-sketch.png`) Laser, relay, one-way, door and inverted door get a pushable version: the box's brown border around the piece's own drawing. A "Pushable" chip at the end of the tools row places it; a level offers it per piece (like two colours). Pushed like a box; a pushable one-way only along its arrow; a pushable door or inverted door is walked through while open and pushed while closed. *Open: does a pushed laser keep its aim; do pushable pieces push each other as a train, like boxes.*
