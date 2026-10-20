@@ -15,15 +15,21 @@ export const ELEMENTS = {
   gate: { label: 'One-way', cell: 'gate:right', kind: 'gate:' },
   // A turret on its own, firing one way; a tap with its tool turns it (register 255).
   laser: { label: 'Laser', piece: 'turret' },
+  idoor: { label: 'Inverted door', cell: 'idoor:red', kind: 'idoor:' },
+  // A block a beam goes through, lighting it (register 312).
+  relay: { label: 'Laser relay', cell: 'sensor:red', kind: 'sensor:' },
+  // Open while either colour is held, like an OR (register 313).
+  ddoor: { label: 'Two-colour door', cell: 'door:red|blue', kind: 'door:', two: true },
 };
-const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind));
+// A plain door and a two-colour one share 'door:'; the '|' tells them apart.
+const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind) && c.includes('|') === !!ELEMENTS[k].two);
 // A level's colours (def.colours, red when it names none). A one-way takes one only in a level
 // that names its colours (register 241); elsewhere it has none.
 export const coloursOf = def => def.colours || ['red'];
 function colourFits(def, c) {
   if (c.startsWith('gate:')) { const col = c.split('@')[1] || null; return def.colours ? def.colours.includes(col) : col === null; }
   const [kind, col] = c.split(':');
-  return !['button', 'door', 'toggle'].includes(kind) || coloursOf(def).includes(col);
+  return !['button', 'door', 'toggle', 'idoor', 'sensor'].includes(kind) || col.split('|').every(c2 => coloursOf(def).includes(c2));
 }
 
 // The level's room: empty at its starting size, with no border (the room's edge stops the

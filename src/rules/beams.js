@@ -10,7 +10,7 @@ export function trace(s, x, y, d, hit, hitsPlayer) {
   const path = [[x, y]];
   let cx = x, cy = y, cd = d, wall = true, stop = null, player = false;
   for (let i = 0; i < s.w * s.h * 2; i++) {
-    const t = stepTo(s, cx, cy, cd);
+    const t = stepTo(s, cx, cy, cd, true, false, true);
     if (!t || t.death) { cd = facing(s, cx, cy, cd); stop = [cx + DIRS[cd][0], cy + DIRS[cd][1]]; break; }
     path.push([t.x, t.y]);
     if (hitsPlayer && playerAt(s, t.x, t.y)) { wall = false; player = true; break; }

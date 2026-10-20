@@ -8,7 +8,9 @@ export const KNOWN = {
     14: ['GD.', 'Dw.', 'tP.'], // His 6x5 room (register 293) plus one block from a search: 11 moves.
     15: ['#..##.', '...P..', '...B..', '#.....', 'e..>G#'],
     // His room (registers 304, 306): 7 moves, 5x4, two lasers; the robot steps on the button.
-    16: ['..#P#', 'G..B.', 'D....', 'ne.o.'] },
+    16: ['..#P#', 'G..B.', 'D....', 'ne.o.'],
+    // Found by tools/tilesArea.mjs (registers 311, 313); 18 built by hand (register 312), 11 moves.
+    17: ['.e.I', 'G...', '...P', 'Bo.I'], 18: ['e..r..', '#.....', 'PB.I.G', '......', '.#....'], 19: ['....', '.r..', '.X.q', '....', 'PnG.'] },
   optional: {
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
     14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
@@ -57,6 +59,7 @@ export const KNOWN = {
     15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
     // His room (registers 304, 306): 7 moves, 5x4, two lasers; the robot steps on the button.
     16: ['..#P#', 'G..B.', 'D....', 'ne.o.'],
+    17: ['.e.I', 'G...', '...P', 'Bo.I'], 18: ['e..r..', '#.....', 'PB.I.G', '......', '.#....'], 19: ['....', '.r..', '.X.q', '....', 'PnG.'],
   },
 };
 

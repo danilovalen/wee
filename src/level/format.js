@@ -57,6 +57,8 @@ export function isCell(c) {
   if (c.startsWith('gate:')) { const [d, col, extra] = c.slice(5).split('@'), ds = d.split(','); return extra === undefined && (col === undefined || COLOURS.includes(col)) && new Set(ds).size === ds.length && ds.every(x => CLOCKWISE.includes(x)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
+  // A door may take two colours, 'door:red|blue' (register 313).
+  if (kind === 'door' && colour && colour.includes('|')) { const [a, b] = colour.split('|'); return a !== b && COLOURS.includes(a) && COLOURS.includes(b); }
   return (kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor') && COLOURS.includes(colour);
 }
 

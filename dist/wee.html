@@ -1073,6 +1073,8 @@ function isCell(c) {
   if (c.startsWith('gate:')) { const [d, col, extra] = c.slice(5).split('@'), ds = d.split(','); return extra === undefined && (col === undefined || COLOURS.includes(col)) && new Set(ds).size === ds.length && ds.every(x => CLOCKWISE.includes(x)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
   const [kind, colour] = c.split(':');
+  // A door may take two colours, 'door:red|blue' (register 313).
+  if (kind === 'door' && colour && colour.includes('|')) { const [a, b] = colour.split('|'); return a !== b && COLOURS.includes(a) && COLOURS.includes(b); }
   return (kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor') && COLOURS.includes(colour);
 }
 
@@ -1167,12 +1169,15 @@ const cellAt = (s, x, y) => s.cells[y * s.w + x];
 // Gravel stops anything sliding onto it, you included.
 const onGravel = (s, o) => cellAt(s, o.x, o.y) === 'gravel';
 
-function solidCell(s, x, y) {
+// A relay is solid to anything that moves, and a beam goes through it (register 312). A door of
+// two colours ('door:red|blue') is open while either colour is (register 313).
+function solidCell(s, x, y, beam = false) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
   if (c === 'wall' || c.startsWith('receiver:') || c.startsWith('spring:')) return true;
+  if (c.startsWith('sensor:')) return !beam;
   if (c === 'crack') return !s.broken.includes(y * s.w + x);
-  if (c.startsWith('door:')) return !s.open[c.slice(5)];
+  if (c.startsWith('door:')) return !c.slice(5).split('|').some(col => s.open[col]);
   if (c.startsWith('idoor:')) return !!s.open[c.slice(6)];
   return false;
 }
@@ -1196,13 +1201,13 @@ const gateAt = (s, x, y) => inb(s, x, y) ? gateDirs(s, cellAt(s, x, y)) : null;
 
 // wet: whether this mover may enter water (beams always may). heavy: whether it breaks a
 // breakable block; the step then lands on it, marked crack, and the mover breaks it on arrival.
-function stepTo(s, x, y, d, wet = true, heavy = false) {
+function stepTo(s, x, y, d, wet = true, heavy = false, beam = false) {
   d = facing(s, x, y, d);
   const [dx, dy] = DIRS[d], nx = x + dx, ny = y + dy;
   const from = gateAt(s, x, y), to = gateAt(s, nx, ny);
   if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;
   if (heavy && inb(s, nx, ny) && cellAt(s, nx, ny) === 'crack' && solidCell(s, nx, ny)) return { x: nx, y: ny, d, crack: true };
-  if (solidCell(s, nx, ny)) return null;
+  if (solidCell(s, nx, ny, beam)) return null;
   if (!wet && cellAt(s, nx, ny) === 'water') return null;
   if (cellAt(s, nx, ny) === 'death') return { x: nx, y: ny, d, death: true };
   const tri = triAt(s, nx, ny);
@@ -1323,7 +1328,7 @@ function refreshDoors(s) {
     pressed[col] = (pressed[col] ?? true) && down;
   }
   let squashed = false;
-  const turned = [];
+  const turned = [], was = { ...s.open };
   for (const col of COLOURS) {
     const want = !!(any[col] && pressed[col]);
     if (want !== !!s.open[col]) {
@@ -1339,6 +1344,14 @@ function refreshDoors(s) {
     if (want !== !!s.open[col]) turned.push(col);
     s.open[col] = want;
   }
+  // A door of two colours closes only when both have: then it squashes what is in it.
+  s.cells.forEach((c, i) => {
+    if (!/^door:\w+\|/.test(c)) return;
+    const cols = c.slice(5).split('|'), x = i % s.w, y = Math.floor(i / s.w);
+    if (!cols.some(col => was[col]) || cols.some(col => s.open[col])) return;
+    for (const e of s.entities.filter(e => !e.dead && e.x === x && e.y === y)) kill(s, e, 'door');
+    if (s.player.x === x && s.player.y === y && !s.player.hidden) squashed = true;
+  });
   launch(s, turned);
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
 }
@@ -1444,7 +1457,7 @@ function trace(s, x, y, d, hit, hitsPlayer) {
   const path = [[x, y]];
   let cx = x, cy = y, cd = d, wall = true, stop = null, player = false;
   for (let i = 0; i < s.w * s.h * 2; i++) {
-    const t = stepTo(s, cx, cy, cd);
+    const t = stepTo(s, cx, cy, cd, true, false, true);
     if (!t || t.death) { cd = facing(s, cx, cy, cd); stop = [cx + DIRS[cd][0], cy + DIRS[cd][1]]; break; }
     path.push([t.x, t.y]);
     if (hitsPlayer && playerAt(s, t.x, t.y)) { wall = false; player = true; break; }
@@ -2657,6 +2670,36 @@ const EXTRA_REQUIREMENTS = {
     short: [{ el: 'laser' }, 'pointing 2 ways'],
     judge: room => new Set(room.entities.filter(e => e.turret).map(e => e.turret.dirs[0])).size >= 2,
   },
+  // Inverted doors (registers 311, 312): open until their colour is held.
+  robotThroughIdoor: {
+    text: 'Robot through an inverted door.',
+    short: [{ el: 'start' }, 'through an open', { el: 'idoor' }],
+    judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (/^idoor:/.test(room.cells[s.player.y * room.w + s.player.x] || '')) ok = true; }); return ok; },
+  },
+  laserStoppedByIdoor: {
+    text: 'Laser stopped by a closed inverted door.',
+    short: [{ el: 'laser' }, 'stopped by a closed', { el: 'idoor' }],
+    judge: (room, moves) => { let ok = false; beams(room, moves, b => { if (cellOf(room, b.stop).startsWith('idoor:')) ok = true; }); return ok; },
+  },
+  boxHitsIdoor: {
+    text: 'Box collides with a closed inverted door.',
+    short: [{ el: 'box' }, 'collides with a closed', { el: 'idoor' }],
+    judge: (room, moves) => stoppedPushes(room, moves).out.some(h => { const c = cellOf(room, [h.x, h.y]); return c.startsWith('idoor:') && !!h.open[c.slice(6)]; }),
+  },
+  // The beam goes through a door, then lights a relay of one of that door's colours: it holds the
+  // door it passes through (register 313). A relay before the door would open it for any beam.
+  laserHoldsOwnDoor: {
+    text: 'Laser through a door that its own relay holds open.',
+    short: [{ el: 'laser' }, 'holds its own', { el: 'ddoor' }],
+    judge: (room, moves) => {
+      let ok = false;
+      beams(room, moves, (b, s) => {
+        const at = through(b, s).map(p => cellOf(room, p));
+        at.forEach((c, i) => { if (c.startsWith('door:') && at.slice(i + 1).some(r => r.startsWith('sensor:') && c.slice(5).split('|').includes(r.slice(7)))) ok = true; });
+      });
+      return ok;
+    },
+  },
   boxHitsTwoDoors: {
     needs: { door: 2 },
     text: 'Box collides with two different closed doors.',
@@ -2940,15 +2983,21 @@ const ELEMENTS = {
   gate: { label: 'One-way', cell: 'gate:right', kind: 'gate:' },
   // A turret on its own, firing one way; a tap with its tool turns it (register 255).
   laser: { label: 'Laser', piece: 'turret' },
+  idoor: { label: 'Inverted door', cell: 'idoor:red', kind: 'idoor:' },
+  // A block a beam goes through, lighting it (register 312).
+  relay: { label: 'Laser relay', cell: 'sensor:red', kind: 'sensor:' },
+  // Open while either colour is held, like an OR (register 313).
+  ddoor: { label: 'Two-colour door', cell: 'door:red|blue', kind: 'door:', two: true },
 };
-const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind));
+// A plain door and a two-colour one share 'door:'; the '|' tells them apart.
+const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind) && c.includes('|') === !!ELEMENTS[k].two);
 // A level's colours (def.colours, red when it names none). A one-way takes one only in a level
 // that names its colours (register 241); elsewhere it has none.
 const coloursOf = def => def.colours || ['red'];
 function colourFits(def, c) {
   if (c.startsWith('gate:')) { const col = c.split('@')[1] || null; return def.colours ? def.colours.includes(col) : col === null; }
   const [kind, col] = c.split(':');
-  return !['button', 'door', 'toggle'].includes(kind) || coloursOf(def).includes(col);
+  return !['button', 'door', 'toggle', 'idoor', 'sensor'].includes(kind) || col.split('|').every(c2 => coloursOf(def).includes(c2));
 }
 
 // The level's room: empty at its starting size, with no border (the room's edge stops the
@@ -3121,7 +3170,7 @@ return { madeLevels, saveMade, madeLevel, backToMaker, onMakerBack };
 const m17 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"optional":["touchBlockFourTimes"],"tiles":1},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice"],"tiles":2},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoor"],"tiles":2},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd"],"tiles":3},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"optional":[],"tiles":6},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd"],"tiles":4},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd"],"tiles":3},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"],"tiles":4},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays"],"tiles":2},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"optional":["boxStuckOnOneWay"],"tiles":3},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors"],"tiles":8},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched"],"tiles":6},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"tiles":5},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays"],"tiles":4},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay"],"tiles":8},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":7},"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["robotOnButton"],"tiles":7}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"optional":["touchBlockFourTimes"],"tiles":1},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice"],"tiles":2},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoor"],"tiles":2},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd"],"tiles":3},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"optional":[],"tiles":6},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd"],"tiles":4},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd"],"tiles":3},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"],"tiles":4},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays"],"tiles":2},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"optional":["boxStuckOnOneWay"],"tiles":3},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors"],"tiles":8},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched"],"tiles":6},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"tiles":5},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays"],"tiles":4},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay"],"tiles":8},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":7},"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["robotOnButton"],"tiles":7},{"id":"17","name":"Level 17","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"idoor":[1,null],"laser":[1,null]},"steps":{},"rules":[],"require":["laserStoppedByIdoor","robotThroughIdoor"],"tiles":5},{"id":"18","name":"Level 18","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"idoor":[1,null],"relay":[1,null],"laser":[1,null]},"steps":{},"rules":[],"require":["boxHitsIdoor","robotThroughIdoor"],"tiles":6},{"id":"19","name":"Level 19","size":[7,7],"palette":{"block":[0,null],"button":[1,null],"ddoor":[1,null],"relay":[1,null],"laser":[1,null]},"colours":["red","blue"],"steps":{},"rules":[],"require":["laserHoldsOwnDoor"],"tiles":4}];
 return { LEVELS };
 })();
 // ---- src/editor/history.js
@@ -3557,6 +3606,17 @@ function drawCell(g, c, x, y, s, scale = 1, bare = false) {
         g.fillStyle = INK[col];
         for (const bx of [9, 15, 21]) g.fillRect(bx, 5, 2, T - 10);
       }
+    } else if (col.includes('|')) {
+      // A door of two colours: each half in one, open while either colour is.
+      const cols = col.split('|'), open = s && cols.some(c2 => s.open[c2]);
+      cols.forEach((c2, k) => {
+        g.save(); g.beginPath(); g.rect(k * T / 2, 0, T / 2, T); g.clip();
+        g.fillStyle = g.strokeStyle = INK[c2];
+        if (open) { g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]); }
+        else { roundRect(g, 2, 2, T - 4, T - 4, 4); g.fill(); }
+        g.restore();
+      });
+      if (!open) { g.fillStyle = 'rgba(0,0,0,0.3)'; for (const bx of [9, 15, 21]) g.fillRect(bx, 4, 2, T - 8); }
     } else {
       const open = s && s.open[col];
       if (open) { g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]); }
@@ -4071,8 +4131,8 @@ function icon(tool, colour = 'red', gateColour = null) {
   const c = document.createElement('canvas'), k = 20 / T;
   c.width = 40; c.height = 40;
   const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
-  if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') {
-    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' + (gateColour ? '@' + gateColour : '') : tool === 'spring' ? 'spring:up' : tool + ':' + colour;
+  if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'ddoor' || tool === 'idoor' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') {
+    const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' + (gateColour ? '@' + gateColour : '') : tool === 'spring' ? 'spring:up' : tool === 'ddoor' ? 'door:red|blue' : tool + ':' + colour;
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'select') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
@@ -4218,7 +4278,7 @@ const { madeLevel, backToMaker } = m16;
 
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
-const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle', gate: 'gate', laser: 'turret' };
+const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle', gate: 'gate', laser: 'turret', idoor: 'idoor', relay: 'sensor', ddoor: 'ddoor' };
 // Every level hands you Move, to carry anything placed (the start and goal too) elsewhere.
 const ALWAYS = ['move'];
 let A = null, boot = null, fitScene = null;
@@ -6097,6 +6157,7 @@ const TOOLS = [
   { id: 'toggle', label: 'Switch', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'idoor', label: 'Inverted door', group: 'switches' },
+  { id: 'ddoor', label: 'Two-colour door', group: 'switches', campaign: true },
   { id: 'receiver', label: 'Laser catcher', group: 'switches' },
   { id: 'sensor', label: 'Laser relay', group: 'switches' },
 ];
@@ -6485,7 +6546,9 @@ function holds(level, x, y, tool) {
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
-  if (tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
+  if (tool === 'ddoor') return /^door:\w+\|/.test(c);
+  if (tool === 'door') return /^door:\w+$/.test(c);
+  if (tool === 'button' || tool === 'toggle' || tool === 'idoor' || tool === 'tri' || tool === 'receiver' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;
 }
@@ -6517,6 +6580,7 @@ function describe(level, x, y) {
     else if (kind === 'sensor') parts.push(`${COLOUR_NAME[v]} laser relay`);
     else if (kind === 'receiver') parts.push(`${COLOUR_NAME[v]} laser catcher`);
     else if (kind === 'idoor') parts.push(`${COLOUR_NAME[v]} inverted door`);
+    else if (kind === 'door' && v.includes('|')) parts.push(`${v.split('|').map(c => COLOUR_NAME[c]).join(' and ')} door`);
     else parts.push(`${COLOUR_NAME[v]} ${kind}`);
   }
   if (level.start && level.start.x === x && level.start.y === y) parts.push('Start');
@@ -6540,7 +6604,7 @@ function place(level, ui, x, y, how) {
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
     if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
-    else if (['wall', 'crack', 'checkpoint', 'button', 'toggle', 'door', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
+    else if (['wall', 'crack', 'checkpoint', 'button', 'toggle', 'door', 'ddoor', 'idoor', 'tri', 'receiver', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
     if (isStart) return out;
@@ -6561,8 +6625,11 @@ function place(level, ui, x, y, how) {
   } else if (t === 'wall' || t === 'crack') {
     if (isStart) return out;
     removePiece(); setCell(t);
+  } else if (t === 'ddoor') {
+    if (isStart) return out;
+    removePiece(); setCell('door:red|blue');
   } else if (t === 'checkpoint' || t === 'button' || t === 'toggle' || t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor') {
-    const solid = t === 'door' || t === 'idoor' || t === 'receiver';
+    const solid = t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor';
     if (solid && isStart) return out;
     if (solid) removePiece();
     setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
@@ -7173,7 +7240,7 @@ let tint = '';
 // In a level, Look, Erase and Move start the colours' line; back in the sandbox they return to the palette.
 const LINE = ['look', 'erase', 'move'];
 // The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
-const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'gate', 'turret'];
+const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'ddoor', 'sensor', 'gate', 'turret'];
 const lined = () => !!(S.camp || S.simple);
 function placeTools() {
   const box = $('campTools');

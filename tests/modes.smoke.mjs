@@ -15,7 +15,7 @@ try {
   await page.goto('http://localhost:5241/');
   await page.click('#menuSandbox'); await page.waitForTimeout(600);
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });
-  check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,door,erase,gate,goal,look,move,start,toggle,turret,wall', await shown());
+  check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,ddoor,door,erase,gate,goal,idoor,look,move,sensor,start,toggle,turret,wall', await shown());
   check('the Sandbox offers two colours and no powers', await page.evaluate(() => document.querySelectorAll('[data-camp-colour]').length === 2 && getComputedStyle(document.querySelector('[data-sheet=powers]')).display === 'none'));
   // Puzzles: a room marked in the Sandbox is offered, played by hand, and the win names the fewest.
   await page.evaluate(async () => {

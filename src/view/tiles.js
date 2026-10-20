@@ -148,6 +148,17 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
         g.fillStyle = INK[col];
         for (const bx of [9, 15, 21]) g.fillRect(bx, 5, 2, T - 10);
       }
+    } else if (col.includes('|')) {
+      // A door of two colours: each half in one, open while either colour is.
+      const cols = col.split('|'), open = s && cols.some(c2 => s.open[c2]);
+      cols.forEach((c2, k) => {
+        g.save(); g.beginPath(); g.rect(k * T / 2, 0, T / 2, T); g.clip();
+        g.fillStyle = g.strokeStyle = INK[c2];
+        if (open) { g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]); }
+        else { roundRect(g, 2, 2, T - 4, T - 4, 4); g.fill(); }
+        g.restore();
+      });
+      if (!open) { g.fillStyle = 'rgba(0,0,0,0.3)'; for (const bx of [9, 15, 21]) g.fillRect(bx, 4, 2, T - 8); }
     } else {
       const open = s && s.open[col];
       if (open) { g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]); }

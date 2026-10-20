@@ -1180,6 +1180,17 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a turning turret still wears its mode badge', dots({ dirs: ['up', 'down'], mode: 'realtime' }) === 1);
 }
 
+{ // a relay is a block a beam goes through (register 312); a two-colour door opens on either colour (313)
+  const g = createGame(room(['#######', '#P.s..#', '#######'])); slide(g, 'right');
+  check('a relay stops the robot', at(g.player, 2, 1), JSON.stringify(g.player));
+  const b = createGame(room(['#######', '#T.s..#', '#P....#', '#######'])); step(b);
+  check('a beam goes through a relay and lights it', b.lit.has(1 * 7 + 3) && b.beams[0].path.some(([x]) => x === 5), JSON.stringify(b.beams[0].path));
+  const d = createGame(room(['#####', '#PY.#', '#####']));
+  const shut = solidCell(d, 2, 1); d.open.blue = true; const blue = solidCell(d, 2, 1); d.open = { red: true }; const red = solidCell(d, 2, 1);
+  check('a two-colour door is shut with neither colour, open with either', shut && !blue && !red);
+  check('a room with a two-colour door reads back', isCell('door:red|blue') && !isCell('door:red|red') && !isCell('door:red|pink'));
+}
+
 { // gravel stops what slides onto it
   const r = room(['#######', '#P.g..#', '#######']);
   check('a slide stops on gravel', at(slide(createGame(r), 'right').player, 3, 1));

@@ -1,0 +1,36 @@
+{
+ "name": "Level 18",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "box": [
+   1,
+   null
+  ],
+  "idoor": [
+   1,
+   null
+  ],
+  "relay": [
+   1,
+   null
+  ],
+  "laser": [
+   1,
+   null
+  ]
+ },
+ "steps": {},
+ "rules": [],
+ "require": [
+  "boxHitsIdoor",
+  "robotThroughIdoor"
+ ],
+ "tiles": 6
+}

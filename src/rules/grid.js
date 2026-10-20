@@ -8,12 +8,15 @@ export const cellAt = (s, x, y) => s.cells[y * s.w + x];
 // Gravel stops anything sliding onto it, you included.
 export const onGravel = (s, o) => cellAt(s, o.x, o.y) === 'gravel';
 
-export function solidCell(s, x, y) {
+// A relay is solid to anything that moves, and a beam goes through it (register 312). A door of
+// two colours ('door:red|blue') is open while either colour is (register 313).
+export function solidCell(s, x, y, beam = false) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
   if (c === 'wall' || c.startsWith('receiver:') || c.startsWith('spring:')) return true;
+  if (c.startsWith('sensor:')) return !beam;
   if (c === 'crack') return !s.broken.includes(y * s.w + x);
-  if (c.startsWith('door:')) return !s.open[c.slice(5)];
+  if (c.startsWith('door:')) return !c.slice(5).split('|').some(col => s.open[col]);
   if (c.startsWith('idoor:')) return !!s.open[c.slice(6)];
   return false;
 }
@@ -37,13 +40,13 @@ export const gateAt = (s, x, y) => inb(s, x, y) ? gateDirs(s, cellAt(s, x, y)) :
 
 // wet: whether this mover may enter water (beams always may). heavy: whether it breaks a
 // breakable block; the step then lands on it, marked crack, and the mover breaks it on arrival.
-export function stepTo(s, x, y, d, wet = true, heavy = false) {
+export function stepTo(s, x, y, d, wet = true, heavy = false, beam = false) {
   d = facing(s, x, y, d);
   const [dx, dy] = DIRS[d], nx = x + dx, ny = y + dy;
   const from = gateAt(s, x, y), to = gateAt(s, nx, ny);
   if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;
   if (heavy && inb(s, nx, ny) && cellAt(s, nx, ny) === 'crack' && solidCell(s, nx, ny)) return { x: nx, y: ny, d, crack: true };
-  if (solidCell(s, nx, ny)) return null;
+  if (solidCell(s, nx, ny, beam)) return null;
   if (!wet && cellAt(s, nx, ny) === 'water') return null;
   if (cellAt(s, nx, ny) === 'death') return { x: nx, y: ny, d, death: true };
   const tri = triAt(s, nx, ny);

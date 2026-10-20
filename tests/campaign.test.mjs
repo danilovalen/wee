@@ -35,6 +35,11 @@ const build = (def, rows) => {
     if (c === 'T') r.cells[i] = 'toggle:blue';
     if (c === 'Q') r.cells[i] = 'door:blue';
     if (c === 'q') r.cells[i] = 'button:blue';
+    if (c === 'I') r.cells[i] = 'idoor:red';
+    if (c === 'J') r.cells[i] = 'idoor:blue';
+    if (c === 'r') r.cells[i] = 'sensor:red';
+    if (c === 'R') r.cells[i] = 'sensor:blue';
+    if (c === 'X') r.cells[i] = 'door:red|blue';
     if ('^>v<'.includes(c)) r.cells[i] = 'gate:' + { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c] + (def.colours ? '@' + def.colours[0] : '');
     if (c === 'G') { r.cells[i] = 'goal'; goal = true; }
     if (c === 'P') r.start = { x, y };
@@ -340,6 +345,16 @@ const build = (def, rows) => {
   ok('a laser through a button: not met when a box on it stops the beam', !REQUIREMENTS.laserThroughButton.judge(boxed, []));
   ok('the robot steps on a button: met when it slides over one', req('robotOnButton', ['#######', '#P.o..#', '#######'], ['right']));
   ok('the robot steps on a button: not met when it passes beside it', !req('robotOnButton', ['#######', '#P....#', '#..o..#', '#######'], ['right']));
+  // Inverted doors, relays and the two-colour door (registers 311-313).
+  ok('robot through an inverted door: met while it is open', req('robotThroughIdoor', ['#######', '#P.N.G#', '#######'], ['right']));
+  ok('robot through an inverted door: not met with none', !req('robotThroughIdoor', ['#######', '#P...G#', '#######'], ['right']));
+  ok('laser stopped by an inverted door: met once a button closes it', req('laserStoppedByIdoor', ['#######', '#T.N..#', '#Po####', '#######'], ['right']));
+  ok('laser stopped by an inverted door: not met while it is open', !req('laserStoppedByIdoor', ['#######', '#T.N..#', '#Po####', '#######'], []));
+  ok('box hits an inverted door: met when a lit relay closes it', req('boxHitsIdoor', ['########', '#T.s...#', '#PB.N..#', '########'], ['right']));
+  ok('box hits an inverted door: not met while it is open', !req('boxHitsIdoor', ['########', '#..s...#', '#PB.N..#', '########'], ['right']));
+  ok('a laser holds its own door: met when a blue press opens it and the red relay past it holds it', req('laserHoldsOwnDoor', ['#########', '#T.Y.s..#', '#Pu.....#', '#########'], ['right']));
+  ok('a laser holds its own door: not met when the relay comes first and opens the door for any beam', !req('laserHoldsOwnDoor', ['#########', '#T.s.D..#', '#P......#', '#########'], ['right']));
+  ok('a laser holds its own door: not met by a one-colour door, which needs the button too', !req('laserHoldsOwnDoor', ['#########', '#T.D.s..#', '#Po.....#', '#########'], ['right']));
   ok('a closed door stops every laser: met by both', req('laserBlockedByDoor', two, []));
   ok('a closed door stops every laser: not met when one hits a wall', !req('laserBlockedByDoor', ['##########', '#T.D.....#', '#P.......#', '#T.......#', '##########'], []));
   const ways = (a, b) => { const r = off(['######', '#P...#', '#....#', '######']); r.entities.push({ kind: 'turret', x: 2, y: 2, turret: { dirs: [a], mode: 'input' } }, { kind: 'turret', x: 4, y: 2, turret: { dirs: [b], mode: 'input' } }); return REQUIREMENTS.lasersTwoWays.judge(r, []); };

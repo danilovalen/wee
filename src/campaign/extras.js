@@ -154,6 +154,36 @@ export const EXTRA_REQUIREMENTS = {
     short: [{ el: 'laser' }, 'pointing 2 ways'],
     judge: room => new Set(room.entities.filter(e => e.turret).map(e => e.turret.dirs[0])).size >= 2,
   },
+  // Inverted doors (registers 311, 312): open until their colour is held.
+  robotThroughIdoor: {
+    text: 'Robot through an inverted door.',
+    short: [{ el: 'start' }, 'through an open', { el: 'idoor' }],
+    judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (/^idoor:/.test(room.cells[s.player.y * room.w + s.player.x] || '')) ok = true; }); return ok; },
+  },
+  laserStoppedByIdoor: {
+    text: 'Laser stopped by a closed inverted door.',
+    short: [{ el: 'laser' }, 'stopped by a closed', { el: 'idoor' }],
+    judge: (room, moves) => { let ok = false; beams(room, moves, b => { if (cellOf(room, b.stop).startsWith('idoor:')) ok = true; }); return ok; },
+  },
+  boxHitsIdoor: {
+    text: 'Box collides with a closed inverted door.',
+    short: [{ el: 'box' }, 'collides with a closed', { el: 'idoor' }],
+    judge: (room, moves) => stoppedPushes(room, moves).out.some(h => { const c = cellOf(room, [h.x, h.y]); return c.startsWith('idoor:') && !!h.open[c.slice(6)]; }),
+  },
+  // The beam goes through a door, then lights a relay of one of that door's colours: it holds the
+  // door it passes through (register 313). A relay before the door would open it for any beam.
+  laserHoldsOwnDoor: {
+    text: 'Laser through a door that its own relay holds open.',
+    short: [{ el: 'laser' }, 'holds its own', { el: 'ddoor' }],
+    judge: (room, moves) => {
+      let ok = false;
+      beams(room, moves, (b, s) => {
+        const at = through(b, s).map(p => cellOf(room, p));
+        at.forEach((c, i) => { if (c.startsWith('door:') && at.slice(i + 1).some(r => r.startsWith('sensor:') && c.slice(5).split('|').includes(r.slice(7)))) ok = true; });
+      });
+      return ok;
+    },
+  },
   boxHitsTwoDoors: {
     needs: { door: 2 },
     text: 'Box collides with two different closed doors.',

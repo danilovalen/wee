@@ -6,8 +6,8 @@ import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { miss } from './searchScores.mjs';
 
-const CELL = { block: 'wall', toggle: 'toggle', door: 'door', button: 'button' };
-const TINTS = ['toggle', 'door', 'button', 'gate'];
+const CELL = { block: 'wall', toggle: 'toggle', door: 'door', button: 'button', idoor: 'idoor', relay: 'sensor' };
+const TINTS = ['toggle', 'door', 'button', 'gate', 'idoor', 'relay'];
 // A laser in the legend: n, e, s or w, the way it fires.
 const LASER = { up: 'n', right: 'e', down: 's', left: 'w' }, FROM_LASER = { n: 'up', e: 'right', s: 'down', w: 'left' };
 const DIRS = ['up', 'right', 'down', 'left'];
@@ -29,6 +29,7 @@ export function searcher(def, seed = 1) {
       const col = cols.includes(c) ? c : cols[0];
       if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right') + (def.colours ? '@' + col : '');
       else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
+      else if (el === 'ddoor') r.cells[y * g.w + x] = 'door:red|blue';
       else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, turret: { dirs: [d || 'right'], mode: 'input' } });
       else r.cells[y * g.w + x] = el === 'block' ? 'wall' : CELL[el] + ':' + col;
     }
@@ -103,14 +104,17 @@ export function searcher(def, seed = 1) {
     if (r.start.x === x && r.start.y === y) return 'P';
     const ent = r.entities.find(e => e.x === x && e.y === y);
     if (ent) return ent.turret ? LASER[ent.turret.dirs[0]] : 'B';
-    // Blue in the tests' legend: Q door, q button, T switch.
+    // Blue in the tests' legend: Q door, q button, T switch, J inverted door, R relay; X a two-colour door.
     const blue = /:blue$/.test(c);
+    if (c.includes('|')) return 'X';
+    if (c.startsWith('idoor')) return blue ? 'J' : 'I';
+    if (c.startsWith('sensor')) return blue ? 'R' : 'r';
     return c === 'wall' ? '#' : c.startsWith('gate:') ? { up: '^', right: '>', down: 'v', left: '<' }[c.slice(5).split('@')[0]] : c === 'goal' ? 'G' : c.startsWith('toggle') ? (blue ? 'T' : 't') : c.startsWith('door') ? (blue ? 'Q' : 'D') : c.startsWith('button') ? (blue ? 'q' : 'o') : '.';
   }).join('')).join(' ');
   // A genome from rows in show()'s legend, so a climb can start from a known room.
   function parse(rows) {
     const g = { w: rows[0].length, h: rows.length, start: null, goal: null, items: [] };
-    const EL = { '#': ['block'], t: ['toggle', 'red'], T: ['toggle', 'blue'], D: ['door', 'red'], Q: ['door', 'blue'], o: ['button', 'red'], q: ['button', 'blue'], B: ['box'] };
+    const EL = { '#': ['block'], t: ['toggle', 'red'], T: ['toggle', 'blue'], D: ['door', 'red'], Q: ['door', 'blue'], o: ['button', 'red'], q: ['button', 'blue'], B: ['box'], I: ['idoor', 'red'], J: ['idoor', 'blue'], r: ['relay', 'red'], R: ['relay', 'blue'], X: ['ddoor'] };
     rows.forEach((row, y) => [...row].forEach((c, x) => {
       if (c === 'P') g.start = { x, y }; else if (c === 'G') g.goal = { x, y };
       else if (EL[c]) g.items.push([EL[c][0], x, y, null, EL[c][1] || null]);

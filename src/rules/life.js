@@ -69,7 +69,7 @@ export function refreshDoors(s) {
     pressed[col] = (pressed[col] ?? true) && down;
   }
   let squashed = false;
-  const turned = [];
+  const turned = [], was = { ...s.open };
   for (const col of COLOURS) {
     const want = !!(any[col] && pressed[col]);
     if (want !== !!s.open[col]) {
@@ -85,6 +85,14 @@ export function refreshDoors(s) {
     if (want !== !!s.open[col]) turned.push(col);
     s.open[col] = want;
   }
+  // A door of two colours closes only when both have: then it squashes what is in it.
+  s.cells.forEach((c, i) => {
+    if (!/^door:\w+\|/.test(c)) return;
+    const cols = c.slice(5).split('|'), x = i % s.w, y = Math.floor(i / s.w);
+    if (!cols.some(col => was[col]) || cols.some(col => s.open[col])) return;
+    for (const e of s.entities.filter(e => !e.dead && e.x === x && e.y === y)) kill(s, e, 'door');
+    if (s.player.x === x && s.player.y === y && !s.player.hidden) squashed = true;
+  });
   launch(s, turned);
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
 }
