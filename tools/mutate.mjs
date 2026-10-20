@@ -767,6 +767,8 @@ const M = [
   ['src/view/pieces.js', "if (badge && t.dirs.length > 1) modeBadge", "if (badge) modeBadge", 'sim'],
   ['src/campaign/robot.js', "if (!hit) for (const k of keys) move(", "if (false) for (const k of keys) move(", 'campaign'],
   ['src/level/campaign.js', '"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null]', '"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null]', 'campaign'],
+  ['src/app/reset.js', "$('resetNo').onclick = () => box.close();", "$('resetNo').onclick = () => { box.close(); S.level = roomOf(S.camp.def); };", 'campaign-play'],
+  ['src/app/reset.js', "box.close(); change(() => { S.level = roomOf(S.camp.def); }); after();", "box.close(); change(() => {}); S.level = roomOf(S.camp.def); after();", 'campaign-play'],
   ['src/campaign/extras.js', "  return all.size > 0 && [...all].every(id => met.has(id));", "  return met.size > 0;", 'campaign'],
   ['src/campaign/extras.js', "e.turret.dirs[0])).size >= 2", "e.turret.dirs[0])).size >= 1", 'campaign'],
   ['src', "(!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind))", "false", 'campaign'],

@@ -19,6 +19,7 @@
     <button id="campTest" type="button" class="camp-only" title="Play your room by hand. A test is not judged.">Test</button>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
+    <button id="campReset" type="button" class="camp-only" data-edit>Reset</button>
     <button id="checkBtn" type="button" data-edit>Check</button>
     <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room: colour, dots, lines and frames. Keys 1 to 4 cycle them, 0 turns them off.">Lenses</button>
     <button id="genBtn" type="button" data-edit title="Generate a room">Generate</button>
@@ -219,6 +220,10 @@
       <button id="menuSandbox" type="button" class="primary">Sandbox</button>
       <button id="menuDebug" type="button" title="Copies what the game knows about where you are.">Debug</button>
     </div>
+  </dialog>
+  <dialog id="resetBox" class="confirm">
+    <p>Reset the room to the level's start? Undo brings it back.</p>
+    <div class="row"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="campBox" class="rooms">
     <div class="roomsHead"><b>Campaign</b><button id="campMenu" type="button">Menu</button></div>

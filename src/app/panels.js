@@ -13,6 +13,7 @@ import { runCheck, syncCheck, syncLint } from './check.js';
 import { buildLenses, syncLenses } from './lenses.js';
 import { buildWell, openWell } from './well.js';
 import { buildChips } from './chips.js';
+import { buildReset } from './reset.js';
 import { buildSize } from './size.js';
 import { buildSheets } from './sheets.js';
 import { buildKeys } from './keys.js';
@@ -122,6 +123,7 @@ export function buildPanels(actions) {
   const after = () => { syncPanel(); fit(); };
   $('undo').onclick = () => undoStep(true, after);
   $('redo').onclick = () => undoStep(false, after);
+  buildReset(after);
   $('winEdit').onclick = () => setMode('edit');
   $('placeHint').textContent = DEFAULT_HINT;
   // The context bar's one line of text: a message, else the tool's note, else the default hint.

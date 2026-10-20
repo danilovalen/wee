@@ -76,6 +76,18 @@ try {
   await page.click('[data-minus="top"]'); await page.click('[data-minus="top"]'); await page.waitForTimeout(100);
   check('a cut that would take the start does nothing in a level', await page.evaluate(() => { const l = window.wee.getLevel(); return l.h === 7 && !!l.start && l.start.y === 0; }), await page.evaluate(() => JSON.stringify([window.wee.getLevel().h, window.wee.getLevel().start])));
   await page.click('[data-plus="top"]'); await page.click('#undo'); await page.click('#undo');
+  // Reset (register 291): asks first; Cancel keeps the room; Reset returns the level's start room; Undo brings it back.
+  await load(['P.#..', '.....', '..#..', '.....', '....G']);
+  const mine = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));
+  await page.click('#campReset');
+  check('Reset asks first', await page.locator('#resetBox').isVisible());
+  await page.click('#resetNo');
+  check('Cancel keeps the room', !(await page.locator('#resetBox').isVisible()) && (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === mine);
+  await page.click('#campReset'); await page.click('#resetYes');
+  check('Reset returns the level\'s start room', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.cells.filter(c => c).length === 1; }));
+  const undoable = !(await page.locator('#undo').isDisabled());
+  if (undoable) await page.click('#undo');
+  check('Undo brings the reset room back', undoable && (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === mine);
   await load(['P....', '.....', '.....', '.....', '....G']);
   const before = await box();
   await page.click('#campRun');

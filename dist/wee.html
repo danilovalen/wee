@@ -573,6 +573,12 @@ body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin-left
 #campColours button { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 0; position: relative; }
 #campColours button::after { content: ''; position: absolute; inset: -9px; }
 #campColours button.on { box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px #2a2440; }
+
+/* A yes-or-no question over the room (register 291): small and centred, not a page. */
+.confirm { width: min(340px, 100vw - 32px); background: var(--panel); color: inherit; border: 0; border-radius: var(--r-l); padding: 16px; }
+.confirm p { margin: 0 0 14px; line-height: 1.4; }
+.confirm .row { display: flex; gap: 8px; justify-content: flex-end; }
+.confirm::backdrop { background: rgba(40, 44, 60, .35); }
 </style>
 </head>
 <body>
@@ -586,6 +592,7 @@ body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin-left
     <button id="campTest" type="button" class="camp-only" title="Play your room by hand. A test is not judged.">Test</button>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
+    <button id="campReset" type="button" class="camp-only" data-edit>Reset</button>
     <button id="checkBtn" type="button" data-edit>Check</button>
     <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room: colour, dots, lines and frames. Keys 1 to 4 cycle them, 0 turns them off.">Lenses</button>
     <button id="genBtn" type="button" data-edit title="Generate a room">Generate</button>
@@ -786,6 +793,10 @@ body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin-left
       <button id="menuSandbox" type="button" class="primary">Sandbox</button>
       <button id="menuDebug" type="button" title="Copies what the game knows about where you are.">Debug</button>
     </div>
+  </dialog>
+  <dialog id="resetBox" class="confirm">
+    <p>Reset the room to the level's start? Undo brings it back.</p>
+    <div class="row"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="campBox" class="rooms">
     <div class="roomsHead"><b>Campaign</b><button id="campMenu" type="button">Menu</button></div>
@@ -6343,8 +6354,27 @@ function syncInfo() {
 }
 return { buildChips, syncChips };
 })();
-// ---- src/app/sheets.js
+// ---- src/app/reset.js
 const m54 = (() => {
+const { S } = m11;
+const { roomOf } = m40;
+const { $ } = m12;
+const { change } = m31;
+// Reset: the room goes back to the level's start, after a yes (register 291). One undo step.
+
+
+
+
+function buildReset(after) {
+  const box = $('resetBox');
+  $('campReset').onclick = () => { if (S.camp && S.mode === 'edit') box.showModal(); };
+  $('resetNo').onclick = () => box.close();
+  $('resetYes').onclick = () => { box.close(); change(() => { S.level = roomOf(S.camp.def); }); after(); };
+}
+return { buildReset };
+})();
+// ---- src/app/sheets.js
+const m55 = (() => {
 const { $ } = m12;
 const { closeWell } = m18;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
@@ -6372,7 +6402,7 @@ function buildSheets() {
 return { openSheet, buildSheets };
 })();
 // ---- src/app/keys.js
-const m55 = (() => {
+const m56 = (() => {
 const { TOOLS } = m34;
 const { $ } = m12;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
@@ -6425,7 +6455,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m56 = (() => {
+const m57 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -6490,8 +6520,8 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m57 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m56;
+const m58 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m57;
 const { S } = m11;
 const { change } = m31;
 const { $ } = m12;
@@ -6614,7 +6644,7 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/panels.js
-const m58 = (() => {
+const m59 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m9;
 const { INK } = m14;
@@ -6628,14 +6658,16 @@ const { runCheck, syncCheck, syncLint } = m21;
 const { buildLenses, syncLenses } = m51;
 const { buildWell, openWell } = m18;
 const { buildChips } = m53;
+const { buildReset } = m54;
 const { buildSize } = m32;
-const { buildSheets } = m54;
-const { buildKeys } = m55;
+const { buildSheets } = m55;
+const { buildKeys } = m56;
 const { syncRoomsButton } = m30;
-const { buildSelect, syncSelect } = m57;
+const { buildSelect, syncSelect } = m58;
 const { icon } = m46;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -6757,6 +6789,7 @@ function buildPanels(actions) {
   const after = () => { syncPanel(); fit(); };
   $('undo').onclick = () => undoStep(true, after);
   $('redo').onclick = () => undoStep(false, after);
+  buildReset(after);
   $('winEdit').onclick = () => setMode('edit');
   $('placeHint').textContent = DEFAULT_HINT;
   // The context bar's one line of text: a message, else the tool's note, else the default hint.
@@ -6872,7 +6905,7 @@ function syncColours() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/app/campaignMove.js
-const m59 = (() => {
+const m60 = (() => {
 const { placementErrors } = m40;
 const { place, moveAt, swapAt } = m52;
 const { S } = m11;
@@ -6936,7 +6969,7 @@ function say(x, y, why, ms = 1500) {
 return { moveIn, refusal, allows, moveRefusal, refuse, say };
 })();
 // ---- src/app/stuck.js
-const m60 = (() => {
+const m61 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m15;
 const { S } = m11;
 const { $ } = m12;
@@ -6971,19 +7004,19 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m61 = (() => {
+const m62 = (() => {
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m8;
 const { aimKey } = m7;
 const { drawEdit, drawPlay } = m45;
 const { S } = m11;
 const { $, g, now } = m12;
-const { openSheet } = m54;
-const { syncPanel, keysText } = m58;
+const { openSheet } = m55;
+const { syncPanel, keysText } = m59;
 const { feedDemo } = m21;
-const { selectOverlay } = m57;
-const { moveRefusal } = m59;
-const { watchStuck, resetStuck } = m60;
+const { selectOverlay } = m58;
+const { moveRefusal } = m60;
+const { watchStuck, resetStuck } = m61;
 const { lensMarks, lensBusy } = m51;
 const { syncWell } = m18;
 const { syncChips } = m53;
@@ -7138,20 +7171,20 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m62 = (() => {
+const m63 = (() => {
 const { describe, holds, place, turnGate, turnLaser } = m52;
 const { S } = m11;
 const { $, canvas, touch, now } = m12;
-const { setMode, aim } = m61;
+const { setMode, aim } = m62;
 const { begin, end, change, step: undoStep } = m31;
 const { save } = m30;
-const { selectDown, selectMove, selectUp, selectKey } = m57;
+const { selectDown, selectMove, selectUp, selectKey } = m58;
 const { LENS_GROUPS, cycleLens, lensesOff } = m51;
-const { syncPanel } = m58;
+const { syncPanel } = m59;
 const { fit } = m33;
-const { toolForKey, bareKey, showKeys } = m55;
+const { toolForKey, bareKey, showKeys } = m56;
 const { TOOLS } = m34;
-const { refusal, moveRefusal, moveIn, refuse } = m59;
+const { refusal, moveRefusal, moveIn, refuse } = m60;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -7288,7 +7321,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m63 = (() => {
+const m64 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -7400,12 +7433,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m64 = (() => {
+const m65 = (() => {
 const { search, move, stateKey } = m15;
 const { createGame } = m8;
 const { elementCheck, idleElements, NOTES_MAX } = m17;
 const { contains } = m27;
-const { ING, variants } = m63;
+const { ING, variants } = m64;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -7491,7 +7524,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m65 = (() => {
+const m66 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -7508,13 +7541,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m66 = (() => {
+const m67 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m9;
-const { INGREDIENTS, ING, spot } = m63;
-const { judge, lockedIn } = m64;
+const { INGREDIENTS, ING, spot } = m64;
+const { judge, lockedIn } = m65;
 const { contains } = m27;
-const { rng } = m65;
+const { rng } = m66;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -7669,9 +7702,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m67 = (() => {
-const { INGREDIENTS } = m63;
-const { generate, normalize, recipeLabel, LIMITS } = m66;
+const m68 = (() => {
+const { INGREDIENTS } = m64;
+const { generate, normalize, recipeLabel, LIMITS } = m67;
 const { stampOf } = m24;
 const { S } = m11;
 const { thumbURL } = m25;
@@ -7865,7 +7898,7 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m68 = (() => {
+const m69 = (() => {
 const { TICK_MS } = m0;
 const { replay, gameText } = m8;
 const { parseLevel, emptyLevel } = m9;
@@ -7874,11 +7907,11 @@ const { S, starterLevel } = m11;
 const { portrait, $ } = m12;
 const { startSnow, windNow } = m13;
 const { fit, watchStage } = m33;
-const { buildPanels, syncPanel } = m58;
-const { bindInput } = m62;
-const { setMode, frame, render, tick, report, copyReport } = m61;
+const { buildPanels, syncPanel } = m59;
+const { bindInput } = m63;
+const { setMode, frame, render, tick, report, copyReport } = m62;
 const { buildRooms, bootRooms } = m30;
-const { buildGenerator } = m67;
+const { buildGenerator } = m68;
 const { buildCampaign, openMenu } = m49;
 const { bindDebug } = m47;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the

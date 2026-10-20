@@ -19,7 +19,8 @@ try {
     const page = await browser.newPage({ viewport });
     page.on('pageerror', e => errors.push(e.message));
     await page.goto('http://localhost:5219/');
-    const sizes = await page.evaluate(() => [...document.querySelectorAll('dialog')].map(d => {
+    // A yes-or-no question (dialog.confirm, register 291) is not a menu: it stays small over the room.
+    const sizes = await page.evaluate(() => [...document.querySelectorAll('dialog:not(.confirm)')].map(d => {
       for (const o of document.querySelectorAll('dialog[open]')) o.close();
       d.showModal(); const r = d.getBoundingClientRect(), out = `${d.id} ${Math.round(r.x)},${Math.round(r.y)} ${Math.round(r.width)}x${Math.round(r.height)}`; d.close();
       return { id: d.id, full: r.x === 0 && r.y === 0 && Math.round(r.width) === innerWidth && Math.round(r.height) === innerHeight, out };
