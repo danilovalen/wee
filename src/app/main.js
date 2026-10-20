@@ -1,5 +1,6 @@
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
+import { buildPuzzles } from './puzzles.js';
 import { buildProgress } from './progressCode.js';
 import { TICK_MS } from '../rules/base.js';
 import { replay, gameText } from '../rules/game.js';
@@ -32,6 +33,7 @@ buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
 buildProgress();
+buildPuzzles({ setMode, syncPanel, fit });
 buildCampaign({ setMode, syncPanel, fit }, () => { window.wee.roomsReady = bootRooms(); return window.wee.roomsReady; });
 bindInput();
 syncPanel();

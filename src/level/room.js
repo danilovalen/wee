@@ -1,7 +1,7 @@
 // A room is a level plus what the person wrote about it. These split and join the two.
 import { parseLevel } from './format.js';
 
-export const META = ['id', 'name', 'note', 'updated', 'par', 'solution', 'uses', 'recipe'];
+export const META = ['id', 'name', 'note', 'updated', 'par', 'solution', 'uses', 'recipe', 'puzzle'];
 
 export function splitRoom(room) {
   const meta = {}, level = { ...room };
@@ -13,6 +13,7 @@ export const joinRoom = (meta, level) => ({
   ...level, id: meta.id, name: meta.name, note: meta.note || '',
   ...(meta.solution ? { par: meta.solution.length, solution: meta.solution, uses: meta.uses || [] } : {}),
   ...(meta.recipe ? { recipe: meta.recipe } : {}),
+  ...(meta.puzzle ? { puzzle: true } : {}),
 });
 
 // What counts as the room's content when asking whether it has unsaved changes.

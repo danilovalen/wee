@@ -14,6 +14,7 @@
     <b class="logo">wee</b>
     <button id="roomTitle" class="roomTitle" type="button" title="This room">Untitled</button>
     <button id="campBack" type="button" class="camp-only">Levels</button>
+    <button id="puzzleBack" type="button" class="puzzle-only">Puzzles</button>
     <button id="mode" type="button" title="E">Play</button>
     <button id="campRun" type="button" class="camp-only primary">Run</button>
     <button id="campTest" type="button" class="camp-only" title="Play your room by hand. A test is not judged.">Test</button>
@@ -216,14 +217,23 @@
     <div id="menuScene" class="menuScene" aria-hidden="true"></div>
     <b class="logo menuLogo">wee</b>
     <div class="menuList">
-      <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
-      <button id="menuSandbox" type="button" class="primary">Sandbox</button>
+      <section class="menuSec"><h2>For the robot</h2><p>Build the room. The robot plays it.</p>
+        <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
+        <button id="menuMaker" type="button" class="primary" hidden>Level maker</button></section>
+      <section class="menuSec"><h2>For you</h2><p>You are the little circle.</p>
+        <button id="menuPuzzles" type="button" class="primary">Puzzles</button>
+        <button id="menuSandbox" type="button" class="primary">Sandbox</button></section>
       <button id="menuDebug" type="button" title="Copies what the game knows about where you are.">Debug</button>
     </div>
   </dialog>
   <dialog id="resetBox" class="confirm">
     <p>Reset the room to the level's start? Undo brings it back.</p>
     <div class="row"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
+  </dialog>
+  <dialog id="puzzleBox" class="rooms">
+    <div class="roomsHead"><b>Puzzles</b><button id="puzzleMenu" type="button">Menu</button></div>
+    <p id="puzzleNone" class="hint">No puzzles yet. In the Sandbox, open Rooms, hold a room and choose Add to Puzzles.</p>
+    <ul id="puzzleList" class="campList"></ul>
   </dialog>
   <dialog id="campBox" class="rooms">
     <div class="roomsHead"><b>Campaign</b><button id="campMenu" type="button">Menu</button></div>
@@ -262,6 +272,7 @@
       <button type="button" role="menuitem" data-act="rename">Rename</button>
       <button type="button" role="menuitem" data-act="duplicate">Duplicate</button>
       <button type="button" role="menuitem" data-act="code">Copy code</button>
+      <button type="button" role="menuitem" data-act="puzzle" id="tilePuzzle">Add to Puzzles</button>
       <button type="button" role="menuitem" data-act="delete" class="del">Delete</button>
       <form id="tileRename" class="row" hidden><input id="tileName" aria-label="Room name"><button type="submit">Save</button></form>
       <input id="tileCode" readonly hidden aria-label="Room code">

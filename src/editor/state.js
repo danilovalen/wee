@@ -18,4 +18,6 @@ export const S = {
   played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null, lookAt: null, playFrom: null, stops: null, lens: { open: false, opened: false, pick: {}, follow: true }, lensData: null, sel: null, moving: null, clip: null, paste: null, redraw: true, drawnAt: 0, draws: 0, genPrev: null, design: null,
   // simple: the Sandbox a person builds in (register 302), with the campaign's elements and tools.
   simple: false,
+  // puzzle: the Puzzles room being played by hand, { id, fewest }, or null.
+  puzzle: null,
 };

@@ -42,7 +42,7 @@ export function followUndo() {
 
 export function openRoom(level, meta) {
   S.level = level;
-  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null, recipe: meta.recipe || null, saved: stampOf(level), edited: false };
+  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null, recipe: meta.recipe || null, puzzle: !!meta.puzzle, saved: stampOf(level), edited: false };
   S.genPrev = null;
   S.history = newHistory();
   remember(S.room.id);
@@ -70,7 +70,7 @@ export async function save(asNew) {
   const solution = r && r.status === 'solved' ? r.moves : null;
   let stored;
   try {
-    stored = await put(joinRoom({ id, name, note: $('roomNote').value, solution, uses: solution ? uses(S.level, solution) : [], recipe: S.room.recipe }, S.level));
+    stored = await put(joinRoom({ id, name, note: $('roomNote').value, solution, uses: solution ? uses(S.level, solution) : [], recipe: S.room.recipe, puzzle: S.room.puzzle }, S.level));
   } catch (e) { say(e.message); return false; }
   Object.assign(S.room, { id, name, note: $('roomNote').value, solution, saved: stampOf(S.level), edited: false });
   remember(id);

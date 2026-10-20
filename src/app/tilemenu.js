@@ -28,6 +28,7 @@ function openMenu(b, r) {
   const m = $('tileMenu');
   menuFor = r;
   $('tileRename').hidden = true; $('tileCode').hidden = true;
+  $('tilePuzzle').textContent = r.puzzle ? 'Remove from Puzzles' : 'Add to Puzzles';
   m.hidden = false;
   const t = b.getBoundingClientRect();
   m.style.left = `${t.left + 8}px`;
@@ -49,6 +50,8 @@ async function menuAct(act) {
   }
   closeMenu();
   try {
+    // A puzzle is a room offered in Puzzles, played by hand (register 302).
+    if (act === 'puzzle') { await put({ ...r, puzzle: !r.puzzle }); followOpen(r.id, room => { room.puzzle = !r.puzzle; }); say(r.puzzle ? `"${name}" left Puzzles.` : `"${name}" is in Puzzles.`); }
     if (act === 'duplicate') { await put({ ...r, id: newId(), name: `${name} copy` }); say(`Duplicated "${name}".`); }
     if (act === 'delete') {
       if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;

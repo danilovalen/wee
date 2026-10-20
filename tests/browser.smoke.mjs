@@ -452,7 +452,7 @@ try {
   // A saved room's own menu: right-click a tile, act on it without opening it.
   const tiles = () => page.$$eval('#roomList .roomRow b', bs => bs.map(b => b.textContent));
   await page.locator('#roomList .roomRow', { hasText: /^A/ }).first().click({ button: 'right' });
-  check('right-clicking a room opens its menu, and the room stays shut', await page.locator('#tileMenu').isVisible() && await page.locator('#roomsBox').isVisible() && (await page.$$eval('#tileMenu [data-act]', bs => bs.map(b => b.textContent).join())) === 'Rename,Duplicate,Copy code,Delete');
+  check('right-clicking a room opens its menu, and the room stays shut', await page.locator('#tileMenu').isVisible() && await page.locator('#roomsBox').isVisible() && (await page.$$eval('#tileMenu [data-act]', bs => bs.map(b => b.textContent).join())) === 'Rename,Duplicate,Copy code,Add to Puzzles,Delete');
   await page.click('#tileMenu [data-act=rename]');
   await page.fill('#tileName', 'Arch');
   await page.keyboard.press('Enter');
