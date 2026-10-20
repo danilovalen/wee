@@ -48,6 +48,12 @@ try {
   check('Build it opens the level like a campaign one, with its palette and goal', await page.evaluate(() => document.body.classList.contains('campaign')) && await page.locator('#palette [data-tool="door"]').isVisible() && await page.locator('.campReqs li[data-req="throughOpenDoor"]').count() === 1);
   await page.click('#campBack');
   check('Levels from a made level goes back to the maker, which lists it', await page.locator('#makerBox').isVisible() && (await page.$$eval('#madeList .campRow b', bs => bs.map(b => b.textContent).join())) === 'Door test');
+  // One progress code carries the made levels and the Puzzles bests too (question 4).
+  await page.click('#makerMenu'); await page.click('#menuCampaign');
+  await page.click('#progCopy'); const all = await page.inputValue('#progCode'); await page.click('#progNo');
+  await page.evaluate(() => { localStorage.removeItem('wee-made'); localStorage.removeItem('wee-puzzles'); });
+  await page.click('#progLoad'); await page.fill('#progCode', all); await page.click('#progYes'); await page.waitForTimeout(200);
+  check('a progress code brings back made levels and Puzzles bests', await page.evaluate(() => JSON.parse(localStorage.getItem('wee-made') || '[]').length === 1 && JSON.parse(localStorage.getItem('wee-puzzles') || '{}').pz1 === 2));
   await page.goto('http://localhost:5241/?sandbox');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady); await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });

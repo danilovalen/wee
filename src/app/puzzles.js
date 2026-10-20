@@ -7,8 +7,8 @@ import { allShortest } from '../campaign/robot.js';
 import { $ } from './dom.js';
 
 const KEY = 'wee-puzzles';
-const bests = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
-const keep = b => { try { localStorage.setItem(KEY, JSON.stringify(b)); } catch { /* storage off */ } };
+export const bests = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
+export const keep = b => { try { localStorage.setItem(KEY, JSON.stringify(b)); } catch { /* storage off */ } };
 let A = null;
 
 function leave() { S.puzzle = null; document.body.classList.remove('puzzle'); }

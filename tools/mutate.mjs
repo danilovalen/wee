@@ -779,6 +779,7 @@ const M = [
   ['src/app/campaign.js', "(made ? backToMaker : openList)();", "openList();", 'modes'],
   ['src/app/campaign.js', "LEVELS.find(l => l.id === id) || madeLevel(id);", "LEVELS.find(l => l.id === id);", 'modes'],
   ['src/level/room.js', "  ...(meta.puzzle ? { puzzle: true } : {}),\n", "", 'design'],
+  ['src/app/progressCode.js', "  if (all.made) saveMade(all.made);\n", "", 'modes'],
   ['src/campaign/extras.js', "  return all.size > 0 && [...all].every(id => met.has(id));", "  return met.size > 0;", 'campaign'],
   ['src/campaign/extras.js', "e.turret.dirs[0])).size >= 2", "e.turret.dirs[0])).size >= 1", 'campaign'],
   ['src', "(!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind))", "false", 'campaign'],
