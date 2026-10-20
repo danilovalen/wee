@@ -47,7 +47,7 @@ export function migrate(p) {
   p.v = 4; write(p);
   return p;
 }
-const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
+export const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
 const levelOf = id => LEVELS.find(l => l.id === id);
 
 // A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the

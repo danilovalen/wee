@@ -228,6 +228,16 @@
   <dialog id="campBox" class="rooms">
     <div class="roomsHead"><b>Campaign</b><button id="campMenu" type="button">Menu</button></div>
     <ul id="campList" class="campList"></ul>
+    <div class="row progRow"><button id="progCopy" type="button">Copy progress</button><button id="progLoad" type="button">Load progress</button><button id="progReset" type="button">Reset progress</button></div>
+  </dialog>
+  <dialog id="progBox" class="confirm">
+    <p id="progSay"></p>
+    <textarea id="progCode" rows="4" spellcheck="false"></textarea>
+    <div class="row"><button id="progYes" type="button" class="primary">Load</button><button id="progNo" type="button">Close</button></div>
+  </dialog>
+  <dialog id="progResetBox" class="confirm">
+    <p>Reset every level? Wins, rooms and goals are erased. To keep them, copy your progress first.</p>
+    <div class="row"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="roomsBox" class="rooms library">
     <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>

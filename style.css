@@ -561,3 +561,5 @@ body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin-left
 .confirm p { margin: 0 0 14px; line-height: 1.4; }
 .confirm .row { display: flex; gap: 8px; justify-content: flex-end; }
 .confirm::backdrop { background: rgba(40, 44, 60, .35); }
+.confirm textarea { width: 100%; box-sizing: border-box; margin: 0 0 12px; font: 12px monospace; word-break: break-all; }
+.progRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }

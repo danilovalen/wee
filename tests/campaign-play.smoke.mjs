@@ -142,6 +142,21 @@ try {
   const row = await page.locator('.campRow[data-level="1"] small').textContent();
   check('the list keeps a beaten level and how many optional goals it met', /Beaten, optional 0\/4, moves 4, tiles 7 at area 25$/.test(row) && !/cost/.test(row), row);
   check('the level you were on is selected', await page.locator('.campRow[data-level="1"]').evaluate(b => b.classList.contains('sel')));
+  // Progress you carry yourself (register 254): copy a code, reset after a yes, load the code back.
+  await page.click('#progCopy');
+  const code = await page.inputValue('#progCode');
+  check('Copy progress shows a code', code.length > 20 && await page.locator('#progBox').isVisible());
+  await page.click('#progNo');
+  await page.click('#progReset');
+  check('Reset progress asks first', await page.locator('#progResetBox').isVisible());
+  await page.click('#progResetYes');
+  check('after a reset the level is no longer beaten', !/Beaten/.test(await page.locator('.campRow[data-level="1"] small').textContent()));
+  await page.click('#progLoad'); await page.fill('#progCode', 'not a code'); await page.click('#progYes');
+  check('a bad code is refused and says so', await page.locator('#progBox').isVisible() && /does not read/.test(await page.locator('#progSay').textContent()));
+  await page.fill('#progCode', Buffer.from('{"rooms":[]}').toString('base64')); await page.click('#progYes');
+  check('a code of something else is refused too', await page.locator('#progBox').isVisible());
+  await page.fill('#progCode', code); await page.click('#progYes');
+  check('loading the code brings the progress back', (await page.locator('.campRow[data-level="1"] small').textContent()) === row);
   await page.click('.campRow[data-level="1"]');
   const kept = await page.evaluate(() => { const l = window.wee.getLevel(); return [l.w, l.h, l.cells.filter(c => c === 'wall').length].join(); });
   check('your room is kept for next time', kept === '5,5,7', kept);
