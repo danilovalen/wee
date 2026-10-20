@@ -30,7 +30,9 @@
   "red",
   "blue"
  ],
- "steps": {},
+ "steps": {
+  "best": 9
+ },
  "rules": [],
  "require": [
   "laserHoldsOwnDoor"

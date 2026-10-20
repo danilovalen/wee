@@ -434,7 +434,7 @@ const build = (def, rows) => {
   for (const l of LEVELS) {
     const v = WINS[l.id] && check(l, build(l, WINS[l.id]));
     ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
-    if (['5', '8', '9', '10', '11', '12', '13', '14', '15', '16'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
+    if (['5', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
     if (l.id === '7') { const six = check(l, build(l, ['#B.....o..', '........D.', '.#...#....', '.#B.#..B..', '....DP..D.', '#..G##..#.'])); ok('level 7\'s exact count is reachable: a found room wins in exactly 6', six.won && six.length === l.steps.best, String(six.length)); }
     ok(`level ${l.id}'s win marks every row of its goal card met`, v && v.inRange && (l.require || []).every(id => v.reqs[id] === true), JSON.stringify(v && v.reqs));
   }
