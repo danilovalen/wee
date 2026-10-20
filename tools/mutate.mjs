@@ -388,7 +388,7 @@ const M = [
   ['src', "  if (c.startsWith('idoor:')) return c.slice(6).split('|').some(col => s.open[col]);\n", "", 'sim'],
   ['src', "if (c.startsWith('idoor:')) return c.slice(6).split('|').some(col => s.open[col]);", "if (c.startsWith('idoor:')) return !c.slice(6).split('|').some(col => s.open[col]);", 'sim'],
   ['src', "if (want !== !!s.open[col]) {", "if (!want && s.open[col]) {", 'sim'],
-  ['src', "      const doors = doorsOf(s, (want ? 'idoor:' : 'door:') + col);", "      const doors = doorsOf(s, 'door:' + col);", 'sim'],
+  ['src', "      const kind = want ? 'idoor:' : 'door:', doors", "      const kind = want ? 'idoor:' : 'idoor:', doors", 'sim'],
   ['src', "(kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor')", "(kind === 'button' || kind === 'toggle' || kind === 'door')", 'sim'],
   ['src', "const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');", "const isDoor = c => c.startsWith('door:');", 'sim'],
   ['src', "const solid = t === 'door' || t === 'idoor' || t === 'receiver' || t === 'sensor';", "const solid = t === 'door' || t === 'receiver' || t === 'sensor';", 'sim'],
@@ -794,7 +794,8 @@ const M = [
   ['src', "export function colouringsOf(def, el) {\n", "export function colouringsOf(def, el) {\n  return coloursOf(def);\n", 'campaign'],
   ['src', "return !pair || !two ? one : two === 'only' ? [pair] : [...one, pair];", "return !pair || !two ? one : [...one, pair];", 'campaign'],
   // Register 316: two colours on any piece, offered per level, picked with a third dot.
-  ['src/rules/life.js', "    if (m[1] ? before || !after : !before || after) return;", "    if (!before || after) return;", 'sim'],
+  ['src/rules/life.js', "doorsOf(s, kind + col), ...pairsOf(s, kind, col)]", "doorsOf(s, kind + col)]", 'sim'],
+  ['src/rules/life.js', "return cols.includes(col) && !cols.some(k => k !== col && s.open[k]) ? at : [];", "return cols.includes(col) ? at : [];", 'sim'],
   ['src/campaign/robot.js', "const door = (sets.find(cs => !cs.some(c => opened.has(c))) || [null])[0];", "const door = (sets.find(cs => cs.some(c => !opened.has(c))) || [null])[0];", 'campaign'],
   ['src/app/panels.js', "b.disabled = !!fits && !fits.includes(b.dataset.campColour);", "b.disabled = false;", 'campaign-play'],
   ['src/app/panels.js', "  if (fits && !fits.includes(ui.colour)) ui.colour = fits[0];", "", 'campaign-play'],

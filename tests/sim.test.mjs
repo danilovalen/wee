@@ -8,7 +8,7 @@ import { drawTurret } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
 import { newHistory, record, undo, redo, LIMIT } from '../src/editor/history.js';
 import { RT_PERIOD } from '../src/rules/base.js';
-import { explode, respawn } from '../src/rules/life.js';
+import { explode, respawn, refreshDoors } from '../src/rules/life.js';
 
 // One move of yours, as the world sees it: pieces on your move start their slide, then
 // every slide and push runs to its end before the test looks.
@@ -1200,6 +1200,16 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a two-colour inverted door is passable with neither colour, solid with either', iOpen && iShut);
   const gd = { open: { blue: true } };
   check('a two-colour one-way turns while either colour is pressed', gateDirs(gd, 'gate:right@red|blue')[0] === 'left' && gateDirs({ open: {} }, 'gate:right@red|blue')[0] === 'right');
+  // A heavy piece holds a two-colour door as it holds a one-colour one (register 317).
+  const held = k => { const l = room(['######', '#P.' + k + '.#', '######']); l.cells[9] = 'door:red|blue'; const g = createGame(l); g.open = { red: true }; refreshDoors(g); return g; };
+  const crushed = held('B'), kept = held('H');
+  check('a two-colour door closing crushes a box in it', !crushed.open.red && crushed.entities[0].dead);
+  check('a heavy box in a two-colour door keeps it open', kept.open.red && !kept.entities[0].dead);
+  const blueOn = (() => { const l = room(['#######', '#PBB..#', '#######']); l.cells[9] = 'button:blue'; l.cells[10] = 'door:red|blue'; const g = createGame(l); g.open.red = true; refreshDoors(g); return g; })();
+  check('red closing does not crush a box in a two-colour door blue still holds open', blueOn.open.blue && !blueOn.entities[1].dead, JSON.stringify(blueOn.open));
+  const iheld = k => { const l = room(['#######', '#PB' + k + '..#', '#######']); l.cells[9] = 'button:red'; l.cells[10] = 'idoor:red|blue'; return createGame(l); };
+  const ic = iheld('B'), ik = iheld('H');
+  check('a two-colour inverted door blocking crushes a box in it; a heavy box keeps it passable', ic.open.red && ic.entities[1].dead && !ik.open.red && !ik.entities[1].dead, JSON.stringify([ic.open, ik.open]));
   check('every coloured piece reads back in two colours, in the palette\'s order', ['button:red|blue', 'toggle:red|blue', 'idoor:red|blue', 'sensor:red|blue', 'gate:right@red|blue'].every(isCell) && !isCell('button:blue|red') && !isCell('gate:right@red|red'));
 }
 

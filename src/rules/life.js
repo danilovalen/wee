@@ -34,11 +34,17 @@ export function switchesOf(s) {
   return list;
 }
 
+// Two-colour doors of a kind holding col whose other colour is closed now (registers 313, 316).
+const pairsOf = (s, kind, col) => Object.entries(doorsOf(s)).flatMap(([c, at]) => {
+  const cols = c.startsWith(kind) && c.includes('|') ? c.slice(kind.length).split('|') : [];
+  return cols.includes(col) && !cols.some(k => k !== col && s.open[k]) ? at : [];
+});
+
 const DOORS = new WeakMap();
 function doorsOf(s, cell) {
   let by = DOORS.get(s.cells);
   if (!by) { by = {}; s.cells.forEach((c, i) => { if (/^i?door:/.test(c)) (by[c] ||= []).push([i % s.w, Math.floor(i / s.w)]); }); DOORS.set(s.cells, by); }
-  return by[cell] || [];
+  return cell ? by[cell] || [] : by;
 }
 
 // A toggle flips each time something enters it (you, or any piece), and starts off. Who stands
@@ -72,7 +78,9 @@ export function refreshDoors(s) {
   for (const col of COLOURS) {
     const want = !!(any[col] && pressed[col]);
     if (want !== !!s.open[col]) {
-      const doors = doorsOf(s, (want ? 'idoor:' : 'door:') + col);
+      // The doors this change closes: its own colour's, and a two-colour one whose other colour is
+      // closed too (a door shuts when both have, an inverted one blocks when either opens).
+      const kind = want ? 'idoor:' : 'door:', doors = [...doorsOf(s, kind + col), ...pairsOf(s, kind, col)];
       const inside = ([x, y]) => s.entities.filter(e => !e.dead && e.x === x && e.y === y);
       const youIn = ([x, y]) => s.player.x === x && s.player.y === y;
       if (doors.some(d => inside(d).some(e => HOLDS_DOOR.includes(e.kind)) || (youIn(d) && s.powers.armored))) continue;
@@ -84,16 +92,6 @@ export function refreshDoors(s) {
     if (want !== !!s.open[col]) turned.push(col);
     s.open[col] = want;
   }
-  // A door of two colours closes only when both have, an inverted one the moment either opens:
-  // then it squashes what is in it.
-  s.cells.forEach((c, i) => {
-    const m = /^(i?)door:(\w+\|\w+)$/.exec(c);
-    if (!m) return;
-    const cols = m[2].split('|'), x = i % s.w, y = Math.floor(i / s.w), before = cols.some(col => was[col]), after = cols.some(col => s.open[col]);
-    if (m[1] ? before || !after : !before || after) return;
-    for (const e of s.entities.filter(e => !e.dead && e.x === x && e.y === y)) kill(s, e, 'door');
-    if (s.player.x === x && s.player.y === y && !s.player.hidden) squashed = true;
-  });
   launch(s, turned, was);
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
 }
