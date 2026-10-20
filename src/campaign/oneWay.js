@@ -60,47 +60,47 @@ export function oneWayLog(room, moves) {
 
 export const ONE_WAY_REQUIREMENTS = {
   robotThroughOneWayBothWays: {
-    text: 'The robot goes through a one-way both ways.',
+    text: 'Robot through a one-way both ways.',
     short: [{ el: 'start' }, 'through a', { el: 'gate' }, 'both ways'],
     judge: (room, moves) => both(oneWayLog(room, moves).robotWays),
   },
   boxThroughOneWayBothWays: {
-    text: 'A box goes through a one-way both ways.',
+    text: 'Box through a one-way both ways.',
     short: [{ el: 'box' }, 'through a', { el: 'gate' }, 'both ways'],
     judge: (room, moves) => both(oneWayLog(room, moves).boxWays),
   },
   robotThroughEveryOneWay: {
-    text: 'The robot goes through every one-way.',
+    text: 'Robot through every one-way.',
     short: [{ el: 'start' }, 'through every', { el: 'gate' }],
     judge: (room, moves) => { const all = gates(room), l = oneWayLog(room, moves); return all.length > 0 && all.every(i => l.robotThrough.has(i)); },
   },
   robotThroughOneWay: {
-    text: 'The robot goes through a one-way.',
+    text: 'Robot through a one-way.',
     short: [{ el: 'start' }, 'through a', { el: 'gate' }],
     judge: (room, moves) => oneWayLog(room, moves).robotThrough.size > 0,
   },
   robotHitsEveryOneWay: {
-    text: 'The robot collides with every one-way.',
+    text: 'Robot collides with every one-way.',
     short: [{ el: 'start' }, 'collides with every', { el: 'gate' }],
     judge: (room, moves) => { const all = gates(room), l = oneWayLog(room, moves); return all.length > 0 && all.every(i => l.robotHits[i]); },
   },
   boxThroughOneWay: {
-    text: 'A box goes through a one-way.',
+    text: 'Box through a one-way.',
     short: [{ el: 'box' }, 'through a', { el: 'gate' }],
     judge: (room, moves) => oneWayLog(room, moves).boxThrough > 0,
   },
   boxHitsOneWay: {
-    text: 'A box collides with a one-way.',
+    text: 'Box collides with a one-way.',
     short: [{ el: 'box' }, 'collides with a', { el: 'gate' }],
     judge: (room, moves) => Object.values(oneWayLog(room, moves).boxHits).some(n => n >= 1),
   },
   boxHitsOneWayTwice: {
-    text: 'A box collides with a one-way twice.',
+    text: 'Box collides with a one-way twice.',
     short: [{ el: 'box' }, 'collides with a', { el: 'gate' }, '×2'],
     judge: (room, moves) => Object.values(oneWayLog(room, moves).boxHits).some(n => n >= 2),
   },
   boxStuckOnOneWay: {
-    text: 'A box ends on a one-way.',
+    text: 'Box ends on a one-way.',
     short: [{ el: 'box' }, 'ends on a', { el: 'gate' }],
     judge: (room, moves) => oneWayLog(room, moves).boxStuck,
   },

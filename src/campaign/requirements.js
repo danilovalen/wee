@@ -32,7 +32,7 @@ export function boxMoves(room, moves) {
 const STEP = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] };
 export const REQUIREMENTS = {
   throughOpenDoor: {
-    text: 'The robot passes through an open door.',
+    text: 'Robot through an open door.',
     short: [{ el: 'start' }, 'through an open', { el: 'door' }],
     // A closed door is solid, so standing on a door tile means it is open.
     judge: (room, moves) => {
@@ -43,7 +43,7 @@ export const REQUIREMENTS = {
   },
   throughDoorsOfTwoColours: {
     needs: { door: 2 },
-    text: 'The robot passes through doors of two colours.',
+    text: 'Robot through doors of two colours.',
     short: [{ el: 'start' }, 'through', { el: 'door' }, 'of two colours'],
     // Standing on a door tile means it is open (register 243).
     judge: (room, moves) => {
@@ -53,7 +53,7 @@ export const REQUIREMENTS = {
     },
   },
   hitsClosedDoor: {
-    text: 'The robot collides with a closed door.',
+    text: 'Robot collides with a closed door.',
     short: [{ el: 'start' }, 'collides with a closed', { el: 'door' }],
     // A slide that ends with a closed door on the next tile ahead: the door is what stopped it.
     judge: (room, moves) => {
@@ -71,7 +71,7 @@ export const REQUIREMENTS = {
   },
   throughOpenDoorTwice: {
     // Two passes, not two doors (register 257): the row says so.
-    text: 'The robot passes through an open door twice, the same door or another.',
+    text: 'Robot through an open door twice, the same door or another.',
     short: [{ el: 'start' }, '2 passes through an open', { el: 'door' }],
     // One pass is stepping onto a door tile from a tile that is not one: a slide across two
     // doors side by side passes once.
@@ -86,7 +86,7 @@ export const REQUIREMENTS = {
     },
   },
   touchBlockFourTimes: {
-    text: 'The robot touches the same block 4 times.',
+    text: 'Robot touches the same block 4 times.',
     short: ['touch one', { el: 'block' }, '×4'],
     // A touch is a slide that ends against a block, as a collision ends against a door.
     judge: (room, moves) => {
@@ -104,7 +104,7 @@ export const REQUIREMENTS = {
     },
   },
   boxOffButtonAtEnd: {
-    text: 'Every box is off its button when the robot reaches the goal.',
+    text: 'Every box off its button at the end.',
     short: ['every', { el: 'box' }, 'off the', { el: 'button' }, 'at the end'],
     judge: (room, moves) => {
       const end = replayPath(room, moves, () => {});
@@ -112,7 +112,7 @@ export const REQUIREMENTS = {
     },
   },
   doorClosedAtEnd: {
-    text: 'Every door is closed when the robot reaches the goal.',
+    text: 'Every door closed at the end.',
     short: ['every', { el: 'door' }, 'closed at the end'],
     judge: (room, moves) => {
       const end = replayPath(room, moves, () => {});
@@ -137,7 +137,7 @@ Object.assign(REQUIREMENTS, {
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
   },
   boxThroughOpenDoor: {
-    text: 'A box goes into an open doorway.',
+    text: 'Box into an open doorway.',
     short: [{ el: 'box' }, 'into an open', { el: 'door' }],
     // A closed door is solid, so a box on a door tile means it is open.
     judge: (room, moves) => {
@@ -147,7 +147,7 @@ Object.assign(REQUIREMENTS, {
     },
   },
   onlyBoxesFlipSwitches: {
-    text: 'Only boxes turn switches on and off. The robot never crosses one.',
+    text: 'Only boxes turn switches on and off; the robot never crosses one.',
     short: ['only', { el: 'box' }, 'flips', { el: 'toggle' }],
     judge: (room, moves) => {
       let robot = false, flipped = false;
@@ -159,28 +159,28 @@ Object.assign(REQUIREMENTS, {
     },
   },
   boxPushedThrice: {
-    text: 'One box is pushed in at least 3 moves.',
+    text: 'One box pushed in at least 3 moves.',
     short: [{ el: 'box' }, 'pushed ×3'],
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 3),
   },
   boxPushedTwiceHitOnce: {
-    text: 'One box is pushed in at least 2 moves, and the robot collides with it once without moving it.',
+    text: 'One box pushed in at least 2 moves, and hit once by the robot without moving.',
     short: [{ el: 'box' }, 'pushed ×2, collided ×1'],
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2 && b.hits >= 1),
   },
   // Level 5 (register 263): each box must do both, so a second box cannot share the work.
   everyBoxPushedTwice: {
-    text: 'Every box is pushed in at least 2 moves.',
+    text: 'Every box pushed in at least 2 moves.',
     short: ['every', { el: 'box' }, 'pushed 2 times'],
     judge: (room, moves) => { const b = boxMoves(room, moves); return b.length > 0 && b.every(x => x.pushes >= 2); },
   },
   everyBoxHitOnce: {
-    text: 'The robot collides with every box without moving it.',
+    text: 'Robot collides with every box without moving it.',
     short: [{ el: 'start' }, 'collides with every', { el: 'box' }],
     judge: (room, moves) => { const b = boxMoves(room, moves); return b.length > 0 && b.every(x => x.hits >= 1); },
   },
   everyToggleOffAtEnd: {
-    text: 'Every switch is off when the robot reaches the goal.',
+    text: 'Every switch off at the end.',
     short: ['every', { el: 'toggle' }, 'off at the end'],
     judge: (room, moves) => room.cells.some(c => c.startsWith('toggle:')) && replayPath(room, moves, () => {}).toggled.length === 0,
   },
@@ -190,7 +190,7 @@ Object.assign(REQUIREMENTS, {
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.onOff.has(i)); },
   },
   boxCrossesOpenDoor: {
-    text: 'A box goes through an open door and out the other side.',
+    text: 'Box through an open door and out the other side.',
     short: [{ el: 'box' }, 'crosses an open', { el: 'door' }],
     // Like a one-way: in through the door and off the far side; a box left on the door tile has not crossed.
     judge: (room, moves) => {
@@ -212,7 +212,7 @@ Object.assign(REQUIREMENTS, {
     },
   },
   boxCrushedByDoor: {
-    text: 'A box is crushed by a closing door.',
+    text: 'Box crushed by a closing door.',
     short: [{ el: 'box' }, 'crushed by a', { el: 'door' }],
     // A plain box does not hold a door open: a door closing on its doorway destroys the box in it.
     judge: (room, moves) => {

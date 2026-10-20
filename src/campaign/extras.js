@@ -44,22 +44,22 @@ const cellOf = (room, at) => at && at[0] >= 0 && at[1] >= 0 && at[0] < room.w &&
 export const EXTRA_REQUIREMENTS = {
   // Lasers (registers 255, 256).
   laserThroughOpenDoor: {
-    text: 'Every laser goes through an open door.',
+    text: 'Every laser through an open door.',
     short: ['every', { el: 'laser' }, 'through an open', { el: 'door' }],
     judge: (room, moves) => everyLaser(room, moves, b => b.path.slice(1).some(at => cellOf(room, at).startsWith('door:'))),
   },
   laserThroughADoor: {
-    text: 'A laser goes through an open door.',
+    text: 'Laser through an open door.',
     short: [{ el: 'laser' }, 'through an open', { el: 'door' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at).startsWith('door:'))) ok = true; }); return ok; },
   },
   laserThroughButton: {
-    text: 'A laser goes through a button.',
+    text: 'Laser through a button.',
     short: [{ el: 'laser' }, 'through a', { el: 'button' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at).startsWith('button:'))) ok = true; }); return ok; },
   },
   robotOnButton: {
-    text: 'The robot steps on a button.',
+    text: 'Robot steps on a button.',
     short: [{ el: 'start' }, 'steps on a', { el: 'button' }],
     judge: (room, moves) => {
       let ok = false;
@@ -69,7 +69,7 @@ export const EXTRA_REQUIREMENTS = {
   },
   laserThroughTwoDoors: {
     needs: { door: 2 },
-    text: 'A laser goes through two open doors at once.',
+    text: 'Laser through two open doors at once.',
     short: [{ el: 'laser' }, 'through 2 open', { el: 'door' }],
     judge: (room, moves) => {
       let ok = false;
@@ -78,12 +78,12 @@ export const EXTRA_REQUIREMENTS = {
     },
   },
   laserBlockedByDoor: {
-    text: 'A closed door stops every laser.',
+    text: 'Every laser stopped by a closed door.',
     short: ['every', { el: 'laser' }, 'stopped by a closed', { el: 'door' }],
     judge: (room, moves) => everyLaser(room, moves, b => cellOf(room, b.stop).startsWith('door:')),
   },
   laserThroughOneWay: {
-    text: 'A laser goes through a one-way.',
+    text: 'Laser through a one-way.',
     short: [{ el: 'laser' }, 'through a', { el: 'gate' }],
     judge: (room, moves) => {
       let ok = false;
@@ -92,7 +92,7 @@ export const EXTRA_REQUIREMENTS = {
     },
   },
   laserBlockedByOneWay: {
-    text: 'A one-way stops a laser.',
+    text: 'Laser stopped by a one-way.',
     short: [{ el: 'laser' }, 'stopped by a', { el: 'gate' }],
     judge: (room, moves) => {
       let ok = false;
@@ -102,24 +102,24 @@ export const EXTRA_REQUIREMENTS = {
   },
   twoTogglesOffAtEnd: {
     needs: { toggle: 2 },
-    text: 'At least 2 switches are off when the robot reaches the goal.',
+    text: 'At least 2 switches off at the end.',
     short: ['2', { el: 'toggle' }, 'off at the end'],
     judge: (room, moves) => switches(room).length - replayPath(room, moves, () => {}).toggled.length >= 2,
   },
   thirdToggleOnAtEnd: {
     needs: { toggle: 3 },
-    text: 'A third switch is on when the robot reaches the goal.',
+    text: 'Third switch on at the end.',
     short: ['a 3rd', { el: 'toggle' }, 'on at the end'],
     judge: (room, moves) => switches(room).length >= 3 && replayPath(room, moves, () => {}).toggled.length >= 1,
   },
   aToggleOffAtEnd: {
-    text: 'At least one switch is off when the robot reaches the goal.',
+    text: 'At least one switch off at the end.',
     short: ['a', { el: 'toggle' }, 'off at the end'],
     judge: (room, moves) => switches(room).length > replayPath(room, moves, () => {}).toggled.length,
   },
   // Register 277: a box on a coloured one-way when it turns is thrown out the other way.
   boxLaunched: {
-    text: 'A one-way turns with a box on it and throws the box out.',
+    text: 'One-way turns and throws out the box on it.',
     short: [{ el: 'gate' }, 'throws a', { el: 'box' }, 'out'],
     judge: (room, moves) => {
       let ok = false;
@@ -129,34 +129,34 @@ export const EXTRA_REQUIREMENTS = {
   },
   boxHitsBox: {
     needs: { box: 2 },
-    text: 'A box collides with another box.',
+    text: 'Box collides with another box.',
     short: [{ el: 'box' }, 'collides with a', { el: 'box' }],
     judge: (room, moves) => stoppedPushes(room, moves).out.some(h => live(h.s, h.x, h.y)),
   },
   boxOnButtonAtEnd: {
-    text: 'A box is on a button when the robot reaches the goal.',
+    text: 'Box on a button at the end.',
     short: [{ el: 'box' }, 'on a', { el: 'button' }, 'at the end'],
     judge: (room, moves) => replayPath(room, moves, () => {}).entities.some(e => !e.dead && e.kind === 'box' && /^button:/.test(room.cells[e.y * room.w + e.x] || '')),
   },
   noBoxAtEnd: {
-    text: 'No box is left when the robot reaches the goal.',
+    text: 'No box left at the end.',
     short: ['no', { el: 'box' }, 'at the end'],
     judge: (room, moves) => boxes(room) > 0 && !replayPath(room, moves, () => {}).entities.some(e => !e.dead && e.kind === 'box'),
   },
   oneWaysThreeWays: {
-    text: 'The one-ways point at least three different ways.',
+    text: 'One-ways pointing at least three ways.',
     short: [{ el: 'gate' }, 'pointing 3 ways'],
     judge: room => new Set(room.cells.filter(c => c.startsWith('gate:')).flatMap(c => c.slice(5).split('@')[0].split(','))).size >= 3,
   },
   lasersTwoWays: {
     needs: { laser: 2 },
-    text: 'The lasers point at least two different ways.',
+    text: 'Lasers pointing at least two ways.',
     short: [{ el: 'laser' }, 'pointing 2 ways'],
     judge: room => new Set(room.entities.filter(e => e.turret).map(e => e.turret.dirs[0])).size >= 2,
   },
   boxHitsTwoDoors: {
     needs: { door: 2 },
-    text: 'A box collides with two different closed doors.',
+    text: 'Box collides with two different closed doors.',
     short: [{ el: 'box' }, 'collides with 2 closed', { el: 'door' }],
     judge: (room, moves) => {
       const hit = new Set();

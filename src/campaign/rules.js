@@ -104,7 +104,7 @@ export function optionalGoals(def) {
     ...(def.small ? [{ id: 'small', parts: [`${def.small[0]}×${def.small[1]} or smaller`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] }] : []),
     ...(def.optional || []).map(id => ({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: v => !!(v.pathGoals && v.pathGoals[id]) })),
   ];
-  return own.length < 2 ? own : [...own, { id: 'mix', parts: ['any 2 optional goals at once'], text: 'Meet two of the other optional goals in the same run.', mix: 2 }];
+  return own.length < 2 ? own : [...own, { id: 'mix', parts: ['any 2 optional goals at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
 }
 // Each optional goal judged on one run's verdict; mix counts the others.
 export function optionalResults(def, v) {
