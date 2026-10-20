@@ -764,6 +764,7 @@ const M = [
   ['src/campaign/extras.js', "replayPath(room, moves, s => { if ((room.cells[s.player.y * room.w + s.player.x] || '').startsWith('button:')) ok = true; });", "replayPath(room, moves, () => { ok = true; });", 'campaign'],
   ['src/app/campaign.js', "    if (max !== null && max !== undefined) rows.push(", "    if (false) rows.push(", 'campaign-play'],
   ['src/view/pieces.js', "if (badge && t.dirs.length > 1) modeBadge", "if (badge) modeBadge", 'sim'],
+  ['src/campaign/robot.js', "if (!hit) for (const k of keys) move(", "if (false) for (const k of keys) move(", 'campaign'],
   ['src/campaign/extras.js', "  return all.size > 0 && [...all].every(id => met.has(id));", "  return met.size > 0;", 'campaign'],
   ['src/campaign/extras.js', "e.turret.dirs[0])).size >= 2", "e.turret.dirs[0])).size >= 1", 'campaign'],
   ['src', "(!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind))", "false", 'campaign'],

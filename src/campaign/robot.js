@@ -70,6 +70,7 @@ export function replayPath(level, moves, see) {
 export function whyStuck(level, { max = MAX_STATES } = {}) {
   const start = createGame(level), keys = [...KEYS, ...(start.powers.cycle || start.powers.swim ? ['hide'] : [])];
   const seen = new Set([stateKey(start)]), opened = new Set(), held = new Set();
+  let hit = false;
   const note = s => {
     for (const [c, on] of Object.entries(s.open)) if (on) opened.add(c);
     s.cells.forEach((c, i) => {
@@ -81,6 +82,10 @@ export function whyStuck(level, { max = MAX_STATES } = {}) {
   let frontier = [start];
   while (frontier.length) {
     const next = [];
+    for (const s of frontier) {
+      // The solver drops a move that kills the robot; replaying each tick shows a laser hit it.
+      if (!hit) for (const k of keys) move(s, k, t => { if (t.deaths > s.deaths) hit = true; });
+    }
     for (const s of frontier) for (const pair of successors(s, keys)) {
       if (!pair || pair[1].won) continue;
       const t = pair[1], k = stateKey(t);
@@ -92,8 +97,8 @@ export function whyStuck(level, { max = MAX_STATES } = {}) {
   }
   const colours = [...new Set(start.cells.filter(c => /^door:/.test(c)).map(c => c.slice(5)))];
   const door = colours.find(c => !opened.has(c)) ?? null;
-  if (door === null) return { door, stuck: [], apart: false };
+  if (door === null) return { door, stuck: [], apart: false, hit };
   const own = start.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.endsWith(':' + door) ? [i] : []);
   const stuck = own.filter(i => !held.has(i));
-  return { door, stuck, apart: own.length > 0 && stuck.length === 0 };
+  return { door, stuck, apart: own.length > 0 && stuck.length === 0, hit };
 }

@@ -3840,6 +3840,7 @@ function replayPath(level, moves, see) {
 function whyStuck(level, { max = MAX_STATES } = {}) {
   const start = createGame(level), keys = [...KEYS, ...(start.powers.cycle || start.powers.swim ? ['hide'] : [])];
   const seen = new Set([stateKey(start)]), opened = new Set(), held = new Set();
+  let hit = false;
   const note = s => {
     for (const [c, on] of Object.entries(s.open)) if (on) opened.add(c);
     s.cells.forEach((c, i) => {
@@ -3851,6 +3852,10 @@ function whyStuck(level, { max = MAX_STATES } = {}) {
   let frontier = [start];
   while (frontier.length) {
     const next = [];
+    for (const s of frontier) {
+      // The solver drops a move that kills the robot; replaying each tick shows a laser hit it.
+      if (!hit) for (const k of keys) move(s, k, t => { if (t.deaths > s.deaths) hit = true; });
+    }
     for (const s of frontier) for (const pair of successors(s, keys)) {
       if (!pair || pair[1].won) continue;
       const t = pair[1], k = stateKey(t);
@@ -3862,10 +3867,10 @@ function whyStuck(level, { max = MAX_STATES } = {}) {
   }
   const colours = [...new Set(start.cells.filter(c => /^door:/.test(c)).map(c => c.slice(5)))];
   const door = colours.find(c => !opened.has(c)) ?? null;
-  if (door === null) return { door, stuck: [], apart: false };
+  if (door === null) return { door, stuck: [], apart: false, hit };
   const own = start.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.endsWith(':' + door) ? [i] : []);
   const stuck = own.filter(i => !held.has(i));
-  return { door, stuck, apart: own.length > 0 && stuck.length === 0 };
+  return { door, stuck, apart: own.length > 0 && stuck.length === 0, hit };
 }
 return { shortestPaths, allShortest, replayPath, whyStuck };
 })();
@@ -4527,6 +4532,9 @@ const HOLD = {
 function stuckText(room) {
   const w = whyStuck(room), xy = i => ({ x: i % room.w, y: Math.floor(i / room.w) });
   if (w.capped) return { why: 'The robot cannot reach the goal, and the room is too big to say why.', at: [] };
+  // A move that ends with the robot hit says so, and shows the lasers (register 286).
+  const lasers = () => room.entities.filter(e => e.turret).map(e => ({ x: e.x, y: e.y }));
+  if (!w.door && w.hit) return { why: 'The robot cannot reach the goal: a laser hits it on the way.', at: lasers() };
   if (!w.door) return { why: 'The robot cannot reach the goal from anywhere it can get to.', at: [] };
   const doors = room.cells.flatMap((c, i) => c === 'door:' + w.door ? [xy(i)] : []);
   const own = room.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.endsWith(':' + w.door) ? [i] : []);

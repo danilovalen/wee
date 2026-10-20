@@ -126,6 +126,9 @@ const HOLD = {
 export function stuckText(room) {
   const w = whyStuck(room), xy = i => ({ x: i % room.w, y: Math.floor(i / room.w) });
   if (w.capped) return { why: 'The robot cannot reach the goal, and the room is too big to say why.', at: [] };
+  // A move that ends with the robot hit says so, and shows the lasers (register 286).
+  const lasers = () => room.entities.filter(e => e.turret).map(e => ({ x: e.x, y: e.y }));
+  if (!w.door && w.hit) return { why: 'The robot cannot reach the goal: a laser hits it on the way.', at: lasers() };
   if (!w.door) return { why: 'The robot cannot reach the goal from anywhere it can get to.', at: [] };
   const doors = room.cells.flatMap((c, i) => c === 'door:' + w.door ? [xy(i)] : []);
   const own = room.cells.flatMap((c, i) => /^(button|toggle|receiver|sensor):/.test(c) && c.endsWith(':' + w.door) ? [i] : []);
