@@ -36,10 +36,10 @@ export const POWER_TEXT = {
   boomerang: 'While sliding, press back to slide the other way.',
   dive: 'While sliding, press the same arrow to land at once and crash.',
   laser: 'While sliding, press a side arrow to fire a beam that way.',
-  cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed. With Swim too, the same press does both.',
-  swim: 'When standing on land, press Space to start or stop swimming. The world takes a step. While swimming, you can go into water, at half speed.',
+  cycle: 'When standing, press Space to hide while the world takes a step, and you come back once it settles, squashed if anything is on you then (with Swim too, the same press does both).',
+  swim: 'When standing on land, press Space to start or stop swimming while the world takes a step, and while swimming you can go into water at half speed.',
   light: 'When standing still, light up dark rooms.',
-  armored: 'Weak enemies, blocks and closing doors cannot crush you, and bomb blasts cannot hurt you. Strong enemies, heavy boxes, beams and death blocks still can.',
+  armored: 'Weak enemies, blocks, closing doors and bomb blasts cannot hurt you, but strong enemies, heavy boxes, beams and death blocks still can.',
 };
 export const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', light: 'Light', armored: 'Armored' };
 

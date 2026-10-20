@@ -61,7 +61,7 @@ export function selectUp() {
 function copy() {
   if (!S.sel) return;
   S.clip = copyRegion(S.level, S.sel);
-  say(`Copied ${S.clip.w}x${S.clip.h}. Paste places it.`);
+  say(`Copied ${S.clip.w}x${S.clip.h}, and Paste places it.`);
   syncSelect();
 }
 function cut() {
@@ -89,7 +89,7 @@ function startPaste() {
   if (!S.clip) return;
   S.paste = JSON.parse(JSON.stringify(S.clip));
   S.sel = null;
-  say('Click or tap where the top-left corner goes. Rotate turns it.');
+  say('Click or tap where the top-left corner goes, and Rotate turns it.');
   syncSelect();
 }
 

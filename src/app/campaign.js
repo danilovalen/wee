@@ -134,9 +134,9 @@ export function syncBrief() {
   out.hidden = !v || S.camp.verdictGone;
   if (!v) return;
   out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
-  $('campVerdictText').textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
+  $('campVerdictText').textContent = !v.ok ? v.errors[0].msg
     : v.won ? `Made it in ${v.length} moves${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}.`
-      : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
+      : v.fail.why;
   // A run that cannot finish points at the tiles that stop it; tap the words to see them again.
   const points = stuckAt(v).length > 0;
   out.classList.toggle('points', points);
@@ -273,7 +273,7 @@ export function buildCampaign(actions, sandbox) {
     if (!S.camp || !S.camp.testing) return;
     const out = $('campVerdict');
     out.className = 'campVerdict won'; out.hidden = false;
-    $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}. A test does not count: Run judges the room.`;
+    $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}, and since a test does not count, Run judges the room.`;
     $('campVerdictText').onclick = null;
   });
   // The verdict is read once: the next touch anywhere else blanks it (its band keeps its place); the card keeps the marks.

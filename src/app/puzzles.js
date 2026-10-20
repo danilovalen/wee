@@ -45,6 +45,6 @@ export function buildPuzzles(actions) {
     const b = bests(), n = ev.detail.moves, id = S.puzzle.id;
     if (!b[id] || n < b[id]) { b[id] = n; keep(b); }
     const few = S.puzzle.fewest;
-    $('winText').textContent = few == null ? `Solved in ${n} moves.` : n === few ? `Solved in ${n} moves, the fewest there are.` : `Solved in ${n} moves. It can be done in ${few}.`;
+    $('winText').textContent = few == null ? `Solved in ${n} moves.` : n === few ? `Solved in ${n} moves, the fewest there are.` : `Solved in ${n} moves, and it can be done in ${few}.`;
   });
 }

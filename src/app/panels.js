@@ -21,7 +21,7 @@ import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
 import { icon } from './icons.js';
 
-const DEFAULT_HINT = touch ? 'Tap to place. Tap one again to remove it. Look changes nothing.' : 'Click to place. Click one again, or right click, to remove it. Look changes nothing.';
+const DEFAULT_HINT = touch ? 'Tap to place, tap one again to remove it, and Look changes nothing.' : 'Click to place, click one again or right click to remove it, and Look changes nothing.';
 function syncCtxText() {
   const note = [...document.querySelectorAll('.opt:not([hidden]) .note')].map(n => n.textContent).join(' ');
   const message = $('placeHint').textContent !== DEFAULT_HINT;
@@ -32,8 +32,8 @@ function syncCtxText() {
 
 export function keysText() {
   return touch
-    ? (S.mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : '')
-    : (S.mode === 'play' ? `Arrows slide. ${tapText()}R resets the room. E goes back to editing.` : 'E plays this room. ? lists every key.');
+    ? (S.mode === 'play' ? 'Swipe to slide, and while sliding, swipe again to use a power.' : '')
+    : (S.mode === 'play' ? `Arrows slide, ${tapText()}R resets the room and E goes back to editing.` : 'E plays this room and ? lists every key.');
 }
 
 function tapText() {

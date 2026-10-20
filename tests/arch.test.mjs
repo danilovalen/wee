@@ -40,6 +40,16 @@ check('the bundle builds from the entry with no cycle and no missing export', !!
 // Words on screen are separated by commas, never a middle dot (register 260).
 const dotted = [...files, 'index.html'].filter(f => /\u00b7|\\u00b7/.test(readFileSync(f, 'utf8')));
 check('no middle dot in the source or the page', dotted.length === 0, dotted.join(' '));
+// One sentence per message (register 310): "You are X. That thing Y." strings read machine-made.
+{
+  const code = files.filter(f => /^src\/(app|campaign|editor)\//.test(f)).map(f => readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter(l => !/^\s*\/\//.test(l)).map(l => l.replace(/\s\/\/ .*$/, '')).join('\n'));
+  const literals = code.flatMap(c => [...c.matchAll(/'([^'\n]*)'|`([^`]*)`/g)].map(m => m[1] ?? m[2]));
+  const html = readFileSync('index.html', 'utf8').replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, '');
+  const texts = [...literals, ...[...html.matchAll(/>([^<>]+)</g)].map(m => m[1]), ...[...html.matchAll(/(?:title|placeholder|aria-label)="([^"]+)"/g)].map(m => m[1])];
+  const two = texts.filter(t => /[a-z0-9)]\. +[A-Z]/.test(t));
+  check('no on-screen string holds two sentences', two.length === 0, two.join(' || '));
+}
+
 // The page is light only, so a browser's forced dark mode leaves it alone (register 285).
 const page = readFileSync('index.html', 'utf8'), sheet = readFileSync('style.css', 'utf8');
 check('the page declares itself light only', page.includes('<meta name="color-scheme" content="only light">') && /:root \{[^}]*color-scheme: only light;/.test(sheet));

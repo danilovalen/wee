@@ -99,7 +99,7 @@ export function start(recipe, seconds) {
   const finish = res => {
     setRunning(false);
     const entry = { recipe, level: res.level, verdict: res.verdict, fit: res.fit, at: new Date().toISOString() };
-    say(res.fit ? `Found one after ${res.tries} ${res.tries === 1 ? 'try' : 'tries'}.` : `Nothing fit after ${res.tries} tries. Here is the closest.`);
+    say(res.fit ? `Found one after ${res.tries} ${res.tries === 1 ? 'try' : 'tries'}.` : `Nothing fit after ${res.tries} tries, so here is the closest.`);
     keep(entry); show(entry);
   };
   const slice = () => {
@@ -126,8 +126,8 @@ export function start(recipe, seconds) {
 export function openInEditor(entry) {
   if (dirty()) {
     const name = S.room && S.room.name ? `"${S.room.name}"` : 'this unsaved room';
-    if (!confirm('This room has changes. Open the generated room instead?')) return false;
-    if (!confirm(`Replace ${name}? Its unsaved changes go. Undo brings them back.`)) return false;
+    if (!confirm('Open the generated room instead of this one, and lose its changes?')) return false;
+    if (!confirm(`Replace ${name}? Undo brings back its unsaved changes.`)) return false;
   }
   if (S.mode !== 'edit') A.setMode('edit');
   const prev = S.room, prevStamp = stampOf(S.level);
@@ -137,7 +137,7 @@ export function openInEditor(entry) {
   remember(null);
   A.syncPanel(); A.fit(); syncRoomsButton();
   $('genBox').close();
-  $('placeHint').textContent = 'A generated room. Name it and Save to keep it.';
+  $('placeHint').textContent = 'To keep this generated room, name it and Save.';
   return true;
 }
 

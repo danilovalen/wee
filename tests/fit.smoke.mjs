@@ -28,7 +28,7 @@ try {
       if (await over()) bad.push(t);
       if (t === 'turret' && !(await page.locator('[data-aim=up]').getAttribute('class') || '').includes('on')) await page.click('[data-aim=up]');
       if (await ctxCut()) cutTools.push(t);
-      if (t === 'turret') turretNote = await page.evaluate(() => !!document.getElementById('ctxNote').offsetParent && document.getElementById('ctxNote').textContent.includes('To mount it') && !document.getElementById('placeHint').offsetParent);
+      if (t === 'turret') turretNote = await page.evaluate(() => !!document.getElementById('ctxNote').offsetParent && document.getElementById('ctxNote').textContent.includes('to mount it') && !document.getElementById('placeHint').offsetParent);
     }
     check(`${w}x${h}: nothing scrolls, with any tool picked`, !bad.length, bad.join(' '));
     check(`${w}x${h}: the context bar shows every tool's controls and text whole, text under the controls`, !cutTools.length, cutTools.join(' '));

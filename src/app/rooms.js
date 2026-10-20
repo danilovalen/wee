@@ -19,7 +19,7 @@ let saved = [];
 
 // A template opened and left as it is has nothing to lose: it is clean until it changes.
 export const dirty = () => !S.camp && (!S.room || stampOf(S.level) !== (S.room.saved ?? S.room.template) || S.room.edited);
-export const leaveOk = () => !dirty() || confirm('This room has changes that are not saved. Leave them?');
+export const leaveOk = () => !dirty() || confirm('Leave the unsaved changes in this room?');
 
 export function syncRoomsButton() {
   noteChange(dirty());
@@ -56,7 +56,7 @@ export function fillCurrent() {
   $('roomDelete').disabled = !S.room || !S.room.id;
 }
 
-const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only. Export all to keep a copy.'; };
+const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only, so Export all to keep a copy.'; };
 
 export function say(msg) { $('roomsSay').textContent = msg; $('infoSay').textContent = msg; }
 
@@ -154,7 +154,7 @@ function renderList() {
       shown++;
     }
     if (i < saved.length) { setTimeout(slice, 0); return; }
-    if (!shown) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'No saved rooms yet. Make one with New room.'; ul.append(li); }
+    if (!shown) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'To save a room, make one with New room.'; ul.append(li); }
     $('libTools').hidden = !saved.length;
     // The filter lists every mechanism with how many rooms have it; the tally shows the gaps.
     const opts = [new Option('All rooms', ''), new Option(`Started generated (${counts[GENERATED] || 0})`, GENERATED)];
@@ -200,7 +200,7 @@ export function buildRooms(actions) {
     if (!S.room || !S.room.id || !confirm(`Delete "${S.room.name}"? This cannot be undone.`)) return;
     try { await remove(S.room.id); } catch (e) { say(e.message); return; }
     S.room.id = null; S.room.saved = null; remember(null);
-    say('Deleted. The room is still open here, unsaved.');
+    say('Deleted, and the room is still open here, unsaved.');
     fillCurrent(); syncRoomsButton(); await refresh();
   };
   $('roomDownload').onclick = () => download(($('roomName').value.trim() || 'room').replace(/[^\w-]+/g, '-') + '.wee', joinRoom({ id: S.room?.id || null, name: $('roomName').value, note: $('roomNote').value }, S.level));
@@ -220,7 +220,7 @@ export function buildRooms(actions) {
     if (!leaveOk()) return;
     openRoom(level, {}); S.room.saved = null; syncRoomsButton();
     $('codeIn').value = '';
-    closeAll(); $('placeHint').textContent = 'Opened from a code. Name it and save to keep it.';
+    closeAll(); $('placeHint').textContent = 'To keep this room from a code, name it and save.';
   };
   $('exportAll').onclick = async () => download('wee-rooms.weepack', pack(await refresh()));
   $('importBtn').onclick = () => $('importFile').click();
@@ -234,7 +234,7 @@ export function buildRooms(actions) {
       const { meta, level } = splitRoom(rooms[0]);
       openRoom(level, { name: meta.name || f.name.replace(/\.\w+$/, ''), note: meta.note });
       S.room.saved = null; syncRoomsButton();
-      closeAll(); $('placeHint').textContent = 'Opened. Save it to keep it.';
+      closeAll(); $('placeHint').textContent = 'To keep this room, save it.';
       return;
     }
     for (const r of rooms) await put({ ...r, id: r.id || newId() });
@@ -270,7 +270,7 @@ export async function bootRooms() {
       S.room.saved = savedRoom ? stampOf(splitRoom(savedRoom).level) : null;
       S.room.edited = true;
       syncRoomsButton();
-      $('placeHint').textContent = 'Your unsaved changes are back. Save to keep them.';
+      $('placeHint').textContent = 'To keep your unsaved changes, which are back, save them.';
       await openLibrary();
       return;
     } catch { clearDraft(); }

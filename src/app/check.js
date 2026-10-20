@@ -16,7 +16,7 @@ const PROGRESS_MS = 250;
 let liveTimer = null;
 const SAY = {
   solved: r => `Solvable in ${r.moves.length} ${r.moves.length === 1 ? 'move' : 'moves'}.`,
-  unsolvable: () => 'No solution. Every reachable position was tried.',
+  unsolvable: () => 'No solution: every reachable position was tried.',
   capped: r => `Stopped after ${r.states} positions without finding one.`,
   nogoal: () => 'Place a Goal to check the room.',
   realtime: () => 'Has real-time pieces, so it cannot be checked.',
@@ -54,7 +54,7 @@ export function runCheck(live = false) {
 
 function finish(r) {
   S.check.result = r;
-  $('checkText').textContent = S.check.live && r.status === 'capped' ? 'Too big to tell while editing. Press Check to search further.' : checkText(r);
+  $('checkText').textContent = S.check.live && r.status === 'capped' ? 'Too big to tell while editing, so press Check to search further.' : checkText(r);
   $('checkText').dataset.verdict = '1';
   $('checkText').classList.remove('stale');
   $('showSolution').hidden = r.status !== 'solved';
@@ -107,7 +107,7 @@ export function syncLint() {
   const warns = lint(S.level), sol = S.room && S.room.solution;
   if (sol && S.level.start && !rechecked) {
     const n = brokenAt(S.level, sol);
-    if (n) warns.unshift({ x: S.level.start.x, y: S.level.start.y, msg: `The saved solution no longer wins: it breaks at move ${n} of ${sol.length}. Check again and save.` });
+    if (n) warns.unshift({ x: S.level.start.x, y: S.level.start.y, msg: `The saved solution breaks at move ${n} of ${sol.length}, so check again and save.` });
   }
   $('lintBox').hidden = !warns.length;
   $('lintSum').textContent = `${warns.length} ${warns.length === 1 ? 'warning' : 'warnings'}`;

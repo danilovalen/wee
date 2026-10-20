@@ -781,6 +781,7 @@ const M = [
   ['src/level/room.js', "  ...(meta.puzzle ? { puzzle: true } : {}),\n", "", 'design'],
   ['src/app/progressCode.js', "  if (all.made) saveMade(all.made);\n", "", 'modes'],
   ['src/app/campaign.js', "$('campBack').textContent = def.made ? 'Maker' : 'Levels';", "", 'modes'],
+  ['index.html', "<p>Play as the little circle</p>", "<p>You are the little circle. It moves.</p>", 'arch'],
   ['src/campaign/extras.js', "  return all.size > 0 && [...all].every(id => met.has(id));", "  return met.size > 0;", 'campaign'],
   ['src/campaign/extras.js', "e.turret.dirs[0])).size >= 2", "e.turret.dirs[0])).size >= 1", 'campaign'],
   ['src', "(!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind))", "false", 'campaign'],

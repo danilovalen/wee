@@ -47,3 +47,4 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
 - When a rule changes, re-derive every number measured under the old one (size goals, exact counts, "no win found"), and say which ones moved (row 225).
 
 - Goal sentences are direct, starting on their subject with no article: "Laser through an open door.", not "A laser goes through an open door." Opening line after line on "A" or "The" reads machine-written (register 308).
+- One sentence per on-screen message: "You are X. That thing Y." strings read machine-made (register 310). The `arch` test holds it.

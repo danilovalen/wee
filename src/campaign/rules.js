@@ -152,7 +152,7 @@ export function check(def, room, opts) {
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
-  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'This room is too big for the robot to search. Make it smaller.' } };
+  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'To let the robot search this room, make it smaller.' } };
   const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
   // Each requirement holds on every shortest path or it is not met; the card marks each one.
@@ -166,7 +166,7 @@ export function check(def, room, opts) {
   base.missed = { ...failed };
   for (const id of def.optional || []) if (!base.pathGoals[id]) base.missed[id] = r.paths.find(path => !REQUIREMENTS[id].judge(room, path));
   if (!base.inRange) base.missed.steps = r.paths[0];
-  if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: r.length < min ? `${stepsText(st)} This one takes ${r.length}.` : `The shortest path takes at most ${max} moves. This one takes ${r.length}.` } };
+  if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: r.length < min ? `The shortest path takes ${r.length} moves, and it must take at least ${min}.` : `The shortest path takes ${r.length} moves, and it may take at most ${max}.` } };
   const over = overLimits(def, room)[0];
   if (over) return { ...base, won: false, fail: { path: r.paths[0], why: `Not met: ${over.msg}` } };
   const first = (def.require || []).find(id => id in failed);

@@ -136,7 +136,7 @@ const build = (def, rows) => {
   const open = ['P....', '.....', '.....', '.....', '....G'];
   const empty = check(d, build(d, open));
   ok('a run too short keeps its path for the moves row', empty.missed && empty.missed.steps.length === 2);
-  ok('an empty 5x5 is too short', empty.ok && !empty.won && empty.length === 2 && empty.fail.why.startsWith(stepsText(d.steps)), JSON.stringify(empty.fail));
+  ok('an empty 5x5 is too short', empty.ok && !empty.won && empty.length === 2 && /must take at least 4/.test(empty.fail.why), JSON.stringify(empty.fail));
   ok('a failure hands the robot a path to play', Array.isArray(empty.fail.path) && empty.fail.path.length === 2);
   ok('the room\'s edge stops the robot like a wall', allShortest(build(d, open)).length === 2);
   const win = build(d, ['P.#.#', '.....', '.###.', '.#...', '.#..G']);

@@ -415,7 +415,7 @@ try {
   check('unsaved work leads the library as its own tile', await page.locator('#openNow').isVisible() && (await page.textContent('#openNow')).includes('Smoke room') && (await page.textContent('#openNow')).includes('Unsaved changes'));
   await page.click('#openNow .roomRow');
   check('and tapping it goes back to that room', !(await page.locator('#roomsBox').isVisible()));
-  check('an unsaved edit comes back after a reload', (await text()).level.cells[ay * lvA.w + ax] === 'wall' && (await page.textContent('#roomsBtn')).includes('\u2022') && (await page.textContent('#placeHint')).includes('unsaved changes are back'));
+  check('an unsaved edit comes back after a reload', (await text()).level.cells[ay * lvA.w + ax] === 'wall' && (await page.textContent('#roomsBtn')).includes('\u2022') && (await page.textContent('#placeHint')).includes('unsaved changes, which are back'));
   await page.keyboard.press('Control+s');
   await page.waitForFunction(() => !document.getElementById('roomsBtn').textContent.includes('\u2022'));
   check('saving clears the draft', await page.evaluate(() => localStorage.getItem('wee.draft') === null));
@@ -602,13 +602,13 @@ try {
   await page.locator('#roomList .roomRow', { hasText: 'Par room' }).click();
   const blocked = JSON.parse(JSON.stringify(turnRoom)); blocked.cells[2 * 5 + 3] = 'wall';
   await page.evaluate(l => window.wee.loadLevel(l), blocked);
-  check('editing the room so its saved solution fails says so', (await page.textContent('#lintList')).includes('saved solution no longer wins'), await page.textContent('#lintList'));
+  check('editing the room so its saved solution fails says so', (await page.textContent('#lintList')).includes('saved solution breaks at move'), await page.textContent('#lintList'));
   const detour = room(['#####', '#P..#', '#.###', '#...#', '#####']); detour.cells[3 * 5 + 3] = 'goal';
   await page.evaluate(l => window.wee.loadLevel(l), detour);
-  check('a room with another way still warns before it is checked', (await page.textContent('#lintList')).includes('saved solution no longer wins'));
+  check('a room with another way still warns before it is checked', (await page.textContent('#lintList')).includes('saved solution breaks at move'));
   await page.click('#checkBtn');
   await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')));
-  check('and once Check finds the new way, the warning goes', !(await page.textContent('#lintList')).includes('saved solution no longer wins'), await page.textContent('#lintList'));
+  check('and once Check finds the new way, the warning goes', !(await page.textContent('#lintList')).includes('saved solution breaks at move'), await page.textContent('#lintList'));
   const lone = room(['#####', '#P.D#', '#####']);
   await page.evaluate(l => window.wee.loadLevel(l), lone);
   check('a door with no switch is a warning', (await page.textContent('#lintSum')) === '2 warnings' && (await page.textContent('#lintList')).includes('red door with no red switch'), await page.textContent('#lintList'));

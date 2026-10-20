@@ -95,7 +95,7 @@ try {
   const lost = await verdict();
   check('the verdict shows in its band and moves nothing', await page.locator('#campVerdict').isVisible() && (await box()) === before, before + ' / ' + await box());
   check('a run too short marks the moves row', (await marks()).startsWith('steps:unmet'), await marks());
-  check('an empty 5x5 is too short and says so', /takes at least 4 moves/.test(lost) && /Watch the robot/.test(lost), lost);
+  check('an empty 5x5 is too short and says so', /must take at least 4/.test(lost), lost);
   check('the robot plays the failing path', await page.evaluate(() => document.getElementById('mode').textContent === 'Edit'), await page.locator('#mode').textContent());
   // F1: a tap on the failed row draws a shortest path that missed it on the room.
   // Back in edit first, so the room is compared with itself and not with the robot playing.

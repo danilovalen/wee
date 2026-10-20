@@ -17,12 +17,12 @@
     <button id="puzzleBack" type="button" class="puzzle-only">Puzzles</button>
     <button id="mode" type="button" title="E">Play</button>
     <button id="campRun" type="button" class="camp-only primary">Run</button>
-    <button id="campTest" type="button" class="camp-only" title="Play your room by hand. A test is not judged.">Test</button>
+    <button id="campTest" type="button" class="camp-only" title="Play your room by hand; a test is not judged.">Test</button>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
     <button id="campReset" type="button" class="camp-only" data-edit>Reset</button>
     <button id="checkBtn" type="button" data-edit>Check</button>
-    <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room: colour, dots, lines and frames. Keys 1 to 4 cycle them, 0 turns them off.">Lenses</button>
+    <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room (colour, dots, lines and frames): keys 1 to 4 cycle them and 0 turns them off.">Lenses</button>
     <button id="genBtn" type="button" data-edit title="Generate a room">Generate</button>
     <span class="spacer"></span>
     <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
@@ -43,7 +43,7 @@
           <button id="selDelete" type="button">Delete</button>
           <button id="selRotate" type="button">Rotate</button>
           <button id="selPaste" type="button">Paste</button>
-          <small class="note">Drag to mark a box. Drag inside it to move it.</small>
+          <small class="note">Drag to mark a box, then drag inside it to move it.</small>
         </div>
         <div class="opt" data-for="look">
           <button id="playHere" type="button" hidden>Play from here</button>
@@ -67,7 +67,7 @@
           <button type="button" data-aim="right" title="Right">&rarr;</button>
           <button type="button" data-aim="down" title="Down">&darr;</button>
           <button type="button" data-aim="left" title="Left">&larr;</button>
-          <small class="note">Fires one way at a time, turning clockwise. To mount it, place it on a box, a heavy box or an enemy.</small>
+          <small class="note">Fires one way at a time and turns clockwise; to mount it, place it on a box, a heavy box or an enemy.</small>
         </div>
         <div class="opt" data-for="turret" id="startOpt">
           <span>Starts aiming</span>
@@ -217,24 +217,24 @@
     <div id="menuScene" class="menuScene" aria-hidden="true"></div>
     <b class="logo menuLogo">wee</b>
     <div class="menuList">
-      <section class="menuSec"><h2>For the robot</h2><p>Build the room. The robot plays it.</p>
+      <section class="menuSec"><h2>For the robot</h2><p>Build a room and the robot plays it</p>
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
         <button id="menuMaker" type="button" class="primary">Level maker</button></section>
-      <section class="menuSec"><h2>For you</h2><p>You are the little circle.</p>
+      <section class="menuSec"><h2>For you</h2><p>Play as the little circle</p>
         <button id="menuPuzzles" type="button" class="primary">Puzzles</button>
         <button id="menuSandbox" type="button" class="primary">Sandbox</button></section>
       <button id="menuDebug" type="button" title="Copies what the game knows about where you are.">Debug</button>
     </div>
   </dialog>
   <dialog id="resetBox" class="confirm">
-    <p>Reset the room to the level's start? Undo brings it back.</p>
+    <p>Reset the room to the level's start, which Undo can bring back?</p>
     <div class="row"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="makerBox" class="rooms maker">
     <div class="roomsHead"><b>Level maker</b><button id="makerMenu" type="button">Menu</button></div>
     <ul id="madeList" class="campList"></ul>
     <h3>Rules</h3>
-    <p class="hint">Pick what the room may hold and what the robot must do. Build it, then Run it like a campaign level.</p>
+    <p class="hint">Pick what the room may hold and what the robot must do, then build it and Run it like a campaign level.</p>
     <label class="mkRow">Name <input id="makerName" type="text" placeholder="My level"></label>
     <table class="mkPal"><thead><tr><th></th><th>Min</th><th>Max</th></tr></thead><tbody id="makerPal"></tbody></table>
     <label class="mkRow"><input id="makerTwo" type="checkbox"> Two colours</label>
@@ -247,7 +247,7 @@
   </dialog>
   <dialog id="puzzleBox" class="rooms">
     <div class="roomsHead"><b>Puzzles</b><button id="puzzleMenu" type="button">Menu</button></div>
-    <p id="puzzleNone" class="hint">No puzzles yet. In the Sandbox, open Rooms, hold a room and choose Add to Puzzles.</p>
+    <p id="puzzleNone" class="hint">To add a puzzle, open Rooms in the Sandbox, hold a room and choose Add to Puzzles.</p>
     <ul id="puzzleList" class="campList"></ul>
   </dialog>
   <dialog id="campBox" class="rooms">
@@ -261,7 +261,7 @@
     <div class="row"><button id="progYes" type="button" class="primary">Load</button><button id="progNo" type="button">Close</button></div>
   </dialog>
   <dialog id="progResetBox" class="confirm">
-    <p>Reset every level? Wins, rooms and goals are erased. To keep them, copy your progress first.</p>
+    <p>To keep your wins, rooms and goals, copy your progress before you reset every level.</p>
     <div class="row"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="roomsBox" class="rooms library">
@@ -323,7 +323,7 @@
   </dialog>
   <dialog id="genBox" class="rooms gen">
     <div class="roomsHead"><b>Generate a room</b><form method="dialog"><button>Close</button></form></div>
-    <p class="hint">Pick what the room is made of. Must use: the room has no solution or a different one without it. Allowed: it may be in the room. Real-time pieces are left out, since the solver cannot check them.</p>
+    <p class="hint">Pick what the room is made of: Must use means the room has no solution, or a different one, without it, and Allowed means it may be in the room (real-time pieces are left out, since the solver cannot check them).</p>
     <div class="genNums">
       <label class="genKeep" title="Keeps every tile, piece, start and goal of the room on screen, and adds only what it is missing."><input id="genKeep" type="checkbox"> Complete this room</label>
       <label>Width <input id="genW" type="number"></label>

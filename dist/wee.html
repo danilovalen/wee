@@ -617,12 +617,12 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
     <button id="puzzleBack" type="button" class="puzzle-only">Puzzles</button>
     <button id="mode" type="button" title="E">Play</button>
     <button id="campRun" type="button" class="camp-only primary">Run</button>
-    <button id="campTest" type="button" class="camp-only" title="Play your room by hand. A test is not judged.">Test</button>
+    <button id="campTest" type="button" class="camp-only" title="Play your room by hand; a test is not judged.">Test</button>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
     <button id="campReset" type="button" class="camp-only" data-edit>Reset</button>
     <button id="checkBtn" type="button" data-edit>Check</button>
-    <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room: colour, dots, lines and frames. Keys 1 to 4 cycle them, 0 turns them off.">Lenses</button>
+    <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room (colour, dots, lines and frames): keys 1 to 4 cycle them and 0 turns them off.">Lenses</button>
     <button id="genBtn" type="button" data-edit title="Generate a room">Generate</button>
     <span class="spacer"></span>
     <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
@@ -643,7 +643,7 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
           <button id="selDelete" type="button">Delete</button>
           <button id="selRotate" type="button">Rotate</button>
           <button id="selPaste" type="button">Paste</button>
-          <small class="note">Drag to mark a box. Drag inside it to move it.</small>
+          <small class="note">Drag to mark a box, then drag inside it to move it.</small>
         </div>
         <div class="opt" data-for="look">
           <button id="playHere" type="button" hidden>Play from here</button>
@@ -667,7 +667,7 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
           <button type="button" data-aim="right" title="Right">&rarr;</button>
           <button type="button" data-aim="down" title="Down">&darr;</button>
           <button type="button" data-aim="left" title="Left">&larr;</button>
-          <small class="note">Fires one way at a time, turning clockwise. To mount it, place it on a box, a heavy box or an enemy.</small>
+          <small class="note">Fires one way at a time and turns clockwise; to mount it, place it on a box, a heavy box or an enemy.</small>
         </div>
         <div class="opt" data-for="turret" id="startOpt">
           <span>Starts aiming</span>
@@ -817,24 +817,24 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
     <div id="menuScene" class="menuScene" aria-hidden="true"></div>
     <b class="logo menuLogo">wee</b>
     <div class="menuList">
-      <section class="menuSec"><h2>For the robot</h2><p>Build the room. The robot plays it.</p>
+      <section class="menuSec"><h2>For the robot</h2><p>Build a room and the robot plays it</p>
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
         <button id="menuMaker" type="button" class="primary">Level maker</button></section>
-      <section class="menuSec"><h2>For you</h2><p>You are the little circle.</p>
+      <section class="menuSec"><h2>For you</h2><p>Play as the little circle</p>
         <button id="menuPuzzles" type="button" class="primary">Puzzles</button>
         <button id="menuSandbox" type="button" class="primary">Sandbox</button></section>
       <button id="menuDebug" type="button" title="Copies what the game knows about where you are.">Debug</button>
     </div>
   </dialog>
   <dialog id="resetBox" class="confirm">
-    <p>Reset the room to the level's start? Undo brings it back.</p>
+    <p>Reset the room to the level's start, which Undo can bring back?</p>
     <div class="row"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="makerBox" class="rooms maker">
     <div class="roomsHead"><b>Level maker</b><button id="makerMenu" type="button">Menu</button></div>
     <ul id="madeList" class="campList"></ul>
     <h3>Rules</h3>
-    <p class="hint">Pick what the room may hold and what the robot must do. Build it, then Run it like a campaign level.</p>
+    <p class="hint">Pick what the room may hold and what the robot must do, then build it and Run it like a campaign level.</p>
     <label class="mkRow">Name <input id="makerName" type="text" placeholder="My level"></label>
     <table class="mkPal"><thead><tr><th></th><th>Min</th><th>Max</th></tr></thead><tbody id="makerPal"></tbody></table>
     <label class="mkRow"><input id="makerTwo" type="checkbox"> Two colours</label>
@@ -847,7 +847,7 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
   </dialog>
   <dialog id="puzzleBox" class="rooms">
     <div class="roomsHead"><b>Puzzles</b><button id="puzzleMenu" type="button">Menu</button></div>
-    <p id="puzzleNone" class="hint">No puzzles yet. In the Sandbox, open Rooms, hold a room and choose Add to Puzzles.</p>
+    <p id="puzzleNone" class="hint">To add a puzzle, open Rooms in the Sandbox, hold a room and choose Add to Puzzles.</p>
     <ul id="puzzleList" class="campList"></ul>
   </dialog>
   <dialog id="campBox" class="rooms">
@@ -861,7 +861,7 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
     <div class="row"><button id="progYes" type="button" class="primary">Load</button><button id="progNo" type="button">Close</button></div>
   </dialog>
   <dialog id="progResetBox" class="confirm">
-    <p>Reset every level? Wins, rooms and goals are erased. To keep them, copy your progress first.</p>
+    <p>To keep your wins, rooms and goals, copy your progress before you reset every level.</p>
     <div class="row"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="roomsBox" class="rooms library">
@@ -923,7 +923,7 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
   </dialog>
   <dialog id="genBox" class="rooms gen">
     <div class="roomsHead"><b>Generate a room</b><form method="dialog"><button>Close</button></form></div>
-    <p class="hint">Pick what the room is made of. Must use: the room has no solution or a different one without it. Allowed: it may be in the room. Real-time pieces are left out, since the solver cannot check them.</p>
+    <p class="hint">Pick what the room is made of: Must use means the room has no solution, or a different one, without it, and Allowed means it may be in the room (real-time pieces are left out, since the solver cannot check them).</p>
     <div class="genNums">
       <label class="genKeep" title="Keeps every tile, piece, start and goal of the room on screen, and adds only what it is missing."><input id="genKeep" type="checkbox"> Complete this room</label>
       <label>Width <input id="genW" type="number"></label>
@@ -3077,7 +3077,7 @@ function check(def, room, opts) {
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
-  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'This room is too big for the robot to search. Make it smaller.' } };
+  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'To let the robot search this room, make it smaller.' } };
   const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
   // Each requirement holds on every shortest path or it is not met; the card marks each one.
@@ -3091,7 +3091,7 @@ function check(def, room, opts) {
   base.missed = { ...failed };
   for (const id of def.optional || []) if (!base.pathGoals[id]) base.missed[id] = r.paths.find(path => !REQUIREMENTS[id].judge(room, path));
   if (!base.inRange) base.missed.steps = r.paths[0];
-  if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: r.length < min ? `${stepsText(st)} This one takes ${r.length}.` : `The shortest path takes at most ${max} moves. This one takes ${r.length}.` } };
+  if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: r.length < min ? `The shortest path takes ${r.length} moves, and it must take at least ${min}.` : `The shortest path takes ${r.length} moves, and it may take at most ${max}.` } };
   const over = overLimits(def, room)[0];
   if (over) return { ...base, won: false, fail: { path: r.paths[0], why: `Not met: ${over.msg}` } };
   const first = (def.require || []).find(id => id in failed);
@@ -4335,9 +4335,9 @@ function syncBrief() {
   out.hidden = !v || S.camp.verdictGone;
   if (!v) return;
   out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
-  $('campVerdictText').textContent = !v.ok ? v.errors.map(e => e.msg).join(' ')
+  $('campVerdictText').textContent = !v.ok ? v.errors[0].msg
     : v.won ? `Made it in ${v.length} moves${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}.`
-      : v.fail.why + (v.fail.path ? ' Watch the robot.' : '');
+      : v.fail.why;
   // A run that cannot finish points at the tiles that stop it; tap the words to see them again.
   const points = stuckAt(v).length > 0;
   out.classList.toggle('points', points);
@@ -4474,7 +4474,7 @@ function buildCampaign(actions, sandbox) {
     if (!S.camp || !S.camp.testing) return;
     const out = $('campVerdict');
     out.className = 'campVerdict won'; out.hidden = false;
-    $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}. A test does not count: Run judges the room.`;
+    $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}, and since a test does not count, Run judges the room.`;
     $('campVerdictText').onclick = null;
   });
   // The verdict is read once: the next touch anywhere else blanks it (its band keeps its place); the card keeps the marks.
@@ -4740,7 +4740,7 @@ function buildPuzzles(actions) {
     const b = bests(), n = ev.detail.moves, id = S.puzzle.id;
     if (!b[id] || n < b[id]) { b[id] = n; keep(b); }
     const few = S.puzzle.fewest;
-    $('winText').textContent = few == null ? `Solved in ${n} moves.` : n === few ? `Solved in ${n} moves, the fewest there are.` : `Solved in ${n} moves. It can be done in ${few}.`;
+    $('winText').textContent = few == null ? `Solved in ${n} moves.` : n === few ? `Solved in ${n} moves, the fewest there are.` : `Solved in ${n} moves, and it can be done in ${few}.`;
   });
 }
 return { bests, keep, openPuzzles, buildPuzzles };
@@ -4781,14 +4781,14 @@ function buildProgress() {
   const open = (text, value, load) => { say.textContent = text; code.value = value; $('progYes').hidden = !load; box.showModal(); };
   $('progCopy').onclick = async () => {
     const c = await toCode();
-    open('Your progress, as a code. Keep it somewhere; Load progress takes it back.', c, false);
+    open('Keep this code somewhere, and Load progress brings everything back.', c, false);
     code.select();
-    try { navigator.clipboard.writeText(c).then(() => { say.textContent = 'Copied. Keep it somewhere; Load progress takes it back.'; }, () => {}); } catch { /* no clipboard here */ }
+    try { navigator.clipboard.writeText(c).then(() => { say.textContent = 'Copied: keep it somewhere, and Load progress brings everything back.'; }, () => {}); } catch { /* no clipboard here */ }
   };
-  $('progLoad').onclick = () => open('Paste a progress code. It replaces the progress here.', '', true);
+  $('progLoad').onclick = () => open('Paste a progress code to replace the progress here.', '', true);
   $('progYes').onclick = async () => {
     const p = fromCode(code.value);
-    if (!p) { say.textContent = 'That code does not read as progress. Copy it again, whole.'; return; }
+    if (!p) { say.textContent = 'This code does not read as progress, so copy it again, whole.'; return; }
     await load(p); box.close(); openList();
   };
   $('progNo').onclick = () => box.close();
@@ -5198,7 +5198,7 @@ const PROGRESS_MS = 250;
 let liveTimer = null;
 const SAY = {
   solved: r => `Solvable in ${r.moves.length} ${r.moves.length === 1 ? 'move' : 'moves'}.`,
-  unsolvable: () => 'No solution. Every reachable position was tried.',
+  unsolvable: () => 'No solution: every reachable position was tried.',
   capped: r => `Stopped after ${r.states} positions without finding one.`,
   nogoal: () => 'Place a Goal to check the room.',
   realtime: () => 'Has real-time pieces, so it cannot be checked.',
@@ -5236,7 +5236,7 @@ function runCheck(live = false) {
 
 function finish(r) {
   S.check.result = r;
-  $('checkText').textContent = S.check.live && r.status === 'capped' ? 'Too big to tell while editing. Press Check to search further.' : checkText(r);
+  $('checkText').textContent = S.check.live && r.status === 'capped' ? 'Too big to tell while editing, so press Check to search further.' : checkText(r);
   $('checkText').dataset.verdict = '1';
   $('checkText').classList.remove('stale');
   $('showSolution').hidden = r.status !== 'solved';
@@ -5289,7 +5289,7 @@ function syncLint() {
   const warns = lint(S.level), sol = S.room && S.room.solution;
   if (sol && S.level.start && !rechecked) {
     const n = brokenAt(S.level, sol);
-    if (n) warns.unshift({ x: S.level.start.x, y: S.level.start.y, msg: `The saved solution no longer wins: it breaks at move ${n} of ${sol.length}. Check again and save.` });
+    if (n) warns.unshift({ x: S.level.start.x, y: S.level.start.y, msg: `The saved solution breaks at move ${n} of ${sol.length}, so check again and save.` });
   }
   $('lintBox').hidden = !warns.length;
   $('lintSum').textContent = `${warns.length} ${warns.length === 1 ? 'warning' : 'warnings'}`;
@@ -5609,7 +5609,7 @@ let saved = [];
 
 // A template opened and left as it is has nothing to lose: it is clean until it changes.
 const dirty = () => !S.camp && (!S.room || stampOf(S.level) !== (S.room.saved ?? S.room.template) || S.room.edited);
-const leaveOk = () => !dirty() || confirm('This room has changes that are not saved. Leave them?');
+const leaveOk = () => !dirty() || confirm('Leave the unsaved changes in this room?');
 
 function syncRoomsButton() {
   noteChange(dirty());
@@ -5646,7 +5646,7 @@ function fillCurrent() {
   $('roomDelete').disabled = !S.room || !S.room.id;
 }
 
-const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only. Export all to keep a copy.'; };
+const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only, so Export all to keep a copy.'; };
 
 function say(msg) { $('roomsSay').textContent = msg; $('infoSay').textContent = msg; }
 
@@ -5744,7 +5744,7 @@ function renderList() {
       shown++;
     }
     if (i < saved.length) { setTimeout(slice, 0); return; }
-    if (!shown) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'No saved rooms yet. Make one with New room.'; ul.append(li); }
+    if (!shown) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'To save a room, make one with New room.'; ul.append(li); }
     $('libTools').hidden = !saved.length;
     // The filter lists every mechanism with how many rooms have it; the tally shows the gaps.
     const opts = [new Option('All rooms', ''), new Option(`Started generated (${counts[GENERATED] || 0})`, GENERATED)];
@@ -5790,7 +5790,7 @@ function buildRooms(actions) {
     if (!S.room || !S.room.id || !confirm(`Delete "${S.room.name}"? This cannot be undone.`)) return;
     try { await remove(S.room.id); } catch (e) { say(e.message); return; }
     S.room.id = null; S.room.saved = null; remember(null);
-    say('Deleted. The room is still open here, unsaved.');
+    say('Deleted, and the room is still open here, unsaved.');
     fillCurrent(); syncRoomsButton(); await refresh();
   };
   $('roomDownload').onclick = () => download(($('roomName').value.trim() || 'room').replace(/[^\w-]+/g, '-') + '.wee', joinRoom({ id: S.room?.id || null, name: $('roomName').value, note: $('roomNote').value }, S.level));
@@ -5810,7 +5810,7 @@ function buildRooms(actions) {
     if (!leaveOk()) return;
     openRoom(level, {}); S.room.saved = null; syncRoomsButton();
     $('codeIn').value = '';
-    closeAll(); $('placeHint').textContent = 'Opened from a code. Name it and save to keep it.';
+    closeAll(); $('placeHint').textContent = 'To keep this room from a code, name it and save.';
   };
   $('exportAll').onclick = async () => download('wee-rooms.weepack', pack(await refresh()));
   $('importBtn').onclick = () => $('importFile').click();
@@ -5824,7 +5824,7 @@ function buildRooms(actions) {
       const { meta, level } = splitRoom(rooms[0]);
       openRoom(level, { name: meta.name || f.name.replace(/\.\w+$/, ''), note: meta.note });
       S.room.saved = null; syncRoomsButton();
-      closeAll(); $('placeHint').textContent = 'Opened. Save it to keep it.';
+      closeAll(); $('placeHint').textContent = 'To keep this room, save it.';
       return;
     }
     for (const r of rooms) await put({ ...r, id: r.id || newId() });
@@ -5860,7 +5860,7 @@ async function bootRooms() {
       S.room.saved = savedRoom ? stampOf(splitRoom(savedRoom).level) : null;
       S.room.edited = true;
       syncRoomsButton();
-      $('placeHint').textContent = 'Your unsaved changes are back. Save to keep them.';
+      $('placeHint').textContent = 'To keep your unsaved changes, which are back, save them.';
       await openLibrary();
       return;
     } catch { clearDraft(); }
@@ -6104,10 +6104,10 @@ const POWER_TEXT = {
   boomerang: 'While sliding, press back to slide the other way.',
   dive: 'While sliding, press the same arrow to land at once and crash.',
   laser: 'While sliding, press a side arrow to fire a beam that way.',
-  cycle: 'When standing, press Space to hide. The world takes a step, and you come back once it settles. If anything is on you then, you are squashed. With Swim too, the same press does both.',
-  swim: 'When standing on land, press Space to start or stop swimming. The world takes a step. While swimming, you can go into water, at half speed.',
+  cycle: 'When standing, press Space to hide while the world takes a step, and you come back once it settles, squashed if anything is on you then (with Swim too, the same press does both).',
+  swim: 'When standing on land, press Space to start or stop swimming while the world takes a step, and while swimming you can go into water at half speed.',
   light: 'When standing still, light up dark rooms.',
-  armored: 'Weak enemies, blocks and closing doors cannot crush you, and bomb blasts cannot hurt you. Strong enemies, heavy boxes, beams and death blocks still can.',
+  armored: 'Weak enemies, blocks, closing doors and bomb blasts cannot hurt you, but strong enemies, heavy boxes, beams and death blocks still can.',
 };
 const NAMES = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', light: 'Light', armored: 'Armored' };
 
@@ -6893,7 +6893,7 @@ function selectUp() {
 function copy() {
   if (!S.sel) return;
   S.clip = copyRegion(S.level, S.sel);
-  say(`Copied ${S.clip.w}x${S.clip.h}. Paste places it.`);
+  say(`Copied ${S.clip.w}x${S.clip.h}, and Paste places it.`);
   syncSelect();
 }
 function cut() {
@@ -6921,7 +6921,7 @@ function startPaste() {
   if (!S.clip) return;
   S.paste = JSON.parse(JSON.stringify(S.clip));
   S.sel = null;
-  say('Click or tap where the top-left corner goes. Rotate turns it.');
+  say('Click or tap where the top-left corner goes, and Rotate turns it.');
   syncSelect();
 }
 
@@ -6993,7 +6993,7 @@ const { icon } = m27;
 
 
 
-const DEFAULT_HINT = touch ? 'Tap to place. Tap one again to remove it. Look changes nothing.' : 'Click to place. Click one again, or right click, to remove it. Look changes nothing.';
+const DEFAULT_HINT = touch ? 'Tap to place, tap one again to remove it, and Look changes nothing.' : 'Click to place, click one again or right click to remove it, and Look changes nothing.';
 function syncCtxText() {
   const note = [...document.querySelectorAll('.opt:not([hidden]) .note')].map(n => n.textContent).join(' ');
   const message = $('placeHint').textContent !== DEFAULT_HINT;
@@ -7004,8 +7004,8 @@ function syncCtxText() {
 
 function keysText() {
   return touch
-    ? (S.mode === 'play' ? 'Swipe to slide. While sliding, swipe again to use a power.' : '')
-    : (S.mode === 'play' ? `Arrows slide. ${tapText()}R resets the room. E goes back to editing.` : 'E plays this room. ? lists every key.');
+    ? (S.mode === 'play' ? 'Swipe to slide, and while sliding, swipe again to use a power.' : '')
+    : (S.mode === 'play' ? `Arrows slide, ${tapText()}R resets the room and E goes back to editing.` : 'E plays this room and ? lists every key.');
 }
 
 function tapText() {
@@ -8125,7 +8125,7 @@ function start(recipe, seconds) {
   const finish = res => {
     setRunning(false);
     const entry = { recipe, level: res.level, verdict: res.verdict, fit: res.fit, at: new Date().toISOString() };
-    say(res.fit ? `Found one after ${res.tries} ${res.tries === 1 ? 'try' : 'tries'}.` : `Nothing fit after ${res.tries} tries. Here is the closest.`);
+    say(res.fit ? `Found one after ${res.tries} ${res.tries === 1 ? 'try' : 'tries'}.` : `Nothing fit after ${res.tries} tries, so here is the closest.`);
     keep(entry); show(entry);
   };
   const slice = () => {
@@ -8152,8 +8152,8 @@ function start(recipe, seconds) {
 function openInEditor(entry) {
   if (dirty()) {
     const name = S.room && S.room.name ? `"${S.room.name}"` : 'this unsaved room';
-    if (!confirm('This room has changes. Open the generated room instead?')) return false;
-    if (!confirm(`Replace ${name}? Its unsaved changes go. Undo brings them back.`)) return false;
+    if (!confirm('Open the generated room instead of this one, and lose its changes?')) return false;
+    if (!confirm(`Replace ${name}? Undo brings back its unsaved changes.`)) return false;
   }
   if (S.mode !== 'edit') A.setMode('edit');
   const prev = S.room, prevStamp = stampOf(S.level);
@@ -8163,7 +8163,7 @@ function openInEditor(entry) {
   remember(null);
   A.syncPanel(); A.fit(); syncRoomsButton();
   $('genBox').close();
-  $('placeHint').textContent = 'A generated room. Name it and Save to keep it.';
+  $('placeHint').textContent = 'To keep this generated room, name it and Save.';
   return true;
 }
 

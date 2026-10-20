@@ -28,14 +28,14 @@ export function buildProgress() {
   const open = (text, value, load) => { say.textContent = text; code.value = value; $('progYes').hidden = !load; box.showModal(); };
   $('progCopy').onclick = async () => {
     const c = await toCode();
-    open('Your progress, as a code. Keep it somewhere; Load progress takes it back.', c, false);
+    open('Keep this code somewhere, and Load progress brings everything back.', c, false);
     code.select();
-    try { navigator.clipboard.writeText(c).then(() => { say.textContent = 'Copied. Keep it somewhere; Load progress takes it back.'; }, () => {}); } catch { /* no clipboard here */ }
+    try { navigator.clipboard.writeText(c).then(() => { say.textContent = 'Copied: keep it somewhere, and Load progress brings everything back.'; }, () => {}); } catch { /* no clipboard here */ }
   };
-  $('progLoad').onclick = () => open('Paste a progress code. It replaces the progress here.', '', true);
+  $('progLoad').onclick = () => open('Paste a progress code to replace the progress here.', '', true);
   $('progYes').onclick = async () => {
     const p = fromCode(code.value);
-    if (!p) { say.textContent = 'That code does not read as progress. Copy it again, whole.'; return; }
+    if (!p) { say.textContent = 'This code does not read as progress, so copy it again, whole.'; return; }
     await load(p); box.close(); openList();
   };
   $('progNo').onclick = () => box.close();
