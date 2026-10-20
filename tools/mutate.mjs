@@ -794,11 +794,14 @@ const M = [
   ['src', "export function colouringsOf(def, el) {\n", "export function colouringsOf(def, el) {\n  return coloursOf(def);\n", 'campaign'],
   ['src', "return !pair || !two ? one : two === 'only' ? [pair] : [...one, pair];", "return !pair || !two ? one : [...one, pair];", 'campaign'],
   // Register 318: the side pairs sit beside the room, which leaves them the width.
-  ['src/app/fit.js', "  const side = EDGE + SIDE;", "  const side = EDGE;", 'size-buttons'],
+  ['src/app/fit.js', "  const side = (S.camp || S.simple ? 4 : EDGE) + SIDE;", "  const side = S.camp || S.simple ? 4 : EDGE;", 'size-buttons'],
   ['style.css', ".growBar[data-bar=left] { right: 100%; }", ".growBar[data-bar=left] { right: calc(100% + 6px); }", 'size-buttons'],
   ['style.css', ".plus { background: var(--add-bg); color: var(--add-ink); }", ".plus { background: var(--cut-bg); color: var(--cut-ink); }", 'size-buttons'],
   ['src/app/campaign.js', "const c = icon(p.el === 'start' ? 'robot' : TOOL[p.el])", "const c = icon(p.el === 'start' ? 'start' : TOOL[p.el])", 'campaign-play'],
   ['src/app/icons.js', "(tool === 'robot' ? drawRobot : drawYou)(x)", "drawYou(x)", 'campaign-play'],
+  // Registers 330, 339, 340: a gold laser; the relay a soft eight-point star.
+  ['src/view/pieces.js', "g.fillStyle = d === next ? INK.zap : INK.barrel;", "g.fillStyle = d === next ? INK.beam : INK.barrel;", 'sim'],
+  ['src/app/lenses.js', "colour: INK.zap }", "colour: INK.beam }", 'lensui'],
   // Registers 322, 331, 332: joined strips, Reset at the right, editing buttons hidden in play.
   ['style.css', "body.campaign.play :is(#undo, #redo, #campReset) { display: none; }", "", 'campaign-play'],
   ['style.css', "body.campaign #campReset { order: 6; margin-left: auto; }", "", 'campaign-play'],

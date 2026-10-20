@@ -24,13 +24,13 @@ export function drawTurret(g, t, badge, mounted) {
   if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
   for (const d of t.dirs) {
     g.save(); g.translate(16, 16); g.rotate(AIM[d]);
-    g.fillStyle = d === next ? INK.beam : INK.barrel;
+    g.fillStyle = d === next ? INK.zap : INK.barrel;
     roundRect(g, 4, -3, 11, 6, 2); g.fill();
     g.restore();
   }
   g.fillStyle = '#20242f'; g.beginPath(); g.arc(16, 16, 7, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = INK.beam; g.lineWidth = 1.5; g.stroke();
-  g.fillStyle = INK.beam; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = INK.zap; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = INK.zap; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
   g.restore();
   // One direction always fires the same way, so how it turns says nothing (register 300).
   if (badge && t.dirs.length > 1) modeBadge(g, t.mode, badge[0], badge[1]);

@@ -1169,7 +1169,7 @@ const LONG = ['##########', '#..P....##', '##########'];
 {
   const lit = [];
   let angle = 0;
-  const g = new Proxy({}, { get: (o, k) => k === 'rotate' ? a => { angle = a; } : k === 'restore' ? () => { angle = 0; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle' && v === INK.beam && angle) lit.push(angle); o[k] = v; return true; } });
+  const g = new Proxy({}, { get: (o, k) => k === 'rotate' ? a => { angle = a; } : k === 'restore' ? () => { angle = 0; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle' && v === INK.zap && angle) lit.push(angle); o[k] = v; return true; } });
   drawTurret(g, { dirs: ['up', 'down'], mode: 'input', start: 'down' });
   check('the editor lights the barrel a turret fires first', lit.length === 1 && Math.abs(lit[0] - Math.PI / 2) < 1e-9, JSON.stringify(lit));
 }

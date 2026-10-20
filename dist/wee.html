@@ -3331,7 +3331,7 @@ const INK = {
   armor: '#b9c7e6',
   floor: '#e4e7ec', grid: '#d6dae2', wall: '#a9b0bf', wallTop: '#c3c9d5', crack: '#5b6070',
   player: '#7b6cff', start: '#7b6cff', robotDark: '#4b3fd6', robotTip: '#ff6b81', robotVisor: '#2a2440', robotEye: '#7ef0ff', shadow: 'rgba(40,44,60,0.22)',
-  mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff4d6d', barrel: '#8f86d9', box: '#ffa94d', boxEdge: '#c97326',
+  mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff4d6d', zap: '#ffb400', zapCore: '#fff4c2', barrel: '#8f86d9', box: '#ffa94d', boxEdge: '#c97326',
   heavy: '#9b8cff', heavyEdge: '#5b4fc8', bomb: '#3d4256', bombHi: '#7d8399', fuse: '#b08a5c', spark: '#ff9a3d', blast: '#ff8a3d', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
   red: '#ff6b81', blue: '#5aa9ff', yellow: '#ffd84d', green: '#5edc9a',
   mark: '#3a3f4c', deathBg: '#7a2747', deathSpike: '#ffb0c0', gateBg: '#3a3f4c', gateArrow: '#5edc9a', unlit: '#5b6070', spring: '#ffc23d', gravel: '#dcb88f', gravelDot: '#a98058', gravelHi: '#f4e1c6',
@@ -3383,13 +3383,13 @@ function drawTurret(g, t, badge, mounted) {
   if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
   for (const d of t.dirs) {
     g.save(); g.translate(16, 16); g.rotate(AIM[d]);
-    g.fillStyle = d === next ? INK.beam : INK.barrel;
+    g.fillStyle = d === next ? INK.zap : INK.barrel;
     roundRect(g, 4, -3, 11, 6, 2); g.fill();
     g.restore();
   }
   g.fillStyle = '#20242f'; g.beginPath(); g.arc(16, 16, 7, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = INK.beam; g.lineWidth = 1.5; g.stroke();
-  g.fillStyle = INK.beam; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = INK.zap; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = INK.zap; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
   g.restore();
   // One direction always fires the same way, so how it turns says nothing (register 300).
   if (badge && t.dirs.length > 1) modeBadge(g, t.mode, badge[0], badge[1]);
@@ -3538,6 +3538,15 @@ function grit(g, X, Y) {
   }
 }
 
+// The relay's star: eight points, outer radius 12, inner 10.5, each corner rounded, scaled by k.
+const STAR = Array.from({ length: 16 }, (_, i) => { const r = i % 2 ? 10.5 : 12, t = -Math.PI / 2 + i * Math.PI / 8; return [Math.cos(t) * r, Math.sin(t) * r]; });
+function star(g, k) {
+  const P = STAR.map(([x, y]) => [x * k, y * k]), mid = i => { const a = P[i], b = P[(i + 1) % 16]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; };
+  g.beginPath(); g.moveTo(...mid(15));
+  for (let i = 0; i < 16; i++) g.arcTo(P[i][0], P[i][1], ...mid(i), 1.8 * k);
+  g.closePath();
+}
+
 function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   if (!c) return;
   // A piece of two colours is drawn twice, each colour on its half, both showing the pair's state:
@@ -3636,12 +3645,14 @@ function drawCell(g, c, x, y, s, scale = 1, bare = false) {
       g.restore();
     }
   } else if (c.startsWith('sensor:')) {
-    // A floor plate a beam lights as it crosses: a coloured diamond that glows while lit.
+    // A block a beam goes through, lighting it: a soft eight-point star in its colour, its core filled
+    // while lit (registers 339, 340: a diamond read as a mirror).
     const col = c.slice(7), lit = s && s.lit.has(y * s.w + x);
-    g.translate(16, 16); g.rotate(Math.PI / 4);
-    g.strokeStyle = INK[col]; g.lineWidth = 2.5; g.strokeRect(-8, -8, 16, 16);
-    g.fillStyle = INK[col]; g.globalAlpha = lit ? 1 : 0.25; g.fillRect(-4, -4, 8, 8); g.globalAlpha = 1;
-    if (lit) { g.globalAlpha = 0.3; g.fillRect(-12, -12, 24, 24); g.globalAlpha = 1; }
+    g.translate(16, 16); g.lineJoin = 'round';
+    g.strokeStyle = g.fillStyle = INK[col]; g.lineWidth = 2.5; star(g, 1); g.stroke();
+    g.globalAlpha = lit ? 1 : 0.25; star(g, 0.5); g.fill();
+    if (lit) { g.globalAlpha = 0.3; star(g, 1.25); g.fill(); }
+    g.globalAlpha = 1;
   } else if (c.startsWith('receiver:')) {
     // A catcher: a block with a coloured eye that glows while a beam holds it.
     const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
@@ -4128,7 +4139,8 @@ function drawPlay(g, s, prev, alpha, fx, now) {
     if (f.wall) { const [x, y] = c(f.path[f.path.length - 1]), [dx, dy] = DIRS[f.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
     g.stroke(); g.globalAlpha = 1;
   }
-  // Turret beams are on all the time: a core line with a soft glow and a slow flicker.
+  // Turret beams are on all the time: an electric gold, no button's colour (register 330), a pale
+  // core in a soft glow with a slow flicker.
   for (const b of s.beams) {
     const c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
     const line = () => {
@@ -4138,8 +4150,9 @@ function drawPlay(g, s, prev, alpha, fx, now) {
       g.stroke();
     };
     g.lineJoin = 'round'; g.lineCap = 'round';
-    g.strokeStyle = INK.beam; g.globalAlpha = 0.25 + 0.08 * Math.sin(now / 90); g.lineWidth = 9; line();
-    g.globalAlpha = 1; g.lineWidth = 2.5; g.strokeStyle = INK.beam; line();
+    g.strokeStyle = INK.zap; g.globalAlpha = 0.3 + 0.08 * Math.sin(now / 90); g.lineWidth = 9; line();
+    g.globalAlpha = 1; g.lineWidth = 3; line();
+    g.lineWidth = 1.2; g.strokeStyle = INK.zapCore; line();
     g.lineCap = 'butt';
   }
   // A boomerang kicks up a puff of cloud where you turned, blown the way you were going.
@@ -6464,7 +6477,7 @@ function lensMarks() {
   const colour = lensOn('colour'), out = {};
   if (L().open && S.mode === 'edit') {
     if (d && colour === 'distance') out.heat = { distance: d.distance, hopeless: S.level.cells.includes('goal') ? d.hopeless : [] };
-    if (d && colour === 'beams') out.heat = { tiles: d.beams, colour: INK.beam };
+    if (d && colour === 'beams') out.heat = { tiles: d.beams, colour: INK.zap };
     if (d && colour === 'pieces') out.heat = { tiles: d.pieces, colour: INK.box };
     if (st && lensOn('dots') === 'stops') out.dots = st.list || [...(st.out.stops || [])];
     if (d && lensOn('dots') === 'passes') { out.dots = [...d.stops]; out.small = [...d.passes]; }
@@ -6754,7 +6767,7 @@ const ARROW = (c, w = 1.6) => `<path d="M2 6H20" stroke="${c}" stroke-width="${w
 const MARK = {
   off: `<path d="M6 6H20" stroke="currentColor" stroke-opacity=".4" stroke-width="1.5"/>`,
   distance: `<defs><linearGradient id="chipDist"><stop offset="0" stop-color="hsl(120,75%,45%)"/><stop offset="1" stop-color="hsl(0,75%,45%)"/></linearGradient></defs><rect x="1" y="2" width="24" height="8" rx="2" fill="url(#chipDist)"/>`,
-  beams: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.beam}" fill-opacity=".55"/>`,
+  beams: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.zap}" fill-opacity=".55"/>`,
   pieces: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.box}" fill-opacity=".6"/>`,
   stops: `<circle cx="13" cy="6" r="3.5" fill="${INK.player}"/>`,
   passes: `<circle cx="7" cy="6" r="3.5" fill="${INK.player}"/><circle cx="15" cy="6" r="1.6" fill="${INK.player}"/><circle cx="21" cy="6" r="1.6" fill="${INK.player}"/>`,

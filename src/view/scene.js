@@ -203,7 +203,8 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     if (f.wall) { const [x, y] = c(f.path[f.path.length - 1]), [dx, dy] = DIRS[f.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
     g.stroke(); g.globalAlpha = 1;
   }
-  // Turret beams are on all the time: a core line with a soft glow and a slow flicker.
+  // Turret beams are on all the time: an electric gold, no button's colour (register 330), a pale
+  // core in a soft glow with a slow flicker.
   for (const b of s.beams) {
     const c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
     const line = () => {
@@ -213,8 +214,9 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
       g.stroke();
     };
     g.lineJoin = 'round'; g.lineCap = 'round';
-    g.strokeStyle = INK.beam; g.globalAlpha = 0.25 + 0.08 * Math.sin(now / 90); g.lineWidth = 9; line();
-    g.globalAlpha = 1; g.lineWidth = 2.5; g.strokeStyle = INK.beam; line();
+    g.strokeStyle = INK.zap; g.globalAlpha = 0.3 + 0.08 * Math.sin(now / 90); g.lineWidth = 9; line();
+    g.globalAlpha = 1; g.lineWidth = 3; line();
+    g.lineWidth = 1.2; g.strokeStyle = INK.zapCore; line();
     g.lineCap = 'butt';
   }
   // A boomerang kicks up a puff of cloud where you turned, blown the way you were going.

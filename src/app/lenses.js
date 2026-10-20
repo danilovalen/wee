@@ -110,7 +110,7 @@ export function lensMarks() {
   const colour = lensOn('colour'), out = {};
   if (L().open && S.mode === 'edit') {
     if (d && colour === 'distance') out.heat = { distance: d.distance, hopeless: S.level.cells.includes('goal') ? d.hopeless : [] };
-    if (d && colour === 'beams') out.heat = { tiles: d.beams, colour: INK.beam };
+    if (d && colour === 'beams') out.heat = { tiles: d.beams, colour: INK.zap };
     if (d && colour === 'pieces') out.heat = { tiles: d.pieces, colour: INK.box };
     if (st && lensOn('dots') === 'stops') out.dots = st.list || [...(st.out.stops || [])];
     if (d && lensOn('dots') === 'passes') { out.dots = [...d.stops]; out.small = [...d.passes]; }

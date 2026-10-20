@@ -10,6 +10,15 @@ export function grit(g, X, Y) {
   }
 }
 
+// The relay's star: eight points, outer radius 12, inner 10.5, each corner rounded, scaled by k.
+const STAR = Array.from({ length: 16 }, (_, i) => { const r = i % 2 ? 10.5 : 12, t = -Math.PI / 2 + i * Math.PI / 8; return [Math.cos(t) * r, Math.sin(t) * r]; });
+function star(g, k) {
+  const P = STAR.map(([x, y]) => [x * k, y * k]), mid = i => { const a = P[i], b = P[(i + 1) % 16]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; };
+  g.beginPath(); g.moveTo(...mid(15));
+  for (let i = 0; i < 16; i++) g.arcTo(P[i][0], P[i][1], ...mid(i), 1.8 * k);
+  g.closePath();
+}
+
 export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   if (!c) return;
   // A piece of two colours is drawn twice, each colour on its half, both showing the pair's state:
@@ -108,12 +117,14 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
       g.restore();
     }
   } else if (c.startsWith('sensor:')) {
-    // A floor plate a beam lights as it crosses: a coloured diamond that glows while lit.
+    // A block a beam goes through, lighting it: a soft eight-point star in its colour, its core filled
+    // while lit (registers 339, 340: a diamond read as a mirror).
     const col = c.slice(7), lit = s && s.lit.has(y * s.w + x);
-    g.translate(16, 16); g.rotate(Math.PI / 4);
-    g.strokeStyle = INK[col]; g.lineWidth = 2.5; g.strokeRect(-8, -8, 16, 16);
-    g.fillStyle = INK[col]; g.globalAlpha = lit ? 1 : 0.25; g.fillRect(-4, -4, 8, 8); g.globalAlpha = 1;
-    if (lit) { g.globalAlpha = 0.3; g.fillRect(-12, -12, 24, 24); g.globalAlpha = 1; }
+    g.translate(16, 16); g.lineJoin = 'round';
+    g.strokeStyle = g.fillStyle = INK[col]; g.lineWidth = 2.5; star(g, 1); g.stroke();
+    g.globalAlpha = lit ? 1 : 0.25; star(g, 0.5); g.fill();
+    if (lit) { g.globalAlpha = 0.3; star(g, 1.25); g.fill(); }
+    g.globalAlpha = 1;
   } else if (c.startsWith('receiver:')) {
     // A catcher: a block with a coloured eye that glows while a beam holds it.
     const col = c.slice(9), lit = s && s.lit.has(y * s.w + x);
