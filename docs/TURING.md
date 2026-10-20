@@ -30,6 +30,14 @@ Sketch: `docs/turing-sketch.png`. Panels 1 and 2 are the game's own renders of r
 - **Pieces as memory.** Movers, enemies and boxes keep positions, and realtime pieces move without the player. A tape built from piece positions might already make it Turing complete given an unbounded room, but that needs a construction, not a hunch. Not attempted.
 - Who counts as the machine also matters: with the player pressing keys as the program, the question is a different one (whether the player's moves can drive any computation), and the answer is "only up to the room's size".
 
+## Wires, his design (register 347, sketched, not built)
+
+A grey "wired" colour for the editor, and three wire colours painted Terraria-style that cross without joining (`docs/wires-sketch.png`). That removes limits 1 and 2 above. What would still need checking before calling it Turing complete:
+
+- **Memory.** A latch is two NAND gates feeding each other. The laser clock shows that feedback settles one tick at a time, so a latch should hold its state, but nobody has built one yet. It is the one test to run once wires exist.
+- **Gates that drive gates.** A gate's output is a wire, a wire opens a door, and the door lets a beam reach the next gate's relay. Each step is a piece that exists today, so this should chain without anything new.
+- **An endless room.** Already true in his reading, so nothing to build.
+
 ## Register 343: "if you can beat a level in X moves, you can in X+1"
 
 A room's score is its robot's shortest path, so the claim is: if a room of some size has a shortest path of X, another room of that size has X+1.
