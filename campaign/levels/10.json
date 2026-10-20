@@ -26,11 +26,8 @@
   "boxThroughOneWay",
   "boxHitsOneWay"
  ],
- "small": [
-  6,
-  3
- ],
  "optional": [
   "boxStuckOnOneWay"
- ]
+ ],
+ "tiles": 3
 }

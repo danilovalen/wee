@@ -101,7 +101,8 @@ export function optionalGoals(def) {
   // A level from the Level maker may leave out the exact count or the size goal (register 302).
   const own = [
     ...(def.steps.best != null ? [{ id: 'best', parts: [bestShort(def.steps)], text: bestText(def.steps), met: v => v.length === def.steps.best }] : []),
-    ...(def.small ? [{ id: 'small', parts: [`${def.small[0]}×${def.small[1]} or smaller`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] }] : []),
+    // The size goal counts tiles placed, the start and the goal not counted (register 314).
+    ...(def.tiles != null ? [{ id: 'small', parts: [`${def.tiles} ${def.tiles === 1 ? 'tile' : 'tiles'} or fewer`], text: `${def.tiles} ${def.tiles === 1 ? 'tile' : 'tiles'} or fewer.`, met: v => v.tiles <= def.tiles }] : []),
     ...(def.optional || []).map(id => ({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: v => !!(v.pathGoals && v.pathGoals[id]) })),
   ];
   return own.length < 2 ? own : [...own, { id: 'mix', parts: ['any 2 optional goals at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
@@ -113,8 +114,9 @@ export function optionalResults(def, v) {
   return [...own, ...goals.filter(o => o.mix).map(o => ({ id: o.id, text: o.text, met: n >= o.mix }))];
 }
 
-// The room's area, the size score.
+// The room's area, and the tiles placed in it (the start and the goal not counted), the size score.
 export const areaOf = room => room.w * room.h;
+export const tilesOf = (def, room) => Object.values(placed(def, room).by).reduce((n, l) => n + l.length, 0);
 
 // Why the robot cannot reach the goal, in words, with the tiles to point at. Copy is a draft.
 // Per kind: its name, its plural, and how one, several or none of them fail to hold.
@@ -153,7 +155,7 @@ export function check(def, room, opts) {
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
   if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'To let the robot search this room, make it smaller.' } };
-  const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room) };
+  const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room), tiles: tilesOf(def, room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
   // Each requirement holds on every shortest path or it is not met; the card marks each one.
   const failed = {};

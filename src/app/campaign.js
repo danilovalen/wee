@@ -197,11 +197,10 @@ export function run() {
   if (v.ok && v.won) {
     const p = progress(), rec = p.levels[def.id] ||= {}, goals = rec.goals || {};
     rec.goals = Object.fromEntries(v.optional.map(o => [o.id, !!goals[o.id] || o.met]));
-    // Statistics to compare with other players: every win's moves, and per room area the tiles
-    // placed (the start and the goal not counted). Fewest and most of each.
-    const st = rec.stats ||= { moves: null, tiles: {} }, span = (r, n) => r ? [Math.min(r[0], n), Math.max(r[1], n)] : [n, n];
-    const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);
-    st.moves = span(st.moves, v.length); st.tiles[v.area] = span(st.tiles[v.area], tiles);
+    // Statistics to compare with other players: every win's moves and tiles placed (the start and
+    // the goal not counted), fewest and most of each. A save that kept tiles per area starts over.
+    const st = rec.stats ||= { moves: null, tiles: null }, span = (r, n) => r ? [Math.min(r[0], n), Math.max(r[1], n)] : [n, n];
+    st.moves = span(st.moves, v.length); st.tiles = span(Array.isArray(st.tiles) ? st.tiles : null, v.tiles);
     rec.beaten = true; rec.room = S.level;
     write(p);
   }
@@ -213,12 +212,11 @@ export function run() {
   return v;
 }
 
-// A beaten level's statistics, short: moves fewest to most, and tiles at the smallest area won.
+// A beaten level's statistics, short: moves and tiles, fewest to most.
 const range = ([a, b]) => a === b ? `${a}` : `${a}–${b}`;
 function statsText(st) {
   if (!st || !st.moves) return '';
-  const area = Math.min(...Object.keys(st.tiles).map(Number));
-  return `, moves ${range(st.moves)}, tiles ${range(st.tiles[area])} at area ${area}`;
+  return `, moves ${range(st.moves)}` + (Array.isArray(st.tiles) ? `, tiles ${range(st.tiles)}` : '');
 }
 
 function renderList() {

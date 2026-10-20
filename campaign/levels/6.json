@@ -31,11 +31,8 @@
   "throughOpenDoor",
   "onlyBoxesFlipSwitches"
  ],
- "small": [
-  3,
-  5
- ],
  "optional": [
   "aToggleOffAtEnd"
- ]
+ ],
+ "tiles": 4
 }

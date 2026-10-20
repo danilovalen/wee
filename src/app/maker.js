@@ -46,7 +46,7 @@ function fill(def) {
   $('makerName').value = def.name || '';
   $('makerTwo').checked = !!(def.colours && def.colours.length > 1);
   $('makerBest').value = def.steps && def.steps.best != null ? def.steps.best : '';
-  $('makerW').value = def.small ? def.small[0] : ''; $('makerH').value = def.small ? def.small[1] : '';
+  $('makerTiles').value = def.tiles != null ? def.tiles : '';
   $('makerDelete').hidden = !editing; $('makerSay').textContent = '';
   palRows(def); goalRows();
 }
@@ -71,9 +71,9 @@ function build() {
   const shown = new Set([...$('makerGoals').children].map(li => li.dataset.goal));
   const ids = k => Object.keys(picked).filter(id => picked[id] === k && shown.has(id));
   if (!ids('require').length) { $('makerSay').textContent = 'Pick at least one required goal.'; return; }
-  const best = +$('makerBest').value || null, w = +$('makerW').value, h = +$('makerH').value;
+  const best = +$('makerBest').value || null, tiles = $('makerTiles').value === '' ? null : Math.max(0, +$('makerTiles').value);
   const id = editing || 'm' + (Math.max(0, ...list.map(l => +l.id.slice(1))) + 1);
-  const def = { id, made: true, name: $('makerName').value.trim() || `My level ${id.slice(1)}`, size: [7, 7], palette: pal, steps: best ? { best } : {}, rules: [], require: ids('require'), optional: ids('optional'), ...(w && h ? { small: [w, h] } : {}), ...($('makerTwo').checked ? { colours: ['red', 'blue'] } : {}) };
+  const def = { id, made: true, name: $('makerName').value.trim() || `My level ${id.slice(1)}`, size: [7, 7], palette: pal, steps: best ? { best } : {}, rules: [], require: ids('require'), optional: ids('optional'), ...(tiles != null ? { tiles } : {}), ...($('makerTwo').checked ? { colours: ['red', 'blue'] } : {}) };
   saveMade([...list.filter(l => l.id !== id), def]);
   editing = id;
   $('makerBox').close();

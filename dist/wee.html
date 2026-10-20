@@ -839,7 +839,7 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
     <table class="mkPal"><thead><tr><th></th><th>Min</th><th>Max</th></tr></thead><tbody id="makerPal"></tbody></table>
     <label class="mkRow"><input id="makerTwo" type="checkbox"> Two colours</label>
     <label class="mkRow">Exactly <input id="makerBest" type="number" min="4" placeholder="any"> moves (optional goal)</label>
-    <label class="mkRow">Size goal <input id="makerW" type="number" min="2" placeholder="w"> × <input id="makerH" type="number" min="2" placeholder="h"> (optional)</label>
+    <label class="mkRow">At most <input id="makerTiles" type="number" min="0" placeholder="any"> tiles (optional goal)</label>
     <h3>Goals</h3>
     <ul id="makerGoals" class="mkGoals"></ul>
     <p id="makerSay" class="hint" role="status"></p>
@@ -3026,7 +3026,8 @@ function optionalGoals(def) {
   // A level from the Level maker may leave out the exact count or the size goal (register 302).
   const own = [
     ...(def.steps.best != null ? [{ id: 'best', parts: [bestShort(def.steps)], text: bestText(def.steps), met: v => v.length === def.steps.best }] : []),
-    ...(def.small ? [{ id: 'small', parts: [`${def.small[0]}×${def.small[1]} or smaller`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] }] : []),
+    // The size goal counts tiles placed, the start and the goal not counted (register 314).
+    ...(def.tiles != null ? [{ id: 'small', parts: [`${def.tiles} ${def.tiles === 1 ? 'tile' : 'tiles'} or fewer`], text: `${def.tiles} ${def.tiles === 1 ? 'tile' : 'tiles'} or fewer.`, met: v => v.tiles <= def.tiles }] : []),
     ...(def.optional || []).map(id => ({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: v => !!(v.pathGoals && v.pathGoals[id]) })),
   ];
   return own.length < 2 ? own : [...own, { id: 'mix', parts: ['any 2 optional goals at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
@@ -3038,8 +3039,9 @@ function optionalResults(def, v) {
   return [...own, ...goals.filter(o => o.mix).map(o => ({ id: o.id, text: o.text, met: n >= o.mix }))];
 }
 
-// The room's area, the size score.
+// The room's area, and the tiles placed in it (the start and the goal not counted), the size score.
 const areaOf = room => room.w * room.h;
+const tilesOf = (def, room) => Object.values(placed(def, room).by).reduce((n, l) => n + l.length, 0);
 
 // Why the robot cannot reach the goal, in words, with the tiles to point at. Copy is a draft.
 // Per kind: its name, its plural, and how one, several or none of them fail to hold.
@@ -3078,7 +3080,7 @@ function check(def, room, opts) {
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
   if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'To let the robot search this room, make it smaller.' } };
-  const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room) };
+  const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room), tiles: tilesOf(def, room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
   // Each requirement holds on every shortest path or it is not met; the card marks each one.
   const failed = {};
@@ -3099,7 +3101,7 @@ function check(def, room, opts) {
   const optional = optionalResults(def, base);
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, coloursOf, roomOf, placed, nameOf, START_ON, overLimits, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, bestShort, optionalGoals, optionalResults, areaOf, stuckText, check };
+return { ELEMENTS, coloursOf, roomOf, placed, nameOf, START_ON, overLimits, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, bestShort, optionalGoals, optionalResults, areaOf, tilesOf, stuckText, check };
 })();
 // ---- src/app/made.js
 const m16 = (() => {
@@ -3119,7 +3121,7 @@ return { madeLevels, saveMade, madeLevel, backToMaker, onMakerBack };
 const m17 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"small":[3,4],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"small":[8,6],"optional":[]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[4,4],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"],"small":[4,5]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"small":[3,5],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"small":[6,3],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"small":[4,4],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"rules":[],"require":["robotThroughOneWayBothWays"],"small":[6,2],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"small":[7,3]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"small":[3,3],"optional":["lasersTwoWays"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"small":[6,5],"optional":["boxThroughOneWay"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":7},"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"small":[5,4],"optional":["robotOnButton"]}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"optional":["touchBlockFourTimes"],"tiles":1},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice"],"tiles":2},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoor"],"tiles":2},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd"],"tiles":3},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"optional":[],"tiles":6},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd"],"tiles":4},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd"],"tiles":3},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"],"tiles":4},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays"],"tiles":2},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"optional":["boxStuckOnOneWay"],"tiles":3},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors"],"tiles":8},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched"],"tiles":6},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"tiles":5},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays"],"tiles":4},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay"],"tiles":8},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":7},"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["robotOnButton"],"tiles":7}];
 return { LEVELS };
 })();
 // ---- src/editor/history.js
@@ -4398,11 +4400,10 @@ function run() {
   if (v.ok && v.won) {
     const p = progress(), rec = p.levels[def.id] ||= {}, goals = rec.goals || {};
     rec.goals = Object.fromEntries(v.optional.map(o => [o.id, !!goals[o.id] || o.met]));
-    // Statistics to compare with other players: every win's moves, and per room area the tiles
-    // placed (the start and the goal not counted). Fewest and most of each.
-    const st = rec.stats ||= { moves: null, tiles: {} }, span = (r, n) => r ? [Math.min(r[0], n), Math.max(r[1], n)] : [n, n];
-    const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);
-    st.moves = span(st.moves, v.length); st.tiles[v.area] = span(st.tiles[v.area], tiles);
+    // Statistics to compare with other players: every win's moves and tiles placed (the start and
+    // the goal not counted), fewest and most of each. A save that kept tiles per area starts over.
+    const st = rec.stats ||= { moves: null, tiles: null }, span = (r, n) => r ? [Math.min(r[0], n), Math.max(r[1], n)] : [n, n];
+    st.moves = span(st.moves, v.length); st.tiles = span(Array.isArray(st.tiles) ? st.tiles : null, v.tiles);
     rec.beaten = true; rec.room = S.level;
     write(p);
   }
@@ -4414,12 +4415,11 @@ function run() {
   return v;
 }
 
-// A beaten level's statistics, short: moves fewest to most, and tiles at the smallest area won.
+// A beaten level's statistics, short: moves and tiles, fewest to most.
 const range = ([a, b]) => a === b ? `${a}` : `${a}–${b}`;
 function statsText(st) {
   if (!st || !st.moves) return '';
-  const area = Math.min(...Object.keys(st.tiles).map(Number));
-  return `, moves ${range(st.moves)}, tiles ${range(st.tiles[area])} at area ${area}`;
+  return `, moves ${range(st.moves)}` + (Array.isArray(st.tiles) ? `, tiles ${range(st.tiles)}` : '');
 }
 
 function renderList() {
@@ -4553,7 +4553,7 @@ function fill(def) {
   $('makerName').value = def.name || '';
   $('makerTwo').checked = !!(def.colours && def.colours.length > 1);
   $('makerBest').value = def.steps && def.steps.best != null ? def.steps.best : '';
-  $('makerW').value = def.small ? def.small[0] : ''; $('makerH').value = def.small ? def.small[1] : '';
+  $('makerTiles').value = def.tiles != null ? def.tiles : '';
   $('makerDelete').hidden = !editing; $('makerSay').textContent = '';
   palRows(def); goalRows();
 }
@@ -4578,9 +4578,9 @@ function build() {
   const shown = new Set([...$('makerGoals').children].map(li => li.dataset.goal));
   const ids = k => Object.keys(picked).filter(id => picked[id] === k && shown.has(id));
   if (!ids('require').length) { $('makerSay').textContent = 'Pick at least one required goal.'; return; }
-  const best = +$('makerBest').value || null, w = +$('makerW').value, h = +$('makerH').value;
+  const best = +$('makerBest').value || null, tiles = $('makerTiles').value === '' ? null : Math.max(0, +$('makerTiles').value);
   const id = editing || 'm' + (Math.max(0, ...list.map(l => +l.id.slice(1))) + 1);
-  const def = { id, made: true, name: $('makerName').value.trim() || `My level ${id.slice(1)}`, size: [7, 7], palette: pal, steps: best ? { best } : {}, rules: [], require: ids('require'), optional: ids('optional'), ...(w && h ? { small: [w, h] } : {}), ...($('makerTwo').checked ? { colours: ['red', 'blue'] } : {}) };
+  const def = { id, made: true, name: $('makerName').value.trim() || `My level ${id.slice(1)}`, size: [7, 7], palette: pal, steps: best ? { best } : {}, rules: [], require: ids('require'), optional: ids('optional'), ...(tiles != null ? { tiles } : {}), ...($('makerTwo').checked ? { colours: ['red', 'blue'] } : {}) };
   saveMade([...list.filter(l => l.id !== id), def]);
   editing = id;
   $('makerBox').close();

@@ -155,7 +155,7 @@ const build = (def, rows) => {
   ok('a win reports its area', v.area === 25 && areaOf(win) === 25 && areaOf(roomOf(d)) === 49);
   ok('there is no cost score any more', !('cost' in v) && !('COSTS' in LEVELDATA));
   ok('a win hands the robot its path', v.path && v.path.length === 4);
-  ok('a win scores the exact count, the room size, the level\'s own goal and mix', v.optional.map(o => o.id).join() === 'best,small,touchBlockFourTimes,mix' && v.optional[3].met === (v.optional.slice(0, 3).filter(o => o.met).length >= 2) && v.optional[0].met === (v.length === d.steps.best) && v.optional[1].met === (v.area <= d.small[0] * d.small[1]) && v.met === v.optional.filter(o => o.met).length);
+  ok('a win scores the exact count, the room size, the level\'s own goal and mix', v.optional.map(o => o.id).join() === 'best,small,touchBlockFourTimes,mix' && v.optional[3].met === (v.optional.slice(0, 3).filter(o => o.met).length >= 2) && v.optional[0].met === (v.length === d.steps.best) && v.optional[1].met === (v.tiles <= d.tiles) && v.met === v.optional.filter(o => o.met).length);
   const bad = check(d, { ...roomOf(d), start: null, cells: roomOf(d).cells.map(() => '') });
   ok('a room without its start and goal cannot run', bad.ok === false && bad.errors.length === 2);
   const walled = build(d, ['P....', '.....', '#####', '.....', '....G']);
@@ -402,7 +402,7 @@ const build = (def, rows) => {
     }
     if (l.id === '4') ok('mix: met when one run meets two optional goals', v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.id !== 'mix' && o.met).length >= 2, JSON.stringify(v.optional));
     if (l.id === '1') ok('mix: not met by one goal alone', !v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.met).length === 1, JSON.stringify(v.optional));
-    ok(`level ${l.id}'s ${l.small.join('x')} goal is met by a win`, Array.isArray(l.small) && v.won && v.optional.find(o => o.id === 'small').met, JSON.stringify(v.fail || v.optional));
+    ok(`level ${l.id}'s ${l.tiles}-tile goal is met by a win`, Number.isInteger(l.tiles) && v.won && v.optional.find(o => o.id === 'small').met, JSON.stringify(v.fail || v.optional));
   }
 }
 { // every level's own optional goal can be met: a winning room that meets it, found by tools/levelSearch.mjs (registers 262-269)

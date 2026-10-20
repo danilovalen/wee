@@ -30,11 +30,8 @@
   "throughOpenDoor",
   "doorClosedAtEnd"
  ],
- "small": [
-  4,
-  4
- ],
  "optional": [
   "boxOnButtonAtEnd"
- ]
+ ],
+ "tiles": 3
 }

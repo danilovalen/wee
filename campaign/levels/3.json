@@ -26,11 +26,8 @@
   "throughOpenDoor",
   "doorClosedAtEnd"
  ],
- "small": [
-  3,
-  3
- ],
  "optional": [
   "hitsClosedDoor"
- ]
+ ],
+ "tiles": 2
 }

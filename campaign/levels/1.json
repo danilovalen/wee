@@ -15,11 +15,8 @@
  },
  "rules": [],
  "require": [],
- "small": [
-  3,
-  3
- ],
  "optional": [
   "touchBlockFourTimes"
- ]
+ ],
+ "tiles": 1
 }

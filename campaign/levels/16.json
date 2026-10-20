@@ -35,11 +35,8 @@
   "boxOffButtonAtEnd",
   "laserThroughButton"
  ],
- "small": [
-  5,
-  4
- ],
  "optional": [
   "robotOnButton"
- ]
+ ],
+ "tiles": 7
 }

@@ -31,11 +31,8 @@
   "laserBlockedByDoor",
   "throughOpenDoor"
  ],
- "small": [
-  3,
-  3
- ],
  "optional": [
   "lasersTwoWays"
- ]
+ ],
+ "tiles": 4
 }

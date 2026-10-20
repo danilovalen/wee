@@ -26,11 +26,8 @@
   "hitsClosedDoor",
   "throughOpenDoor"
  ],
- "small": [
-  3,
-  3
- ],
  "optional": [
   "throughOpenDoorTwice"
- ]
+ ],
+ "tiles": 2
 }

@@ -22,11 +22,8 @@
   "robotThroughEveryOneWay",
   "robotHitsEveryOneWay"
  ],
- "small": [
-  3,
-  5
- ],
  "optional": [
   "oneWaysThreeWays"
- ]
+ ],
+ "tiles": 2
 }

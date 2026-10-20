@@ -26,11 +26,8 @@
   "throughOpenDoor",
   "twoTogglesOffAtEnd"
  ],
- "small": [
-  3,
-  4
- ],
  "optional": [
   "thirdToggleOnAtEnd"
- ]
+ ],
+ "tiles": 3
 }

@@ -31,11 +31,8 @@
   "robotThroughOneWay",
   "boxHitsOneWay"
  ],
- "small": [
-  6,
-  5
- ],
  "optional": [
   "boxThroughOneWay"
- ]
+ ],
+ "tiles": 8
 }

@@ -23,9 +23,6 @@
   "everyBoxHitOnce",
   "boxHitsBox"
  ],
- "small": [
-  8,
-  6
- ],
- "optional": []
+ "optional": [],
+ "tiles": 6
 }

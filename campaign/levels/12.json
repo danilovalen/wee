@@ -32,11 +32,8 @@
  "require": [
   "robotThroughOneWayBothWays"
  ],
- "small": [
-  6,
-  2
- ],
  "optional": [
   "boxLaunched"
- ]
+ ],
+ "tiles": 6
 }

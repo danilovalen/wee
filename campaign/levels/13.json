@@ -37,8 +37,5 @@
   "boxThroughOneWayBothWays",
   "throughOpenDoor"
  ],
- "small": [
-  7,
-  3
- ]
+ "tiles": 5
 }

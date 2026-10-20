@@ -32,8 +32,5 @@
  "optional": [
   "noBoxAtEnd"
  ],
- "small": [
-  4,
-  5
- ]
+ "tiles": 4
 }

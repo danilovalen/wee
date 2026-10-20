@@ -34,11 +34,8 @@
   "throughDoorsOfTwoColours",
   "boxThroughOpenDoor"
  ],
- "small": [
-  4,
-  4
- ],
  "optional": [
   "boxHitsTwoDoors"
- ]
+ ],
+ "tiles": 8
 }
