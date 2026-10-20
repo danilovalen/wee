@@ -19,7 +19,7 @@
   ],
   "idoor": [
    1,
-   null
+   1
   ],
   "laser": [
    1,
@@ -30,8 +30,8 @@
   "best": 7
  },
  "small": [
-  4,
-  4
+  5,
+  6
  ],
  "rules": [],
  "require": [

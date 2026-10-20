@@ -405,7 +405,10 @@ try {
     return [...document.querySelectorAll('.campReqs [data-part=start]')].map(c => c.dataset.icon + (c.toDataURL() === you ? ':you' : '')).join(); });
   check('a goal row names the robot with the robot, not your circle (register 323)', /^robot(,robot)*$/.test(robotIcon), robotIcon);
   // Two colours per piece (register 316): level 19 offers red+blue as a third dot, only for its door.
-  await nine.click('#campBack'); await nine.click('.campRow[data-level="19"]'); await nine.click('[data-tool="door"]');
+  // The two-colour level is hidden from the list (register 334); it still opens by its id.
+  await nine.click('#campBack');
+  check('the two-colour level 19 is hidden from the list', await nine.locator('.campRow[data-level="19"]').count() === 0 && await nine.locator('.campRow[data-level="18"]').count() === 1);
+  await nine.evaluate(async () => (await import('/src/app/campaign.js')).enterLevel('19')); await nine.click('[data-tool="door"]');
   const dots = () => nine.evaluate(() => [...document.querySelectorAll('#campColours button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '') + (b.disabled ? '-' : '')).join());
   const doorDots = await dots();
   await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);

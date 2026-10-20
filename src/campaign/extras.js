@@ -165,6 +165,12 @@ export const EXTRA_REQUIREMENTS = {
     short: [{ el: 'laser' }, 'stopped by a closed', { el: 'idoor' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, b => { if (cellOf(room, b.stop).startsWith('idoor:')) ok = true; }); return ok; },
   },
+  // Register 329: when the run ends, a beam lights every relay in the room.
+  allRelaysLitAtEnd: {
+    text: 'Every laser relay lit at the end.',
+    short: ['every', { el: 'relay' }, 'lit at the end'],
+    judge: (room, moves) => { const end = replayPath(room, moves, () => {}), relays = room.cells.flatMap((c, i) => c.startsWith('sensor:') ? [i] : []); return relays.length > 0 && relays.every(i => end.lit.has(i)); },
+  },
   boxHitsIdoor: {
     text: 'Box collides with a closed inverted door.',
     short: [{ el: 'box' }, 'collides with a closed', { el: 'idoor' }],

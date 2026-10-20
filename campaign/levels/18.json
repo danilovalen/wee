@@ -30,12 +30,12 @@
   "best": 11
  },
  "small": [
-  6,
+  4,
   5
  ],
  "rules": [],
  "require": [
   "boxHitsIdoor",
-  "robotThroughIdoor"
+  "allRelaysLitAtEnd"
  ]
 }

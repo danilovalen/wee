@@ -41,7 +41,6 @@
   5
  ],
  "rules": [],
- "require": [
-  "laserHoldsOwnDoor"
- ]
+ "require": [],
+ "hidden": true
 }

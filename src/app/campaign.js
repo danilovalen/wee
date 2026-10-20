@@ -222,7 +222,7 @@ const statsText = st => st && st.moves ? `, moves ${range(st.moves)}` : '';
 
 function renderList() {
   const p = progress(), list = $('campList');
-  list.replaceChildren(...LEVELS.map(def => {
+  list.replaceChildren(...LEVELS.filter(def => !def.hidden).map(def => {
     const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button');
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');

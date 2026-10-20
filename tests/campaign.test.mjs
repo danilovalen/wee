@@ -99,7 +99,7 @@ const build = (def, rows) => {
   { const l = level('16'), two = build(l, ['B.#P#', 'G..B.', 'D....', 'ne.o.']), v = check(l, two);
     ok('a second box in level 16 is built and run, then missed at Run', v.ok && !v.won && /at most 1 box/.test(v.fail.why), JSON.stringify(v.fail || v.errors)); }
   ok('more than a maximum is a missed goal at Run', overLimits({ ...d, palette: { block: [0, 10] } }, many).some(e => /at most 10/.test(e.msg)));
-  ok('only levels 15 and 16 set a maximum: one one-way, one box (registers 287, 294)', LEVELS.every(l => Object.entries(l.palette).every(([k, [, max]]) => max === null || (max === 1 && ((l.id === '15' && k === 'gate') || (l.id === '16' && k === 'box'))))));
+  ok('only levels 15, 16 and 17 set a maximum: one one-way, one box, one inverted door (registers 287, 294, 325)', LEVELS.every(l => Object.entries(l.palette).every(([k, [, max]]) => max === null || (max === 1 && ((l.id === '15' && k === 'gate') || (l.id === '16' && k === 'box') || (l.id === '17' && k === 'idoor'))))));
   const alien = build(d, ['', '', '..D']);
   ok('an element outside the palette is refused', placementErrors(d, alien).some(e => /no doors/.test(e.msg)));
   const odd = build(d, ['', '', '..k']); odd.cells[2 * 7 + 2] = 'crack';
@@ -355,6 +355,10 @@ const build = (def, rows) => {
   // Inverted doors, relays and the two-colour door (registers 311-313).
   ok('robot through an inverted door: met while it is open', req('robotThroughIdoor', ['#######', '#P.N.G#', '#######'], ['right']));
   ok('robot through an inverted door: not met with none', !req('robotThroughIdoor', ['#######', '#P...G#', '#######'], ['right']));
+  // Register 329: every relay lit when the run ends.
+  ok('every relay lit at the end: met while the beam reaches it', req('allRelaysLitAtEnd', ['#######', '#T.s..#', '#P...G#', '#######'], ['right']));
+  ok('every relay lit at the end: not met when one relay is dark', !req('allRelaysLitAtEnd', ['#######', '#T.s..#', '#P..sG#', '#######'], ['right']));
+  ok('every relay lit at the end: not met when a box blocks the beam by the end', !req('allRelaysLitAtEnd', ['#######', '#T.s..#', '#.B...#', '#.P#..#', '#######'], ['left', 'right', 'up']));
   ok('laser stopped by an inverted door: met once a button closes it', req('laserStoppedByIdoor', ['#######', '#T.N..#', '#Po####', '#######'], ['right']));
   ok('laser stopped by an inverted door: not met while it is open', !req('laserStoppedByIdoor', ['#######', '#T.N..#', '#Po####', '#######'], []));
   ok('box hits an inverted door: met when a lit relay closes it', req('boxHitsIdoor', ['########', '#T.s...#', '#PB.N..#', '########'], ['right']));
