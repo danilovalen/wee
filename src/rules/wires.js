@@ -39,6 +39,15 @@ export function wireCells(cells, at) {
   });
 }
 
+// A piece pushed onto another tile takes that tile's wires instead of the ones it left.
+const WIRED = /^(button|toggle|receiver|sensor|door|idoor):/;
+export function rewire(c, here) {
+  if (!WIRED.test(c)) return c;
+  const [kind, cols] = c.split(':'), real = cols.split('|').filter(k => !/^w(\d+|none)$/.test(k));
+  if (!real.length) return kind + ':' + (here.length ? here.join('|') : NONE);
+  return kind + ':' + (SWITCH.test(c) ? [...real, ...here] : real).join('|');
+}
+
 // A drawn piece: its real colours, or 'wire' when it has none, and whether its networks are open.
 export function drawnColour(cols, open) {
   const real = cols.filter(c => !/^w(\d+|none)$/.test(c));

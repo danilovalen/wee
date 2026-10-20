@@ -1109,12 +1109,21 @@ function wireCells(cells, at) {
   });
 }
 
+// A piece pushed onto another tile takes that tile's wires instead of the ones it left.
+const WIRED = /^(button|toggle|receiver|sensor|door|idoor):/;
+function rewire(c, here) {
+  if (!WIRED.test(c)) return c;
+  const [kind, cols] = c.split(':'), real = cols.split('|').filter(k => !/^w(\d+|none)$/.test(k));
+  if (!real.length) return kind + ':' + (here.length ? here.join('|') : NONE);
+  return kind + ':' + (SWITCH.test(c) ? [...real, ...here] : real).join('|');
+}
+
 // A drawn piece: its real colours, or 'wire' when it has none, and whether its networks are open.
 function drawnColour(cols, open) {
   const real = cols.filter(c => !/^w(\d+|none)$/.test(c));
   return real.length ? { cols: real } : { cols: ['wire'], on: cols.some(c => open && open[c]) };
 }
-return { WIRES, netsOf, wireCells, drawnColour };
+return { WIRES, netsOf, wireCells, rewire, drawnColour };
 })();
 // ---- src/level/format.js
 const m2 = (() => {
@@ -1938,9 +1947,11 @@ const m9 = (() => {
 const { DIRS, PUSHED, wades } = m0;
 const { cellAt, entAt, gateAt, gateDirs, inb, playerAt, pushTo, solidCell } = m3;
 const { land } = m4;
+const { rewire } = m1;
 // Pushable tiles (register 336): a relay, a one-way, a door or an inverted door in a box's frame.
 // The level lists them as crates: [{x, y}]; a run keeps them as tile indices in s.crates. Pushing
 // replaces s.cells and s.crates, never edits them, so a copy of a run can share both.
+
 
 
 
@@ -1980,7 +1991,7 @@ function pushChain(s, x, y, d) {
     const o = list[i];
     if (o.e) continue;
     const from = o.y * s.w + o.x, to = from + dy * s.w + dx;
-    cells[to] = cells[from]; cells[from] = '';
+    cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from]; cells[from] = '';
     crates.delete(from); crates.add(to);
     s.events.push({ type: 'tilePush', x: o.x, y: o.y, d });
   }
@@ -2204,7 +2215,7 @@ function createGame(level) {
     checkpoint: { ...l.start },
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
     entities: freshPieces(l.entities),
-    colours: [...COLOURS, ...nets.ids], wires: l.wires || [], wireOf: nets.of,
+    colours: [...COLOURS, ...nets.ids], wires: l.wires || [], wireOf: nets.of, wireAt: nets.at,
     crates: new Set((l.crates || []).map(c => c.y * l.w + c.x)),
     open: {}, broken: [], toggled: [], onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };

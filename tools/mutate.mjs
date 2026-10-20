@@ -838,6 +838,8 @@ const M = [
   ['src/editor/edit.js', "  const k = (level.wires || []).filter(r => r.x !== x || r.y !== y || r.w !== w);", "  const k = (level.wires || []).filter(r => r.x !== x || r.y !== y);", 'sim'],
   ['src/level/code.js', ", ...(wires ? { wires } : {}) });", " });", 'code'],
   ['src/app/panels.js', "  if (lined() && ui.tool === 'wire') {", "  if (false) {", 'wires'],
+  // Register 351: a pushed grey piece takes the wires where it lands.
+  ['src/rules/crates.js', "cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from];", "cells[to] = cells[from];", 'sim'],
   // Registers 330, 339, 340: a gold laser; the relay a soft eight-point star.
   ['src/view/pieces.js', "g.fillStyle = d === next ? INK.zap : INK.barrel;", "g.fillStyle = d === next ? INK.beam : INK.barrel;", 'sim'],
   ['src/app/lenses.js', "colour: INK.zap }", "colour: INK.beam }", 'lensui'],

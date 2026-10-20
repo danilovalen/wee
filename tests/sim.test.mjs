@@ -1293,6 +1293,13 @@ const LONG = ['##########', '#..P....##', '##########'];
   const half = make(['#######', '#PB...#', '#.....#', '#######'], [...line(2, 5, 1, 'teal'), { x: 5, y: 2, w: 'teal' }], { 9: 'button:wire', 12: 'button:wire', 19: 'door:wire' });
   check('one switch of two is not enough', solidCell(half, 5, 2));
   const bare = make(rows, [], { 19: 'door:wire', 9: 'button:wire' });
+  // A pushed grey piece takes the wires of the tile it lands on (register 351).
+  const pushRoom = () => { const l = room(['########', '#B.....#', '#P.D.#.#', '########'], { crates: [[3, 2]] }); l.cells[9] = 'button:wire'; l.cells[19] = 'door:wire'; l.wires = [[1, 1], [2, 1], [3, 1], [4, 1], [4, 2]].map(([x, y]) => ({ x, y, w: 'teal' })); return l; };
+  const pg = slide(createGame(pushRoom()), 'right');
+  check('a grey door pushed onto a live wire joins it and opens', /^door:w\d/.test(cellAt(pg, 4, 2)) && !solidCell(pg, 4, 2), cellAt(pg, 4, 2));
+  const pl = pushRoom(); pl.wires = [...pl.wires.filter(r => r.y === 1), { x: 3, y: 2, w: 'violet' }];
+  const pf = slide(createGame(pl), 'right');
+  check('pushed off its wire, a grey door no longer reads it', cellAt(pf, 4, 2) === 'door:wnone' && solidCell(pf, 4, 2), cellAt(pf, 4, 2));
   check('a grey door on no wire never opens', solidCell(bare, 5, 2));
   const inv = make(rows, [...line(2, 5, 1, 'teal'), { x: 5, y: 2, w: 'teal' }], { 9: 'button:wire', 19: 'idoor:wire' });
   check('a grey inverted door is solid while its wire is on', solidCell(inv, 5, 2));

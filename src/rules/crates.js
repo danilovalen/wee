@@ -4,6 +4,7 @@
 import { DIRS, PUSHED, wades } from './base.js';
 import { cellAt, entAt, gateAt, gateDirs, inb, playerAt, pushTo, solidCell } from './grid.js';
 import { land } from './life.js';
+import { rewire } from './wires.js';
 
 export const crateAt = (s, x, y) => inb(s, x, y) && s.crates.has(y * s.w + x);
 
@@ -41,7 +42,7 @@ export function pushChain(s, x, y, d) {
     const o = list[i];
     if (o.e) continue;
     const from = o.y * s.w + o.x, to = from + dy * s.w + dx;
-    cells[to] = cells[from]; cells[from] = '';
+    cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from]; cells[from] = '';
     crates.delete(from); crates.add(to);
     s.events.push({ type: 'tilePush', x: o.x, y: o.y, d });
   }

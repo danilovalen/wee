@@ -20,7 +20,7 @@ export function createGame(level) {
     checkpoint: { ...l.start },
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
     entities: freshPieces(l.entities),
-    colours: [...COLOURS, ...nets.ids], wires: l.wires || [], wireOf: nets.of,
+    colours: [...COLOURS, ...nets.ids], wires: l.wires || [], wireOf: nets.of, wireAt: nets.at,
     crates: new Set((l.crates || []).map(c => c.y * l.w + c.x)),
     open: {}, broken: [], toggled: [], onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };
