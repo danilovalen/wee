@@ -332,6 +332,13 @@ try {
   const toolSize = await phone.evaluate(() => ['look', 'wall'].map(id => { const r = document.querySelector(`[data-tool="${id}"]`).getBoundingClientRect(), c = document.querySelector(`[data-tool="${id}"] canvas`).getBoundingClientRect(); return [r.width, r.height, c.width].map(Math.round).join('x'); }));
   check('on a phone the tools are the objects\' size, icons too (register 251)', toolSize[0] === toolSize[1], toolSize.join(' vs '));
   check('on a phone the page never scrolls; the palette row does', fit.page[0] === fit.page[1] && fit.page[2] === fit.page[3] && fit.grid[2] === 'auto', JSON.stringify(fit));
+  // Registers 322, 331, 332: joined strips, Reset alone at the right, editing buttons gone in play.
+  const bar = await phone.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(), radius = id => getComputedStyle(document.getElementById(id)).borderTopLeftRadius + '/' + getComputedStyle(document.getElementById(id)).borderTopRightRadius;
+    return { resetRight: r('campReset').left > r('redo').right && innerWidth - r('campReset').right < 12, levels: radius('campBack'), run: radius('campRun'), redo: radius('redo'), reset: radius('campReset'), seam: r('campRun').left - r('campBack').right }; });
+  check('on a phone the header is one joined strip, Reset alone at the right (registers 322, 331)', bar.resetRight && bar.levels.startsWith('8') && bar.levels.endsWith('/0px') && bar.run === '0px/0px' && bar.redo.startsWith('0px/') && !bar.redo.endsWith('/0px') && bar.reset !== '0px/0px' && bar.seam <= 2, JSON.stringify(bar));
+  await phone.click('#campTest'); await phone.waitForTimeout(200);
+  const inPlay = await phone.evaluate(() => ['undo', 'redo', 'campReset', 'campRun', 'mode'].map(id => id + ':' + (getComputedStyle(document.getElementById(id)).display !== 'none')).join());
+  check('in play the editing buttons are hidden, not greyed (register 332)', inPlay === 'undo:false,redo:false,campReset:false,campRun:false,mode:true', inPlay);
   await phone.close();
   // 226: level 8 became level 7 (243 moved it to 8 for a day; 246 moved it back). A v1 save's level 8 record ends on 7, the old 7 dropped.
   const oldSave = await browser.newPage();

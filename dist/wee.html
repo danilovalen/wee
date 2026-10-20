@@ -622,21 +622,44 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
 .mkGoals { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
 .mkGoals li { display: flex; align-items: center; gap: 8px; }
 .mkGoals select { flex: 0 0 118px; }
+
+/* Register 332: in a level's play, the editing buttons go away instead of greying out. */
+body.campaign.play :is(#undo, #redo, #campReset) { display: none; }
+body.campaign #campReset { order: 6; margin-left: auto; }
+
+/* Register 322: in a level and the simple Sandbox the room takes the screen and every strip of
+   buttons is joined: square seams, round only at the strip's ends (src/app/join.js), less margin. */
+@media (max-width: 700px) {
+  body:is(.campaign, .simple) header { gap: 1px; padding: 6px; }
+  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button:not([data-alone]) { border-radius: 0; }
+  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button.joinFirst:not([data-alone]) { border-top-left-radius: var(--r-s); border-bottom-left-radius: var(--r-s); }
+  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button.joinLast:not([data-alone]) { border-top-right-radius: var(--r-s); border-bottom-right-radius: var(--r-s); }
+  body:is(.campaign, .simple) :is(#campTools, #palette) { gap: 1px; }
+  body:is(.campaign, .simple) main { padding: 0 4px; gap: 2px; }
+  body:is(.campaign, .simple) #tools { padding: 4px 4px 6px; }
+  body:is(.campaign, .simple) #campTop { margin: 0 0 4px; }
+  .campBrief { margin: 0 0 4px; gap: 4px; }
+  .campGoal { padding: 5px 8px; }
+  .campHead { margin: 0 0 2px; }
+  .campReqs { gap: 2px 10px; }
+  .campOpt { margin-top: 4px; padding-top: 4px; }
+  .campVerdict { margin: 0 0 4px; }
+}
 </style>
 </head>
 <body>
   <canvas id="snow" aria-hidden="true"></canvas>
-  <header>
+  <header data-join>
     <b class="logo">wee</b>
     <button id="roomTitle" class="roomTitle" type="button" title="This room">Untitled</button>
     <button id="campBack" type="button" class="camp-only">Levels</button>
     <button id="puzzleBack" type="button" class="puzzle-only">Puzzles</button>
-    <button id="mode" type="button" title="E">Play</button>
+    <button id="mode" type="button" title="E" data-alone>Play</button>
     <button id="campRun" type="button" class="camp-only primary">Run</button>
     <button id="campTest" type="button" class="camp-only" title="Play your room by hand; a test is not judged.">Test</button>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
-    <button id="campReset" type="button" class="camp-only" data-edit>Reset</button>
+    <button id="campReset" type="button" class="camp-only" data-edit data-alone>Reset</button>
     <button id="checkBtn" type="button" data-edit>Check</button>
     <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room (colour, dots, lines and frames): keys 1 to 4 cycle them and 0 turns them off.">Lenses</button>
     <button id="genBtn" type="button" data-edit title="Generate a room">Generate</button>
@@ -649,9 +672,9 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
     <aside id="tools">
       <h2>Build</h2>
       <p id="toolName" class="toolName"></p>
-      <div id="campTop" class="campTop camp-only"><div id="campTools" class="campTools"></div><div id="campColours" class="campColours" role="radiogroup" aria-label="Colour" hidden></div></div>
+      <div id="campTop" class="campTop camp-only"><div id="campTools" class="campTools" data-join></div><div id="campColours" class="campColours" role="radiogroup" aria-label="Colour" hidden></div></div>
       <div id="groups" class="tabs" role="tablist"></div>
-      <div id="palette" class="grid"></div>
+      <div id="palette" class="grid" data-join></div>
       <div id="options">
         <div class="opt" data-for="select">
           <button id="selCopy" type="button">Copy</button>
@@ -6151,7 +6174,8 @@ function fit() {
   const level = S.level, wide = innerWidth > 700;
   place(wide);
   const area = $('roomArea');
-  const side = EDGE + SIDE;
+  // A level and the simple Sandbox let the room come closer to the screen's sides (register 322).
+  const side = (S.camp || S.simple ? 4 : EDGE) + SIDE;
   const stage = (wide ? area.clientWidth - 2 * side : $('stage').clientWidth - 2 * side) || level.w * T;
   // A phone in play gives the room everything between the header and the play buttons; in a level
   // the room keeps its edit size instead, so nothing moves when the mode changes (register 222).
@@ -7066,8 +7090,25 @@ function selectOverlay() {
 }
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
-// ---- src/app/panels.js
+// ---- src/app/join.js
 const m63 = (() => {
+
+// A strip of buttons reads as one object (register 322): square seams inside, round only at its two
+// ends. Which buttons are the ends depends on what shows, so they are marked again on every sync.
+function joinEnds() {
+  const on = document.body.classList.contains('campaign') || document.body.classList.contains('simple');
+  for (const strip of document.querySelectorAll('[data-join]')) {
+    const kids = [...strip.children].filter(b => b.tagName === 'BUTTON');
+    for (const b of kids) b.classList.remove('joinFirst', 'joinLast');
+    const shown = on ? kids.filter(b => !b.hasAttribute('data-alone') && getComputedStyle(b).display !== 'none') : [];
+    if (!shown.length) continue;
+    shown[0].classList.add('joinFirst'); shown[shown.length - 1].classList.add('joinLast');
+  }
+}
+return { joinEnds };
+})();
+// ---- src/app/panels.js
+const m64 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m1;
 const { INK } = m21;
@@ -7088,8 +7129,10 @@ const { buildKeys } = m60;
 const { syncRoomsButton } = m49;
 const { buildSelect, syncSelect } = m62;
 const { icon } = m27;
+const { joinEnds } = m63;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -7280,6 +7323,7 @@ function syncPanel() {
   document.querySelectorAll('[data-start]').forEach(b => { b.classList.toggle('on', b.dataset.start === first); b.disabled = !ui.aim.includes(b.dataset.start); });
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
+  joinEnds();
 }
 
 // A level with more than one colour shows them as a row of dots over its tools (register 245):
@@ -7345,7 +7389,7 @@ function syncColours() {
 return { keysText, buildPanels, syncPanel, pairInk };
 })();
 // ---- src/app/campaignMove.js
-const m64 = (() => {
+const m65 = (() => {
 const { placementErrors } = m15;
 const { place, moveAt, swapAt } = m56;
 const { S } = m19;
@@ -7409,7 +7453,7 @@ function say(x, y, why, ms = 1500) {
 return { moveIn, refusal, allows, moveRefusal, refuse, say };
 })();
 // ---- src/app/stuck.js
-const m65 = (() => {
+const m66 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m10;
 const { S } = m19;
 const { $ } = m20;
@@ -7444,7 +7488,7 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m66 = (() => {
+const m67 = (() => {
 const { frame: look } = m21;
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m9;
@@ -7453,11 +7497,11 @@ const { drawEdit, drawPlay } = m26;
 const { S } = m19;
 const { $, g, now } = m20;
 const { openSheet } = m59;
-const { syncPanel, keysText } = m63;
+const { syncPanel, keysText } = m64;
 const { feedDemo } = m42;
 const { selectOverlay } = m62;
-const { moveRefusal } = m64;
-const { watchStuck, resetStuck } = m65;
+const { moveRefusal } = m65;
+const { watchStuck, resetStuck } = m66;
 const { lensMarks, lensBusy } = m55;
 const { syncWell } = m39;
 const { syncChips } = m57;
@@ -7614,20 +7658,20 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m67 = (() => {
+const m68 = (() => {
 const { describe, holds, place, turnGate, turnLaser } = m56;
 const { S } = m19;
 const { $, canvas, touch, now } = m20;
-const { setMode, aim } = m66;
+const { setMode, aim } = m67;
 const { begin, end, change, step: undoStep } = m50;
 const { save } = m49;
 const { selectDown, selectMove, selectUp, selectKey } = m62;
 const { LENS_GROUPS, cycleLens, lensesOff } = m55;
-const { syncPanel } = m63;
+const { syncPanel } = m64;
 const { fit } = m52;
 const { toolForKey, bareKey, showKeys } = m60;
 const { TOOLS } = m53;
-const { refusal, moveRefusal, moveIn, refuse } = m64;
+const { refusal, moveRefusal, moveIn, refuse } = m65;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -7764,7 +7808,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m68 = (() => {
+const m69 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -7876,12 +7920,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m69 = (() => {
+const m70 = (() => {
 const { search, move, stateKey } = m10;
 const { createGame } = m9;
 const { elementCheck, idleElements, NOTES_MAX } = m38;
 const { contains } = m46;
-const { ING, variants } = m68;
+const { ING, variants } = m69;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -7967,7 +8011,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m70 = (() => {
+const m71 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -7984,13 +8028,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m71 = (() => {
+const m72 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m1;
-const { INGREDIENTS, ING, spot } = m68;
-const { judge, lockedIn } = m69;
+const { INGREDIENTS, ING, spot } = m69;
+const { judge, lockedIn } = m70;
 const { contains } = m46;
-const { rng } = m70;
+const { rng } = m71;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -8145,9 +8189,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m72 = (() => {
-const { INGREDIENTS } = m68;
-const { generate, normalize, recipeLabel, LIMITS } = m71;
+const m73 = (() => {
+const { INGREDIENTS } = m69;
+const { generate, normalize, recipeLabel, LIMITS } = m72;
 const { stampOf } = m33;
 const { S } = m19;
 const { thumbURL } = m45;
@@ -8341,7 +8385,7 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m73 = (() => {
+const m74 = (() => {
 const { buildMaker } = m31;
 const { buildPuzzles } = m34;
 const { buildProgress } = m35;
@@ -8353,11 +8397,11 @@ const { S, starterLevel } = m19;
 const { portrait, $ } = m20;
 const { startSnow, windNow } = m36;
 const { fit, watchStage } = m52;
-const { buildPanels, syncPanel } = m63;
-const { bindInput } = m67;
-const { setMode, frame, render, tick, report, copyReport } = m66;
+const { buildPanels, syncPanel } = m64;
+const { bindInput } = m68;
+const { setMode, frame, render, tick, report, copyReport } = m67;
 const { buildRooms, bootRooms } = m49;
-const { buildGenerator } = m72;
+const { buildGenerator } = m73;
 const { buildCampaign, openMenu } = m30;
 const { bindDebug } = m28;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the

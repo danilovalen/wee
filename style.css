@@ -604,3 +604,26 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
 .mkGoals { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
 .mkGoals li { display: flex; align-items: center; gap: 8px; }
 .mkGoals select { flex: 0 0 118px; }
+
+/* Register 332: in a level's play, the editing buttons go away instead of greying out. */
+body.campaign.play :is(#undo, #redo, #campReset) { display: none; }
+body.campaign #campReset { order: 6; margin-left: auto; }
+
+/* Register 322: in a level and the simple Sandbox the room takes the screen and every strip of
+   buttons is joined: square seams, round only at the strip's ends (src/app/join.js), less margin. */
+@media (max-width: 700px) {
+  body:is(.campaign, .simple) header { gap: 1px; padding: 6px; }
+  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button:not([data-alone]) { border-radius: 0; }
+  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button.joinFirst:not([data-alone]) { border-top-left-radius: var(--r-s); border-bottom-left-radius: var(--r-s); }
+  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button.joinLast:not([data-alone]) { border-top-right-radius: var(--r-s); border-bottom-right-radius: var(--r-s); }
+  body:is(.campaign, .simple) :is(#campTools, #palette) { gap: 1px; }
+  body:is(.campaign, .simple) main { padding: 0 4px; gap: 2px; }
+  body:is(.campaign, .simple) #tools { padding: 4px 4px 6px; }
+  body:is(.campaign, .simple) #campTop { margin: 0 0 4px; }
+  .campBrief { margin: 0 0 4px; gap: 4px; }
+  .campGoal { padding: 5px 8px; }
+  .campHead { margin: 0 0 2px; }
+  .campReqs { gap: 2px 10px; }
+  .campOpt { margin-top: 4px; padding-top: 4px; }
+  .campVerdict { margin: 0 0 4px; }
+}

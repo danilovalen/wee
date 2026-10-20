@@ -799,6 +799,12 @@ const M = [
   ['style.css', ".plus { background: var(--add-bg); color: var(--add-ink); }", ".plus { background: var(--cut-bg); color: var(--cut-ink); }", 'size-buttons'],
   ['src/app/campaign.js', "const c = icon(p.el === 'start' ? 'robot' : TOOL[p.el])", "const c = icon(p.el === 'start' ? 'start' : TOOL[p.el])", 'campaign-play'],
   ['src/app/icons.js', "(tool === 'robot' ? drawRobot : drawYou)(x)", "drawYou(x)", 'campaign-play'],
+  // Registers 322, 331, 332: joined strips, Reset at the right, editing buttons hidden in play.
+  ['style.css', "body.campaign.play :is(#undo, #redo, #campReset) { display: none; }", "", 'campaign-play'],
+  ['style.css', "body.campaign #campReset { order: 6; margin-left: auto; }", "", 'campaign-play'],
+  ['src/app/join.js', "    shown[0].classList.add('joinFirst'); shown[shown.length - 1].classList.add('joinLast');", "    shown[0].classList.add('joinFirst');", 'campaign-play'],
+  ['src/app/panels.js', "  joinEnds();\n}", "}", 'campaign-play'],
+  ['style.css', "  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button:not([data-alone]) { border-radius: 0; }", "", 'campaign-play'],
   // Registers 329, 334: every relay lit at the end; level 19 hidden from the list.
   ['src/campaign/extras.js', "return relays.length > 0 && relays.every(i => end.lit.has(i));", "return relays.length > 0 && relays.some(i => end.lit.has(i));", 'campaign'],
   ['src/campaign/extras.js', "const end = replayPath(room, moves, () => {}), relays", "const end = replayPath(room, moves.slice(0, 1), () => {}), relays", 'campaign'],
