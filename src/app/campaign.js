@@ -79,7 +79,7 @@ function words(parts) {
 }
 function word(p) {
   if (typeof p === 'string') return document.createTextNode(p);
-  const c = icon(p.el === 'start' ? 'start' : TOOL[p.el]), name = p.el === 'start' ? 'Robot' : ELEMENTS[p.el].label;
+  const c = icon(p.el === 'start' ? 'robot' : TOOL[p.el]), name = p.el === 'start' ? 'Robot' : ELEMENTS[p.el].label;
   c.className = 'campIcon'; c.dataset.part = p.el; c.title = name; c.setAttribute('aria-label', name); c.setAttribute('role', 'img');
   return c;
 }

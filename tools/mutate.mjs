@@ -797,6 +797,8 @@ const M = [
   ['src/app/fit.js', "  const side = EDGE + SIDE;", "  const side = EDGE;", 'size-buttons'],
   ['style.css', ".growBar[data-bar=left] { right: 100%; }", ".growBar[data-bar=left] { right: calc(100% + 6px); }", 'size-buttons'],
   ['style.css', ".plus { background: var(--add-bg); color: var(--add-ink); }", ".plus { background: var(--cut-bg); color: var(--cut-ink); }", 'size-buttons'],
+  ['src/app/campaign.js', "const c = icon(p.el === 'start' ? 'robot' : TOOL[p.el])", "const c = icon(p.el === 'start' ? 'start' : TOOL[p.el])", 'campaign-play'],
+  ['src/app/icons.js', "(tool === 'robot' ? drawRobot : drawYou)(x)", "drawYou(x)", 'campaign-play'],
   // Register 316: two colours on any piece, offered per level, picked with a third dot.
   ['src/rules/life.js', "doorsOf(s, kind + col), ...pairsOf(s, kind, col)]", "doorsOf(s, kind + col)]", 'sim'],
   ['src/rules/life.js', "return cols.includes(col) && !cols.some(k => k !== col && s.open[k]) ? at : [];", "return cols.includes(col) ? at : [];", 'sim'],

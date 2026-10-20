@@ -401,6 +401,9 @@ try {
   await nine.click('#campBack'); await nine.click('.campRow[data-level="9"]');
   const plainGate = await nine.evaluate(() => document.querySelector(`#palette [data-tool="gate"] canvas`).dataset.colour);
   check('a level that names no colours draws its one-way plain', plainGate === '', plainGate);
+  const robotIcon = await nine.evaluate(async () => { const { icon } = await import('/src/app/icons.js'), you = icon('start').toDataURL();
+    return [...document.querySelectorAll('.campReqs [data-part=start]')].map(c => c.dataset.icon + (c.toDataURL() === you ? ':you' : '')).join(); });
+  check('a goal row names the robot with the robot, not your circle (register 323)', /^robot(,robot)*$/.test(robotIcon), robotIcon);
   // Two colours per piece (register 316): level 19 offers red+blue as a third dot, only for its door.
   await nine.click('#campBack'); await nine.click('.campRow[data-level="19"]'); await nine.click('[data-tool="door"]');
   const dots = () => nine.evaluate(() => [...document.querySelectorAll('#campColours button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '') + (b.disabled ? '-' : '')).join());
