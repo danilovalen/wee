@@ -1,4 +1,5 @@
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+import { frame as look } from '../view/ink.js';
 import { TICK_MS } from '../rules/base.js';
 import { createGame, step, gameText } from '../rules/game.js';
 import { aimKey } from '../rules/player.js';
@@ -111,6 +112,7 @@ export function render() {
   S.draws++;
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
+  look.avatar = S.camp ? 'robot' : 'you';
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
   else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
 }

@@ -115,6 +115,14 @@ export function drawRobot(g, hidden = false) {
   g.restore();
 }
 
+// You, when a person plays (register 302): a round body with two eyes, about 20 across.
+export function drawYou(g, hidden = false) {
+  g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2);
+  if (hidden) { g.strokeStyle = INK.player; g.lineWidth = 1.5; g.setLineDash([2.5, 2.5]); g.stroke(); g.setLineDash([]); }
+  else { g.fillStyle = INK.player; g.fill(); g.strokeStyle = INK.robotDark; g.lineWidth = 1.5; g.stroke(); }
+  g.fillStyle = INK.robotEye; g.beginPath(); g.arc(-3.5, -1.5, 1.6, 0, Math.PI * 2); g.arc(3.5, -1.5, 1.6, 0, Math.PI * 2); g.fill();
+}
+
 // Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
 // on top of you, so you can still be found. Swimming on land you wear a blue drop;
 // under water you waver, tinted, with a ripple.
@@ -130,7 +138,7 @@ export function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false,
     g.globalAlpha = alpha * 0.8;
     g.translate(w * 1.5, 0); g.scale(1 + 0.07 * w, 1 - 0.07 * w);
   }
-  drawRobot(g, hidden);
+  (frame.avatar === 'you' ? drawYou : drawRobot)(g, hidden);
   if (armored) {
     // A steel rim with four rivets.
     g.strokeStyle = INK.armor; g.lineWidth = 3.5;

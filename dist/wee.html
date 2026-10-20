@@ -553,7 +553,7 @@ body:not(.campaign) #campVerdict { display: none !important; }
 .campTip { position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 4px)); padding: 5px 9px; border-radius: var(--r-s); background: #24262e; color: #fff; font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
 [data-tool] { position: relative; }
 body.campaign [data-tool][hidden], body.campaign #powers, body.campaign #placeHint, body.campaign #ctx { display: none !important; }
-body:not(.campaign) [data-camp] { display: none !important; }
+body:not(.campaign):not(.simple) [data-camp] { display: none !important; }
 
 /* Every menu is a page of its own, never a box over the game (register 220). Its content keeps a
    readable width, centred by the padding. */
@@ -562,8 +562,8 @@ dialog[id].rooms.gen { --page: 912px; }
 
 /* A level's colours (register 245): a row of dots over its tools; the chosen one is ringed. */
 /* Registers 251, 261: the tools (Look, Erase, Move) on the left and the colours on the right of one line; the objects below. */
-body.campaign #campTop { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
-body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin-left: auto; }
+body.campaign #campTop, body.simple #campTop { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
+body.campaign #campColours:not([hidden]), body.simple #campColours:not([hidden]) { display: flex; gap: 10px; margin-left: auto; }
 #campTools { display: flex; gap: 6px; }
 /* The tools are the objects' size: 46px square on a phone, a short icon button beside the desktop's text rows. */
 #campTools button { width: 32px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; }
@@ -581,6 +581,9 @@ body.campaign #campColours:not([hidden]) { display: flex; gap: 10px; margin-left
 .confirm::backdrop { background: rgba(40, 44, 60, .35); }
 .confirm textarea { width: 100%; box-sizing: border-box; margin: 0 0 12px; font: 12px monospace; word-break: break-all; }
 .progRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+/* The simple Sandbox (register 302): the campaign's tool line and colours, none of the dev panels. */
+body.simple #groups, body.simple #stopsBtn, body.simple #genBtn, body.simple #lensChips, body.simple .opt, body.simple #powers, body.simple #worldMoves, body.simple #ctxNote, body.simple [data-sheet=powers] { display: none !important; }
 </style>
 </head>
 <body>
@@ -3108,6 +3111,8 @@ const S = {
   ui: { group: 'basic', tool: 'look', axis: 'h', dir: 1, start: 'right', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
   mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
   played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null, lookAt: null, playFrom: null, stops: null, lens: { open: false, opened: false, pick: {}, follow: true }, lensData: null, sel: null, moving: null, clip: null, paste: null, redraw: true, drawnAt: 0, draws: 0, genPrev: null, design: null,
+  // simple: the Sandbox a person builds in (register 302), with the campaign's elements and tools.
+  simple: false,
 };
 return { starterLevel, S };
 })();
@@ -3149,7 +3154,8 @@ const INK = {
 const ease = t => 1 - Math.pow(1 - t, 3);
 const lerp = (a, b, t) => a + (b - a) * t;
 // The time the current frame is drawn at, for tiles that move on their own.
-const frame = { clock: 0 };
+// avatar: who plays, the robot (campaign) or you, a circle (register 302).
+const frame = { clock: 0, avatar: 'robot' };
 
 function roundRect(g, x, y, w, h, r) {
   g.beginPath();
@@ -3282,6 +3288,14 @@ function drawRobot(g, hidden = false) {
   g.restore();
 }
 
+// You, when a person plays (register 302): a round body with two eyes, about 20 across.
+function drawYou(g, hidden = false) {
+  g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2);
+  if (hidden) { g.strokeStyle = INK.player; g.lineWidth = 1.5; g.setLineDash([2.5, 2.5]); g.stroke(); g.setLineDash([]); }
+  else { g.fillStyle = INK.player; g.fill(); g.strokeStyle = INK.robotDark; g.lineWidth = 1.5; g.stroke(); }
+  g.fillStyle = INK.robotEye; g.beginPath(); g.arc(-3.5, -1.5, 1.6, 0, Math.PI * 2); g.arc(3.5, -1.5, 1.6, 0, Math.PI * 2); g.fill();
+}
+
 // Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
 // on top of you, so you can still be found. Swimming on land you wear a blue drop;
 // under water you waver, tinted, with a ripple.
@@ -3297,7 +3311,7 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
     g.globalAlpha = alpha * 0.8;
     g.translate(w * 1.5, 0); g.scale(1 + 0.07 * w, 1 - 0.07 * w);
   }
-  drawRobot(g, hidden);
+  (frame.avatar === 'you' ? drawYou : drawRobot)(g, hidden);
   if (armored) {
     // A steel rim with four rivets.
     g.strokeStyle = INK.armor; g.lineWidth = 3.5;
@@ -3321,7 +3335,7 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
   }
   g.restore();
 }
-return { modeBadge, drawTurret, drawPiece, drawRobot, drawPlayer };
+return { modeBadge, drawTurret, drawPiece, drawRobot, drawYou, drawPlayer };
 })();
 // ---- src/view/tiles.js
 const m22 = (() => {
@@ -3977,7 +3991,7 @@ return { drawEdit, drawPlay };
 const m26 = (() => {
 const { emptyLevel } = m2;
 const { T, INK } = m20;
-const { drawPiece, drawRobot } = m21;
+const { drawPiece, drawYou } = m21;
 const { drawEdit } = m25;
 // A tool's icon, drawn the way the room draws the thing: the palette and the generator's
 // ingredients share it.
@@ -4012,7 +4026,7 @@ function icon(tool, colour = 'red', gateColour = null) {
   } else if (tool === 'erase') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
   } else if (tool === 'start') {
-    x.save(); x.translate(16, 16); x.scale(1.3, 1.3); drawRobot(x); x.restore();
+    x.save(); x.translate(16, 16); x.scale(1.3, 1.3); drawYou(x); x.restore();
   } else if (tool === 'turret') drawPiece(x, { kind: 'turret', turret: { dirs: ['up', 'right'], mode: 'input' } }, 0, 0);
   // Two ingredients that are a tool with a twist: a turret riding a box, a block that copies you.
   else if (tool === 'mounted') drawPiece(x, { kind: 'box', turret: { dirs: ['up'], mode: 'input' } }, 0, 0);
@@ -4288,7 +4302,7 @@ function enterLevel(id) {
   S.history = newHistory();
   S.ui.tool = 'look'; S.ui.colour = coloursOf(def)[0];
   p.last = id; write(p);
-  document.body.classList.add('campaign');
+  document.body.classList.add('campaign'); document.body.classList.remove('simple'); S.simple = false;
   syncBrief();
   A.setMode('edit'); A.syncPanel(); A.fit();
   return true;
@@ -4380,7 +4394,7 @@ function buildCampaign(actions, sandbox) {
   A = actions; boot = sandbox;
   fitScene = buildMenuScene($('menuScene'));
   $('menuCampaign').onclick = openList;
-  $('menuSandbox').onclick = () => { closeAll(); boot(); };
+  $('menuSandbox').onclick = () => { closeAll(); S.simple = true; document.body.classList.add('simple'); Promise.resolve(boot()).then(A.syncPanel); };
   $('campMenu').onclick = openMenu;
   $('campBack').onclick = () => { noteLeaving(); leaveLevel(); openList(); };
   $('menuDebug').onclick = copyDebug;
@@ -6866,7 +6880,7 @@ function syncPanel() {
   syncRoomsButton();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   // In a campaign level the palette is the level's: its elements, Look and Erase, in one list.
-  const only = S.camp ? toolsFor(S.camp.def) : null;
+  const only = S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE : null;
   syncColours();
   if (only && !only.includes(ui.tool)) ui.tool = 'look';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp; });
@@ -6874,7 +6888,7 @@ function syncPanel() {
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   // In a level the one-way says how it is turned and taken away (register 234); draft copy.
-  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + (S.camp && (ui.tool === 'gate' || ui.tool === 'turret') ? ' (tap one to turn it, hold to remove it)' : '');
+  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + ((S.camp || S.simple) && (ui.tool === 'gate' || ui.tool === 'turret') ? ' (tap one to turn it, hold to remove it)' : '');
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
@@ -6913,22 +6927,25 @@ const TINTED = ['button', 'toggle', 'door', 'idoor', 'receiver', 'sensor', 'gate
 let tint = '';
 // In a level, Look, Erase and Move start the colours' line; back in the sandbox they return to the palette.
 const LINE = ['look', 'erase', 'move'];
+// The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
+const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'gate', 'turret'];
+const lined = () => !!(S.camp || S.simple);
 function placeTools() {
   const box = $('campTools');
   for (const id of LINE) {
     const b = document.querySelector(`[data-tool="${id}"]`);
     // A comment keeps each one's place in the palette while it is away.
-    if (S.camp && b.parentNode !== box) { b.home ||= document.createComment(id); b.replaceWith(b.home); box.append(b); }
-    else if (!S.camp && b.parentNode === box) b.home.replaceWith(b);
+    if (lined() && b.parentNode !== box) { b.home ||= document.createComment(id); b.replaceWith(b.home); box.append(b); }
+    else if (!lined() && b.parentNode === box) b.home.replaceWith(b);
   }
 }
 function syncColours() {
   placeTools();
-  const ui = S.ui, cols = S.camp ? coloursOf(S.camp.def) : null, row = $('campColours');
+  const ui = S.ui, cols = S.camp ? coloursOf(S.camp.def) : S.simple ? ['red', 'blue'] : null, row = $('campColours');
   if (cols && !cols.includes(ui.colour)) ui.colour = cols[0];
-  ui.gateColour = S.camp && S.camp.def.colours ? ui.colour : null;
+  ui.gateColour = (S.camp && S.camp.def.colours) || S.simple ? ui.colour : null;
   // In a level a laser stands alone, fires one way and turns with its clock: no mounting, no aim list.
-  if (S.camp) { ui.mount = false; if (ui.aim.length !== 1) ui.aim = ['right']; ui.mode = 'input'; } else ui.mount = true;
+  if (lined()) { ui.mount = false; if (ui.aim.length !== 1) ui.aim = ['right']; ui.mode = 'input'; } else ui.mount = true;
   row.hidden = !cols || cols.length < 2;
   if (cols && row.dataset.cols !== cols.join()) {
     row.dataset.cols = cols.join();
@@ -7052,6 +7069,7 @@ return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
 const m63 = (() => {
+const { frame: look } = m20;
 const { TICK_MS } = m1;
 const { createGame, step, gameText } = m10;
 const { aimKey } = m9;
@@ -7072,6 +7090,7 @@ const { stateKey } = m11;
 const { respawn } = m4;
 const { syncEnabled } = m36;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
 
 
 
@@ -7183,6 +7202,7 @@ function render() {
   S.draws++;
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
+  look.avatar = S.camp ? 'robot' : 'you';
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
   else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
 }
@@ -7300,7 +7320,7 @@ function bindInput() {
     // Move: press on a thing, release on the tile it goes to; the outline shows where.
     if (S.ui.tool === 'move') { canvas.setPointerCapture(ev.pointerId); S.carry = c; S.hover = c; return; }
     // In a level, the one-way or laser tool on its own piece: a tap turns it, a hold removes it (registers 234, 255).
-    if (S.camp && (S.ui.tool === 'gate' || S.ui.tool === 'turret') && ev.button !== 2 && holds(S.level, c.x, c.y, S.ui.tool)) {
+    if ((S.camp || S.simple) && (S.ui.tool === 'gate' || S.ui.tool === 'turret') && ev.button !== 2 && holds(S.level, c.x, c.y, S.ui.tool)) {
       const at = c, tool = S.ui.tool;
       S.gateHold = { at, tool, timer: setTimeout(() => { S.gateHold = null; change(() => place(S.level, { ...S.ui, tool }, at.x, at.y, 'remove')); S.fx.push({ type: 'erase', x: at.x, y: at.y, at: now() }); S.redraw = true; }, GATE_HOLD_MS) };
       return;

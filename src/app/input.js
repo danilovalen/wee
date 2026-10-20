@@ -67,7 +67,7 @@ export function bindInput() {
     // Move: press on a thing, release on the tile it goes to; the outline shows where.
     if (S.ui.tool === 'move') { canvas.setPointerCapture(ev.pointerId); S.carry = c; S.hover = c; return; }
     // In a level, the one-way or laser tool on its own piece: a tap turns it, a hold removes it (registers 234, 255).
-    if (S.camp && (S.ui.tool === 'gate' || S.ui.tool === 'turret') && ev.button !== 2 && holds(S.level, c.x, c.y, S.ui.tool)) {
+    if ((S.camp || S.simple) && (S.ui.tool === 'gate' || S.ui.tool === 'turret') && ev.button !== 2 && holds(S.level, c.x, c.y, S.ui.tool)) {
       const at = c, tool = S.ui.tool;
       S.gateHold = { at, tool, timer: setTimeout(() => { S.gateHold = null; change(() => place(S.level, { ...S.ui, tool }, at.x, at.y, 'remove')); S.fx.push({ type: 'erase', x: at.x, y: at.y, at: now() }); S.redraw = true; }, GATE_HOLD_MS) };
       return;

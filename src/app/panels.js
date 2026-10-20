@@ -153,7 +153,7 @@ export function syncPanel() {
   syncRoomsButton();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   // In a campaign level the palette is the level's: its elements, Look and Erase, in one list.
-  const only = S.camp ? toolsFor(S.camp.def) : null;
+  const only = S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE : null;
   syncColours();
   if (only && !only.includes(ui.tool)) ui.tool = 'look';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp; });
@@ -161,7 +161,7 @@ export function syncPanel() {
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   // In a level the one-way says how it is turned and taken away (register 234); draft copy.
-  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + (S.camp && (ui.tool === 'gate' || ui.tool === 'turret') ? ' (tap one to turn it, hold to remove it)' : '');
+  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + ((S.camp || S.simple) && (ui.tool === 'gate' || ui.tool === 'turret') ? ' (tap one to turn it, hold to remove it)' : '');
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
@@ -200,22 +200,25 @@ const TINTED = ['button', 'toggle', 'door', 'idoor', 'receiver', 'sensor', 'gate
 let tint = '';
 // In a level, Look, Erase and Move start the colours' line; back in the sandbox they return to the palette.
 const LINE = ['look', 'erase', 'move'];
+// The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
+const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'gate', 'turret'];
+const lined = () => !!(S.camp || S.simple);
 function placeTools() {
   const box = $('campTools');
   for (const id of LINE) {
     const b = document.querySelector(`[data-tool="${id}"]`);
     // A comment keeps each one's place in the palette while it is away.
-    if (S.camp && b.parentNode !== box) { b.home ||= document.createComment(id); b.replaceWith(b.home); box.append(b); }
-    else if (!S.camp && b.parentNode === box) b.home.replaceWith(b);
+    if (lined() && b.parentNode !== box) { b.home ||= document.createComment(id); b.replaceWith(b.home); box.append(b); }
+    else if (!lined() && b.parentNode === box) b.home.replaceWith(b);
   }
 }
 function syncColours() {
   placeTools();
-  const ui = S.ui, cols = S.camp ? coloursOf(S.camp.def) : null, row = $('campColours');
+  const ui = S.ui, cols = S.camp ? coloursOf(S.camp.def) : S.simple ? ['red', 'blue'] : null, row = $('campColours');
   if (cols && !cols.includes(ui.colour)) ui.colour = cols[0];
-  ui.gateColour = S.camp && S.camp.def.colours ? ui.colour : null;
+  ui.gateColour = (S.camp && S.camp.def.colours) || S.simple ? ui.colour : null;
   // In a level a laser stands alone, fires one way and turns with its clock: no mounting, no aim list.
-  if (S.camp) { ui.mount = false; if (ui.aim.length !== 1) ui.aim = ['right']; ui.mode = 'input'; } else ui.mount = true;
+  if (lined()) { ui.mount = false; if (ui.aim.length !== 1) ui.aim = ['right']; ui.mode = 'input'; } else ui.mount = true;
   row.hidden = !cols || cols.length < 2;
   if (cols && row.dataset.cols !== cols.join()) {
     row.dataset.cols = cols.join();

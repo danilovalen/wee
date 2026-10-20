@@ -167,7 +167,7 @@ export function enterLevel(id) {
   S.history = newHistory();
   S.ui.tool = 'look'; S.ui.colour = coloursOf(def)[0];
   p.last = id; write(p);
-  document.body.classList.add('campaign');
+  document.body.classList.add('campaign'); document.body.classList.remove('simple'); S.simple = false;
   syncBrief();
   A.setMode('edit'); A.syncPanel(); A.fit();
   return true;
@@ -259,7 +259,7 @@ export function buildCampaign(actions, sandbox) {
   A = actions; boot = sandbox;
   fitScene = buildMenuScene($('menuScene'));
   $('menuCampaign').onclick = openList;
-  $('menuSandbox').onclick = () => { closeAll(); boot(); };
+  $('menuSandbox').onclick = () => { closeAll(); S.simple = true; document.body.classList.add('simple'); Promise.resolve(boot()).then(A.syncPanel); };
   $('campMenu').onclick = openMenu;
   $('campBack').onclick = () => { noteLeaving(); leaveLevel(); openList(); };
   $('menuDebug').onclick = copyDebug;

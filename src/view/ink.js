@@ -22,7 +22,8 @@ export const INK = {
 export const ease = t => 1 - Math.pow(1 - t, 3);
 export const lerp = (a, b, t) => a + (b - a) * t;
 // The time the current frame is drawn at, for tiles that move on their own.
-export const frame = { clock: 0 };
+// avatar: who plays, the robot (campaign) or you, a circle (register 302).
+export const frame = { clock: 0, avatar: 'robot' };
 
 export function roundRect(g, x, y, w, h, r) {
   g.beginPath();
