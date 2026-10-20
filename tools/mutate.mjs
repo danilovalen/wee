@@ -765,6 +765,7 @@ const M = [
   ['src/app/campaign.js', "    if (max !== null && max !== undefined) rows.push(", "    if (false) rows.push(", 'campaign-play'],
   ['src/view/pieces.js', "if (badge && t.dirs.length > 1) modeBadge", "if (badge) modeBadge", 'sim'],
   ['src/campaign/robot.js', "if (!hit) for (const k of keys) move(", "if (false) for (const k of keys) move(", 'campaign'],
+  ['src/level/campaign.js', '"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null]', '"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null]', 'campaign'],
   ['src/campaign/extras.js', "  return all.size > 0 && [...all].every(id => met.has(id));", "  return met.size > 0;", 'campaign'],
   ['src/campaign/extras.js', "e.turret.dirs[0])).size >= 2", "e.turret.dirs[0])).size >= 1", 'campaign'],
   ['src', "(!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind))", "false", 'campaign'],

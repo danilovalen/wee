@@ -186,6 +186,11 @@ const build = (def, rows) => {
   ok('every switch off at the end: not met with no switch at all', !req('everyToggleOffAtEnd', ['#####', '#P..#', '#####'], ['right']));
   ok('a requirement with no toggles is not met', !req('everyToggleOn', ['#####', '#P..#', '#####'], ['right']));
 }
+{ // a palette minimum a required goal already needs is not set (register 280): it would show twice
+  const twice = LEVELS.flatMap(l => Object.entries(l.palette).filter(([el, [min]]) => min >= 2 && (l.require || []).some(id => (REQUIREMENTS[id].needs || {})[el] >= min)).map(([el]) => l.id + ':' + el));
+  ok('no level asks for a minimum its required goals already need', twice.length === 0, twice.join());
+  ok('a goal that needs two of something says so', REQUIREMENTS.twoTogglesOffAtEnd.needs.toggle === 2 && REQUIREMENTS.boxHitsBox.needs.box === 2);
+}
 { // why the robot cannot finish (copy is a draft)
   const why = rows => stuckText(room(rows));
   const at = (r, x, y) => r.at.some(t => t.x === x && t.y === y);
@@ -209,8 +214,8 @@ const build = (def, rows) => {
 }
 { // level 4: two switches at least, through the door, every switch off at the end
   const d = level('4');
-  ok('level 4 needs two switches and a door', d.palette.toggle[0] === 2 && d.palette.door[0] === 1 && d.require.join() === 'throughOpenDoor,twoTogglesOffAtEnd' && d.optional.join() === 'thirdToggleOnAtEnd');
-  ok('a one-switch room no longer fits level 4', placementErrors(d, build(d, ['#######', '#P.#..#', '#....##', '#...t.#', '#..#.##', '##...G#', '#######'].map((r, y) => y === 1 ? '#P.#D.#' : r))).some(e => /at least 2 switches/.test(e.msg)));
+  ok('level 4 needs a door, and its goal needs two switches (no minimum of its own, register 280)', d.palette.toggle[0] === 1 && d.palette.door[0] === 1 && d.require.join() === 'throughOpenDoor,twoTogglesOffAtEnd' && d.optional.join() === 'thirdToggleOnAtEnd');
+  ok('a one-switch room cannot meet level 4', !REQUIREMENTS.twoTogglesOffAtEnd.judge(build(d, ['#######', '#P.#D.#', '#....##', '#...t.#', '#..#.##', '##...G#', '#######']), ['right']));
 }
 { // level 5: one box pushed in two moves and run into once without moving
   const d = level('5');

@@ -68,6 +68,7 @@ export const EXTRA_REQUIREMENTS = {
     },
   },
   laserThroughTwoDoors: {
+    needs: { door: 2 },
     text: 'A laser goes through two open doors at once.',
     short: [{ el: 'laser' }, 'through 2 open', { el: 'door' }],
     judge: (room, moves) => {
@@ -100,11 +101,13 @@ export const EXTRA_REQUIREMENTS = {
     },
   },
   twoTogglesOffAtEnd: {
+    needs: { toggle: 2 },
     text: 'At least 2 switches are off when the robot reaches the goal.',
     short: ['2', { el: 'toggle' }, 'off at the end'],
     judge: (room, moves) => switches(room).length - replayPath(room, moves, () => {}).toggled.length >= 2,
   },
   thirdToggleOnAtEnd: {
+    needs: { toggle: 3 },
     text: 'A third switch is on when the robot reaches the goal.',
     short: ['a 3rd', { el: 'toggle' }, 'on at the end'],
     judge: (room, moves) => switches(room).length >= 3 && replayPath(room, moves, () => {}).toggled.length >= 1,
@@ -125,6 +128,7 @@ export const EXTRA_REQUIREMENTS = {
     },
   },
   boxHitsBox: {
+    needs: { box: 2 },
     text: 'A box collides with another box.',
     short: [{ el: 'box' }, 'collides with a', { el: 'box' }],
     judge: (room, moves) => stoppedPushes(room, moves).out.some(h => live(h.s, h.x, h.y)),
@@ -145,11 +149,13 @@ export const EXTRA_REQUIREMENTS = {
     judge: room => new Set(room.cells.filter(c => c.startsWith('gate:')).flatMap(c => c.slice(5).split('@')[0].split(','))).size >= 3,
   },
   lasersTwoWays: {
+    needs: { laser: 2 },
     text: 'The lasers point at least two different ways.',
     short: [{ el: 'laser' }, 'pointing 2 ways'],
     judge: room => new Set(room.entities.filter(e => e.turret).map(e => e.turret.dirs[0])).size >= 2,
   },
   boxHitsTwoDoors: {
+    needs: { door: 2 },
     text: 'A box collides with two different closed doors.',
     short: [{ el: 'box' }, 'collides with 2 closed', { el: 'door' }],
     judge: (room, moves) => {

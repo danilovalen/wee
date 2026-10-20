@@ -42,6 +42,7 @@ export const REQUIREMENTS = {
     },
   },
   throughDoorsOfTwoColours: {
+    needs: { door: 2 },
     text: 'The robot passes through doors of two colours.',
     short: [{ el: 'start' }, 'through', { el: 'door' }, 'of two colours'],
     // Standing on a door tile means it is open (register 243).

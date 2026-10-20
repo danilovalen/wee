@@ -205,11 +205,11 @@ try {
   await page.click('#campBack'); await page.click('.campRow[data-level="2"]');
   const hit = await page.locator('.campReqs li[data-req="hitsClosedDoor"]').evaluate(l => l.textContent + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join());
   check('level 2 says collides with, and draws the robot and the door', /collides with a closed/.test(hit) && hit.endsWith('start,door'), hit);
-  await page.click('#campBack'); await page.click('.campRow[data-level="4"]');
-  const min4 = await page.locator('.campReqs li[data-req="min-toggle"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');
-  check('level 4 lists its 2-switch minimum as a goal, drawn as the switch', min4 === '2 or more|toggle', min4);
+  await page.click('#campBack'); await page.click('.campRow[data-level="9"]');
+  const min9 = await page.locator('.campReqs li[data-req="min-gate"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');
+  check('level 9 lists its 2-one-way minimum as a goal, drawn as the one-way', min9 === '2 or more|gate', min9);
   await page.click('#campRun'); await page.waitForTimeout(150);
-  check('the minimum row is marked after a run on an empty room', await page.locator('.campReqs li[data-req="min-toggle"].unmet').count() === 1);
+  check('the minimum row is marked after a run on an empty room', await page.locator('.campReqs li[data-req="min-gate"].unmet').count() === 1);
   if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
   // A maximum shows as a goal while playing (register 299): level 16 allows exactly one box.
   await page.click('#campBack'); await page.click('.campRow[data-level="16"]');
