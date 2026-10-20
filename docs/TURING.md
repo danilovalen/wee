@@ -34,7 +34,7 @@ Sketch: `docs/turing-sketch.png`. Panels 1 and 2 are the game's own renders of r
 
 A grey "wired" colour for the editor, and three wire colours painted Terraria-style that cross without joining (`docs/wires-sketch.png`). That removes limits 1 and 2 above. What would still need checking before calling it Turing complete:
 
-- **Memory.** A latch is two NAND gates feeding each other. The laser clock shows that feedback settles one tick at a time, so a latch should hold its state, but nobody has built one yet. It is the one test to run once wires exist.
+- **Memory: tested, it works (register 348).** `tools/latch.mjs` builds one bit from today's four colours: two NOR gates (a two-colour inverted door is a NOR gate) feeding each other, set and reset by buttons. It holds 1 after Set is released and 0 after Reset is released. With no button pressed from the start it flickers until the first press, the circuit's textbook race. One bit uses all four colours, so a bigger memory needs the wires.
 - **Gates that drive gates.** A gate's output is a wire, a wire opens a door, and the door lets a beam reach the next gate's relay. Each step is a piece that exists today, so this should chain without anything new.
 - **An endless room.** Already true in his reading, so nothing to build.
 
