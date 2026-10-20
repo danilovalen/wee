@@ -11,7 +11,7 @@ From `docs/REGISTER.md`; numbers are register rows. The first plan (sections 1 t
 4. **325** Level 17: exactly 1 inverted door; requirements "laser stopped by a closed inverted door" (any time) and "robot through an inverted door". Known win: `.#... / ...#. / PBo#. / e...I / ..#.. / ....G`, exactly 7 moves. Exact count stays 7; size goal re-measured.
 5. **329** Level 18 gains "every relay is lit at the end". Its known room and counts are re-measured.
 6. **333 / 334** Level 19 loses "laser holds its own door" (lesson: a goal must never state the trick) and is hidden. The two-colour door stays in the game and in the Sandbox.
-7. **336-338** A new level 19 for pushable pieces, once slice 5 exists. *His requirements needed.*
+7. **341** A new level 19, once slice 5 exists: a pushable laser, a relay and a door (plus blocks). Requirements: the laser is pushed in 3 moves; a laser goes through an open door; the robot goes through the door.
 
 ## 3. Screen (one slice, sketch: `docs/screen-sketch.png`)
 8. **331** Reset sits at the right end of the level header.
@@ -30,7 +30,6 @@ From `docs/REGISTER.md`; numbers are register rows. The first plan (sections 1 t
 ## 7. To ask before building
 - **330** "Laser object colour isn't reflecting its palette": lasers have no colour today (the beam is always red). Is it the palette icon, the placed laser, or should lasers take a colour?
 - **328** The reading above.
-- **New level 19** Which pieces are pushable in it, and its requirements.
 
 ## 8. Older open rows, from before the campaign (his call whether they still matter)
 - **27** a 7×12 room as a template; **58** generator linearity; **76 / 82 / 90 / 92** lens and look decisions; **106** Rooms dialog; **118** flicker diagnosis; **215 / 216 / 218** menu screen polish; **227** resize lost while editing.
