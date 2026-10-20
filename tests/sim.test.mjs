@@ -1,9 +1,10 @@
 import { createGame, step, gameText, replay, cloneGame } from "../src/rules/game.js";
 import { worldStep as rawWorldStep } from '../src/rules/pieces.js';
 import { aimKey } from '../src/rules/player.js';
-import { parseLevel, emptyLevel, isCell, resizeSide, wallBorder } from '../src/level/format.js';
-import { solidCell, gateDirs } from '../src/rules/grid.js';
-import { place, describe, turnGate } from '../src/editor/edit.js';
+import { parseLevel, emptyLevel, isCell, resizeSide, wallBorder, moveSide } from '../src/level/format.js';
+import { solidCell, gateDirs, cellAt } from '../src/rules/grid.js';
+import { stateKey } from '../src/solve/solve.js';
+import { place, describe, turnGate, moveAt } from '../src/editor/edit.js';
 import { drawTurret } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
 import { newHistory, record, undo, redo, LIMIT } from '../src/editor/history.js';
@@ -1210,6 +1211,12 @@ const LONG = ['##########', '#..P....##', '##########'];
   const iheld = k => { const l = room(['#######', '#PB' + k + '..#', '#######']); l.cells[9] = 'button:red'; l.cells[10] = 'idoor:red|blue'; return createGame(l); };
   const ic = iheld('B'), ik = iheld('H');
   check('a two-colour inverted door blocking crushes a box in it; a heavy box keeps it passable', ic.open.red && ic.entities[1].dead && !ik.open.red && !ik.entities[1].dead, JSON.stringify([ic.open, ik.open]));
+  // A two-colour one-way does not launch again when its second colour joins the first (register 316).
+  const lg = room(['#######', '#P...B#', '#..B..#', '#B....#', '#######']); lg.cells[10] = 'gate:up@red|blue'; lg.cells[15] = 'button:blue'; lg.cells[19] = 'button:red';
+  const sg = createGame(lg), onGate = sg.entities.find(e => e.y === 2), bb = sg.entities.find(e => e.y === 1), rb = sg.entities.find(e => e.y === 3);
+  onGate.x = 3; onGate.y = 1; bb.x = 1; bb.y = 2; refreshDoors(sg); const firstLaunch = onGate.slide;
+  onGate.slide = null; onGate.x = 3; onGate.y = 1; rb.x = 5; rb.y = 2; refreshDoors(sg);
+  check('a two-colour one-way launches when the pair opens, not again when the other colour joins', firstLaunch === 'down' && !onGate.slide, JSON.stringify([firstLaunch, onGate.slide]));
   check('every coloured piece reads back in two colours, in the palette\'s order', ['button:red|blue', 'toggle:red|blue', 'idoor:red|blue', 'sensor:red|blue', 'gate:right@red|blue'].every(isCell) && !isCell('button:blue|red') && !isCell('gate:right@red|red'));
 }
 
@@ -1222,6 +1229,47 @@ const LONG = ['##########', '#..P....##', '##########'];
   const c = createGame(room(['#######', '#PBK..#', '#######'])); slide(c, 'right');
   check('a box pushes a pushable laser ahead of it, as a train', turret(c).x === 5 && c.entities.find(e => e.kind === 'box').x === 4, JSON.stringify(c.entities.map(e => [e.kind, e.x])));
   check('a pushable laser reads back', parseLevel(JSON.stringify(room(['#P.K#']))).entities[0].crate === true);
+}
+
+{ // pushable tiles (register 336): a relay, a one-way along its arrow, a closed door or inverted door
+  const run = (rows, crates, k = 'right') => slide(createGame(room(rows, { crates })), k);
+  const r = run(['#######', '#P.s..#', '#######'], [[3, 1]]);
+  check('the robot pushes a pushable relay to the wall', cellAt(r, 5, 1) === 'sensor:red' && cellAt(r, 3, 1) === '' && r.player.x === 4 && r.crates.has(12), JSON.stringify([r.cells, [...r.crates], r.player.x]));
+  check('a plain relay stops the robot', run(['#######', '#P.s..#', '#######'], []).player.x === 2);
+  const g = run(['#######', '#P.>..#', '#######'], [[3, 1]]);
+  check('a pushable one-way is pushed along its arrow', cellAt(g, 5, 1) === 'gate:right' && g.player.x === 4);
+  const gw = run(['#######', '#..<.P#', '#######'], [[3, 1]], 'left');
+  check('pushed along its arrow from the other side too', cellAt(gw, 1, 1) === 'gate:left' && gw.player.x === 2, JSON.stringify([gw.cells.slice(7, 14), gw.player.x]));
+  const ga = run(['#######', '#P.<..#', '#######'], [[3, 1]]);
+  check('against its arrow a pushable one-way is a wall', cellAt(ga, 3, 1) === 'gate:left' && ga.player.x === 2);
+  const d = run(['#######', '#P.D..#', '#######'], [[3, 1]]);
+  check('a closed pushable door is pushed', cellAt(d, 5, 1) === 'door:red' && d.player.x === 4);
+  const od = (() => { const l = room(['########', '#P.D...#', '#B.....#', '########'], { crates: [[3, 1]] }); l.cells[17] = 'button:red'; return slide(createGame(l), 'right'); })();
+  check('an open pushable door is walked through, not pushed', cellAt(od, 3, 1) === 'door:red' && od.player.x === 6, JSON.stringify([od.cells.slice(8, 16), od.player.x]));
+  const nd = (() => { const l = room(['########', '#P.N...#', '#B.....#', '########'], { crates: [[3, 1]] }); l.cells[17] = 'button:red'; return slide(createGame(l), 'right'); })();
+  check('a closed (pressed) pushable inverted door is pushed', cellAt(nd, 6, 1) === 'idoor:red' && nd.player.x === 5, JSON.stringify([nd.cells.slice(8, 16), nd.player.x]));
+  const tr = run(['########', '#PBs.B.#', '########'], [[3, 1]]);
+  check('a box pushes a pushable relay that pushes a box, as one train', cellAt(tr, 5, 1) === 'sensor:red' && tr.entities.map(e => e.x).join() === '4,6' && tr.player.x === 3, JSON.stringify([tr.cells.slice(8, 16), tr.entities.map(e => e.x), tr.player.x]));
+  const fl = run(['#######', '#P.sg.#', '#######'], [[3, 1]]);
+  check('a pushable tile lands only on bare floor', cellAt(fl, 3, 1) === 'sensor:red' && fl.player.x === 2);
+  const rs = run(['#######', '#P.s..#', '#######'], [[3, 1]]); respawn(rs);
+  check('a reset puts pushed tiles back', cellAt(rs, 3, 1) === 'sensor:red' && rs.crates.has(10) && cellAt(rs, 5, 1) === '');
+  const k1 = createGame(room(['#######', '#P.s..#', '#######'], { crates: [[3, 1]] })), k2 = slide(cloneGame(k1), 'right');
+  check('a pushed tile changes the search key, and a copy of a run is untouched by the push', stateKey(k1) !== stateKey(k2) && cellAt(k1, 3, 1) === 'sensor:red');
+  const ed = room(['#P...#']), ui = { tool: 'sensor', colour: 'red', crate: true };
+  place(ed, ui, 3, 0, 'place');
+  check('placing with the chip on makes a pushable tile', ed.crates?.length === 1 && ed.cells[3] === 'sensor:red' && /pushable/.test(describe(ed, 3, 0)));
+  place(ed, { ...ui, crate: false }, 3, 0, 'place');
+  check('placing again with the chip off makes it plain', !ed.crates && ed.cells[3] === 'sensor:red');
+  place(ed, ui, 3, 0, 'place'); place(ed, ui, 3, 0, 'erase');
+  check('erasing a pushable tile takes the mark too', !ed.crates && ed.cells[3] === '');
+  place(ed, ui, 3, 0, 'place'); const mv = moveAt(ed, { x: 3, y: 0 }, { x: 4, y: 0 }), gr = resizeSide(ed, 'left', 1);
+  check('moving or growing the room carries the mark with its tile', mv.crates[0].x === 4 && mv.cells[4] === 'sensor:red' && gr.crates[0].x === 4, JSON.stringify([mv.crates, gr.crates]));
+  const bord = room(['#####', '#.s.#', '#####'], { crates: [[2, 1]] }), grown = moveSide(bord, 'left', 1);
+  check('growing a walled room carries the mark too', grown && grown.crates[0].x === 3 && grown.cells[grown.w + 3] === 'sensor:red', JSON.stringify(grown && grown.crates));
+  check('pushable tiles read back', parseLevel(JSON.stringify(room(['#P.s#'], { crates: [[3, 0]] }))).crates[0].x === 3);
+  let bad = ''; try { parseLevel(JSON.stringify(room(['#P..#'], { crates: [[3, 0]] }))); } catch (e) { bad = e.message; }
+  check('a pushable mark on a tile that cannot be pushed is refused', /pushable/i.test(bad), bad);
 }
 
 { // gravel stops what slides onto it

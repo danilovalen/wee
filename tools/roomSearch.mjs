@@ -1,7 +1,7 @@
 // The room search shared by tools/levelSearch.mjs and tools/tilesArea.mjs. A genome is what a
 // player can vary: the room's size, where the start and the goal stand, and what goes in.
 // searcher(def, seed) returns its moves: random(), mutate(g), penalty(g), make(g), show(room).
-import { roomOf, placementErrors, bounds, coloursOf, colouringsOf, pushingsOf } from '../src/campaign/rules.js';
+import { roomOf, placementErrors, overLimits, underLimits, bounds, coloursOf, colouringsOf, pushingsOf } from '../src/campaign/rules.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { miss } from './searchScores.mjs';
@@ -31,6 +31,7 @@ export function searcher(def, seed = 1) {
       else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
       else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, ...(pushingsOf(def, 'laser')[0] ? { crate: true } : {}), turret: { dirs: [d || 'right'], mode: 'input' } });
       else r.cells[y * g.w + x] = el === 'block' ? 'wall' : CELL[el] + ':' + col;
+      if (['gate', 'door', 'idoor', 'relay'].includes(el) && pushingsOf(def, el)[0]) (r.crates ||= []).push({ x, y });
     }
     return r;
   }
@@ -90,7 +91,8 @@ export function searcher(def, seed = 1) {
   // How far a room is from winning: 0 is a win. Each failed requirement on each path counts.
   function penalty(g) {
     const r = make(g);
-    if (placementErrors(def, r).length) return 1e9;
+    // The palette's counts are part of a win (check reads them), so a room off them is refused here too.
+    if (placementErrors(def, r).length || overLimits(def, r).length || underLimits(def, r).length) return 1e9;
     const a = allShortest(r, { maxPaths: 300 });
     if (a.status !== 'solved') return 1000;
     const { min, max } = bounds(def.steps);

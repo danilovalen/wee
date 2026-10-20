@@ -418,6 +418,8 @@ const build = (def, rows) => {
   // Pushable lasers are offered per level (register 336): level 19's only pushable, level 14's only plain.
   const strayLaser = (id, crate) => { const d = level(id), r = roomOf(d); r.entities.push({ kind: 'turret', x: 3, y: 3, ...(crate ? { crate: true } : {}), turret: { dirs: ['up'], mode: 'input' } }); return placed(d, r).stray.length; };
   ok('a level offering a laser only pushable refuses a plain one', strayLaser('19', true) === 0 && strayLaser('19', false) === 1);
+  const strayRelay = crate => { const d = { ...level('18'), pushable: { relay: 'also' } }, d2 = level('18'), r = roomOf(d); r.cells[3 * r.w + 3] = 'sensor:red'; if (crate) r.crates = [{ x: 3, y: 3 }]; return [placed(d, r).stray.length, placed(d2, r).stray.length]; };
+  ok('a pushable relay counts where the level offers one, and is stray where it does not', strayRelay(true).join() === '0,1' && strayRelay(false).join() === '0,0', JSON.stringify([strayRelay(true), strayRelay(false)]));
   ok('a level not offering a pushable laser refuses one', strayLaser('14', false) === 0 && strayLaser('14', true) === 1);
   // Two colours are offered per piece (register 316): the two-colour level's door only in red+blue, its buttons and relays never.
   ok('a level offering a piece only in two colours refuses it in one', stray('twocolour', 'door:red|blue') === 0 && stray('twocolour', 'door:red') === 1 && stray('twocolour', 'door:blue') === 1);

@@ -27,6 +27,7 @@ export function resizeLevel(level, w, h) {
     ...level, w, h, cells,
     start: level.start && { x: Math.min(level.start.x, w - 1), y: Math.min(level.start.y, h - 1) },
     entities: level.entities.filter(e => e.x < w && e.y < h),
+    ...(level.crates ? { crates: level.crates.filter(c => c.x < w && c.y < h) } : {}),
   };
 }
 
@@ -42,11 +43,15 @@ export function parseLevel(text) {
     if (e.turret) checkTurret(e.turret);
     if (MOVES.includes(e.kind) && e.mode && !MODES.includes(e.mode)) throw new Error('Unknown clock: ' + e.mode);
   }
+  for (const c of l.crates || []) if (!(c.x >= 0 && c.y >= 0 && c.x < l.w && c.y < l.h) || !CRATED(l.cells[c.y * l.w + c.x])) throw new Error('Only a relay, a one-way or a door can be pushable.');
   if (!['tile', 'slide'].includes(l.clock)) throw new Error('Unknown clock: ' + l.clock);
   // Powers that no longer exist (Hook, the boots) are dropped from old rooms.
   const powers = Object.fromEntries(Object.entries(l.powers || {}).filter(([p]) => POWERS.includes(p)));
   return { ...emptyLevel(l.w, l.h), ...l, powers: { ...emptyLevel().powers, ...powers } };
 }
+
+// The tiles that come in a pushable version (register 336); a pushable laser is a piece.
+export const CRATED = c => !!c && ['sensor:', 'gate:', 'door:', 'idoor:'].some(k => c.startsWith(k));
 
 export function isCell(c) {
   if (c === '' || c === 'wall' || c === 'crack' || c === 'checkpoint') return true;
@@ -79,7 +84,7 @@ export function resizeSide(level, side, delta) {
   const cells = Array(w * h).fill('');
   for (let y = 0; y < level.h; y++) for (let x = 0; x < level.w; x++) if (inside(x + dx, y + dy)) cells[(y + dy) * w + x + dx] = level.cells[y * level.w + x];
   const entities = level.entities.map(e => ({ ...e, x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y));
-  return { ...level, w, h, cells, start, entities };
+  return { ...level, w, h, cells, start, entities, ...(level.crates ? { crates: level.crates.map(e => ({ x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y)) } : {}) };
 }
 
 // A side's grip: n > 0 adds n lines, n < 0 cuts them. When that edge is a wall border, the
@@ -114,7 +119,7 @@ function cutOnce(l, side) {
   const shift = o => ({ ...o, x: across(side) && o.x > k ? o.x - 1 : o.x, y: !across(side) && o.y > k ? o.y - 1 : o.y });
   const cells = [];
   for (let y = 0; y < l.h; y++) for (let x = 0; x < l.w; x++) if (keep(x, y)) cells.push(l.cells[y * l.w + x]);
-  return { ...l, w, h, cells, start: l.start && !at(l.start) ? shift(l.start) : null, entities: l.entities.map(shift) };
+  return { ...l, w, h, cells, start: l.start && !at(l.start) ? shift(l.start) : null, entities: l.entities.map(shift), ...(l.crates ? { crates: l.crates.map(shift) } : {}) };
 }
 
 function growOnce(l, side) {
@@ -131,7 +136,7 @@ function growOnce(l, side) {
     const ox = across(side) && x > k ? x - 1 : x, oy = !across(side) && y > k ? y - 1 : y;
     cells.push(l.cells[oy * l.w + ox]);
   }
-  return { ...l, w, h, cells, start: l.start && shift(l.start), entities: l.entities.map(shift) };
+  return { ...l, w, h, cells, start: l.start && shift(l.start), entities: l.entities.map(shift), ...(l.crates ? { crates: l.crates.map(shift) } : {}) };
 }
 
 // Walls on every edge tile, except where the start stands.
@@ -142,5 +147,5 @@ export function wallBorder(level) {
     if ((x === 0 || y === 0 || x === w - 1 || y === h - 1) && !(level.start && x === level.start.x && y === level.start.y)) cells[i] = 'wall';
   }
   const edge = e => e.x === 0 || e.y === 0 || e.x === w - 1 || e.y === h - 1;
-  return { ...level, cells, entities: level.entities.filter(e => !edge(e)) };
+  return { ...level, cells, entities: level.entities.filter(e => !edge(e)), ...(level.crates ? { crates: level.crates.filter(c => !edge(c)) } : {}) };
 }

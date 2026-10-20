@@ -17,6 +17,8 @@ export function room(rows, opts = {}) {
   const l = emptyLevel(w, h);
   l.clock = opts.clock || 'tile';
   if (opts.powers) l.powers = { ...l.powers, ...opts.powers };
+  // opts.crates: [[x, y], ...], tiles made pushable (register 336).
+  if (opts.crates) l.crates = opts.crates.map(([x, y]) => ({ x, y }));
   const mode = opts.mode || 'input';
   rows.forEach((row, y) => [...row].forEach((ch, x) => {
     const i = y * w + x;

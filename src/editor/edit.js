@@ -1,11 +1,20 @@
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 import { CLOCKWISE, CARRIES_TURRET } from '../rules/base.js';
+import { CRATED } from '../level/format.js';
 import { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } from './palette.js';
 
 const idx = (level, x, y) => y * level.w + x;
 const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');
 const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
+// Pushable tiles (register 336): level.crates lists them as {x, y}, and they move with their tile.
+export const CRATE_TOOLS = ['sensor', 'gate', 'door', 'idoor'];
+export const crateAt = (level, x, y) => !!level.crates?.some(c => c.x === x && c.y === y);
+function setCrate(level, x, y, on) {
+  const k = (level.crates || []).filter(c => c.x !== x || c.y !== y);
+  if (on) k.push({ x, y });
+  if (k.length) level.crates = k; else delete level.crates;
+}
 
 // Does (x, y) already hold the kind of thing this tool places?
 // Moves whatever stands on one tile to another: the start, a piece, or a tile's contents.
@@ -29,6 +38,7 @@ function moveOnto(level, from, to) {
   } else if (l.cells[fi]) {
     if (l.cells[ti] || there || isStart(to)) return null;
     l.cells[ti] = l.cells[fi]; l.cells[fi] = '';
+    if (crateAt(l, from.x, from.y)) { setCrate(l, from.x, from.y, false); setCrate(l, to.x, to.y, true); }
   } else return null;
   return l;
 }
@@ -42,7 +52,7 @@ export function swapAt(level, from, to) {
     if (l.start && l.start.x === p.x && l.start.y === p.y) { l.start = null; return { start: true }; }
     const k = pieceAt(l, p.x, p.y);
     if (k >= 0) return { piece: l.entities.splice(k, 1)[0] };
-    if (l.cells[i]) { const cell = l.cells[i]; l.cells[i] = ''; return { cell }; }
+    if (l.cells[i]) { const cell = l.cells[i], crate = crateAt(l, p.x, p.y); l.cells[i] = ''; setCrate(l, p.x, p.y, false); return { cell, crate }; }
     return null;
   };
   const a = grab(from), b = grab(to);
@@ -52,7 +62,7 @@ export function swapAt(level, from, to) {
     if (t.start) l.start = { x: p.x, y: p.y };
     else if (t.piece) l.entities.push({ ...t.piece, x: p.x, y: p.y });
     else if (l.cells[i]) return false;
-    else l.cells[i] = t.cell;
+    else { l.cells[i] = t.cell; if (t.crate) setCrate(l, p.x, p.y, true); }
     return true;
   };
   // A swap frees both tiles first, so the robot or a piece always lands where one stood or on
@@ -113,6 +123,7 @@ export function describe(level, x, y) {
     else if (kind === 'idoor') parts.push(`${cname(v)} inverted door`);
     else parts.push(`${cname(v)} ${kind}`);
   }
+  if (crateAt(level, x, y)) parts.push('pushable');
   if (level.start && level.start.x === x && level.start.y === y) parts.push('Start');
   return parts.length ? parts.join(', ') : 'Empty floor';
 }
@@ -123,7 +134,7 @@ export function describe(level, x, y) {
 export function place(level, ui, x, y, how) {
   const out = [];
   if (how === 'remove' && !holds(level, x, y, ui.tool)) return out;
-  if (how === 'place' && holds(level, x, y, ui.tool)) return out;
+  if (how === 'place' && holds(level, x, y, ui.tool) && (!CRATE_TOOLS.includes(ui.tool) || crateAt(level, x, y) === !!ui.crate)) return out;
   const t = how === 'erase' ? 'erase' : how === 'remove' ? 'remove' : ui.tool, i = idx(level, x, y), pi = pieceAt(level, x, y);
   const gone = { type: 'erase', x, y };
   const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
@@ -181,6 +192,8 @@ export function place(level, ui, x, y, how) {
     if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
     level.entities.push(want);
   }
+  const c = level.cells[i];
+  setCrate(level, x, y, CRATE_TOOLS.includes(t) ? !!ui.crate && CRATED(c) : crateAt(level, x, y) && CRATED(c));
   if (gone.cell || gone.piece) out.push(gone);
   if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
   return out;

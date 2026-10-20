@@ -1,7 +1,8 @@
 // You: one slide step at a time, dive, hide, and what each key does.
 import { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS, PUSHED, wades } from './base.js';
 import { inBeam, laser, turnTurrets } from './beams.js';
-import { cellAt, crushes, entAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } from './grid.js';
+import { cellAt, crushes, entAt, facing, gateAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } from './grid.js';
+import { crateAt, pushChain, pushesTile } from './crates.js';
 import { die, kill, land, light, refreshDoors, respawn, smash } from './life.js';
 import { burnFuses, hideCycle, worldStep } from './pieces.js';
 import { STICKS, drag, entered, stick, stuckTo, unstick } from './sticky.js';
@@ -23,7 +24,13 @@ function train(s, e, dx, dy, d) {
 
 // One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
 export function playerStep(s, d, diving) {
-  const p = s.player, t = stepTo(s, p.x, p.y, d, p.swimming, diving);
+  const p = s.player, pd = facing(s, p.x, p.y, d), ax = p.x + DIRS[pd][0], ay = p.y + DIRS[pd][1];
+  // A pushable tile ahead goes first, with whatever it pushes in turn.
+  if (crateAt(s, ax, ay) && pushesTile(s, ax, ay, pd)) {
+    const g = gateAt(s, p.x, p.y);
+    if ((g && !g.includes(pd)) || !pushChain(s, ax, ay, pd)) return 'blocked';
+  }
+  const t = stepTo(s, p.x, p.y, d, p.swimming, diving);
   if (!t) return 'blocked';
   if (t.death) { die(s); return 'died'; }
   smash(s, t);
@@ -47,8 +54,13 @@ export function playerStep(s, d, diving) {
     } else if (PUSHED(e)) {
       // A box glued to another piece: the one ahead goes first, the one behind follows.
       const led = !!partnerAt(s, e, nx + dx, ny + dy) && lead(s, e, dx, dy);
-      if (!(b = pushTo(s, nx, ny, t.d, wades(e)))) { const o = entAt(s, nx + dx, ny + dy, e); if (o && meet(s, e, o)) return 'blocked'; if (!(b = train(s, e, dx, dy, t.d))) return 'blocked'; }
-      if (land(s, e, b)) { pushed = { id: e.id, d: b.d }; light(s, e); if (!led) follow(s, e, dx, dy); }
+      let chained = false;
+      if (!(b = pushTo(s, nx, ny, t.d, wades(e)))) {
+        const o = entAt(s, nx + dx, ny + dy, e);
+        if (o && meet(s, e, o)) return 'blocked';
+        if (!(b = train(s, e, dx, dy, t.d))) { if (!pushChain(s, nx, ny, t.d)) return 'blocked'; chained = true; }
+      }
+      if (chained ? !e.dead : land(s, e, b)) { pushed = { id: e.id, d: chained ? t.d : b.d }; light(s, e); if (!led) follow(s, e, dx, dy); }
     } else return 'blocked';
   }
   p.pushing = pushed;

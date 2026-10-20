@@ -14,7 +14,7 @@ export const REQUIREMENTS = {
     // A closed door is solid, so standing on a door tile means it is open.
     judge: (room, moves) => {
       let ok = false;
-      replayPath(room, moves, s => { if (/^door:/.test(room.cells[s.player.y * room.w + s.player.x] || '')) ok = true; });
+      replayPath(room, moves, s => { if (/^door:/.test(s.cells[s.player.y * room.w + s.player.x] || '')) ok = true; });
       return ok;
     },
   },
@@ -25,7 +25,7 @@ export const REQUIREMENTS = {
     // Standing on a door tile means it is open (register 243).
     judge: (room, moves) => {
       const seen = new Set();
-      replayPath(room, moves, s => { const c = room.cells[s.player.y * room.w + s.player.x] || ''; if (/^door:/.test(c)) seen.add(c.slice(5)); });
+      replayPath(room, moves, s => { const c = s.cells[s.player.y * room.w + s.player.x] || ''; if (/^door:/.test(c)) seen.add(c.slice(5)); });
       return seen.size >= 2;
     },
   },
@@ -38,7 +38,7 @@ export const REQUIREMENTS = {
       replayPath(room, moves, s => {
         const p = s.player;
         if (dir && !p.dir) {
-          const [dx, dy] = STEP[dir], c = room.cells[(p.y + dy) * room.w + p.x + dx] || '';
+          const [dx, dy] = STEP[dir], c = s.cells[(p.y + dy) * room.w + p.x + dx] || '';
           if (/^door:/.test(c) && !c.slice(5).split('|').some(col => s.open[col])) ok = true;
         }
         dir = p.dir;
@@ -55,7 +55,7 @@ export const REQUIREMENTS = {
     judge: (room, moves) => {
       let passes = 0, was = false;
       replayPath(room, moves, s => {
-        const on = /^door:/.test(room.cells[s.player.y * room.w + s.player.x] || '');
+        const on = /^door:/.test(s.cells[s.player.y * room.w + s.player.x] || '');
         if (on && !was) passes++;
         was = on;
       });
@@ -85,7 +85,7 @@ export const REQUIREMENTS = {
     short: ['every', { el: 'box' }, 'off the', { el: 'button' }, 'at the end'],
     judge: (room, moves) => {
       const end = replayPath(room, moves, () => {});
-      return end.entities.filter(e => !e.dead && e.kind === 'box').every(e => !(room.cells[e.y * room.w + e.x] || '').startsWith('button:'));
+      return end.entities.filter(e => !e.dead && e.kind === 'box').every(e => !(end.cells[e.y * room.w + e.x] || '').startsWith('button:'));
     },
   },
   doorClosedAtEnd: {
@@ -119,7 +119,7 @@ Object.assign(REQUIREMENTS, {
     // A closed door is solid, so a box on a door tile means it is open.
     judge: (room, moves) => {
       let ok = false;
-      replayPath(room, moves, s => { if (s.entities.some(e => !e.dead && e.kind === 'box' && /^door:/.test(room.cells[e.y * room.w + e.x] || ''))) ok = true; });
+      replayPath(room, moves, s => { if (s.entities.some(e => !e.dead && e.kind === 'box' && /^door:/.test(s.cells[e.y * room.w + e.x] || ''))) ok = true; });
       return ok;
     },
   },
@@ -129,7 +129,7 @@ Object.assign(REQUIREMENTS, {
     judge: (room, moves) => {
       let robot = false, flipped = false;
       replayPath(room, moves, s => {
-        if ((room.cells[s.player.y * room.w + s.player.x] || '').startsWith('toggle:')) robot = true;
+        if ((s.cells[s.player.y * room.w + s.player.x] || '').startsWith('toggle:')) robot = true;
         if (s.toggled.length) flipped = true;
       });
       return flipped && !robot;

@@ -64,7 +64,7 @@ export const EXTRA_REQUIREMENTS = {
     short: [{ el: 'start' }, 'steps on a', { el: 'button' }],
     judge: (room, moves) => {
       let ok = false;
-      replayPath(room, moves, s => { if ((room.cells[s.player.y * room.w + s.player.x] || '').startsWith('button:')) ok = true; });
+      replayPath(room, moves, s => { if ((s.cells[s.player.y * room.w + s.player.x] || '').startsWith('button:')) ok = true; });
       return ok;
     },
   },
@@ -137,7 +137,7 @@ export const EXTRA_REQUIREMENTS = {
   boxOnButtonAtEnd: {
     text: 'Box on a button at the end.',
     short: [{ el: 'box' }, 'on a', { el: 'button' }, 'at the end'],
-    judge: (room, moves) => replayPath(room, moves, () => {}).entities.some(e => !e.dead && e.kind === 'box' && /^button:/.test(room.cells[e.y * room.w + e.x] || '')),
+    judge: (room, moves) => { const end = replayPath(room, moves, () => {}); return end.entities.some(e => !e.dead && e.kind === 'box' && /^button:/.test(end.cells[e.y * room.w + e.x] || '')); },
   },
   noBoxAtEnd: {
     text: 'No box left at the end.',
@@ -159,7 +159,7 @@ export const EXTRA_REQUIREMENTS = {
   robotThroughIdoor: {
     text: 'Robot through an inverted door.',
     short: [{ el: 'start' }, 'through an open', { el: 'idoor' }],
-    judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (/^idoor:/.test(room.cells[s.player.y * room.w + s.player.x] || '')) ok = true; }); return ok; },
+    judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (/^idoor:/.test(s.cells[s.player.y * room.w + s.player.x] || '')) ok = true; }); return ok; },
   },
   laserStoppedByIdoor: {
     text: 'Laser stopped by a closed inverted door.',
@@ -170,7 +170,7 @@ export const EXTRA_REQUIREMENTS = {
   allRelaysLitAtEnd: {
     text: 'Every laser relay lit at the end.',
     short: ['every', { el: 'relay' }, 'lit at the end'],
-    judge: (room, moves) => { const end = replayPath(room, moves, () => {}), relays = room.cells.flatMap((c, i) => c.startsWith('sensor:') ? [i] : []); return relays.length > 0 && relays.every(i => end.lit.has(i)); },
+    judge: (room, moves) => { const end = replayPath(room, moves, () => {}), relays = end.cells.flatMap((c, i) => c.startsWith('sensor:') ? [i] : []); return relays.length > 0 && relays.every(i => end.lit.has(i)); },
   },
   // Register 341: one laser pushed in 3 moves (a push slides it at least one tile).
   laserPushedThrice: {

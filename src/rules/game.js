@@ -13,13 +13,15 @@ export function createGame(level) {
   const l = JSON.parse(JSON.stringify(level));
   const s = {
     origin: l.entities,
-    w: l.w, h: l.h, cells: l.cells, powers: l.powers, clock: l.clock,
+    w: l.w, h: l.h, cells: l.cells, originCells: l.cells, powers: l.powers, clock: l.clock,
     start: { ...l.start },
     checkpoint: { ...l.start },
     player: { x: l.start.x, y: l.start.y, dir: null, moved: 0, hidden: false, hideTicks: 0, swimming: false, stroke: false, sticky: false, stuck: null, pushing: null, snap: true },
     entities: freshPieces(l.entities),
+    crates: new Set((l.crates || []).map(c => c.y * l.w + c.x)),
     open: {}, broken: [], toggled: [], onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };
+  s.originCrates = s.crates;
   computeBeams(s, false);
   flipToggles(s, false);
   refreshDoors(s);
@@ -90,6 +92,7 @@ export function gameText(s, mode = 'play') {
       ...(e.turret ? { turret: { dirs: e.turret.dirs, mode: e.turret.mode, aim: aimOf(e.turret) } } : {}),
     })),
     open: COLOURS.filter(c => s.open[c]),
+    ...(s.crates.size ? { crates: [...s.crates].sort((a, b) => a - b).map(i => [i % s.w, Math.floor(i / s.w), s.cells[i]]) } : {}),
     ...(s.broken.length ? { broken: s.broken.map(i => [i % s.w, Math.floor(i / s.w)]) } : {}),
     beams: s.beams.map(b => ({ from: b.path[0], to: b.path[b.path.length - 1] })),
     powers: POWERS.filter(p => s.powers[p] && !NEEDS[p]),

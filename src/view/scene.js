@@ -1,13 +1,21 @@
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
-import { DIRS } from '../rules/base.js';
-import { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } from './ink.js';
+import { DIRS, TICK_MS } from '../rules/base.js';
+import { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp, roundRect } from './ink.js';
 import { drawPiece, drawPlayer } from './pieces.js';
 import { drawCell, drawFloor } from './tiles.js';
 import { drawMasses, inMass, overlay } from './masses.js';
 import { drawHeat, drawLensMarks } from './lenses.js';
 
 const GHOST_MS = 360;
+
+// A pushable tile (register 336): the tile cut to fit inside the box's brown border.
+function drawCrated(g, c, x, y, s, k = 1, ox = 0, oy = 0) {
+  const X = x * T + ox, Y = y * T + oy;
+  g.save(); g.translate(ox, oy); roundRect(g, x * T + 4, y * T + 4, T - 8, T - 8, 3); g.clip(); drawCell(g, c, x, y, s, k); g.restore();
+  g.strokeStyle = INK.boxEdge; g.lineWidth = 2; roundRect(g, X + 3, Y + 3, T - 6, T - 6, 3.5); g.stroke();
+}
+const crateSet = level => new Set((level.crates || []).map(c => c.y * level.w + c.x));
 
 // fx: [{type, at(ms), ...}] effects started by game events or edits.
 // marks: lens ({ heat, dots, lines, frames }, see lenses.js) and unused (pieces or tiles the
@@ -22,10 +30,12 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
     return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
   };
-  drawMasses(g, level.cells, level.w, level.h, (x, y) => pop(x, y) < 1);
+  const crated = crateSet(level), massed = crated.size ? level.cells.map((c, i) => crated.has(i) ? '' : c) : level.cells;
+  drawMasses(g, massed, level.w, level.h, (x, y) => pop(x, y) < 1);
   level.cells.forEach((c, i) => {
     const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
-    if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);
+    if (crated.has(i)) drawCrated(g, c, x, y, null, k);
+    else if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);
     else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
   });
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
@@ -134,8 +144,15 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
   drawFloor(g, s.w, s.h);
   // A broken block is floor for the rest of the run.
   const cells = s.broken.length ? s.cells.map((c, i) => s.broken.includes(i) ? '' : c) : s.cells;
-  drawMasses(g, cells, s.w, s.h);
-  cells.forEach((c, i) => { if (!inMass(c) || overlay(c)) drawCell(g, c, i % s.w, Math.floor(i / s.w), s, 1, overlay(c)); });
+  drawMasses(g, s.crates.size ? cells.map((c, i) => s.crates.has(i) ? '' : c) : cells, s.w, s.h);
+  cells.forEach((c, i) => {
+    const x = i % s.w, y = Math.floor(i / s.w);
+    if (s.crates.has(i)) {
+      // A tile pushed this tick slides from where it stood.
+      const f = fx.find(f => f.type === 'tilePush' && f.x + DIRS[f.d][0] === x && f.y + DIRS[f.d][1] === y && now - f.at < TICK_MS), k = f ? 1 - ease((now - f.at) / TICK_MS) : 0;
+      drawCrated(g, c, x, y, s, 1, f ? -DIRS[f.d][0] * T * k : 0, f ? -DIRS[f.d][1] * T * k : 0);
+    } else if (!inMass(c) || overlay(c)) drawCell(g, c, x, y, s, 1, overlay(c));
+  });
   // A shocked pool crackles: a flicker over every cell of it, a turret's for as long
   // as its beam touches, yours for a moment.
   const crackle = (cells, k) => {

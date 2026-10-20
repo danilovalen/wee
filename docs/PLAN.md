@@ -1,6 +1,6 @@
 # Plan: everything still open (2026-10-20, second plan)
 
-From `docs/REGISTER.md`; numbers are register rows. The first plan (sections 1 to 6 of 2026-10-20) is built; its leftover questions are in `docs/QUESTIONS.md`. Nothing below is built. Order is his list's order where it does not depend on another slice.
+From `docs/REGISTER.md`; numbers are register rows. The first plan (sections 1 to 6 of 2026-10-20) is built; its leftover questions are in `docs/QUESTIONS.md`. Sections 1 to 6 are built (2026-10-20); section 8 is his call. Order is his list's order where it does not depend on another slice.
 
 ## 1. Goals and scoring (one slice)
 1. **321** Run never refuses a room for its palette: minimums ("place at least one") stop being placement errors and stay as goal rows, which the run marks met or not.
@@ -21,13 +21,13 @@ From `docs/REGISTER.md`; numbers are register rows. The first plan (sections 1 t
 ## 4. Relay look (small, decided)
 11. **326 / 339 / 340** The relay becomes a soft eight-point star (outer radius 12, inner 10.5, rounded corners), same outline and faint core as today. Sketch: `docs/relay-sketch-3.png`, version S5c.
 
-## 5. Pushable pieces (the big one)
+## 5. Pushable pieces (the big one): built
 12. **336-338** (sketch: `docs/pushable-sketch.png`) Laser, relay, one-way, door and inverted door get a pushable version: the box's brown border around the piece's own drawing. A "Pushable" chip at the end of the tools row places it; a level offers it per piece (like two colours). Pushed like a box; a pushable one-way only along its arrow; a pushable door or inverted door is walked through while open and pushed while closed. A pushed laser keeps its aim; pushable pieces and boxes push each other as one train, like boxes (his answers).
 
 ## 5b. Laser colour
 12b. **330** The laser (turret and beam) turns an electric gold, a colour no button, door or switch uses.
 
-## 6. Search (diagnosis first)
+## 6. Search (diagnosis first): done
 13. **335** Find why the room search misses wins that exist (levels 17, 18): likely the climb's partial credit gives nothing for goals that need an order of events. Fix, then re-run it on every level as a check.
 
 ## 8. Older open rows, from before the campaign (his call whether they still matter)

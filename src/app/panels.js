@@ -216,6 +216,8 @@ function placeTools() {
 }
 // What the chosen tool may come in, and every choice the row offers: a level's colours, then red+blue
 // as a third dot where the level offers some piece in two (register 316); the simple Sandbox offers all three.
+// The pieces that come in a pushable version (register 336).
+const PUSHABLE = ['laser', 'relay', 'gate', 'door', 'idoor'];
 const ELEMENT_OF = Object.fromEntries(Object.entries(TOOL).map(([el, t]) => [t, el]));
 function colourChoices() {
   if (S.simple) return { all: ['red', 'blue', 'red|blue'], fits: ['red', 'blue', 'red|blue'] };
@@ -247,21 +249,23 @@ function syncColours() {
   row.querySelectorAll('[data-camp-colour]').forEach(b => { const on = b.dataset.campColour === ui.colour; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); b.disabled = !!fits && !fits.includes(b.dataset.campColour); });
   // The Pushable chip (register 336) shows where the level offers a pushable piece; the chosen tool
   // decides whether it may be on, off, or either.
-  const chip = $('campCrate'), def = S.camp && S.camp.def, offers = el => S.simple ? (el === 'laser' ? [false, true] : [false]) : def && def.palette[el] ? pushingsOf(def, el) : [false];
+  const chip = $('campCrate'), def = S.camp && S.camp.def, offers = el => S.simple ? (PUSHABLE.includes(el) ? [false, true] : [false]) : def && def.palette[el] ? pushingsOf(def, el) : [false];
   const crateFits = offers(ELEMENT_OF[ui.tool]);
   chip.hidden = !(S.simple || (def && Object.keys(def.palette).some(k => pushingsOf(def, k).includes(true))));
   if (!crateFits.includes(!!ui.crate)) ui.crate = crateFits[0];
   chip.disabled = crateFits.length < 2; chip.classList.toggle('on', !!ui.crate); chip.setAttribute('aria-pressed', String(!!ui.crate));
   chip.onclick ||= () => { S.ui.crate = !S.ui.crate; syncPanel(); };
-  const laserFits = offers('laser'), crateIcon = laserFits.length === 1 ? laserFits[0] : !!ui.crate, tb = document.querySelector('#palette [data-tool="turret"] canvas');
-  if (tb && tb.dataset.crate !== String(crateIcon)) { const c = icon('turret', 'red', null, crateIcon); c.dataset.crate = String(crateIcon); tb.replaceWith(c); }
+  // Each pushable tool's icon wears the border when it can only come pushable, or while the chip is on.
+  const crateOf = id => { const f = offers(ELEMENT_OF[id]); return f.length === 1 ? f[0] : !!ui.crate; };
+  const tb = document.querySelector('#palette [data-tool="turret"] canvas');
+  if (tb && tb.dataset.crate !== String(crateOf('turret'))) { const c = icon('turret', 'red', null, crateOf('turret')); c.dataset.crate = String(crateOf('turret')); tb.replaceWith(c); }
   // Each tool is drawn in the chosen colour, or in its own first one when it cannot take that.
   const own = id => { const el = ELEMENT_OF[id], c = S.camp && el && S.camp.def.palette[el] ? colouringsOf(S.camp.def, el) : null; return c && !c.includes(ui.colour) ? c[0] : ui.colour; };
-  const key = TINTED.map(own).join() + '|' + ui.gateColour;
+  const key = TINTED.map(id => own(id) + crateOf(id)).join() + '|' + ui.gateColour;
   if (key === tint) return;
   tint = key;
   for (const id of TINTED) {
     const b = document.querySelector(`#palette [data-tool="${id}"]`), old = b && b.querySelector('canvas'), col = own(id), gate = ui.gateColour && own('gate');
-    if (old) { const c = icon(id, col, gate); c.dataset.colour = id === 'gate' ? gate || '' : col; old.replaceWith(c); }
+    if (old) { const c = icon(id, col, gate, crateOf(id)); c.dataset.crate = String(crateOf(id)); c.dataset.colour = id === 'gate' ? gate || '' : col; old.replaceWith(c); }
   }
 }

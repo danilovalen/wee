@@ -59,7 +59,8 @@ export function placed(def, room) {
   room.cells.forEach((c, i) => {
     if (!c || c === 'goal') return;
     const el = Object.keys(ELEMENTS).find(k => isEl(k, c));
-    if (el && colourFits(def, c)) out[el].push(i); else stray.push(i);
+    const crate = !!room.crates?.some(k => k.y * room.w + k.x === i);
+    if (el && colourFits(def, c) && pushingsOf(def, el).includes(crate)) out[el].push(i); else stray.push(i);
   });
   for (const e of room.entities) {
     const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].piece === e.kind), i = e.y * room.w + e.x;
