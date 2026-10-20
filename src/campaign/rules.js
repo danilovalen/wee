@@ -72,6 +72,11 @@ export function overLimits(def, room) {
   const { by } = placed(def, room);
   return Object.entries(by).flatMap(([el, list]) => { const max = (def.palette[el] || [0, 0])[1]; return max && list.length > max ? [{ el, msg: `Place at most ${max} ${nameOf(el, max)}.` }] : []; });
 }
+// The minimums a room falls short of: judged at Run like the maximums, never a reason not to run (register 321).
+export function underLimits(def, room) {
+  const { by } = placed(def, room);
+  return Object.entries(by).flatMap(([el, list]) => { const min = (def.palette[el] || [0, 0])[0]; return list.length < min ? [{ el, msg: `Place at least ${min} ${nameOf(el, min)}.` }] : []; });
+}
 
 export function placementErrors(def, room) {
   const errs = [], { by, stray } = placed(def, room);
@@ -82,8 +87,7 @@ export function placementErrors(def, room) {
   if (goals > 1) errs.push({ msg: 'Place only one goal.' });
   for (const [el, list] of Object.entries(by)) {
     // A null maximum is no limit: cost is what keeps the count down.
-    const [min, max] = def.palette[el] || [0, 0];
-    if (list.length < min) errs.push({ msg: `Place at least ${min} ${nameOf(el, min)}.` });
+    const max = (def.palette[el] || [0, 0])[1];
     // A maximum above 0 is a goal, judged at Run, not a rule that stops building (register 306).
     if (max === 0 && list.length) errs.push({ msg: `This level has no ${nameOf(el, 2)}.` });
   }
@@ -111,11 +115,18 @@ export function optionalGoals(def) {
   // A level from the Level maker may leave out the exact count or the size goal (register 302).
   const own = [
     ...(def.steps.best != null ? [{ id: 'best', parts: [bestShort(def.steps)], text: bestText(def.steps), met: v => v.length === def.steps.best }] : []),
-    // The size goal counts tiles placed, the start and the goal not counted (register 314).
-    ...(def.tiles != null ? [{ id: 'small', parts: [`${def.tiles} ${def.tiles === 1 ? 'tile' : 'tiles'} or fewer`], text: `${def.tiles} ${def.tiles === 1 ? 'tile' : 'tiles'} or fewer.`, met: v => v.tiles <= def.tiles }] : []),
+    // The size goal is the room's area (register 327); tiles placed are the score instead (register 328).
+    ...(def.small ? [{ id: 'small', parts: [`${def.small[0]}×${def.small[1]} or smaller`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] }] : []),
     ...(def.optional || []).map(id => ({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: v => !!(v.pathGoals && v.pathGoals[id]) })),
   ];
   return own.length < 2 ? own : [...own, { id: 'mix', parts: ['any 2 optional goals at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
+}
+// The fewest tiles a win took, then the fewest for each optional goal met: 'fewest tiles 3; exactly 7: 5'.
+export function scoreText(def, best) {
+  if (!best || best.win == null) return '';
+  const name = o => o.parts.every(p => typeof p === 'string') ? o.parts.join(' ') : o.text.replace(/\.$/, '').toLowerCase();
+  const each = optionalGoals(def).filter(o => !o.mix && best[o.id] != null).map(o => `${name(o)}: ${best[o.id]}`);
+  return `, fewest tiles ${best.win}` + (each.length ? `; ${each.join('; ')}` : '');
 }
 // Each optional goal judged on one run's verdict; mix counts the others.
 export function optionalResults(def, v) {
@@ -124,7 +135,7 @@ export function optionalResults(def, v) {
   return [...own, ...goals.filter(o => o.mix).map(o => ({ id: o.id, text: o.text, met: n >= o.mix }))];
 }
 
-// The room's area, and the tiles placed in it (the start and the goal not counted), the size score.
+// The room's area, the size goal; and the tiles placed in it (the start and the goal not counted), the score.
 export const areaOf = room => room.w * room.h;
 export const tilesOf = (def, room) => Object.values(placed(def, room).by).reduce((n, l) => n + l.length, 0);
 
@@ -180,7 +191,7 @@ export function check(def, room, opts) {
   for (const id of def.optional || []) if (!base.pathGoals[id]) base.missed[id] = r.paths.find(path => !REQUIREMENTS[id].judge(room, path));
   if (!base.inRange) base.missed.steps = r.paths[0];
   if (!base.inRange) return { ...base, won: false, fail: { path: r.paths[0], why: r.length < min ? `The shortest path takes ${r.length} moves, and it must take at least ${min}.` : `The shortest path takes ${r.length} moves, and it may take at most ${max}.` } };
-  const over = overLimits(def, room)[0];
+  const over = overLimits(def, room)[0] || underLimits(def, room)[0];
   if (over) return { ...base, won: false, fail: { path: r.paths[0], why: `Not met: ${over.msg}` } };
   const first = (def.require || []).find(id => id in failed);
   if (first) return { ...base, won: false, fail: { path: failed[first], why: `Not met: ${REQUIREMENTS[first].text}` } };

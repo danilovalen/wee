@@ -29,10 +29,13 @@
  "steps": {
   "best": 11
  },
+ "small": [
+  6,
+  5
+ ],
  "rules": [],
  "require": [
   "boxHitsIdoor",
   "robotThroughIdoor"
- ],
- "tiles": 6
+ ]
 }

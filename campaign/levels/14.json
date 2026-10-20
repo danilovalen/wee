@@ -25,6 +25,10 @@
  "steps": {
   "best": 8
  },
+ "small": [
+  3,
+  3
+ ],
  "rules": [],
  "require": [
   "laserThroughOpenDoor",
@@ -33,6 +37,5 @@
  ],
  "optional": [
   "lasersTwoWays"
- ],
- "tiles": 4
+ ]
 }

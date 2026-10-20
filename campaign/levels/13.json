@@ -32,10 +32,13 @@
  "steps": {
   "best": 9
  },
+ "small": [
+  7,
+  3
+ ],
  "rules": [],
  "require": [
   "boxThroughOneWayBothWays",
   "throughOpenDoor"
- ],
- "tiles": 5
+ ]
 }

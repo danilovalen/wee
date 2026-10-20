@@ -21,6 +21,10 @@
  "steps": {
   "best": 8
  },
+ "small": [
+  3,
+  4
+ ],
  "rules": [],
  "require": [
   "throughOpenDoor",
@@ -28,6 +32,5 @@
  ],
  "optional": [
   "thirdToggleOnAtEnd"
- ],
- "tiles": 3
+ ]
 }

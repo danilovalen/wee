@@ -36,9 +36,12 @@
  "steps": {
   "best": 9
  },
+ "small": [
+  4,
+  5
+ ],
  "rules": [],
  "require": [
   "laserHoldsOwnDoor"
- ],
- "tiles": 4
+ ]
 }

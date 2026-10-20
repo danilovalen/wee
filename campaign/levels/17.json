@@ -29,10 +29,13 @@
  "steps": {
   "best": 7
  },
+ "small": [
+  4,
+  4
+ ],
  "rules": [],
  "require": [
   "laserStoppedByIdoor",
   "robotThroughIdoor"
- ],
- "tiles": 5
+ ]
 }

@@ -17,6 +17,10 @@
  "steps": {
   "best": 8
  },
+ "small": [
+  3,
+  5
+ ],
  "rules": [],
  "require": [
   "robotThroughEveryOneWay",
@@ -24,6 +28,5 @@
  ],
  "optional": [
   "oneWaysThreeWays"
- ],
- "tiles": 2
+ ]
 }

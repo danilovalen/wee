@@ -25,6 +25,10 @@
  "steps": {
   "best": 14
  },
+ "small": [
+  6,
+  5
+ ],
  "rules": [],
  "require": [
   "laserThroughOneWay",
@@ -33,6 +37,5 @@
  ],
  "optional": [
   "boxThroughOneWay"
- ],
- "tiles": 8
+ ]
 }

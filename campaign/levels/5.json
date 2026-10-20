@@ -17,12 +17,15 @@
  "steps": {
   "best": 19
  },
+ "small": [
+  8,
+  6
+ ],
  "rules": [],
  "require": [
   "everyBoxPushedTwice",
   "everyBoxHitOnce",
   "boxHitsBox"
  ],
- "optional": [],
- "tiles": 6
+ "optional": []
 }

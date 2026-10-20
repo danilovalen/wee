@@ -25,12 +25,15 @@
  "steps": {
   "best": 7
  },
+ "small": [
+  4,
+  5
+ ],
  "rules": [],
  "require": [
   "boxThroughOpenDoor"
  ],
  "optional": [
   "noBoxAtEnd"
- ],
- "tiles": 4
+ ]
 }

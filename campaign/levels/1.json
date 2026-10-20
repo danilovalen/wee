@@ -13,10 +13,13 @@
  "steps": {
   "best": 6
  },
+ "small": [
+  3,
+  3
+ ],
  "rules": [],
  "require": [],
  "optional": [
   "touchBlockFourTimes"
- ],
- "tiles": 1
+ ]
 }

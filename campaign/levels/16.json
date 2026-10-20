@@ -29,6 +29,10 @@
  "steps": {
   "best": 7
  },
+ "small": [
+  5,
+  4
+ ],
  "rules": [],
  "require": [
   "laserThroughADoor",
@@ -37,6 +41,5 @@
  ],
  "optional": [
   "robotOnButton"
- ],
- "tiles": 7
+ ]
 }

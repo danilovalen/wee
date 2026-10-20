@@ -3,7 +3,7 @@
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS } from '../level/campaign.js';
-import { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } from '../campaign/rules.js';
+import { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, scoreText } from '../campaign/rules.js';
 import { REQUIREMENTS, trailOf } from '../campaign/requirements.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -201,6 +201,10 @@ export function run() {
     // the goal not counted), fewest and most of each. A save that kept tiles per area starts over.
     const st = rec.stats ||= { moves: null, tiles: null }, span = (r, n) => r ? [Math.min(r[0], n), Math.max(r[1], n)] : [n, n];
     st.moves = span(st.moves, v.length); st.tiles = span(Array.isArray(st.tiles) ? st.tiles : null, v.tiles);
+    // The score is tiles (register 328): the fewest in any win, and the fewest in a win meeting each optional goal.
+    const best = rec.best ||= {}, low = (k, n) => { best[k] = best[k] == null ? n : Math.min(best[k], n); };
+    low('win', v.tiles);
+    for (const o of v.optional) if (o.met && o.id !== 'mix') low(o.id, v.tiles);
     rec.beaten = true; rec.room = S.level;
     write(p);
   }
@@ -212,12 +216,9 @@ export function run() {
   return v;
 }
 
-// A beaten level's statistics, short: moves and tiles, fewest to most.
+// A beaten level's statistics, short: moves, fewest to most; tiles are the score, below.
 const range = ([a, b]) => a === b ? `${a}` : `${a}–${b}`;
-function statsText(st) {
-  if (!st || !st.moves) return '';
-  return `, moves ${range(st.moves)}` + (Array.isArray(st.tiles) ? `, tiles ${range(st.tiles)}` : '');
-}
+const statsText = st => st && st.moves ? `, moves ${range(st.moves)}` : '';
 
 function renderList() {
   const p = progress(), list = $('campList');
@@ -226,7 +227,7 @@ function renderList() {
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten, optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}` : '';
+    small.textContent = rec.beaten ? `Beaten, optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}${scoreText(def, rec.best)}` : '';
     // The elements the level hands you, as the palette draws them.
     const parts = document.createElement('span'); parts.className = 'campParts';
     for (const el of Object.keys(def.palette)) {

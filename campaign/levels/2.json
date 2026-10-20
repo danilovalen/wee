@@ -21,6 +21,10 @@
  "steps": {
   "best": 7
  },
+ "small": [
+  3,
+  3
+ ],
  "rules": [],
  "require": [
   "hitsClosedDoor",
@@ -28,6 +32,5 @@
  ],
  "optional": [
   "throughOpenDoorTwice"
- ],
- "tiles": 2
+ ]
 }

@@ -21,6 +21,10 @@
  "steps": {
   "best": 10
  },
+ "small": [
+  6,
+  3
+ ],
  "rules": [],
  "require": [
   "boxThroughOneWay",
@@ -28,6 +32,5 @@
  ],
  "optional": [
   "boxStuckOnOneWay"
- ],
- "tiles": 3
+ ]
 }

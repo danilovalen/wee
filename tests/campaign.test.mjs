@@ -1,6 +1,6 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { colouringsOf, stuckText, nameOf, roomOf, placed, placementErrors, overLimits, check, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
+import { scoreText, underLimits, colouringsOf, stuckText, nameOf, roomOf, placed, placementErrors, overLimits, check, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
 import { boxMoves, REQUIREMENTS, trailOf } from '../src/campaign/requirements.js';
 import { allShortest, replayPath } from '../src/campaign/robot.js';
 import { LEVELS } from '../src/level/campaign.js';
@@ -106,7 +106,14 @@ const build = (def, rows) => {
   ok('a sandbox tile is refused', placementErrors(d, odd).some(e => e.msg === 'This level does not have that.'));
   ok('names take the right plural', nameOf('toggle', 2) === 'switches' && nameOf('toggle', 1) === 'switch' && nameOf('box', 2) === 'boxes' && nameOf('door', 2) === 'doors');
   const d3 = level('3');
-  ok('too few of a required element is refused', placementErrors(d3, roomOf(d3)).some(e => /at least 1 switch\./.test(e.msg)));
+  // Too few is judged at Run, never a reason not to run (register 321).
+  ok('too few of a required element does not stop a run', !placementErrors(d3, roomOf(d3)).some(e => /at least/.test(e.msg)));
+  // The score is tiles (register 328): the fewest in any win, then per optional goal met.
+  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, robotOnButton: 6 }) === ', fewest tiles 3; exactly 7: 5; 5×4 or smaller: 4; robot steps on a button: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, robotOnButton: 6 }));
+  ok('no win, no score', scoreText(level('16'), {}) === '' && scoreText(level('16'), undefined) === '');
+  ok('too few of a required element is missed at Run', underLimits(d3, roomOf(d3)).some(e => e.msg === 'Place at least 1 switch.'));
+  const few = check(d3, build(d3, ['P#...', '.#.#.', '.#.#.', '...#G']));
+  ok('a run with too few of an element runs and says what is missing', few.ok && !few.won && few.length >= 4 && /^Not met: Place at least 1 (door|switch)\./.test(few.fail.why), JSON.stringify(few.fail));
   const lots = build(d3, ['']); for (let x = 1; x <= 5; x++) { lots.cells[2 * 7 + x] = 'toggle:red'; lots.cells[3 * 7 + x] = 'door:red'; }
   ok('a level with no maximum takes any number', placementErrors(d3, lots).length === 0, JSON.stringify(placementErrors(d3, lots)));
   const d4 = level('7'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
@@ -424,7 +431,7 @@ const build = (def, rows) => {
     }
     if (l.id === '4') ok('mix: met when one run meets two optional goals', v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.id !== 'mix' && o.met).length >= 2, JSON.stringify(v.optional));
     if (l.id === '1') ok('mix: not met by one goal alone', !v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.met).length === 1, JSON.stringify(v.optional));
-    ok(`level ${l.id}'s ${l.tiles}-tile goal is met by a win`, Number.isInteger(l.tiles) && v.won && v.optional.find(o => o.id === 'small').met, JSON.stringify(v.fail || v.optional));
+    ok(`level ${l.id}'s ${l.small}-room goal is met by a win (register 327)`, Array.isArray(l.small) && v.won && v.optional.find(o => o.id === 'small').met, JSON.stringify(v.fail || v.optional));
   }
 }
 { // every level's own optional goal can be met: a winning room that meets it, found by tools/levelSearch.mjs (registers 262-269)
