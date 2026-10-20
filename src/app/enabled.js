@@ -21,6 +21,6 @@ export function syncEnabled() {
   // press would redo the same work and redraw the same words.
   const stamp = level.start && S.check && !S.check.live ? JSON.stringify(level) : null;
   $('checkBtn').disabled = !level.start || (!!stamp && S.check.stamp === stamp);
-  // A side's add or cut is greyed out when it cannot happen (a placed thing, 2x2, 40x30).
+  // A side's add or cut is greyed out when it cannot happen (a placed thing, one line left, 40x30).
   document.querySelectorAll('[data-side][data-delta]').forEach(b => { b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta); });
 }

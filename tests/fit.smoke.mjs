@@ -56,7 +56,7 @@ try {
     const share = () => page.evaluate(() => { const a = document.getElementById('roomArea'), c = document.getElementById('game').getBoundingClientRect(); return c.width >= a.clientWidth - 40 && c.height < a.clientHeight - 40 ? 1 : a.clientHeight / innerHeight; });
     // The room takes the area it is given, less the margin its "+" handles sit in, and no more.
     // Fills its area, less the bars of + and − above and below it (register 298).
-    const fills = () => page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), a = document.getElementById('roomArea'); return (c.width >= a.clientWidth - 40 || c.height >= a.clientHeight - 90) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
+    const fills = () => page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), a = document.getElementById('roomArea'); return (c.width >= a.clientWidth - 110 || c.height >= a.clientHeight - 90) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
     const ctxOpts = await page.evaluate(() => [...document.querySelectorAll('#ctx .opt')].filter(o => !o.hidden).length);
     check(`${w}x${h}: the turret's options sit in the context bar`, ctxOpts >= 3, String(ctxOpts));
     const open = await share();
@@ -74,7 +74,7 @@ try {
     await page.click('#wellClose');
     await settle();
     const shut = await share();
-    check(`${w}x${h}: with the well shut the room keeps at least 70%`, shut >= 0.7 && await fills(), shut.toFixed(2));
+    check(`${w}x${h}: with the well shut the room keeps at least 65% (the side pairs take their width, register 318)`, shut >= 0.65 && await fills(), shut.toFixed(2));
     await page.click('#mode');
     await settle();
     check(`${w}x${h}: play mode: the play buttons sit in the status bar, the lens chips go, and nothing is cut`, await page.locator('#lensChips').isHidden() && !(await over()) && !(await cutOff()).length && await page.evaluate(() => document.getElementById('pad').parentElement.id === 'statusBar' && !!document.getElementById('pad').offsetParent), JSON.stringify(await cutOff()));

@@ -68,11 +68,11 @@ function colourOk(col) {
 }
 
 // Adds (delta 1) or cuts (delta -1) one row or column on a side, moving everything with
-// it. A cut through the start takes it off. Returns null below 2 tiles or past 40x30.
+// it. A cut through the start takes it off. Returns null below 1 tile or past 40x30.
 export function resizeSide(level, side, delta) {
   const dx = side === 'left' ? delta : 0, dy = side === 'top' ? delta : 0;
   const w = level.w + (side === 'left' || side === 'right' ? delta : 0), h = level.h + (side === 'top' || side === 'bottom' ? delta : 0);
-  if (w < 2 || h < 2 || w > 40 || h > 30) return null;
+  if (w < 1 || h < 1 || w > 40 || h > 30) return null;
   const inside = (x, y) => x >= 0 && y >= 0 && x < w && y < h;
   const moved = level.start && { x: level.start.x + dx, y: level.start.y + dy };
   const start = moved && inside(moved.x, moved.y) ? moved : null;
@@ -85,8 +85,8 @@ export function resizeSide(level, side, delta) {
 // A side's grip: n > 0 adds n lines, n < 0 cuts them. When that edge is a wall border, the
 // border moves with the grip, so a line goes in or out just inside it and the border stays
 // whole. A cut only takes lines that hold nothing you placed but the start (which it takes
-// off), and never leaves less than 2x2 inside the border; otherwise it returns null.
-export const MIN_INSIDE = 2;
+// off), and never leaves less than one line inside the border (register 319); otherwise it returns null.
+export const MIN_INSIDE = 1;
 export function moveSide(level, side, n) {
   let l = level;
   for (let i = 0; i < Math.abs(n); i++) if (!(l = (n > 0 ? growOnce : cutOnce)(l, side))) return null;

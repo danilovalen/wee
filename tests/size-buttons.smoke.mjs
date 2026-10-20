@@ -31,8 +31,12 @@ try {
   check('a press that slides off the button does nothing, even if a release lands on it later', (await width()) === w0);
   const over = await page.evaluate(() => { const g = document.getElementById('game').getBoundingClientRect(); return [...document.querySelectorAll('.plus, .minus')].filter(b => { const r = b.getBoundingClientRect(); return !(r.bottom <= g.top || r.top >= g.bottom || r.right <= g.left || r.left >= g.right); }).map(b => b.dataset.plus || b.dataset.minus); });
   check('no + or − sits over a tile', over.length === 0, over.join());
+  const sides = await page.evaluate(() => { const g = document.getElementById('game').getBoundingClientRect(), r = s => [...document.querySelectorAll(`[data-plus=${s}], [data-minus=${s}]`)].map(b => b.getBoundingClientRect());
+    return { left: r('left').every(b => b.right <= g.left && b.top >= g.top && b.bottom <= g.bottom), right: r('right').every(b => b.left >= g.right && b.top >= g.top && b.bottom <= g.bottom), top: r('top').every(b => b.bottom <= g.top), bottom: r('bottom').every(b => b.top >= g.bottom) }; });
+  check('each side\'s + and − sit on that side of the room (register 318)', Object.values(sides).every(Boolean), JSON.stringify(sides));
   const edge = await page.evaluate(() => Math.min(...[...document.querySelectorAll('.plus, .minus')].map(b => { const r = b.getBoundingClientRect(); return Math.min(r.left, innerWidth - r.right); })));
-  check('every + and − keeps 30px from the screen\'s sides', edge >= 30, String(edge));
+  // Beside the room, 14px from the screen's sides: his call over the back-swipe margin (register 318).
+  check('every + and − keeps 14px from the screen\'s sides', edge >= 14, String(edge));
 } finally {
   await browser.close();
   server.close();

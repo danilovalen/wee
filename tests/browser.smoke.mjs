@@ -317,10 +317,10 @@ try {
   check('a tap on the bottom − cuts one', (await text()).level.h === 4);
   await page.click('#undo'); await page.click('#undo'); await page.click('#undo');
   check('each tap is one undo step', (await text()).level.h === 3);
-  await tap('[data-minus=top]'); await tap('[data-minus=top]');
-  check('a − stops at the room\'s 2-tall floor', (await text()).level.h === 2);
+  await tap('[data-minus=top]'); await tap('[data-minus=top]'); await tap('[data-minus=top]');
+  check('a − stops at the room\'s 1-tall floor (register 319)', (await text()).level.h === 1);
   check('no + or − sits over a tile', await page.evaluate(() => { const g = document.getElementById('game').getBoundingClientRect(); return [...document.querySelectorAll('.plus, .minus')].every(b => { const r = b.getBoundingClientRect(); return r.bottom <= g.top || r.top >= g.bottom || r.right <= g.left || r.left >= g.right; }); }));
-  await page.click('#undo');
+  await page.click('#undo'); await page.click('#undo');
   check('the size readout opens the size controls', await page.locator('#sizePop').isHidden() && await page.click('#sizeBtn').then(() => page.locator('#sizePop').isVisible()));
   await page.keyboard.press('Escape');
   check('Escape shuts them', await page.locator('#sizePop').isHidden());
@@ -343,9 +343,9 @@ try {
     await page.click('#playHere');
     check('Play from here works with no start, and Edit stays clickable', (await text()).mode === 'play' && !(await page.locator('#mode').isDisabled()));
     await page.click('#mode'); await page.click('#sizeBtn'); }
-  for (let i = 0; i < 3; i++) await page.click('[data-side=bottom][data-delta="-1"]', { force: true });
-  check('a cut that would leave less than 2 tall is greyed out', (await text()).level.h === 2 && await page.locator('[data-side=bottom][data-delta="-1"]').isDisabled());
-  await page.click('#undo');
+  for (let i = 0; i < 4; i++) await page.click('[data-side=bottom][data-delta="-1"]', { force: true });
+  check('a cut that would leave less than 1 tall is greyed out', (await text()).level.h === 1 && await page.locator('[data-side=bottom][data-delta="-1"]').isDisabled(), String((await text()).level.h));
+  await page.click('#undo'); await page.click('#undo');
   await page.keyboard.press('Escape');
   await pick('start'); const g0 = await page.locator('#game').boundingBox(); const lv0 = (await text()).level;
   await page.mouse.click(g0.x + 1.5 * g0.width / lv0.w, g0.y + 1.5 * g0.height / lv0.h);

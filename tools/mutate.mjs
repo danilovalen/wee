@@ -280,7 +280,7 @@ const M = [
   ['src', "      const open = !/^(wall|receiver:|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);", "      const open = true;", "browser"],
   ['src', "  const from = m === 'play' && S.playFrom ? { ...S.level, start: S.playFrom } : S.level;", "  const from = S.level;", "browser"],
   ['src', "  const dx = side === 'left' ? delta : 0, dy = side === 'top' ? delta : 0;", "  const dx = 0, dy = 0;", "sim"],
-  ['src', "  if (w < 2 || h < 2 || w > 40 || h > 30) return null;", "  if (w > 40 || h > 30) return null;", "sim"],
+  ['src', "  if (w < 1 || h < 1 || w > 40 || h > 30) return null;", "  if (w < 2 || h < 2 || w > 40 || h > 30) return null;", "sim"],
   ['src', ".filter(e => inside(e.x, e.y));\n  return { ...level, w, h, cells, start, entities };", ";\n  return { ...level, w, h, cells, start, entities };", "sim"],
   ['src', "    if ((x === 0 || y === 0 || x === w - 1 || y === h - 1) && !(level.start && x === level.start.x && y === level.start.y)) cells[i] = 'wall';", "    if (x === 0 || y === 0 || x === w - 1 || y === h - 1) cells[i] = 'wall';", "sim"],
   ['src', "  return { ...level, cells, entities: level.entities.filter(e => !edge(e)) };", "  return { ...level, cells };", "sim"],
@@ -584,7 +584,7 @@ const M = [
   // A cut can take the start; the room stays 2x2 inside; no control refuses a click (register 109)
   ['src/level/format.js', "  if (!clear || l.entities.some(at)) return null;", "  if (!clear || at(l.start) || l.entities.some(at)) return null;", 'size'],
   ['src/level/format.js', "start: l.start && !at(l.start) ? shift(l.start) : null,", "start: l.start && shift(l.start),", 'size'],
-  ['src/level/format.js', "export const MIN_INSIDE = 2;", "export const MIN_INSIDE = 1;", 'size'],
+  ['src/level/format.js', "export const MIN_INSIDE = 1;", "export const MIN_INSIDE = 2;", 'size'],
   ['src/level/format.js', "  const start = moved && inside(moved.x, moved.y) ? moved : null;", "  const start = moved;", 'sim'],
   ['src/app/enabled.js', "  $('mode').disabled = !level.start;", "", 'browser'],
   ['src/app/enabled.js', "b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta);", "b.disabled = false;", 'browser'],
@@ -793,6 +793,9 @@ const M = [
   ['src/campaign/extras.js', "e.turret.dirs[0])).size >= 2", "e.turret.dirs[0])).size >= 1", 'campaign'],
   ['src', "export function colouringsOf(def, el) {\n", "export function colouringsOf(def, el) {\n  return coloursOf(def);\n", 'campaign'],
   ['src', "return !pair || !two ? one : two === 'only' ? [pair] : [...one, pair];", "return !pair || !two ? one : [...one, pair];", 'campaign'],
+  // Register 318: the side pairs sit beside the room, which leaves them the width.
+  ['src/app/fit.js', "  const side = EDGE + SIDE;", "  const side = EDGE;", 'size-buttons'],
+  ['style.css', ".growBar[data-bar=left] { right: calc(100% + 6px); }", ".growBar[data-bar=left] { right: calc(100% - 36px); }", 'size-buttons'],
   // Register 316: two colours on any piece, offered per level, picked with a third dot.
   ['src/rules/life.js', "doorsOf(s, kind + col), ...pairsOf(s, kind, col)]", "doorsOf(s, kind + col)]", 'sim'],
   ['src/rules/life.js', "return cols.includes(col) && !cols.some(k => k !== col && s.open[k]) ? at : [];", "return cols.includes(col) ? at : [];", 'sim'],

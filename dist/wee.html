@@ -303,12 +303,16 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .chip .n { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 }
 
-/* The room's size: a + and a − for each side, in a bar above the room (left column, top row, right
-   column) and one below it (bottom row). Tap only. Never over a tile (register 298), and the side pairs
-   keep clear of the screen's edge, where a swipe is the phone's back gesture (register 239). */
+/* The room's size: a + and a − on each side of the room, beside the line it adds or cuts (register 318).
+   Tap only. Never over a tile (register 298), and the side pairs keep clear of the screen's edge, where
+   a swipe is the phone's back gesture (register 239). */
 .roomWrap { position: relative; line-height: 0; }
 .growBar { position: absolute; left: 50%; translate: -50% 0; width: max(calc(100% - 16px), 270px); display: flex; justify-content: center; gap: 16px; z-index: 2; }
-.growBar[data-bar=top] { bottom: calc(100% + 8px); justify-content: space-between; }
+.growBar[data-bar=top] { bottom: calc(100% + 8px); }
+.growBar[data-bar=left], .growBar[data-bar=right] { width: auto; left: auto; translate: 0 -50%; top: 50%; }
+.growBar[data-bar=left] { right: calc(100% + 6px); }
+.growBar[data-bar=right] { left: calc(100% + 6px); }
+.growBar[data-bar=left] .grow, .growBar[data-bar=right] .grow { flex-direction: column; }
 .growBar[data-bar=bottom] { top: calc(100% + 8px); }
 .grow { display: flex; gap: 14px; }
 .plus, .minus { position: relative; width: 30px; height: 30px; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 17px; line-height: 1; opacity: .9; touch-action: manipulation; }
@@ -711,7 +715,9 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
       <div id="campVerdict" class="campVerdict camp-only" role="status" hidden><span id="campVerdictText"></span></div>
       <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="game"></canvas>
         <div id="campTip" class="campTip" role="status" hidden></div>
-        <div class="growBar" data-bar="top"><div class="grow" data-grow="left"><button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left">+</button><button type="button" class="minus" data-minus="left" title="Remove the column on the left" aria-label="Remove the column on the left">&minus;</button></div><div class="grow" data-grow="top"><button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button><button type="button" class="minus" data-minus="top" title="Remove the top row" aria-label="Remove the top row">&minus;</button></div><div class="grow" data-grow="right"><button type="button" class="minus" data-minus="right" title="Remove the column on the right" aria-label="Remove the column on the right">&minus;</button><button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right">+</button></div></div>
+        <div class="growBar" data-bar="top"><div class="grow" data-grow="top"><button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top">+</button><button type="button" class="minus" data-minus="top" title="Remove the top row" aria-label="Remove the top row">&minus;</button></div></div>
+        <div class="growBar" data-bar="left"><div class="grow" data-grow="left"><button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left">+</button><button type="button" class="minus" data-minus="left" title="Remove the column on the left" aria-label="Remove the column on the left">&minus;</button></div></div>
+        <div class="growBar" data-bar="right"><div class="grow" data-grow="right"><button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right">+</button><button type="button" class="minus" data-minus="right" title="Remove the column on the right" aria-label="Remove the column on the right">&minus;</button></div></div>
         <div class="growBar" data-bar="bottom"><div class="grow" data-grow="bottom"><button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom">+</button><button type="button" class="minus" data-minus="bottom" title="Remove the bottom row" aria-label="Remove the bottom row">&minus;</button></div></div>
       </div>
 </div>
@@ -792,8 +798,8 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
   <div id="sizePop" class="sizePop" hidden role="dialog" aria-label="Room size">
         <div class="roomBody">
       <div class="size">
-        <label>Width <input id="w" type="number" min="2" max="40"></label>
-        <label>Height <input id="h" type="number" min="2" max="30"></label>
+        <label>Width <input id="w" type="number" min="1" max="40"></label>
+        <label>Height <input id="h" type="number" min="1" max="30"></label>
       </div>
       <div class="sides">
         <span>Add</span>
@@ -1085,11 +1091,11 @@ function colourOk(col) {
 }
 
 // Adds (delta 1) or cuts (delta -1) one row or column on a side, moving everything with
-// it. A cut through the start takes it off. Returns null below 2 tiles or past 40x30.
+// it. A cut through the start takes it off. Returns null below 1 tile or past 40x30.
 function resizeSide(level, side, delta) {
   const dx = side === 'left' ? delta : 0, dy = side === 'top' ? delta : 0;
   const w = level.w + (side === 'left' || side === 'right' ? delta : 0), h = level.h + (side === 'top' || side === 'bottom' ? delta : 0);
-  if (w < 2 || h < 2 || w > 40 || h > 30) return null;
+  if (w < 1 || h < 1 || w > 40 || h > 30) return null;
   const inside = (x, y) => x >= 0 && y >= 0 && x < w && y < h;
   const moved = level.start && { x: level.start.x + dx, y: level.start.y + dy };
   const start = moved && inside(moved.x, moved.y) ? moved : null;
@@ -1102,8 +1108,8 @@ function resizeSide(level, side, delta) {
 // A side's grip: n > 0 adds n lines, n < 0 cuts them. When that edge is a wall border, the
 // border moves with the grip, so a line goes in or out just inside it and the border stays
 // whole. A cut only takes lines that hold nothing you placed but the start (which it takes
-// off), and never leaves less than 2x2 inside the border; otherwise it returns null.
-const MIN_INSIDE = 2;
+// off), and never leaves less than one line inside the border (register 319); otherwise it returns null.
+const MIN_INSIDE = 1;
 function moveSide(level, side, n) {
   let l = level;
   for (let i = 0; i < Math.abs(n); i++) if (!(l = (n > 0 ? growOnce : cutOnce)(l, side))) return null;
@@ -5244,7 +5250,7 @@ function syncEnabled() {
   // press would redo the same work and redraw the same words.
   const stamp = level.start && S.check && !S.check.live ? JSON.stringify(level) : null;
   $('checkBtn').disabled = !level.start || (!!stamp && S.check.stamp === stamp);
-  // A side's add or cut is greyed out when it cannot happen (a placed thing, 2x2, 40x30).
+  // A side's add or cut is greyed out when it cannot happen (a placed thing, one line left, 40x30).
   document.querySelectorAll('[data-side][data-delta]').forEach(b => { b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta); });
 }
 return { syncEnabled };
@@ -6021,10 +6027,10 @@ function closeSize() { $('sizePop').hidden = true; $('sizeBtn').setAttribute('ar
 function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('aria-expanded', 'true'); place(); }
 
 // A + or a − on each side: a tap adds or cuts one line there. A cut that would take a placed thing
-// (or the room's 2x2 floor) does nothing and flashes what is in the way (register 252).
+// (or the room's last line) does nothing and flashes what is in the way (register 252).
 // In a campaign level the start is the level's, so a cut may not take it.
 const keeps = l => !!l && !(S.camp && S.level.start && !l.start);
-// The tiles of the line a cut would take that hold something. Empty when the 2x2 floor stops it.
+// The tiles of the line a cut would take that hold something. Empty when the last line stops it.
 function blockers(level, side) {
   const { w, h } = level, at = side === 'top' ? 0 : side === 'bottom' ? h - 1 : side === 'left' ? 0 : w - 1;
   const across = side === 'top' || side === 'bottom', out = [];
@@ -6108,14 +6114,15 @@ function place(wide) {
 const EDGE = 14;
 // Above and below the room, a bar of + and − buttons (register 298): the room keeps that much free.
 const BAR = 40;
+// Left and right of it, a + over a − (register 318): a 30px button and its 6px gap.
+const SIDE = 36;
 
 function fit() {
   const level = S.level, wide = innerWidth > 700;
   place(wide);
   const area = $('roomArea');
-  // The side pairs live in the bar above the room, so the room may come within EDGE of the sides.
-  const side = EDGE;
-  const stage = (wide ? area.clientWidth - 2 * EDGE : $('stage').clientWidth - 2 * side) || level.w * T;
+  const side = EDGE + SIDE;
+  const stage = (wide ? area.clientWidth - 2 * side : $('stage').clientWidth - 2 * side) || level.w * T;
   // A phone in play gives the room everything between the header and the play buttons; in a level
   // the room keeps its edit size instead, so nothing moves when the mode changes (register 222).
   const below = $('pad').hidden ? 0 : $('pad').offsetHeight + 16;
@@ -7182,7 +7189,7 @@ function buildPanels(actions) {
   new MutationObserver(syncCtxText).observe($('placeHint'), { childList: true, characterData: true, subtree: true });
   const resize = () => {
     const level = S.level;
-    const w = Math.max(2, Math.min(40, +$('w').value || level.w)), h = Math.max(2, Math.min(30, +$('h').value || level.h));
+    const w = Math.max(1, Math.min(40, +$('w').value || level.w)), h = Math.max(1, Math.min(30, +$('h').value || level.h));
     if (w !== level.w || h !== level.h) { change(() => { S.level = resizeLevel(level, w, h); }); fit(); }
   };
   $('w').onchange = resize; $('h').onchange = resize;

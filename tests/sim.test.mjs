@@ -1141,7 +1141,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('cutting the right column keeps the rest in place', right.w === 4 && right.cells.length === 12 && right.entities[0].x === 3 && right.cells[7] === '');
   check('cutting the column with the start takes the start off', resizeSide(resizeSide(l, 'left', -1), 'left', -1).start === null);
   check('the box is cut away with its column', resizeSide(resizeSide(l, 'right', -1), 'right', -1).entities.length === 0);
-  check('a room stays at least 2 tiles', !!resizeSide(room(['###', '#P#', '###']), 'top', -1) && resizeSide(room(['###', '#P#']), 'top', -1) === null);
+  check('a room stays at least 1 tile (register 319)', !!resizeSide(room(['###', '#P#']), 'top', -1) && resizeSide(room(['#P#']), 'top', -1) === null);
   const b = wallBorder(room(['.....', '.P...', '....B', '.....']));
   check('Border walls every edge tile', b.cells.filter((c, i) => (i % 5 === 0 || i % 5 === 4 || i < 5 || i >= 15) && c !== 'wall').length === 0);
   check('and removes pieces on the edge, keeps the start', b.entities.length === 0 && b.cells[6] === '');

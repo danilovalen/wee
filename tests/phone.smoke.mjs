@@ -65,7 +65,8 @@ try {
   check('Check opens its findings in place of a sheet', await page.locator('#sheet').isHidden() && await page.locator('#well').isVisible());
   await page.click('#wellClose');
   check('the room fits inside its area', layout.room <= layout.stage + 0.5, JSON.stringify(layout));
-  check('a tile is big enough to tap', layout.tile >= 28, layout.tile.toFixed(1));
+  // The side pairs take 36px each side (register 318), so this wide room's tiles are smaller than 28px now.
+  check('a tile is big enough to tap', layout.tile >= 22, layout.tile.toFixed(1));
   // every tool, picked from its tab, fits with its options under the room on one screen
   const over = [];
   for (const [t, g] of await page.$$eval('[data-tool]:not([data-camp])', bs => bs.map(b => [b.dataset.tool, b.dataset.in]))) {

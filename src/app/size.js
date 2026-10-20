@@ -18,10 +18,10 @@ export function closeSize() { $('sizePop').hidden = true; $('sizeBtn').setAttrib
 function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('aria-expanded', 'true'); place(); }
 
 // A + or a − on each side: a tap adds or cuts one line there. A cut that would take a placed thing
-// (or the room's 2x2 floor) does nothing and flashes what is in the way (register 252).
+// (or the room's last line) does nothing and flashes what is in the way (register 252).
 // In a campaign level the start is the level's, so a cut may not take it.
 const keeps = l => !!l && !(S.camp && S.level.start && !l.start);
-// The tiles of the line a cut would take that hold something. Empty when the 2x2 floor stops it.
+// The tiles of the line a cut would take that hold something. Empty when the last line stops it.
 function blockers(level, side) {
   const { w, h } = level, at = side === 'top' ? 0 : side === 'bottom' ? h - 1 : side === 'left' ? 0 : w - 1;
   const across = side === 'top' || side === 'bottom', out = [];
