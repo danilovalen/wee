@@ -11,6 +11,7 @@ import { $, portrait, now } from './dom.js';
 import { icon } from './icons.js';
 import { noteLeaving, copyDebug } from './debug.js';
 import { buildMenuScene } from './menuScene.js';
+import { madeLevel, backToMaker } from './made.js';
 
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
@@ -48,7 +49,7 @@ export function migrate(p) {
   return p;
 }
 export const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
-const levelOf = id => LEVELS.find(l => l.id === id);
+const levelOf = id => LEVELS.find(l => l.id === id) || madeLevel(id);
 
 // A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
 // level's, so it is cut off, and the start and goal it had stay where they were.
@@ -261,7 +262,7 @@ export function buildCampaign(actions, sandbox) {
   $('menuCampaign').onclick = openList;
   $('menuSandbox').onclick = () => { closeAll(); S.simple = true; document.body.classList.add('simple'); Promise.resolve(boot()).then(A.syncPanel); };
   $('campMenu').onclick = openMenu;
-  $('campBack').onclick = () => { noteLeaving(); leaveLevel(); openList(); };
+  $('campBack').onclick = () => { const made = S.camp && S.camp.def.made; noteLeaving(); leaveLevel(); (made ? backToMaker : openList)(); };
   $('menuDebug').onclick = copyDebug;
   $('campRun').onclick = () => { S.camp.testing = false; run(); };
   // Test: the room played by hand, the robot not involved; nothing is judged or saved.

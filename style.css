@@ -577,3 +577,14 @@ body.simple #groups, body.simple #stopsBtn, body.simple #genBtn, body.simple #le
 .puzzle-only { display: none; }
 body.puzzle .puzzle-only { display: revert; }
 body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #checkBtn, body.puzzle #mode, body.puzzle #roomsBtn, body.puzzle #keysBtn, body.puzzle #winEdit, body.puzzle .growBar, body.puzzle #sizeBtn { display: none !important; }
+
+/* The Level maker (register 302). */
+.maker h3 { margin: 16px 0 6px; font: 800 15px var(--label-face); }
+.mkRow { display: flex; align-items: center; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.mkRow input[type=number] { width: 64px; }
+.mkPal { border-collapse: collapse; }
+.mkPal td, .mkPal th { padding: 3px 6px; text-align: left; }
+.mkPal input[type=number] { width: 56px; }
+.mkGoals { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.mkGoals li { display: flex; align-items: center; gap: 8px; }
+.mkGoals select { flex: 0 0 118px; }

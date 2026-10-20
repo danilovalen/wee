@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { powerCheck, elementCheck, routes } from '../src/solve/design.js';
 import { solve } from '../src/solve/solve.js';
-import { splitRoom } from '../src/level/room.js';
+import { splitRoom, joinRoom } from '../src/level/room.js';
 import { room, suite } from './lib.mjs';
 
 const { check, done } = suite('design');
@@ -59,4 +59,7 @@ const ex = run(routes(example)), exs = run(elementCheck(example));
 check('the example room takes 21 moves, by one route', ex.par === 21 && ex.routes === 1, JSON.stringify(ex));
 check('every piece and tile in it changes the answer, and none could be a plain wall', exs.every(e => e.without !== 21 && e.standIn !== 21), JSON.stringify(exs));
 check('and it has a tile that traps you for good', ex.traps.length > 0, JSON.stringify(ex));
+// A room marked for Puzzles keeps the mark through a split and a join, so saving it keeps it (register 302).
+{ const { meta, level } = splitRoom({ ...first, id: 'p', name: 'P', puzzle: true });
+  check('a puzzle room keeps its mark through a save', meta.puzzle === true && joinRoom(meta, level).puzzle === true && !('puzzle' in joinRoom({ ...meta, puzzle: false }, level))); }
 done();

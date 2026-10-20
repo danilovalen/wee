@@ -219,7 +219,7 @@
     <div class="menuList">
       <section class="menuSec"><h2>For the robot</h2><p>Build the room. The robot plays it.</p>
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
-        <button id="menuMaker" type="button" class="primary" hidden>Level maker</button></section>
+        <button id="menuMaker" type="button" class="primary">Level maker</button></section>
       <section class="menuSec"><h2>For you</h2><p>You are the little circle.</p>
         <button id="menuPuzzles" type="button" class="primary">Puzzles</button>
         <button id="menuSandbox" type="button" class="primary">Sandbox</button></section>
@@ -229,6 +229,21 @@
   <dialog id="resetBox" class="confirm">
     <p>Reset the room to the level's start? Undo brings it back.</p>
     <div class="row"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
+  </dialog>
+  <dialog id="makerBox" class="rooms maker">
+    <div class="roomsHead"><b>Level maker</b><button id="makerMenu" type="button">Menu</button></div>
+    <ul id="madeList" class="campList"></ul>
+    <h3>Rules</h3>
+    <p class="hint">Pick what the room may hold and what the robot must do. Build it, then Run it like a campaign level.</p>
+    <label class="mkRow">Name <input id="makerName" type="text" placeholder="My level"></label>
+    <table class="mkPal"><thead><tr><th></th><th>Min</th><th>Max</th></tr></thead><tbody id="makerPal"></tbody></table>
+    <label class="mkRow"><input id="makerTwo" type="checkbox"> Two colours</label>
+    <label class="mkRow">Exactly <input id="makerBest" type="number" min="4" placeholder="any"> moves (optional goal)</label>
+    <label class="mkRow">Size goal <input id="makerW" type="number" min="2" placeholder="w"> × <input id="makerH" type="number" min="2" placeholder="h"> (optional)</label>
+    <h3>Goals</h3>
+    <ul id="makerGoals" class="mkGoals"></ul>
+    <p id="makerSay" class="hint" role="status"></p>
+    <div class="row"><button id="makerBuild" type="button" class="primary">Build it</button><button id="makerNew" type="button">New</button><button id="makerDelete" type="button" hidden>Delete</button></div>
   </dialog>
   <dialog id="puzzleBox" class="rooms">
     <div class="roomsHead"><b>Puzzles</b><button id="puzzleMenu" type="button">Menu</button></div>

@@ -595,6 +595,17 @@ body.simple #groups, body.simple #stopsBtn, body.simple #genBtn, body.simple #le
 .puzzle-only { display: none; }
 body.puzzle .puzzle-only { display: revert; }
 body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #checkBtn, body.puzzle #mode, body.puzzle #roomsBtn, body.puzzle #keysBtn, body.puzzle #winEdit, body.puzzle .growBar, body.puzzle #sizeBtn { display: none !important; }
+
+/* The Level maker (register 302). */
+.maker h3 { margin: 16px 0 6px; font: 800 15px var(--label-face); }
+.mkRow { display: flex; align-items: center; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.mkRow input[type=number] { width: 64px; }
+.mkPal { border-collapse: collapse; }
+.mkPal td, .mkPal th { padding: 3px 6px; text-align: left; }
+.mkPal input[type=number] { width: 56px; }
+.mkGoals { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.mkGoals li { display: flex; align-items: center; gap: 8px; }
+.mkGoals select { flex: 0 0 118px; }
 </style>
 </head>
 <body>
@@ -808,7 +819,7 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
     <div class="menuList">
       <section class="menuSec"><h2>For the robot</h2><p>Build the room. The robot plays it.</p>
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
-        <button id="menuMaker" type="button" class="primary" hidden>Level maker</button></section>
+        <button id="menuMaker" type="button" class="primary">Level maker</button></section>
       <section class="menuSec"><h2>For you</h2><p>You are the little circle.</p>
         <button id="menuPuzzles" type="button" class="primary">Puzzles</button>
         <button id="menuSandbox" type="button" class="primary">Sandbox</button></section>
@@ -818,6 +829,21 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
   <dialog id="resetBox" class="confirm">
     <p>Reset the room to the level's start? Undo brings it back.</p>
     <div class="row"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
+  </dialog>
+  <dialog id="makerBox" class="rooms maker">
+    <div class="roomsHead"><b>Level maker</b><button id="makerMenu" type="button">Menu</button></div>
+    <ul id="madeList" class="campList"></ul>
+    <h3>Rules</h3>
+    <p class="hint">Pick what the room may hold and what the robot must do. Build it, then Run it like a campaign level.</p>
+    <label class="mkRow">Name <input id="makerName" type="text" placeholder="My level"></label>
+    <table class="mkPal"><thead><tr><th></th><th>Min</th><th>Max</th></tr></thead><tbody id="makerPal"></tbody></table>
+    <label class="mkRow"><input id="makerTwo" type="checkbox"> Two colours</label>
+    <label class="mkRow">Exactly <input id="makerBest" type="number" min="4" placeholder="any"> moves (optional goal)</label>
+    <label class="mkRow">Size goal <input id="makerW" type="number" min="2" placeholder="w"> × <input id="makerH" type="number" min="2" placeholder="h"> (optional)</label>
+    <h3>Goals</h3>
+    <ul id="makerGoals" class="mkGoals"></ul>
+    <p id="makerSay" class="hint" role="status"></p>
+    <div class="row"><button id="makerBuild" type="button" class="primary">Build it</button><button id="makerNew" type="button">New</button><button id="makerDelete" type="button" hidden>Delete</button></div>
   </dialog>
   <dialog id="puzzleBox" class="rooms">
     <div class="roomsHead"><b>Puzzles</b><button id="puzzleMenu" type="button">Menu</button></div>
@@ -1129,157 +1155,8 @@ function wallBorder(level) {
 }
 return { checkTurret, emptyLevel, resizeLevel, parseLevel, isCell, resizeSide, MIN_INSIDE, moveSide, wallBorder };
 })();
-// ---- src/editor/history.js
-const m2 = (() => {
-
-// Undo and redo: a stack of whole levels, as text. An edit is recorded only when it
-// changed the level, so a click that did nothing leaves nothing to undo.
-const LIMIT = 100;
-
-const newHistory = () => ({ past: [], future: [] });
-
-// before: the level as text from just before the edit; level: the level now.
-function record(h, before, level) {
-  if (before === JSON.stringify(level)) return false;
-  h.past.push(before);
-  if (h.past.length > LIMIT) h.past.shift();
-  h.future = [];
-  return true;
-}
-
-function undo(h, level) {
-  if (!h.past.length) return null;
-  h.future.push(JSON.stringify(level));
-  return JSON.parse(h.past.pop());
-}
-
-function redo(h, level) {
-  if (!h.future.length) return null;
-  h.past.push(JSON.stringify(level));
-  return JSON.parse(h.future.pop());
-}
-return { LIMIT, newHistory, record, undo, redo };
-})();
-// ---- src/editor/state.js
-const m3 = (() => {
-const { emptyLevel } = m1;
-const { newHistory } = m2;
-// The one shared state of the page: the level being edited, the editor's settings and
-// the run being played. Every app file reads and writes it here, never in a copy.
-
-
-// A new room takes the screen's shape: taller than wide on a phone held upright.
-function starterLevel(tall) {
-  const l = tall ? emptyLevel(12, 14) : emptyLevel(20, 12);
-  for (let x = 0; x < l.w; x++) { l.cells[x] = 'wall'; l.cells[(l.h - 1) * l.w + x] = 'wall'; }
-  for (let y = 0; y < l.h; y++) { l.cells[y * l.w] = 'wall'; l.cells[y * l.w + l.w - 1] = 'wall'; }
-  return l;
-}
-
-const S = {
-  level: null,
-  ui: { group: 'basic', tool: 'look', axis: 'h', dir: 1, start: 'right', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
-  mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
-  played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null, lookAt: null, playFrom: null, stops: null, lens: { open: false, opened: false, pick: {}, follow: true }, lensData: null, sel: null, moving: null, clip: null, paste: null, redraw: true, drawnAt: 0, draws: 0, genPrev: null, design: null,
-  // simple: the Sandbox a person builds in (register 302), with the campaign's elements and tools.
-  simple: false,
-  // puzzle: the Puzzles room being played by hand, { id, fewest }, or null.
-  puzzle: null,
-};
-return { starterLevel, S };
-})();
-// ---- src/app/store.js
-const m4 = (() => {
-
-// Where rooms are kept: on the server when the page is served by one, otherwise in this
-// browser's local storage. A room is a level file with id, name, note and updated added.
-const KEY = 'wee.rooms';
-let mode = 'device';
-
-const where = () => mode;
-
-async function detect() {
-  try {
-    const r = await fetch('api/rooms', { cache: 'no-store' });
-    if (r.ok && (r.headers.get('content-type') || '').includes('json')) { mode = 'server'; return mode; }
-  } catch { /* opened from a file, or no server */ }
-  mode = 'device';
-  return mode;
-}
-
-function readLocal() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
-function writeLocal(rooms) { localStorage.setItem(KEY, JSON.stringify(rooms)); }
-
-const newId = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-
-async function list() {
-  if (mode === 'server') {
-    const r = await fetch('api/rooms', { cache: 'no-store' });
-    if (!r.ok) throw new Error('The server did not list the rooms.');
-    return r.json();
-  }
-  return readLocal();
-}
-
-async function put(room) {
-  room = { ...room, updated: new Date().toISOString() };
-  if (mode === 'server') {
-    const r = await fetch('api/rooms/' + room.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(room) });
-    if (!r.ok) throw new Error('The server did not save the room: ' + (await r.text()));
-    return r.json();
-  }
-  const rooms = readLocal().filter(o => o.id !== room.id);
-  rooms.push(room);
-  writeLocal(rooms);
-  return room;
-}
-
-async function remove(id) {
-  if (mode === 'server') {
-    const r = await fetch('api/rooms/' + id, { method: 'DELETE' });
-    if (!r.ok) throw new Error('The server did not delete the room.');
-    return;
-  }
-  writeLocal(readLocal().filter(o => o.id !== id));
-}
-return { where, detect, newId, list, put, remove };
-})();
-// ---- src/level/room.js
-const m5 = (() => {
-const { parseLevel } = m1;
-// A room is a level plus what the person wrote about it. These split and join the two.
-
-const META = ['id', 'name', 'note', 'updated', 'par', 'solution', 'uses', 'recipe', 'puzzle'];
-
-function splitRoom(room) {
-  const meta = {}, level = { ...room };
-  for (const k of META) { meta[k] = room[k] ?? null; delete level[k]; }
-  return { meta, level: parseLevel(JSON.stringify(level)) };
-}
-
-const joinRoom = (meta, level) => ({
-  ...level, id: meta.id, name: meta.name, note: meta.note || '',
-  ...(meta.solution ? { par: meta.solution.length, solution: meta.solution, uses: meta.uses || [] } : {}),
-  ...(meta.recipe ? { recipe: meta.recipe } : {}),
-  ...(meta.puzzle ? { puzzle: true } : {}),
-});
-
-// What counts as the room's content when asking whether it has unsaved changes.
-const stampOf = level => JSON.stringify(level);
-
-function pack(rooms) { return { format: 'wee-pack', version: 1, rooms }; }
-
-// A pack file, or a single level file read as a pack of one.
-function unpack(text) {
-  const data = JSON.parse(text);
-  if (data.format === 'wee-pack' && Array.isArray(data.rooms)) return data.rooms.map(r => { splitRoom(r); return r; });
-  if (data.format === 'wee-level') { splitRoom(data); return [data]; }
-  throw new Error('Not a wee room or pack file.');
-}
-return { META, splitRoom, joinRoom, stampOf, pack, unpack };
-})();
 // ---- src/rules/grid.js
-const m6 = (() => {
+const m2 = (() => {
 const { DIRS, DIR_OF, ENTRY_FACE, EXIT_FACE, OPPOSITE, breaks, openFaces, turn, wades } = m0;
 // Geometry: what is on a tile, and where one step from a tile lands (walls, doors,
 // triangles, one-way tiles, water).
@@ -1373,9 +1250,9 @@ function fling(s, x, y, d, type) {
 return { inb, cellAt, onGravel, solidCell, triAt, facing, gateOf, gateDirs, gateAt, stepTo, pushTo, inWater, entAt, playerAt, crushes, shift, fling };
 })();
 // ---- src/rules/life.js
-const m7 = (() => {
+const m3 = (() => {
 const { CLOCKWISE, COLOURS, FUSE, HOLDS_DOOR } = m0;
-const { cellAt, entAt, fling, gateDirs, inb, playerAt } = m6;
+const { cellAt, entAt, fling, gateDirs, inb, playerAt } = m2;
 // Doors and switches, dying, and the room reset.
 
 
@@ -1552,10 +1429,10 @@ function land(s, e, t) {
 return { startAim, freshPieces, switchesOf, flipToggles, refreshDoors, respawn, smash, light, explode, die, kill, land };
 })();
 // ---- src/rules/beams.js
-const m8 = (() => {
+const m4 = (() => {
 const { DIRS } = m0;
-const { cellAt, entAt, facing, inWater, inb, playerAt, stepTo } = m6;
-const { die, explode, kill } = m7;
+const { cellAt, entAt, facing, inWater, inb, playerAt, stepTo } = m2;
+const { die, explode, kill } = m3;
 // Lasers: your shot, turret beams, relays, catchers and shocked water.
 
 
@@ -1644,10 +1521,10 @@ function computeBeams(s, harm) {
 return { trace, laserHit, laser, shockPools, shockHarms, aimOf, inBeam, turnTurrets, computeBeams };
 })();
 // ---- src/rules/sticky.js
-const m9 = (() => {
+const m5 = (() => {
 const { LIGHT } = m0;
-const { cellAt, shift } = m6;
-const { die, land } = m7;
+const { cellAt, shift } = m2;
+const { die, land } = m3;
 // Sticky: a puddle makes you sticky until water washes it off or you stick to
 // something. You ride a moving block or a sliding box you meet until you move off; a
 // light box you meet glues to you and comes along; pushed into something it stays glued, and
@@ -1703,10 +1580,10 @@ function checkStuck(s) {
 return { stuckTo, STICKS, stick, unstick, entered, carry, drag, checkStuck };
 })();
 // ---- src/rules/glue.js
-const m10 = (() => {
+const m6 = (() => {
 const { wades } = m0;
-const { entAt, playerAt, shift } = m6;
-const { land } = m7;
+const { entAt, playerAt, shift } = m2;
+const { land } = m3;
 // Sticky pieces: a piece that crosses a puddle is sticky until water washes it off or it
 // meets another piece, and then the two are glued. A glued pair moves as one: when one
 // moves, the other moves the same way, or they come apart.
@@ -1763,13 +1640,13 @@ function checkGlue(s) {
 return { partnerOf, meet, unglue, lead, follow, partnerAt, checkGlue };
 })();
 // ---- src/rules/pieces.js
-const m11 = (() => {
+const m7 = (() => {
 const { DIRS, ENEMY, LIGHT, MOVES, breaks, wades } = m0;
-const { turnTurrets } = m8;
-const { crushes, entAt, fling, inb, onGravel, playerAt, pushTo, stepTo } = m6;
-const { die, kill, land, light, refreshDoors, smash } = m7;
-const { carry, entered, stick, stuckTo } = m9;
-const { follow, lead, meet, partnerAt, partnerOf } = m10;
+const { turnTurrets } = m4;
+const { crushes, entAt, fling, inb, onGravel, playerAt, pushTo, stepTo } = m2;
+const { die, kill, land, light, refreshDoors, smash } = m3;
+const { carry, entered, stick, stuckTo } = m5;
+const { follow, lead, meet, partnerAt, partnerOf } = m6;
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
 
 
@@ -1916,14 +1793,14 @@ function fireSprings(s) {
 return { burnFuses, hideCycle, rushOnce, launch, worldStep, patrolDir, moveMover, slidePiece, springsOf, fireSprings };
 })();
 // ---- src/rules/player.js
-const m12 = (() => {
+const m8 = (() => {
 const { DIRS, ENEMY, HIDE_TICKS, LIGHT, OPPOSITE, POWERS, wades } = m0;
-const { inBeam, laser, turnTurrets } = m8;
-const { cellAt, crushes, entAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } = m6;
-const { die, kill, land, light, refreshDoors, respawn, smash } = m7;
-const { burnFuses, hideCycle, worldStep } = m11;
-const { STICKS, drag, entered, stick, stuckTo, unstick } = m9;
-const { follow, lead, meet, partnerAt } = m10;
+const { inBeam, laser, turnTurrets } = m4;
+const { cellAt, crushes, entAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } = m2;
+const { die, kill, land, light, refreshDoors, respawn, smash } = m3;
+const { burnFuses, hideCycle, worldStep } = m7;
+const { STICKS, drag, entered, stick, stuckTo, unstick } = m5;
+const { follow, lead, meet, partnerAt } = m6;
 // You: one slide step at a time, dive, hide, and what each key does.
 
 
@@ -2082,15 +1959,15 @@ function aimKey(s, k, alpha) {
 return { playerStep, endSlide, slideOnce, dive, unhide, letGo, input, aimKey };
 })();
 // ---- src/rules/game.js
-const m13 = (() => {
+const m9 = (() => {
 const { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } = m0;
-const { aimOf, computeBeams, turnTurrets } = m8;
-const { cellAt, inWater } = m6;
-const { explode, flipToggles, freshPieces, refreshDoors } = m7;
-const { fireSprings, rushOnce, slidePiece } = m11;
-const { input, slideOnce, unhide } = m12;
-const { checkStuck } = m9;
-const { checkGlue, partnerOf } = m10;
+const { aimOf, computeBeams, turnTurrets } = m4;
+const { cellAt, inWater } = m2;
+const { explode, flipToggles, freshPieces, refreshDoors } = m3;
+const { fireSprings, rushOnce, slidePiece } = m7;
+const { input, slideOnce, unhide } = m8;
+const { checkStuck } = m5;
+const { checkGlue, partnerOf } = m6;
 // A run: the state, one tick of it, its text reading, and replaying a key log.
 // Pure and deterministic: no DOM, no clock, no randomness.
 
@@ -2197,8 +2074,8 @@ function replay(level, log, ticks) {
 return { createGame, cloneGame, step, gameText, replay };
 })();
 // ---- src/solve/solve.js
-const m14 = (() => {
-const { createGame, step, cloneGame } = m13;
+const m10 = (() => {
+const { createGame, step, cloneGame } = m9;
 const { MOVES, OPPOSITE } = m0;
 // The solver: a breadth-first search over the room's states, one move of yours per
 // edge, using the real rules. A move is a slide you start from rest (or a hide), run
@@ -2400,10 +2277,10 @@ function solve(level, max) {
 return { MAX_STATES, stateKey, settled, parseMove, move, powerMoves, successors, unsearchable, search, canWin, reach, solve };
 })();
 // ---- src/campaign/robot.js
-const m15 = (() => {
-const { createGame } = m13;
-const { entAt, playerAt } = m6;
-const { stateKey, successors, unsearchable, move, MAX_STATES } = m14;
+const m11 = (() => {
+const { createGame } = m9;
+const { entAt, playerAt } = m2;
+const { stateKey, successors, unsearchable, move, MAX_STATES } = m10;
 // The robot: every shortest way to the goal, not just one. A breadth-first search by layers
 // that keeps every parent of a state reached at its first depth, so two equal-length routes
 // into one position both survive, then walks back from each winning move.
@@ -2509,87 +2386,10 @@ function whyStuck(level, { max = MAX_STATES } = {}) {
 }
 return { shortestPaths, allShortest, replayPath, whyStuck };
 })();
-// ---- src/app/dom.js
-const m16 = (() => {
-
-// The page: the elements the app talks to, and what kind of screen it is on.
-const $ = id => document.getElementById(id);
-const canvas = $('game');
-const g = canvas.getContext('2d');
-const touch = matchMedia('(pointer: coarse)').matches;
-const portrait = () => innerHeight > innerWidth;
-const now = () => performance.now();
-return { $, canvas, g, touch, portrait, now };
-})();
-// ---- src/app/puzzles.js
-const m17 = (() => {
-const { S } = m3;
-const { list } = m4;
-const { splitRoom } = m5;
-const { allShortest } = m15;
-const { $ } = m16;
-// Puzzles (register 302): rooms marked in the Sandbox, played by hand as the little circle.
-// Your best is kept; the fewest moves come from the robot's own search.
-
-
-
-
-
-const KEY = 'wee-puzzles';
-const bests = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
-const keep = b => { try { localStorage.setItem(KEY, JSON.stringify(b)); } catch { /* storage off */ } };
-let A = null;
-
-function leave() { S.puzzle = null; document.body.classList.remove('puzzle'); }
-async function openPuzzles() {
-  for (const id of ['menuBox', 'campBox']) if ($(id).open) $(id).close();
-  leave();
-  const rooms = (await list().catch(() => [])).filter(r => r.puzzle), b = bests();
-  $('puzzleNone').hidden = rooms.length > 0;
-  $('puzzleList').replaceChildren(...rooms.map(r => {
-    const li = document.createElement('li'), btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'campRow'; btn.dataset.puzzle = r.id;
-    btn.append(Object.assign(document.createElement('b'), { textContent: r.name || 'Untitled' }), Object.assign(document.createElement('small'), { textContent: b[r.id] ? `Solved in ${b[r.id]}` : 'Not solved yet' }));
-    btn.onclick = () => play(r);
-    li.append(btn); return li;
-  }));
-  if (!$('puzzleBox').open) $('puzzleBox').showModal();
-}
-function play(r) {
-  const { level } = splitRoom(r), found = allShortest(level);
-  $('puzzleBox').close();
-  S.puzzle = { id: r.id, fewest: found.status === 'solved' ? found.length : null };
-  S.camp = null; S.simple = true; S.level = level;
-  document.body.classList.add('puzzle', 'simple');
-  A.setMode('play'); A.syncPanel(); A.fit();
-}
-
-function buildPuzzles(actions) {
-  A = actions;
-  $('menuPuzzles').onclick = openPuzzles;
-  $('puzzleMenu').onclick = () => { $('puzzleBox').close(); $('menuBox').showModal(); };
-  $('puzzleBack').onclick = openPuzzles;
-  addEventListener('wee:win', ev => {
-    if (!S.puzzle) return;
-    const b = bests(), n = ev.detail.moves, id = S.puzzle.id;
-    if (!b[id] || n < b[id]) { b[id] = n; keep(b); }
-    const few = S.puzzle.fewest;
-    $('winText').textContent = few == null ? `Solved in ${n} moves.` : n === few ? `Solved in ${n} moves, the fewest there are.` : `Solved in ${n} moves. It can be done in ${few}.`;
-  });
-}
-return { openPuzzles, buildPuzzles };
-})();
-// ---- src/level/campaign.js
-const m18 = (() => {
-
-// Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"small":[3,4],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"small":[8,6],"optional":[]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[4,4],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"],"small":[4,5]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"small":[3,5],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"small":[6,3],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"small":[4,4],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"rules":[],"require":["robotThroughOneWayBothWays"],"small":[6,2],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"small":[7,3]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"small":[3,3],"optional":["lasersTwoWays"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"small":[6,5],"optional":["boxThroughOneWay"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":7},"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"small":[5,4],"optional":["robotOnButton"]}];
-return { LEVELS };
-})();
 // ---- src/campaign/oneWay.js
-const m19 = (() => {
-const { replayPath } = m15;
-const { gateDirs } = m6;
+const m12 = (() => {
+const { replayPath } = m11;
+const { gateDirs } = m2;
 const { OPPOSITE } = m0;
 // What a level can require of one-way tiles. Going through one is entering it along its arrow
 // and leaving off the far side; colliding with one is a slide that ends against it, from any
@@ -2700,8 +2500,8 @@ const ONE_WAY_REQUIREMENTS = {
 return { oneWayLog, ONE_WAY_REQUIREMENTS };
 })();
 // ---- src/campaign/extras.js
-const m20 = (() => {
-const { replayPath } = m15;
+const m13 = (() => {
+const { replayPath } = m11;
 // More goals a level can ask of a path or of the room (registers 262-269). A box collides when the
 // robot's push ends with something stopping the box, and the box moved in that push. All copy is draft.
 
@@ -2874,10 +2674,10 @@ const EXTRA_REQUIREMENTS = {
 return { stoppedPushes, EXTRA_REQUIREMENTS };
 })();
 // ---- src/campaign/requirements.js
-const m21 = (() => {
-const { replayPath } = m15;
-const { ONE_WAY_REQUIREMENTS } = m19;
-const { EXTRA_REQUIREMENTS } = m20;
+const m14 = (() => {
+const { replayPath } = m11;
+const { ONE_WAY_REQUIREMENTS } = m12;
+const { EXTRA_REQUIREMENTS } = m13;
 // What a level can require of the robot's shortest paths, each judged on one path from every
 // tick of its replay; and a path drawn on its room. All copy is draft.
 
@@ -3120,10 +2920,10 @@ function trailOf(room, moves) {
 return { boxMoves, REQUIREMENTS, trailOf };
 })();
 // ---- src/campaign/rules.js
-const m22 = (() => {
+const m15 = (() => {
 const { emptyLevel } = m1;
-const { allShortest, whyStuck } = m15;
-const { REQUIREMENTS } = m21;
+const { allShortest, whyStuck } = m11;
+const { REQUIREMENTS } = m14;
 // A campaign level: the room it gives you, what you may place and how many, and what the
 // robot's shortest paths must do. check() judges a room you built against it. All copy is draft.
 
@@ -3223,12 +3023,13 @@ const bestShort = st => `exactly ${st.best}`;
 // path goals (def.optional: requirement ids, met only when every shortest path meets them),
 // then mix, any two of the others in one run. Not every pair, let alone all, need fit one room.
 function optionalGoals(def) {
-  return [
-    { id: 'best', parts: [bestShort(def.steps)], text: bestText(def.steps), met: v => v.length === def.steps.best },
-    { id: 'small', parts: [`${def.small[0]}×${def.small[1]} or smaller`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] },
+  // A level from the Level maker may leave out the exact count or the size goal (register 302).
+  const own = [
+    ...(def.steps.best != null ? [{ id: 'best', parts: [bestShort(def.steps)], text: bestText(def.steps), met: v => v.length === def.steps.best }] : []),
+    ...(def.small ? [{ id: 'small', parts: [`${def.small[0]}×${def.small[1]} or smaller`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] }] : []),
     ...(def.optional || []).map(id => ({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: v => !!(v.pathGoals && v.pathGoals[id]) })),
-    { id: 'mix', parts: ['any 2 optional goals at once'], text: 'Meet two of the other optional goals in the same run.', mix: 2 },
   ];
+  return own.length < 2 ? own : [...own, { id: 'mix', parts: ['any 2 optional goals at once'], text: 'Meet two of the other optional goals in the same run.', mix: 2 }];
 }
 // Each optional goal judged on one run's verdict; mix counts the others.
 function optionalResults(def, v) {
@@ -3300,8 +3101,100 @@ function check(def, room, opts) {
 }
 return { ELEMENTS, coloursOf, roomOf, placed, nameOf, START_ON, overLimits, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, bestShort, optionalGoals, optionalResults, areaOf, stuckText, check };
 })();
+// ---- src/app/made.js
+const m16 = (() => {
+
+// Levels made in the Level maker (register 302), kept in this browser. Their ids are 'm' + a number.
+const KEY = 'wee-made';
+const madeLevels = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
+const saveMade = list => { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch { /* storage off or full */ } };
+const madeLevel = id => madeLevels().find(l => l.id === id);
+// Leaving a made level goes back to the maker; the maker hands its opener in, so the two do not import each other.
+let back = () => {};
+const backToMaker = () => back();
+const onMakerBack = f => { back = f; };
+return { madeLevels, saveMade, madeLevel, backToMaker, onMakerBack };
+})();
+// ---- src/level/campaign.js
+const m17 = (() => {
+
+// Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"rules":[],"require":[],"small":[3,3],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"small":[3,3],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[3,3],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"small":[3,4],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"small":[8,6],"optional":[]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"small":[3,5],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"small":[4,4],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"],"small":[4,5]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"small":[3,5],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"small":[6,3],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"small":[4,4],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"rules":[],"require":["robotThroughOneWayBothWays"],"small":[6,2],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"small":[7,3]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"small":[3,3],"optional":["lasersTwoWays"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"small":[6,5],"optional":["boxThroughOneWay"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":7},"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"small":[5,4],"optional":["robotOnButton"]}];
+return { LEVELS };
+})();
+// ---- src/editor/history.js
+const m18 = (() => {
+
+// Undo and redo: a stack of whole levels, as text. An edit is recorded only when it
+// changed the level, so a click that did nothing leaves nothing to undo.
+const LIMIT = 100;
+
+const newHistory = () => ({ past: [], future: [] });
+
+// before: the level as text from just before the edit; level: the level now.
+function record(h, before, level) {
+  if (before === JSON.stringify(level)) return false;
+  h.past.push(before);
+  if (h.past.length > LIMIT) h.past.shift();
+  h.future = [];
+  return true;
+}
+
+function undo(h, level) {
+  if (!h.past.length) return null;
+  h.future.push(JSON.stringify(level));
+  return JSON.parse(h.past.pop());
+}
+
+function redo(h, level) {
+  if (!h.future.length) return null;
+  h.past.push(JSON.stringify(level));
+  return JSON.parse(h.future.pop());
+}
+return { LIMIT, newHistory, record, undo, redo };
+})();
+// ---- src/editor/state.js
+const m19 = (() => {
+const { emptyLevel } = m1;
+const { newHistory } = m18;
+// The one shared state of the page: the level being edited, the editor's settings and
+// the run being played. Every app file reads and writes it here, never in a copy.
+
+
+// A new room takes the screen's shape: taller than wide on a phone held upright.
+function starterLevel(tall) {
+  const l = tall ? emptyLevel(12, 14) : emptyLevel(20, 12);
+  for (let x = 0; x < l.w; x++) { l.cells[x] = 'wall'; l.cells[(l.h - 1) * l.w + x] = 'wall'; }
+  for (let y = 0; y < l.h; y++) { l.cells[y * l.w] = 'wall'; l.cells[y * l.w + l.w - 1] = 'wall'; }
+  return l;
+}
+
+const S = {
+  level: null,
+  ui: { group: 'basic', tool: 'look', axis: 'h', dir: 1, start: 'right', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up' },
+  mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,
+  played: null, keylog: [], history: newHistory(), before: null, check: null, demo: null, demoWait: null, lookAt: null, playFrom: null, stops: null, lens: { open: false, opened: false, pick: {}, follow: true }, lensData: null, sel: null, moving: null, clip: null, paste: null, redraw: true, drawnAt: 0, draws: 0, genPrev: null, design: null,
+  // simple: the Sandbox a person builds in (register 302), with the campaign's elements and tools.
+  simple: false,
+  // puzzle: the Puzzles room being played by hand, { id, fewest }, or null.
+  puzzle: null,
+};
+return { starterLevel, S };
+})();
+// ---- src/app/dom.js
+const m20 = (() => {
+
+// The page: the elements the app talks to, and what kind of screen it is on.
+const $ = id => document.getElementById(id);
+const canvas = $('game');
+const g = canvas.getContext('2d');
+const touch = matchMedia('(pointer: coarse)').matches;
+const portrait = () => innerHeight > innerWidth;
+const now = () => performance.now();
+return { $, canvas, g, touch, portrait, now };
+})();
 // ---- src/view/ink.js
-const m23 = (() => {
+const m21 = (() => {
 const { TICK_MS } = m0;
 // The palette, the tile size and the small drawing helpers every view file shares.
 
@@ -3342,8 +3235,8 @@ const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9, 5], [0
 return { AIM, T, INK, ease, lerp, frame, roundRect, LASER_MS, PUFF_MS, PUFFS };
 })();
 // ---- src/view/pieces.js
-const m24 = (() => {
-const { AIM, INK, T, frame, roundRect } = m23;
+const m22 = (() => {
+const { AIM, INK, T, frame, roundRect } = m21;
 // Pieces and the player.
 
 // The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
@@ -3510,9 +3403,9 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
 return { modeBadge, drawTurret, drawPiece, drawRobot, drawYou, drawPlayer };
 })();
 // ---- src/view/tiles.js
-const m25 = (() => {
-const { INK, T, frame, roundRect } = m23;
-const { gateOf, gateDirs } = m6;
+const m23 = (() => {
+const { INK, T, frame, roundRect } = m21;
+const { gateOf, gateDirs } = m2;
 // Tiles: floor, walls and every cell type, drawn in place.
 
 
@@ -3691,9 +3584,9 @@ function drawFloor(g, w, h) {
 return { grit, drawCell, pressedAt, drawFloor };
 })();
 // ---- src/view/masses.js
-const m26 = (() => {
-const { INK, T, frame } = m23;
-const { grit } = m25;
+const m24 = (() => {
+const { INK, T, frame } = m21;
+const { grit } = m23;
 // Joined-up tiles: neighbouring walls, water, sticky puddles and death blocks are drawn as
 // one mass each. Every cell is four quarters; a quarter reads its two side neighbours and
 // the diagonal between them, so outer corners round, inner corners get a fillet and a
@@ -3810,8 +3703,8 @@ function drawMasses(g, cells, w, h, skip = () => false) {
 return { MASSES, RADIUS, joins, inMass, overlay, quarter, kindIn, drawMasses };
 })();
 // ---- src/view/lenses.js
-const m27 = (() => {
-const { INK, T } = m23;
+const m25 = (() => {
+const { INK, T } = m21;
 // The editor's lenses, drawn over the room. A heat lens recolours tiles under the pieces; dots,
 // lines and frames are marks on top. One lens per group, so nothing here paints over its own kind.
 
@@ -3888,13 +3781,13 @@ function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses } = {}
 return { drawHeat, drawLensMarks };
 })();
 // ---- src/view/scene.js
-const m28 = (() => {
+const m26 = (() => {
 const { DIRS } = m0;
-const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m23;
-const { drawPiece, drawPlayer } = m24;
-const { drawCell, drawFloor } = m25;
-const { drawMasses, inMass, overlay } = m26;
-const { drawHeat, drawLensMarks } = m27;
+const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp } = m21;
+const { drawPiece, drawPlayer } = m22;
+const { drawCell, drawFloor } = m23;
+const { drawMasses, inMass, overlay } = m24;
+const { drawHeat, drawLensMarks } = m25;
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
 
@@ -4160,11 +4053,11 @@ function drawPlay(g, s, prev, alpha, fx, now) {
 return { drawEdit, drawPlay };
 })();
 // ---- src/app/icons.js
-const m29 = (() => {
+const m27 = (() => {
 const { emptyLevel } = m1;
-const { T, INK } = m23;
-const { drawPiece, drawYou } = m24;
-const { drawEdit } = m28;
+const { T, INK } = m21;
+const { drawPiece, drawYou } = m22;
+const { drawEdit } = m26;
 // A tool's icon, drawn the way the room draws the thing: the palette and the generator's
 // ingredients share it.
 
@@ -4209,9 +4102,9 @@ function icon(tool, colour = 'red', gateColour = null) {
 return { icon };
 })();
 // ---- src/app/debug.js
-const m30 = (() => {
-const { S } = m3;
-const { $ } = m16;
+const m28 = (() => {
+const { S } = m19;
+const { $ } = m20;
 // A report for a bug that only shows on a real device: the last taps and keys, and the
 // game's state the moment the player left a level, to copy from the menu and paste in chat.
 
@@ -4256,7 +4149,7 @@ function copyDebug() {
 return { noteLeaving, bindDebug, copyDebug };
 })();
 // ---- src/app/menuScene.js
-const m31 = (() => {
+const m29 = (() => {
 
 // The main menu's background: a small room the robot plays on a loop (the box blocks a laser, the
 // robot bumps the closed door, steps on the switch, goes through). Drawn in CSS, not the game's
@@ -4296,20 +4189,22 @@ function buildMenuScene(host) {
 return { buildMenuScene };
 })();
 // ---- src/app/campaign.js
-const m32 = (() => {
-const { LEVELS } = m18;
-const { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } = m22;
-const { REQUIREMENTS, trailOf } = m21;
-const { newHistory } = m2;
-const { S, starterLevel } = m3;
-const { $, portrait, now } = m16;
-const { icon } = m29;
-const { noteLeaving, copyDebug } = m30;
-const { buildMenuScene } = m31;
+const m30 = (() => {
+const { LEVELS } = m17;
+const { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults } = m15;
+const { REQUIREMENTS, trailOf } = m14;
+const { newHistory } = m18;
+const { S, starterLevel } = m19;
+const { $, portrait, now } = m20;
+const { icon } = m27;
+const { noteLeaving, copyDebug } = m28;
+const { buildMenuScene } = m29;
+const { madeLevel, backToMaker } = m16;
 // The campaign: a main menu at launch, the level list, and building a level's room for the
 // robot. Run judges the room (src/campaign/rules.js) and the robot plays a shortest path:
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
+
 
 
 
@@ -4355,7 +4250,7 @@ function migrate(p) {
   return p;
 }
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };
-const levelOf = id => LEVELS.find(l => l.id === id);
+const levelOf = id => LEVELS.find(l => l.id === id) || madeLevel(id);
 
 // A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
 // level's, so it is cut off, and the start and goal it had stay where they were.
@@ -4568,7 +4463,7 @@ function buildCampaign(actions, sandbox) {
   $('menuCampaign').onclick = openList;
   $('menuSandbox').onclick = () => { closeAll(); S.simple = true; document.body.classList.add('simple'); Promise.resolve(boot()).then(A.syncPanel); };
   $('campMenu').onclick = openMenu;
-  $('campBack').onclick = () => { noteLeaving(); leaveLevel(); openList(); };
+  $('campBack').onclick = () => { const made = S.camp && S.camp.def.made; noteLeaving(); leaveLevel(); (made ? backToMaker : openList)(); };
   $('menuDebug').onclick = copyDebug;
   $('campRun').onclick = () => { S.camp.testing = false; run(); };
   // Test: the room played by hand, the robot not involved; nothing is judged or saved.
@@ -4604,10 +4499,256 @@ function buildCampaign(actions, sandbox) {
 }
 return { TOOL, progress, migrate, write, unframe, toolsFor, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
 })();
-// ---- src/app/progressCode.js
+// ---- src/app/maker.js
+const m31 = (() => {
+const { ELEMENTS } = m15;
+const { REQUIREMENTS } = m14;
+const { madeLevels, saveMade, onMakerBack } = m16;
+const { enterLevel } = m30;
+const { $ } = m20;
+// The Level maker (register 302): pick the palette (in or out, a minimum, a maximum), the goals
+// and the optional goals; Build it opens it like a campaign level, judged by the robot.
+
+
+
+
+
+const ELS = Object.keys(ELEMENTS);
+// A goal is offered when every element its short line draws is in the palette (the robot is always there).
+const needs = id => REQUIREMENTS[id].short.filter(p => p && p.el && p.el !== 'start').map(p => p.el);
+let editing = null;
+
+function palRows(def) {
+  $('makerPal').replaceChildren(...ELS.map(el => {
+    const tr = document.createElement('tr'), [min, max] = def.palette[el] || [0, null], on = el in def.palette;
+    tr.dataset.el = el;
+    tr.innerHTML = `<td><label><input type="checkbox" data-in> ${ELEMENTS[el].label}</label></td><td><input type="number" min="0" data-min></td><td><input type="number" min="0" placeholder="any" data-max></td>`;
+    tr.querySelector('[data-in]').checked = on;
+    tr.querySelector('[data-min]').value = on ? min : 0;
+    tr.querySelector('[data-max]').value = on && max != null ? max : '';
+    tr.querySelector('[data-in]').onchange = goalRows;
+    return tr;
+  }));
+}
+const palette = () => Object.fromEntries([...$('makerPal').children].filter(tr => tr.querySelector('[data-in]').checked).map(tr => {
+  const min = Math.max(0, +tr.querySelector('[data-min]').value || 0), m = tr.querySelector('[data-max]').value;
+  return [tr.dataset.el, [min, m === '' ? null : Math.max(min, +m)]];
+}));
+let picked = {};
+function goalRows() {
+  const have = new Set(Object.keys(palette()));
+  for (const li of $('makerGoals').children) picked[li.dataset.goal] = li.querySelector('select').value;
+  $('makerGoals').replaceChildren(...Object.keys(REQUIREMENTS).filter(id => needs(id).every(el => have.has(el))).map(id => {
+    const li = document.createElement('li'); li.dataset.goal = id;
+    li.innerHTML = `<select aria-label="Use"><option value="">Not used</option><option value="require">Required</option><option value="optional">Optional</option></select><span></span>`;
+    li.querySelector('span').textContent = REQUIREMENTS[id].text;
+    li.querySelector('select').value = picked[id] || '';
+    return li;
+  }));
+}
+function fill(def) {
+  editing = def.id || null; picked = {};
+  for (const id of def.require || []) picked[id] = 'require';
+  for (const id of def.optional || []) picked[id] = 'optional';
+  $('makerName').value = def.name || '';
+  $('makerTwo').checked = !!(def.colours && def.colours.length > 1);
+  $('makerBest').value = def.steps && def.steps.best != null ? def.steps.best : '';
+  $('makerW').value = def.small ? def.small[0] : ''; $('makerH').value = def.small ? def.small[1] : '';
+  $('makerDelete').hidden = !editing; $('makerSay').textContent = '';
+  palRows(def); goalRows();
+}
+const blank = () => ({ palette: { block: [0, null] }, require: [], optional: [] });
+function listMade() {
+  $('madeList').replaceChildren(...madeLevels().map(def => {
+    const li = document.createElement('li'), b = document.createElement('button');
+    b.type = 'button'; b.className = 'campRow'; b.dataset.made = def.id;
+    b.append(Object.assign(document.createElement('b'), { textContent: def.name }), Object.assign(document.createElement('small'), { textContent: `${def.require.length} goals, ${Object.keys(def.palette).length} elements` }));
+    b.onclick = () => fill(def);
+    li.append(b); return li;
+  }));
+}
+function openMaker() {
+  for (const id of ['menuBox', 'campBox']) if ($(id).open) $(id).close();
+  listMade(); if (!editing) fill(blank());
+  if (!$('makerBox').open) $('makerBox').showModal();
+}
+function build() {
+  const pal = palette(), list = madeLevels();
+  for (const li of $('makerGoals').children) picked[li.dataset.goal] = li.querySelector('select').value;
+  const shown = new Set([...$('makerGoals').children].map(li => li.dataset.goal));
+  const ids = k => Object.keys(picked).filter(id => picked[id] === k && shown.has(id));
+  if (!ids('require').length) { $('makerSay').textContent = 'Pick at least one required goal.'; return; }
+  const best = +$('makerBest').value || null, w = +$('makerW').value, h = +$('makerH').value;
+  const id = editing || 'm' + (Math.max(0, ...list.map(l => +l.id.slice(1))) + 1);
+  const def = { id, made: true, name: $('makerName').value.trim() || `My level ${id.slice(1)}`, size: [7, 7], palette: pal, steps: best ? { best } : {}, rules: [], require: ids('require'), optional: ids('optional'), ...(w && h ? { small: [w, h] } : {}), ...($('makerTwo').checked ? { colours: ['red', 'blue'] } : {}) };
+  saveMade([...list.filter(l => l.id !== id), def]);
+  editing = id;
+  $('makerBox').close();
+  enterLevel(id);
+}
+
+function buildMaker() {
+  onMakerBack(openMaker);
+  $('menuMaker').onclick = openMaker;
+  $('makerMenu').onclick = () => { $('makerBox').close(); $('menuBox').showModal(); };
+  $('makerNew').onclick = () => fill(blank());
+  $('makerBuild').onclick = build;
+  $('makerDelete').onclick = () => { if (!editing || !confirm('Delete this level? This cannot be undone.')) return; saveMade(madeLevels().filter(l => l.id !== editing)); fill(blank()); listMade(); };
+}
+return { openMaker, buildMaker };
+})();
+// ---- src/app/store.js
+const m32 = (() => {
+
+// Where rooms are kept: on the server when the page is served by one, otherwise in this
+// browser's local storage. A room is a level file with id, name, note and updated added.
+const KEY = 'wee.rooms';
+let mode = 'device';
+
+const where = () => mode;
+
+async function detect() {
+  try {
+    const r = await fetch('api/rooms', { cache: 'no-store' });
+    if (r.ok && (r.headers.get('content-type') || '').includes('json')) { mode = 'server'; return mode; }
+  } catch { /* opened from a file, or no server */ }
+  mode = 'device';
+  return mode;
+}
+
+function readLocal() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
+function writeLocal(rooms) { localStorage.setItem(KEY, JSON.stringify(rooms)); }
+
+const newId = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+async function list() {
+  if (mode === 'server') {
+    const r = await fetch('api/rooms', { cache: 'no-store' });
+    if (!r.ok) throw new Error('The server did not list the rooms.');
+    return r.json();
+  }
+  return readLocal();
+}
+
+async function put(room) {
+  room = { ...room, updated: new Date().toISOString() };
+  if (mode === 'server') {
+    const r = await fetch('api/rooms/' + room.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(room) });
+    if (!r.ok) throw new Error('The server did not save the room: ' + (await r.text()));
+    return r.json();
+  }
+  const rooms = readLocal().filter(o => o.id !== room.id);
+  rooms.push(room);
+  writeLocal(rooms);
+  return room;
+}
+
+async function remove(id) {
+  if (mode === 'server') {
+    const r = await fetch('api/rooms/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error('The server did not delete the room.');
+    return;
+  }
+  writeLocal(readLocal().filter(o => o.id !== id));
+}
+return { where, detect, newId, list, put, remove };
+})();
+// ---- src/level/room.js
 const m33 = (() => {
-const { progress, write, migrate, openList } = m32;
-const { $ } = m16;
+const { parseLevel } = m1;
+// A room is a level plus what the person wrote about it. These split and join the two.
+
+const META = ['id', 'name', 'note', 'updated', 'par', 'solution', 'uses', 'recipe', 'puzzle'];
+
+function splitRoom(room) {
+  const meta = {}, level = { ...room };
+  for (const k of META) { meta[k] = room[k] ?? null; delete level[k]; }
+  return { meta, level: parseLevel(JSON.stringify(level)) };
+}
+
+const joinRoom = (meta, level) => ({
+  ...level, id: meta.id, name: meta.name, note: meta.note || '',
+  ...(meta.solution ? { par: meta.solution.length, solution: meta.solution, uses: meta.uses || [] } : {}),
+  ...(meta.recipe ? { recipe: meta.recipe } : {}),
+  ...(meta.puzzle ? { puzzle: true } : {}),
+});
+
+// What counts as the room's content when asking whether it has unsaved changes.
+const stampOf = level => JSON.stringify(level);
+
+function pack(rooms) { return { format: 'wee-pack', version: 1, rooms }; }
+
+// A pack file, or a single level file read as a pack of one.
+function unpack(text) {
+  const data = JSON.parse(text);
+  if (data.format === 'wee-pack' && Array.isArray(data.rooms)) return data.rooms.map(r => { splitRoom(r); return r; });
+  if (data.format === 'wee-level') { splitRoom(data); return [data]; }
+  throw new Error('Not a wee room or pack file.');
+}
+return { META, splitRoom, joinRoom, stampOf, pack, unpack };
+})();
+// ---- src/app/puzzles.js
+const m34 = (() => {
+const { S } = m19;
+const { list } = m32;
+const { splitRoom } = m33;
+const { allShortest } = m11;
+const { $ } = m20;
+// Puzzles (register 302): rooms marked in the Sandbox, played by hand as the little circle.
+// Your best is kept; the fewest moves come from the robot's own search.
+
+
+
+
+
+const KEY = 'wee-puzzles';
+const bests = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
+const keep = b => { try { localStorage.setItem(KEY, JSON.stringify(b)); } catch { /* storage off */ } };
+let A = null;
+
+function leave() { S.puzzle = null; document.body.classList.remove('puzzle'); }
+async function openPuzzles() {
+  for (const id of ['menuBox', 'campBox']) if ($(id).open) $(id).close();
+  leave();
+  const rooms = (await list().catch(() => [])).filter(r => r.puzzle), b = bests();
+  $('puzzleNone').hidden = rooms.length > 0;
+  $('puzzleList').replaceChildren(...rooms.map(r => {
+    const li = document.createElement('li'), btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'campRow'; btn.dataset.puzzle = r.id;
+    btn.append(Object.assign(document.createElement('b'), { textContent: r.name || 'Untitled' }), Object.assign(document.createElement('small'), { textContent: b[r.id] ? `Solved in ${b[r.id]}` : 'Not solved yet' }));
+    btn.onclick = () => play(r);
+    li.append(btn); return li;
+  }));
+  if (!$('puzzleBox').open) $('puzzleBox').showModal();
+}
+function play(r) {
+  const { level } = splitRoom(r), found = allShortest(level);
+  $('puzzleBox').close();
+  S.puzzle = { id: r.id, fewest: found.status === 'solved' ? found.length : null };
+  S.camp = null; S.simple = true; S.level = level;
+  document.body.classList.add('puzzle', 'simple');
+  A.setMode('play'); A.syncPanel(); A.fit();
+}
+
+function buildPuzzles(actions) {
+  A = actions;
+  $('menuPuzzles').onclick = openPuzzles;
+  $('puzzleMenu').onclick = () => { $('puzzleBox').close(); $('menuBox').showModal(); };
+  $('puzzleBack').onclick = openPuzzles;
+  addEventListener('wee:win', ev => {
+    if (!S.puzzle) return;
+    const b = bests(), n = ev.detail.moves, id = S.puzzle.id;
+    if (!b[id] || n < b[id]) { b[id] = n; keep(b); }
+    const few = S.puzzle.fewest;
+    $('winText').textContent = few == null ? `Solved in ${n} moves.` : n === few ? `Solved in ${n} moves, the fewest there are.` : `Solved in ${n} moves. It can be done in ${few}.`;
+  });
+}
+return { openPuzzles, buildPuzzles };
+})();
+// ---- src/app/progressCode.js
+const m35 = (() => {
+const { progress, write, migrate, openList } = m30;
+const { $ } = m20;
 // Progress you carry yourself (register 254): a code to copy out and paste back, for a viewer that
 // keeps no storage, and a reset after a yes.
 
@@ -4640,7 +4781,7 @@ function buildProgress() {
 return { toCode, fromCode, buildProgress };
 })();
 // ---- src/app/snow.js
-const m34 = (() => {
+const m36 = (() => {
 
 // Drift: snow behind the shell. It falls slowly, and when the player starts a slide it rushes the
 // same way for a moment, then settles. Still under reduced motion.
@@ -4683,10 +4824,10 @@ function startSnow(cv) {
 return { gust, windNow, startSnow };
 })();
 // ---- src/solve/lint.js
-const m35 = (() => {
+const m37 = (() => {
 const { DIRS } = m0;
-const { createGame, step } = m13;
-const { parseMove } = m14;
+const { createGame, step } = m9;
+const { parseMove } = m10;
 // Lint: warnings about a room that the rules allow but that are almost always a
 // mistake, each with the tile it is about. Read-only over the level.
 
@@ -4735,10 +4876,10 @@ function brokenAt(level, moves) {
 return { lint, brokenAt };
 })();
 // ---- src/solve/design.js
-const m36 = (() => {
-const { createGame } = m13;
+const m38 = (() => {
+const { createGame } = m9;
 const { NEEDS, POWERS } = m0;
-const { search, successors, stateKey, unsearchable, MAX_STATES } = m14;
+const { search, successors, stateKey, unsearchable, MAX_STATES } = m10;
 // Design notes: what each power, piece and tile does to a room's answer, where the room
 // traps you, and how many shortest routes it has. Each is a generator, so the page can run
 // it a slice at a time. An answer is a number of moves, or 'unsolvable' or 'capped'.
@@ -4845,9 +4986,9 @@ function* routes(level, max = MAX_STATES) {
 return { powerCheck, elementCheck, NOTES_MAX, idleElements, routes };
 })();
 // ---- src/app/well.js
-const m37 = (() => {
-const { S } = m3;
-const { $ } = m16;
+const m39 = (() => {
+const { S } = m19;
+const { $ } = m20;
 // The well: a fixed-height drawer under the room, with a tab for findings (warnings and
 // design notes) and one for lenses. It never pushes anything off the screen, it only takes
 // height from the room. All copy is draft.
@@ -4899,11 +5040,11 @@ function buildWell() {
 return { WELL, openWell, closeWell, syncWell, buildWell };
 })();
 // ---- src/app/design.js
-const m38 = (() => {
-const { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } = m36;
-const { S } = m3;
-const { $, now } = m16;
-const { syncWell } = m37;
+const m40 = (() => {
+const { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } = m38;
+const { S } = m19;
+const { $, now } = m20;
+const { syncWell } = m39;
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
 // how many shortest routes there are, and how many positions trap you. Runs a slice at a
 // time and stops when the room changes. All copy is draft.
@@ -4981,11 +5122,11 @@ function runDesign(par) {
 return { sliced, clearDesign, runDesign };
 })();
 // ---- src/app/enabled.js
-const m39 = (() => {
-const { S } = m3;
-const { $ } = m16;
+const m41 = (() => {
+const { S } = m19;
+const { $ } = m20;
 const { moveSide } = m1;
-const { stateKey } = m14;
+const { stateKey } = m10;
 // A control that would do nothing right now is greyed out, never left to refuse a click.
 // Runs after every change to the room, every switch between editing and playing, and each
 // tick of a run. Controls marked data-edit work on the room being edited, so a run greys them.
@@ -5014,14 +5155,14 @@ function syncEnabled() {
 return { syncEnabled };
 })();
 // ---- src/app/check.js
-const m40 = (() => {
-const { search, parseMove } = m14;
-const { lint, brokenAt } = m35;
-const { now } = m16;
-const { S } = m3;
-const { $ } = m16;
-const { runDesign, clearDesign } = m38;
-const { syncEnabled } = m39;
+const m42 = (() => {
+const { search, parseMove } = m10;
+const { lint, brokenAt } = m37;
+const { now } = m20;
+const { S } = m19;
+const { $ } = m20;
+const { runDesign, clearDesign } = m40;
+const { syncEnabled } = m41;
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
 
@@ -5145,14 +5286,14 @@ function syncLint() {
 return { checkText, runCheck, syncCheck, feedDemo, syncLint };
 })();
 // ---- src/level/templates.js
-const m41 = (() => {
+const m43 = (() => {
 
 // Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.
 const TEMPLATES = [{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Overshoot","level":{"format":"wee-level","version":1,"name":"Overshoot","w":7,"h":7,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","","","","","","wall","wall","","","wall","","","wall","wall","wall","goal","","","","wall","wall","wall","","","","wall","wall","wall","","","","","","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":2,"y":4},"entities":[{"kind":"box","x":4,"y":3,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","receiver:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"swim":false,"light":false},"clock":"tile"}},{"name":"Short fuse","level":{"format":"wee-level","version":1,"name":"Short fuse","w":8,"h":8,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","wall","","wall","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","wall","","crack","","wall","wall","wall","wall","wall","wall","goal","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"bomb","x":4,"y":4,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":true,"swim":false,"light":false,"armored":false},"clock":"tile"}}];
 return { TEMPLATES };
 })();
 // ---- src/level/code.js
-const m42 = (() => {
+const m44 = (() => {
 const { parseLevel } = m1;
 // A share code: the level as compressed, URL-safe text, so a room fits in a message or
 // a link (#room=<code>). Uses the platform's own deflate, in the page and in Node.
@@ -5183,8 +5324,8 @@ async function decodeRoom(code) {
 return { encodeRoom, decodeRoom };
 })();
 // ---- src/view/thumb.js
-const m43 = (() => {
-const { INK } = m23;
+const m45 = (() => {
+const { INK } = m21;
 // A room's thumbnail: one small square per tile in the tile's main colour, so a list of
 // many rooms costs little to draw. Returns a data URL.
 
@@ -5211,9 +5352,9 @@ function thumbURL(level) {
 return { thumbURL };
 })();
 // ---- src/solve/tags.js
-const m44 = (() => {
-const { createGame, step } = m13;
-const { parseMove } = m14;
+const m46 = (() => {
+const { createGame, step } = m9;
+const { parseMove } = m10;
 // The mechanism index: what a room contains, and what its solution actually does.
 // Both come from the room and the rules, never typed by hand, so the counts stay true.
 
@@ -5296,8 +5437,8 @@ function uses(level, moves) {
 return { MECHANISMS, LABEL, contains, uses };
 })();
 // ---- src/app/draft.js
-const m45 = (() => {
-const { S } = m3;
+const m47 = (() => {
+const { S } = m19;
 // Autosave: the room being edited, with its name and note, kept in this browser after
 // every change, so a closed tab or a phone that drops the page loses nothing. Saving the
 // room clears it; a reload with a draft newer than the saved room brings the draft back.
@@ -5329,12 +5470,12 @@ function flushDraft(dirty) { if (dirty && timer) { clearTimeout(timer); write();
 return { readDraft, clearDraft, noteChange, flushDraft };
 })();
 // ---- src/app/tilemenu.js
-const m46 = (() => {
-const { encodeRoom } = m42;
-const { splitRoom } = m5;
-const { S } = m3;
-const { put, remove, newId } = m4;
-const { $ } = m16;
+const m48 = (() => {
+const { encodeRoom } = m44;
+const { splitRoom } = m33;
+const { S } = m19;
+const { put, remove, newId } = m32;
+const { $ } = m20;
 // A saved room's own menu in the Library: Rename, Duplicate, Copy code and Delete, without
 // opening the room. Right-click, or hold on a touch screen.
 
@@ -5417,19 +5558,19 @@ function buildTileMenu(lib) {
 return { menuOn, buildTileMenu };
 })();
 // ---- src/app/rooms.js
-const m47 = (() => {
-const { TEMPLATES } = m41;
-const { encodeRoom, decodeRoom } = m42;
-const { splitRoom, joinRoom, stampOf, pack, unpack } = m5;
-const { starterLevel } = m3;
-const { newHistory } = m2;
-const { S } = m3;
-const { thumbURL } = m43;
-const { list, put, remove, where, newId, detect } = m4;
-const { contains, uses, MECHANISMS } = m44;
-const { $ } = m16;
-const { readDraft, noteChange, flushDraft, clearDraft } = m45;
-const { menuOn, buildTileMenu } = m46;
+const m49 = (() => {
+const { TEMPLATES } = m43;
+const { encodeRoom, decodeRoom } = m44;
+const { splitRoom, joinRoom, stampOf, pack, unpack } = m33;
+const { starterLevel } = m19;
+const { newHistory } = m18;
+const { S } = m19;
+const { thumbURL } = m45;
+const { list, put, remove, where, newId, detect } = m32;
+const { contains, uses, MECHANISMS } = m46;
+const { $ } = m20;
+const { readDraft, noteChange, flushDraft, clearDraft } = m47;
+const { menuOn, buildTileMenu } = m48;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
 
@@ -5714,13 +5855,13 @@ async function bootRooms() {
 return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, fillCurrent, say, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m48 = (() => {
-const { record, undo, redo } = m2;
-const { S } = m3;
-const { $ } = m16;
-const { syncCheck, syncLint } = m40;
-const { syncRoomsButton, followUndo } = m47;
-const { syncEnabled } = m39;
+const m50 = (() => {
+const { record, undo, redo } = m18;
+const { S } = m19;
+const { $ } = m20;
+const { syncCheck, syncLint } = m42;
+const { syncRoomsButton, followUndo } = m49;
+const { syncEnabled } = m41;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -5761,11 +5902,11 @@ function step(back, after) {
 return { syncUndo, begin, end, change, step };
 })();
 // ---- src/app/size.js
-const m49 = (() => {
-const { $, now } = m16;
-const { S } = m3;
+const m51 = (() => {
+const { $, now } = m20;
+const { S } = m19;
 const { moveSide } = m1;
-const { change } = m48;
+const { change } = m50;
 // The room's size: a + and a − for each side add or cut a row or a column there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
 
@@ -5831,11 +5972,11 @@ function buildSize({ after }) {
 return { syncSize, closeSize, buildSize };
 })();
 // ---- src/app/fit.js
-const m50 = (() => {
-const { T } = m23;
-const { S } = m3;
-const { $, canvas, g } = m16;
-const { syncSize } = m49;
+const m52 = (() => {
+const { T } = m21;
+const { S } = m19;
+const { $, canvas, g } = m20;
+const { syncSize } = m51;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 
 
@@ -5905,7 +6046,7 @@ function watchStage() {
 return { fit, watchStage };
 })();
 // ---- src/editor/palette.js
-const m51 = (() => {
+const m53 = (() => {
 
 // The palette: every tool, its group and label, and the words the editor uses for
 // powers, colours, clocks and directions. Draft copy throughout.
@@ -5962,10 +6103,10 @@ const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'b
 return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/solve/lenses.js
-const m52 = (() => {
-const { createGame } = m13;
-const { computeBeams } = m8;
-const { successors, stateKey, unsearchable, MAX_STATES } = m14;
+const m54 = (() => {
+const { createGame } = m9;
+const { computeBeams } = m4;
+const { successors, stateKey, unsearchable, MAX_STATES } = m10;
 // What the editor's lenses draw, from every position the room can reach: how far each tile
 // is from winning, a shortest way there, every tile you pass through on the way to a stop,
 // every tile a beam or a piece ever covers, the moves between stops, and where a move kills
@@ -6047,15 +6188,15 @@ function* lensData(level, max = MAX_STATES) {
 return { lensData };
 })();
 // ---- src/app/lenses.js
-const m53 = (() => {
-const { reach } = m14;
-const { routes } = m36;
-const { lensData } = m52;
-const { INK } = m23;
-const { S } = m3;
-const { $ } = m16;
-const { sliced } = m38;
-const { WELL, closeWell } = m37;
+const m55 = (() => {
+const { reach } = m10;
+const { routes } = m38;
+const { lensData } = m54;
+const { INK } = m21;
+const { S } = m19;
+const { $ } = m20;
+const { sliced } = m40;
+const { WELL, closeWell } = m39;
 // Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
 // you pick one in that group. Data comes from searches run a slice at a time, again whenever
@@ -6246,9 +6387,9 @@ function buildLenses() {
 return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
 // ---- src/editor/edit.js
-const m54 = (() => {
+const m56 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
-const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m51;
+const { TOOLS, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m53;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -6435,12 +6576,12 @@ function place(level, ui, x, y, how) {
 return { moveAt, swapAt, turnGate, turnLaser, holds, describe, place };
 })();
 // ---- src/app/chips.js
-const m55 = (() => {
-const { describe } = m54;
-const { S } = m3;
-const { INK } = m23;
-const { $, touch } = m16;
-const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m53;
+const m57 = (() => {
+const { describe } = m56;
+const { S } = m19;
+const { INK } = m21;
+const { $, touch } = m20;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m55;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
@@ -6502,11 +6643,11 @@ function syncInfo() {
 return { buildChips, syncChips };
 })();
 // ---- src/app/reset.js
-const m56 = (() => {
-const { S } = m3;
-const { roomOf } = m22;
-const { $ } = m16;
-const { change } = m48;
+const m58 = (() => {
+const { S } = m19;
+const { roomOf } = m15;
+const { $ } = m20;
+const { change } = m50;
 // Reset: the room goes back to the level's start, after a yes (register 291). One undo step.
 
 
@@ -6521,9 +6662,9 @@ function buildReset(after) {
 return { buildReset };
 })();
 // ---- src/app/sheets.js
-const m57 = (() => {
-const { $ } = m16;
-const { closeWell } = m37;
+const m59 = (() => {
+const { $ } = m20;
+const { closeWell } = m39;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
 // Rooms opens the rooms list. One sheet at a time; Build, Escape or play closes it.
 
@@ -6549,9 +6690,9 @@ function buildSheets() {
 return { openSheet, buildSheets };
 })();
 // ---- src/app/keys.js
-const m58 = (() => {
-const { TOOLS } = m51;
-const { $ } = m16;
+const m60 = (() => {
+const { TOOLS } = m53;
+const { $ } = m20;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
 // every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
 
@@ -6602,7 +6743,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m59 = (() => {
+const m61 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -6667,11 +6808,11 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m60 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m59;
-const { S } = m3;
-const { change } = m48;
-const { $ } = m16;
+const m62 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m61;
+const { S } = m19;
+const { change } = m50;
+const { $ } = m20;
 // The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
 // it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
 // undo step each.
@@ -6791,27 +6932,27 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/panels.js
-const m61 = (() => {
+const m63 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m1;
-const { INK } = m23;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m51;
-const { toolsFor, syncBrief } = m32;
-const { coloursOf } = m22;
-const { S } = m3;
-const { $, canvas, touch } = m16;
-const { change, step: undoStep, syncUndo } = m48;
-const { runCheck, syncCheck, syncLint } = m40;
-const { buildLenses, syncLenses } = m53;
-const { buildWell, openWell } = m37;
-const { buildChips } = m55;
-const { buildReset } = m56;
-const { buildSize } = m49;
-const { buildSheets } = m57;
-const { buildKeys } = m58;
-const { syncRoomsButton } = m47;
-const { buildSelect, syncSelect } = m60;
-const { icon } = m29;
+const { INK } = m21;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m53;
+const { toolsFor, syncBrief } = m30;
+const { coloursOf } = m15;
+const { S } = m19;
+const { $, canvas, touch } = m20;
+const { change, step: undoStep, syncUndo } = m50;
+const { runCheck, syncCheck, syncLint } = m42;
+const { buildLenses, syncLenses } = m55;
+const { buildWell, openWell } = m39;
+const { buildChips } = m57;
+const { buildReset } = m58;
+const { buildSize } = m51;
+const { buildSheets } = m59;
+const { buildKeys } = m60;
+const { syncRoomsButton } = m49;
+const { buildSelect, syncSelect } = m62;
+const { icon } = m27;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -7055,11 +7196,11 @@ function syncColours() {
 return { keysText, buildPanels, syncPanel };
 })();
 // ---- src/app/campaignMove.js
-const m62 = (() => {
-const { placementErrors } = m22;
-const { place, moveAt, swapAt } = m54;
-const { S } = m3;
-const { $, now } = m16;
+const m64 = (() => {
+const { placementErrors } = m15;
+const { place, moveAt, swapAt } = m56;
+const { S } = m19;
+const { $, now } = m20;
 // Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
 
 
@@ -7119,10 +7260,10 @@ function say(x, y, why, ms = 1500) {
 return { moveIn, refusal, allows, moveRefusal, refuse, say };
 })();
 // ---- src/app/stuck.js
-const m63 = (() => {
-const { canWin, settled, stateKey, unsearchable } = m14;
-const { S } = m3;
-const { $ } = m16;
+const m65 = (() => {
+const { canWin, settled, stateKey, unsearchable } = m10;
+const { S } = m19;
+const { $ } = m20;
 // While you play: once everything has come to rest, a search in the background asks whether
 // the goal can still be reached, and says so when it cannot. All copy is draft.
 
@@ -7154,27 +7295,27 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m64 = (() => {
-const { frame: look } = m23;
+const m66 = (() => {
+const { frame: look } = m21;
 const { TICK_MS } = m0;
-const { createGame, step, gameText } = m13;
-const { aimKey } = m12;
-const { drawEdit, drawPlay } = m28;
-const { S } = m3;
-const { $, g, now } = m16;
-const { openSheet } = m57;
-const { syncPanel, keysText } = m61;
-const { feedDemo } = m40;
-const { selectOverlay } = m60;
-const { moveRefusal } = m62;
-const { watchStuck, resetStuck } = m63;
-const { lensMarks, lensBusy } = m53;
-const { syncWell } = m37;
-const { syncChips } = m55;
-const { gust } = m34;
-const { stateKey } = m14;
-const { respawn } = m7;
-const { syncEnabled } = m39;
+const { createGame, step, gameText } = m9;
+const { aimKey } = m8;
+const { drawEdit, drawPlay } = m26;
+const { S } = m19;
+const { $, g, now } = m20;
+const { openSheet } = m59;
+const { syncPanel, keysText } = m63;
+const { feedDemo } = m42;
+const { selectOverlay } = m62;
+const { moveRefusal } = m64;
+const { watchStuck, resetStuck } = m65;
+const { lensMarks, lensBusy } = m55;
+const { syncWell } = m39;
+const { syncChips } = m57;
+const { gust } = m36;
+const { stateKey } = m10;
+const { respawn } = m3;
+const { syncEnabled } = m41;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
 
@@ -7324,20 +7465,20 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m65 = (() => {
-const { describe, holds, place, turnGate, turnLaser } = m54;
-const { S } = m3;
-const { $, canvas, touch, now } = m16;
-const { setMode, aim } = m64;
-const { begin, end, change, step: undoStep } = m48;
-const { save } = m47;
-const { selectDown, selectMove, selectUp, selectKey } = m60;
-const { LENS_GROUPS, cycleLens, lensesOff } = m53;
-const { syncPanel } = m61;
-const { fit } = m50;
-const { toolForKey, bareKey, showKeys } = m58;
-const { TOOLS } = m51;
-const { refusal, moveRefusal, moveIn, refuse } = m62;
+const m67 = (() => {
+const { describe, holds, place, turnGate, turnLaser } = m56;
+const { S } = m19;
+const { $, canvas, touch, now } = m20;
+const { setMode, aim } = m66;
+const { begin, end, change, step: undoStep } = m50;
+const { save } = m49;
+const { selectDown, selectMove, selectUp, selectKey } = m62;
+const { LENS_GROUPS, cycleLens, lensesOff } = m55;
+const { syncPanel } = m63;
+const { fit } = m52;
+const { toolForKey, bareKey, showKeys } = m60;
+const { TOOLS } = m53;
+const { refusal, moveRefusal, moveIn, refuse } = m64;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -7474,7 +7615,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m66 = (() => {
+const m68 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -7586,12 +7727,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m67 = (() => {
-const { search, move, stateKey } = m14;
-const { createGame } = m13;
-const { elementCheck, idleElements, NOTES_MAX } = m36;
-const { contains } = m44;
-const { ING, variants } = m66;
+const m69 = (() => {
+const { search, move, stateKey } = m10;
+const { createGame } = m9;
+const { elementCheck, idleElements, NOTES_MAX } = m38;
+const { contains } = m46;
+const { ING, variants } = m68;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -7677,7 +7818,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m68 = (() => {
+const m70 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -7694,13 +7835,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m69 = (() => {
+const m71 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m1;
-const { INGREDIENTS, ING, spot } = m66;
-const { judge, lockedIn } = m67;
-const { contains } = m44;
-const { rng } = m68;
+const { INGREDIENTS, ING, spot } = m68;
+const { judge, lockedIn } = m69;
+const { contains } = m46;
+const { rng } = m70;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -7855,17 +7996,17 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m70 = (() => {
-const { INGREDIENTS } = m66;
-const { generate, normalize, recipeLabel, LIMITS } = m69;
-const { stampOf } = m5;
-const { S } = m3;
-const { thumbURL } = m43;
-const { $ } = m16;
-const { change } = m48;
-const { dirty, remember, syncRoomsButton } = m47;
-const { icon } = m29;
-const { TOOLS, GROUPS } = m51;
+const m72 = (() => {
+const { INGREDIENTS } = m68;
+const { generate, normalize, recipeLabel, LIMITS } = m71;
+const { stampOf } = m33;
+const { S } = m19;
+const { thumbURL } = m45;
+const { $ } = m20;
+const { change } = m50;
+const { dirty, remember, syncRoomsButton } = m49;
+const { icon } = m27;
+const { TOOLS, GROUPS } = m53;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
@@ -8051,26 +8192,28 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m71 = (() => {
-const { buildPuzzles } = m17;
-const { buildProgress } = m33;
+const m73 = (() => {
+const { buildMaker } = m31;
+const { buildPuzzles } = m34;
+const { buildProgress } = m35;
 const { TICK_MS } = m0;
-const { replay, gameText } = m13;
+const { replay, gameText } = m9;
 const { parseLevel, emptyLevel } = m1;
-const { newHistory } = m2;
-const { S, starterLevel } = m3;
-const { portrait, $ } = m16;
-const { startSnow, windNow } = m34;
-const { fit, watchStage } = m50;
-const { buildPanels, syncPanel } = m61;
-const { bindInput } = m65;
-const { setMode, frame, render, tick, report, copyReport } = m64;
-const { buildRooms, bootRooms } = m47;
-const { buildGenerator } = m70;
-const { buildCampaign, openMenu } = m32;
-const { bindDebug } = m30;
+const { newHistory } = m18;
+const { S, starterLevel } = m19;
+const { portrait, $ } = m20;
+const { startSnow, windNow } = m36;
+const { fit, watchStage } = m52;
+const { buildPanels, syncPanel } = m63;
+const { bindInput } = m67;
+const { setMode, frame, render, tick, report, copyReport } = m66;
+const { buildRooms, bootRooms } = m49;
+const { buildGenerator } = m72;
+const { buildCampaign, openMenu } = m30;
+const { bindDebug } = m28;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
+
 
 
 
@@ -8104,6 +8247,7 @@ buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });
+buildMaker();
 buildCampaign({ setMode, syncPanel, fit }, () => { window.wee.roomsReady = bootRooms(); return window.wee.roomsReady; });
 bindInput();
 syncPanel();

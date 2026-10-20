@@ -36,6 +36,18 @@ try {
   check('the win names the fewest moves', /Solved in 2 moves, the fewest there are\./.test(won), won);
   await page.click('#puzzleBack');
   check('the list keeps your best', /Solved in 2/.test(await page.locator('#puzzleList .campRow small').textContent()));
+  // The Level maker: pick elements and goals, build it, it plays like a campaign level, and back.
+  await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); document.getElementById('menuBox').showModal(); });
+  await page.click('#menuMaker');
+  check('the maker offers only goals its palette can meet', !(await page.$$eval('#makerGoals li', ls => ls.map(l => l.dataset.goal))).includes('throughOpenDoor'));
+  for (const el of ['door', 'toggle']) await page.check(`#makerPal tr[data-el="${el}"] [data-in]`);
+  await page.fill('#makerPal tr[data-el="door"] [data-min]', '1');
+  await page.selectOption('#makerGoals li[data-goal="throughOpenDoor"] select', 'require');
+  await page.fill('#makerName', 'Door test');
+  await page.click('#makerBuild');
+  check('Build it opens the level like a campaign one, with its palette and goal', await page.evaluate(() => document.body.classList.contains('campaign')) && await page.locator('#palette [data-tool="door"]').isVisible() && await page.locator('.campReqs li[data-req="throughOpenDoor"]').count() === 1);
+  await page.click('#campBack');
+  check('Levels from a made level goes back to the maker, which lists it', await page.locator('#makerBox').isVisible() && (await page.$$eval('#madeList .campRow b', bs => bs.map(b => b.textContent).join())) === 'Door test');
   await page.goto('http://localhost:5241/?sandbox');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady); await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });

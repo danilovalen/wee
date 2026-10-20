@@ -1,5 +1,7 @@
 # Plan: everything still open (2026-10-20)
 
+**Status (2026-10-20):** sections 1 to 4 are built; questions from them are in `docs/QUESTIONS.md`.
+
 From `docs/REGISTER.md`. Numbers are register rows. Nothing below is built.
 
 ## 1. Quick fixes (one slice, about an hour)
