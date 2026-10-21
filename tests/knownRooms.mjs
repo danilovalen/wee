@@ -8,12 +8,14 @@ export const KNOWN = {
     14: ['GD.', 'Dw.', 'tP.'], // His 6x5 room (register 293) plus one block from a search: 11 moves.
     15: ['#..##.', '...P..', '...B..', '#.....', 'e..>G#'],
     // His room (registers 304, 306): 7 moves, 5x4, two lasers; the robot steps on the button.
-    16: ['..#P#', 'G..B.', 'D....', 'ne.o.'],
+    16: ['o..', 'GBP', '.eD', 'n..'],
     // 17 built by hand (register 325): one inverted door, 7 moves; 18 found by tools/levelSearch.mjs (register 329): 4x5 in 4 moves, and 6x9 in 11.
-    17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['.I.#', 'r.#I', 'nB.#', '...e', '#.GP'], twocolour: ['....', '.r..', '.X.q', '....', 'PnG.'],
-    // Found by tools/levelSearch.mjs (register 341), its top row cut to fit the 5x5 goal (register 363): 9 moves.
-    19: ['N.D##', 'rD.W.', '...P.', 'N.D##', '.G...'] },
+    17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['rP#', 'nB.', '.G.', '#I#'], twocolour: ['....', '.r..', '.X.q', '....', 'PnG.'],
+    // Found by tools/climb.mjs (register 365): 4x4 in 7 moves; 16 and 18 likewise, 3x4 in 4.
+    19: ['##..', '.DD.', 'DESG', '.Pr.'] },
   optional: {
+    // Found by tools/levelSearch.mjs with the goal required (register 365): 8 moves, the laser through the goal.
+    19: ['#D.##', '...##', 'rG.WP', 'rW..D', 'D....', '..#..', '.....'],
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
     14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
     // His room (registers 304, 306): 7 moves, 5x4, two lasers; the robot steps on the button.
@@ -60,8 +62,9 @@ export const KNOWN = {
     // His room (register 293): 14 moves, level 15's exact count.
     15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
     // His room (registers 304, 306): 7 moves, 5x4, two lasers; the robot steps on the button.
-    16: ['..#P#', 'G..B.', 'D....', 'ne.o.'],
-    17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['e..r.w', '.#....', 'PB.I..', '....BI', '.#....', '.n....', '......', '.#..G.', '......'], 19: ['#D..D', 'N.D##', 'rD.W.', '...P.', 'N.D##', '.G...'], twocolour: ['..eXqR', '.G.#P#', 'wX..o.', '..#...'],
+    // Exact counts tightened to the search's fewest (register 365): 16 and 18 in 4 moves, 19 in 7.
+    16: ['o..', 'GBP', '.eD', 'n..'],
+    17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['rP#', 'nB.', '.G.', '#I#'], 19: ['##..', '.DD.', 'DESG', '.Pr.'], twocolour: ['..eXqR', '.G.#P#', 'wX..o.', '..#...'],
   },
 };
 

@@ -27,11 +27,11 @@
   ]
  },
  "steps": {
-  "best": 11
+  "best": 4
  },
  "small": [
-  4,
-  5
+  3,
+  4
  ],
  "rules": [],
  "require": [
