@@ -180,10 +180,14 @@ const closeAll = () => { for (const id of ['roomsBox', 'newBox', 'infoBox']) if 
 
 export function buildRooms(actions) {
   A = actions;
-  $('templateList').replaceChildren(...TEMPLATES.map(t => {
+  // The templates show under New room; the library's foot shows only the examples (register 358).
+  const EXAMPLES = ['Hex counter'];
+  const templateRows = (list = TEMPLATES) => list.map(t => {
     const { level } = splitRoom(t.level);
     return row(level, t.name, `Template, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } });
-  }));
+  });
+  $('templateList').replaceChildren(...templateRows());
+  $('exampleList').replaceChildren(...templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name))));
   // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
   // generate, templates) and This room (name, note, save, share, delete), from the header title.
   $('roomsBtn').onclick = openLibrary;

@@ -272,7 +272,7 @@
     <div class="row"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="roomsBox" class="rooms library">
-    <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
+    <div class="roomsHead"><b>Rooms</b><span class="row"><button id="roomsMenu" type="button">Menu</button><form method="dialog"><button>Close</button></form></span></div>
     <div class="row libBar">
       <button id="roomNew" type="button" autofocus>New room</button>
       <button id="codeBtn" type="button" aria-expanded="false">Open a code</button>
@@ -290,6 +290,8 @@
       <details class="explored"><summary id="exploredSum"></summary><p class="hint">Not in any room yet:</p><ul id="unexplored"></ul></details>
     </div>
     <ul id="roomList" class="roomList tiles"></ul>
+    <h3>Examples</h3>
+    <ul id="exampleList" class="roomList tiles"></ul>
     <div id="tileMenu" class="tileMenu" role="menu" hidden>
       <button type="button" role="menuitem" data-act="rename">Rename</button>
       <button type="button" role="menuitem" data-act="duplicate">Duplicate</button>

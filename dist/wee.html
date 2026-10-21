@@ -916,7 +916,7 @@ body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; ali
     <div class="row"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="roomsBox" class="rooms library">
-    <div class="roomsHead"><b>Rooms</b><form method="dialog"><button>Close</button></form></div>
+    <div class="roomsHead"><b>Rooms</b><span class="row"><button id="roomsMenu" type="button">Menu</button><form method="dialog"><button>Close</button></form></span></div>
     <div class="row libBar">
       <button id="roomNew" type="button" autofocus>New room</button>
       <button id="codeBtn" type="button" aria-expanded="false">Open a code</button>
@@ -934,6 +934,8 @@ body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; ali
       <details class="explored"><summary id="exploredSum"></summary><p class="hint">Not in any room yet:</p><ul id="unexplored"></ul></details>
     </div>
     <ul id="roomList" class="roomList tiles"></ul>
+    <h3>Examples</h3>
+    <ul id="exampleList" class="roomList tiles"></ul>
     <div id="tileMenu" class="tileMenu" role="menu" hidden>
       <button type="button" role="menuitem" data-act="rename">Rename</button>
       <button type="button" role="menuitem" data-act="duplicate">Duplicate</button>
@@ -4893,6 +4895,8 @@ function buildCampaign(actions, sandbox) {
   $('menuCampaign').onclick = openList;
   $('menuSandbox').onclick = () => { closeAll(); S.simple = true; document.body.classList.add('simple'); Promise.resolve(boot()).then(A.syncPanel); };
   $('campMenu').onclick = openMenu;
+  // The Sandbox's way back (register 357): its Rooms page has a Menu button, as the other modes' pages do.
+  $('roomsMenu').onclick = () => { $('roomsBox').close(); openMenu(); };
   $('campBack').onclick = () => { const made = S.camp && S.camp.def.made; noteLeaving(); leaveLevel(); (made ? backToMaker : openList)(); };
   $('menuDebug').onclick = copyDebug;
   $('campRun').onclick = () => { S.camp.testing = false; run(); };
@@ -6201,10 +6205,14 @@ const closeAll = () => { for (const id of ['roomsBox', 'newBox', 'infoBox']) if 
 
 function buildRooms(actions) {
   A = actions;
-  $('templateList').replaceChildren(...TEMPLATES.map(t => {
+  // The templates show under New room; the library's foot shows only the examples (register 358).
+  const EXAMPLES = ['Hex counter'];
+  const templateRows = (list = TEMPLATES) => list.map(t => {
     const { level } = splitRoom(t.level);
     return row(level, t.name, `Template, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } });
-  }));
+  });
+  $('templateList').replaceChildren(...templateRows());
+  $('exampleList').replaceChildren(...templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name))));
   // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
   // generate, templates) and This room (name, note, save, share, delete), from the header title.
   $('roomsBtn').onclick = openLibrary;

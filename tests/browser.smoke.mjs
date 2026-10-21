@@ -28,7 +28,7 @@ try {
   check('focus starts on New room, not on Close', await page.evaluate(() => document.activeElement.id) === 'roomNew', await page.evaluate(() => document.activeElement.id));
   check('a fresh start has no unsaved tile', await page.locator('#openNow').isHidden());
   check('floors are their own section: water, sticky puddle, gravel and wire', (await page.$$eval('[data-tool][data-in=floors]', bs => bs.map(b => b.dataset.tool).join())) === 'water,sticky,gravel,wire' && await page.locator('[data-group=floors]').count() === 1);
-  await page.click('#roomsBox .roomsHead button');
+  await page.click('#roomsBox .roomsHead form button');
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
   const pick = async t => { const tab = page.locator(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); if (await tab.isVisible()) await tab.click(); await page.click(`[data-tool=${t}]`); };
@@ -399,7 +399,7 @@ try {
   await page.evaluate(() => window.wee.roomsReady);
   check('a reload starts on the library', await page.locator('#roomsBox').isVisible());
   check('a saved room behind it gets no unsaved tile', await page.locator('#openNow').isHidden());
-  await page.click('#roomsBox .roomsHead button');
+  await page.click('#roomsBox .roomsHead form button');
   check('a reload reopens the room you were on', (await text()).level.cells.filter(c => c === 'wall').length === wallsBefore && (await page.getAttribute('#roomsBtn', 'title')) === 'Smoke room');
   // autosave: an unsaved edit survives a reload, and saving clears the draft
   await page.keyboard.press('Escape').catch(() => {});

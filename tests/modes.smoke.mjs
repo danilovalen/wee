@@ -17,6 +17,13 @@ try {
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });
   check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,door,erase,gate,goal,idoor,look,move,sensor,start,toggle,turret,wall,wire', await shown());
   check('the Sandbox offers red, blue, both and grey, and no powers', await page.evaluate(() => document.querySelectorAll('[data-camp-colour]').length === 4 && getComputedStyle(document.querySelector('[data-sheet=powers]')).display === 'none'));
+  // Registers 357 and 358: the Rooms page lists the example rooms and has a way back to the menu.
+  await page.evaluate(() => document.getElementById('roomsBtn').click()); await page.waitForTimeout(300);
+  const examples = await page.$$eval('#exampleList li', ls => ls.map(l => l.textContent).join('|'));
+  check('the Rooms page lists the hex counter as its one example', /Hex counter/.test(examples) && !examples.includes('|'), examples);
+  await page.click('#roomsMenu');
+  check('the Rooms page has a Menu button that returns to the menu', await page.evaluate(() => document.getElementById('menuBox').open && !document.getElementById('roomsBox').open));
+  await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });
   // Puzzles: a room marked in the Sandbox is offered, played by hand, and the win names the fewest.
   await page.evaluate(async () => {
     const { put } = await import('/src/app/store.js');
