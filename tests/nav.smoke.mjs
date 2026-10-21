@@ -64,6 +64,13 @@ try {
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await settle();
   await page.keyboard.press('Escape'); await settle();
   check('Escape on the Rooms page goes to the room', (await at()).hash === '#/room' && (await at()).open === '');
+  // A page closed and reopened before its late close event lands stays open (the race register 364 found).
+  await page.evaluate(() => { document.getElementById('roomsBtn').click(); });
+  await settle();
+  await page.evaluate(() => { document.getElementById('roomsBox').close(); document.getElementById('roomsBtn').click(); });
+  await settle();
+  check('a page reopened before its close event lands stays open', (await at()).open === 'roomsBox' && (await at()).hash === '#/rooms', JSON.stringify(await at()));
+  await page.click('#roomsBox .roomsHead form button'); await settle();
   await page.reload(); await page.waitForTimeout(900);
   check('a reload in the room stays in the room', (await at()).hash === '#/room' && (await at()).open === '');
   // Opening a template from a fresh Sandbox asks nothing: nothing has changed.

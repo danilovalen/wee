@@ -3,7 +3,7 @@
 // searcher(def, seed) returns its moves: random(), mutate(g), penalty(g), make(g), show(room).
 import { roomOf, placementErrors, check, bounds, coloursOf, colouringsOf, pushingsOf } from '../src/campaign/rules.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
-import { allShortest } from '../src/campaign/robot.js';
+import { allShortest, replayPath } from '../src/campaign/robot.js';
 import { miss } from './searchScores.mjs';
 
 const CELL = { block: 'wall', toggle: 'toggle', door: 'door', button: 'button', idoor: 'idoor', relay: 'sensor' };
@@ -15,7 +15,12 @@ const D4 = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 // Rooms up to 16 on a side, 120 tiles (register 272): long thin rooms, like his 6x11 level 5 win, need it.
 export const MAX_SIDE = 16, MAX_AREA = 120;
 
-export function searcher(def, seed = 1) {
+// What the last scoring of a genome saw: whether it was solved and its first shortest path. The
+// edits that aim (register 364) read it, so they put pieces where the robot goes and the beam runs.
+const seen = new WeakMap();
+
+// opts.aim: false turns the aiming edits off, for measuring the search as it was (tools/searchBench.mjs).
+export function searcher(def, seed = 1, opts = {}) {
   const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
   const pick = a => a[Math.floor(rnd() * a.length)];
   // An item is [element, x, y, direction, colour]; a level's colours tint its buttons, doors,
@@ -67,7 +72,58 @@ export function searcher(def, seed = 1) {
     g.items = [...g.items.filter(i => !on(i, t)), ...copies.filter(i => free(i[1], i[2]))];
     return true;
   }
+  const robotTiles = (g, path) => { const at = new Map(); replayPath(make(g), path, s => at.set(s.player.x + ',' + s.player.y, [s.player.x, s.player.y])); return [...at.values()]; };
+  // The tiles a laser item's beam crosses, up to the room's edge or a block.
+  function beamTiles(g, [, x, y, d]) {
+    const [dx, dy] = D4[DIRS.indexOf(d || 'right')], out = [];
+    for (let cx = x + dx, cy = y + dy; cx >= 0 && cy >= 0 && cx < g.w && cy < g.h; cx += dx, cy += dy) {
+      if (g.items.some(i => i[0] === 'block' && i[1] === cx && i[2] === cy)) break;
+      out.push([cx, cy]);
+    }
+    return out;
+  }
+  // Puts an element on a tile: moves one already in the room there, or adds one.
+  function placeAt(g, el, [x, y]) {
+    if ((g.start.x === x && g.start.y === y) || (g.goal.x === x && g.goal.y === y)) return false;
+    g.items = g.items.filter(i => i[1] !== x || i[2] !== y);
+    const have = g.items.filter(i => i[0] === el);
+    if (have.length && rnd() < 0.6) { const it = pick(have); [it[1], it[2]] = [x, y]; }
+    else g.items.push([el, x, y, el === 'gate' || el === 'laser' ? pick(DIRS) : null, TINTS.includes(el) ? pick(choices(el)) : null]);
+    return true;
+  }
+  // Edits that aim (register 364): a piece on the robot's path, a piece or the goal on a beam, an
+  // unsolvable room opened up, the room cropped to what is in it. Null when there is nothing to aim at.
+  function aim(g) {
+    const info = seen.get(g), els = Object.keys(def.palette).filter(e => e !== 'block'), r = rnd();
+    if (info && info.status !== 'solved') {
+      const blocks = g.items.filter(i => i[0] === 'block');
+      if (!blocks.length) return null;
+      g.items.splice(g.items.indexOf(pick(blocks)), 1); return g;
+    }
+    if (r < 0.4 && info && info.path && els.length) {
+      const tiles = robotTiles(g, info.path);
+      return tiles.length && placeAt(g, pick(els), pick(tiles)) ? g : null;
+    }
+    const lasers = g.items.filter(i => i[0] === 'laser');
+    if (r < 0.8 && lasers.length) {
+      const line = beamTiles(g, pick(lasers));
+      if (!line.length) return null;
+      const t = pick(line);
+      if (rnd() < 0.15 && !taken(g, ...t)) { g.goal = { x: t[0], y: t[1] }; return g; }
+      const on = els.filter(e => e !== 'laser');
+      return on.length && placeAt(g, pick(on), t) ? g : null;
+    }
+    // Crop to the pieces, the start and the goal: an empty margin only adds tiles to cross.
+    const xs = [g.start.x, g.goal.x, ...g.items.map(i => i[1])], ys = [g.start.y, g.goal.y, ...g.items.map(i => i[2])];
+    const x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(3, Math.max(...xs) - x0 + 1), h = Math.max(3, Math.max(...ys) - y0 + 1);
+    if (w === g.w && h === g.h && !x0 && !y0) return null;
+    if (x0 + w > g.w || y0 + h > g.h) return null;
+    g.w = w; g.h = h; g.start = { x: g.start.x - x0, y: g.start.y - y0 }; g.goal = { x: g.goal.x - x0, y: g.goal.y - y0 };
+    g.items = g.items.map(i => [i[0], i[1] - x0, i[2] - y0, i[3], i[4]]);
+    return g;
+  }
   function mutate(g0) {
+    if (opts.aim !== false && rnd() < 0.3) { const a = aim(structuredClone(g0)); if (a) { seen.delete(a); return a; } }
     const g = structuredClone(g0), r = rnd(), els = Object.keys(def.palette);
     if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if ((it[0] === 'gate' || it[0] === 'laser') && rnd() < 0.5) it[3] = pick(DIRS); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(choices(it[0])); }
     else if (r < 0.5) add(g, pick(els));
@@ -93,6 +149,7 @@ export function searcher(def, seed = 1) {
     const r = make(g);
     if (placementErrors(def, r).length) return 1e9;
     const a = allShortest(r, { maxPaths: 300 });
+    seen.set(g, { status: a.status, path: a.paths && a.paths[0] });
     if (a.status !== 'solved') return 1000;
     const { min, max } = bounds(def.steps);
     let p = Math.max(0, min - a.length, a.length - max) * 10 + (a.capped ? 5 : 0);

@@ -28,7 +28,7 @@ const M = [
   ['src', "{ if (now.touched.has(id)) b.pushes++; }", "b.pushes++;", 'campaign'],
   // the room search (register 272)
   ['tools/roomSearch.mjs', "export const MAX_SIDE = 16, MAX_AREA = 120;", "export const MAX_SIDE = 10, MAX_AREA = 100;", 'search'],
-  ['tools/searchScores.mjs', "export const miss = (id, room, moves) => 1 - Math.min(0.95, SCORES[id] ? SCORES[id](room, moves) : 0);", "export const miss = () => 1;", 'search'],
+  ['tools/searchScores.mjs', "export const miss = (id, room, moves) => { const f = SCORES[id] || derived(id); return 1 - Math.min(0.95, f ? f(room, moves) : 0); };", "export const miss = () => 1;", 'search'],
   ['tools/searchScores.mjs', "best = Math.max(best, 1 / (1 + Math.abs(e.x - h.x) + Math.abs(e.y - h.y)));", "best = 1;", 'search'],
   ['tools/roomSearch.mjs', "    g.items = [...g.items.filter(i => !on(i, t)), ...copies.filter(i => free(i[1], i[2]))];", "    g.items = g.items.filter(i => !on(i, t));", 'search'],
   ['tools/roomSearch.mjs', "o: ['button', 'red'], q: ['button', 'blue'], B: ['box'],", "o: ['button', 'red'], q: ['button', 'red'], B: ['box'],", 'search'],
@@ -572,7 +572,8 @@ const M = [
   ['index.html', '<div class="danger"><button id="roomDelete"', '<div><button id="roomDelete"', 'browser'],
   // wee starts on the library (register 108)
   ['src/app/rooms.js', "$('roomsBtn').onclick = () => go('rooms');", "$('roomsBtn').onclick = () => {};", 'browser'],
-  ['src/app/nav.js', "if (shut.delete(id)) return; ", "", 'nav'],
+  ['src/app/nav.js', "if (shut.delete(id) || $(id).open) return; ", "", 'nav'],
+  ['src/app/nav.js', "if (shut.delete(id) || $(id).open) return; ", "if (shut.delete(id)) return; ", 'nav'],
   ['src/app/rooms.js', "'Unsaved changes', closeAll)", "'Unsaved changes', () => {})", 'browser'],
   ['src/app/nav.js', "ev.preventDefault(); if (here", "if (here", 'nav'],
   // A cut can take the start; the room stays 2x2 inside; no control refuses a click (register 109)
@@ -791,7 +792,7 @@ const M = [
   ['src/app/fit.js', "  const side = (S.camp || S.simple ? 4 : EDGE) + SIDE;", "  const side = S.camp || S.simple ? 4 : EDGE;", 'size-buttons'],
   ['style.css', ".growBar[data-bar=left] { right: 100%; }", ".growBar[data-bar=left] { right: calc(100% + 6px); }", 'size-buttons'],
   ['style.css', ".plus { background: var(--add-bg); color: var(--add-ink); }", ".plus { background: var(--cut-bg); color: var(--cut-ink); }", 'size-buttons'],
-  ['src/app/campaign.js', "const c = icon(p.el === 'start' ? 'robot' : TOOL[p.el])", "const c = icon(p.el === 'start' ? 'start' : TOOL[p.el])", 'campaign-play'],
+  ['src/app/campaign.js', "start: ['robot', 'Robot']", "start: ['start', 'Robot']", 'campaign-play'],
   ['src/app/icons.js', "(tool === 'robot' ? drawRobot : drawYou)(x)", "drawYou(x)", 'campaign-play'],
   // Registers 336-338, 341: the pushable laser, its offer per level, its look, and level 19's goal.
   ['src/rules/base.js', "export const PUSHED = o => LIGHT.includes(o.kind) || !!o.crate;", "export const PUSHED = o => LIGHT.includes(o.kind);", 'sim'],
@@ -933,8 +934,12 @@ const M = [
   ['src', "    dispatchEvent(new Event('wee:demoDone'));", "", 'campaign-play'],
   ['src', "exit: () => { noteLeaving(); leaveLevel(); }", "exit: () => { leaveLevel(); }", 'campaign-play'],
   ['src/app/nav.js', "  $('logo').onclick = () => go('menu');", "", 'nav'],
+  ['tools/climb.mjs', "    if (!x) continue;\n    see(x);", "    if (!x) continue;", 'search'],
+  ['tools/climb.mjs', "    if (sc <= score) { cur = h; score = sc; }", "", 'search'],
+  ['tools/searchScores.mjs', "const f = SCORES[id] || derived(id);", "const f = SCORES[id];", 'search'],
+  ['tools/minMoves.mjs', "steps: { ...base.steps, max: K }", "steps: { ...base.steps, min: 1, max: K }", 'search'],
   ['src/app/nav.js', "  addEventListener('popstate', ", "  addEventListener('popstate-off', ", 'nav'],
-  ['src/app/nav.js', "  const state = { path, prev: replace ? history.state?.prev ?? null : from };\n  history[replace ? 'replaceState' : 'pushState'](state, '', location.pathname + location.search + path);", "  const state = { path, prev: replace ? history.state?.prev ?? null : from };", 'nav'],
+  ['src/app/nav.js', "  if (!fixed) try { history[replace ? 'replaceState' : 'pushState'](entry, '', location.pathname + location.search + entry.path); return; } catch { fixed = true; }", "  fixed = true;", 'nav'],
   ['src/app/rooms.js', "S.simple = false; document.body.classList.remove('simple'); };", "};", 'nav'],
   ['style.css', ".campMust { grid-template-columns: repeat(2, minmax(0, 1fr)); }", "", 'campaign-play'],
   ['src', "    const list = r.optional ? opt : must;", "    const list = must;", 'campaign-play'],

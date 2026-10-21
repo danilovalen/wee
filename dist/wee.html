@@ -3531,8 +3531,9 @@ function bindNav() {
   addEventListener('popstate', () => { const { name, arg } = parse(location.hash); const popups = !ours; ours = false; show(name, arg, popups); });
   // Escape on a page goes up a place, never into the screen behind it; the menu has nowhere up.
   for (const id of PAGES) $(id).addEventListener('cancel', ev => { ev.preventDefault(); if (here && here.name !== 'menu') up(); });
-  // A page closed by its own Close button (the Rooms page) goes to its parent, the room.
-  for (const id of PAGES) $(id).addEventListener('close', () => { if (shut.delete(id)) return; if (here && places[here.name].page === id) up(); });
+  // A page closed by its own Close button (the Rooms page) goes to its parent, the room; the event comes
+  // late, so a page open again by then (reopened in the meantime) stays.
+  for (const id of PAGES) $(id).addEventListener('close', () => { if (shut.delete(id) || $(id).open) return; if (here && places[here.name].page === id) up(); });
   // The logo is the way to the menu from anywhere.
   $('logo').onclick = () => go('menu');
 }

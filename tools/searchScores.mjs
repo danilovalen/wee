@@ -4,6 +4,7 @@
 import { boxMoves } from '../src/campaign/pushes.js';
 import { stoppedPushes } from '../src/campaign/extras.js';
 import { replayPath } from '../src/campaign/robot.js';
+import { REQUIREMENTS } from '../src/campaign/requirements.js';
 
 // The nearest any of pick(s)'s points comes, over a path, to a tile whose kind starts with prefix:
 // 0.8 standing on one, falling off with distance (register 335).
@@ -44,5 +45,14 @@ export const SCORES = {
     return n ? 1 - replayPath(room, moves, () => {}).toggled.length / n : 0;
   },
 };
+// A goal with no score of its own is scored from its own row (register 364): the first object it names
+// (the robot, a laser's beam, a box) against the last (a door, a one-way, a button...), warmer the nearer.
+const MOVERS = { start: you, laser: beamTiles, box: s => s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.x, e.y]) };
+const TARGETS = { door: 'door:', idoor: 'idoor:', gate: 'gate:', button: 'button:', toggle: 'toggle:', relay: 'sensor:', goal: 'goal' };
+export function derived(id) {
+  const els = (REQUIREMENTS[id]?.short || []).filter(p => typeof p === 'object').map(p => p.el);
+  const mover = MOVERS[els[0]], target = els.length > 1 && TARGETS[els[els.length - 1]];
+  return mover && target ? (room, moves) => nearest(room, moves, mover, target) * (els[0] === 'box' ? 0.5 : 1) : null;
+}
 // What a missed goal costs: 1 with no partial credit, less the closer the path came.
-export const miss = (id, room, moves) => 1 - Math.min(0.95, SCORES[id] ? SCORES[id](room, moves) : 0);
+export const miss = (id, room, moves) => { const f = SCORES[id] || derived(id); return 1 - Math.min(0.95, f ? f(room, moves) : 0); };
