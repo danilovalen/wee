@@ -70,8 +70,8 @@ Pop-ups that are not places (confirmations, the progress code, keys, This room, 
 
 About half a day for slice 1, two hours each for 2 and 3.
 
-## Open questions
+## Rulings (2026-10-21)
 
-1. Should Back from a level go to the Levels list (one step) or to wherever you came from (a level opened from the Maker goes back to the Maker)? The table above does the first; the second is what the buttons do today.
-2. Should the logo go to the menu, or should the menu get a visible button on every play screen?
-3. Should a reload inside a level keep your unsaved edits to that level, or start the level fresh?
+1. **Back goes to where you came from.** A level opened from the Maker goes back to the Maker; from Levels, to Levels. So a place's parent in the table above is a default for a cold start (a reload or a link), and history decides otherwise.
+2. **The wee logo goes to the menu**, one tap from any screen. No new button.
+3. **A reload inside a level keeps your edits.** The current build is saved on every change and restored with the place.
