@@ -112,7 +112,7 @@ const build = (def, rows) => {
   // Too few is judged at Run, never a reason not to run (register 321).
   ok('too few of a required element does not stop a run', !placementErrors(d3, roomOf(d3)).some(e => /at least/.test(e.msg)));
   // The score is tiles (register 328): the fewest in any win, then per optional goal met.
-  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, robotOnButton: 6 }) === ', fewest tiles 3; exactly 4: 5; 3×4 or smaller: 4; robot steps on a button: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, robotOnButton: 6 }));
+  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, twoButtons: 6 }) === ', fewest tiles 3; exactly 4: 5; 3×4 or smaller: 4; at least 2 buttons in the room: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, robotOnButton: 6 }));
   ok('no win, no score', scoreText(level('16'), {}) === '' && scoreText(level('16'), undefined) === '');
   ok('too few of a required element is missed at Run', underLimits(d3, roomOf(d3)).some(e => e.msg === 'Place at least 1 switch.'));
   const few = check(d3, build(d3, ['P#...', '.#.#.', '.#.#.', '...#G']));
@@ -452,6 +452,11 @@ const build = (def, rows) => {
     if (l.id === '1') ok('mix: not met by one goal alone', !v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.met).length === 1, JSON.stringify(v.optional));
     ok(`level ${l.id}'s ${l.small}-room goal is met by a win (register 327)`, Array.isArray(l.small) && v.won && v.optional.find(o => o.id === 'small').met, JSON.stringify(v.fail || v.optional));
   }
+}
+{ // the goals a level gives its rooms (register 366)
+  const lvl16 = level('16'), two = ['o..', 'GBP', '.eD', 'n.o'], req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
+  ok('two buttons: met by a room with two', REQUIREMENTS.twoButtons.judge(build(lvl16, two), []) && !REQUIREMENTS.twoButtons.judge(build(lvl16, ['o..', 'GBP', '.eD', 'n..']), []));
+  ok('a box twice through an open inverted door: one push across two apart counts twice', req('boxThroughIdoorTwice', ['#########', '#PB.N.N.#', '#########'], ['right']) && !req('boxThroughIdoorTwice', ['#########', '#PB.NN..#', '#########'], ['right']));
 }
 { // every level's own optional goal can be met: a winning room that meets it, found by tools/levelSearch.mjs (registers 262-269)
   const OPT = KNOWN.optional;

@@ -40,6 +40,6 @@
   "laserThroughButton"
  ],
  "optional": [
-  "robotOnButton"
+  "twoButtons"
  ]
 }

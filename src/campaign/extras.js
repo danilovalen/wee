@@ -59,6 +59,13 @@ export const EXTRA_REQUIREMENTS = {
     short: [{ el: 'laser' }, 'through the', { el: 'goal' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at) === 'goal')) ok = true; }); return ok; },
   },
+  // Register 366: a room built with at least two buttons.
+  twoButtons: {
+    needs: { button: 2 },
+    text: 'At least 2 buttons in the room.',
+    short: ['at least 2', { el: 'button' }],
+    judge: room => room.cells.filter(c => /^button:/.test(c || '')).length >= 2,
+  },
   laserThroughButton: {
     text: 'Laser through a button.',
     short: [{ el: 'laser' }, 'through a', { el: 'button' }],
@@ -165,6 +172,24 @@ export const EXTRA_REQUIREMENTS = {
     text: 'Robot through an inverted door.',
     short: [{ el: 'start' }, 'through an open', { el: 'idoor' }],
     judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (/^idoor:/.test(s.cells[s.player.y * room.w + s.player.x] || '')) ok = true; }); return ok; },
+  },
+  // Register 366: a box enters an open inverted door twice; a slide across two side by side passes once.
+  boxThroughIdoorTwice: {
+    text: 'Box through an open inverted door twice, the same door or another.',
+    short: [{ el: 'box' }, '2 passes through an open', { el: 'idoor' }],
+    judge: (room, moves) => {
+      let passes = 0;
+      const was = new Map();
+      replayPath(room, moves, s => {
+        for (const e of s.entities) {
+          if (e.dead || e.kind !== 'box') continue;
+          const on = /^idoor:/.test(s.cells[e.y * room.w + e.x] || '');
+          if (on && !was.get(e.id)) passes++;
+          was.set(e.id, on);
+        }
+      });
+      return passes >= 2;
+    },
   },
   laserStoppedByIdoor: {
     text: 'Laser stopped by a closed inverted door.',

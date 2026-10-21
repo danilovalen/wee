@@ -18,8 +18,7 @@ export const KNOWN = {
     19: ['#D.##', '...##', 'rG.WP', 'rW..D', 'D....', '..#..', '.....'],
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
     14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
-    // His room (registers 304, 306): 7 moves, 5x4, two lasers; the robot steps on the button.
-    16: ['..#P#', 'G..B.', 'D....', 'ne.o.'],
+    // 16 and 18: no known room meets their own goals (register 366: two buttons; box twice through an open inverted door).
     // His room (register 293): a box goes through the one-way.
     15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
     4: ['PtttD.', '......', '......', '......', '.#.G..'],
