@@ -173,23 +173,11 @@ export const EXTRA_REQUIREMENTS = {
     short: [{ el: 'start' }, 'through an open', { el: 'idoor' }],
     judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (/^idoor:/.test(s.cells[s.player.y * room.w + s.player.x] || '')) ok = true; }); return ok; },
   },
-  // Register 366: a box enters an open inverted door twice; a slide across two side by side passes once.
-  boxThroughIdoorTwice: {
-    text: 'Box through an open inverted door twice, the same door or another.',
-    short: [{ el: 'box' }, '2 passes through an open', { el: 'idoor' }],
-    judge: (room, moves) => {
-      let passes = 0;
-      const was = new Map();
-      replayPath(room, moves, s => {
-        for (const e of s.entities) {
-          if (e.dead || e.kind !== 'box') continue;
-          const on = /^idoor:/.test(s.cells[e.y * room.w + e.x] || '');
-          if (on && !was.get(e.id)) passes++;
-          was.set(e.id, on);
-        }
-      });
-      return passes >= 2;
-    },
+  // Register 368: a box stands in an inverted door's tile at some point; a closed one is solid, so it was open.
+  boxThroughIdoor: {
+    text: 'Box through an inverted door.',
+    short: [{ el: 'box' }, 'through an', { el: 'idoor' }],
+    judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (s.entities.some(e => !e.dead && e.kind === 'box' && /^idoor:/.test(s.cells[e.y * room.w + e.x] || ''))) ok = true; }); return ok; },
   },
   laserStoppedByIdoor: {
     text: 'Laser stopped by a closed inverted door.',
