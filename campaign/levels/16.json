@@ -41,5 +41,9 @@
  ],
  "optional": [
   "twoButtons"
+ ],
+ "colours": [
+  "red",
+  "blue"
  ]
 }

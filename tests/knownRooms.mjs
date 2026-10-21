@@ -18,7 +18,9 @@ export const KNOWN = {
     19: ['#D.##', '...##', 'rG.WP', 'rW..D', 'D....', '..#..', '.....'],
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
     14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
-    // 16 and 18: no known room meets their own goals (register 366: two buttons; box twice through an open inverted door).
+    // Found by tools/levelSearch.mjs once level 16 had two colours (register 367): 4 moves, 4x3, a red and a blue button.
+    16: ['D..Q', 'no.G', 'qPwB'],
+    // 18: no known room meets its own goal yet (register 366: a box twice through an open inverted door).
     // His room (register 293): a box goes through the one-way.
     15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
     4: ['PtttD.', '......', '......', '......', '.#.G..'],
