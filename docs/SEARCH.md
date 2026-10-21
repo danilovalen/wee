@@ -42,3 +42,9 @@ also wins the harder levels (16 at 16-30s), which the old one never did.
 - **The prover cannot settle big rooms.** Level 19 up to 9 tiles is 333 million rooms; a 5x5 room with
   5 pieces is 2.7 trillion. "No 6-move win in 5x5" is out of its reach.
 - Wins depend on time, so a rerun of the benchmark gives close but not identical numbers.
+
+## Level 16 and 18's own goals (register 366, 2026-10-21)
+
+`node tools/levelSearch.mjs 16 --seconds 1200 --seed 11..14 --seeded --require laserThroughADoor,boxOffButtonAtEnd,laserThroughButton,twoButtons`
+and the same for 18 with `boxHitsIdoor,allRelaysLitAtEnd,boxThroughIdoorTwice`; 8 runs at once on 4 cores.
+No win. Level 16: closest penalty 0.20 on all four seeds (1004 to 1710 climbs). Level 18: 0.40 on one, 0.71 on three.
