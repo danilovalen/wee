@@ -270,7 +270,7 @@ export async function bootRooms() {
       const level = await decodeRoom(location.hash);
       await refresh();
       openRoom(level, {}); S.room.saved = null; syncRoomsButton();
-      history.replaceState({ path: '#/room', prev: null }, '', location.pathname + location.search + '#/room');
+      try { history.replaceState({ path: '#/room', prev: null }, '', location.pathname + location.search + '#/room'); } catch { /* a preview frame keeps its address */ }
       return;
     } catch { /* a bad link falls through to the usual start */ }
   }

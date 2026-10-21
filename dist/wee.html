@@ -3459,6 +3459,14 @@ const places = {}; // name -> { page, parent(arg), enter(arg), shown(), exit(nex
 // shut: pages this module closed; a dialog's close event comes later, so the flag must outlive the call.
 let here = null, ours = false, turn = 0;
 const shut = new Set();
+// A preview frame (about:srcdoc, blob:) cannot change its address, so there the entries live here instead.
+let fixed = false;
+const stack = [];
+const state = () => fixed ? stack[stack.length - 1] : history.state;
+function write(entry, replace) {
+  if (!fixed) try { history[replace ? 'replaceState' : 'pushState'](entry, '', location.pathname + location.search + entry.path); return; } catch { fixed = true; }
+  if (replace && stack.length) stack[stack.length - 1] = entry; else stack.push(entry);
+}
 
 const place = (name, def) => { places[name] = def; };
 const pathOf = (name, arg = null) => '#/' + (name === 'menu' ? '' : name + (arg != null ? '/' + arg : ''));
@@ -3491,8 +3499,7 @@ async function show(name, arg, popups = false) {
 function go(name, arg = null, { replace = false } = {}) {
   const path = pathOf(name, arg), from = here && pathOf(here.name, here.arg);
   if (path === from) return show(name, arg);
-  const state = { path, prev: replace ? history.state?.prev ?? null : from };
-  history[replace ? 'replaceState' : 'pushState'](state, '', location.pathname + location.search + path);
+  write({ path, prev: replace ? state()?.prev ?? null : from }, replace);
   return show(name, arg);
 }
 
@@ -3500,8 +3507,9 @@ function go(name, arg = null, { replace = false } = {}) {
 // this agree; otherwise straight to the parent (a cold start from a reload or a link).
 function back(target = here && places[here.name].parent(here.arg)) {
   if (!target) return;
-  if (history.state?.prev === pathOf(target)) { ours = true; history.back(); }
-  else go(target);
+  if (state()?.prev !== pathOf(target)) go(target);
+  else if (!fixed) { ours = true; history.back(); }
+  else { stack.pop(); const { name, arg } = parse(state().path); show(name, arg); }
 }
 // Up to the place a level, puzzle or room was opened from: its own parent unless history says otherwise.
 const up = () => back(here && places[here.name].parent(here.arg));
@@ -3510,7 +3518,7 @@ function start() {
   if (location.hash.startsWith('#room=')) return show('room', null);  // a shared room link: rooms.js reads the hash
   const sandbox = !location.hash && new URLSearchParams(location.search).has('sandbox');
   const { name, arg } = sandbox ? { name: 'rooms', arg: null } : parse(location.hash);
-  history.replaceState({ path: pathOf(name, arg), prev: null }, '', location.pathname + location.search + pathOf(name, arg));
+  write({ path: pathOf(name, arg), prev: null }, true);
   return show(name, arg);
 }
 
@@ -6370,7 +6378,7 @@ async function bootRooms() {
       const level = await decodeRoom(location.hash);
       await refresh();
       openRoom(level, {}); S.room.saved = null; syncRoomsButton();
-      history.replaceState({ path: '#/room', prev: null }, '', location.pathname + location.search + '#/room');
+      try { history.replaceState({ path: '#/room', prev: null }, '', location.pathname + location.search + '#/room'); } catch { /* a preview frame keeps its address */ }
       return;
     } catch { /* a bad link falls through to the usual start */ }
   }

@@ -89,6 +89,8 @@ About half a day for slice 1, two hours each for 2 and 3.
 
 Behaviour that changed on purpose: a reload in the Sandbox lands in the room, not on the Rooms page; a shared `#room=` link becomes `#/room` once opened.
 
+A trap found after shipping: a preview frame (the app's file viewer opens the HTML as `about:srcdoc`) refuses any change to the address, so the first `replaceState` threw and the game opened on the bare editor instead of the menu. Where the address cannot change, `nav.js` keeps the entries itself; `tests/nav.smoke.mjs` plays the built file inside such a frame.
+
 One trap found while building: a dialog's `close` event fires a moment after `close()` returns, so "did the router close this?" has to be remembered (a set), not held in a flag for the length of the call.
 
 Gates: `tests/nav.smoke.mjs` (23 checks), the arch rule, and 13 mutants (12 caught; the survivor, clearing the Sandbox's `simple` look on leaving it, is filed: no test checks the body class after leaving).

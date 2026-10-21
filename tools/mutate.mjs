@@ -268,7 +268,7 @@ const M = [
   ['src', "  return parseLevel(text);", "  return JSON.parse(text);", "code"],
   ['src', "const text = JSON.stringify({ format, version, w, h, cells, start, entities, powers, clock, ...(crates ? { crates } : {}), ...(wires ? { wires } : {}) });", "const text = JSON.stringify(level);", "code"],
   ['src', "    catch { $('shareOut').hidden = false; $('shareOut').value = text; $('shareOut').select(); say('Copy it from the box.'); }", "    catch { say('Copy it from the box.'); }", "browser"],
-  ['src', "      history.replaceState({ path: '#/room', prev: null }, '', location.pathname + location.search + '#/room');\n", "", "browser"],
+  ['src', "      try { history.replaceState({ path: '#/room', prev: null }, '', location.pathname + location.search + '#/room'); } catch { /* a preview frame keeps its address */ }\n", "", "browser"],
   ['src', "  if (location.hash.startsWith('#room=')) {", "  if (false) {", "browser"],
   ['src', "        stops.add(t.player.y * t.w + t.player.x);\n", "", "solve"],
   ['src', "  if (unsearchable({ ...level, cells: [...level.cells, 'goal'] })) return { why: 'realtime', stops: [] };\n", "", "solve"],

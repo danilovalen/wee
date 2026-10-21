@@ -75,6 +75,26 @@ try {
   check('a link to #/levels opens the list', (await at()).open === 'campBox');
   await page.goto(B + '#/level/nope'); await settle();
   check('a link to a missing level falls back to the list', (await at()).hash === '#/levels' && (await at()).open === 'campBox');
+  // A preview frame (the app's file viewer) cannot change its address: the game still starts on the
+  // menu and every way back still works, from entries the router keeps itself.
+  const html = await (await fetch(B + 'dist/wee.html')).text().catch(() => '');
+  if (html) {
+    const fp = await browser.newPage({ viewport: { width: 393, height: 873 } });
+    const ferr = []; fp.on('pageerror', e => ferr.push(e.message));
+    await fp.setContent('<iframe sandbox="allow-scripts allow-modals" style="width:393px;height:860px;border:0"></iframe>');
+    await fp.$eval('iframe', (f, h) => { f.srcdoc = h; }, html); await fp.waitForTimeout(1200);
+    const f = fp.frames()[1], fat = () => f.evaluate(() => [...document.querySelectorAll('dialog[open]')].map(d => d.id).join());
+    check('in a preview frame the game starts on the menu', await fat() === 'menuBox', ferr.join(' | '));
+    await f.click('#menuCampaign'); await f.click('#campList button[data-level="1"]'); await fp.waitForTimeout(300);
+    await f.click('#campBack'); await fp.waitForTimeout(300);
+    const list = await fat();
+    await f.press('#campList button', 'Escape'); await fp.waitForTimeout(300);
+    check('in a preview frame, Levels and Escape step back through the router\'s own entries', list === 'campBox' && await fat() === 'menuBox', list);
+    await f.click('#menuCampaign'); await f.click('#campList button[data-level="1"]'); await fp.waitForTimeout(300);
+    await f.click('#logo'); await fp.waitForTimeout(300);
+    check('in a preview frame the logo goes to the menu', await fat() === 'menuBox' && ferr.length === 0, ferr.join(' | '));
+    await fp.close();
+  } else check('the built single file is served for the preview-frame check', false, 'run npm run build');
   check('no page errors', errors.length === 0, errors.join(' | '));
 } finally {
   await browser.close();
