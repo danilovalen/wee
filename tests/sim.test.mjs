@@ -6,6 +6,7 @@ import { solidCell, gateDirs, cellAt } from '../src/rules/grid.js';
 import { stateKey } from '../src/solve/solve.js';
 import { counterRoom, countOf } from '../tools/counterRoom.mjs';
 import { displayRoom, digitOf } from '../tools/displayRoom.mjs';
+import { hexRoom, hexOf } from '../tools/hexRoom.mjs';
 import { place, describe, turnGate, moveAt } from '../src/editor/edit.js';
 import { drawTurret } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
@@ -1336,6 +1337,15 @@ const LONG = ['##########', '#..P....##', '##########'];
   const ds = seen.map(e => e.d).join('');
   check('the 7-segment room shows 0 to 7 and loops, one digit every 16 ticks', ds.startsWith('01234567012345670') && !ds.includes('?') && seen.slice(2).every((e, i) => e.t - seen[i + 1].t === 16), ds);
   check('the saved 7-segment room is the generated one', JSON.stringify(parseLevel(readFileSync('rooms/7-segment-counter.wee', 'utf8')).wires) === JSON.stringify(r.wires));
+}
+
+{ // the grey-only 4-bit counter with a hex display (register 356): 0 to F and round again, no colour anywhere
+  const r = hexRoom(), c = createGame(r), seen = [];
+  for (let t = 0; t < 520; t++) { step(c); const d = hexOf(c); if (seen.at(-1)?.d !== d) seen.push({ t, d }); }
+  const ds = seen.map(e => e.d).join('');
+  check('the hex room shows 0 to F and loops, one digit every 16 ticks', ds.startsWith('0123456789ABCDEF0') && !ds.includes('?') && seen.slice(2).every((e, i) => e.t - seen[i + 1].t === 16), ds);
+  check('the hex room uses grey pieces only', r.cells.every(c => !/:(red|blue|yellow|green)/.test(c)) && r.cells.some(c => c.endsWith(':wire')));
+  check('the saved hex room is the generated one', JSON.stringify(parseLevel(readFileSync('rooms/hex-counter.wee', 'utf8')).wires) === JSON.stringify(r.wires));
 }
 
 { // gravel stops what slides onto it

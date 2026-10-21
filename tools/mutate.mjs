@@ -844,6 +844,9 @@ const M = [
   // Register 355: the 7-segment display; its d segment is the AND of two relays.
   ['tools/displayRoom.mjs', "  { seg: 'd', lines: [[L(1, false)], [L(0, false)], [L(2, false)]] },\n", "", 'sim'],
   ['tools/displayRoom.mjs', "[L(2), L(0)], [L(2, false), L(0, false)]] },", "[L(2), L(0)]] },", 'sim'],
+  // Register 356: the grey hex counter; a segment's row is the NOR of its terms, and its carries are wires.
+  ['tools/hexRoom.mjs', "    T.forEach((t, k) => { if (t.segs.includes(s)) cell(X0 + k, y, 'idoor:wire'); });", "    T.forEach((t, k) => { if (t.segs.includes(s)) cell(X0 + k, y, 'door:wire'); });", 'sim'],
+  ['tools/hexRoom.mjs', "  need('C2', relayAt[0], relayAt[1]); need('C3', relayAt[0], relayAt[1], relayAt[2]);", "  need('C2', relayAt[0], relayAt[1]); need('C3', relayAt[0], relayAt[2]);", 'sim'],
   // Registers 330, 339, 340: a gold laser; the relay a soft eight-point star.
   ['src/view/pieces.js', "g.fillStyle = d === next ? INK.zap : INK.barrel;", "g.fillStyle = d === next ? INK.beam : INK.barrel;", 'sim'],
   ['src/app/lenses.js', "colour: INK.zap }", "colour: INK.beam }", 'lensui'],
