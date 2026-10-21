@@ -2,8 +2,8 @@
 // and the optional goals; Build it opens it like a campaign level, judged by the robot.
 import { ELEMENTS } from '../campaign/rules.js';
 import { REQUIREMENTS } from '../campaign/requirements.js';
-import { madeLevels, saveMade, onMakerBack } from './made.js';
-import { enterLevel } from './campaign.js';
+import { madeLevels, saveMade } from './made.js';
+import { place, go, back } from './nav.js';
 import { $ } from './dom.js';
 
 const ELS = Object.keys(ELEMENTS);
@@ -60,11 +60,7 @@ function listMade() {
     li.append(b); return li;
   }));
 }
-export function openMaker() {
-  for (const id of ['menuBox', 'campBox']) if ($(id).open) $(id).close();
-  listMade(); if (!editing) fill(blank());
-  if (!$('makerBox').open) $('makerBox').showModal();
-}
+function enterMaker() { listMade(); if (!editing) fill(blank()); }
 function build() {
   const pal = palette(), list = madeLevels();
   for (const li of $('makerGoals').children) picked[li.dataset.goal] = li.querySelector('select').value;
@@ -76,14 +72,13 @@ function build() {
   const def = { id, made: true, name: $('makerName').value.trim() || `My level ${id.slice(1)}`, size: [7, 7], palette: pal, steps: best ? { best } : {}, rules: [], require: ids('require'), optional: ids('optional'), ...(small ? { small } : {}), ...($('makerTwo').checked ? { colours: ['red', 'blue'] } : {}) };
   saveMade([...list.filter(l => l.id !== id), def]);
   editing = id;
-  $('makerBox').close();
-  enterLevel(id);
+  go('level', id);
 }
 
 export function buildMaker() {
-  onMakerBack(openMaker);
-  $('menuMaker').onclick = openMaker;
-  $('makerMenu').onclick = () => { $('makerBox').close(); $('menuBox').showModal(); };
+  place('maker', { page: 'makerBox', parent: () => 'menu', enter: enterMaker });
+  $('menuMaker').onclick = () => go('maker');
+  $('makerMenu').onclick = () => back('menu');
   $('makerNew').onclick = () => fill(blank());
   $('makerBuild').onclick = build;
   $('makerDelete').onclick = () => { if (!editing || !confirm('Delete this level? This cannot be undone.')) return; saveMade(madeLevels().filter(l => l.id !== editing)); fill(blank()); listMade(); };

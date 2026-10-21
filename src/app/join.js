@@ -3,7 +3,7 @@
 export function joinEnds() {
   const on = document.body.classList.contains('campaign') || document.body.classList.contains('simple');
   for (const strip of document.querySelectorAll('[data-join]')) {
-    const kids = [...strip.children].filter(b => b.tagName === 'BUTTON');
+    const kids = [...strip.children].filter(b => b.tagName === 'BUTTON' && !b.classList.contains('logo'));
     for (const b of kids) b.classList.remove('joinFirst', 'joinLast');
     const shown = on ? kids.filter(b => !b.hasAttribute('data-alone') && getComputedStyle(b).display !== 'none') : [];
     if (!shown.length) continue;

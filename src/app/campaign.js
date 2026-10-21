@@ -11,14 +11,15 @@ import { $, portrait, now } from './dom.js';
 import { icon } from './icons.js';
 import { noteLeaving, copyDebug } from './debug.js';
 import { buildMenuScene } from './menuScene.js';
-import { madeLevel, backToMaker } from './made.js';
+import { madeLevel } from './made.js';
+import { place, go, back, up } from './nav.js';
 
 const KEY = 'wee.campaign';
 // The editor tool that places each palette element.
 export const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle', gate: 'gate', laser: 'turret', idoor: 'idoor', relay: 'sensor' };
 // Every level hands you Move, to carry anything placed (the start and goal too) elsewhere.
 const ALWAYS = ['move'];
-let A = null, boot = null, fitScene = null;
+let A = null, fitScene = null;
 
 export function progress() {
   try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return migrate(p); } catch { /* storage off */ }
@@ -160,7 +161,6 @@ export function enterLevel(id) {
   const def = levelOf(id);
   if (!def) return false;
   const p = progress(), rec = p.levels[id];
-  closeAll();
   S.camp = { def, verdict: null }; S.trail = null; $('campBack').textContent = def.made ? 'Maker' : 'Levels';
   const kept = rec && rec.room && unframe(rec.room);
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
@@ -236,34 +236,33 @@ function renderList() {
     }
     b.append(name, parts, small);
     if (def.id === p.last) b.classList.add('sel');
-    b.onclick = () => enterLevel(def.id);
+    b.onclick = () => go('level', def.id);
     li.append(b);
     return li;
   }));
 }
 
-function closeAll() { for (const id of ['menuBox', 'campBox']) if ($(id).open) $(id).close(); }
-
-export function openList() {
+// The level list, drawn fresh, with the last level played in view.
+export function showList() {
   renderList();
-  closeAll();
-  $('campBox').showModal();
   const sel = $('campList').querySelector('.sel') || $('campList').querySelector('button');
   if (sel) { sel.focus(); sel.scrollIntoView({ block: 'nearest' }); }
 }
 
-export function openMenu() { closeAll(); $('menuBox').showModal(); fitScene?.(); }
-
-// actions: setMode, syncPanel, fit; sandbox(): starts the sandbox (the Rooms list).
-export function buildCampaign(actions, sandbox) {
-  A = actions; boot = sandbox;
+// actions: setMode, syncPanel, fit.
+export function buildCampaign(actions) {
+  A = actions;
   fitScene = buildMenuScene($('menuScene'));
-  $('menuCampaign').onclick = openList;
-  $('menuSandbox').onclick = () => { closeAll(); S.simple = true; document.body.classList.add('simple'); Promise.resolve(boot()).then(A.syncPanel); };
-  $('campMenu').onclick = openMenu;
+  place('menu', { page: 'menuBox', parent: () => null, enter: () => {}, shown: () => fitScene?.() });
+  place('levels', { page: 'campBox', parent: () => 'menu', enter: () => {}, shown: showList });
+  // A level goes back to where it was opened from; with no history, a made level's parent is the maker.
+  place('level', { parent: id => (levelOf(id) || {}).made ? 'maker' : 'levels', enter: id => (S.camp && S.camp.def.id === id) || enterLevel(id), exit: () => { noteLeaving(); leaveLevel(); } });
+  $('menuCampaign').onclick = () => go('levels');
+  $('menuSandbox').onclick = () => go('rooms');
+  $('campMenu').onclick = () => back('menu');
   // The Sandbox's way back (register 357): its Rooms page has a Menu button, as the other modes' pages do.
-  $('roomsMenu').onclick = () => { $('roomsBox').close(); openMenu(); };
-  $('campBack').onclick = () => { const made = S.camp && S.camp.def.made; noteLeaving(); leaveLevel(); (made ? backToMaker : openList)(); };
+  $('roomsMenu').onclick = () => back('menu');
+  $('campBack').onclick = up;
   $('menuDebug').onclick = copyDebug;
   $('campRun').onclick = () => { S.camp.testing = false; run(); };
   // Test: the room played by hand, the robot not involved; nothing is judged or saved.

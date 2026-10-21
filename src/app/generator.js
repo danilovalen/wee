@@ -10,6 +10,7 @@ import { $ } from './dom.js';
 import { change } from './undo.js';
 import { dirty, remember, syncRoomsButton } from './rooms.js';
 import { icon } from './icons.js';
+import { current, up } from './nav.js';
 import { TOOLS, GROUPS } from '../editor/palette.js';
 
 const SHELF = 'wee.generated', FORM = 'wee.genForm', KEEP = 20, SLICE_MS = 25;
@@ -172,7 +173,7 @@ export function buildGenerator(actions) {
   $('genKeep').checked = $('genW').disabled = $('genH').disabled = !!(saved && saved.recipe.keep);
   $('genKeep').onchange = () => fillForm(recipeFromForm());
   $('genTime').value = saved ? saved.seconds : 15;
-  const open = () => { for (const id of ['roomsBox', 'newBox']) if ($(id).open) $(id).close(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
+  const open = () => { if ($('newBox').open) $('newBox').close(); if (current()?.name === 'rooms') up(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
   $('roomGen').onclick = $('genBtn').onclick = open;
   $('genReroll').onclick = () => { $('genSeed').value = newSeed(); };
   const seconds = () => Math.max(5, Math.min(60, +$('genTime').value || 15));

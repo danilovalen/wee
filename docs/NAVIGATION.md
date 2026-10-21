@@ -1,5 +1,7 @@
 # Navigation (register 359)
 
+**Built 2026-10-21**, all three slices: see "What was built" at the end. The diagnosis below is kept as written.
+
 Diagnosis, 2026-10-21, at `149fab7`. Measured in a phone-sized browser (393x873, touch) with a probe that reads which pages are open, the body's mode, the URL and the browser history after each step.
 
 **Short answer: wee has no navigation system.** It has 13 `<dialog>` pages. Each mode opens and closes them by hand, and the browser is never told that anything changed. The five defects below all come from that.
@@ -75,3 +77,18 @@ About half a day for slice 1, two hours each for 2 and 3.
 1. **Back goes to where you came from.** A level opened from the Maker goes back to the Maker; from Levels, to Levels. So a place's parent in the table above is a default for a cold start (a reload or a link), and history decides otherwise.
 2. **The wee logo goes to the menu**, one tap from any screen. No new button.
 3. **A reload inside a level keeps your edits.** The current build is saved on every change and restored with the place.
+
+## What was built (2026-10-21)
+
+- **`src/app/nav.js`** owns where you are. Places: `#/` menu, `#/levels`, `#/level/<id>` (made levels too), `#/maker`, `#/puzzles`, `#/puzzle/<id>`, `#/rooms`, `#/room`. Each module registers its places (`place(name, { page, parent, enter, shown, exit })`) and nothing else opens or closes a place's page; `tests/arch.test.mjs` fails if anything outside `nav.js` does.
+- **Back** is the browser's own history: every `go()` is an entry. The in-game back buttons (Levels, Maker, Puzzles, Close on the Rooms page, the list pages' Menu) step back through history when that is where you came from, and go straight to the parent otherwise (a cold start).
+- **Escape** on a page goes up a place; on the menu it does nothing.
+- **The wee logo** is a button to the menu, now shown on phones too (17px, outside the joined button strip).
+- **Reload and links** land on the place in the address. A level keeps its placements (they were already saved on every change); the Sandbox room keeps its draft.
+- **Unsaved changes**: the Sandbox draft is only written while you are in the Sandbox. Before this, a level or a puzzle open over the Sandbox's room counted as "unsaved changes" to it and could overwrite or clear its draft; that is the likely cause of the false "Leave the unsaved changes?" on a fresh Sandbox, which no longer appears (gated). Leaving the Sandbox keeps the draft and asks nothing.
+
+Behaviour that changed on purpose: a reload in the Sandbox lands in the room, not on the Rooms page; a shared `#room=` link becomes `#/room` once opened.
+
+One trap found while building: a dialog's `close` event fires a moment after `close()` returns, so "did the router close this?" has to be remembered (a set), not held in a flag for the length of the call.
+
+Gates: `tests/nav.smoke.mjs` (23 checks), the arch rule, and 13 mutants (12 caught; the survivor, clearing the Sandbox's `simple` look on leaving it, is filed: no test checks the body class after leaving).

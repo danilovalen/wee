@@ -37,6 +37,10 @@ check(`no source file is over ${MAX_LINES} lines`, long.length === 0, long.join(
 let built = '', err = '';
 try { built = bundle(); } catch (e) { err = e.message; }
 check('the bundle builds from the entry with no cycle and no missing export', !!built && !err, err);
+// Only the router opens or closes a place's page (register 359), so Back, Escape and reload agree.
+const PAGE_CALL = /\$\('(menuBox|campBox|makerBox|puzzleBox|roomsBox)'\)\.(showModal|close)\(/;
+const strays = files.filter(f => !f.endsWith('nav.js') && PAGE_CALL.test(readFileSync(f, 'utf8')));
+check('no module but nav.js opens or closes a place\'s page', strays.length === 0, strays.join(' '));
 // Words on screen are separated by commas, never a middle dot (register 260).
 const dotted = [...files, 'index.html'].filter(f => /\u00b7|\\u00b7/.test(readFileSync(f, 'utf8')));
 check('no middle dot in the source or the page', dotted.length === 0, dotted.join(' '));

@@ -397,8 +397,10 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
-  check('a reload starts on the library', await page.locator('#roomsBox').isVisible());
-  check('a saved room behind it gets no unsaved tile', await page.locator('#openNow').isHidden());
+  // A reload lands where you were (register 359): here the room, not the library.
+  check('a reload lands back in the room, not the library', await page.locator('#roomsBox').isHidden());
+  await page.click('#roomsBtn');
+  check('a saved room behind the library gets no unsaved tile', await page.locator('#openNow').isHidden());
   await page.click('#roomsBox .roomsHead form button');
   check('a reload reopens the room you were on', (await text()).level.cells.filter(c => c === 'wall').length === wallsBefore && (await page.getAttribute('#roomsBtn', 'title')) === 'Smoke room');
   // autosave: an unsaved edit survives a reload, and saving clears the draft
@@ -412,6 +414,8 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
+  check('a reload with unsaved work lands in the room', await page.locator('#roomsBox').isHidden());
+  await page.click('#roomsBtn');
   check('unsaved work leads the library as its own tile', await page.locator('#openNow').isVisible() && (await page.textContent('#openNow')).includes('Smoke room') && (await page.textContent('#openNow')).includes('Unsaved changes'));
   await page.click('#openNow .roomRow');
   check('and tapping it goes back to that room', !(await page.locator('#roomsBox').isVisible()));
@@ -444,7 +448,7 @@ try {
   await linkPage.waitForFunction(() => window.wee && window.wee.roomsReady);
   await linkPage.evaluate(() => window.wee.roomsReady);
   check('a #room= link skips the library', !(await linkPage.locator('#roomsBox').isVisible()));
-  check('a #room= link opens that room, unsaved', (await linkPage.evaluate(() => window.wee.getLevel().w)) === FIRST_W && (await linkPage.textContent('#roomsBtn')).includes('\u2022') && !(await linkPage.evaluate(() => location.hash)));
+  check('a #room= link opens that room, unsaved', (await linkPage.evaluate(() => window.wee.getLevel().w)) === FIRST_W && (await linkPage.textContent('#roomsBtn')).includes('\u2022') && (await linkPage.evaluate(() => location.hash)) === '#/room');
   await linkPage.close();
   await page.locator('#importFile').setInputFiles({ name: 'two.weepack', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ format: 'wee-pack', version: 1, rooms: [{ ...room(['#####', '#P..#', '#####']), id: 'ra', name: 'A' }, { ...room(['#####', '#P..#', '#####']), id: 'rb', name: 'B' }] })) });
   await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 3);
@@ -735,7 +739,7 @@ try {
   await page.keyboard.press('e');
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) {
-  check('the smoke ran to the end', false, err.message);
+  check('the smoke ran to the end', false, err.message + ' @ ' + (err.stack.match(/browser.smoke.mjs:\d+/) || [''])[0]);
 } finally {
   await browser.close();
   server.close();

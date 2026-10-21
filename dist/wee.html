@@ -31,6 +31,9 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 var(
 header { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0; }
 /* Drift: a thin, spaced wordmark with a sheen passing over it. */
 .logo { font: 700 22px var(--wee-face); letter-spacing: .04em; margin-right: 8px; background: linear-gradient(100deg, var(--accent) 40%, #c9c2ff 50%, var(--accent) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
+/* The header's logo is the way to the menu (register 359): a button that still looks like the logo. */
+header .logo { border: 0; box-shadow: none; padding: 0 4px; cursor: pointer; }
+header .logo:hover:not(:disabled), header .logo:active:not(:disabled) { transform: none; box-shadow: none; }
 @keyframes sheen { to { background-position: -300% 0; } }
 .spacer { flex: 1; }
 /* The sticker shadow: hard, lifts on hover, sinks on press. "On" is a pink ring inside. */
@@ -459,7 +462,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 .rooms .danger button { color: #c8283c; }
 #shareOut[hidden] { display: none; }
 @media (max-width: 700px) {
-  .logo { display: none; }
+  header .logo { font-size: 17px; min-height: 44px; padding: 0 2px; }
   .roomTitle { order: 0; max-width: 9em; min-height: 44px; }
   .rooms.library { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; }
   .roomList.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -655,7 +658,7 @@ body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; ali
 <body>
   <canvas id="snow" aria-hidden="true"></canvas>
   <header data-join>
-    <b class="logo">wee</b>
+    <button id="logo" class="logo" type="button" title="Menu" aria-label="Menu">wee</button>
     <button id="roomTitle" class="roomTitle" type="button" title="This room">Untitled</button>
     <button id="campBack" type="button" class="camp-only">Levels</button>
     <button id="puzzleBack" type="button" class="puzzle-only">Puzzles</button>
@@ -3429,21 +3432,194 @@ const KEY = 'wee-made';
 const madeLevels = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
 const saveMade = list => { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch { /* storage off or full */ } };
 const madeLevel = id => madeLevels().find(l => l.id === id);
-// Leaving a made level goes back to the maker; the maker hands its opener in, so the two do not import each other.
-let back = () => {};
-const backToMaker = () => back();
-const onMakerBack = f => { back = f; };
-return { madeLevels, saveMade, madeLevel, backToMaker, onMakerBack };
+return { madeLevels, saveMade, madeLevel };
 })();
-// ---- src/level/campaign.js
+// ---- src/app/dom.js
 const m20 = (() => {
 
-// Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"small":[3,3],"rules":[],"require":[],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,3],"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,4],"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"small":[8,6],"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"optional":[]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,5],"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"small":[4,4],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"small":[4,5],"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"small":[3,5],"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"small":[6,3],"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"small":[4,4],"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"small":[6,2],"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"small":[7,3],"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"small":[6,5],"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":7},"small":[5,4],"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["robotOnButton"]},{"id":"17","name":"Level 17","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"idoor":[1,1],"laser":[1,null]},"steps":{"best":7},"small":[5,6],"rules":[],"require":["laserStoppedByIdoor","robotThroughIdoor"]},{"id":"18","name":"Level 18","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"idoor":[1,null],"relay":[1,null],"laser":[1,null]},"steps":{"best":11},"small":[4,5],"rules":[],"require":["boxHitsIdoor","allRelaysLitAtEnd"]},{"id":"19","name":"Level 19","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[1,null],"door":[1,null]},"pushable":{"laser":"only"},"steps":{},"small":[5,6],"rules":[],"require":["laserPushedThrice","laserThroughADoor","throughOpenDoor"]},{"id":"twocolour","name":"Two colours","size":[7,7],"palette":{"block":[0,null],"button":[1,null],"door":[1,null],"relay":[1,null],"laser":[1,null]},"colours":["red","blue"],"twoColour":{"door":"only"},"steps":{"best":9},"small":[4,5],"rules":[],"require":[],"hidden":true}];
-return { LEVELS };
+// The page: the elements the app talks to, and what kind of screen it is on.
+const $ = id => document.getElementById(id);
+const canvas = $('game');
+const g = canvas.getContext('2d');
+const touch = matchMedia('(pointer: coarse)').matches;
+const portrait = () => innerHeight > innerWidth;
+const now = () => performance.now();
+return { $, canvas, g, touch, portrait, now };
+})();
+// ---- src/app/nav.js
+const m21 = (() => {
+const { $ } = m20;
+// Where you are (register 359): every screen is a place with a hash path, and this is the only
+// module that opens or closes a place's page, so Back, Escape, reload and links agree.
+// Pop-ups that are not places (confirmations, This room, New room) stay plain dialogs. docs/NAVIGATION.md.
+
+// The pages that are places. Nothing outside this file opens or closes them (tests/arch.test.mjs).
+const PAGES = ['menuBox', 'campBox', 'makerBox', 'puzzleBox', 'roomsBox'];
+const places = {}; // name -> { page, parent(arg), enter(arg), shown(), exit(nextName) }
+// shut: pages this module closed; a dialog's close event comes later, so the flag must outlive the call.
+let here = null, ours = false, turn = 0;
+const shut = new Set();
+
+const place = (name, def) => { places[name] = def; };
+const pathOf = (name, arg = null) => '#/' + (name === 'menu' ? '' : name + (arg != null ? '/' + arg : ''));
+const current = () => here;
+function parse(hash) {
+  const [name, ...rest] = (hash || '').replace(/^#\/?/, '').split('/');
+  return places[name] ? { name, arg: rest.length ? decodeURIComponent(rest.join('/')) : null } : { name: 'menu', arg: null };
+}
+
+// Closes every page but this place's own (and, after the browser's Back, any pop-up left over it).
+function closePages(keep, popups) {
+  for (const d of document.querySelectorAll('dialog[open]')) if (d.id !== keep && (PAGES.includes(d.id) || popups)) { shut.add(d.id); d.close(); }
+}
+
+async function show(name, arg, popups = false) {
+  const def = places[name], t = ++turn;
+  if (here && (here.name !== name || here.arg !== arg)) places[here.name].exit?.(name);
+  here = { name, arg };
+  closePages(def.page, popups);
+  // The page opens at once and fills as it loads, so a tap or Escape right after lands on it.
+  if (def.page && !$(def.page).open) $(def.page).showModal();
+  const ok = await def.enter(arg);
+  if (t !== turn) return;  // a later move overtook this one while it loaded
+  if (ok === false) { go(def.parent(arg), null, { replace: true }); return; }
+  def.shown?.();
+  dispatchEvent(new CustomEvent('wee:place', { detail: here }));
+}
+
+// The only way to change screen: a history entry, then the place.
+function go(name, arg = null, { replace = false } = {}) {
+  const path = pathOf(name, arg), from = here && pathOf(here.name, here.arg);
+  if (path === from) return show(name, arg);
+  const state = { path, prev: replace ? history.state?.prev ?? null : from };
+  history[replace ? 'replaceState' : 'pushState'](state, '', location.pathname + location.search + path);
+  return show(name, arg);
+}
+
+// One step up: back through history when that is where you came from, so the browser's Back and
+// this agree; otherwise straight to the parent (a cold start from a reload or a link).
+function back(target = here && places[here.name].parent(here.arg)) {
+  if (!target) return;
+  if (history.state?.prev === pathOf(target)) { ours = true; history.back(); }
+  else go(target);
+}
+// Up to the place a level, puzzle or room was opened from: its own parent unless history says otherwise.
+const up = () => back(here && places[here.name].parent(here.arg));
+
+function start() {
+  if (location.hash.startsWith('#room=')) return show('room', null);  // a shared room link: rooms.js reads the hash
+  const sandbox = !location.hash && new URLSearchParams(location.search).has('sandbox');
+  const { name, arg } = sandbox ? { name: 'rooms', arg: null } : parse(location.hash);
+  history.replaceState({ path: pathOf(name, arg), prev: null }, '', location.pathname + location.search + pathOf(name, arg));
+  return show(name, arg);
+}
+
+function bindNav() {
+  addEventListener('popstate', () => { const { name, arg } = parse(location.hash); const popups = !ours; ours = false; show(name, arg, popups); });
+  // Escape on a page goes up a place, never into the screen behind it; the menu has nowhere up.
+  for (const id of PAGES) $(id).addEventListener('cancel', ev => { ev.preventDefault(); if (here && here.name !== 'menu') up(); });
+  // A page closed by its own Close button (the Rooms page) goes to its parent, the room.
+  for (const id of PAGES) $(id).addEventListener('close', () => { if (shut.delete(id)) return; if (here && places[here.name].page === id) up(); });
+  // The logo is the way to the menu from anywhere.
+  $('logo').onclick = () => go('menu');
+}
+return { PAGES, place, pathOf, current, go, back, up, start, bindNav };
+})();
+// ---- src/app/maker.js
+const m22 = (() => {
+const { ELEMENTS } = m18;
+const { REQUIREMENTS } = m17;
+const { madeLevels, saveMade } = m19;
+const { place, go, back } = m21;
+const { $ } = m20;
+// The Level maker (register 302): pick the palette (in or out, a minimum, a maximum), the goals
+// and the optional goals; Build it opens it like a campaign level, judged by the robot.
+
+
+
+
+
+const ELS = Object.keys(ELEMENTS);
+// A goal is offered when every element its short line draws is in the palette (the robot is always there).
+const needs = id => REQUIREMENTS[id].short.filter(p => p && p.el && p.el !== 'start').map(p => p.el);
+let editing = null;
+
+function palRows(def) {
+  $('makerPal').replaceChildren(...ELS.map(el => {
+    const tr = document.createElement('tr'), [min, max] = def.palette[el] || [0, null], on = el in def.palette;
+    tr.dataset.el = el;
+    tr.innerHTML = `<td><label><input type="checkbox" data-in> ${ELEMENTS[el].label}</label></td><td><input type="number" min="0" data-min></td><td><input type="number" min="0" placeholder="any" data-max></td>`;
+    tr.querySelector('[data-in]').checked = on;
+    tr.querySelector('[data-min]').value = on ? min : 0;
+    tr.querySelector('[data-max]').value = on && max != null ? max : '';
+    tr.querySelector('[data-in]').onchange = goalRows;
+    return tr;
+  }));
+}
+const palette = () => Object.fromEntries([...$('makerPal').children].filter(tr => tr.querySelector('[data-in]').checked).map(tr => {
+  const min = Math.max(0, +tr.querySelector('[data-min]').value || 0), m = tr.querySelector('[data-max]').value;
+  return [tr.dataset.el, [min, m === '' ? null : Math.max(min, +m)]];
+}));
+let picked = {};
+function goalRows() {
+  const have = new Set(Object.keys(palette()));
+  for (const li of $('makerGoals').children) picked[li.dataset.goal] = li.querySelector('select').value;
+  $('makerGoals').replaceChildren(...Object.keys(REQUIREMENTS).filter(id => needs(id).every(el => have.has(el))).map(id => {
+    const li = document.createElement('li'); li.dataset.goal = id;
+    li.innerHTML = `<select aria-label="Use"><option value="">Not used</option><option value="require">Required</option><option value="optional">Optional</option></select><span></span>`;
+    li.querySelector('span').textContent = REQUIREMENTS[id].text;
+    li.querySelector('select').value = picked[id] || '';
+    return li;
+  }));
+}
+function fill(def) {
+  editing = def.id || null; picked = {};
+  for (const id of def.require || []) picked[id] = 'require';
+  for (const id of def.optional || []) picked[id] = 'optional';
+  $('makerName').value = def.name || '';
+  $('makerTwo').checked = !!(def.colours && def.colours.length > 1);
+  $('makerBest').value = def.steps && def.steps.best != null ? def.steps.best : '';
+  $('makerW').value = def.small ? def.small[0] : ''; $('makerH').value = def.small ? def.small[1] : '';
+  $('makerDelete').hidden = !editing; $('makerSay').textContent = '';
+  palRows(def); goalRows();
+}
+const blank = () => ({ palette: { block: [0, null] }, require: [], optional: [] });
+function listMade() {
+  $('madeList').replaceChildren(...madeLevels().map(def => {
+    const li = document.createElement('li'), b = document.createElement('button');
+    b.type = 'button'; b.className = 'campRow'; b.dataset.made = def.id;
+    b.append(Object.assign(document.createElement('b'), { textContent: def.name }), Object.assign(document.createElement('small'), { textContent: `${def.require.length} goals, ${Object.keys(def.palette).length} elements` }));
+    b.onclick = () => fill(def);
+    li.append(b); return li;
+  }));
+}
+function enterMaker() { listMade(); if (!editing) fill(blank()); }
+function build() {
+  const pal = palette(), list = madeLevels();
+  for (const li of $('makerGoals').children) picked[li.dataset.goal] = li.querySelector('select').value;
+  const shown = new Set([...$('makerGoals').children].map(li => li.dataset.goal));
+  const ids = k => Object.keys(picked).filter(id => picked[id] === k && shown.has(id));
+  if (!ids('require').length) { $('makerSay').textContent = 'Pick at least one required goal.'; return; }
+  const best = +$('makerBest').value || null, w = +$('makerW').value, h = +$('makerH').value, small = w >= 1 && h >= 1 ? [w, h] : null;
+  const id = editing || 'm' + (Math.max(0, ...list.map(l => +l.id.slice(1))) + 1);
+  const def = { id, made: true, name: $('makerName').value.trim() || `My level ${id.slice(1)}`, size: [7, 7], palette: pal, steps: best ? { best } : {}, rules: [], require: ids('require'), optional: ids('optional'), ...(small ? { small } : {}), ...($('makerTwo').checked ? { colours: ['red', 'blue'] } : {}) };
+  saveMade([...list.filter(l => l.id !== id), def]);
+  editing = id;
+  go('level', id);
+}
+
+function buildMaker() {
+  place('maker', { page: 'makerBox', parent: () => 'menu', enter: enterMaker });
+  $('menuMaker').onclick = () => go('maker');
+  $('makerMenu').onclick = () => back('menu');
+  $('makerNew').onclick = () => fill(blank());
+  $('makerBuild').onclick = build;
+  $('makerDelete').onclick = () => { if (!editing || !confirm('Delete this level? This cannot be undone.')) return; saveMade(madeLevels().filter(l => l.id !== editing)); fill(blank()); listMade(); };
+}
+return { buildMaker };
 })();
 // ---- src/editor/history.js
-const m21 = (() => {
+const m23 = (() => {
 
 // Undo and redo: a stack of whole levels, as text. An edit is recorded only when it
 // changed the level, so a click that did nothing leaves nothing to undo.
@@ -3474,9 +3650,9 @@ function redo(h, level) {
 return { LIMIT, newHistory, record, undo, redo };
 })();
 // ---- src/editor/state.js
-const m22 = (() => {
+const m24 = (() => {
 const { emptyLevel } = m2;
-const { newHistory } = m21;
+const { newHistory } = m23;
 // The one shared state of the page: the level being edited, the editor's settings and
 // the run being played. Every app file reads and writes it here, never in a copy.
 
@@ -3501,20 +3677,164 @@ const S = {
 };
 return { starterLevel, S };
 })();
-// ---- src/app/dom.js
-const m23 = (() => {
+// ---- src/app/store.js
+const m25 = (() => {
 
-// The page: the elements the app talks to, and what kind of screen it is on.
-const $ = id => document.getElementById(id);
-const canvas = $('game');
-const g = canvas.getContext('2d');
-const touch = matchMedia('(pointer: coarse)').matches;
-const portrait = () => innerHeight > innerWidth;
-const now = () => performance.now();
-return { $, canvas, g, touch, portrait, now };
+// Where rooms are kept: on the server when the page is served by one, otherwise in this
+// browser's local storage. A room is a level file with id, name, note and updated added.
+const KEY = 'wee.rooms';
+let mode = 'device';
+
+const where = () => mode;
+
+async function detect() {
+  try {
+    const r = await fetch('api/rooms', { cache: 'no-store' });
+    if (r.ok && (r.headers.get('content-type') || '').includes('json')) { mode = 'server'; return mode; }
+  } catch { /* opened from a file, or no server */ }
+  mode = 'device';
+  return mode;
+}
+
+function readLocal() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
+function writeLocal(rooms) { localStorage.setItem(KEY, JSON.stringify(rooms)); }
+
+const newId = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+async function list() {
+  if (mode === 'server') {
+    const r = await fetch('api/rooms', { cache: 'no-store' });
+    if (!r.ok) throw new Error('The server did not list the rooms.');
+    return r.json();
+  }
+  return readLocal();
+}
+
+async function put(room) {
+  room = { ...room, updated: new Date().toISOString() };
+  if (mode === 'server') {
+    const r = await fetch('api/rooms/' + room.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(room) });
+    if (!r.ok) throw new Error('The server did not save the room: ' + (await r.text()));
+    return r.json();
+  }
+  const rooms = readLocal().filter(o => o.id !== room.id);
+  rooms.push(room);
+  writeLocal(rooms);
+  return room;
+}
+
+async function remove(id) {
+  if (mode === 'server') {
+    const r = await fetch('api/rooms/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error('The server did not delete the room.');
+    return;
+  }
+  writeLocal(readLocal().filter(o => o.id !== id));
+}
+return { where, detect, newId, list, put, remove };
+})();
+// ---- src/level/room.js
+const m26 = (() => {
+const { parseLevel } = m2;
+// A room is a level plus what the person wrote about it. These split and join the two.
+
+const META = ['id', 'name', 'note', 'updated', 'par', 'solution', 'uses', 'recipe', 'puzzle'];
+
+function splitRoom(room) {
+  const meta = {}, level = { ...room };
+  for (const k of META) { meta[k] = room[k] ?? null; delete level[k]; }
+  return { meta, level: parseLevel(JSON.stringify(level)) };
+}
+
+const joinRoom = (meta, level) => ({
+  ...level, id: meta.id, name: meta.name, note: meta.note || '',
+  ...(meta.solution ? { par: meta.solution.length, solution: meta.solution, uses: meta.uses || [] } : {}),
+  ...(meta.recipe ? { recipe: meta.recipe } : {}),
+  ...(meta.puzzle ? { puzzle: true } : {}),
+});
+
+// What counts as the room's content when asking whether it has unsaved changes.
+const stampOf = level => JSON.stringify(level);
+
+function pack(rooms) { return { format: 'wee-pack', version: 1, rooms }; }
+
+// A pack file, or a single level file read as a pack of one.
+function unpack(text) {
+  const data = JSON.parse(text);
+  if (data.format === 'wee-pack' && Array.isArray(data.rooms)) return data.rooms.map(r => { splitRoom(r); return r; });
+  if (data.format === 'wee-level') { splitRoom(data); return [data]; }
+  throw new Error('Not a wee room or pack file.');
+}
+return { META, splitRoom, joinRoom, stampOf, pack, unpack };
+})();
+// ---- src/app/puzzles.js
+const m27 = (() => {
+const { S } = m24;
+const { list } = m25;
+const { splitRoom } = m26;
+const { allShortest } = m13;
+const { $ } = m20;
+const { place, go, back, up } = m21;
+// Puzzles (register 302): rooms marked in the Sandbox, played by hand as the little circle.
+// Your best is kept; the fewest moves come from the robot's own search.
+
+
+
+
+
+
+const KEY = 'wee-puzzles';
+const bests = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
+const keep = b => { try { localStorage.setItem(KEY, JSON.stringify(b)); } catch { /* storage off */ } };
+let A = null;
+
+function leave() { S.puzzle = null; document.body.classList.remove('puzzle'); }
+async function listPuzzles() {
+  const rooms = (await list().catch(() => [])).filter(r => r.puzzle), b = bests();
+  $('puzzleNone').hidden = rooms.length > 0;
+  $('puzzleList').replaceChildren(...rooms.map(r => {
+    const li = document.createElement('li'), btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'campRow'; btn.dataset.puzzle = r.id;
+    btn.append(Object.assign(document.createElement('b'), { textContent: r.name || 'Untitled' }), Object.assign(document.createElement('small'), { textContent: b[r.id] ? `Solved in ${b[r.id]}` : 'Not solved yet' }));
+    btn.onclick = () => go('puzzle', r.id);
+    li.append(btn); return li;
+  }));
+}
+function play(r) {
+  const { level } = splitRoom(r), found = allShortest(level);
+  S.puzzle = { id: r.id, fewest: found.status === 'solved' ? found.length : null };
+  S.camp = null; S.simple = true; S.level = level;
+  document.body.classList.add('puzzle', 'simple');
+  A.setMode('play'); A.syncPanel(); A.fit();
+}
+
+function buildPuzzles(actions) {
+  A = actions;
+  place('puzzles', { page: 'puzzleBox', parent: () => 'menu', enter: listPuzzles });
+  // A puzzle is found by its room's id, so a reload or a link plays it again.
+  place('puzzle', { parent: () => 'puzzles', enter: async id => { const r = (await list().catch(() => [])).find(o => o.id === id && o.puzzle); if (!r) return false; play(r); }, exit: leave });
+  $('menuPuzzles').onclick = () => go('puzzles');
+  $('puzzleMenu').onclick = () => back('menu');
+  $('puzzleBack').onclick = up;
+  addEventListener('wee:win', ev => {
+    if (!S.puzzle) return;
+    const b = bests(), n = ev.detail.moves, id = S.puzzle.id;
+    if (!b[id] || n < b[id]) { b[id] = n; keep(b); }
+    const few = S.puzzle.fewest;
+    $('winText').textContent = few == null ? `Solved in ${n} moves.` : n === few ? `Solved in ${n} moves, the fewest there are.` : `Solved in ${n} moves, and it can be done in ${few}.`;
+  });
+}
+return { bests, keep, buildPuzzles };
+})();
+// ---- src/level/campaign.js
+const m28 = (() => {
+
+// Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"small":[3,3],"rules":[],"require":[],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,3],"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,4],"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"small":[8,6],"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"optional":[]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,5],"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"small":[4,4],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"small":[4,5],"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"small":[3,5],"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"small":[6,3],"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"small":[4,4],"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"small":[6,2],"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"small":[7,3],"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"small":[6,5],"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":7},"small":[5,4],"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["robotOnButton"]},{"id":"17","name":"Level 17","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"idoor":[1,1],"laser":[1,null]},"steps":{"best":7},"small":[5,6],"rules":[],"require":["laserStoppedByIdoor","robotThroughIdoor"]},{"id":"18","name":"Level 18","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"idoor":[1,null],"relay":[1,null],"laser":[1,null]},"steps":{"best":11},"small":[4,5],"rules":[],"require":["boxHitsIdoor","allRelaysLitAtEnd"]},{"id":"19","name":"Level 19","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[1,null],"door":[1,null]},"pushable":{"laser":"only"},"steps":{},"small":[5,6],"rules":[],"require":["laserPushedThrice","laserThroughADoor","throughOpenDoor"]},{"id":"twocolour","name":"Two colours","size":[7,7],"palette":{"block":[0,null],"button":[1,null],"door":[1,null],"relay":[1,null],"laser":[1,null]},"colours":["red","blue"],"twoColour":{"door":"only"},"steps":{"best":9},"small":[4,5],"rules":[],"require":[],"hidden":true}];
+return { LEVELS };
 })();
 // ---- src/view/ink.js
-const m24 = (() => {
+const m29 = (() => {
 const { TICK_MS } = m0;
 // The palette, the tile size and the small drawing helpers every view file shares.
 
@@ -3557,8 +3877,8 @@ const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9, 5], [0
 return { AIM, T, INK, ease, lerp, frame, roundRect, LASER_MS, PUFF_MS, PUFFS };
 })();
 // ---- src/view/pieces.js
-const m25 = (() => {
-const { AIM, INK, T, frame, roundRect } = m24;
+const m30 = (() => {
+const { AIM, INK, T, frame, roundRect } = m29;
 // Pieces and the player.
 
 // The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
@@ -3728,8 +4048,8 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
 return { modeBadge, drawTurret, drawPiece, drawRobot, drawYou, drawPlayer };
 })();
 // ---- src/view/tiles.js
-const m26 = (() => {
-const { INK, T, frame, roundRect } = m24;
+const m31 = (() => {
+const { INK, T, frame, roundRect } = m29;
 const { drawnColour } = m1;
 const { gateOf, gateDirs } = m3;
 // Tiles: floor, walls and every cell type, drawn in place.
@@ -3935,9 +4255,9 @@ function drawFloor(g, w, h) {
 return { grit, drawCell, pressedAt, drawFloor };
 })();
 // ---- src/view/masses.js
-const m27 = (() => {
-const { INK, T, frame } = m24;
-const { grit } = m26;
+const m32 = (() => {
+const { INK, T, frame } = m29;
+const { grit } = m31;
 // Joined-up tiles: neighbouring walls, water, sticky puddles and death blocks are drawn as
 // one mass each. Every cell is four quarters; a quarter reads its two side neighbours and
 // the diagonal between them, so outer corners round, inner corners get a fillet and a
@@ -4054,8 +4374,8 @@ function drawMasses(g, cells, w, h, skip = () => false) {
 return { MASSES, RADIUS, joins, inMass, overlay, quarter, kindIn, drawMasses };
 })();
 // ---- src/view/lenses.js
-const m28 = (() => {
-const { INK, T } = m24;
+const m33 = (() => {
+const { INK, T } = m29;
 // The editor's lenses, drawn over the room. A heat lens recolours tiles under the pieces; dots,
 // lines and frames are marks on top. One lens per group, so nothing here paints over its own kind.
 
@@ -4132,8 +4452,8 @@ function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses } = {}
 return { drawHeat, drawLensMarks };
 })();
 // ---- src/view/wires.js
-const m29 = (() => {
-const { INK, T } = m24;
+const m34 = (() => {
+const { INK, T } = m29;
 // Drawing wires (register 347).
 
 // Wires (register 347): each colour in its own lane of the tile, joining the same colour next door.
@@ -4182,14 +4502,14 @@ function drawReach(g, level, at, nets) {
 return { drawWires, isGrey, wireColoursAt, drawTrim, drawReach };
 })();
 // ---- src/view/scene.js
-const m30 = (() => {
+const m35 = (() => {
 const { DIRS, TICK_MS } = m0;
-const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp, roundRect } = m24;
-const { drawPiece, drawPlayer } = m25;
-const { drawCell, drawFloor } = m26;
-const { drawMasses, inMass, overlay } = m27;
-const { drawHeat, drawLensMarks } = m28;
-const { drawReach, drawTrim, drawWires, isGrey, wireColoursAt } = m29;
+const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp, roundRect } = m29;
+const { drawPiece, drawPlayer } = m30;
+const { drawCell, drawFloor } = m31;
+const { drawMasses, inMass, overlay } = m32;
+const { drawHeat, drawLensMarks } = m33;
+const { drawReach, drawTrim, drawWires, isGrey, wireColoursAt } = m34;
 const { netsOf } = m1;
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
@@ -4482,11 +4802,11 @@ function drawPlay(g, s, prev, alpha, fx, now) {
 return { drawEdit, drawPlay };
 })();
 // ---- src/app/icons.js
-const m31 = (() => {
+const m36 = (() => {
 const { emptyLevel } = m2;
-const { T, INK } = m24;
-const { drawPiece, drawRobot, drawYou } = m25;
-const { drawEdit } = m30;
+const { T, INK } = m29;
+const { drawPiece, drawRobot, drawYou } = m30;
+const { drawEdit } = m35;
 // A tool's icon, drawn the way the room draws the thing: the palette and the generator's
 // ingredients share it.
 
@@ -4535,9 +4855,9 @@ function icon(tool, colour = 'red', gateColour = null, crate = false) {
 return { icon };
 })();
 // ---- src/app/debug.js
-const m32 = (() => {
-const { S } = m22;
-const { $ } = m23;
+const m37 = (() => {
+const { S } = m24;
+const { $ } = m20;
 // A report for a bug that only shows on a real device: the last taps and keys, and the
 // game's state the moment the player left a level, to copy from the menu and paste in chat.
 
@@ -4582,7 +4902,7 @@ function copyDebug() {
 return { noteLeaving, bindDebug, copyDebug };
 })();
 // ---- src/app/menuScene.js
-const m33 = (() => {
+const m38 = (() => {
 
 // The main menu's background: a small room the robot plays on a loop (the box blocks a laser, the
 // robot bumps the closed door, steps on the switch, goes through). Drawn in CSS, not the game's
@@ -4622,21 +4942,23 @@ function buildMenuScene(host) {
 return { buildMenuScene };
 })();
 // ---- src/app/campaign.js
-const m34 = (() => {
-const { LEVELS } = m20;
+const m39 = (() => {
+const { LEVELS } = m28;
 const { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, scoreText } = m18;
 const { REQUIREMENTS, trailOf } = m17;
-const { newHistory } = m21;
-const { S, starterLevel } = m22;
-const { $, portrait, now } = m23;
-const { icon } = m31;
-const { noteLeaving, copyDebug } = m32;
-const { buildMenuScene } = m33;
-const { madeLevel, backToMaker } = m19;
+const { newHistory } = m23;
+const { S, starterLevel } = m24;
+const { $, portrait, now } = m20;
+const { icon } = m36;
+const { noteLeaving, copyDebug } = m37;
+const { buildMenuScene } = m38;
+const { madeLevel } = m19;
+const { place, go, back, up } = m21;
 // The campaign: a main menu at launch, the level list, and building a level's room for the
 // robot. Run judges the room (src/campaign/rules.js) and the robot plays a shortest path:
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
+
 
 
 
@@ -4652,7 +4974,7 @@ const KEY = 'wee.campaign';
 const TOOL = { block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle', gate: 'gate', laser: 'turret', idoor: 'idoor', relay: 'sensor' };
 // Every level hands you Move, to carry anything placed (the start and goal too) elsewhere.
 const ALWAYS = ['move'];
-let A = null, boot = null, fitScene = null;
+let A = null, fitScene = null;
 
 function progress() {
   try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return migrate(p); } catch { /* storage off */ }
@@ -4794,7 +5116,6 @@ function enterLevel(id) {
   const def = levelOf(id);
   if (!def) return false;
   const p = progress(), rec = p.levels[id];
-  closeAll();
   S.camp = { def, verdict: null }; S.trail = null; $('campBack').textContent = def.made ? 'Maker' : 'Levels';
   const kept = rec && rec.room && unframe(rec.room);
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
@@ -4870,34 +5191,33 @@ function renderList() {
     }
     b.append(name, parts, small);
     if (def.id === p.last) b.classList.add('sel');
-    b.onclick = () => enterLevel(def.id);
+    b.onclick = () => go('level', def.id);
     li.append(b);
     return li;
   }));
 }
 
-function closeAll() { for (const id of ['menuBox', 'campBox']) if ($(id).open) $(id).close(); }
-
-function openList() {
+// The level list, drawn fresh, with the last level played in view.
+function showList() {
   renderList();
-  closeAll();
-  $('campBox').showModal();
   const sel = $('campList').querySelector('.sel') || $('campList').querySelector('button');
   if (sel) { sel.focus(); sel.scrollIntoView({ block: 'nearest' }); }
 }
 
-function openMenu() { closeAll(); $('menuBox').showModal(); fitScene?.(); }
-
-// actions: setMode, syncPanel, fit; sandbox(): starts the sandbox (the Rooms list).
-function buildCampaign(actions, sandbox) {
-  A = actions; boot = sandbox;
+// actions: setMode, syncPanel, fit.
+function buildCampaign(actions) {
+  A = actions;
   fitScene = buildMenuScene($('menuScene'));
-  $('menuCampaign').onclick = openList;
-  $('menuSandbox').onclick = () => { closeAll(); S.simple = true; document.body.classList.add('simple'); Promise.resolve(boot()).then(A.syncPanel); };
-  $('campMenu').onclick = openMenu;
+  place('menu', { page: 'menuBox', parent: () => null, enter: () => {}, shown: () => fitScene?.() });
+  place('levels', { page: 'campBox', parent: () => 'menu', enter: () => {}, shown: showList });
+  // A level goes back to where it was opened from; with no history, a made level's parent is the maker.
+  place('level', { parent: id => (levelOf(id) || {}).made ? 'maker' : 'levels', enter: id => (S.camp && S.camp.def.id === id) || enterLevel(id), exit: () => { noteLeaving(); leaveLevel(); } });
+  $('menuCampaign').onclick = () => go('levels');
+  $('menuSandbox').onclick = () => go('rooms');
+  $('campMenu').onclick = () => back('menu');
   // The Sandbox's way back (register 357): its Rooms page has a Menu button, as the other modes' pages do.
-  $('roomsMenu').onclick = () => { $('roomsBox').close(); openMenu(); };
-  $('campBack').onclick = () => { const made = S.camp && S.camp.def.made; noteLeaving(); leaveLevel(); (made ? backToMaker : openList)(); };
+  $('roomsMenu').onclick = () => back('menu');
+  $('campBack').onclick = up;
   $('menuDebug').onclick = copyDebug;
   $('campRun').onclick = () => { S.camp.testing = false; run(); };
   // Test: the room played by hand, the robot not involved; nothing is judged or saved.
@@ -4931,261 +5251,15 @@ function buildCampaign(actions, sandbox) {
   addEventListener('wee:mode', () => { if (S.camp) { if (S.mode !== 'play') S.camp.testing = false; syncBrief(); } });
   addEventListener('pagehide', save);
 }
-return { TOOL, progress, migrate, write, unframe, toolsFor, syncBrief, enterLevel, run, openList, openMenu, buildCampaign };
-})();
-// ---- src/app/maker.js
-const m35 = (() => {
-const { ELEMENTS } = m18;
-const { REQUIREMENTS } = m17;
-const { madeLevels, saveMade, onMakerBack } = m19;
-const { enterLevel } = m34;
-const { $ } = m23;
-// The Level maker (register 302): pick the palette (in or out, a minimum, a maximum), the goals
-// and the optional goals; Build it opens it like a campaign level, judged by the robot.
-
-
-
-
-
-const ELS = Object.keys(ELEMENTS);
-// A goal is offered when every element its short line draws is in the palette (the robot is always there).
-const needs = id => REQUIREMENTS[id].short.filter(p => p && p.el && p.el !== 'start').map(p => p.el);
-let editing = null;
-
-function palRows(def) {
-  $('makerPal').replaceChildren(...ELS.map(el => {
-    const tr = document.createElement('tr'), [min, max] = def.palette[el] || [0, null], on = el in def.palette;
-    tr.dataset.el = el;
-    tr.innerHTML = `<td><label><input type="checkbox" data-in> ${ELEMENTS[el].label}</label></td><td><input type="number" min="0" data-min></td><td><input type="number" min="0" placeholder="any" data-max></td>`;
-    tr.querySelector('[data-in]').checked = on;
-    tr.querySelector('[data-min]').value = on ? min : 0;
-    tr.querySelector('[data-max]').value = on && max != null ? max : '';
-    tr.querySelector('[data-in]').onchange = goalRows;
-    return tr;
-  }));
-}
-const palette = () => Object.fromEntries([...$('makerPal').children].filter(tr => tr.querySelector('[data-in]').checked).map(tr => {
-  const min = Math.max(0, +tr.querySelector('[data-min]').value || 0), m = tr.querySelector('[data-max]').value;
-  return [tr.dataset.el, [min, m === '' ? null : Math.max(min, +m)]];
-}));
-let picked = {};
-function goalRows() {
-  const have = new Set(Object.keys(palette()));
-  for (const li of $('makerGoals').children) picked[li.dataset.goal] = li.querySelector('select').value;
-  $('makerGoals').replaceChildren(...Object.keys(REQUIREMENTS).filter(id => needs(id).every(el => have.has(el))).map(id => {
-    const li = document.createElement('li'); li.dataset.goal = id;
-    li.innerHTML = `<select aria-label="Use"><option value="">Not used</option><option value="require">Required</option><option value="optional">Optional</option></select><span></span>`;
-    li.querySelector('span').textContent = REQUIREMENTS[id].text;
-    li.querySelector('select').value = picked[id] || '';
-    return li;
-  }));
-}
-function fill(def) {
-  editing = def.id || null; picked = {};
-  for (const id of def.require || []) picked[id] = 'require';
-  for (const id of def.optional || []) picked[id] = 'optional';
-  $('makerName').value = def.name || '';
-  $('makerTwo').checked = !!(def.colours && def.colours.length > 1);
-  $('makerBest').value = def.steps && def.steps.best != null ? def.steps.best : '';
-  $('makerW').value = def.small ? def.small[0] : ''; $('makerH').value = def.small ? def.small[1] : '';
-  $('makerDelete').hidden = !editing; $('makerSay').textContent = '';
-  palRows(def); goalRows();
-}
-const blank = () => ({ palette: { block: [0, null] }, require: [], optional: [] });
-function listMade() {
-  $('madeList').replaceChildren(...madeLevels().map(def => {
-    const li = document.createElement('li'), b = document.createElement('button');
-    b.type = 'button'; b.className = 'campRow'; b.dataset.made = def.id;
-    b.append(Object.assign(document.createElement('b'), { textContent: def.name }), Object.assign(document.createElement('small'), { textContent: `${def.require.length} goals, ${Object.keys(def.palette).length} elements` }));
-    b.onclick = () => fill(def);
-    li.append(b); return li;
-  }));
-}
-function openMaker() {
-  for (const id of ['menuBox', 'campBox']) if ($(id).open) $(id).close();
-  listMade(); if (!editing) fill(blank());
-  if (!$('makerBox').open) $('makerBox').showModal();
-}
-function build() {
-  const pal = palette(), list = madeLevels();
-  for (const li of $('makerGoals').children) picked[li.dataset.goal] = li.querySelector('select').value;
-  const shown = new Set([...$('makerGoals').children].map(li => li.dataset.goal));
-  const ids = k => Object.keys(picked).filter(id => picked[id] === k && shown.has(id));
-  if (!ids('require').length) { $('makerSay').textContent = 'Pick at least one required goal.'; return; }
-  const best = +$('makerBest').value || null, w = +$('makerW').value, h = +$('makerH').value, small = w >= 1 && h >= 1 ? [w, h] : null;
-  const id = editing || 'm' + (Math.max(0, ...list.map(l => +l.id.slice(1))) + 1);
-  const def = { id, made: true, name: $('makerName').value.trim() || `My level ${id.slice(1)}`, size: [7, 7], palette: pal, steps: best ? { best } : {}, rules: [], require: ids('require'), optional: ids('optional'), ...(small ? { small } : {}), ...($('makerTwo').checked ? { colours: ['red', 'blue'] } : {}) };
-  saveMade([...list.filter(l => l.id !== id), def]);
-  editing = id;
-  $('makerBox').close();
-  enterLevel(id);
-}
-
-function buildMaker() {
-  onMakerBack(openMaker);
-  $('menuMaker').onclick = openMaker;
-  $('makerMenu').onclick = () => { $('makerBox').close(); $('menuBox').showModal(); };
-  $('makerNew').onclick = () => fill(blank());
-  $('makerBuild').onclick = build;
-  $('makerDelete').onclick = () => { if (!editing || !confirm('Delete this level? This cannot be undone.')) return; saveMade(madeLevels().filter(l => l.id !== editing)); fill(blank()); listMade(); };
-}
-return { openMaker, buildMaker };
-})();
-// ---- src/app/store.js
-const m36 = (() => {
-
-// Where rooms are kept: on the server when the page is served by one, otherwise in this
-// browser's local storage. A room is a level file with id, name, note and updated added.
-const KEY = 'wee.rooms';
-let mode = 'device';
-
-const where = () => mode;
-
-async function detect() {
-  try {
-    const r = await fetch('api/rooms', { cache: 'no-store' });
-    if (r.ok && (r.headers.get('content-type') || '').includes('json')) { mode = 'server'; return mode; }
-  } catch { /* opened from a file, or no server */ }
-  mode = 'device';
-  return mode;
-}
-
-function readLocal() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
-function writeLocal(rooms) { localStorage.setItem(KEY, JSON.stringify(rooms)); }
-
-const newId = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-
-async function list() {
-  if (mode === 'server') {
-    const r = await fetch('api/rooms', { cache: 'no-store' });
-    if (!r.ok) throw new Error('The server did not list the rooms.');
-    return r.json();
-  }
-  return readLocal();
-}
-
-async function put(room) {
-  room = { ...room, updated: new Date().toISOString() };
-  if (mode === 'server') {
-    const r = await fetch('api/rooms/' + room.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(room) });
-    if (!r.ok) throw new Error('The server did not save the room: ' + (await r.text()));
-    return r.json();
-  }
-  const rooms = readLocal().filter(o => o.id !== room.id);
-  rooms.push(room);
-  writeLocal(rooms);
-  return room;
-}
-
-async function remove(id) {
-  if (mode === 'server') {
-    const r = await fetch('api/rooms/' + id, { method: 'DELETE' });
-    if (!r.ok) throw new Error('The server did not delete the room.');
-    return;
-  }
-  writeLocal(readLocal().filter(o => o.id !== id));
-}
-return { where, detect, newId, list, put, remove };
-})();
-// ---- src/level/room.js
-const m37 = (() => {
-const { parseLevel } = m2;
-// A room is a level plus what the person wrote about it. These split and join the two.
-
-const META = ['id', 'name', 'note', 'updated', 'par', 'solution', 'uses', 'recipe', 'puzzle'];
-
-function splitRoom(room) {
-  const meta = {}, level = { ...room };
-  for (const k of META) { meta[k] = room[k] ?? null; delete level[k]; }
-  return { meta, level: parseLevel(JSON.stringify(level)) };
-}
-
-const joinRoom = (meta, level) => ({
-  ...level, id: meta.id, name: meta.name, note: meta.note || '',
-  ...(meta.solution ? { par: meta.solution.length, solution: meta.solution, uses: meta.uses || [] } : {}),
-  ...(meta.recipe ? { recipe: meta.recipe } : {}),
-  ...(meta.puzzle ? { puzzle: true } : {}),
-});
-
-// What counts as the room's content when asking whether it has unsaved changes.
-const stampOf = level => JSON.stringify(level);
-
-function pack(rooms) { return { format: 'wee-pack', version: 1, rooms }; }
-
-// A pack file, or a single level file read as a pack of one.
-function unpack(text) {
-  const data = JSON.parse(text);
-  if (data.format === 'wee-pack' && Array.isArray(data.rooms)) return data.rooms.map(r => { splitRoom(r); return r; });
-  if (data.format === 'wee-level') { splitRoom(data); return [data]; }
-  throw new Error('Not a wee room or pack file.');
-}
-return { META, splitRoom, joinRoom, stampOf, pack, unpack };
-})();
-// ---- src/app/puzzles.js
-const m38 = (() => {
-const { S } = m22;
-const { list } = m36;
-const { splitRoom } = m37;
-const { allShortest } = m13;
-const { $ } = m23;
-// Puzzles (register 302): rooms marked in the Sandbox, played by hand as the little circle.
-// Your best is kept; the fewest moves come from the robot's own search.
-
-
-
-
-
-const KEY = 'wee-puzzles';
-const bests = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
-const keep = b => { try { localStorage.setItem(KEY, JSON.stringify(b)); } catch { /* storage off */ } };
-let A = null;
-
-function leave() { S.puzzle = null; document.body.classList.remove('puzzle'); }
-async function openPuzzles() {
-  for (const id of ['menuBox', 'campBox']) if ($(id).open) $(id).close();
-  leave();
-  const rooms = (await list().catch(() => [])).filter(r => r.puzzle), b = bests();
-  $('puzzleNone').hidden = rooms.length > 0;
-  $('puzzleList').replaceChildren(...rooms.map(r => {
-    const li = document.createElement('li'), btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'campRow'; btn.dataset.puzzle = r.id;
-    btn.append(Object.assign(document.createElement('b'), { textContent: r.name || 'Untitled' }), Object.assign(document.createElement('small'), { textContent: b[r.id] ? `Solved in ${b[r.id]}` : 'Not solved yet' }));
-    btn.onclick = () => play(r);
-    li.append(btn); return li;
-  }));
-  if (!$('puzzleBox').open) $('puzzleBox').showModal();
-}
-function play(r) {
-  const { level } = splitRoom(r), found = allShortest(level);
-  $('puzzleBox').close();
-  S.puzzle = { id: r.id, fewest: found.status === 'solved' ? found.length : null };
-  S.camp = null; S.simple = true; S.level = level;
-  document.body.classList.add('puzzle', 'simple');
-  A.setMode('play'); A.syncPanel(); A.fit();
-}
-
-function buildPuzzles(actions) {
-  A = actions;
-  $('menuPuzzles').onclick = openPuzzles;
-  $('puzzleMenu').onclick = () => { $('puzzleBox').close(); $('menuBox').showModal(); };
-  $('puzzleBack').onclick = openPuzzles;
-  addEventListener('wee:win', ev => {
-    if (!S.puzzle) return;
-    const b = bests(), n = ev.detail.moves, id = S.puzzle.id;
-    if (!b[id] || n < b[id]) { b[id] = n; keep(b); }
-    const few = S.puzzle.fewest;
-    $('winText').textContent = few == null ? `Solved in ${n} moves.` : n === few ? `Solved in ${n} moves, the fewest there are.` : `Solved in ${n} moves, and it can be done in ${few}.`;
-  });
-}
-return { bests, keep, openPuzzles, buildPuzzles };
+return { TOOL, progress, migrate, write, unframe, toolsFor, syncBrief, enterLevel, run, showList, buildCampaign };
 })();
 // ---- src/app/progressCode.js
-const m39 = (() => {
-const { progress, write, migrate, openList } = m34;
-const { list, put } = m36;
-const { bests, keep } = m38;
+const m40 = (() => {
+const { progress, write, migrate, showList } = m39;
+const { list, put } = m25;
+const { bests, keep } = m27;
 const { madeLevels, saveMade } = m19;
-const { $ } = m23;
+const { $ } = m20;
 // Progress you carry yourself (register 254): a code to copy out and paste back, for a viewer that
 // keeps no storage, and a reset after a yes. One code carries everything (question 4): the campaign,
 // Sandbox rooms, Puzzles bests and made levels. A code from before holds the campaign alone.
@@ -5223,17 +5297,17 @@ function buildProgress() {
   $('progYes').onclick = async () => {
     const p = fromCode(code.value);
     if (!p) { say.textContent = 'This code does not read as progress, so copy it again, whole.'; return; }
-    await load(p); box.close(); openList();
+    await load(p); box.close(); showList();
   };
   $('progNo').onclick = () => box.close();
   $('progReset').onclick = () => $('progResetBox').showModal();
   $('progResetNo').onclick = () => $('progResetBox').close();
-  $('progResetYes').onclick = () => { write({ ...progress(), last: null, levels: {} }); $('progResetBox').close(); openList(); };
+  $('progResetYes').onclick = () => { write({ ...progress(), last: null, levels: {} }); $('progResetBox').close(); showList(); };
 }
 return { toCode, fromCode, buildProgress };
 })();
 // ---- src/app/snow.js
-const m40 = (() => {
+const m41 = (() => {
 
 // Drift: snow behind the shell. It falls slowly, and when the player starts a slide it rushes the
 // same way for a moment, then settles. Still under reduced motion.
@@ -5276,7 +5350,7 @@ function startSnow(cv) {
 return { gust, windNow, startSnow };
 })();
 // ---- src/solve/lint.js
-const m41 = (() => {
+const m42 = (() => {
 const { DIRS } = m0;
 const { createGame, step } = m11;
 const { parseMove } = m12;
@@ -5328,7 +5402,7 @@ function brokenAt(level, moves) {
 return { lint, brokenAt };
 })();
 // ---- src/solve/design.js
-const m42 = (() => {
+const m43 = (() => {
 const { createGame } = m11;
 const { NEEDS, POWERS } = m0;
 const { search, successors, stateKey, unsearchable, MAX_STATES } = m12;
@@ -5438,9 +5512,9 @@ function* routes(level, max = MAX_STATES) {
 return { powerCheck, elementCheck, NOTES_MAX, idleElements, routes };
 })();
 // ---- src/app/well.js
-const m43 = (() => {
-const { S } = m22;
-const { $ } = m23;
+const m44 = (() => {
+const { S } = m24;
+const { $ } = m20;
 // The well: a fixed-height drawer under the room, with a tab for findings (warnings and
 // design notes) and one for lenses. It never pushes anything off the screen, it only takes
 // height from the room. All copy is draft.
@@ -5492,11 +5566,11 @@ function buildWell() {
 return { WELL, openWell, closeWell, syncWell, buildWell };
 })();
 // ---- src/app/design.js
-const m44 = (() => {
-const { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } = m42;
-const { S } = m22;
-const { $, now } = m23;
-const { syncWell } = m43;
+const m45 = (() => {
+const { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } = m43;
+const { S } = m24;
+const { $, now } = m20;
+const { syncWell } = m44;
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
 // how many shortest routes there are, and how many positions trap you. Runs a slice at a
 // time and stops when the room changes. All copy is draft.
@@ -5574,9 +5648,9 @@ function runDesign(par) {
 return { sliced, clearDesign, runDesign };
 })();
 // ---- src/app/enabled.js
-const m45 = (() => {
-const { S } = m22;
-const { $ } = m23;
+const m46 = (() => {
+const { S } = m24;
+const { $ } = m20;
 const { moveSide } = m2;
 const { stateKey } = m12;
 // A control that would do nothing right now is greyed out, never left to refuse a click.
@@ -5607,14 +5681,14 @@ function syncEnabled() {
 return { syncEnabled };
 })();
 // ---- src/app/check.js
-const m46 = (() => {
+const m47 = (() => {
 const { search, parseMove } = m12;
-const { lint, brokenAt } = m41;
-const { now } = m23;
-const { S } = m22;
-const { $ } = m23;
-const { runDesign, clearDesign } = m44;
-const { syncEnabled } = m45;
+const { lint, brokenAt } = m42;
+const { now } = m20;
+const { S } = m24;
+const { $ } = m20;
+const { runDesign, clearDesign } = m45;
+const { syncEnabled } = m46;
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
 
@@ -5738,14 +5812,14 @@ function syncLint() {
 return { checkText, runCheck, syncCheck, feedDemo, syncLint };
 })();
 // ---- src/level/templates.js
-const m47 = (() => {
+const m48 = (() => {
 
 // Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.
 const TEMPLATES = [{"name":"4-bit counter","level":{"format":"wee-level","version":1,"w":31,"h":19,"cells":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","idoor:wire","sensor:yellow","wall","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:yellow","","","","","idoor:yellow","","","","","","idoor:yellow","","","","","idoor:yellow","","","","","","","door:wire","sensor:wire","wall","","","","","","door:wire","","","","","door:green","","","","","","door:blue","","","","","door:red","","","","","","","","","","","","","","wall","sensor:wire","idoor:wire","door:yellow","door:wire","","sensor:green","door:blue","door:red","door:yellow","idoor:green","","sensor:blue","door:red","door:yellow","idoor:blue","","sensor:red","door:yellow","idoor:red","","","","","door:wire","sensor:wire","wall","","","","","","door:wire","","","","","door:green","","","","","","door:blue","","","","","wall","","","","","","","","","","","","","","","idoor:wire","","","","","idoor:wire","","","","","","idoor:red","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"start":{"x":8,"y":18},"entities":[{"kind":"turret","x":1,"y":2,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":4,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":6,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":8,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":12,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":14,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":4,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":29,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":26,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":25,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":21,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":21,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":20,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":15,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":15,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":14,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":10,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":10,"y":12,"turret":{"dirs":["up"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile","wires":[{"x":3,"y":2,"w":"teal"},{"x":3,"y":3,"w":"teal"},{"x":2,"y":3,"w":"teal"},{"x":2,"y":4,"w":"teal"},{"x":3,"y":4,"w":"violet"},{"x":3,"y":5,"w":"violet"},{"x":2,"y":5,"w":"violet"},{"x":2,"y":6,"w":"violet"},{"x":3,"y":6,"w":"teal"},{"x":3,"y":7,"w":"teal"},{"x":2,"y":7,"w":"teal"},{"x":2,"y":8,"w":"teal"},{"x":3,"y":8,"w":"violet"},{"x":3,"y":9,"w":"violet"},{"x":2,"y":9,"w":"violet"},{"x":2,"y":10,"w":"violet"},{"x":3,"y":10,"w":"teal"},{"x":3,"y":11,"w":"teal"},{"x":2,"y":11,"w":"teal"},{"x":2,"y":12,"w":"teal"},{"x":3,"y":12,"w":"violet"},{"x":3,"y":13,"w":"violet"},{"x":2,"y":13,"w":"violet"},{"x":2,"y":14,"w":"violet"},{"x":3,"y":14,"w":"teal"},{"x":3,"y":15,"w":"teal"},{"x":2,"y":15,"w":"teal"},{"x":2,"y":16,"w":"teal"},{"x":3,"y":16,"w":"charcoal"},{"x":3,"y":17,"w":"charcoal"},{"x":2,"y":17,"w":"charcoal"},{"x":1,"y":17,"w":"charcoal"},{"x":0,"y":17,"w":"charcoal"},{"x":0,"y":16,"w":"charcoal"},{"x":0,"y":15,"w":"charcoal"},{"x":0,"y":14,"w":"charcoal"},{"x":0,"y":13,"w":"charcoal"},{"x":0,"y":12,"w":"charcoal"},{"x":0,"y":11,"w":"charcoal"},{"x":0,"y":10,"w":"charcoal"},{"x":0,"y":9,"w":"charcoal"},{"x":0,"y":8,"w":"charcoal"},{"x":0,"y":7,"w":"charcoal"},{"x":0,"y":6,"w":"charcoal"},{"x":0,"y":5,"w":"charcoal"},{"x":0,"y":4,"w":"charcoal"},{"x":0,"y":3,"w":"charcoal"},{"x":0,"y":2,"w":"charcoal"},{"x":0,"y":1,"w":"charcoal"},{"x":1,"y":1,"w":"charcoal"},{"x":2,"y":1,"w":"charcoal"},{"x":2,"y":2,"w":"charcoal"},{"x":4,"y":3,"w":"teal"},{"x":5,"y":3,"w":"teal"},{"x":4,"y":4,"w":"violet"},{"x":5,"y":4,"w":"violet"},{"x":6,"y":4,"w":"violet"},{"x":6,"y":3,"w":"violet"},{"x":26,"y":9,"w":"teal"},{"x":25,"y":9,"w":"teal"},{"x":24,"y":9,"w":"teal"},{"x":23,"y":9,"w":"teal"},{"x":22,"y":9,"w":"teal"},{"x":21,"y":9,"w":"teal"},{"x":20,"y":9,"w":"teal"},{"x":19,"y":9,"w":"teal"},{"x":18,"y":9,"w":"teal"},{"x":17,"y":9,"w":"teal"},{"x":16,"y":9,"w":"teal"},{"x":16,"y":10,"w":"teal"},{"x":16,"y":11,"w":"teal"},{"x":15,"y":11,"w":"teal"},{"x":26,"y":9,"w":"violet"},{"x":25,"y":9,"w":"violet"},{"x":24,"y":9,"w":"violet"},{"x":23,"y":9,"w":"violet"},{"x":22,"y":9,"w":"violet"},{"x":21,"y":9,"w":"violet"},{"x":20,"y":9,"w":"violet"},{"x":19,"y":9,"w":"violet"},{"x":18,"y":9,"w":"violet"},{"x":17,"y":9,"w":"violet"},{"x":16,"y":9,"w":"violet"},{"x":15,"y":9,"w":"violet"},{"x":14,"y":9,"w":"violet"},{"x":13,"y":9,"w":"violet"},{"x":13,"y":10,"w":"violet"},{"x":13,"y":11,"w":"violet"},{"x":12,"y":11,"w":"violet"},{"x":11,"y":11,"w":"violet"},{"x":10,"y":11,"w":"violet"},{"x":10,"y":9,"w":"charcoal"},{"x":10,"y":8,"w":"charcoal"},{"x":10,"y":10,"w":"charcoal"},{"x":11,"y":9,"w":"charcoal"}],"name":"4-bit counter"}},{"name":"7-segment counter","level":{"format":"wee-level","version":1,"w":40,"h":30,"cells":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","idoor:wire","sensor:yellow","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:yellow","","","","","","idoor:yellow","","","","","idoor:yellow","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","door:green","","","","","","door:blue","","","","","door:red","","","","","","","","","","","","","","","","","","","","","","","","","","","","wall","sensor:green","door:blue","door:red","door:yellow","idoor:green","","sensor:blue","door:red","door:yellow","idoor:blue","","sensor:red","door:yellow","idoor:red","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","door:green","","","","","","door:blue","","","","","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","","","idoor:red","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","idoor:wire","","","","","door:wire","sensor:wire","wall","","","","","door:red","","","","","","","door:red","","","","","","","","","","","","","","idoor:green","","","","idoor:wire","","","","idoor:wire","","","","","","","","","","","door:green","","","","","","","door:blue","","","","","","","idoor:blue","","","","","","","idoor:red","","","","idoor:wire","","","","idoor:wire","","","","door:wire","sensor:wire","wall","","","","door:blue","sensor:wire","idoor:green","idoor:red","","","","idoor:green","sensor:wire","idoor:blue","idoor:red","","","","door:green","sensor:wire","door:red","","","","","door:blue","sensor:wire","door:red","door:green","","idoor:wire","","","","idoor:wire","","","","","","","","","","","wall","","","","","","","wall","","","","","","","wall","","","","","","","wall","","","","","idoor:wire","idoor:wire","idoor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","idoor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","idoor:wire","","","","","","","","","","","","","","","","","","door:blue","","","","","","","idoor:blue","","","","","","","idoor:blue","","","","idoor:wire","","","","idoor:wire","","","","","","","","","","","idoor:red","","","","","","","idoor:red","","","","","","","door:green","","","","","","","door:green","","","","","idoor:wire","idoor:wire","idoor:wire","","","","","","","","","","","idoor:blue","sensor:wire","idoor:green","","","","idoor:green","idoor:red","sensor:wire","","","","","idoor:red","idoor:blue","sensor:wire","door:green","idoor:red","","","idoor:green","door:blue","sensor:wire","door:green","idoor:red","","","","","","","","","","","","","","","","","wall","","","","","","","wall","","","","","","","wall","","","","","","","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"start":{"x":38,"y":28},"entities":[{"kind":"turret","x":1,"y":2,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":4,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":6,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":8,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":12,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":14,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":4,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":24,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":21,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":20,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":16,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":16,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":15,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":10,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":10,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":7,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":9,"y":13,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":12,"y":16,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":14,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":16,"y":13,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":19,"y":16,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":21,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":23,"y":14,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":25,"y":16,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":28,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":30,"y":13,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":33,"y":16,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":7,"y":22,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":9,"y":20,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":11,"y":22,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":13,"y":22,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":16,"y":19,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":20,"y":22,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":23,"y":19,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":26,"y":22,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":27,"y":22,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":30,"y":19,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":33,"y":22,"turret":{"dirs":["left"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile","wires":[{"x":3,"y":2,"w":"teal"},{"x":3,"y":3,"w":"teal"},{"x":2,"y":3,"w":"teal"},{"x":2,"y":4,"w":"teal"},{"x":3,"y":4,"w":"violet"},{"x":3,"y":5,"w":"violet"},{"x":2,"y":5,"w":"violet"},{"x":2,"y":6,"w":"violet"},{"x":3,"y":6,"w":"teal"},{"x":3,"y":7,"w":"teal"},{"x":2,"y":7,"w":"teal"},{"x":2,"y":8,"w":"teal"},{"x":3,"y":8,"w":"violet"},{"x":3,"y":9,"w":"violet"},{"x":2,"y":9,"w":"violet"},{"x":2,"y":10,"w":"violet"},{"x":3,"y":10,"w":"teal"},{"x":3,"y":11,"w":"teal"},{"x":2,"y":11,"w":"teal"},{"x":2,"y":12,"w":"teal"},{"x":3,"y":12,"w":"violet"},{"x":3,"y":13,"w":"violet"},{"x":2,"y":13,"w":"violet"},{"x":2,"y":14,"w":"violet"},{"x":3,"y":14,"w":"teal"},{"x":3,"y":15,"w":"teal"},{"x":2,"y":15,"w":"teal"},{"x":2,"y":16,"w":"teal"},{"x":3,"y":16,"w":"charcoal"},{"x":3,"y":17,"w":"charcoal"},{"x":2,"y":17,"w":"charcoal"},{"x":1,"y":17,"w":"charcoal"},{"x":0,"y":17,"w":"charcoal"},{"x":0,"y":16,"w":"charcoal"},{"x":0,"y":15,"w":"charcoal"},{"x":0,"y":14,"w":"charcoal"},{"x":0,"y":13,"w":"charcoal"},{"x":0,"y":12,"w":"charcoal"},{"x":0,"y":11,"w":"charcoal"},{"x":0,"y":10,"w":"charcoal"},{"x":0,"y":9,"w":"charcoal"},{"x":0,"y":8,"w":"charcoal"},{"x":0,"y":7,"w":"charcoal"},{"x":0,"y":6,"w":"charcoal"},{"x":0,"y":5,"w":"charcoal"},{"x":0,"y":4,"w":"charcoal"},{"x":0,"y":3,"w":"charcoal"},{"x":0,"y":2,"w":"charcoal"},{"x":0,"y":1,"w":"charcoal"},{"x":1,"y":1,"w":"charcoal"},{"x":2,"y":1,"w":"charcoal"},{"x":2,"y":2,"w":"charcoal"},{"x":4,"y":3,"w":"teal"},{"x":5,"y":3,"w":"teal"},{"x":4,"y":4,"w":"violet"},{"x":5,"y":4,"w":"violet"},{"x":6,"y":4,"w":"violet"},{"x":6,"y":3,"w":"violet"},{"x":21,"y":9,"w":"teal"},{"x":20,"y":9,"w":"teal"},{"x":19,"y":9,"w":"teal"},{"x":18,"y":9,"w":"teal"},{"x":17,"y":9,"w":"teal"},{"x":16,"y":9,"w":"teal"},{"x":15,"y":9,"w":"teal"},{"x":14,"y":9,"w":"teal"},{"x":13,"y":9,"w":"teal"},{"x":12,"y":9,"w":"teal"},{"x":11,"y":9,"w":"teal"},{"x":11,"y":10,"w":"teal"},{"x":11,"y":11,"w":"teal"},{"x":10,"y":11,"w":"teal"},{"x":38,"y":18,"w":"teal"},{"x":38,"y":19,"w":"teal"},{"x":38,"y":20,"w":"teal"},{"x":23,"y":16,"w":"teal"},{"x":23,"y":17,"w":"teal"},{"x":23,"y":18,"w":"teal"},{"x":23,"y":19,"w":"teal"},{"x":23,"y":20,"w":"teal"},{"x":23,"y":21,"w":"teal"},{"x":24,"y":21,"w":"teal"},{"x":25,"y":21,"w":"teal"},{"x":26,"y":21,"w":"teal"},{"x":27,"y":21,"w":"teal"},{"x":28,"y":21,"w":"teal"},{"x":29,"y":21,"w":"teal"},{"x":30,"y":21,"w":"teal"},{"x":31,"y":21,"w":"teal"},{"x":31,"y":22,"w":"teal"},{"x":32,"y":22,"w":"teal"},{"x":33,"y":22,"w":"teal"},{"x":34,"y":22,"w":"teal"},{"x":35,"y":22,"w":"teal"},{"x":36,"y":22,"w":"teal"},{"x":37,"y":22,"w":"teal"},{"x":38,"y":22,"w":"teal"},{"x":38,"y":21,"w":"teal"},{"x":34,"y":14,"w":"violet"},{"x":34,"y":15,"w":"violet"},{"x":34,"y":16,"w":"violet"},{"x":23,"y":22,"w":"violet"},{"x":23,"y":21,"w":"violet"},{"x":23,"y":20,"w":"violet"},{"x":23,"y":19,"w":"violet"},{"x":23,"y":18,"w":"violet"},{"x":23,"y":17,"w":"violet"},{"x":24,"y":17,"w":"violet"},{"x":25,"y":17,"w":"violet"},{"x":26,"y":17,"w":"violet"},{"x":27,"y":17,"w":"violet"},{"x":28,"y":17,"w":"violet"},{"x":29,"y":17,"w":"violet"},{"x":30,"y":17,"w":"violet"},{"x":31,"y":17,"w":"violet"},{"x":31,"y":16,"w":"violet"},{"x":32,"y":16,"w":"violet"},{"x":33,"y":16,"w":"violet"},{"x":38,"y":14,"w":"teal"},{"x":38,"y":15,"w":"teal"},{"x":38,"y":16,"w":"teal"},{"x":16,"y":16,"w":"teal"},{"x":16,"y":15,"w":"teal"},{"x":16,"y":14,"w":"teal"},{"x":16,"y":13,"w":"teal"},{"x":16,"y":12,"w":"teal"},{"x":17,"y":12,"w":"teal"},{"x":18,"y":12,"w":"teal"},{"x":19,"y":12,"w":"teal"},{"x":20,"y":12,"w":"teal"},{"x":21,"y":12,"w":"teal"},{"x":22,"y":12,"w":"teal"},{"x":23,"y":12,"w":"teal"},{"x":24,"y":12,"w":"teal"},{"x":25,"y":12,"w":"teal"},{"x":26,"y":12,"w":"teal"},{"x":27,"y":12,"w":"teal"},{"x":28,"y":12,"w":"teal"},{"x":29,"y":12,"w":"teal"},{"x":30,"y":12,"w":"teal"},{"x":31,"y":12,"w":"teal"},{"x":32,"y":12,"w":"teal"},{"x":33,"y":12,"w":"teal"},{"x":34,"y":12,"w":"teal"},{"x":35,"y":12,"w":"teal"},{"x":36,"y":12,"w":"teal"},{"x":37,"y":12,"w":"teal"},{"x":38,"y":12,"w":"teal"},{"x":38,"y":13,"w":"teal"},{"x":34,"y":18,"w":"teal"},{"x":34,"y":19,"w":"teal"},{"x":34,"y":20,"w":"teal"},{"x":16,"y":22,"w":"teal"},{"x":16,"y":21,"w":"teal"},{"x":16,"y":20,"w":"teal"},{"x":16,"y":19,"w":"teal"},{"x":16,"y":18,"w":"teal"},{"x":17,"y":18,"w":"teal"},{"x":17,"y":17,"w":"teal"},{"x":18,"y":17,"w":"teal"},{"x":18,"y":16,"w":"teal"},{"x":18,"y":15,"w":"teal"},{"x":18,"y":14,"w":"teal"},{"x":19,"y":14,"w":"teal"},{"x":20,"y":14,"w":"teal"},{"x":21,"y":14,"w":"teal"},{"x":22,"y":14,"w":"teal"},{"x":23,"y":14,"w":"teal"},{"x":24,"y":14,"w":"teal"},{"x":24,"y":15,"w":"teal"},{"x":25,"y":15,"w":"teal"},{"x":25,"y":16,"w":"teal"},{"x":25,"y":17,"w":"teal"},{"x":25,"y":18,"w":"teal"},{"x":26,"y":18,"w":"teal"},{"x":27,"y":18,"w":"teal"},{"x":28,"y":18,"w":"teal"},{"x":29,"y":18,"w":"teal"},{"x":30,"y":18,"w":"teal"},{"x":31,"y":18,"w":"teal"},{"x":32,"y":18,"w":"teal"},{"x":33,"y":18,"w":"teal"},{"x":35,"y":13,"w":"violet"},{"x":36,"y":13,"w":"violet"},{"x":37,"y":13,"w":"violet"},{"x":9,"y":16,"w":"violet"},{"x":9,"y":15,"w":"violet"},{"x":9,"y":14,"w":"violet"},{"x":9,"y":13,"w":"violet"},{"x":9,"y":12,"w":"violet"},{"x":10,"y":12,"w":"violet"},{"x":11,"y":12,"w":"violet"},{"x":12,"y":12,"w":"violet"},{"x":13,"y":12,"w":"violet"},{"x":14,"y":12,"w":"violet"},{"x":15,"y":12,"w":"violet"},{"x":16,"y":12,"w":"violet"},{"x":17,"y":12,"w":"violet"},{"x":18,"y":12,"w":"violet"},{"x":19,"y":12,"w":"violet"},{"x":20,"y":12,"w":"violet"},{"x":21,"y":12,"w":"violet"},{"x":22,"y":12,"w":"violet"},{"x":23,"y":12,"w":"violet"},{"x":24,"y":12,"w":"violet"},{"x":25,"y":12,"w":"violet"},{"x":26,"y":12,"w":"violet"},{"x":27,"y":12,"w":"violet"},{"x":28,"y":12,"w":"violet"},{"x":29,"y":12,"w":"violet"},{"x":30,"y":12,"w":"violet"},{"x":31,"y":12,"w":"violet"},{"x":32,"y":12,"w":"violet"},{"x":33,"y":12,"w":"violet"},{"x":34,"y":12,"w":"violet"},{"x":35,"y":12,"w":"violet"},{"x":35,"y":21,"w":"charcoal"},{"x":36,"y":21,"w":"charcoal"},{"x":37,"y":21,"w":"charcoal"},{"x":30,"y":16,"w":"charcoal"},{"x":30,"y":17,"w":"charcoal"},{"x":30,"y":18,"w":"charcoal"},{"x":30,"y":19,"w":"charcoal"},{"x":30,"y":20,"w":"charcoal"},{"x":30,"y":21,"w":"charcoal"},{"x":31,"y":21,"w":"charcoal"},{"x":32,"y":21,"w":"charcoal"},{"x":33,"y":21,"w":"charcoal"},{"x":34,"y":21,"w":"charcoal"},{"x":9,"y":22,"w":"charcoal"},{"x":9,"y":21,"w":"charcoal"},{"x":10,"y":21,"w":"charcoal"},{"x":11,"y":21,"w":"charcoal"},{"x":12,"y":21,"w":"charcoal"},{"x":13,"y":21,"w":"charcoal"},{"x":14,"y":21,"w":"charcoal"},{"x":15,"y":21,"w":"charcoal"},{"x":16,"y":21,"w":"charcoal"},{"x":17,"y":21,"w":"charcoal"},{"x":18,"y":21,"w":"charcoal"},{"x":19,"y":21,"w":"charcoal"},{"x":20,"y":21,"w":"charcoal"},{"x":21,"y":21,"w":"charcoal"},{"x":22,"y":21,"w":"charcoal"},{"x":23,"y":21,"w":"charcoal"},{"x":24,"y":21,"w":"charcoal"},{"x":25,"y":21,"w":"charcoal"},{"x":26,"y":21,"w":"charcoal"},{"x":27,"y":21,"w":"charcoal"},{"x":28,"y":21,"w":"charcoal"},{"x":29,"y":21,"w":"charcoal"},{"x":35,"y":17,"w":"violet"},{"x":36,"y":17,"w":"violet"},{"x":37,"y":17,"w":"violet"},{"x":30,"y":22,"w":"violet"},{"x":31,"y":22,"w":"violet"},{"x":32,"y":22,"w":"violet"},{"x":33,"y":22,"w":"violet"},{"x":34,"y":22,"w":"violet"},{"x":35,"y":22,"w":"violet"},{"x":36,"y":22,"w":"violet"},{"x":37,"y":22,"w":"violet"},{"x":38,"y":22,"w":"violet"},{"x":38,"y":21,"w":"violet"},{"x":39,"y":21,"w":"violet"},{"x":39,"y":20,"w":"violet"},{"x":39,"y":19,"w":"violet"},{"x":39,"y":18,"w":"violet"},{"x":39,"y":17,"w":"violet"},{"x":38,"y":17,"w":"violet"}],"name":"7-segment counter"}},{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Hex counter","level":{"format":"wee-level","version":1,"w":60,"h":46,"cells":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","idoor:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","","","","","","","idoor:wire","","","","","","","","","","idoor:wire","","","","","","","","","","idoor:wire","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","","","","","","","","","door:wire","","","","","","","","","","door:wire","","","","","","","","","","door:wire","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","idoor:wire","","sensor:wire","wall","","","door:wire","","door:wire","","idoor:wire","","sensor:wire","wall","","","door:wire","","door:wire","","idoor:wire","","sensor:wire","wall","","","door:wire","","door:wire","","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","","","","","","","","","door:wire","","","","","","","","","","door:wire","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","","","","","","","idoor:wire","","","","","","","","","","idoor:wire","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","","door:wire","door:wire","idoor:wire","idoor:wire","","","","door:wire","door:wire","idoor:wire","","","door:wire","idoor:wire","idoor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","idoor:wire","","idoor:wire","door:wire","","","door:wire","door:wire","idoor:wire","idoor:wire","idoor:wire","","door:wire","","door:wire","door:wire","idoor:wire","idoor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","door:wire","","door:wire","door:wire","","idoor:wire","idoor:wire","","door:wire","idoor:wire","door:wire","door:wire","idoor:wire","door:wire","","idoor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","idoor:wire","door:wire","idoor:wire","door:wire","idoor:wire","","door:wire","idoor:wire","","","door:wire","","","idoor:wire","door:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","door:wire","door:wire","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","","","idoor:wire","idoor:wire","","","idoor:wire","","","idoor:wire","idoor:wire","idoor:wire","","","idoor:wire","","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","","","idoor:wire","idoor:wire","idoor:wire","","","","idoor:wire","","","","","idoor:wire","idoor:wire","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","door:wire","door:wire","","","","","","","","","","","","","","","","","","","","idoor:wire","","","idoor:wire","","","","idoor:wire","idoor:wire","idoor:wire","","idoor:wire","","","","","idoor:wire","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","idoor:wire","","idoor:wire","idoor:wire","","","idoor:wire","idoor:wire","idoor:wire","","idoor:wire","idoor:wire","","","","idoor:wire","idoor:wire","","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","door:wire","door:wire","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","","","","idoor:wire","","idoor:wire","","","","","idoor:wire","","idoor:wire","","idoor:wire","","","","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","idoor:wire","idoor:wire","","idoor:wire","","","idoor:wire","idoor:wire","idoor:wire","","","","idoor:wire","","idoor:wire","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","idoor:wire","","idoor:wire","","","idoor:wire","","idoor:wire","idoor:wire","","","","idoor:wire","idoor:wire","","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"start":{"x":58,"y":44},"entities":[{"kind":"turret","x":1,"y":2,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":4,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":6,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":8,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":12,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":14,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":4,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":13,"y":9,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":18,"y":4,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":21,"y":9,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":28,"y":4,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":28,"y":14,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":31,"y":9,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":38,"y":4,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":38,"y":14,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":41,"y":9,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":48,"y":4,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":48,"y":14,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":12,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":13,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":14,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":15,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":16,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":17,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":18,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":19,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":20,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":21,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":22,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":23,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":24,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":25,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":26,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":27,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":28,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":29,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":30,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":10,"y":31,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":33,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":35,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":37,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":39,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":41,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":43,"turret":{"dirs":["right"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile","wires":[{"x":3,"y":2,"w":"teal"},{"x":3,"y":3,"w":"teal"},{"x":2,"y":3,"w":"teal"},{"x":2,"y":4,"w":"teal"},{"x":3,"y":4,"w":"violet"},{"x":3,"y":5,"w":"violet"},{"x":2,"y":5,"w":"violet"},{"x":2,"y":6,"w":"violet"},{"x":3,"y":6,"w":"teal"},{"x":3,"y":7,"w":"teal"},{"x":2,"y":7,"w":"teal"},{"x":2,"y":8,"w":"teal"},{"x":3,"y":8,"w":"violet"},{"x":3,"y":9,"w":"violet"},{"x":2,"y":9,"w":"violet"},{"x":2,"y":10,"w":"violet"},{"x":3,"y":10,"w":"teal"},{"x":3,"y":11,"w":"teal"},{"x":2,"y":11,"w":"teal"},{"x":2,"y":12,"w":"teal"},{"x":3,"y":12,"w":"violet"},{"x":3,"y":13,"w":"violet"},{"x":2,"y":13,"w":"violet"},{"x":2,"y":14,"w":"violet"},{"x":3,"y":14,"w":"teal"},{"x":3,"y":15,"w":"teal"},{"x":2,"y":15,"w":"teal"},{"x":2,"y":16,"w":"teal"},{"x":3,"y":16,"w":"charcoal"},{"x":3,"y":17,"w":"charcoal"},{"x":2,"y":17,"w":"charcoal"},{"x":1,"y":17,"w":"charcoal"},{"x":0,"y":17,"w":"charcoal"},{"x":0,"y":16,"w":"charcoal"},{"x":0,"y":15,"w":"charcoal"},{"x":0,"y":14,"w":"charcoal"},{"x":0,"y":13,"w":"charcoal"},{"x":0,"y":12,"w":"charcoal"},{"x":0,"y":11,"w":"charcoal"},{"x":0,"y":10,"w":"charcoal"},{"x":0,"y":9,"w":"charcoal"},{"x":0,"y":8,"w":"charcoal"},{"x":0,"y":7,"w":"charcoal"},{"x":0,"y":6,"w":"charcoal"},{"x":0,"y":5,"w":"charcoal"},{"x":0,"y":4,"w":"charcoal"},{"x":0,"y":3,"w":"charcoal"},{"x":0,"y":2,"w":"charcoal"},{"x":0,"y":1,"w":"charcoal"},{"x":1,"y":1,"w":"charcoal"},{"x":2,"y":1,"w":"charcoal"},{"x":2,"y":2,"w":"charcoal"},{"x":4,"y":3,"w":"teal"},{"x":5,"y":3,"w":"teal"},{"x":4,"y":4,"w":"violet"},{"x":5,"y":4,"w":"violet"},{"x":6,"y":4,"w":"violet"},{"x":6,"y":3,"w":"violet"},{"x":12,"y":28,"w":"violet"},{"x":12,"y":29,"w":"violet"},{"x":12,"y":30,"w":"violet"},{"x":12,"y":31,"w":"violet"},{"x":12,"y":32,"w":"violet"},{"x":12,"y":33,"w":"violet"},{"x":12,"y":34,"w":"violet"},{"x":12,"y":35,"w":"violet"},{"x":12,"y":36,"w":"violet"},{"x":12,"y":37,"w":"violet"},{"x":12,"y":38,"w":"violet"},{"x":12,"y":39,"w":"violet"},{"x":13,"y":28,"w":"charcoal"},{"x":13,"y":29,"w":"charcoal"},{"x":13,"y":30,"w":"charcoal"},{"x":13,"y":31,"w":"charcoal"},{"x":13,"y":32,"w":"charcoal"},{"x":13,"y":33,"w":"charcoal"},{"x":13,"y":34,"w":"charcoal"},{"x":13,"y":35,"w":"charcoal"},{"x":13,"y":36,"w":"charcoal"},{"x":13,"y":37,"w":"charcoal"},{"x":13,"y":38,"w":"charcoal"},{"x":13,"y":39,"w":"charcoal"},{"x":13,"y":40,"w":"charcoal"},{"x":13,"y":41,"w":"charcoal"},{"x":13,"y":42,"w":"charcoal"},{"x":13,"y":43,"w":"charcoal"},{"x":14,"y":28,"w":"violet"},{"x":14,"y":29,"w":"violet"},{"x":14,"y":30,"w":"violet"},{"x":14,"y":31,"w":"violet"},{"x":14,"y":32,"w":"violet"},{"x":14,"y":33,"w":"violet"},{"x":14,"y":34,"w":"violet"},{"x":14,"y":35,"w":"violet"},{"x":14,"y":36,"w":"violet"},{"x":14,"y":37,"w":"violet"},{"x":14,"y":38,"w":"violet"},{"x":14,"y":39,"w":"violet"},{"x":14,"y":40,"w":"violet"},{"x":14,"y":41,"w":"violet"},{"x":15,"y":28,"w":"charcoal"},{"x":15,"y":29,"w":"charcoal"},{"x":15,"y":30,"w":"charcoal"},{"x":15,"y":31,"w":"charcoal"},{"x":15,"y":32,"w":"charcoal"},{"x":15,"y":33,"w":"charcoal"},{"x":15,"y":34,"w":"charcoal"},{"x":15,"y":35,"w":"charcoal"},{"x":15,"y":36,"w":"charcoal"},{"x":15,"y":37,"w":"charcoal"},{"x":15,"y":38,"w":"charcoal"},{"x":15,"y":39,"w":"charcoal"},{"x":15,"y":40,"w":"charcoal"},{"x":15,"y":41,"w":"charcoal"},{"x":15,"y":42,"w":"charcoal"},{"x":15,"y":43,"w":"charcoal"},{"x":16,"y":28,"w":"violet"},{"x":16,"y":29,"w":"violet"},{"x":16,"y":30,"w":"violet"},{"x":16,"y":31,"w":"violet"},{"x":16,"y":32,"w":"violet"},{"x":16,"y":33,"w":"violet"},{"x":16,"y":34,"w":"violet"},{"x":16,"y":35,"w":"violet"},{"x":16,"y":36,"w":"violet"},{"x":16,"y":37,"w":"violet"},{"x":16,"y":38,"w":"violet"},{"x":16,"y":39,"w":"violet"},{"x":16,"y":40,"w":"violet"},{"x":16,"y":41,"w":"violet"},{"x":17,"y":28,"w":"charcoal"},{"x":17,"y":29,"w":"charcoal"},{"x":17,"y":30,"w":"charcoal"},{"x":17,"y":31,"w":"charcoal"},{"x":17,"y":32,"w":"charcoal"},{"x":17,"y":33,"w":"charcoal"},{"x":17,"y":34,"w":"charcoal"},{"x":17,"y":35,"w":"charcoal"},{"x":17,"y":36,"w":"charcoal"},{"x":17,"y":37,"w":"charcoal"},{"x":17,"y":38,"w":"charcoal"},{"x":17,"y":39,"w":"charcoal"},{"x":17,"y":40,"w":"charcoal"},{"x":17,"y":41,"w":"charcoal"},{"x":17,"y":42,"w":"charcoal"},{"x":17,"y":43,"w":"charcoal"},{"x":18,"y":28,"w":"violet"},{"x":18,"y":29,"w":"violet"},{"x":18,"y":30,"w":"violet"},{"x":18,"y":31,"w":"violet"},{"x":18,"y":32,"w":"violet"},{"x":18,"y":33,"w":"violet"},{"x":18,"y":34,"w":"violet"},{"x":18,"y":35,"w":"violet"},{"x":18,"y":36,"w":"violet"},{"x":18,"y":37,"w":"violet"},{"x":18,"y":38,"w":"violet"},{"x":18,"y":39,"w":"violet"},{"x":18,"y":40,"w":"violet"},{"x":18,"y":41,"w":"violet"},{"x":19,"y":28,"w":"charcoal"},{"x":19,"y":29,"w":"charcoal"},{"x":19,"y":30,"w":"charcoal"},{"x":19,"y":31,"w":"charcoal"},{"x":19,"y":32,"w":"charcoal"},{"x":19,"y":33,"w":"charcoal"},{"x":19,"y":34,"w":"charcoal"},{"x":19,"y":35,"w":"charcoal"},{"x":19,"y":36,"w":"charcoal"},{"x":19,"y":37,"w":"charcoal"},{"x":19,"y":38,"w":"charcoal"},{"x":19,"y":39,"w":"charcoal"},{"x":20,"y":28,"w":"violet"},{"x":20,"y":29,"w":"violet"},{"x":20,"y":30,"w":"violet"},{"x":20,"y":31,"w":"violet"},{"x":20,"y":32,"w":"violet"},{"x":20,"y":33,"w":"violet"},{"x":20,"y":34,"w":"violet"},{"x":20,"y":35,"w":"violet"},{"x":20,"y":36,"w":"violet"},{"x":20,"y":37,"w":"violet"},{"x":20,"y":38,"w":"violet"},{"x":20,"y":39,"w":"violet"},{"x":20,"y":40,"w":"violet"},{"x":20,"y":41,"w":"violet"},{"x":20,"y":42,"w":"violet"},{"x":20,"y":43,"w":"violet"},{"x":21,"y":28,"w":"charcoal"},{"x":21,"y":29,"w":"charcoal"},{"x":21,"y":30,"w":"charcoal"},{"x":21,"y":31,"w":"charcoal"},{"x":21,"y":32,"w":"charcoal"},{"x":21,"y":33,"w":"charcoal"},{"x":21,"y":34,"w":"charcoal"},{"x":21,"y":35,"w":"charcoal"},{"x":21,"y":36,"w":"charcoal"},{"x":21,"y":37,"w":"charcoal"},{"x":21,"y":38,"w":"charcoal"},{"x":21,"y":39,"w":"charcoal"},{"x":21,"y":40,"w":"charcoal"},{"x":21,"y":41,"w":"charcoal"},{"x":22,"y":28,"w":"violet"},{"x":22,"y":29,"w":"violet"},{"x":22,"y":30,"w":"violet"},{"x":22,"y":31,"w":"violet"},{"x":22,"y":32,"w":"violet"},{"x":22,"y":33,"w":"violet"},{"x":22,"y":34,"w":"violet"},{"x":22,"y":35,"w":"violet"},{"x":22,"y":36,"w":"violet"},{"x":22,"y":37,"w":"violet"},{"x":22,"y":38,"w":"violet"},{"x":22,"y":39,"w":"violet"},{"x":22,"y":40,"w":"violet"},{"x":22,"y":41,"w":"violet"},{"x":22,"y":42,"w":"violet"},{"x":22,"y":43,"w":"violet"},{"x":23,"y":28,"w":"charcoal"},{"x":23,"y":29,"w":"charcoal"},{"x":23,"y":30,"w":"charcoal"},{"x":23,"y":31,"w":"charcoal"},{"x":23,"y":32,"w":"charcoal"},{"x":23,"y":33,"w":"charcoal"},{"x":23,"y":34,"w":"charcoal"},{"x":23,"y":35,"w":"charcoal"},{"x":23,"y":36,"w":"charcoal"},{"x":23,"y":37,"w":"charcoal"},{"x":23,"y":38,"w":"charcoal"},{"x":23,"y":39,"w":"charcoal"},{"x":23,"y":40,"w":"charcoal"},{"x":23,"y":41,"w":"charcoal"},{"x":23,"y":42,"w":"charcoal"},{"x":23,"y":43,"w":"charcoal"},{"x":24,"y":28,"w":"violet"},{"x":24,"y":29,"w":"violet"},{"x":24,"y":30,"w":"violet"},{"x":24,"y":31,"w":"violet"},{"x":24,"y":32,"w":"violet"},{"x":24,"y":33,"w":"violet"},{"x":24,"y":34,"w":"violet"},{"x":24,"y":35,"w":"violet"},{"x":24,"y":36,"w":"violet"},{"x":24,"y":37,"w":"violet"},{"x":24,"y":38,"w":"violet"},{"x":24,"y":39,"w":"violet"},{"x":25,"y":28,"w":"charcoal"},{"x":25,"y":29,"w":"charcoal"},{"x":25,"y":30,"w":"charcoal"},{"x":25,"y":31,"w":"charcoal"},{"x":26,"y":28,"w":"violet"},{"x":26,"y":29,"w":"violet"},{"x":26,"y":30,"w":"violet"},{"x":26,"y":31,"w":"violet"},{"x":26,"y":32,"w":"violet"},{"x":26,"y":33,"w":"violet"},{"x":26,"y":34,"w":"violet"},{"x":26,"y":35,"w":"violet"},{"x":26,"y":36,"w":"violet"},{"x":26,"y":37,"w":"violet"},{"x":26,"y":38,"w":"violet"},{"x":26,"y":39,"w":"violet"},{"x":27,"y":28,"w":"charcoal"},{"x":27,"y":29,"w":"charcoal"},{"x":27,"y":30,"w":"charcoal"},{"x":27,"y":31,"w":"charcoal"},{"x":27,"y":32,"w":"charcoal"},{"x":27,"y":33,"w":"charcoal"},{"x":27,"y":34,"w":"charcoal"},{"x":27,"y":35,"w":"charcoal"},{"x":27,"y":36,"w":"charcoal"},{"x":27,"y":37,"w":"charcoal"},{"x":27,"y":38,"w":"charcoal"},{"x":27,"y":39,"w":"charcoal"},{"x":27,"y":40,"w":"charcoal"},{"x":27,"y":41,"w":"charcoal"},{"x":27,"y":42,"w":"charcoal"},{"x":27,"y":43,"w":"charcoal"},{"x":28,"y":28,"w":"violet"},{"x":28,"y":29,"w":"violet"},{"x":28,"y":30,"w":"violet"},{"x":28,"y":31,"w":"violet"},{"x":28,"y":32,"w":"violet"},{"x":28,"y":33,"w":"violet"},{"x":28,"y":34,"w":"violet"},{"x":28,"y":35,"w":"violet"},{"x":28,"y":36,"w":"violet"},{"x":28,"y":37,"w":"violet"},{"x":28,"y":38,"w":"violet"},{"x":28,"y":39,"w":"violet"},{"x":28,"y":40,"w":"violet"},{"x":28,"y":41,"w":"violet"},{"x":28,"y":42,"w":"violet"},{"x":28,"y":43,"w":"violet"},{"x":29,"y":28,"w":"charcoal"},{"x":29,"y":29,"w":"charcoal"},{"x":29,"y":30,"w":"charcoal"},{"x":29,"y":31,"w":"charcoal"},{"x":29,"y":32,"w":"charcoal"},{"x":29,"y":33,"w":"charcoal"},{"x":29,"y":34,"w":"charcoal"},{"x":29,"y":35,"w":"charcoal"},{"x":29,"y":36,"w":"charcoal"},{"x":29,"y":37,"w":"charcoal"},{"x":29,"y":38,"w":"charcoal"},{"x":29,"y":39,"w":"charcoal"},{"x":29,"y":40,"w":"charcoal"},{"x":29,"y":41,"w":"charcoal"},{"x":30,"y":28,"w":"violet"},{"x":30,"y":29,"w":"violet"},{"x":30,"y":30,"w":"violet"},{"x":30,"y":31,"w":"violet"},{"x":30,"y":32,"w":"violet"},{"x":30,"y":33,"w":"violet"},{"x":30,"y":34,"w":"violet"},{"x":30,"y":35,"w":"violet"},{"x":30,"y":36,"w":"violet"},{"x":30,"y":37,"w":"violet"},{"x":30,"y":38,"w":"violet"},{"x":30,"y":39,"w":"violet"},{"x":30,"y":40,"w":"violet"},{"x":30,"y":41,"w":"violet"},{"x":30,"y":42,"w":"violet"},{"x":30,"y":43,"w":"violet"},{"x":32,"y":37,"w":"charcoal"},{"x":51,"y":34,"w":"charcoal"},{"x":50,"y":34,"w":"charcoal"},{"x":49,"y":34,"w":"charcoal"},{"x":48,"y":34,"w":"charcoal"},{"x":47,"y":34,"w":"charcoal"},{"x":47,"y":35,"w":"charcoal"},{"x":47,"y":36,"w":"charcoal"},{"x":47,"y":37,"w":"charcoal"},{"x":46,"y":37,"w":"charcoal"},{"x":45,"y":37,"w":"charcoal"},{"x":44,"y":37,"w":"charcoal"},{"x":43,"y":37,"w":"charcoal"},{"x":42,"y":37,"w":"charcoal"},{"x":41,"y":37,"w":"charcoal"},{"x":40,"y":37,"w":"charcoal"},{"x":39,"y":37,"w":"charcoal"},{"x":38,"y":37,"w":"charcoal"},{"x":37,"y":37,"w":"charcoal"},{"x":36,"y":37,"w":"charcoal"},{"x":35,"y":37,"w":"charcoal"},{"x":34,"y":37,"w":"charcoal"},{"x":33,"y":37,"w":"charcoal"},{"x":52,"y":34,"w":"charcoal"},{"x":53,"y":34,"w":"charcoal"},{"x":32,"y":33,"w":"teal"},{"x":50,"y":31,"w":"teal"},{"x":49,"y":31,"w":"teal"},{"x":48,"y":31,"w":"teal"},{"x":47,"y":31,"w":"teal"},{"x":46,"y":31,"w":"teal"},{"x":46,"y":32,"w":"teal"},{"x":45,"y":32,"w":"teal"},{"x":45,"y":33,"w":"teal"},{"x":44,"y":33,"w":"teal"},{"x":43,"y":33,"w":"teal"},{"x":42,"y":33,"w":"teal"},{"x":41,"y":33,"w":"teal"},{"x":40,"y":33,"w":"teal"},{"x":39,"y":33,"w":"teal"},{"x":38,"y":33,"w":"teal"},{"x":37,"y":33,"w":"teal"},{"x":36,"y":33,"w":"teal"},{"x":35,"y":33,"w":"teal"},{"x":34,"y":33,"w":"teal"},{"x":33,"y":33,"w":"teal"},{"x":50,"y":32,"w":"teal"},{"x":50,"y":33,"w":"teal"},{"x":32,"y":39,"w":"violet"},{"x":50,"y":37,"w":"violet"},{"x":50,"y":38,"w":"violet"},{"x":50,"y":39,"w":"violet"},{"x":50,"y":40,"w":"violet"},{"x":49,"y":40,"w":"violet"},{"x":48,"y":40,"w":"violet"},{"x":47,"y":40,"w":"violet"},{"x":46,"y":40,"w":"violet"},{"x":45,"y":40,"w":"violet"},{"x":44,"y":40,"w":"violet"},{"x":43,"y":40,"w":"violet"},{"x":42,"y":40,"w":"violet"},{"x":41,"y":40,"w":"violet"},{"x":40,"y":40,"w":"violet"},{"x":39,"y":40,"w":"violet"},{"x":38,"y":40,"w":"violet"},{"x":37,"y":40,"w":"violet"},{"x":36,"y":40,"w":"violet"},{"x":35,"y":40,"w":"violet"},{"x":34,"y":40,"w":"violet"},{"x":34,"y":39,"w":"violet"},{"x":33,"y":39,"w":"violet"},{"x":50,"y":35,"w":"violet"},{"x":50,"y":36,"w":"violet"},{"x":32,"y":41,"w":"teal"},{"x":54,"y":36,"w":"teal"},{"x":55,"y":36,"w":"teal"},{"x":55,"y":37,"w":"teal"},{"x":56,"y":37,"w":"teal"},{"x":56,"y":38,"w":"teal"},{"x":56,"y":39,"w":"teal"},{"x":56,"y":40,"w":"teal"},{"x":56,"y":41,"w":"teal"},{"x":56,"y":42,"w":"teal"},{"x":56,"y":43,"w":"teal"},{"x":55,"y":43,"w":"teal"},{"x":54,"y":43,"w":"teal"},{"x":53,"y":43,"w":"teal"},{"x":52,"y":43,"w":"teal"},{"x":51,"y":43,"w":"teal"},{"x":50,"y":43,"w":"teal"},{"x":49,"y":43,"w":"teal"},{"x":48,"y":43,"w":"teal"},{"x":47,"y":43,"w":"teal"},{"x":46,"y":43,"w":"teal"},{"x":45,"y":43,"w":"teal"},{"x":44,"y":43,"w":"teal"},{"x":43,"y":43,"w":"teal"},{"x":42,"y":43,"w":"teal"},{"x":41,"y":43,"w":"teal"},{"x":40,"y":43,"w":"teal"},{"x":39,"y":43,"w":"teal"},{"x":38,"y":43,"w":"teal"},{"x":37,"y":43,"w":"teal"},{"x":36,"y":43,"w":"teal"},{"x":35,"y":43,"w":"teal"},{"x":35,"y":42,"w":"teal"},{"x":35,"y":41,"w":"teal"},{"x":34,"y":41,"w":"teal"},{"x":33,"y":41,"w":"teal"},{"x":54,"y":35,"w":"teal"},{"x":54,"y":37,"w":"teal"},{"x":32,"y":35,"w":"violet"},{"x":54,"y":32,"w":"violet"},{"x":55,"y":32,"w":"violet"},{"x":55,"y":31,"w":"violet"},{"x":56,"y":31,"w":"violet"},{"x":56,"y":30,"w":"violet"},{"x":56,"y":29,"w":"violet"},{"x":56,"y":28,"w":"violet"},{"x":56,"y":27,"w":"violet"},{"x":55,"y":27,"w":"violet"},{"x":54,"y":27,"w":"violet"},{"x":53,"y":27,"w":"violet"},{"x":52,"y":27,"w":"violet"},{"x":51,"y":27,"w":"violet"},{"x":50,"y":27,"w":"violet"},{"x":50,"y":28,"w":"violet"},{"x":49,"y":28,"w":"violet"},{"x":48,"y":28,"w":"violet"},{"x":47,"y":28,"w":"violet"},{"x":46,"y":28,"w":"violet"},{"x":45,"y":28,"w":"violet"},{"x":45,"y":29,"w":"violet"},{"x":44,"y":29,"w":"violet"},{"x":44,"y":30,"w":"violet"},{"x":43,"y":30,"w":"violet"},{"x":42,"y":30,"w":"violet"},{"x":41,"y":30,"w":"violet"},{"x":40,"y":30,"w":"violet"},{"x":39,"y":30,"w":"violet"},{"x":38,"y":30,"w":"violet"},{"x":37,"y":30,"w":"violet"},{"x":36,"y":30,"w":"violet"},{"x":35,"y":30,"w":"violet"},{"x":34,"y":30,"w":"violet"},{"x":34,"y":31,"w":"violet"},{"x":34,"y":32,"w":"violet"},{"x":34,"y":33,"w":"violet"},{"x":34,"y":34,"w":"violet"},{"x":34,"y":35,"w":"violet"},{"x":33,"y":35,"w":"violet"},{"x":54,"y":31,"w":"violet"},{"x":54,"y":33,"w":"violet"},{"x":32,"y":31,"w":"charcoal"},{"x":52,"y":30,"w":"charcoal"},{"x":52,"y":29,"w":"charcoal"},{"x":52,"y":28,"w":"charcoal"},{"x":52,"y":27,"w":"charcoal"},{"x":52,"y":26,"w":"charcoal"},{"x":52,"y":25,"w":"charcoal"},{"x":52,"y":24,"w":"charcoal"},{"x":51,"y":24,"w":"charcoal"},{"x":50,"y":24,"w":"charcoal"},{"x":49,"y":24,"w":"charcoal"},{"x":49,"y":25,"w":"charcoal"},{"x":48,"y":25,"w":"charcoal"},{"x":47,"y":25,"w":"charcoal"},{"x":46,"y":25,"w":"charcoal"},{"x":45,"y":25,"w":"charcoal"},{"x":44,"y":25,"w":"charcoal"},{"x":44,"y":26,"w":"charcoal"},{"x":43,"y":26,"w":"charcoal"},{"x":43,"y":27,"w":"charcoal"},{"x":42,"y":27,"w":"charcoal"},{"x":41,"y":27,"w":"charcoal"},{"x":40,"y":27,"w":"charcoal"},{"x":39,"y":27,"w":"charcoal"},{"x":38,"y":27,"w":"charcoal"},{"x":37,"y":27,"w":"charcoal"},{"x":36,"y":27,"w":"charcoal"},{"x":35,"y":27,"w":"charcoal"},{"x":34,"y":27,"w":"charcoal"},{"x":33,"y":27,"w":"charcoal"},{"x":33,"y":28,"w":"charcoal"},{"x":33,"y":29,"w":"charcoal"},{"x":33,"y":30,"w":"charcoal"},{"x":33,"y":31,"w":"charcoal"},{"x":51,"y":30,"w":"charcoal"},{"x":53,"y":30,"w":"charcoal"},{"x":32,"y":43,"w":"charcoal"},{"x":51,"y":38,"w":"charcoal"},{"x":51,"y":39,"w":"charcoal"},{"x":51,"y":40,"w":"charcoal"},{"x":51,"y":41,"w":"charcoal"},{"x":51,"y":42,"w":"charcoal"},{"x":51,"y":43,"w":"charcoal"},{"x":50,"y":43,"w":"charcoal"},{"x":49,"y":43,"w":"charcoal"},{"x":48,"y":43,"w":"charcoal"},{"x":47,"y":43,"w":"charcoal"},{"x":46,"y":43,"w":"charcoal"},{"x":45,"y":43,"w":"charcoal"},{"x":44,"y":43,"w":"charcoal"},{"x":43,"y":43,"w":"charcoal"},{"x":42,"y":43,"w":"charcoal"},{"x":41,"y":43,"w":"charcoal"},{"x":40,"y":43,"w":"charcoal"},{"x":39,"y":43,"w":"charcoal"},{"x":38,"y":43,"w":"charcoal"},{"x":37,"y":43,"w":"charcoal"},{"x":36,"y":43,"w":"charcoal"},{"x":35,"y":43,"w":"charcoal"},{"x":34,"y":43,"w":"charcoal"},{"x":33,"y":43,"w":"charcoal"},{"x":52,"y":38,"w":"charcoal"},{"x":53,"y":38,"w":"charcoal"},{"x":42,"y":9,"w":"violet"},{"x":48,"y":13,"w":"violet"},{"x":48,"y":12,"w":"violet"},{"x":47,"y":12,"w":"violet"},{"x":47,"y":11,"w":"violet"},{"x":47,"y":10,"w":"violet"},{"x":46,"y":10,"w":"violet"},{"x":45,"y":10,"w":"violet"},{"x":44,"y":10,"w":"violet"},{"x":43,"y":10,"w":"violet"},{"x":43,"y":9,"w":"violet"},{"x":18,"y":9,"w":"violet"},{"x":18,"y":10,"w":"violet"},{"x":19,"y":10,"w":"violet"},{"x":20,"y":10,"w":"violet"},{"x":21,"y":10,"w":"violet"},{"x":22,"y":10,"w":"violet"},{"x":23,"y":10,"w":"violet"},{"x":24,"y":10,"w":"violet"},{"x":25,"y":10,"w":"violet"},{"x":26,"y":10,"w":"violet"},{"x":27,"y":10,"w":"violet"},{"x":28,"y":10,"w":"violet"},{"x":29,"y":10,"w":"violet"},{"x":30,"y":10,"w":"violet"},{"x":31,"y":10,"w":"violet"},{"x":32,"y":10,"w":"violet"},{"x":33,"y":10,"w":"violet"},{"x":34,"y":10,"w":"violet"},{"x":35,"y":10,"w":"violet"},{"x":36,"y":10,"w":"violet"},{"x":37,"y":10,"w":"violet"},{"x":37,"y":9,"w":"violet"},{"x":38,"y":9,"w":"violet"},{"x":39,"y":9,"w":"violet"},{"x":40,"y":9,"w":"violet"},{"x":41,"y":9,"w":"violet"},{"x":28,"y":9,"w":"violet"},{"x":32,"y":9,"w":"charcoal"},{"x":38,"y":13,"w":"charcoal"},{"x":37,"y":13,"w":"charcoal"},{"x":36,"y":13,"w":"charcoal"},{"x":35,"y":13,"w":"charcoal"},{"x":34,"y":13,"w":"charcoal"},{"x":33,"y":13,"w":"charcoal"},{"x":32,"y":13,"w":"charcoal"},{"x":32,"y":12,"w":"charcoal"},{"x":32,"y":11,"w":"charcoal"},{"x":32,"y":10,"w":"charcoal"},{"x":18,"y":9,"w":"charcoal"},{"x":18,"y":10,"w":"charcoal"},{"x":18,"y":11,"w":"charcoal"},{"x":18,"y":12,"w":"charcoal"},{"x":18,"y":13,"w":"charcoal"},{"x":18,"y":14,"w":"charcoal"},{"x":19,"y":14,"w":"charcoal"},{"x":20,"y":14,"w":"charcoal"},{"x":21,"y":14,"w":"charcoal"},{"x":22,"y":14,"w":"charcoal"},{"x":23,"y":14,"w":"charcoal"},{"x":24,"y":14,"w":"charcoal"},{"x":25,"y":14,"w":"charcoal"},{"x":26,"y":14,"w":"charcoal"},{"x":27,"y":14,"w":"charcoal"},{"x":28,"y":14,"w":"charcoal"},{"x":29,"y":14,"w":"charcoal"},{"x":29,"y":13,"w":"charcoal"},{"x":30,"y":13,"w":"charcoal"},{"x":31,"y":13,"w":"charcoal"},{"x":28,"y":9,"w":"charcoal"},{"x":29,"y":9,"w":"charcoal"},{"x":30,"y":9,"w":"charcoal"},{"x":31,"y":9,"w":"charcoal"},{"x":46,"y":9,"w":"charcoal"},{"x":48,"y":7,"w":"charcoal"},{"x":47,"y":7,"w":"charcoal"},{"x":46,"y":7,"w":"charcoal"},{"x":46,"y":8,"w":"charcoal"},{"x":48,"y":11,"w":"charcoal"},{"x":49,"y":11,"w":"charcoal"},{"x":50,"y":11,"w":"charcoal"},{"x":50,"y":10,"w":"charcoal"},{"x":50,"y":9,"w":"charcoal"},{"x":50,"y":8,"w":"charcoal"},{"x":50,"y":7,"w":"charcoal"},{"x":49,"y":7,"w":"charcoal"},{"x":48,"y":9,"w":"charcoal"},{"x":48,"y":8,"w":"charcoal"},{"x":30,"y":26,"w":"charcoal"},{"x":30,"y":25,"w":"charcoal"},{"x":31,"y":25,"w":"charcoal"},{"x":31,"y":24,"w":"charcoal"},{"x":31,"y":23,"w":"charcoal"},{"x":31,"y":22,"w":"charcoal"},{"x":31,"y":21,"w":"charcoal"},{"x":31,"y":20,"w":"charcoal"},{"x":31,"y":19,"w":"charcoal"},{"x":31,"y":18,"w":"charcoal"},{"x":31,"y":17,"w":"charcoal"},{"x":31,"y":16,"w":"charcoal"},{"x":32,"y":16,"w":"charcoal"},{"x":33,"y":16,"w":"charcoal"},{"x":34,"y":16,"w":"charcoal"},{"x":35,"y":16,"w":"charcoal"},{"x":36,"y":16,"w":"charcoal"},{"x":37,"y":16,"w":"charcoal"},{"x":38,"y":16,"w":"charcoal"},{"x":39,"y":16,"w":"charcoal"},{"x":40,"y":16,"w":"charcoal"},{"x":41,"y":16,"w":"charcoal"},{"x":42,"y":16,"w":"charcoal"},{"x":43,"y":16,"w":"charcoal"},{"x":44,"y":16,"w":"charcoal"},{"x":45,"y":16,"w":"charcoal"},{"x":46,"y":16,"w":"charcoal"},{"x":47,"y":16,"w":"charcoal"},{"x":48,"y":16,"w":"charcoal"},{"x":49,"y":16,"w":"charcoal"},{"x":49,"y":15,"w":"charcoal"},{"x":50,"y":15,"w":"charcoal"},{"x":50,"y":14,"w":"charcoal"},{"x":51,"y":14,"w":"charcoal"},{"x":51,"y":13,"w":"charcoal"},{"x":51,"y":12,"w":"charcoal"},{"x":51,"y":11,"w":"charcoal"},{"x":12,"y":26,"w":"charcoal"},{"x":13,"y":26,"w":"charcoal"},{"x":14,"y":26,"w":"charcoal"},{"x":15,"y":26,"w":"charcoal"},{"x":16,"y":26,"w":"charcoal"},{"x":17,"y":26,"w":"charcoal"},{"x":18,"y":26,"w":"charcoal"},{"x":19,"y":26,"w":"charcoal"},{"x":20,"y":26,"w":"charcoal"},{"x":21,"y":26,"w":"charcoal"},{"x":22,"y":26,"w":"charcoal"},{"x":23,"y":26,"w":"charcoal"},{"x":24,"y":26,"w":"charcoal"},{"x":25,"y":26,"w":"charcoal"},{"x":26,"y":26,"w":"charcoal"},{"x":27,"y":26,"w":"charcoal"},{"x":28,"y":26,"w":"charcoal"},{"x":29,"y":26,"w":"charcoal"},{"x":16,"y":9,"w":"teal"},{"x":18,"y":7,"w":"teal"},{"x":17,"y":7,"w":"teal"},{"x":16,"y":7,"w":"teal"},{"x":16,"y":8,"w":"teal"},{"x":18,"y":9,"w":"teal"},{"x":17,"y":9,"w":"teal"},{"x":22,"y":9,"w":"teal"},{"x":22,"y":8,"w":"teal"},{"x":22,"y":7,"w":"teal"},{"x":21,"y":7,"w":"teal"},{"x":20,"y":7,"w":"teal"},{"x":19,"y":7,"w":"teal"},{"x":28,"y":13,"w":"teal"},{"x":28,"y":14,"w":"teal"},{"x":28,"y":15,"w":"teal"},{"x":28,"y":16,"w":"teal"},{"x":28,"y":17,"w":"teal"},{"x":27,"y":17,"w":"teal"},{"x":26,"y":17,"w":"teal"},{"x":25,"y":17,"w":"teal"},{"x":24,"y":17,"w":"teal"},{"x":23,"y":17,"w":"teal"},{"x":22,"y":17,"w":"teal"},{"x":21,"y":17,"w":"teal"},{"x":20,"y":17,"w":"teal"},{"x":19,"y":17,"w":"teal"},{"x":18,"y":17,"w":"teal"},{"x":17,"y":17,"w":"teal"},{"x":17,"y":16,"w":"teal"},{"x":16,"y":16,"w":"teal"},{"x":16,"y":15,"w":"teal"},{"x":15,"y":15,"w":"teal"},{"x":15,"y":14,"w":"teal"},{"x":15,"y":13,"w":"teal"},{"x":15,"y":12,"w":"teal"},{"x":15,"y":11,"w":"teal"},{"x":15,"y":10,"w":"teal"},{"x":15,"y":9,"w":"teal"},{"x":28,"y":20,"w":"teal"},{"x":28,"y":19,"w":"teal"},{"x":28,"y":18,"w":"teal"},{"x":12,"y":20,"w":"teal"},{"x":13,"y":20,"w":"teal"},{"x":14,"y":20,"w":"teal"},{"x":15,"y":20,"w":"teal"},{"x":16,"y":20,"w":"teal"},{"x":17,"y":20,"w":"teal"},{"x":18,"y":20,"w":"teal"},{"x":19,"y":20,"w":"teal"},{"x":20,"y":20,"w":"teal"},{"x":21,"y":20,"w":"teal"},{"x":22,"y":20,"w":"teal"},{"x":23,"y":20,"w":"teal"},{"x":24,"y":20,"w":"teal"},{"x":25,"y":20,"w":"teal"},{"x":26,"y":20,"w":"teal"},{"x":27,"y":20,"w":"teal"},{"x":29,"y":20,"w":"teal"},{"x":30,"y":20,"w":"teal"},{"x":26,"y":9,"w":"teal"},{"x":28,"y":7,"w":"teal"},{"x":27,"y":7,"w":"teal"},{"x":26,"y":7,"w":"teal"},{"x":26,"y":8,"w":"teal"},{"x":28,"y":11,"w":"teal"},{"x":28,"y":10,"w":"teal"},{"x":28,"y":9,"w":"teal"},{"x":27,"y":9,"w":"teal"},{"x":12,"y":22,"w":"teal"},{"x":11,"y":22,"w":"teal"},{"x":10,"y":22,"w":"teal"},{"x":10,"y":21,"w":"teal"},{"x":9,"y":21,"w":"teal"},{"x":9,"y":20,"w":"teal"},{"x":9,"y":19,"w":"teal"},{"x":9,"y":18,"w":"teal"},{"x":9,"y":17,"w":"teal"},{"x":9,"y":16,"w":"teal"},{"x":9,"y":15,"w":"teal"},{"x":9,"y":14,"w":"teal"},{"x":9,"y":13,"w":"teal"},{"x":9,"y":12,"w":"teal"},{"x":9,"y":11,"w":"teal"},{"x":9,"y":10,"w":"teal"},{"x":9,"y":9,"w":"teal"},{"x":9,"y":8,"w":"teal"},{"x":9,"y":7,"w":"teal"},{"x":9,"y":6,"w":"teal"},{"x":9,"y":5,"w":"teal"},{"x":9,"y":4,"w":"teal"},{"x":10,"y":4,"w":"teal"},{"x":11,"y":4,"w":"teal"},{"x":12,"y":4,"w":"teal"},{"x":13,"y":4,"w":"teal"},{"x":14,"y":4,"w":"teal"},{"x":15,"y":4,"w":"teal"},{"x":16,"y":4,"w":"teal"},{"x":17,"y":4,"w":"teal"},{"x":18,"y":4,"w":"teal"},{"x":19,"y":4,"w":"teal"},{"x":20,"y":4,"w":"teal"},{"x":21,"y":4,"w":"teal"},{"x":22,"y":4,"w":"teal"},{"x":23,"y":4,"w":"teal"},{"x":23,"y":5,"w":"teal"},{"x":24,"y":5,"w":"teal"},{"x":24,"y":6,"w":"teal"},{"x":25,"y":6,"w":"teal"},{"x":25,"y":7,"w":"teal"},{"x":13,"y":22,"w":"teal"},{"x":14,"y":22,"w":"teal"},{"x":15,"y":22,"w":"teal"},{"x":16,"y":22,"w":"teal"},{"x":17,"y":22,"w":"teal"},{"x":18,"y":22,"w":"teal"},{"x":19,"y":22,"w":"teal"},{"x":20,"y":22,"w":"teal"},{"x":21,"y":22,"w":"teal"},{"x":22,"y":22,"w":"teal"},{"x":23,"y":22,"w":"teal"},{"x":24,"y":22,"w":"teal"},{"x":25,"y":22,"w":"teal"},{"x":26,"y":22,"w":"teal"},{"x":27,"y":22,"w":"teal"},{"x":28,"y":22,"w":"teal"},{"x":29,"y":22,"w":"teal"},{"x":30,"y":22,"w":"teal"},{"x":36,"y":9,"w":"teal"},{"x":38,"y":7,"w":"teal"},{"x":38,"y":6,"w":"teal"},{"x":37,"y":6,"w":"teal"},{"x":36,"y":6,"w":"teal"},{"x":36,"y":7,"w":"teal"},{"x":36,"y":8,"w":"teal"},{"x":38,"y":11,"w":"teal"},{"x":38,"y":10,"w":"teal"},{"x":38,"y":9,"w":"teal"},{"x":37,"y":9,"w":"teal"},{"x":30,"y":24,"w":"teal"},{"x":31,"y":24,"w":"teal"},{"x":32,"y":24,"w":"teal"},{"x":33,"y":24,"w":"teal"},{"x":34,"y":24,"w":"teal"},{"x":34,"y":23,"w":"teal"},{"x":34,"y":22,"w":"teal"},{"x":34,"y":21,"w":"teal"},{"x":34,"y":20,"w":"teal"},{"x":34,"y":19,"w":"teal"},{"x":35,"y":19,"w":"teal"},{"x":36,"y":19,"w":"teal"},{"x":37,"y":19,"w":"teal"},{"x":37,"y":18,"w":"teal"},{"x":37,"y":17,"w":"teal"},{"x":37,"y":16,"w":"teal"},{"x":37,"y":15,"w":"teal"},{"x":37,"y":14,"w":"teal"},{"x":37,"y":13,"w":"teal"},{"x":37,"y":12,"w":"teal"},{"x":37,"y":11,"w":"teal"},{"x":12,"y":24,"w":"teal"},{"x":13,"y":24,"w":"teal"},{"x":14,"y":24,"w":"teal"},{"x":15,"y":24,"w":"teal"},{"x":16,"y":24,"w":"teal"},{"x":17,"y":24,"w":"teal"},{"x":18,"y":24,"w":"teal"},{"x":19,"y":24,"w":"teal"},{"x":20,"y":24,"w":"teal"},{"x":21,"y":24,"w":"teal"},{"x":22,"y":24,"w":"teal"},{"x":23,"y":24,"w":"teal"},{"x":24,"y":24,"w":"teal"},{"x":25,"y":24,"w":"teal"},{"x":26,"y":24,"w":"teal"},{"x":27,"y":24,"w":"teal"},{"x":28,"y":24,"w":"teal"},{"x":29,"y":24,"w":"teal"},{"x":7,"y":3,"w":"charcoal"},{"x":14,"y":9,"w":"charcoal"},{"x":14,"y":8,"w":"charcoal"},{"x":13,"y":8,"w":"charcoal"},{"x":13,"y":7,"w":"charcoal"},{"x":13,"y":6,"w":"charcoal"},{"x":13,"y":5,"w":"charcoal"},{"x":13,"y":4,"w":"charcoal"},{"x":13,"y":3,"w":"charcoal"},{"x":13,"y":2,"w":"charcoal"},{"x":13,"y":1,"w":"charcoal"},{"x":12,"y":1,"w":"charcoal"},{"x":11,"y":1,"w":"charcoal"},{"x":10,"y":1,"w":"charcoal"},{"x":9,"y":1,"w":"charcoal"},{"x":8,"y":1,"w":"charcoal"},{"x":8,"y":2,"w":"charcoal"},{"x":8,"y":3,"w":"charcoal"},{"x":18,"y":5,"w":"charcoal"},{"x":18,"y":4,"w":"charcoal"},{"x":18,"y":3,"w":"charcoal"},{"x":18,"y":2,"w":"charcoal"},{"x":18,"y":1,"w":"charcoal"},{"x":17,"y":1,"w":"charcoal"},{"x":16,"y":1,"w":"charcoal"},{"x":15,"y":1,"w":"charcoal"},{"x":14,"y":1,"w":"charcoal"},{"x":24,"y":9,"w":"charcoal"},{"x":24,"y":8,"w":"charcoal"},{"x":24,"y":7,"w":"charcoal"},{"x":24,"y":6,"w":"charcoal"},{"x":24,"y":5,"w":"charcoal"},{"x":24,"y":4,"w":"charcoal"},{"x":24,"y":3,"w":"charcoal"},{"x":24,"y":2,"w":"charcoal"},{"x":24,"y":1,"w":"charcoal"},{"x":23,"y":1,"w":"charcoal"},{"x":22,"y":1,"w":"charcoal"},{"x":21,"y":1,"w":"charcoal"},{"x":20,"y":1,"w":"charcoal"},{"x":19,"y":1,"w":"charcoal"},{"x":28,"y":5,"w":"charcoal"},{"x":28,"y":4,"w":"charcoal"},{"x":28,"y":3,"w":"charcoal"},{"x":27,"y":3,"w":"charcoal"},{"x":26,"y":3,"w":"charcoal"},{"x":25,"y":3,"w":"charcoal"},{"x":34,"y":9,"w":"charcoal"},{"x":34,"y":8,"w":"charcoal"},{"x":34,"y":7,"w":"charcoal"},{"x":33,"y":7,"w":"charcoal"},{"x":33,"y":6,"w":"charcoal"},{"x":33,"y":5,"w":"charcoal"},{"x":32,"y":5,"w":"charcoal"},{"x":31,"y":5,"w":"charcoal"},{"x":30,"y":5,"w":"charcoal"},{"x":29,"y":5,"w":"charcoal"},{"x":38,"y":5,"w":"charcoal"},{"x":38,"y":4,"w":"charcoal"},{"x":38,"y":3,"w":"charcoal"},{"x":37,"y":3,"w":"charcoal"},{"x":36,"y":3,"w":"charcoal"},{"x":35,"y":3,"w":"charcoal"},{"x":35,"y":4,"w":"charcoal"},{"x":34,"y":4,"w":"charcoal"},{"x":34,"y":5,"w":"charcoal"},{"x":44,"y":9,"w":"charcoal"},{"x":44,"y":8,"w":"charcoal"},{"x":44,"y":7,"w":"charcoal"},{"x":44,"y":6,"w":"charcoal"},{"x":44,"y":5,"w":"charcoal"},{"x":44,"y":4,"w":"charcoal"},{"x":43,"y":4,"w":"charcoal"},{"x":42,"y":4,"w":"charcoal"},{"x":41,"y":4,"w":"charcoal"},{"x":40,"y":4,"w":"charcoal"},{"x":39,"y":4,"w":"charcoal"},{"x":48,"y":5,"w":"charcoal"},{"x":48,"y":4,"w":"charcoal"},{"x":47,"y":4,"w":"charcoal"},{"x":46,"y":4,"w":"charcoal"},{"x":45,"y":4,"w":"charcoal"}],"name":"Hex counter"}},{"name":"Overshoot","level":{"format":"wee-level","version":1,"name":"Overshoot","w":7,"h":7,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","","","","","","wall","wall","","","wall","","","wall","wall","wall","goal","","","","wall","wall","wall","","","","wall","wall","wall","","","","","","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":2,"y":4},"entities":[{"kind":"box","x":4,"y":3,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","sensor:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","sensor:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","sensor:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"swim":false,"light":false},"clock":"tile"}},{"name":"Short fuse","level":{"format":"wee-level","version":1,"name":"Short fuse","w":8,"h":8,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","wall","","wall","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","wall","","crack","","wall","wall","wall","wall","wall","wall","goal","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"bomb","x":4,"y":4,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":true,"swim":false,"light":false,"armored":false},"clock":"tile"}}];
 return { TEMPLATES };
 })();
 // ---- src/level/code.js
-const m48 = (() => {
+const m49 = (() => {
 const { parseLevel } = m2;
 // A share code: the level as compressed, URL-safe text, so a room fits in a message or
 // a link (#room=<code>). Uses the platform's own deflate, in the page and in Node.
@@ -5777,8 +5851,8 @@ async function decodeRoom(code) {
 return { encodeRoom, decodeRoom };
 })();
 // ---- src/view/thumb.js
-const m49 = (() => {
-const { INK } = m24;
+const m50 = (() => {
+const { INK } = m29;
 // A room's thumbnail: one small square per tile in the tile's main colour, so a list of
 // many rooms costs little to draw. Returns a data URL.
 
@@ -5805,7 +5879,7 @@ function thumbURL(level) {
 return { thumbURL };
 })();
 // ---- src/solve/tags.js
-const m50 = (() => {
+const m51 = (() => {
 const { createGame, step } = m11;
 const { parseMove } = m12;
 // The mechanism index: what a room contains, and what its solution actually does.
@@ -5890,8 +5964,8 @@ function uses(level, moves) {
 return { MECHANISMS, LABEL, contains, uses };
 })();
 // ---- src/app/draft.js
-const m51 = (() => {
-const { S } = m22;
+const m52 = (() => {
+const { S } = m24;
 // Autosave: the room being edited, with its name and note, kept in this browser after
 // every change, so a closed tab or a phone that drops the page loses nothing. Saving the
 // room clears it; a reload with a draft newer than the saved room brings the draft back.
@@ -5923,12 +5997,12 @@ function flushDraft(dirty) { if (dirty && timer) { clearTimeout(timer); write();
 return { readDraft, clearDraft, noteChange, flushDraft };
 })();
 // ---- src/app/tilemenu.js
-const m52 = (() => {
-const { encodeRoom } = m48;
-const { splitRoom } = m37;
-const { S } = m22;
-const { put, remove, newId } = m36;
-const { $ } = m23;
+const m53 = (() => {
+const { encodeRoom } = m49;
+const { splitRoom } = m26;
+const { S } = m24;
+const { put, remove, newId } = m25;
+const { $ } = m20;
 // A saved room's own menu in the Library: Rename, Duplicate, Copy code and Delete, without
 // opening the room. Right-click, or hold on a touch screen.
 
@@ -6011,21 +6085,23 @@ function buildTileMenu(lib) {
 return { menuOn, buildTileMenu };
 })();
 // ---- src/app/rooms.js
-const m53 = (() => {
-const { TEMPLATES } = m47;
-const { encodeRoom, decodeRoom } = m48;
-const { splitRoom, joinRoom, stampOf, pack, unpack } = m37;
-const { starterLevel } = m22;
-const { newHistory } = m21;
-const { S } = m22;
-const { thumbURL } = m49;
-const { list, put, remove, where, newId, detect } = m36;
-const { contains, uses, MECHANISMS } = m50;
-const { $ } = m23;
-const { readDraft, noteChange, flushDraft, clearDraft } = m51;
-const { menuOn, buildTileMenu } = m52;
+const m54 = (() => {
+const { TEMPLATES } = m48;
+const { encodeRoom, decodeRoom } = m49;
+const { splitRoom, joinRoom, stampOf, pack, unpack } = m26;
+const { starterLevel } = m24;
+const { newHistory } = m23;
+const { S } = m24;
+const { thumbURL } = m50;
+const { list, put, remove, where, newId, detect } = m25;
+const { contains, uses, MECHANISMS } = m51;
+const { $ } = m20;
+const { readDraft, noteChange, flushDraft, clearDraft } = m52;
+const { menuOn, buildTileMenu } = m53;
+const { place, go, current, up } = m21;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
+
 
 
 
@@ -6047,7 +6123,7 @@ const dirty = () => !S.camp && (!S.room || stampOf(S.level) !== (S.room.saved ??
 const leaveOk = () => !dirty() || confirm('Leave the unsaved changes in this room?');
 
 function syncRoomsButton() {
-  noteChange(dirty());
+  if (inSandbox()) noteChange(dirty());
   $('roomsBtn').textContent = dirty() ? 'Rooms •' : 'Rooms';
   $('roomsBtn').title = (S.room && S.room.name) || 'Unsaved room';
   // The room's name in the header opens its page; a dot means changes not saved yet.
@@ -6138,15 +6214,25 @@ async function refresh() {
   return saved;
 }
 
-// The library is where wee starts. The room open behind it, when it has unsaved changes,
-// leads the page as its own tile, so a launch never hides work in progress.
-async function openLibrary() {
+// The library leads with the room behind it when that has unsaved changes, so work in progress shows.
+async function fillLibrary() {
   say(''); sayWhere();
   const now = $('openNow'), live = dirty();
   now.replaceChildren(...(live ? [row(S.level, (S.room && S.room.name) || 'Untitled', 'Unsaved changes', closeAll)] : []));
-  if (!$('roomsBox').open) $('roomsBox').showModal();
   await refresh();
 }
+
+// The Sandbox's two places, the Rooms page and the room under it; leaving keeps unsaved work as a draft.
+let sandboxOpen = false;
+async function enterSandbox() {
+  if (sandboxOpen) return;
+  sandboxOpen = true;
+  const full = new URLSearchParams(location.search).has('sandbox') || location.hash.startsWith('#room=');
+  S.simple = !full; document.body.classList.toggle('simple', !full);
+  await (window.wee.roomsReady = bootRooms()); A.syncPanel();
+}
+const leaveSandbox = next => { if (next === 'room' || next === 'rooms') return; flushDraft(dirty()); sandboxOpen = false; S.simple = false; document.body.classList.remove('simple'); };
+const inSandbox = () => sandboxOpen && !S.camp && !S.puzzle;
 
 // A room's tags: what it holds, what its saved solution does, and whether it started generated.
 const GENERATED = 'from:generated';
@@ -6201,7 +6287,8 @@ function download(name, data) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-const closeAll = () => { for (const id of ['roomsBox', 'newBox', 'infoBox']) if ($(id).open) $(id).close(); };
+// Back to the room: the pop-ups close, and the Rooms page goes up to the room under it.
+const closeAll = () => { for (const id of ['newBox', 'infoBox']) if ($(id).open) $(id).close(); if (current()?.name === 'rooms') up(); };
 
 function buildRooms(actions) {
   A = actions;
@@ -6215,7 +6302,9 @@ function buildRooms(actions) {
   $('exampleList').replaceChildren(...templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name))));
   // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
   // generate, templates) and This room (name, note, save, share, delete), from the header title.
-  $('roomsBtn').onclick = openLibrary;
+  place('rooms', { page: 'roomsBox', parent: () => 'room', enter: async () => { await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
+  place('room', { parent: () => 'menu', enter: enterSandbox, exit: leaveSandbox });
+  $('roomsBtn').onclick = () => go('rooms');
   buildTileMenu({ say, fillCurrent, refresh, remember, syncRoomsButton });
   $('roomTitle').onclick = () => { fillCurrent(); say(''); $('shareOut').hidden = true; $('infoBox').showModal(); };
   $('codeBtn').onclick = () => { const open = $('codeRow').hidden; $('codeRow').hidden = !open; $('codeBtn').setAttribute('aria-expanded', String(open)); if (open) $('codeIn').focus(); };
@@ -6281,7 +6370,7 @@ async function bootRooms() {
       const level = await decodeRoom(location.hash);
       await refresh();
       openRoom(level, {}); S.room.saved = null; syncRoomsButton();
-      history.replaceState(null, '', location.pathname + location.search);
+      history.replaceState({ path: '#/room', prev: null }, '', location.pathname + location.search + '#/room');
       return;
     } catch { /* a bad link falls through to the usual start */ }
   }
@@ -6300,25 +6389,23 @@ async function bootRooms() {
       S.room.edited = true;
       syncRoomsButton();
       $('placeHint').textContent = 'To keep your unsaved changes, which are back, save them.';
-      await openLibrary();
       return;
     } catch { clearDraft(); }
   }
   const r = last && rooms.find(o => o.id === last);
   if (r) { const { meta, level } = splitRoom(r); openRoom(level, meta); }
   else { S.room = { id: null, name: '', note: '', saved: stampOf(S.level), edited: false }; syncRoomsButton(); }
-  await openLibrary();
 }
 return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, fillCurrent, say, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m54 = (() => {
-const { record, undo, redo } = m21;
-const { S } = m22;
-const { $ } = m23;
-const { syncCheck, syncLint } = m46;
-const { syncRoomsButton, followUndo } = m53;
-const { syncEnabled } = m45;
+const m55 = (() => {
+const { record, undo, redo } = m23;
+const { S } = m24;
+const { $ } = m20;
+const { syncCheck, syncLint } = m47;
+const { syncRoomsButton, followUndo } = m54;
+const { syncEnabled } = m46;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -6359,11 +6446,11 @@ function step(back, after) {
 return { syncUndo, begin, end, change, step };
 })();
 // ---- src/app/size.js
-const m55 = (() => {
-const { $, now } = m23;
-const { S } = m22;
+const m56 = (() => {
+const { $, now } = m20;
+const { S } = m24;
 const { moveSide } = m2;
-const { change } = m54;
+const { change } = m55;
 // The room's size: a + and a − for each side add or cut a row or a column there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
 
@@ -6429,11 +6516,11 @@ function buildSize({ after }) {
 return { syncSize, closeSize, buildSize };
 })();
 // ---- src/app/fit.js
-const m56 = (() => {
-const { T } = m24;
-const { S } = m22;
-const { $, canvas, g } = m23;
-const { syncSize } = m55;
+const m57 = (() => {
+const { T } = m29;
+const { S } = m24;
+const { $, canvas, g } = m20;
+const { syncSize } = m56;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 
 
@@ -6505,7 +6592,7 @@ function watchStage() {
 return { fit, watchStage };
 })();
 // ---- src/editor/palette.js
-const m57 = (() => {
+const m58 = (() => {
 
 // The palette: every tool, its group and label, and the words the editor uses for
 // powers, colours, clocks and directions. Draft copy throughout.
@@ -6564,7 +6651,7 @@ const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'b
 return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, WIRE_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/solve/lenses.js
-const m58 = (() => {
+const m59 = (() => {
 const { createGame } = m11;
 const { computeBeams } = m5;
 const { successors, stateKey, unsearchable, MAX_STATES } = m12;
@@ -6649,15 +6736,15 @@ function* lensData(level, max = MAX_STATES) {
 return { lensData };
 })();
 // ---- src/app/lenses.js
-const m59 = (() => {
+const m60 = (() => {
 const { reach } = m12;
-const { routes } = m42;
-const { lensData } = m58;
-const { INK } = m24;
-const { S } = m22;
-const { $ } = m23;
-const { sliced } = m44;
-const { WELL, closeWell } = m43;
+const { routes } = m43;
+const { lensData } = m59;
+const { INK } = m29;
+const { S } = m24;
+const { $ } = m20;
+const { sliced } = m45;
+const { WELL, closeWell } = m44;
 // Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
 // you pick one in that group. Data comes from searches run a slice at a time, again whenever
@@ -6848,10 +6935,10 @@ function buildLenses() {
 return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
 // ---- src/editor/edit.js
-const m60 = (() => {
+const m61 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
 const { CRATED } = m2;
-const { TOOLS, WIRE_NAME, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m57;
+const { TOOLS, WIRE_NAME, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m58;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -7070,12 +7157,12 @@ function place(level, ui, x, y, how) {
 return { CRATE_TOOLS, crateAt, moveAt, swapAt, turnGate, turnLaser, wiresAt, holds, describe, place };
 })();
 // ---- src/app/chips.js
-const m61 = (() => {
-const { describe } = m60;
-const { S } = m22;
-const { INK } = m24;
-const { $, touch } = m23;
-const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m59;
+const m62 = (() => {
+const { describe } = m61;
+const { S } = m24;
+const { INK } = m29;
+const { $, touch } = m20;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m60;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
@@ -7137,11 +7224,11 @@ function syncInfo() {
 return { buildChips, syncChips };
 })();
 // ---- src/app/reset.js
-const m62 = (() => {
-const { S } = m22;
+const m63 = (() => {
+const { S } = m24;
 const { roomOf } = m18;
-const { $ } = m23;
-const { change } = m54;
+const { $ } = m20;
+const { change } = m55;
 // Reset: the room goes back to the level's start, after a yes (register 291). One undo step.
 
 
@@ -7156,9 +7243,9 @@ function buildReset(after) {
 return { buildReset };
 })();
 // ---- src/app/sheets.js
-const m63 = (() => {
-const { $ } = m23;
-const { closeWell } = m43;
+const m64 = (() => {
+const { $ } = m20;
+const { closeWell } = m44;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
 // Rooms opens the rooms list. One sheet at a time; Build, Escape or play closes it.
 
@@ -7184,9 +7271,9 @@ function buildSheets() {
 return { openSheet, buildSheets };
 })();
 // ---- src/app/keys.js
-const m64 = (() => {
-const { TOOLS } = m57;
-const { $ } = m23;
+const m65 = (() => {
+const { TOOLS } = m58;
+const { $ } = m20;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
 // every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
 
@@ -7237,7 +7324,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m65 = (() => {
+const m66 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -7302,11 +7389,11 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m66 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m65;
-const { S } = m22;
-const { change } = m54;
-const { $ } = m23;
+const m67 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m66;
+const { S } = m24;
+const { change } = m55;
+const { $ } = m20;
 // The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
 // it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
 // undo step each.
@@ -7426,14 +7513,14 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/join.js
-const m67 = (() => {
+const m68 = (() => {
 
 // A strip of buttons reads as one object (register 322): square seams inside, round only at its two
 // ends. Which buttons are the ends depends on what shows, so they are marked again on every sync.
 function joinEnds() {
   const on = document.body.classList.contains('campaign') || document.body.classList.contains('simple');
   for (const strip of document.querySelectorAll('[data-join]')) {
-    const kids = [...strip.children].filter(b => b.tagName === 'BUTTON');
+    const kids = [...strip.children].filter(b => b.tagName === 'BUTTON' && !b.classList.contains('logo'));
     for (const b of kids) b.classList.remove('joinFirst', 'joinLast');
     const shown = on ? kids.filter(b => !b.hasAttribute('data-alone') && getComputedStyle(b).display !== 'none') : [];
     if (!shown.length) continue;
@@ -7443,28 +7530,28 @@ function joinEnds() {
 return { joinEnds };
 })();
 // ---- src/app/panels.js
-const m68 = (() => {
+const m69 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m2;
-const { INK } = m24;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m57;
-const { toolsFor, syncBrief, TOOL } = m34;
+const { INK } = m29;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m58;
+const { toolsFor, syncBrief, TOOL } = m39;
 const { coloursOf, colouringsOf, pushingsOf } = m18;
-const { S } = m22;
-const { $, canvas, touch } = m23;
-const { change, step: undoStep, syncUndo } = m54;
-const { runCheck, syncCheck, syncLint } = m46;
-const { buildLenses, syncLenses } = m59;
-const { buildWell, openWell } = m43;
-const { buildChips } = m61;
-const { buildReset } = m62;
-const { buildSize } = m55;
-const { buildSheets } = m63;
-const { buildKeys } = m64;
-const { syncRoomsButton } = m53;
-const { buildSelect, syncSelect } = m66;
-const { icon } = m31;
-const { joinEnds } = m67;
+const { S } = m24;
+const { $, canvas, touch } = m20;
+const { change, step: undoStep, syncUndo } = m55;
+const { runCheck, syncCheck, syncLint } = m47;
+const { buildLenses, syncLenses } = m60;
+const { buildWell, openWell } = m44;
+const { buildChips } = m62;
+const { buildReset } = m63;
+const { buildSize } = m56;
+const { buildSheets } = m64;
+const { buildKeys } = m65;
+const { syncRoomsButton } = m54;
+const { buildSelect, syncSelect } = m67;
+const { icon } = m36;
+const { joinEnds } = m68;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -7756,11 +7843,11 @@ function syncColours() {
 return { keysText, buildPanels, syncPanel, pairInk };
 })();
 // ---- src/app/campaignMove.js
-const m69 = (() => {
+const m70 = (() => {
 const { placementErrors } = m18;
-const { place, moveAt, swapAt } = m60;
-const { S } = m22;
-const { $, now } = m23;
+const { place, moveAt, swapAt } = m61;
+const { S } = m24;
+const { $, now } = m20;
 // Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
 
 
@@ -7820,10 +7907,10 @@ function say(x, y, why, ms = 1500) {
 return { moveIn, refusal, allows, moveRefusal, refuse, say };
 })();
 // ---- src/app/stuck.js
-const m70 = (() => {
+const m71 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m12;
-const { S } = m22;
-const { $ } = m23;
+const { S } = m24;
+const { $ } = m20;
 // While you play: once everything has come to rest, a search in the background asks whether
 // the goal can still be reached, and says so when it cannot. All copy is draft.
 
@@ -7855,27 +7942,27 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m71 = (() => {
-const { frame: look } = m24;
+const m72 = (() => {
+const { frame: look } = m29;
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m11;
 const { aimKey } = m10;
-const { drawEdit, drawPlay } = m30;
-const { S } = m22;
-const { $, g, now } = m23;
-const { openSheet } = m63;
-const { syncPanel, keysText } = m68;
-const { feedDemo } = m46;
-const { selectOverlay } = m66;
-const { moveRefusal } = m69;
-const { watchStuck, resetStuck } = m70;
-const { lensMarks, lensBusy } = m59;
-const { syncWell } = m43;
-const { syncChips } = m61;
-const { gust } = m40;
+const { drawEdit, drawPlay } = m35;
+const { S } = m24;
+const { $, g, now } = m20;
+const { openSheet } = m64;
+const { syncPanel, keysText } = m69;
+const { feedDemo } = m47;
+const { selectOverlay } = m67;
+const { moveRefusal } = m70;
+const { watchStuck, resetStuck } = m71;
+const { lensMarks, lensBusy } = m60;
+const { syncWell } = m44;
+const { syncChips } = m62;
+const { gust } = m41;
 const { stateKey } = m12;
 const { respawn } = m4;
-const { syncEnabled } = m45;
+const { syncEnabled } = m46;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
 
@@ -8025,20 +8112,20 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m72 = (() => {
-const { describe, holds, place, turnGate, turnLaser } = m60;
-const { S } = m22;
-const { $, canvas, touch, now } = m23;
-const { setMode, aim } = m71;
-const { begin, end, change, step: undoStep } = m54;
-const { save } = m53;
-const { selectDown, selectMove, selectUp, selectKey } = m66;
-const { LENS_GROUPS, cycleLens, lensesOff } = m59;
-const { syncPanel } = m68;
-const { fit } = m56;
-const { toolForKey, bareKey, showKeys } = m64;
-const { TOOLS } = m57;
-const { refusal, moveRefusal, moveIn, refuse } = m69;
+const m73 = (() => {
+const { describe, holds, place, turnGate, turnLaser } = m61;
+const { S } = m24;
+const { $, canvas, touch, now } = m20;
+const { setMode, aim } = m72;
+const { begin, end, change, step: undoStep } = m55;
+const { save } = m54;
+const { selectDown, selectMove, selectUp, selectKey } = m67;
+const { LENS_GROUPS, cycleLens, lensesOff } = m60;
+const { syncPanel } = m69;
+const { fit } = m57;
+const { toolForKey, bareKey, showKeys } = m65;
+const { TOOLS } = m58;
+const { refusal, moveRefusal, moveIn, refuse } = m70;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -8177,7 +8264,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m73 = (() => {
+const m74 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -8288,12 +8375,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m74 = (() => {
+const m75 = (() => {
 const { search, move, stateKey } = m12;
 const { createGame } = m11;
-const { elementCheck, idleElements, NOTES_MAX } = m42;
-const { contains } = m50;
-const { ING, variants } = m73;
+const { elementCheck, idleElements, NOTES_MAX } = m43;
+const { contains } = m51;
+const { ING, variants } = m74;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -8379,7 +8466,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m75 = (() => {
+const m76 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -8396,13 +8483,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m76 = (() => {
+const m77 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m2;
-const { INGREDIENTS, ING, spot } = m73;
-const { judge, lockedIn } = m74;
-const { contains } = m50;
-const { rng } = m75;
+const { INGREDIENTS, ING, spot } = m74;
+const { judge, lockedIn } = m75;
+const { contains } = m51;
+const { rng } = m76;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -8557,20 +8644,22 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m77 = (() => {
-const { INGREDIENTS } = m73;
-const { generate, normalize, recipeLabel, LIMITS } = m76;
-const { stampOf } = m37;
-const { S } = m22;
-const { thumbURL } = m49;
-const { $ } = m23;
-const { change } = m54;
-const { dirty, remember, syncRoomsButton } = m53;
-const { icon } = m31;
-const { TOOLS, GROUPS } = m57;
+const m78 = (() => {
+const { INGREDIENTS } = m74;
+const { generate, normalize, recipeLabel, LIMITS } = m77;
+const { stampOf } = m26;
+const { S } = m24;
+const { thumbURL } = m50;
+const { $ } = m20;
+const { change } = m55;
+const { dirty, remember, syncRoomsButton } = m54;
+const { icon } = m36;
+const { current, up } = m21;
+const { TOOLS, GROUPS } = m58;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
+
 
 
 
@@ -8741,7 +8830,7 @@ function buildGenerator(actions) {
   $('genKeep').checked = $('genW').disabled = $('genH').disabled = !!(saved && saved.recipe.keep);
   $('genKeep').onchange = () => fillForm(recipeFromForm());
   $('genTime').value = saved ? saved.seconds : 15;
-  const open = () => { for (const id of ['roomsBox', 'newBox']) if ($(id).open) $(id).close(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
+  const open = () => { if ($('newBox').open) $('newBox').close(); if (current()?.name === 'rooms') up(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
   $('roomGen').onclick = $('genBtn').onclick = open;
   $('genReroll').onclick = () => { $('genSeed').value = newSeed(); };
   const seconds = () => Math.max(5, Math.min(60, +$('genTime').value || 15));
@@ -8753,27 +8842,29 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m78 = (() => {
-const { buildMaker } = m35;
-const { buildPuzzles } = m38;
-const { buildProgress } = m39;
+const m79 = (() => {
+const { buildMaker } = m22;
+const { buildPuzzles } = m27;
+const { buildProgress } = m40;
 const { TICK_MS } = m0;
 const { replay, gameText } = m11;
 const { parseLevel, emptyLevel } = m2;
-const { newHistory } = m21;
-const { S, starterLevel } = m22;
-const { portrait, $ } = m23;
-const { startSnow, windNow } = m40;
-const { fit, watchStage } = m56;
-const { buildPanels, syncPanel } = m68;
-const { bindInput } = m72;
-const { setMode, frame, render, tick, report, copyReport } = m71;
-const { buildRooms, bootRooms } = m53;
-const { buildGenerator } = m77;
-const { buildCampaign, openMenu } = m34;
-const { bindDebug } = m32;
+const { newHistory } = m23;
+const { S, starterLevel } = m24;
+const { portrait, $ } = m20;
+const { startSnow, windNow } = m41;
+const { fit, watchStage } = m57;
+const { buildPanels, syncPanel } = m69;
+const { bindInput } = m73;
+const { setMode, frame, render, tick, report, copyReport } = m72;
+const { buildRooms } = m54;
+const { buildGenerator } = m78;
+const { buildCampaign } = m39;
+const { bindNav, start } = m21;
+const { bindDebug } = m37;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
+
 
 
 
@@ -8809,7 +8900,8 @@ bindDebug();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });
 buildMaker();
-buildCampaign({ setMode, syncPanel, fit }, () => { window.wee.roomsReady = bootRooms(); return window.wee.roomsReady; });
+buildCampaign({ setMode, syncPanel, fit });
+bindNav();
 bindInput();
 syncPanel();
 addEventListener('resize', fit);
@@ -8820,9 +8912,9 @@ fit();
 setMode('edit');
 startSnow($('snow'));
 requestAnimationFrame(frame);
-// The game opens on the main menu. A shared room link, or ?sandbox, goes straight to the sandbox.
-if (location.hash.startsWith('#room=') || new URLSearchParams(location.search).has('sandbox')) window.wee.roomsReady = bootRooms();
-else openMenu();
+// The game opens where its address says: the menu, a level, a puzzle, the Sandbox. A shared room
+// link, or ?sandbox, goes straight to the Sandbox.
+start();
 return {  };
 })();
 </script>

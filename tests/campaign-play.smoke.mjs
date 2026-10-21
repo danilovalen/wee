@@ -420,7 +420,7 @@ try {
   // The two-colour level is hidden from the list (register 334); it still opens by its id.
   await nine.click('#campBack');
   check('the two-colour level is hidden from the list', await nine.locator('.campRow[data-level="twocolour"]').count() === 0 && await nine.locator('.campRow[data-level="18"]').count() === 1);
-  await nine.evaluate(async () => (await import('/src/app/campaign.js')).enterLevel('twocolour')); await nine.click('[data-tool="door"]');
+  await nine.evaluate(async () => (await import('/src/app/nav.js')).go('level', 'twocolour')); await nine.click('[data-tool="door"]');
   const dots = () => nine.evaluate(() => [...document.querySelectorAll('#campColours button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '') + (b.disabled ? '-' : '')).join());
   const doorDots = await dots();
   await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);

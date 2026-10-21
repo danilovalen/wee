@@ -1,7 +1,7 @@
 // Progress you carry yourself (register 254): a code to copy out and paste back, for a viewer that
 // keeps no storage, and a reset after a yes. One code carries everything (question 4): the campaign,
 // Sandbox rooms, Puzzles bests and made levels. A code from before holds the campaign alone.
-import { progress, write, migrate, openList } from './campaign.js';
+import { progress, write, migrate, showList } from './campaign.js';
 import { list, put } from './store.js';
 import { bests, keep } from './puzzles.js';
 import { madeLevels, saveMade } from './made.js';
@@ -36,10 +36,10 @@ export function buildProgress() {
   $('progYes').onclick = async () => {
     const p = fromCode(code.value);
     if (!p) { say.textContent = 'This code does not read as progress, so copy it again, whole.'; return; }
-    await load(p); box.close(); openList();
+    await load(p); box.close(); showList();
   };
   $('progNo').onclick = () => box.close();
   $('progReset').onclick = () => $('progResetBox').showModal();
   $('progResetNo').onclick = () => $('progResetBox').close();
-  $('progResetYes').onclick = () => { write({ ...progress(), last: null, levels: {} }); $('progResetBox').close(); openList(); };
+  $('progResetYes').onclick = () => { write({ ...progress(), last: null, levels: {} }); $('progResetBox').close(); showList(); };
 }

@@ -12,6 +12,7 @@ import { contains, uses, MECHANISMS } from '../solve/tags.js';
 import { $ } from './dom.js';
 import { readDraft, noteChange, flushDraft, clearDraft } from './draft.js';
 import { menuOn, buildTileMenu } from './tilemenu.js';
+import { place, go, current, up } from './nav.js';
 
 const LAST = 'wee.last';
 let A = null; // the page actions (setMode, syncPanel, fit), passed in to avoid an import cycle
@@ -22,7 +23,7 @@ export const dirty = () => !S.camp && (!S.room || stampOf(S.level) !== (S.room.s
 export const leaveOk = () => !dirty() || confirm('Leave the unsaved changes in this room?');
 
 export function syncRoomsButton() {
-  noteChange(dirty());
+  if (inSandbox()) noteChange(dirty());
   $('roomsBtn').textContent = dirty() ? 'Rooms •' : 'Rooms';
   $('roomsBtn').title = (S.room && S.room.name) || 'Unsaved room';
   // The room's name in the header opens its page; a dot means changes not saved yet.
@@ -113,15 +114,25 @@ export async function refresh() {
   return saved;
 }
 
-// The library is where wee starts. The room open behind it, when it has unsaved changes,
-// leads the page as its own tile, so a launch never hides work in progress.
-async function openLibrary() {
+// The library leads with the room behind it when that has unsaved changes, so work in progress shows.
+async function fillLibrary() {
   say(''); sayWhere();
   const now = $('openNow'), live = dirty();
   now.replaceChildren(...(live ? [row(S.level, (S.room && S.room.name) || 'Untitled', 'Unsaved changes', closeAll)] : []));
-  if (!$('roomsBox').open) $('roomsBox').showModal();
   await refresh();
 }
+
+// The Sandbox's two places, the Rooms page and the room under it; leaving keeps unsaved work as a draft.
+let sandboxOpen = false;
+async function enterSandbox() {
+  if (sandboxOpen) return;
+  sandboxOpen = true;
+  const full = new URLSearchParams(location.search).has('sandbox') || location.hash.startsWith('#room=');
+  S.simple = !full; document.body.classList.toggle('simple', !full);
+  await (window.wee.roomsReady = bootRooms()); A.syncPanel();
+}
+const leaveSandbox = next => { if (next === 'room' || next === 'rooms') return; flushDraft(dirty()); sandboxOpen = false; S.simple = false; document.body.classList.remove('simple'); };
+const inSandbox = () => sandboxOpen && !S.camp && !S.puzzle;
 
 // A room's tags: what it holds, what its saved solution does, and whether it started generated.
 const GENERATED = 'from:generated';
@@ -176,7 +187,8 @@ function download(name, data) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-const closeAll = () => { for (const id of ['roomsBox', 'newBox', 'infoBox']) if ($(id).open) $(id).close(); };
+// Back to the room: the pop-ups close, and the Rooms page goes up to the room under it.
+const closeAll = () => { for (const id of ['newBox', 'infoBox']) if ($(id).open) $(id).close(); if (current()?.name === 'rooms') up(); };
 
 export function buildRooms(actions) {
   A = actions;
@@ -190,7 +202,9 @@ export function buildRooms(actions) {
   $('exampleList').replaceChildren(...templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name))));
   // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
   // generate, templates) and This room (name, note, save, share, delete), from the header title.
-  $('roomsBtn').onclick = openLibrary;
+  place('rooms', { page: 'roomsBox', parent: () => 'room', enter: async () => { await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
+  place('room', { parent: () => 'menu', enter: enterSandbox, exit: leaveSandbox });
+  $('roomsBtn').onclick = () => go('rooms');
   buildTileMenu({ say, fillCurrent, refresh, remember, syncRoomsButton });
   $('roomTitle').onclick = () => { fillCurrent(); say(''); $('shareOut').hidden = true; $('infoBox').showModal(); };
   $('codeBtn').onclick = () => { const open = $('codeRow').hidden; $('codeRow').hidden = !open; $('codeBtn').setAttribute('aria-expanded', String(open)); if (open) $('codeIn').focus(); };
@@ -256,7 +270,7 @@ export async function bootRooms() {
       const level = await decodeRoom(location.hash);
       await refresh();
       openRoom(level, {}); S.room.saved = null; syncRoomsButton();
-      history.replaceState(null, '', location.pathname + location.search);
+      history.replaceState({ path: '#/room', prev: null }, '', location.pathname + location.search + '#/room');
       return;
     } catch { /* a bad link falls through to the usual start */ }
   }
@@ -275,12 +289,10 @@ export async function bootRooms() {
       S.room.edited = true;
       syncRoomsButton();
       $('placeHint').textContent = 'To keep your unsaved changes, which are back, save them.';
-      await openLibrary();
       return;
     } catch { clearDraft(); }
   }
   const r = last && rooms.find(o => o.id === last);
   if (r) { const { meta, level } = splitRoom(r); openRoom(level, meta); }
   else { S.room = { id: null, name: '', note: '', saved: stampOf(S.level), edited: false }; syncRoomsButton(); }
-  await openLibrary();
 }

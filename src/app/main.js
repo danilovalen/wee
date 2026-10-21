@@ -14,9 +14,10 @@ import { fit, watchStage } from './fit.js';
 import { buildPanels, syncPanel } from './panels.js';
 import { bindInput } from './input.js';
 import { setMode, frame, render, tick, report, copyReport } from './play.js';
-import { buildRooms, bootRooms } from './rooms.js';
+import { buildRooms } from './rooms.js';
 import { buildGenerator } from './generator.js';
-import { buildCampaign, openMenu } from './campaign.js';
+import { buildCampaign } from './campaign.js';
+import { bindNav, start } from './nav.js';
 import { bindDebug } from './debug.js';
 
 S.level = starterLevel(portrait());
@@ -36,7 +37,8 @@ bindDebug();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });
 buildMaker();
-buildCampaign({ setMode, syncPanel, fit }, () => { window.wee.roomsReady = bootRooms(); return window.wee.roomsReady; });
+buildCampaign({ setMode, syncPanel, fit });
+bindNav();
 bindInput();
 syncPanel();
 addEventListener('resize', fit);
@@ -47,6 +49,6 @@ fit();
 setMode('edit');
 startSnow($('snow'));
 requestAnimationFrame(frame);
-// The game opens on the main menu. A shared room link, or ?sandbox, goes straight to the sandbox.
-if (location.hash.startsWith('#room=') || new URLSearchParams(location.search).has('sandbox')) window.wee.roomsReady = bootRooms();
-else openMenu();
+// The game opens where its address says: the menu, a level, a puzzle, the Sandbox. A shared room
+// link, or ?sandbox, goes straight to the Sandbox.
+start();
