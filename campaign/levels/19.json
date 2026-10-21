@@ -25,15 +25,19 @@
  "pushable": {
   "laser": "only"
  },
- "steps": {},
+ "steps": {
+  "best": 7
+ },
  "small": [
   5,
-  6
+  5
  ],
  "rules": [],
  "require": [
   "laserPushedThrice",
-  "laserThroughADoor",
   "throughOpenDoor"
+ ],
+ "optional": [
+  "laserThroughGoal"
  ]
 }

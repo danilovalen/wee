@@ -72,7 +72,8 @@ function save() {
   write(p);
 }
 
-// A row's words, with each object drawn as its palette icon.
+// A row's words, each object drawn as its palette icon; the robot and the goal have their own.
+const WORD_ICON = { start: ['robot', 'Robot'], goal: ['goal', 'Goal'] };
 function words(parts) {
   const span = document.createElement('span'); span.className = 'words';
   span.append(...parts.flatMap((p, i) => [...(i ? [document.createTextNode(' ')] : []), word(p)]));
@@ -80,7 +81,7 @@ function words(parts) {
 }
 function word(p) {
   if (typeof p === 'string') return document.createTextNode(p);
-  const c = icon(p.el === 'start' ? 'robot' : TOOL[p.el]), name = p.el === 'start' ? 'Robot' : ELEMENTS[p.el].label;
+  const [tool, name] = WORD_ICON[p.el] || [TOOL[p.el], ELEMENTS[p.el].label], c = icon(tool);
   c.className = 'campIcon'; c.dataset.part = p.el; c.title = name; c.setAttribute('aria-label', name); c.setAttribute('role', 'img');
   return c;
 }

@@ -54,6 +54,11 @@ export const EXTRA_REQUIREMENTS = {
     short: [{ el: 'laser' }, 'through an open', { el: 'door' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at).startsWith('door:'))) ok = true; }); return ok; },
   },
+  laserThroughGoal: {
+    text: 'Laser through the goal.',
+    short: [{ el: 'laser' }, 'through the', { el: 'goal' }],
+    judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at) === 'goal')) ok = true; }); return ok; },
+  },
   laserThroughButton: {
     text: 'Laser through a button.',
     short: [{ el: 'laser' }, 'through a', { el: 'button' }],
