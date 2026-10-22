@@ -225,6 +225,23 @@ export const EXTRA_REQUIREMENTS = {
     short: [{ el: 'laser' }, 'through every', { el: 'relay' }],
     judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { const r = relaysOf(s); if (r.length && r.every(i => s.lit.has(i))) ok = true; }); return ok; },
   },
+  // Register 376: a relay pushed one tile has another relay right ahead of it (they go on as a train).
+  relayHitsRelay: {
+    text: 'A relay collides with another relay.',
+    short: [{ el: 'relay' }, 'collides with a', { el: 'relay' }],
+    judge: (room, moves) => {
+      let ok = false, before = null;
+      replayPath(room, moves, s => {
+        const now = new Set(relaysOf(s)), d = s.player.dir;
+        if (before && d) {
+          const [dx, dy] = STEP[d];
+          for (const i of now) if (!before.has(i) && now.has(i + dy * room.w + dx) && (i % room.w) + dx >= 0 && (i % room.w) + dx < room.w) ok = true;
+        }
+        before = now;
+      });
+      return ok;
+    },
+  },
   threeRelays: {
     needs: { relay: 3 },
     text: 'At least 3 relays in the room.',

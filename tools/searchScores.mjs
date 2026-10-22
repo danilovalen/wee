@@ -57,6 +57,8 @@ export const SCORES = {
     });
     return 0.4 * touched.size + 0.1 * near;
   },
+  // Two relays nearer each other is warmer (register 376).
+  relayHitsRelay: (room, moves) => { let d = Infinity; replayPath(room, moves, s => { const r = s.cells.flatMap((c, i) => /^sensor:/.test(c || '') ? [[i % s.w, Math.floor(i / s.w)]] : []); for (const a of r) for (const b of r) if (a !== b) d = Math.min(d, Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1])); }); return d === Infinity ? 0 : 0.8 / d; },
   // The most relays lit at once, as a share; and the fewest (register 375).
   laserThroughEveryRelay: (room, moves) => { let best = 0; replayPath(room, moves, s => { const r = s.cells.flatMap((c, i) => /^sensor:/.test(c || '') ? [i] : []); if (r.length) best = Math.max(best, r.filter(i => s.lit.has(i)).length / r.length); }); return 0.9 * best; },
   laserThroughNoRelay: (room, moves) => { let best = 0; replayPath(room, moves, s => { const r = s.cells.flatMap((c, i) => /^sensor:/.test(c || '') ? [i] : []); if (r.length) best = Math.max(best, 1 - r.filter(i => s.lit.has(i)).length / r.length); }); return 0.9 * best; },

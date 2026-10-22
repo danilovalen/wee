@@ -457,6 +457,8 @@ const build = (def, rows) => {
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
   ok('a laser through every relay: met when one beam lights them all, not when one is dark', req('laserThroughEveryRelay', ['########', '#PT.r.r#', '########'], []) && !req('laserThroughEveryRelay', ['########', '#PT.r#r#', '########'], []));
   ok('a laser through no relay: met at a moment with every relay dark', req('laserThroughNoRelay', ['########', '#PT#r..#', '########'], []) && !req('laserThroughNoRelay', ['########', '#PT.r..#', '########'], []));
+  const l20 = level('20'), hit = (rows, moves) => REQUIREMENTS.relayHitsRelay.judge(build(l20, rows), moves);
+  ok('a relay collides with a relay: a pushed relay meets another in its line, not one off its line', hit(['#######', '#Pr..r#', '#.....#', '#######'], ['right']) && !hit(['#######', '#Pr...#', '#....r#', '#######'], ['right']));
   ok('at least 3 relays counts the room', REQUIREMENTS.threeRelays.judge(room(['#######', '#Pr.r.r#', '#######']), []) && !REQUIREMENTS.threeRelays.judge(room(['######', '#Pr.r#', '######']), []));
   ok('box touches a laser and a pushable laser: one kind alone is not enough', !req('boxTouchesBothLasers', ['#######', '#PB.T.#', '#######'], ['right']) && !req('boxTouchesBothLasers', ['#######', '#PB.K.#', '#######'], ['right']));
   ok('robot and box collide with a relay: met when both stop against one', req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#.....#', '#....r#', '#######'], ['right', 'down', 'right']) && !req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#######'], ['right']));

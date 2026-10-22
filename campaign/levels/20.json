@@ -14,7 +14,7 @@
    null
   ],
   "relay": [
-   1,
+   2,
    null
   ],
   "door": [
@@ -27,17 +27,16 @@
  },
  "steps": {},
  "small": [
-  3,
+  4,
   3
  ],
  "rules": [],
  "require": [
   "laserThroughNoRelay",
-  "laserThroughEveryRelay",
   "laserThroughADoor",
   "throughOpenDoor"
  ],
  "optional": [
-  "threeRelays"
+  "relayHitsRelay"
  ]
 }

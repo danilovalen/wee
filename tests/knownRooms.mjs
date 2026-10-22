@@ -13,11 +13,11 @@ export const KNOWN = {
     17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['rP#', 'nB.', '.G.', '#I#'], twocolour: ['....', '.r..', '.X.q', '....', 'PnG.'],
     // Found by tools/climb.mjs (register 365): 4x4 in 7 moves; 16 and 18 likewise, 3x4 in 4.
     19: ['##..', '.DD.', 'DESG', '.Pr.'],
-    // Found by tools/climb.mjs (register 375): 4 moves, 3x3.
-    20: ['reD', 'PGD', 'n..'] },
+    // Found by tools/climb.mjs (register 376): two relays, 4 moves, 4x3.
+    20: ['DwGD', '....', 'ePrr'] },
   optional: {
-    // Found by tools/climb.mjs (register 375): three relays, 4 moves.
-    20: ['D.D..w', 'r.rrPw', '.G#...', '.D..D.'],
+    // Found by tools/climb.mjs (register 376): a relay pushed into another, 5 moves, 7x5.
+    20: ['D.e..D.', 'P.r.r..', '#.D..nn', '..D..s.', 'DG.....'],
     // Found by tools/levelSearch.mjs with the goal required (register 365): 8 moves, the laser through the goal.
     19: ['#D.##', '...##', 'rG.WP', 'rW..D', 'D....', '..#..', '.....'],
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
@@ -40,7 +40,7 @@ export const KNOWN = {
     12: ['PBB.v', '.G>.B', '..>.o'],
   },
   wins: {
-    20: ['reD', 'PGD', 'n..'],
+    20: ['DwGD', '....', 'ePrr'],
     1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
     2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
     3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],
