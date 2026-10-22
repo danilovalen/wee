@@ -29,7 +29,9 @@
  "pushable": {
   "relay": "only"
  },
- "steps": {},
+ "steps": {
+  "best": 8
+ },
  "small": [
   8,
   3

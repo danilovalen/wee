@@ -40,7 +40,8 @@ export const KNOWN = {
     12: ['PBB.v', '.G>.B', '..>.o'],
   },
   wins: {
-    20: ['........#', '......B..', '.BD.GrrPw'],
+    // Found by tools/levelSearch.mjs (register 388): 8 moves, level 20's exact count, a relay pushed into another on the way.
+    20: ['...GB..#', '.B.B....', 'D.r..rPw'],
     1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
     2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
     3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],
