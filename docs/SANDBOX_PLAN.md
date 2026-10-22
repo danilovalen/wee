@@ -42,4 +42,4 @@ are "buttons everywhere" (378), and a new room still opens inside a wall border 
 ## Open questions
 
 1. ~~The groups~~: settled (2026-10-22): Relay stays with Lasers and One-way with Doors, "for now" (register 383).
-2. Does the simple Sandbox (from the menu) get the strip too, or keep its single row?
+2. ~~Simple Sandbox~~: settled (2026-10-22, register 384): every Sandbox uses the grouped strip; the campaign, Puzzles and made levels keep their single row of buttons, since a level offers few tools.
