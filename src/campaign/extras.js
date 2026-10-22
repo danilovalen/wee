@@ -59,12 +59,17 @@ export const EXTRA_REQUIREMENTS = {
     short: [{ el: 'laser' }, 'through the', { el: 'goal' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at) === 'goal')) ok = true; }); return ok; },
   },
-  // Register 366: a room built with at least two buttons.
-  twoButtons: {
-    needs: { button: 2 },
-    text: 'At least 2 buttons in the room.',
-    short: ['at least 2', { el: 'button' }],
-    judge: room => room.cells.filter(c => /^button:/.test(c || '')).length >= 2,
+  // Register 370: level 16's main goals made "all": every door and every button in the room has a beam
+  // pass through it at some point (a closed door stops a beam, so a door crossed was open).
+  laserThroughEveryDoorAndButton: {
+    text: 'Laser through every door and every button.',
+    short: [{ el: 'laser' }, 'through every', { el: 'door' }, 'and', { el: 'button' }],
+    judge: (room, moves) => {
+      const left = new Set(room.cells.flatMap((c, i) => /^(door|button):/.test(c || '') ? [i] : []));
+      if (!left.size) return false;
+      beams(room, moves, (b, s) => { for (const [x, y] of through(b, s)) left.delete(y * room.w + x); });
+      return left.size === 0;
+    },
   },
   laserThroughButton: {
     text: 'Laser through a button.',

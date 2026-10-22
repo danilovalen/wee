@@ -40,6 +40,12 @@ export const SCORES = {
   boxHitsIdoor: (room, moves) => nearest(room, moves, s => s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.x, e.y]), 'idoor:') * 0.5,
   laserPushedThrice: (room, moves) => Math.max(0, ...boxMoves(room, moves, 'turret').map(b => Math.min(b.pushes, 3) / 3)) * 0.9,
   allRelaysLitAtEnd: (room, moves) => { const end = replayPath(room, moves, () => {}), relays = end.cells.flatMap((c, i) => c.startsWith('sensor:') ? [i] : []); return relays.length ? 0.9 * relays.filter(i => end.lit.has(i)).length / relays.length : 0; },
+  // The share of the room's doors and buttons a beam has crossed (register 370).
+  laserThroughEveryDoorAndButton: (room, moves) => {
+    const want = room.cells.flatMap((c, i) => /^(door|button):/.test(c || '') ? [[i % room.w, Math.floor(i / room.w)]] : []), hit = new Set();
+    replayPath(room, moves, s => { for (const [x, y] of beamTiles(s)) hit.add(x + ',' + y); });
+    return want.length ? 0.9 * want.filter(([x, y]) => hit.has(x + ',' + y)).length / want.length : 0;
+  },
   everyToggleOffAtEnd: (room, moves) => {
     const n = room.cells.filter(c => c.startsWith('toggle:')).length;
     return n ? 1 - replayPath(room, moves, () => {}).toggled.length / n : 0;

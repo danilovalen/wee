@@ -40,7 +40,7 @@
   "laserThroughButton"
  ],
  "optional": [
-  "twoButtons"
+  "laserThroughEveryDoorAndButton"
  ],
  "colours": [
   "red",

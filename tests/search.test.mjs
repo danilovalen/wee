@@ -57,7 +57,7 @@ const level = id => LEVELS.find(l => l.id === id);
 }
 { // register 364: partial credit for every goal, a climb that keeps near-misses and polishes a win, a prover for every piece
   // Goals about a count or the room's end state have no distance to measure; any other goal must have credit.
-  const STATE = ['touchBlockFourTimes', 'doorClosedAtEnd', 'everyToggleOn', 'boxPushedThrice', 'boxPushedTwiceHitOnce', 'everyToggleOnThenOff', 'twoTogglesOffAtEnd', 'thirdToggleOnAtEnd', 'aToggleOffAtEnd', 'boxLaunched', 'noBoxAtEnd', 'oneWaysThreeWays', 'lasersTwoWays', 'twoButtons'];
+  const STATE = ['touchBlockFourTimes', 'doorClosedAtEnd', 'everyToggleOn', 'boxPushedThrice', 'boxPushedTwiceHitOnce', 'everyToggleOnThenOff', 'twoTogglesOffAtEnd', 'thirdToggleOnAtEnd', 'aToggleOffAtEnd', 'boxLaunched', 'noBoxAtEnd', 'oneWaysThreeWays', 'lasersTwoWays'];
   const bare = Object.keys(REQUIREMENTS).filter(id => !SCORES[id] && !derived(id) && !STATE.includes(id));
   ok('every goal but the count and end-state ones gives the search partial credit', bare.length === 0, bare.join(' '));
   const beam = (rows, id) => miss(id, room(rows), []);
