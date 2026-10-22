@@ -106,7 +106,7 @@ ok('a new room has no wall border', [false, true].every(tall => !starterLevel(ta
   { const l = level('16'), two = build(l, ['B.#P#', 'G..B.', 'D....', 'ne.o.']), v = check(l, two);
     ok('a second box in level 16 is built and run, then missed at Run', v.ok && !v.won && /at most 1 box/.test(v.fail.why), JSON.stringify(v.fail || v.errors)); }
   ok('more than a maximum is a missed goal at Run', overLimits({ ...d, palette: { block: [0, 10] } }, many).some(e => /at most 10/.test(e.msg)));
-  ok('only levels 15, 16 and 17 set a maximum: one one-way, one box, one inverted door (registers 287, 294, 325)', LEVELS.every(l => Object.entries(l.palette).every(([k, [, max]]) => max === null || (max === 1 && ((l.id === '15' && k === 'gate') || (l.id === '16' && k === 'box') || (l.id === '17' && k === 'idoor'))))));
+  ok('only levels 15, 16, 17 and 20 set a maximum: one one-way, one box, one inverted door, one door (registers 287, 294, 325, 386)', LEVELS.every(l => Object.entries(l.palette).every(([k, [, max]]) => max === null || (max === 1 && ((l.id === '15' && k === 'gate') || (l.id === '16' && k === 'box') || (l.id === '17' && k === 'idoor') || (l.id === '20' && k === 'door'))))));
   const alien = build(d, ['', '', '..D']);
   ok('an element outside the palette is refused', placementErrors(d, alien).some(e => /no doors/.test(e.msg)));
   const odd = build(d, ['', '', '..k']); odd.cells[2 * 7 + 2] = 'crack';
