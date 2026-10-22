@@ -3,7 +3,7 @@
 // once, and the Findings count changes at most once per Check.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { room, suite } from './lib.mjs';
+import { room, suite, pickTool } from './lib.mjs';
 
 const { check, done } = suite('flicker');
 const PORT = 5219;
@@ -52,7 +52,7 @@ try {
   await page.waitForTimeout(300);
 
   // One edit: a wall placed with the mouse.
-  await page.click('[data-tool=wall]');
+  await pickTool(page, 'wall');
   const box = await page.locator('#game').boundingBox(), lv = await page.evaluate(() => window.wee.getLevel());
   const e = await watch(1500, () => page.mouse.click(box.x + 12.5 * box.width / lv.w, box.y + 1.5 * box.height / lv.h));
   check('an edit moves nothing in the status bar', Object.values(e.pos).every(xs => xs.length === 1), JSON.stringify(e.pos));
@@ -63,7 +63,7 @@ try {
   check('the edit landed', (await page.evaluate(() => window.wee.getLevel().cells.filter(c => c === 'wall').length)) > lv.cells.filter(c => c === 'wall').length);
 
   // One Check of the edited room.
-  await page.click('[data-tool=look]');
+  await pickTool(page, 'look');
   await page.waitForFunction(() => !document.getElementById('checkText').classList.contains('stale'), null, { timeout: 10000 });
   const c = await watch(2500, () => page.click('#checkBtn'));
   check('a Check moves nothing in the status bar', Object.values(c.pos).every(xs => xs.length === 1), JSON.stringify(c.pos));

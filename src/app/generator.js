@@ -12,6 +12,7 @@ import { dirty, remember, syncRoomsButton } from './rooms.js';
 import { icon } from './icons.js';
 import { current, up } from './nav.js';
 import { TOOLS, GROUPS } from '../editor/palette.js';
+import { SIMPLE } from './panels.js';
 
 const SHELF = 'wee.generated', FORM = 'wee.genForm', KEEP = 20, SLICE_MS = 25;
 const CHOICES = [['', 'Off'], ['allowed', 'Allowed'], ['must', 'Must use']];
@@ -20,6 +21,16 @@ const ING_ICON = { door: 'door', and: 'button', colours: 'door' };
 const ING_GROUP = { follow: 'pieces', mounted: 'pieces' };
 const ING_COLOUR = { colours: 'blue' };
 export const ingGroup = g => ING_GROUP[g.id] || (TOOLS.find(t => t.id === (ING_ICON[g.id] || g.id)) || {}).group;
+// What the Sandbox open now can place (register 379): the menu's Sandbox has the campaign's pieces and no
+// powers, so the generator offers only those; ?sandbox offers everything.
+const offered = g => !S.simple || (!g.power && SIMPLE.includes(ING_ICON[g.id] === 'button' ? 'door' : ING_ICON[g.id] || g.id));
+function showOffered() {
+  for (const li of $('genIng').querySelectorAll('.genSec')) {
+    let any = false;
+    for (const sel of li.querySelectorAll('select')) { const on = offered(INGREDIENTS.find(g => g.id === sel.dataset.id)); sel.closest('li').hidden = !on; if (!on) { sel.value = ''; sel.dataset.off = '1'; } any ||= on; }
+    li.hidden = !any;
+  }
+}
 let A = null, run = 0, shown = null;
 
 const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 'null') ?? d; } catch { return d; } };
@@ -173,7 +184,7 @@ export function buildGenerator(actions) {
   $('genKeep').checked = $('genW').disabled = $('genH').disabled = !!(saved && saved.recipe.keep);
   $('genKeep').onchange = () => fillForm(recipeFromForm());
   $('genTime').value = saved ? saved.seconds : 15;
-  const open = () => { if ($('newBox').open) $('newBox').close(); if (current()?.name === 'rooms') up(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
+  const open = () => { if ($('newBox').open) $('newBox').close(); if (current()?.name === 'rooms') up(); showOffered(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
   $('roomGen').onclick = $('genBtn').onclick = open;
   $('genReroll').onclick = () => { $('genSeed').value = newSeed(); };
   const seconds = () => Math.max(5, Math.min(60, +$('genTime').value || 15));

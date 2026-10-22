@@ -3,7 +3,7 @@
 import { chromium } from 'playwright-core';
 import { readFileSync } from 'node:fs';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, pickTool } from './lib.mjs';
 
 const { check, done } = suite('wires');
 const PORT = 5229;
@@ -16,7 +16,7 @@ try {
   await page.goto(`http://localhost:${PORT}/`); await page.waitForTimeout(400);
   await page.click('#menuSandbox'); await page.waitForTimeout(400); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   await page.evaluate(() => { const l = window.wee.blank(6, 5); l.start = { x: 0, y: 0 }; window.wee.loadLevel(l); });
-  await page.click('#palette [data-tool="wire"]');
+  await pickTool(page, 'wire');
   const dots = await page.evaluate(() => [...document.querySelectorAll('[data-camp-wire]')].filter(b => b.offsetParent).map(b => b.dataset.campWire).join());
   check('with the Wire tool, the dots are the three wire colours', dots === 'teal,violet,charcoal', dots);
   await page.click('[data-camp-wire="violet"]');
@@ -25,7 +25,7 @@ try {
   await page.mouse.move(...at(1, 2)); await page.mouse.down(); for (let x = 2; x <= 4; x++) await page.mouse.move(...at(x, 2), { steps: 3 }); await page.mouse.up();
   const wires = await page.evaluate(() => window.wee.getLevel().wires || []);
   check('dragging lays a wire of the chosen colour on every tile crossed', wires.length === 4 && wires.every(r => r.w === 'violet' && r.y === 2), JSON.stringify(wires));
-  await page.click('#palette [data-tool="door"]'); await page.click('[data-camp-colour="wire"]'); await page.mouse.click(...at(4, 2));
+  await pickTool(page, 'door'); await page.click('[data-camp-colour="wire"]'); await page.mouse.click(...at(4, 2));
   check('the grey dot places a grey door', await page.evaluate(() => window.wee.getLevel().cells[2 * 6 + 4]) === 'door:wire');
   // A grey piece wears its wire (register 352): teal trim on a teal wire, grey dashes on none; and
   // hovering it lights what it reaches and dims the rest.
@@ -37,7 +37,7 @@ try {
   check('a grey piece on a wire wears its colour, one on none does not', teal(await edge(0, 2)) && teal(await edge(4, 2)) && !teal(await edge(0, 0)), JSON.stringify([await edge(0, 2), await edge(0, 0)]));
   const before = await px(0, 0, 0.5, 0.5), b2 = await page.locator('#game').boundingBox(), tt = b2.width / 6;
   // A phone has no hover: a Look tap does it.
-  await page.click('[data-tool="look"]'); await page.mouse.click(b2.x + 0.5 * tt, b2.y + 2.5 * tt); await page.waitForTimeout(250);
+  await pickTool(page, 'look'); await page.mouse.click(b2.x + 0.5 * tt, b2.y + 2.5 * tt); await page.waitForTimeout(250);
   const after = await px(0, 0, 0.5, 0.5), gold = await px(4, 2, 0.03, 0.5);
   check('looking at a wired grey piece lights its partner and dims the rest', after.join() !== before.join() && gold[0] > 200 && gold[1] > 150 && gold[2] < 120, JSON.stringify([before, after, gold]));
   // The counter room, played: it shows a count that moves on.

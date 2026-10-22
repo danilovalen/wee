@@ -4,11 +4,9 @@ import { emptyLevel } from '../level/format.js';
 import { newHistory } from './history.js';
 
 // A new room takes the screen's shape: taller than wide on a phone held upright.
+// A new room is open floor: the room's edge stops the robot, so it needs no wall border (register 380).
 export function starterLevel(tall) {
-  const l = tall ? emptyLevel(12, 14) : emptyLevel(20, 12);
-  for (let x = 0; x < l.w; x++) { l.cells[x] = 'wall'; l.cells[(l.h - 1) * l.w + x] = 'wall'; }
-  for (let y = 0; y < l.h; y++) { l.cells[y * l.w] = 'wall'; l.cells[y * l.w + l.w - 1] = 'wall'; }
-  return l;
+  return tall ? emptyLevel(12, 14) : emptyLevel(20, 12);
 }
 
 export const S = {

@@ -970,7 +970,12 @@ const M = [
   ['src', "  if (all.some(next => !newError(level, next))) return null;", "  if (!newError(level, all[0])) return null;", 'campaign-play'],
   ['index.html', '<button id="menuSandbox" type="button" class="primary">', '<button id="menuSandbox" type="button">', 'campaign-play'],
   ['style.css', "#reportBox, dialog[id].rooms { --page: 720px; width: 100vw;", "#reportBox, dialog[id].rooms { --page: 720px;", 'steady'],
-
+  ['src/editor/state.js', "  return tall ? emptyLevel(12, 14) : emptyLevel(20, 12);", "  const l = tall ? emptyLevel(12, 14) : emptyLevel(20, 12); l.cells.fill('wall', 0, l.w); return l;", 'campaign'],
+  ['src/app/strip.js', "  if (open && before !== null && before !== tool) open = null;", "", 'browser'],
+  ['src/app/strip.js', "      if (mine && members(g).length > 1) setOpen(open === g ? null : g);", "      if (false) setOpen(g);", 'browser'],
+  ['src/app/strip.js', "    b.querySelector('.more').hidden = m.length < 2;", "    b.querySelector('.more').hidden = false;", 'modes'],
+  ['src/app/strip.js', "  if (on && pal.parentNode !== document.body) document.body.append(pal);", "", 'phone'],
+  ['src/app/generator.js', "sel.closest('li').hidden = !on;", "sel.closest('li').hidden = false;", 'modes'],
 ];
 
 // SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.

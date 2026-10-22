@@ -3,7 +3,7 @@
 import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, pickTool } from './lib.mjs';
 
 const { check, done } = suite('phone');
 const PORT = 5197;
@@ -22,7 +22,7 @@ try {
   await page.click('#roomsBox .roomsHead form button');
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
-  const pick = async t => { const tab = page.locator(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); if (await tab.isVisible()) await tab.click(); await page.click(`[data-tool=${t}]`); };
+  const pick = t => pickTool(page, t);
   const lv = (await text()).level;
   check('a new room is taller than wide', lv.h > lv.w, `${lv.w}x${lv.h}`);
   // Holding a room's tile opens its menu; a tap still opens the room.
@@ -67,15 +67,15 @@ try {
   check('the room fits inside its area', layout.room <= layout.stage + 0.5, JSON.stringify(layout));
   // The side pairs take 36px each side (register 318), so this wide room's tiles are smaller than 28px now.
   check('a tile is big enough to tap', layout.tile >= 22, layout.tile.toFixed(1));
-  // every tool, picked from its tab, fits with its options under the room on one screen
+  // every tool, picked from its group's slot, fits with its options under the room on one screen
   const over = [];
   for (const [t, g] of await page.$$eval('[data-tool]:not([data-camp])', bs => bs.map(b => [b.dataset.tool, b.dataset.in]))) {
-    await page.click(`[data-group=${g}]`); await page.click(`[data-tool=${t}]`);
+    await pickTool(page, t);
     const [bottom, who] = await page.evaluate(() => { const es = [...document.querySelectorAll('#tools button, #tools .opt')].filter(e => e.offsetParent); const e = es.reduce((a, b) => b.getBoundingClientRect().bottom > a.getBoundingClientRect().bottom ? b : a); return [e.getBoundingClientRect().bottom, e.id || e.className || e.textContent.slice(0, 12)]; });
     if (bottom > 844) over.push(`${t}:${Math.round(bottom)} (${who})`);
   }
-  check('the room, a tab of tools and its options fit on one screen, for every tool', over.length === 0, over.join(' '));
-  check('a tab shows only its own tools', await page.evaluate(() => [...document.querySelectorAll('#palette button')].filter(b => b.offsetParent).length <= 6));
+  check('the room, the tool strip and a tool\'s options fit on one screen, for every tool', over.length === 0, over.join(' '));
+  check('a flyout shows only its own group', await page.evaluate(() => [...document.querySelectorAll('#palette button')].filter(b => b.offsetParent).length <= 5));
   await pick('look');
 
   const small = await page.evaluate(() => [...document.querySelectorAll('header button, #palette button, .opt:not([hidden]) button')]
@@ -116,12 +116,12 @@ try {
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const full = await page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, h: innerHeight, tools: !!document.getElementById('tools').offsetParent, bottom: document.getElementById('pad').getBoundingClientRect().bottom, room: document.getElementById('game').getBoundingClientRect().height }));
   check('play takes one screen: nothing scrolls, the editor is gone, the buttons are on screen', full.scroll <= full.h + 1 && !full.tools && full.bottom <= full.h, JSON.stringify(full));
-  // a swipe right: the player starts at (1,1) and slides to the wall
+  // a swipe right: the player starts at (1,1) and slides to the room's edge (a new room has no border, register 380)
   const s0 = at(3, 3), s1 = at(6, 3);
   await page.mouse.move(s0.x, s0.y); await page.mouse.down(); await page.mouse.move(s1.x, s1.y, { steps: 6 }); await page.mouse.up();
   await page.evaluate(() => window.advanceTime(1200));
   let s = await text();
-  check('a swipe slides the player', s.player.x === lv.w - 2 && s.player.y === 1, JSON.stringify(s.player));
+  check('a swipe slides the player', s.player.x === lv.w - 1 && s.player.y === 1, JSON.stringify(s.player));
   // A swipe that starts off the room still moves you.
   await page.click('#respawnBtn'); await page.evaluate(() => window.advanceTime(60));
   const off = await page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), p = document.getElementById('pad').getBoundingClientRect(); return { x: 30, y: Math.round((c.bottom + p.top) / 2), gap: p.top - c.bottom, inRoom: document.elementFromPoint(30, (c.bottom + p.top) / 2) === document.getElementById('game') }; });
@@ -161,7 +161,7 @@ try {
   check('the play buttons fit their labels', cutPad.length === 0, cutPad.join(', '));
   await page.screenshot({ path: 'shots/phone-play.png' });
   await page.click('#mode');
-  check('back in edit, Look is picked on its open tab', await page.locator('[data-tool=look]').isVisible() && await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')));
+  check('back in edit, Look is picked, its Edit slot showing it', await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')) && await page.locator('#strip [data-slot=edit]').evaluate(b => b.classList.contains('on') && b.dataset.shows === 'look'));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) {
   check('the smoke ran to the end', false, err.message);

@@ -10,13 +10,26 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || 
 const page = await browser.newPage({ viewport: { width: 393, height: 873 }, isMobile: true, hasTouch: true });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
-const shown = () => page.evaluate(() => [...document.querySelectorAll('[data-tool]')].filter(b => !b.hidden && b.offsetParent).map(b => b.dataset.tool).sort().join());
+// Every tool the strip reaches: a slot's own, or its flyout's when it holds more.
+async function shown() {
+  const tools = new Set();
+  for (const slot of await page.locator('#strip .slot:not([hidden])').all()) {
+    if (await slot.locator('.more').isHidden()) { tools.add(await slot.getAttribute('data-picks')); continue; }
+    await slot.click({ button: 'right' });
+    for (const t of await page.$$eval('#palette [data-tool]', bs => bs.filter(b => !b.hidden && b.offsetParent).map(b => b.dataset.tool))) tools.add(t);
+    await page.keyboard.press('Escape');
+  }
+  return [...tools].sort().join();
+}
 try {
   await page.goto('http://localhost:5241/');
   await page.click('#menuSandbox'); await page.waitForTimeout(600);
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });
   check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,door,erase,gate,goal,idoor,look,move,sensor,start,toggle,turret,wall,wire', await shown());
   check('the Sandbox offers red, blue, both and grey, and no powers', await page.evaluate(() => document.querySelectorAll('[data-camp-colour]').length === 4 && getComputedStyle(document.querySelector('[data-sheet=powers]')).display === 'none'));
+  // Register 379: the Sandbox's generator offers only what the Sandbox can place, and no powers.
+  const ing = await page.evaluate(() => { document.getElementById('roomGen').click(); const on = [...document.querySelectorAll('#genIng select')].filter(s => s.offsetParent).map(s => s.dataset.id); document.getElementById('genBox').close(); return on; });
+  check('the Sandbox\'s generator offers only its own pieces', ing.length > 0 && ing.includes('box') && !['enemy', 'water', 'mover', 'dive', 'laser', 'spring'].some(id => ing.includes(id)), ing.join());
   // Registers 357 and 358: the Rooms page lists the example rooms and has a way back to the menu.
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await page.waitForTimeout(300);
   const examples = await page.$$eval('#exampleList li', ls => ls.map(l => l.textContent).join('|'));
@@ -65,7 +78,7 @@ try {
   await page.goto('http://localhost:5241/?sandbox');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady); await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });
-  check('?sandbox still opens the full sandbox, with its groups', await page.evaluate(() => !document.body.classList.contains('simple') && document.querySelectorAll('[data-group]').length > 3 && getComputedStyle(document.getElementById('groups')).display !== 'none'));
+  check('?sandbox still opens the full sandbox, its tools grouped in the strip', await page.evaluate(() => !document.body.classList.contains('simple') && document.querySelectorAll('#strip .slot:not([hidden])').length === 9 && getComputedStyle(document.getElementById('strip')).display !== 'none'));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } finally {
   await browser.close();

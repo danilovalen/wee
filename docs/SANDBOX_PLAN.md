@@ -36,8 +36,12 @@ are "buttons everywhere" (378), and a new room still opens inside a wall border 
 
 ## Also logged, separate fixes
 
-- 379: the generator still offers objectives no level uses.
-- 380: a new room opens with a wall border; rooms lost their border in the campaign long ago.
+- 379: built (2026-10-22): the menu's Sandbox generator lists only what that Sandbox can place.
+- 380: built (2026-10-22): a new room is open floor.
+
+## Built (2026-10-22)
+
+`src/app/strip.js`: one slot per group showing the tool last used from it, a corner mark when it holds more; a tap on the chosen slot, a hold or a right click opens the flyout. On a wide screen the flyout opens beside the slot and the colours row sits in the bar over the room; on a phone the strip is a row and the flyout rises out of its slot. Powers open from a header button.
 
 ## Open questions
 

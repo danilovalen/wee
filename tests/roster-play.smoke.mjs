@@ -5,6 +5,7 @@ import { serve } from '../tools/serve.mjs';
 import { TEMPLATES } from '../src/level/templates.js';
 import { solve } from '../src/solve/solve.js';
 import { suite } from './suite.mjs';
+import { pickTool } from './lib.mjs';
 
 const { check, done } = suite('roster-play');
 const PORT = 5223;
@@ -36,7 +37,7 @@ try {
   const pick = async name => { await page.evaluate(() => { for (const id of ['roomsBox', 'newBox']) if (document.getElementById(id).open) document.getElementById(id).close(); }); await page.evaluate(() => document.getElementById('newBox').showModal()); await page.locator('#templateList .roomRow', { hasText: name }).click(); };
   await pick('Overshoot'); await pick('Short fuse');
   check('an untouched template is left without asking about unsaved changes', !asked.length && (await page.evaluate(() => window.wee.getLevel().w)) === 8, JSON.stringify(asked));
-  await page.click('[data-tool=wall]');
+  await pickTool(page, 'wall');
   const box = await page.locator('#game').boundingBox();
   await page.mouse.click(box.x + 6.5 * box.width / 8, box.y + 3.5 * box.height / 8);
   await pick('Overshoot');

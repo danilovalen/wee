@@ -75,3 +75,15 @@ export function room(rows, opts = {}) {
 
 // Every gate ends on one "N/N passed" line; the runner treats a missing total as red.
 export { suite } from './suite.mjs';
+
+// Picks a tool as a person would (register 381): its button where it shows, else in a Sandbox its
+// group's slot, then the slot's flyout (a right click opens it), or the slot alone when it is the only tool.
+export async function pickTool(page, t) {
+  const b = page.locator(`#palette [data-tool="${t}"], #campTools [data-tool="${t}"]`).first();
+  if (await b.isVisible()) return b.click();
+  const g = await page.evaluate(async t => (await import('/src/editor/palette.js')).stripOf(t)[0], t);
+  const slot = page.locator(`#strip [data-slot="${g}"]`);
+  await slot.click({ button: 'right' });
+  if (await b.isVisible()) return b.click();
+  await slot.click();
+}

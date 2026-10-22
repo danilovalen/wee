@@ -7,6 +7,7 @@ import { allShortest, replayPath } from '../src/campaign/robot.js';
 import { LEVELS } from '../src/level/campaign.js';
 import * as LEVELDATA from '../src/level/campaign.js';
 import { emptyLevel } from '../src/level/format.js';
+import { starterLevel } from '../src/editor/state.js';
 import { moveAt } from '../src/editor/edit.js';
 import { room, suite } from './lib.mjs';
 import { KNOWN } from './knownRooms.mjs';
@@ -53,6 +54,9 @@ const build = (def, rows) => {
   if (!goal) r.cells[(r.h - 2) * r.w + r.w - 2] = 'goal';
   return r;
 };
+
+// A new Sandbox room is open floor, upright or wide (register 380).
+ok('a new room has no wall border', [false, true].every(tall => !starterLevel(tall).cells.some(c => c === 'wall')));
 
 { // the level's own room
   const d = level('1'), r = roomOf(d);

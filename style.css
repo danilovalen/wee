@@ -635,3 +635,40 @@ body.campaign #campReset { order: 6; margin-left: auto; }
 body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 10px; border-radius: var(--r-pill); font-size: 13px; }
 #campCrate.on { background: #ffe2c2; box-shadow: inset 0 0 0 2px #c97326, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); color: #7a4512; }
 #campCrate:disabled { opacity: .5; }
+
+/* The Sandbox's tool strip (registers 381-384): one slot per group, the group's tools in a flyout
+   (src/app/strip.js). Levels keep their single buttons. The chosen tool's options sit in a bar over the
+   room on a wide screen; powers and status open from the header's Powers button. */
+.strip, #powersBtn { display: none; }
+body.sandbox:not(.simple) #powersBtn { display: inline-block; }
+body.sandbox #strip { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+body.sandbox #groups, body.sandbox #tools > h2, body.sandbox #palette .ghead { display: none !important; }
+body.sandbox #palette:not(.fly) { display: none !important; }
+.slot { position: relative; width: 52px; height: 48px; padding: 0; display: grid; place-items: center; }
+.slot .slotIcon { display: grid; place-items: center; }
+.slot .slotIcon canvas { width: 30px; height: 30px; }
+.slot .more { position: absolute; right: 5px; bottom: 5px; width: 6px; height: 6px; background: linear-gradient(135deg, transparent 50%, var(--soft) 50%); }
+.slot .more[hidden] { display: none; }
+.slot.on { box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
+.slot.open { background: var(--panel); }
+body.sandbox #palette.fly { display: flex !important; flex-direction: column; gap: 2px; position: fixed; z-index: 60; padding: 6px; background: var(--panel); border-radius: var(--r-m); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); min-width: 190px; }
+body.sandbox #palette.fly [data-tool] { display: flex; align-items: center; gap: 10px; justify-content: flex-start; width: 100%; box-shadow: none; }
+body.sandbox #palette.fly [data-tool][hidden] { display: none; }
+body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
+@media (min-width: 701px) {
+  body.sandbox main { grid-template-columns: 76px minmax(0, 1fr); }
+  body.sandbox #tools { padding: 8px 4px; }
+  body.sandbox #powers { display: none; }
+  body.sandbox.powersOpen #powers { display: block; position: fixed; right: 16px; top: 64px; width: 260px; z-index: 40; max-height: calc(100vh - 80px); overflow: auto; box-shadow: 0 6px 18px rgba(0, 0, 0, .14); }
+  body.sandbox #ctx #campTop { margin: 0; }
+}
+@media (max-width: 700px) {
+  body.sandbox #strip { flex-direction: row; justify-content: space-between; gap: 2px; order: 9; }
+  body.sandbox .slot { width: auto; flex: 1; max-width: 46px; height: 46px; }
+  body.sandbox .slot .slotIcon canvas { width: 26px; height: 26px; }
+  /* On a phone the flyout rises out of its slot: same panel, no gap, the slot open beneath it like a tab. */
+  body.sandbox #palette.fly { flex-direction: row; min-width: 0; border-radius: var(--r-m); box-shadow: 0 -4px 14px rgba(0, 0, 0, .14); }
+  body.sandbox #palette.fly [data-tool] { width: 46px; height: 46px; padding: 0; justify-content: center; }
+  body.sandbox #palette.fly [data-tool] .lbl, body.sandbox #palette.fly [data-tool] kbd { display: none; }
+  body.sandbox .slot.open { border-radius: 0 0 var(--r-s) var(--r-s); box-shadow: 0 4px 10px rgba(0, 0, 0, .1); }
+}

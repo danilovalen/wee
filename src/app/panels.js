@@ -21,6 +21,7 @@ import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
 import { icon } from './icons.js';
 import { joinEnds } from './join.js';
+import { buildStrip, syncStrip } from './strip.js';
 
 const DEFAULT_HINT = touch ? 'Tap to place, tap one again to remove it, and Look changes nothing.' : 'Click to place, click one again or right click to remove it, and Look changes nothing.';
 function syncCtxText() {
@@ -119,6 +120,8 @@ export function buildPanels(actions) {
   buildKeys();
   document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
+  buildStrip({ offered: offeredTools, pick: t => { S.ui.tool = t; syncPanel(); }, sync: syncPanel });
+  $('powersBtn').onclick = () => { document.body.classList.toggle('powersOpen'); $('powersBtn').classList.toggle('on', document.body.classList.contains('powersOpen')); };
   buildLenses();
   $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };
   $('showSolution').onclick = () => { const moves = S.check?.result?.moves; if (!moves) return; setMode('play'); S.demo = [...moves]; };
@@ -155,7 +158,7 @@ export function syncPanel() {
   syncRoomsButton();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   // In a campaign level the palette is the level's: its elements, Look and Erase, in one list.
-  const only = S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE : null;
+  const only = S.camp || S.simple ? offeredTools() : null;
   syncColours();
   if (only && !only.includes(ui.tool)) ui.tool = 'look';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp; });
@@ -195,25 +198,28 @@ export function syncPanel() {
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
   joinEnds();
+  syncStrip();
 }
+// The tools this room offers: a level's own, the simple Sandbox's, or every Sandbox tool.
+const offeredTools = () => S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE : TOOLS.filter(t => !t.campaign).map(t => t.id);
 
 // A level with more than one colour shows them as a row of dots over its tools (register 245):
 // what you place takes the chosen one, and a one-way takes a colour only in a level that names
 // its colours. The palette's coloured pieces are drawn in the colour they will be placed in.
 const TINTED = ['button', 'toggle', 'door', 'idoor', 'sensor', 'gate'];
 let tint = '';
-// In a level, Look, Erase and Move start the colours' line; back in the sandbox they return to the palette.
+// In a level, Look, Erase and Move start the colours' line; in a Sandbox they stay in the palette, for the strip.
 const LINE = ['look', 'erase', 'move'];
 // The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
-const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'sensor', 'gate', 'turret', 'wire'];
+export const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'sensor', 'gate', 'turret', 'wire'];
 const lined = () => !!(S.camp || S.simple);
 function placeTools() {
   const box = $('campTools');
   for (const id of LINE) {
     const b = document.querySelector(`[data-tool="${id}"]`);
     // A comment keeps each one's place in the palette while it is away.
-    if (lined() && b.parentNode !== box) { b.home ||= document.createComment(id); b.replaceWith(b.home); box.append(b); }
-    else if (!lined() && b.parentNode === box) b.home.replaceWith(b);
+    if (S.camp && b.parentNode !== box) { b.home ||= document.createComment(id); b.replaceWith(b.home); box.append(b); }
+    else if (!S.camp && b.parentNode === box) b.home.replaceWith(b);
   }
 }
 // What the chosen tool may come in, and every choice the row offers: a level's colours, then red+blue

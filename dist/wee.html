@@ -653,6 +653,43 @@ body.campaign #campReset { order: 6; margin-left: auto; }
 body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 10px; border-radius: var(--r-pill); font-size: 13px; }
 #campCrate.on { background: #ffe2c2; box-shadow: inset 0 0 0 2px #c97326, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); color: #7a4512; }
 #campCrate:disabled { opacity: .5; }
+
+/* The Sandbox's tool strip (registers 381-384): one slot per group, the group's tools in a flyout
+   (src/app/strip.js). Levels keep their single buttons. The chosen tool's options sit in a bar over the
+   room on a wide screen; powers and status open from the header's Powers button. */
+.strip, #powersBtn { display: none; }
+body.sandbox:not(.simple) #powersBtn { display: inline-block; }
+body.sandbox #strip { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+body.sandbox #groups, body.sandbox #tools > h2, body.sandbox #palette .ghead { display: none !important; }
+body.sandbox #palette:not(.fly) { display: none !important; }
+.slot { position: relative; width: 52px; height: 48px; padding: 0; display: grid; place-items: center; }
+.slot .slotIcon { display: grid; place-items: center; }
+.slot .slotIcon canvas { width: 30px; height: 30px; }
+.slot .more { position: absolute; right: 5px; bottom: 5px; width: 6px; height: 6px; background: linear-gradient(135deg, transparent 50%, var(--soft) 50%); }
+.slot .more[hidden] { display: none; }
+.slot.on { box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
+.slot.open { background: var(--panel); }
+body.sandbox #palette.fly { display: flex !important; flex-direction: column; gap: 2px; position: fixed; z-index: 60; padding: 6px; background: var(--panel); border-radius: var(--r-m); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); min-width: 190px; }
+body.sandbox #palette.fly [data-tool] { display: flex; align-items: center; gap: 10px; justify-content: flex-start; width: 100%; box-shadow: none; }
+body.sandbox #palette.fly [data-tool][hidden] { display: none; }
+body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
+@media (min-width: 701px) {
+  body.sandbox main { grid-template-columns: 76px minmax(0, 1fr); }
+  body.sandbox #tools { padding: 8px 4px; }
+  body.sandbox #powers { display: none; }
+  body.sandbox.powersOpen #powers { display: block; position: fixed; right: 16px; top: 64px; width: 260px; z-index: 40; max-height: calc(100vh - 80px); overflow: auto; box-shadow: 0 6px 18px rgba(0, 0, 0, .14); }
+  body.sandbox #ctx #campTop { margin: 0; }
+}
+@media (max-width: 700px) {
+  body.sandbox #strip { flex-direction: row; justify-content: space-between; gap: 2px; order: 9; }
+  body.sandbox .slot { width: auto; flex: 1; max-width: 46px; height: 46px; }
+  body.sandbox .slot .slotIcon canvas { width: 26px; height: 26px; }
+  /* On a phone the flyout rises out of its slot: same panel, no gap, the slot open beneath it like a tab. */
+  body.sandbox #palette.fly { flex-direction: row; min-width: 0; border-radius: var(--r-m); box-shadow: 0 -4px 14px rgba(0, 0, 0, .14); }
+  body.sandbox #palette.fly [data-tool] { width: 46px; height: 46px; padding: 0; justify-content: center; }
+  body.sandbox #palette.fly [data-tool] .lbl, body.sandbox #palette.fly [data-tool] kbd { display: none; }
+  body.sandbox .slot.open { border-radius: 0 0 var(--r-s) var(--r-s); box-shadow: 0 4px 10px rgba(0, 0, 0, .1); }
+}
 </style>
 </head>
 <body>
@@ -672,6 +709,7 @@ body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; ali
     <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room (colour, dots, lines and frames): keys 1 to 4 cycle them and 0 turns them off.">Lenses</button>
     <button id="genBtn" type="button" data-edit title="Generate a room">Generate</button>
     <span class="spacer"></span>
+    <button id="powersBtn" type="button" class="sandbox-only" title="Powers, status and how the world moves">Powers</button>
     <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
     <button id="roomsBtn" type="button">Rooms</button>
   </header>
@@ -681,6 +719,7 @@ body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; ali
       <h2>Build</h2>
       <p id="toolName" class="toolName"></p>
       <div id="campTop" class="campTop camp-only"><div id="campTools" class="campTools" data-join></div><div id="campColours" class="campColours" role="radiogroup" aria-label="Colour" hidden></div><button id="campCrate" type="button" class="crateChip" aria-pressed="false" title="What you place comes out pushable" hidden>Pushable</button></div>
+      <div id="strip" class="strip" role="toolbar" aria-label="Tools"></div>
       <div id="groups" class="tabs" role="tablist"></div>
       <div id="palette" class="grid" data-join></div>
       <div id="options">
@@ -3743,11 +3782,9 @@ const { newHistory } = m23;
 
 
 // A new room takes the screen's shape: taller than wide on a phone held upright.
+// A new room is open floor: the room's edge stops the robot, so it needs no wall border (register 380).
 function starterLevel(tall) {
-  const l = tall ? emptyLevel(12, 14) : emptyLevel(20, 12);
-  for (let x = 0; x < l.w; x++) { l.cells[x] = 'wall'; l.cells[(l.h - 1) * l.w + x] = 'wall'; }
-  for (let y = 0; y < l.h; y++) { l.cells[y * l.w] = 'wall'; l.cells[y * l.w + l.w - 1] = 'wall'; }
-  return l;
+  return tall ? emptyLevel(12, 14) : emptyLevel(20, 12);
 }
 
 const S = {
@@ -6718,6 +6755,20 @@ const TOOLS = [
   { id: 'idoor', label: 'Inverted door', group: 'switches' },
   { id: 'sensor', label: 'Laser relay', group: 'switches' },
 ];
+// The Sandbox's tool strip (registers 381, 383): one slot per group, the rest in the group's flyout.
+// Levels keep one button per tool (register 384).
+const STRIP = [
+  ['edit', 'Edit', ['look', 'select', 'move', 'erase']],
+  ['room', 'Room', ['start', 'goal', 'checkpoint']],
+  ['walls', 'Walls', ['wall', 'crack', 'death', 'tri', 'spring']],
+  ['pieces', 'Pieces', ['box', 'heavy', 'mover', 'bomb']],
+  ['enemies', 'Enemies', ['enemy', 'strong']],
+  ['lasers', 'Lasers', ['turret', 'sensor']],
+  ['switches', 'Switches', ['button', 'toggle', 'wire']],
+  ['doors', 'Doors', ['door', 'idoor', 'gate']],
+  ['floors', 'Floors', ['water', 'sticky', 'gravel']],
+];
+const stripOf = tool => STRIP.find(([, , ts]) => ts.includes(tool));
 const POWER_TEXT = {
   boomerang: 'While sliding, press back to slide the other way.',
   dive: 'While sliding, press the same arrow to land at once and crash.',
@@ -6737,7 +6788,7 @@ const WIRE_NAME = { teal: 'Teal', violet: 'Violet', charcoal: 'Charcoal' };
 const CLOCK_NAME = { realtime: 'real time', input: 'on your move', follow: 'same way as you' };
 const ARROW = { up: '\u2191', right: '\u2192', down: '\u2193', left: '\u2190' };
 const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'bottom right' };
-return { TOOLS, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, WIRE_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
+return { TOOLS, STRIP, stripOf, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, WIRE_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/solve/lenses.js
 const m59 = (() => {
@@ -7618,8 +7669,122 @@ function joinEnds() {
 }
 return { joinEnds };
 })();
-// ---- src/app/panels.js
+// ---- src/app/strip.js
 const m69 = (() => {
+const { STRIP, stripOf, TOOLS } = m58;
+const { S } = m24;
+const { $, touch } = m20;
+const { icon } = m36;
+// The Sandbox's tool strip (registers 381-384): one slot per group, showing the tool last used from it,
+// with a mark when the group holds more. A tap on another group's slot picks its tool; a tap on the
+// chosen slot, a hold or a right click opens the group's flyout, which is the palette showing only that
+// group: beside the slot on a wide screen, rising out of it on a phone. Levels keep their single buttons.
+
+
+
+
+const HOLD_MS = 450;
+// Wide screens keep the chosen tool's options in the bar over the room (#ctx, src/app/fit.js); in a
+// Sandbox its colours and Pushable chip join them there.
+const BAR = ['campTop'];
+const TINTED = ['button', 'toggle', 'door', 'idoor', 'sensor'];
+let A = null, open = null, before = null;
+
+const inSandbox = () => !S.camp && !S.puzzle;
+const wide = () => matchMedia('(min-width: 701px)').matches;
+const members = g => STRIP.find(([id]) => id === g)[2].filter(t => A.offered().includes(t));
+const lastOf = g => { const m = members(g), l = S.ui.last && S.ui.last[g]; return m.includes(l) ? l : m[0]; };
+const label = t => TOOLS.find(o => o.id === t).label;
+function setOpen(g) { open = g; A.sync(); }
+
+// actions: offered() (the tool ids this Sandbox has), pick(tool), sync().
+function buildStrip(actions) {
+  A = actions;
+  for (const [g, name] of STRIP) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'slot'; b.dataset.slot = g; b.setAttribute('aria-label', name);
+    b.append(Object.assign(document.createElement('span'), { className: 'slotIcon' }), Object.assign(document.createElement('i'), { className: 'more' }));
+    let timer = null, held = false;
+    b.addEventListener('pointerdown', () => { held = false; clearTimeout(timer); timer = setTimeout(() => { held = true; if (members(g).length > 1) setOpen(g); }, HOLD_MS); });
+    for (const t of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(t, () => clearTimeout(timer));
+    b.oncontextmenu = ev => { ev.preventDefault(); if (members(g).length > 1) setOpen(g); };
+    b.onclick = () => {
+      if (held) { held = false; return; }
+      const mine = (stripOf(S.ui.tool) || [])[0] === g;
+      if (mine && members(g).length > 1) setOpen(open === g ? null : g);
+      else { open = null; A.pick(lastOf(g)); }
+    };
+    $('strip').append(b);
+  }
+  document.addEventListener('pointerdown', ev => { if (open && !ev.target.closest('#strip, #palette')) setOpen(null); }, true);
+  addEventListener('keydown', ev => { if (ev.key === 'Escape' && open) setOpen(null); });
+  addEventListener('resize', () => { if (inSandbox()) placeBar(); place(); });
+}
+
+// The options bar over the room (wide screens), or the panel's own place (a phone, and every level).
+function placeBar() {
+  const into = inSandbox() && wide() ? $('ctx') : null;
+  for (const id of [...BAR].reverse()) {
+    const el = $(id);
+    el.home ||= el.parentNode.insertBefore(document.createComment(id), el);
+    if (into && el.parentNode !== into) into.prepend(el);
+    else if (!into && el.parentNode !== el.home.parentNode) el.home.after(el);
+  }
+}
+
+// The flyout sits by its slot: to its right on a wide screen; on a phone straight above it, joined to it.
+function place() {
+  const pal = $('palette');
+  if (!open) { pal.style.left = pal.style.top = pal.style.bottom = ''; return; }
+  const slot = document.querySelector(`#strip [data-slot="${open}"]`).getBoundingClientRect();
+  if (wide()) { pal.style.left = slot.right + 6 + 'px'; pal.style.top = slot.top + 'px'; pal.style.bottom = ''; return; }
+  const w = pal.offsetWidth, left = Math.max(6, Math.min(innerWidth - w - 6, slot.left + slot.width / 2 - w / 2));
+  pal.style.left = left + 'px'; pal.style.top = ''; pal.style.bottom = innerHeight - slot.top + 'px';
+  pal.style.setProperty('--tab', slot.left + slot.width / 2 - left + 'px');
+}
+
+function syncStrip() {
+  const on = inSandbox(), pal = $('palette');
+  document.body.classList.toggle('sandbox', on);
+  placeBar();
+  // The panel's blur makes it the frame a fixed child is placed in, so in a Sandbox the flyout lives on the page.
+  pal.home ||= pal.parentNode.insertBefore(document.createComment('palette'), pal);
+  if (on && pal.parentNode !== document.body) document.body.append(pal);
+  else if (!on && pal.parentNode === document.body) pal.home.after(pal);
+  if (!on) { open = null; pal.classList.remove('fly'); return; }
+  const tool = S.ui.tool, mine = (stripOf(tool) || [])[0];
+  S.ui.last ||= {};
+  if (mine) S.ui.last[mine] = tool;
+  // Choosing a tool from the flyout closes it.
+  if (open && before !== null && before !== tool) open = null;
+  before = tool;
+  if (open && members(open).length < 2) open = null;
+  for (const b of document.querySelectorAll('#strip [data-slot]')) {
+    const g = b.dataset.slot, m = members(g), t = g === mine ? tool : lastOf(g);
+    b.hidden = !m.length;
+    if (!m.length) continue;
+    const key = t + (TINTED.includes(t) ? S.ui.colour : '');
+    if (b.dataset.shows !== key) {
+      b.dataset.shows = key;
+      b.querySelector('.slotIcon').replaceChildren(icon(t, TINTED.includes(t) && !S.ui.colour.includes('|') && S.ui.colour !== 'wire' ? S.ui.colour : 'red'));
+    }
+    b.dataset.picks = t;
+    b.title = STRIP.find(([id]) => id === g)[1] + ': ' + label(t) + (m.length > 1 ? (touch ? ', hold for more' : ', right click for more') : '');
+    b.querySelector('.more').hidden = m.length < 2;
+    b.classList.toggle('on', g === mine);
+    b.classList.toggle('open', g === open);
+    b.setAttribute('aria-expanded', String(g === open));
+  }
+  pal.classList.toggle('fly', !!open);
+  // The flyout lists its group in the strip's order, not the palette's.
+  for (const b of pal.querySelectorAll('[data-tool]')) { const i = open ? members(open).indexOf(b.dataset.tool) : -1; b.hidden = i < 0; b.style.order = i < 0 ? '' : String(i); }
+  for (const h of pal.querySelectorAll('.ghead')) h.hidden = true;
+  requestAnimationFrame(place);
+}
+return { inSandbox, buildStrip, syncStrip };
+})();
+// ---- src/app/panels.js
+const m70 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m2;
 const { INK } = m29;
@@ -7641,8 +7806,10 @@ const { syncRoomsButton } = m54;
 const { buildSelect, syncSelect } = m67;
 const { icon } = m36;
 const { joinEnds } = m68;
+const { buildStrip, syncStrip } = m69;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -7761,6 +7928,8 @@ function buildPanels(actions) {
   buildKeys();
   document.querySelectorAll('.opt .note').forEach(n => { n.title = n.textContent; });
   buildSelect({ syncPanel });
+  buildStrip({ offered: offeredTools, pick: t => { S.ui.tool = t; syncPanel(); }, sync: syncPanel });
+  $('powersBtn').onclick = () => { document.body.classList.toggle('powersOpen'); $('powersBtn').classList.toggle('on', document.body.classList.contains('powersOpen')); };
   buildLenses();
   $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };
   $('showSolution').onclick = () => { const moves = S.check?.result?.moves; if (!moves) return; setMode('play'); S.demo = [...moves]; };
@@ -7797,7 +7966,7 @@ function syncPanel() {
   syncRoomsButton();
   canvas.style.touchAction = S.mode === 'edit' && ui.tool === 'look' ? 'pan-y' : 'none';
   // In a campaign level the palette is the level's: its elements, Look and Erase, in one list.
-  const only = S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE : null;
+  const only = S.camp || S.simple ? offeredTools() : null;
   syncColours();
   if (only && !only.includes(ui.tool)) ui.tool = 'look';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp; });
@@ -7837,14 +8006,17 @@ function syncPanel() {
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
   joinEnds();
+  syncStrip();
 }
+// The tools this room offers: a level's own, the simple Sandbox's, or every Sandbox tool.
+const offeredTools = () => S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE : TOOLS.filter(t => !t.campaign).map(t => t.id);
 
 // A level with more than one colour shows them as a row of dots over its tools (register 245):
 // what you place takes the chosen one, and a one-way takes a colour only in a level that names
 // its colours. The palette's coloured pieces are drawn in the colour they will be placed in.
 const TINTED = ['button', 'toggle', 'door', 'idoor', 'sensor', 'gate'];
 let tint = '';
-// In a level, Look, Erase and Move start the colours' line; back in the sandbox they return to the palette.
+// In a level, Look, Erase and Move start the colours' line; in a Sandbox they stay in the palette, for the strip.
 const LINE = ['look', 'erase', 'move'];
 // The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
 const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'box', 'button', 'toggle', 'door', 'idoor', 'sensor', 'gate', 'turret', 'wire'];
@@ -7854,8 +8026,8 @@ function placeTools() {
   for (const id of LINE) {
     const b = document.querySelector(`[data-tool="${id}"]`);
     // A comment keeps each one's place in the palette while it is away.
-    if (lined() && b.parentNode !== box) { b.home ||= document.createComment(id); b.replaceWith(b.home); box.append(b); }
-    else if (!lined() && b.parentNode === box) b.home.replaceWith(b);
+    if (S.camp && b.parentNode !== box) { b.home ||= document.createComment(id); b.replaceWith(b.home); box.append(b); }
+    else if (!S.camp && b.parentNode === box) b.home.replaceWith(b);
   }
 }
 // What the chosen tool may come in, and every choice the row offers: a level's colours, then red+blue
@@ -7929,10 +8101,10 @@ function syncColours() {
     if (old) { const c = icon(id, col, gate, crateOf(id)); c.dataset.crate = String(crateOf(id)); c.dataset.colour = id === 'gate' ? gate || '' : col; old.replaceWith(c); }
   }
 }
-return { keysText, buildPanels, syncPanel, pairInk };
+return { keysText, buildPanels, syncPanel, SIMPLE, pairInk };
 })();
 // ---- src/app/campaignMove.js
-const m70 = (() => {
+const m71 = (() => {
 const { placementErrors } = m18;
 const { place, moveAt, swapAt } = m61;
 const { S } = m24;
@@ -7996,7 +8168,7 @@ function say(x, y, why, ms = 1500) {
 return { moveIn, refusal, allows, moveRefusal, refuse, say };
 })();
 // ---- src/app/stuck.js
-const m71 = (() => {
+const m72 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m12;
 const { S } = m24;
 const { $ } = m20;
@@ -8031,7 +8203,7 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m72 = (() => {
+const m73 = (() => {
 const { frame: look } = m29;
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m11;
@@ -8040,11 +8212,11 @@ const { drawEdit, drawPlay } = m35;
 const { S } = m24;
 const { $, g, now } = m20;
 const { openSheet } = m64;
-const { syncPanel, keysText } = m69;
+const { syncPanel, keysText } = m70;
 const { feedDemo } = m47;
 const { selectOverlay } = m67;
-const { moveRefusal } = m70;
-const { watchStuck, resetStuck } = m71;
+const { moveRefusal } = m71;
+const { watchStuck, resetStuck } = m72;
 const { lensMarks, lensBusy } = m60;
 const { syncWell } = m44;
 const { syncChips } = m62;
@@ -8201,20 +8373,20 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m73 = (() => {
+const m74 = (() => {
 const { describe, holds, place, turnGate, turnLaser } = m61;
 const { S } = m24;
 const { $, canvas, touch, now } = m20;
-const { setMode, aim } = m72;
+const { setMode, aim } = m73;
 const { begin, end, change, step: undoStep } = m55;
 const { save } = m54;
 const { selectDown, selectMove, selectUp, selectKey } = m67;
 const { LENS_GROUPS, cycleLens, lensesOff } = m60;
-const { syncPanel } = m69;
+const { syncPanel } = m70;
 const { fit } = m57;
 const { toolForKey, bareKey, showKeys } = m65;
 const { TOOLS } = m58;
-const { refusal, moveRefusal, moveIn, refuse } = m70;
+const { refusal, moveRefusal, moveIn, refuse } = m71;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -8353,7 +8525,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m74 = (() => {
+const m75 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -8464,12 +8636,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m75 = (() => {
+const m76 = (() => {
 const { search, move, stateKey } = m12;
 const { createGame } = m11;
 const { elementCheck, idleElements, NOTES_MAX } = m43;
 const { contains } = m51;
-const { ING, variants } = m74;
+const { ING, variants } = m75;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -8555,7 +8727,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m76 = (() => {
+const m77 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -8572,13 +8744,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m77 = (() => {
+const m78 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m2;
-const { INGREDIENTS, ING, spot } = m74;
-const { judge, lockedIn } = m75;
+const { INGREDIENTS, ING, spot } = m75;
+const { judge, lockedIn } = m76;
 const { contains } = m51;
-const { rng } = m76;
+const { rng } = m77;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -8733,9 +8905,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m78 = (() => {
-const { INGREDIENTS } = m74;
-const { generate, normalize, recipeLabel, LIMITS } = m77;
+const m79 = (() => {
+const { INGREDIENTS } = m75;
+const { generate, normalize, recipeLabel, LIMITS } = m78;
 const { stampOf } = m26;
 const { S } = m24;
 const { thumbURL } = m50;
@@ -8745,9 +8917,11 @@ const { dirty, remember, syncRoomsButton } = m54;
 const { icon } = m36;
 const { current, up } = m21;
 const { TOOLS, GROUPS } = m58;
+const { SIMPLE } = m70;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
+
 
 
 
@@ -8766,6 +8940,16 @@ const ING_ICON = { door: 'door', and: 'button', colours: 'door' };
 const ING_GROUP = { follow: 'pieces', mounted: 'pieces' };
 const ING_COLOUR = { colours: 'blue' };
 const ingGroup = g => ING_GROUP[g.id] || (TOOLS.find(t => t.id === (ING_ICON[g.id] || g.id)) || {}).group;
+// What the Sandbox open now can place (register 379): the menu's Sandbox has the campaign's pieces and no
+// powers, so the generator offers only those; ?sandbox offers everything.
+const offered = g => !S.simple || (!g.power && SIMPLE.includes(ING_ICON[g.id] === 'button' ? 'door' : ING_ICON[g.id] || g.id));
+function showOffered() {
+  for (const li of $('genIng').querySelectorAll('.genSec')) {
+    let any = false;
+    for (const sel of li.querySelectorAll('select')) { const on = offered(INGREDIENTS.find(g => g.id === sel.dataset.id)); sel.closest('li').hidden = !on; if (!on) { sel.value = ''; sel.dataset.off = '1'; } any ||= on; }
+    li.hidden = !any;
+  }
+}
 let A = null, run = 0, shown = null;
 
 const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 'null') ?? d; } catch { return d; } };
@@ -8919,7 +9103,7 @@ function buildGenerator(actions) {
   $('genKeep').checked = $('genW').disabled = $('genH').disabled = !!(saved && saved.recipe.keep);
   $('genKeep').onchange = () => fillForm(recipeFromForm());
   $('genTime').value = saved ? saved.seconds : 15;
-  const open = () => { if ($('newBox').open) $('newBox').close(); if (current()?.name === 'rooms') up(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
+  const open = () => { if ($('newBox').open) $('newBox').close(); if (current()?.name === 'rooms') up(); showOffered(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
   $('roomGen').onclick = $('genBtn').onclick = open;
   $('genReroll').onclick = () => { $('genSeed').value = newSeed(); };
   const seconds = () => Math.max(5, Math.min(60, +$('genTime').value || 15));
@@ -8931,7 +9115,7 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m79 = (() => {
+const m80 = (() => {
 const { buildMaker } = m22;
 const { buildPuzzles } = m27;
 const { buildProgress } = m40;
@@ -8943,11 +9127,11 @@ const { S, starterLevel } = m24;
 const { portrait, $ } = m20;
 const { startSnow, windNow } = m41;
 const { fit, watchStage } = m57;
-const { buildPanels, syncPanel } = m69;
-const { bindInput } = m73;
-const { setMode, frame, render, tick, report, copyReport } = m72;
+const { buildPanels, syncPanel } = m70;
+const { bindInput } = m74;
+const { setMode, frame, render, tick, report, copyReport } = m73;
 const { buildRooms } = m54;
-const { buildGenerator } = m78;
+const { buildGenerator } = m79;
 const { buildCampaign } = m39;
 const { bindNav, start } = m21;
 const { bindDebug } = m37;

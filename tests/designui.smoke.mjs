@@ -3,7 +3,7 @@
 import { chromium } from 'playwright-core';
 import { readFileSync } from 'node:fs';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, pickTool } from './lib.mjs';
 
 const { check, done } = suite('design-ui');
 const server = await serve(5189);
@@ -52,7 +52,7 @@ try {
   const red = await page.waitForFunction(() => { const c = document.getElementById('game'), g = c.getContext('2d'), k = c.width / window.wee.getLevel().w; const d = g.getImageData(Math.round(4 * k + 3 * k / 32), Math.round(6 * k + k / 2), 2, 2).data; return d[0] > 200 && d[1] < 120; }, null, { timeout: 3000 }).then(() => true, () => false);
   check('and framed in red on the map', red);
   // Any edit makes the notes stale: they stay, dimmed, and their marks leave the room.
-  await page.click('[data-tool=wall]').catch(() => {});
+  await pickTool(page, 'wall').catch(() => {});
   const box = await page.locator('#game').boundingBox(), lv = await page.evaluate(() => window.wee.getLevel());
   await page.mouse.click(box.x + 4.5 * box.width / lv.w, box.y + 3.5 * box.height / lv.h);
   check('an edit dims the notes instead of removing them', await page.locator('#designBox').isVisible() && await page.$eval('#designBox', e => e.classList.contains('stale')));

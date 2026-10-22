@@ -33,6 +33,20 @@ export const TOOLS = [
   { id: 'idoor', label: 'Inverted door', group: 'switches' },
   { id: 'sensor', label: 'Laser relay', group: 'switches' },
 ];
+// The Sandbox's tool strip (registers 381, 383): one slot per group, the rest in the group's flyout.
+// Levels keep one button per tool (register 384).
+export const STRIP = [
+  ['edit', 'Edit', ['look', 'select', 'move', 'erase']],
+  ['room', 'Room', ['start', 'goal', 'checkpoint']],
+  ['walls', 'Walls', ['wall', 'crack', 'death', 'tri', 'spring']],
+  ['pieces', 'Pieces', ['box', 'heavy', 'mover', 'bomb']],
+  ['enemies', 'Enemies', ['enemy', 'strong']],
+  ['lasers', 'Lasers', ['turret', 'sensor']],
+  ['switches', 'Switches', ['button', 'toggle', 'wire']],
+  ['doors', 'Doors', ['door', 'idoor', 'gate']],
+  ['floors', 'Floors', ['water', 'sticky', 'gravel']],
+];
+export const stripOf = tool => STRIP.find(([, , ts]) => ts.includes(tool));
 export const POWER_TEXT = {
   boomerang: 'While sliding, press back to slide the other way.',
   dive: 'While sliding, press the same arrow to land at once and crash.',

@@ -3,7 +3,7 @@
 import { chromium } from 'playwright-core';
 import { INGREDIENTS } from '../src/gen/ingredients.js';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, pickTool } from './lib.mjs';
 
 const { check, done } = suite('gen-ui');
 const PORT = 5193;
@@ -94,7 +94,7 @@ try {
   check('redo brings the generated room again, unnamed', await level() === gen && await page.getAttribute('#roomsBtn', 'title') === 'Unsaved room');
 
   // Edit it, then open a generated room over it: two questions, either No keeps it.
-  await page.click('[data-tool=wall]').catch(async () => { await page.click('[data-group=basic]'); await page.click('[data-tool=wall]'); });
+  await pickTool(page, 'wall').catch(async () => { await page.click('[data-group=basic]'); await pickTool(page, 'wall'); });
   const lv = JSON.parse(gen), box = await page.locator('#game').boundingBox();
   const free = lv.cells.findIndex((c, i) => c === '' && !lv.entities.some(e => e.y * lv.w + e.x === i) && i !== lv.start.y * lv.w + lv.start.x);
   await page.evaluate(() => scrollTo(0, 0));

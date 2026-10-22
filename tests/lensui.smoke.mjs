@@ -2,7 +2,7 @@
 // in that group, the keys, and each kind of drawing reaching the canvas.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { room, suite } from './lib.mjs';
+import { room, suite, pickTool } from './lib.mjs';
 
 const { check, done } = suite('lens-ui');
 const server = await serve(5213);
@@ -36,7 +36,7 @@ try {
   check('every lens button says what it shows on hover', await page.$$eval('#lensRows button', bs => bs.length === 13 && bs.every(b => b.title.length > 10)));
   const cols = await page.evaluate(() => { const r = document.getElementById('lensRows').getBoundingClientRect(), f = document.querySelector('.lensFollow').getBoundingClientRect(), w = document.querySelector('.wellBody'); return { beside: f.left >= r.right && f.top < r.bottom, left: r.left - w.getBoundingClientRect().left < 40, scroll: w.scrollHeight - w.clientHeight }; });
   check('wide, the rows sit left with Follow the tool beside them, and nothing scrolls', cols.beside && cols.left && cols.scroll <= 1, JSON.stringify(cols));
-  await page.click('[data-tool=turret]');
+  await pickTool(page, 'turret');
   await settle();
   check('picking the turret opens Beams', await on('colour') === 'beams' && (await legend()).includes('red where a laser can ever reach'), await legend());
   check('and its chip reads Beams, dashed as the tool\'s doing', (await chip('colour')).text === 'Beams' && (await chip('colour')).auto && !(await chip('dots')).auto);
@@ -46,17 +46,17 @@ try {
   check('hovering a tile names it and what the lenses know', /^Tile 4, 1: Empty floor, .*a laser reaches here/.test(await page.textContent('#info')) && await page.locator('#keys').isHidden(), await page.textContent('#info'));
   const beam = await pixel(4, 1);
   check('and the beam\'s tiles turn the laser\'s orange-red (register 354)', beam[3] > 0 && beam[0] - beam[2] > 50 && beam[0] > beam[1] + 30, JSON.stringify([floor, beam]));
-  await page.click('[data-tool=box]');
+  await pickTool(page, 'box');
   await settle();
   check('picking a box opens Pieces instead', await on('colour') === 'pieces' && (await legend()).includes('box, block or enemy'), await legend());
   await page.click('[data-lens-group=colour][data-lens=off]');
-  await page.click('[data-tool=turret]');
+  await pickTool(page, 'turret');
   check('a lens you pick, Off included, beats the tool', await on('colour') === 'off' && !(await chip('colour')).auto);
   await page.click('[data-chip=colour]');
   await page.waitForFunction(() => document.querySelector('[data-chip=colour] .n').textContent === 'Distance', null, { timeout: 3000 }).catch(() => {});
   check('a chip click moves its group to the next lens', await on('colour') === 'distance' && (await chip('colour')).text === 'Distance');
   await page.click('[data-lens-group=colour][data-lens=off]');
-  await page.click('[data-tool=look]');
+  await pickTool(page, 'look');
   await page.evaluate(l => window.wee.loadLevel(l), oneWay);
   await page.keyboard.press('3');
   await settle();

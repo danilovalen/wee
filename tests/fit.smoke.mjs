@@ -2,7 +2,7 @@
 import { chromium } from 'playwright-core';
 import { readFileSync } from 'node:fs';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, pickTool } from './lib.mjs';
 
 const { check, done } = suite('fit');
 const server = await serve(5191);
@@ -24,7 +24,7 @@ try {
     const cutTools = [];
     let turretNote = false;
     for (const t of await page.$$eval('[data-tool]:not([data-camp])', bs => bs.map(b => b.dataset.tool))) {
-      await page.click(`[data-tool=${t}]`);
+      await pickTool(page, t);
       if (await over()) bad.push(t);
       if (t === 'turret' && !(await page.locator('[data-aim=up]').getAttribute('class') || '').includes('on')) await page.click('[data-aim=up]');
       if (await ctxCut()) cutTools.push(t);
@@ -41,7 +41,7 @@ try {
     // design notes in the well. Nothing is cut, and only the room gives up height.
     const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'));
     await page.evaluate(l => window.wee.loadLevel(l), first);
-    await page.click('[data-tool=turret]');
+    await pickTool(page, 'turret');
     if (!(await page.locator('[data-aim=up]').getAttribute('class') || '').includes('on')) await page.click('[data-aim=up]');
     await page.click('#stopsBtn');
     for (const g of ['colour', 'lines']) await page.click(`[data-chip=${g}]`);
@@ -67,8 +67,9 @@ try {
     await page.waitForFunction(() => [...document.querySelectorAll('[data-plus]')].every(b => getComputedStyle(b).opacity >= 0.9), null, { timeout: 3000 }).catch(() => {});
     const plus = await page.evaluate(() => { const a = document.getElementById('roomArea').getBoundingClientRect(); return [...document.querySelectorAll('[data-plus]')].filter(b => { const r = b.getBoundingClientRect(); return getComputedStyle(b).opacity < 0.9 || r.left < a.left || r.top < a.top || r.right > a.right || r.bottom > a.bottom; }).map(b => b.dataset.plus); });
     check(`${w}x${h}: the room's four + show on hover, none clipped`, !plus.length, plus.join(' '));
-    const unnamed = await page.evaluate(() => [...document.querySelectorAll('[data-tool]:not([data-camp])')].filter(b => !b.title || (b.querySelector('.lbl').offsetParent === null) !== (innerWidth <= 1100)).map(b => b.dataset.tool));
-    check(`${w}x${h}: tools are icons up to 1100 px wide, labelled above it, and always named on hover`, !unnamed.length, unnamed.join(' '));
+    // The Sandbox's strip is icons at every width (register 381); each slot and each flyout tool is named on hover.
+    const unnamed = await page.evaluate(() => [...document.querySelectorAll('#strip .slot:not([hidden]), [data-tool]:not([data-camp])')].filter(b => !b.title).map(b => b.dataset.slot || b.dataset.tool));
+    check(`${w}x${h}: the tool strip's slots and tools are always named on hover`, !unnamed.length, unnamed.join(' '));
     check(`${w}x${h}: everything open: nothing scrolls, nothing is cut, the room fills its area`, !(await over()) && !(await cutOff()).length && await page.locator('#well').isVisible() && await page.locator('#lensChips').isVisible() && await fills(), JSON.stringify({ cut: await cutOff(), over: await over() }));
     check(`${w}x${h}: everything open, the room keeps at least 45% of the height`, open >= 0.45, open.toFixed(2));
     await page.click('#wellClose');
@@ -91,7 +92,8 @@ try {
   await low.evaluate(() => window.wee.roomsReady);
   await low.evaluate(() => document.getElementById('roomsBox').close());
   const reach = [];
-  for (const [col, last] of [['#tools', '#palette button:last-child'], ['#powers', 'input[name=clock]:last-of-type']]) {
+  await low.click('#powersBtn');
+  for (const [col, last] of [['#tools', '#strip .slot:not([hidden])'], ['#powers', 'input[name=clock]:last-of-type']]) {
     const b = await low.locator(col).boundingBox();
     await low.mouse.move(b.x + b.width / 2, b.y + 40);
     await low.mouse.wheel(0, 3000);

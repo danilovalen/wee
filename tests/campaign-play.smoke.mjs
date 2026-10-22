@@ -318,9 +318,10 @@ try {
   await page.click('#menuSandbox');
   await page.waitForFunction(() => document.getElementById('roomsBox').open, null, { timeout: 5000 });
   check('Sandbox opens the rooms list', true);
-  // The menu's Sandbox is the simple one (register 302): Move and the tool line, like a level.
-  check('the Sandbox keeps Move', await page.evaluate(() => !document.querySelector('[data-tool="move"]').hidden));
-  check('in the Sandbox Look, Erase and Move sit in the tool line', await page.evaluate(() => ['look', 'erase', 'move'].every(id => document.querySelector(`#campTools [data-tool="${id}"]`))));
+  // The menu's Sandbox is the simple one (register 302); its Look, Erase and Move sit in the strip's Edit group (register 384).
+  await page.evaluate(() => document.querySelector('#strip [data-slot="edit"]').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })));
+  check('the Sandbox keeps Look, Erase and Move, in the Edit group', await page.evaluate(() => ['look', 'erase', 'move'].every(id => { const b = document.querySelector(`#palette [data-tool="${id}"]`); return b && !b.hidden && b.offsetParent; })));
+  await page.keyboard.press('Escape');
   check('the sandbox shows the whole palette again', !(await page.evaluate(() => document.body.classList.contains('campaign'))) && (await page.locator('[data-tool="wall"] .countDot').count()) === 0);
   // On a phone, a palette wider than the screen scrolls by itself and the page stays put.
   const phone = await browser.newPage({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true });

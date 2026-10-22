@@ -5,7 +5,7 @@ import { readFileSync, mkdirSync, mkdtempSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { serve } from '../tools/serve.mjs';
-import { room, suite } from './lib.mjs';
+import { room, suite, pickTool } from './lib.mjs';
 import { GROUPS } from '../src/editor/palette.js';
 const GROUP_COUNT = GROUPS.length;
 
@@ -31,15 +31,17 @@ try {
   await page.click('#roomsBox .roomsHead form button');
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
-  const pick = async t => { const tab = page.locator(`[data-group=${await page.getAttribute(`[data-tool=${t}]`, 'data-in')}]`); if (await tab.isVisible()) await tab.click(); await page.click(`[data-tool=${t}]`); };
+  const pick = t => pickTool(page, t);
+  // Powers, status and world moves open from the header in a Sandbox (register 381).
+  const powers = async f => { const was = await page.locator('#powers').isVisible(); if (!was) await page.click('#powersBtn'); await f(); if (!was) await page.click('#powersBtn'); };
   // Canvas clicks are aimed from the room's position with the page scrolled to the top.
   for (const fn of ['click', 'move']) { const real = page.mouse[fn].bind(page.mouse); page.mouse[fn] = async (...a) => { await page.evaluate(() => scrollTo(0, 0)); return real(...a); }; }
   const box = await page.locator('#game').boundingBox();
   const at = (x, y) => ({ x: box.x + (x + 0.5) * box.width / 20, y: box.y + (y + 0.5) * box.height / 12 });
 
-  // on a wide screen every tool shows at once, in sections, with no tabs
-  const wide = await page.evaluate(() => ({ tabs: !!document.getElementById('groups').offsetParent, hidden: [...document.querySelectorAll('[data-tool]:not([data-camp])')].filter(b => !b.offsetParent).length, heads: [...document.querySelectorAll('.ghead')].filter(h => h.offsetParent).length }));
-  check('on desktop the tools are sections, all visible, no tabs', !wide.tabs && wide.hidden === 0 && wide.heads === GROUP_COUNT, JSON.stringify(wide));
+  // On a wide screen the Sandbox's tools are a strip of nine group slots, no tabs (register 381).
+  const wide = await page.evaluate(() => ({ tabs: !!document.getElementById('groups').offsetParent, slots: [...document.querySelectorAll('#strip [data-slot]')].filter(b => b.offsetParent).length, palette: !!document.getElementById('palette').offsetParent }));
+  check('on desktop the Sandbox tools are nine group slots, the palette closed, no tabs', !wide.tabs && wide.slots === 9 && !wide.palette, JSON.stringify(wide));
   // nothing in a panel is cut by its panel: every control sits inside its box
   const type = await page.evaluate(async () => {
     await document.fonts.ready;
@@ -70,7 +72,7 @@ try {
   const before = JSON.stringify((await text()).level);
   let p = at(0, 0), q; await page.mouse.click(p.x, p.y);
   check('Look is the starting tool and a click changes nothing', JSON.stringify((await text()).level) === before);
-  check('Look says what is under it', (await page.textContent('#placeHint')) === 'Block', await page.textContent('#placeHint'));
+  check('Look says what is under it', (await page.textContent('#placeHint')) === 'Empty floor', await page.textContent('#placeHint'));
   await pick('wall');
   p = at(5, 5); await page.mouse.click(p.x, p.y);
   let lv = (await text()).level;
@@ -211,7 +213,7 @@ try {
     return [d[0], d[1], d[2]];
   }, s.player);
   check('the player is painted on its tile', px[2] > 200 && px[2] - px[1] > 80 && px[0] < px[2] - 60, px.join(','));
-  await page.locator('#statusList [data-power=armored]').setChecked(true);
+  await powers(() => page.locator('#statusList [data-power=armored]').setChecked(true));
   await page.evaluate(() => window.advanceTime(60));
   const rim = await page.evaluate(({ x, y }) => {
     const c = document.getElementById('game'), tile = c.width / window.wee.getLevel().w;
@@ -219,7 +221,7 @@ try {
     return [d[0], d[1], d[2]];
   }, s.player);
   check('armored, the player wears a steel rim', rim[2] > 160 && rim[0] > 110 && rim[0] < rim[2], rim.join(','));
-  await page.locator('#statusList [data-power=armored]').setChecked(false);
+  await powers(() => page.locator('#statusList [data-power=armored]').setChecked(false));
 
   await page.keyboard.press('ArrowDown');
   await page.evaluate(() => window.advanceTime(600));
@@ -229,7 +231,7 @@ try {
   check('R returns to the start before any checkpoint', s.player.x === 1 && s.player.y === 1, JSON.stringify(s.player));
   await page.keyboard.press('e');
   check('E goes back to editing', (await text()).mode === 'edit');
-  check('going back to editing selects Look, on its open tab', await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')) && await page.locator('[data-tool=look]').isVisible());
+  check('going back to editing selects Look, its Edit slot showing it', await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')) && await page.locator('#strip [data-slot=edit]').evaluate(b => b.classList.contains('on') && b.dataset.shows === 'look'));
   check('playing did not change the room', (await text()).level.entities[0].x === 4);
 
   const roomBeforePanel = (await text()).level;
@@ -519,7 +521,7 @@ try {
   await page.keyboard.press('ArrowUp'); await page.evaluate(() => window.advanceTime(60));
   check('an early side key goes in as an aimed-back shot', JSON.parse(await page.evaluate(() => window.wee.report())).keys.some(k => k.k === 'back:up'));
   // a report replays to exactly the state the run ended in, including a power turned off mid-run
-  await page.locator('[data-power=boomerang]').setChecked(false);
+  await powers(() => page.locator('[data-power=boomerang]').setChecked(false));
   await page.keyboard.press('ArrowDown'); await page.evaluate(() => window.advanceTime(1500));
   const same = await page.evaluate(() => {
     const r = JSON.parse(window.wee.report());
@@ -527,7 +529,7 @@ try {
     return JSON.stringify(again) === JSON.stringify(r.end) && r.level.powers.boomerang === true && r.keys.some(k => k.k === 'power:boomerang:0');
   });
   check('a copied report replays to the same end, with a power turned off mid-run', same);
-  await page.locator('[data-power=boomerang]').setChecked(true);
+  await powers(() => page.locator('[data-power=boomerang]').setChecked(true));
   await page.keyboard.press('e');
 
   // undo takes back a whole drag in one step, redo puts it back, and both keys work

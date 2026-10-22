@@ -4,7 +4,7 @@
 import { chromium } from 'playwright-core';
 import { readFileSync } from 'node:fs';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, pickTool } from './lib.mjs';
 
 const { check, done } = suite('perf');
 const CEILING_MS = 250;
@@ -62,7 +62,7 @@ try {
   w = await worst(async () => { await page.click('#checkBtn'); await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')), null, { timeout: 60000 }); });
   check(`Check never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
   await page.click('#wellClose');
-  await page.click('[data-tool=look]');
+  await pickTool(page, 'look');
   const t0 = Date.now();
   w = await worst(async () => { await page.click('[data-sheet=room]'); await page.click('#stopsBtn'); await page.waitForFunction(() => document.getElementById('lensLegend').textContent.includes('stop on'), null, { timeout: 30000 }); });
   check('Show stops answers within a few seconds', Date.now() - t0 < 8000, `${Date.now() - t0} ms`);

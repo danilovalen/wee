@@ -2,7 +2,7 @@
 // a reload and a link all land where they should, and the logo is the menu. docs/NAVIGATION.md.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, pickTool } from './lib.mjs';
 
 const { check, done } = suite('nav');
 const server = await serve(5243);
@@ -32,7 +32,7 @@ try {
   await page.goForward(); await page.goForward(); await settle();
   check('Forward comes back into the level', (await at()).hash === '#/level/2');
   // A reload keeps the level and what was placed in it (ruling 3).
-  await page.click('[data-tool="wall"]').catch(() => {});
+  await pickTool(page, 'wall').catch(() => {});
   const before = await page.evaluate(() => JSON.stringify(window.wee.getLevel().cells));
   await page.mouse.click(200, 400); await page.waitForTimeout(300);
   const placed = await page.evaluate(() => JSON.stringify(window.wee.getLevel().cells));
