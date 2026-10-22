@@ -25,7 +25,7 @@ try {
   await page.goto('http://localhost:5241/');
   await page.click('#menuSandbox'); await page.waitForTimeout(600);
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });
-  check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,door,erase,gate,goal,idoor,look,move,sensor,start,toggle,turret,wall,wire', await shown());
+  check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,death,door,erase,gate,goal,idoor,look,move,sensor,start,toggle,turret,wall,wire', await shown());
   check('the Sandbox offers red, blue, both and grey, and no powers', await page.evaluate(() => document.querySelectorAll('[data-camp-colour]').length === 4 && getComputedStyle(document.querySelector('[data-sheet=powers]')).display === 'none'));
   // Register 379: the Sandbox's generator offers only what the Sandbox can place, and no powers.
   const ing = await page.evaluate(() => { document.getElementById('roomGen').click(); const on = [...document.querySelectorAll('#genIng select')].filter(s => s.offsetParent).map(s => s.dataset.id); document.getElementById('genBox').close(); return on; });
