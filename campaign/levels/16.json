@@ -40,10 +40,13 @@
   "laserThroughButton"
  ],
  "optional": [
-  "laserThroughEveryDoorAndButton"
+  "boxTouchesBothLasers"
  ],
  "colours": [
   "red",
   "blue"
- ]
+ ],
+ "pushable": {
+  "laser": "also"
+ }
 }

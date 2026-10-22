@@ -938,6 +938,8 @@ const M = [
   ['tools/climb.mjs', "    if (sc <= score) { cur = h; score = sc; }", "", 'search'],
   ['tools/searchScores.mjs', "const f = SCORES[id] || derived(id);", "const f = SCORES[id];", 'search'],
   ['tools/minMoves.mjs', "steps: { ...base.steps, max: K }", "steps: { ...base.steps, min: 1, max: K }", 'search'],
+  ['tools/roomSearch.mjs', "crateOf = c => pushes.length > 1 ? c === 'crate' : pushes[0];", "crateOf = c => pushes[0];", 'search'],
+  ['src/view/tiles.js', "star(g, 0.6); if (lit) { g.fillStyle = INK[col]; g.fill(); }", "star(g, 0.6); if (true) { g.fillStyle = INK[col]; g.fill(); }", 'browser'],
   ['src/app/nav.js', "  addEventListener('popstate', ", "  addEventListener('popstate-off', ", 'nav'],
   ['src/app/nav.js', "  if (!fixed) try { history[replace ? 'replaceState' : 'pushState'](entry, '', location.pathname + location.search + entry.path); return; } catch { fixed = true; }", "  fixed = true;", 'nav'],
   ['src/app/rooms.js', "S.simple = false; document.body.classList.remove('simple'); };", "};", 'nav'],

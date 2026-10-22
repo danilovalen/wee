@@ -112,7 +112,7 @@ const build = (def, rows) => {
   // Too few is judged at Run, never a reason not to run (register 321).
   ok('too few of a required element does not stop a run', !placementErrors(d3, roomOf(d3)).some(e => /at least/.test(e.msg)));
   // The score is tiles (register 328): the fewest in any win, then per optional goal met.
-  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, laserThroughEveryDoorAndButton: 6 }) === ', fewest tiles 3; exactly 4: 5; 3×4 or smaller: 4; laser through every door and every button: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, laserThroughEveryDoorAndButton: 6 }));
+  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, boxTouchesBothLasers: 6 }) === ', fewest tiles 3; exactly 4: 5; 3×4 or smaller: 4; box touches a laser and a pushable laser: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, boxTouchesBothLasers: 6 }));
   ok('no win, no score', scoreText(level('16'), {}) === '' && scoreText(level('16'), undefined) === '');
   ok('too few of a required element is missed at Run', underLimits(d3, roomOf(d3)).some(e => e.msg === 'Place at least 1 switch.'));
   const few = check(d3, build(d3, ['P#...', '.#.#.', '.#.#.', '...#G']));
@@ -455,7 +455,7 @@ const build = (def, rows) => {
 }
 { // the goals a level gives its rooms (register 366)
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
-  ok('a laser through every door and button: met when beams cross them all', req('laserThroughEveryDoorAndButton', ['#######', '#PT.o.#', '#######'], []) && !req('laserThroughEveryDoorAndButton', ['#######', '#PT.o.#', '#..o..#', '#######'], []));
+  ok('box touches a laser and a pushable laser: one kind alone is not enough', !req('boxTouchesBothLasers', ['#######', '#PB.T.#', '#######'], ['right']) && !req('boxTouchesBothLasers', ['#######', '#PB.K.#', '#######'], ['right']));
   ok('robot and box collide with a relay: met when both stop against one', req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#.....#', '#....r#', '#######'], ['right', 'down', 'right']) && !req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#######'], ['right']));
 }
 { // every level's own optional goal can be met: a winning room that meets it, found by tools/levelSearch.mjs (registers 262-269)

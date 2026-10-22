@@ -34,7 +34,7 @@ export function searcher(def, seed = 1, opts = {}) {
       const col = choices(el).includes(c) ? c : choices(el)[0];
       if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right') + (def.colours ? '@' + col : '');
       else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
-      else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, ...(pushingsOf(def, 'laser')[0] ? { crate: true } : {}), turret: { dirs: [d || 'right'], mode: 'input' } });
+      else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, ...(crateOf(c) ? { crate: true } : {}), turret: { dirs: [d || 'right'], mode: 'input' } });
       else r.cells[y * g.w + x] = el === 'block' ? 'wall' : CELL[el] + ':' + col;
       if (['gate', 'door', 'idoor', 'relay'].includes(el) && pushingsOf(def, el)[0]) (r.crates ||= []).push({ x, y });
     }
@@ -45,7 +45,10 @@ export function searcher(def, seed = 1, opts = {}) {
     for (let t = 0; t < 50; t++) { const x = Math.floor(rnd() * g.w), y = Math.floor(rnd() * g.h); if (!taken(g, x, y)) return [x, y]; }
     return null;
   }
-  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push([el, ...f, el === 'gate' || el === 'laser' ? pick(DIRS) : null, TINTS.includes(el) ? pick(choices(el)) : null]); };
+  // A laser item's last slot says whether it is pushable: the level's only choice, or either when it offers both (register 373).
+  const pushes = pushingsOf(def, 'laser'), crateOf = c => pushes.length > 1 ? c === 'crate' : pushes[0];
+  const slot = el => el === 'laser' ? (pushes.length > 1 && rnd() < 0.5 ? 'crate' : null) : TINTS.includes(el) ? pick(choices(el)) : null;
+  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push([el, ...f, el === 'gate' || el === 'laser' ? pick(DIRS) : null, slot(el)]); };
   function random() {
     const w = 4 + Math.floor(rnd() * 5), h = 4 + Math.floor(rnd() * 5);
     const g = { w, h, start: { x: Math.floor(rnd() * w), y: Math.floor(rnd() * h) }, goal: null, items: [] };
@@ -88,7 +91,7 @@ export function searcher(def, seed = 1, opts = {}) {
     g.items = g.items.filter(i => i[1] !== x || i[2] !== y);
     const have = g.items.filter(i => i[0] === el);
     if (have.length && rnd() < 0.6) { const it = pick(have); [it[1], it[2]] = [x, y]; }
-    else g.items.push([el, x, y, el === 'gate' || el === 'laser' ? pick(DIRS) : null, TINTS.includes(el) ? pick(choices(el)) : null]);
+    else g.items.push([el, x, y, el === 'gate' || el === 'laser' ? pick(DIRS) : null, slot(el)]);
     return true;
   }
   // Edits that aim (register 364): a piece on the robot's path, a piece or the goal on a beam, an
@@ -125,7 +128,7 @@ export function searcher(def, seed = 1, opts = {}) {
   function mutate(g0) {
     if (opts.aim !== false && rnd() < 0.3) { const a = aim(structuredClone(g0)); if (a) { seen.delete(a); return a; } }
     const g = structuredClone(g0), r = rnd(), els = Object.keys(def.palette);
-    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if ((it[0] === 'gate' || it[0] === 'laser') && rnd() < 0.5) it[3] = pick(DIRS); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(choices(it[0])); }
+    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if ((it[0] === 'gate' || it[0] === 'laser') && rnd() < 0.5) it[3] = pick(DIRS); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(choices(it[0])); if (it[0] === 'laser' && pushes.length > 1 && rnd() < 0.3) it[4] = it[4] === 'crate' ? null : 'crate'; }
     else if (r < 0.5) add(g, pick(els));
     else if (r < 0.65 && g.items.length) {
       const i = Math.floor(rnd() * g.items.length), [el] = g.items[i];
@@ -178,7 +181,7 @@ export function searcher(def, seed = 1, opts = {}) {
       if (c === 'P') g.start = { x, y }; else if (c === 'G') g.goal = { x, y };
       else if (EL[c]) g.items.push([EL[c][0], x, y, null, EL[c][1] || null]);
       else if ('^>v<'.includes(c)) g.items.push(['gate', x, y, { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c], cols[0]]);
-      else if ('nesw'.includes(c) || 'NESW'.includes(c)) g.items.push(['laser', x, y, FROM_LASER[c.toLowerCase()], null]);
+      else if ('nesw'.includes(c) || 'NESW'.includes(c)) g.items.push(['laser', x, y, FROM_LASER[c.toLowerCase()], c === c.toUpperCase() ? 'crate' : null]);
     }));
     return g;
   }

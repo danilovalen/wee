@@ -71,6 +71,10 @@ const level = id => LEVELS.find(l => l.id === id);
   const s19 = searcher(level('19'), 1), known = s19.parse(roomsOf('19')[0]), met = [];
   const end = s19.make(polish(s19, level('19'), known, BY_AREA, 300, x => met.push(x.r.w * x.r.h)));
   ok('polishing a win reports wins and ends on a smaller room', met.length > 0 && end.w * end.h < 25, `${met.length} wins, ends ${end.w}x${end.h}`);
+  // A level offering lasers plain and pushable gets both from the search (register 373: it took the first, plain, always).
+  const s16 = searcher(level('16'), 5), kinds = new Set();
+  for (let i = 0; i < 200; i++) for (const e of s16.make(s16.random()).entities) if (e.turret) kinds.add(!!e.crate);
+  ok('the search builds plain and pushable lasers where a level offers both', kinds.size === 2, [...kinds].join());
   const g = s19.random();
   ok('the aiming edits leave a room the search can still build', Array.from({ length: 200 }).every(() => { const h = s19.mutate(g); s19.make(h); return h.w >= 3 && h.h >= 3; }));
   // The prover: a known win for level 3, and none for level 1 under its 4-move minimum (the old prover lowered it to 1).

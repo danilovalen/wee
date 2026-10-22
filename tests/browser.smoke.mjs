@@ -169,6 +169,13 @@ try {
   check('a laser sensor places in its colour', (await text()).level.cells[3 * 20 + 18] === 'sensor:blue', (await text()).level.cells[3 * 20 + 18]);
   await page.mouse.click(q.x, q.y);
   check('and clicking it again with the sensor tool removes it', (await text()).level.cells[3 * 20 + 18] === '');
+  // The relay is a glass block whose star fills only while a beam crosses it (register 374): sample its centre.
+  const relayCentre = await page.evaluate(async () => {
+    const { drawCell } = await import('/src/view/tiles.js');
+    const at = lit => { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'); drawCell(g, 'sensor:red', 0, 0, { lit: new Set(lit ? [0] : []), w: 1, open: {} }); return [...g.getImageData(16, 16, 1, 1).data]; };
+    return { off: at(false), on: at(true) };
+  });
+  check('a relay\'s centre is pale glass unlit and its colour lit', relayCentre.off[1] > 180 && relayCentre.on[1] < 140, JSON.stringify(relayCentre));
   await pick('water');
   q = at(18, 4); await page.mouse.click(q.x, q.y);
   check('water places', (await text()).level.cells[4 * 20 + 18] === 'water', (await text()).level.cells[4 * 20 + 18]);

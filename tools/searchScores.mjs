@@ -40,11 +40,22 @@ export const SCORES = {
   boxHitsIdoor: (room, moves) => nearest(room, moves, s => s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.x, e.y]), 'idoor:') * 0.5,
   laserPushedThrice: (room, moves) => Math.max(0, ...boxMoves(room, moves, 'turret').map(b => Math.min(b.pushes, 3) / 3)) * 0.9,
   allRelaysLitAtEnd: (room, moves) => { const end = replayPath(room, moves, () => {}), relays = end.cells.flatMap((c, i) => c.startsWith('sensor:') ? [i] : []); return relays.length ? 0.9 * relays.filter(i => end.lit.has(i)).length / relays.length : 0; },
-  // The share of the room's doors and buttons a beam has crossed (register 370).
-  laserThroughEveryDoorAndButton: (room, moves) => {
-    const want = room.cells.flatMap((c, i) => /^(door|button):/.test(c || '') ? [[i % room.w, Math.floor(i / room.w)]] : []), hit = new Set();
-    replayPath(room, moves, s => { for (const [x, y] of beamTiles(s)) hit.add(x + ',' + y); });
-    return want.length ? 0.9 * want.filter(([x, y]) => hit.has(x + ',' + y)).length / want.length : 0;
+  // Half credit per kind of laser a moving box has had right ahead of it (register 373), plus how near a box came to a laser.
+  boxTouchesBothLasers: (room, moves) => {
+    const touched = new Set(), was = new Map();
+    let near = 0;
+    replayPath(room, moves, s => {
+      const lasers = s.entities.filter(t => !t.dead && t.turret);
+      for (const e of s.entities) {
+        if (e.dead || e.kind !== 'box') continue;
+        for (const t of lasers) near = Math.max(near, 1 / (1 + Math.abs(t.x - e.x) + Math.abs(t.y - e.y)));
+        const p = was.get(e.id); was.set(e.id, [e.x, e.y]);
+        if (!p || (p[0] === e.x && p[1] === e.y)) continue;
+        const ahead = lasers.find(t => t.x === e.x + Math.sign(e.x - p[0]) && t.y === e.y + Math.sign(e.y - p[1]));
+        if (ahead) touched.add(ahead.crate ? 'crate' : 'plain');
+      }
+    });
+    return 0.4 * touched.size + 0.1 * near;
   },
   everyToggleOffAtEnd: (room, moves) => {
     const n = room.cells.filter(c => c.startsWith('toggle:')).length;

@@ -13,6 +13,8 @@ export function grit(g, X, Y) {
 
 // The relay's star: eight points, outer radius 12, inner 10.5, each corner rounded, scaled by k.
 const STAR = Array.from({ length: 16 }, (_, i) => { const r = i % 2 ? 10.5 : 12, t = -Math.PI / 2 + i * Math.PI / 8; return [Math.cos(t) * r, Math.sin(t) * r]; });
+// a and b mixed, t of the way to b: two hex colours.
+const mixInk = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('');
 function star(g, k) {
   const P = STAR.map(([x, y]) => [x * k, y * k]), mid = i => { const a = P[i], b = P[(i + 1) % 16]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; };
   g.beginPath(); g.moveTo(...mid(15));
@@ -124,13 +126,14 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
       g.restore();
     }
   } else if (c.startsWith('sensor:')) {
-    // A block a beam goes through, lighting it: a soft eight-point star in its colour, its core filled
-    // while lit (registers 339, 340: a diamond read as a mirror).
+    // A glass block a beam goes through (register 374, his G3): solid, framed in its colour, the star at its
+    // centre filled only while a beam crosses it.
     const col = c.slice(7), lit = s && s.lit.has(y * s.w + x);
-    g.translate(16, 16); g.lineJoin = 'round';
-    g.strokeStyle = g.fillStyle = INK[col]; g.lineWidth = 2.5; star(g, 1); g.stroke();
-    g.globalAlpha = lit ? 1 : 0.25; star(g, 0.5); g.fill();
-    if (lit) { g.globalAlpha = 0.3; star(g, 1.25); g.fill(); }
+    if (lit) { g.fillStyle = INK[col]; g.globalAlpha = 0.25; roundRect(g, -2, -2, T + 4, T + 4, 9); g.fill(); g.globalAlpha = 1; }
+    g.fillStyle = mixInk('#ffffff', INK[col], 0.3); roundRect(g, 2, 2, T - 4, T - 4, 6); g.fill();
+    g.strokeStyle = INK[col]; g.lineWidth = 3; roundRect(g, 3, 3, T - 6, T - 6, 5); g.stroke();
+    g.translate(16, 16); g.lineJoin = 'round'; g.strokeStyle = INK[col]; g.lineWidth = 1.5;
+    star(g, 0.6); if (lit) { g.fillStyle = INK[col]; g.fill(); } else { g.globalAlpha = 0.5; g.stroke(); }
     g.globalAlpha = 1;
   } else if (c === 'goal') {
     // A gold ring with a star in it, pulsing slowly.

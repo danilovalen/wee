@@ -5,7 +5,7 @@
 // builds them. --pieces N caps the pieces placed, blocks included, so bigger rooms can be covered;
 // a room needing more pieces, or a second colour, is not covered. Prints the first win, or says none.
 // Usage: node tools/minMoves.mjs <level> [--moves 3] [--cells 12] [--pieces N] [--count] [--part i/n]
-import { check, placementErrors, colouringsOf } from '../src/campaign/rules.js';
+import { check, placementErrors, colouringsOf, pushingsOf } from '../src/campaign/rules.js';
 import { allShortest } from '../src/campaign/robot.js';
 import { LEVELS } from '../src/level/campaign.js';
 import { searcher } from './roomSearch.mjs';
@@ -18,7 +18,7 @@ const def = { ...base, steps: { ...base.steps, max: K } };
 const { make, show } = searcher(def, 1);
 const DIRS = ['up', 'right', 'down', 'left'];
 // What one tile can hold: one palette element, in each direction it can face, in the level's first colour.
-const VALUES = Object.keys(def.palette).flatMap(el => el === 'laser' || el === 'gate' ? DIRS.map(d => [el, d]) : [[el, null]]);
+const VALUES = Object.keys(def.palette).flatMap(el => el === 'gate' ? DIRS.map(d => [el, d]) : el === 'laser' ? DIRS.flatMap(d => pushingsOf(def, 'laser').map(p => [el, d, p ? 'crate' : null])) : [[el, null]]);
 const need = Object.entries(def.palette).map(([el, [min]]) => [el, min]);
 const maxPieces = Math.min(+arg('--pieces', Infinity), cap);
 
@@ -43,7 +43,7 @@ for (const [w, h] of shapes) {
     for (let c = 0; c <= Math.min(maxPieces, others.length); c++) for (const at of subsets(others.length, c)) {
       const idx = new Array(c).fill(0);
       for (;;) {
-        const items = at.map((o, k) => { const [el, d] = VALUES[idx[k]], i = others[o]; return [el, i % w, Math.floor(i / w), d, colouringsOf(def, el)[0] || null]; });
+        const items = at.map((o, k) => { const [el, d, crate] = VALUES[idx[k]], i = others[o]; return [el, i % w, Math.floor(i / w), d, el === 'laser' ? crate : colouringsOf(def, el)[0] || null]; });
         if (need.every(([el, min]) => items.filter(it => it[0] === el).length >= min)) {
           const r = make({ w, h, start: { x: s % w, y: Math.floor(s / w) }, goal: { x: g % w, y: Math.floor(g / w) }, items });
           tried++;

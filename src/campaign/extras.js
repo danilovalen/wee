@@ -59,16 +59,25 @@ export const EXTRA_REQUIREMENTS = {
     short: [{ el: 'laser' }, 'through the', { el: 'goal' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at) === 'goal')) ok = true; }); return ok; },
   },
-  // Register 370: level 16's main goals made "all": every door and every button in the room has a beam
-  // pass through it at some point (a closed door stops a beam, so a door crossed was open).
-  laserThroughEveryDoorAndButton: {
-    text: 'Laser through every door and every button.',
-    short: [{ el: 'laser' }, 'through every', { el: 'door' }, 'and', { el: 'button' }],
+  // Register 373: a box, moving, has a laser right ahead of it: one it stops against, or one it shoves along.
+  // Met once that has happened with a plain laser and with a pushable one.
+  boxTouchesBothLasers: {
+    needs: { laser: 2 },
+    text: 'Box touches a laser and a pushable laser.',
+    short: [{ el: 'box' }, 'touches a', { el: 'laser' }, 'and a pushable one'],
     judge: (room, moves) => {
-      const left = new Set(room.cells.flatMap((c, i) => /^(door|button):/.test(c || '') ? [i] : []));
-      if (!left.size) return false;
-      beams(room, moves, (b, s) => { for (const [x, y] of through(b, s)) left.delete(y * room.w + x); });
-      return left.size === 0;
+      const touched = new Set(), was = new Map();
+      replayPath(room, moves, s => {
+        for (const e of s.entities) {
+          if (e.dead || e.kind !== 'box') continue;
+          const p = was.get(e.id);
+          was.set(e.id, [e.x, e.y]);
+          if (!p || (p[0] === e.x && p[1] === e.y)) continue;
+          const ahead = s.entities.find(t => !t.dead && t.turret && t.x === e.x + Math.sign(e.x - p[0]) && t.y === e.y + Math.sign(e.y - p[1]));
+          if (ahead) touched.add(ahead.crate ? 'crate' : 'plain');
+        }
+      });
+      return touched.size === 2;
     },
   },
   laserThroughButton: {
