@@ -14,7 +14,7 @@
    null
   ],
   "relay": [
-   2,
+   3,
    null
   ],
   "door": [
@@ -27,7 +27,7 @@
  },
  "steps": {},
  "small": [
-  4,
+  6,
   3
  ],
  "rules": [],
