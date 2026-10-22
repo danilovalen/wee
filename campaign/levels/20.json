@@ -1,0 +1,43 @@
+{
+ "name": "Level 20",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "laser": [
+   1,
+   null
+  ],
+  "relay": [
+   1,
+   null
+  ],
+  "door": [
+   1,
+   null
+  ]
+ },
+ "pushable": {
+  "relay": "only"
+ },
+ "steps": {},
+ "small": [
+  3,
+  3
+ ],
+ "rules": [],
+ "require": [
+  "laserThroughNoRelay",
+  "laserThroughEveryRelay",
+  "laserThroughADoor",
+  "throughOpenDoor"
+ ],
+ "optional": [
+  "threeRelays"
+ ]
+}

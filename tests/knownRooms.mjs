@@ -12,8 +12,12 @@ export const KNOWN = {
     // 17 built by hand (register 325): one inverted door, 7 moves; 18 found by tools/levelSearch.mjs (register 329): 4x5 in 4 moves, and 6x9 in 11.
     17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['rP#', 'nB.', '.G.', '#I#'], twocolour: ['....', '.r..', '.X.q', '....', 'PnG.'],
     // Found by tools/climb.mjs (register 365): 4x4 in 7 moves; 16 and 18 likewise, 3x4 in 4.
-    19: ['##..', '.DD.', 'DESG', '.Pr.'] },
+    19: ['##..', '.DD.', 'DESG', '.Pr.'],
+    // Found by tools/climb.mjs (register 375): 4 moves, 3x3.
+    20: ['reD', 'PGD', 'n..'] },
   optional: {
+    // Found by tools/climb.mjs (register 375): three relays, 4 moves.
+    20: ['D.D..w', 'r.rrPw', '.G#...', '.D..D.'],
     // Found by tools/levelSearch.mjs with the goal required (register 365): 8 moves, the laser through the goal.
     19: ['#D.##', '...##', 'rG.WP', 'rW..D', 'D....', '..#..', '.....'],
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
@@ -36,6 +40,7 @@ export const KNOWN = {
     12: ['PBB.v', '.G>.B', '..>.o'],
   },
   wins: {
+    20: ['reD', 'PGD', 'n..'],
     1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
     2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
     3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],

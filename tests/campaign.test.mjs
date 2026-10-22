@@ -38,7 +38,7 @@ const build = (def, rows) => {
     if (c === 'q') r.cells[i] = 'button:blue';
     if (c === 'I') r.cells[i] = 'idoor:red';
     if (c === 'J') r.cells[i] = 'idoor:blue';
-    if (c === 'r') r.cells[i] = 'sensor:red';
+    if (c === 'r') { r.cells[i] = 'sensor:red'; if (def.pushable && def.pushable.relay === 'only') (r.crates ||= []).push({ x, y }); }
     if (c === 'R') r.cells[i] = 'sensor:blue';
     if (c === 'X') r.cells[i] = 'door:red|blue';
     if ('^>v<'.includes(c)) r.cells[i] = 'gate:' + { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c] + (def.colours ? '@' + def.colours[0] : '');
@@ -455,6 +455,9 @@ const build = (def, rows) => {
 }
 { // the goals a level gives its rooms (register 366)
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
+  ok('a laser through every relay: met when one beam lights them all, not when one is dark', req('laserThroughEveryRelay', ['########', '#PT.r.r#', '########'], []) && !req('laserThroughEveryRelay', ['########', '#PT.r#r#', '########'], []));
+  ok('a laser through no relay: met at a moment with every relay dark', req('laserThroughNoRelay', ['########', '#PT#r..#', '########'], []) && !req('laserThroughNoRelay', ['########', '#PT.r..#', '########'], []));
+  ok('at least 3 relays counts the room', REQUIREMENTS.threeRelays.judge(room(['#######', '#Pr.r.r#', '#######']), []) && !REQUIREMENTS.threeRelays.judge(room(['######', '#Pr.r#', '######']), []));
   ok('box touches a laser and a pushable laser: one kind alone is not enough', !req('boxTouchesBothLasers', ['#######', '#PB.T.#', '#######'], ['right']) && !req('boxTouchesBothLasers', ['#######', '#PB.K.#', '#######'], ['right']));
   ok('robot and box collide with a relay: met when both stop against one', req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#.....#', '#....r#', '#######'], ['right', 'down', 'right']) && !req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#######'], ['right']));
 }

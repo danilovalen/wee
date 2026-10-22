@@ -57,6 +57,9 @@ export const SCORES = {
     });
     return 0.4 * touched.size + 0.1 * near;
   },
+  // The most relays lit at once, as a share; and the fewest (register 375).
+  laserThroughEveryRelay: (room, moves) => { let best = 0; replayPath(room, moves, s => { const r = s.cells.flatMap((c, i) => /^sensor:/.test(c || '') ? [i] : []); if (r.length) best = Math.max(best, r.filter(i => s.lit.has(i)).length / r.length); }); return 0.9 * best; },
+  laserThroughNoRelay: (room, moves) => { let best = 0; replayPath(room, moves, s => { const r = s.cells.flatMap((c, i) => /^sensor:/.test(c || '') ? [i] : []); if (r.length) best = Math.max(best, 1 - r.filter(i => s.lit.has(i)).length / r.length); }); return 0.9 * best; },
   everyToggleOffAtEnd: (room, moves) => {
     const n = room.cells.filter(c => c.startsWith('toggle:')).length;
     return n ? 1 - replayPath(room, moves, () => {}).toggled.length / n : 0;

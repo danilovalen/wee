@@ -40,6 +40,7 @@ function everyLaser(room, moves, test) {
 }
 // The tiles a beam goes through: past the turret, and not the one where a piece or the robot stops it.
 const through = (b, s) => b.path.slice(1).filter(([x, y]) => !(s.player.x === x && s.player.y === y) && !s.entities.some(e => !e.dead && !e.turret && e.x === x && e.y === y));
+const relaysOf = s => s.cells.flatMap((c, i) => /^sensor:/.test(c || '') ? [i] : []);
 const cellOf = (room, at) => at && at[0] >= 0 && at[1] >= 0 && at[0] < room.w && at[1] < room.h ? room.cells[at[1] * room.w + at[0]] || '' : '';
 
 export const EXTRA_REQUIREMENTS = {
@@ -211,6 +212,24 @@ export const EXTRA_REQUIREMENTS = {
     text: 'Every laser relay lit at the end.',
     short: ['every', { el: 'relay' }, 'lit at the end'],
     judge: (room, moves) => { const end = replayPath(room, moves, () => {}), relays = end.cells.flatMap((c, i) => c.startsWith('sensor:') ? [i] : []); return relays.length > 0 && relays.every(i => end.lit.has(i)); },
+  },
+  // Register 375 (level 20): two moments of one run, read from which relays the beams light at each tick.
+  // Relays can be pushed, so they are found again at every tick.
+  laserThroughNoRelay: {
+    text: 'At one moment, a laser goes through no relay.',
+    short: [{ el: 'laser' }, 'through no', { el: 'relay' }],
+    judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { const r = relaysOf(s); if (r.length && r.every(i => !s.lit.has(i))) ok = true; }); return ok; },
+  },
+  laserThroughEveryRelay: {
+    text: 'At one moment, a laser goes through every relay.',
+    short: [{ el: 'laser' }, 'through every', { el: 'relay' }],
+    judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { const r = relaysOf(s); if (r.length && r.every(i => s.lit.has(i))) ok = true; }); return ok; },
+  },
+  threeRelays: {
+    needs: { relay: 3 },
+    text: 'At least 3 relays in the room.',
+    short: ['at least 3', { el: 'relay' }],
+    judge: room => room.cells.filter(c => /^sensor:/.test(c || '')).length >= 3,
   },
   // Register 341: one laser pushed in 3 moves (a push slides it at least one tile).
   laserPushedThrice: {
