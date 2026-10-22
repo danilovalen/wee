@@ -16,8 +16,8 @@ export const KNOWN = {
     // Found by tools/levelSearch.mjs --seeded (register 386): one door, four relays, 6 moves, 8x3.
     20: ['..B.....', '.B......', 'DGrrrrPw'] },
   optional: {
-    // Found by tools/levelSearch.mjs (register 386): one door, a relay pushed into another, 9 moves, 11x3.
-    20: ['......B...s', '.B....#.#..', 'DG.rr.rP..w'],
+    // Found by tools/levelSearch.mjs --all (register 387): the fewest moves found with a relay pushed into another, 5, in 9x3.
+    20: ['....G...e', '........e', '.BD.r.rPw'],
     // Found by tools/levelSearch.mjs with the goal required (register 365): 8 moves, the laser through the goal.
     19: ['#D.##', '...##', 'rG.WP', 'rW..D', 'D....', '..#..', '.....'],
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
