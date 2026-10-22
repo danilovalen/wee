@@ -39,6 +39,6 @@
   "allRelaysLitAtEnd"
  ],
  "optional": [
-  "boxThroughIdoor"
+  "robotAndBoxHitRelay"
  ]
 }

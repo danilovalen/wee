@@ -20,7 +20,8 @@ export const KNOWN = {
     14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
     // Every door and button crossed by a beam (register 370): the 3x4 win, one of each, found at once.
     16: ['o..', 'GBP', '.eD', 'n..'],
-    // 18: no known room meets its own goal yet (register 366: a box twice through an open inverted door).
+    // Found by tools/levelSearch.mjs (register 371): 9 moves, 4x7; the robot and a box each stop against a relay.
+    18: ['.II.', 'I..s', 'B.Br', '....', '.B..', '...P', '.G.r'],
     // His room (register 293): a box goes through the one-way.
     15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
     4: ['PtttD.', '......', '......', '......', '.#.G..'],

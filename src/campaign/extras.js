@@ -178,11 +178,19 @@ export const EXTRA_REQUIREMENTS = {
     short: [{ el: 'start' }, 'through an open', { el: 'idoor' }],
     judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (/^idoor:/.test(s.cells[s.player.y * room.w + s.player.x] || '')) ok = true; }); return ok; },
   },
-  // Register 368: a box stands in an inverted door's tile at some point; a closed one is solid, so it was open.
-  boxThroughIdoor: {
-    text: 'Box through an inverted door.',
-    short: [{ el: 'box' }, 'through an', { el: 'idoor' }],
-    judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (s.entities.some(e => !e.dead && e.kind === 'box' && /^idoor:/.test(s.cells[e.y * room.w + e.x] || ''))) ok = true; }); return ok; },
+  // Register 371: the robot's slide ends against a relay, and so does a pushed box: the relay is solid.
+  robotAndBoxHitRelay: {
+    text: 'Robot and a box both collide with a relay.',
+    short: [{ el: 'start' }, 'and', { el: 'box' }, 'collide with a', { el: 'relay' }],
+    judge: (room, moves) => {
+      let robot = false, dir = null;
+      replayPath(room, moves, s => {
+        const p = s.player;
+        if (dir && !p.dir) { const [dx, dy] = STEP[dir]; if (cellOf(room, [p.x + dx, p.y + dy]).startsWith('sensor:')) robot = true; }
+        dir = p.dir;
+      });
+      return robot && stoppedPushes(room, moves).out.some(h => cellOf(room, [h.x, h.y]).startsWith('sensor:'));
+    },
   },
   laserStoppedByIdoor: {
     text: 'Laser stopped by a closed inverted door.',

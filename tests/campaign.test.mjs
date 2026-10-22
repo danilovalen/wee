@@ -456,7 +456,7 @@ const build = (def, rows) => {
 { // the goals a level gives its rooms (register 366)
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
   ok('a laser through every door and button: met when beams cross them all', req('laserThroughEveryDoorAndButton', ['#######', '#PT.o.#', '#######'], []) && !req('laserThroughEveryDoorAndButton', ['#######', '#PT.o.#', '#..o..#', '#######'], []));
-  ok('a box through an inverted door: met when it is pushed across one, not when it stops short', req('boxThroughIdoor', ['########', '#PB.N..#', '########'], ['right']) && !req('boxThroughIdoor', ['########', '#PB#N..#', '########'], ['right']));
+  ok('robot and box collide with a relay: met when both stop against one', req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#.....#', '#....r#', '#######'], ['right', 'down', 'right']) && !req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#######'], ['right']));
 }
 { // every level's own optional goal can be met: a winning room that meets it, found by tools/levelSearch.mjs (registers 262-269)
   const OPT = KNOWN.optional;
