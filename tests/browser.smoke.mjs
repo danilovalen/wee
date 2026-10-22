@@ -373,7 +373,7 @@ try {
   check('an empty library hides its filter and explored count', await page.locator('#libTools').isHidden());
   check('the library holds no templates of its own', (await page.locator('#roomsBox #templateList').count()) === 0);
   await page.click('#roomNew');
-  check('New room is its own page, with the templates', await page.locator('#newBox').isVisible() && (await page.locator('#templateList li').count()) >= 2);
+  check('New room is its own page, with no templates (register 396)', await page.locator('#newBox').isVisible() && (await page.locator('#templateList').count()) === 0);
   await page.keyboard.press('Escape'); await page.keyboard.press('Escape');
   check('the header names the room, untitled at first', (await page.textContent('#roomTitle')).startsWith('Untitled'));
   await page.click('#roomTitle');
@@ -433,8 +433,7 @@ try {
   await page.waitForFunction(() => !document.getElementById('roomsBtn').textContent.includes('\u2022'));
   check('saving clears the draft', await page.evaluate(() => localStorage.getItem('wee.draft') === null));
   await page.click('#roomsBtn');
-  await page.click('#roomNew');
-  await page.locator('#templateList .roomRow', { hasText: 'First room' }).click();
+  await page.evaluate(n => window.wee.openTemplate(n), 'First room');
   // A template opens as a new room, untitled; left as it is, it has no unsaved changes to warn about.
   check('a template opens as a new, untitled room with nothing unsaved', (await text()).level.w === FIRST_W && !(await page.textContent('#roomsBtn')).includes('\u2022') && (await page.textContent('#roomTitle')).startsWith('Untitled') && !(await page.locator('#newBox').isVisible()));
   // a share code round-trips: sent from This room, received in the library, and a #room= link opens the room

@@ -14,7 +14,7 @@ const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 try {
   await page.goto(`http://localhost:${PORT}/`); await page.waitForTimeout(400);
-  await page.click('#menuSandbox'); await page.waitForTimeout(400); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+  await page.click('#menuSandbox'); await page.waitForTimeout(400); await page.click('#roomNew'); await page.click('#newBlank'); await page.waitForTimeout(300);
   await page.evaluate(() => { const l = window.wee.blank(6, 5); l.start = { x: 0, y: 0 }; window.wee.loadLevel(l); });
   await pickTool(page, 'wire');
   const dots = await page.evaluate(() => [...document.querySelectorAll('[data-camp-wire]')].filter(b => b.offsetParent).map(b => b.dataset.campWire).join());

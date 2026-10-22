@@ -24,7 +24,7 @@ async function shown() {
 try {
   await page.goto('http://localhost:5241/');
   await page.click('#menuSandbox'); await page.waitForTimeout(600);
-  await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });
+  await page.click('#roomNew'); await page.click('#newBlank'); await page.waitForTimeout(300);
   check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,death,door,erase,gate,goal,idoor,look,move,sensor,start,toggle,turret,wall,wire', await shown());
   check('the Sandbox offers red, blue, both and grey, and no powers', await page.evaluate(() => document.querySelectorAll('[data-camp-colour]').length === 4 && getComputedStyle(document.querySelector('[data-sheet=powers]')).display === 'none'));
   // Register 379: the Sandbox's generator offers only what the Sandbox can place, and no powers.
@@ -58,7 +58,9 @@ try {
   check('the list keeps your best', /Solved in 2/.test(await page.locator('#puzzleList .campRow small').textContent()));
   // The Level maker: pick elements and goals, build it, it plays like a campaign level, and back.
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); document.getElementById('menuBox').showModal(); });
-  await page.click('#menuMaker');
+  // The Level maker is off the menu for now (register 394); it still opens at its own place.
+  check('the menu has no Level maker', await page.locator('#menuMaker').isHidden());
+  await page.evaluate(() => document.getElementById('menuMaker').click());
   check('the maker offers only goals its palette can meet', !(await page.$$eval('#makerGoals li', ls => ls.map(l => l.dataset.goal))).includes('throughOpenDoor'));
   for (const el of ['door', 'toggle']) await page.check(`#makerPal tr[data-el="${el}"] [data-in]`);
   await page.fill('#makerPal tr[data-el="door"] [data-min]', '1');

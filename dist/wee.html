@@ -912,7 +912,7 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
     <div class="menuList">
       <section class="menuSec"><h2>For the robot</h2><p>Build a room and the robot plays it</p>
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
-        <button id="menuMaker" type="button" class="primary">Level maker</button></section>
+        <button id="menuMaker" type="button" class="primary" hidden>Level maker</button></section>
       <section class="menuSec"><h2>For you</h2><p>Play as the little circle</p>
         <button id="menuPuzzles" type="button" class="primary">Puzzles</button>
         <button id="menuSandbox" type="button" class="primary">Sandbox</button></section>
@@ -958,7 +958,7 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
     <div class="row"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="roomsBox" class="rooms library">
-    <div class="roomsHead"><b>Rooms</b><span class="row"><button id="roomsMenu" type="button">Menu</button><form method="dialog"><button>Close</button></form></span></div>
+    <div class="roomsHead"><b>Rooms</b><span class="row"><button id="roomsMenu" type="button">Menu</button><form method="dialog" id="roomsClose"><button>Close</button></form></span></div>
     <div class="row libBar">
       <button id="roomNew" type="button" autofocus>New room</button>
       <button id="codeBtn" type="button" aria-expanded="false">Open a code</button>
@@ -995,8 +995,6 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
       <button id="newBlank" type="button">Empty room</button>
       <button id="roomGen" type="button">Generate a room</button>
     </div>
-    <h3>Templates</h3>
-    <ul id="templateList" class="roomList tiles"></ul>
   </dialog>
   <dialog id="infoBox" class="rooms">
     <div class="roomsHead"><b>This room</b><form method="dialog"><button>Close</button></form></div>
@@ -5339,7 +5337,7 @@ function buildCampaign(actions) {
   // A level goes back to where it was opened from; with no history, a made level's parent is the maker.
   place('level', { parent: id => (levelOf(id) || {}).made ? 'maker' : 'levels', enter: id => (S.camp && S.camp.def.id === id) || enterLevel(id), exit: () => { noteLeaving(); leaveLevel(); } });
   $('menuCampaign').onclick = () => go('levels');
-  $('menuSandbox').onclick = () => go('rooms');
+  $('menuSandbox').onclick = () => go('rooms', 'start');
   $('campMenu').onclick = () => back('menu');
   // The Sandbox's way back (register 357): its Rooms page has a Menu button, as the other modes' pages do.
   $('roomsMenu').onclick = () => back('menu');
@@ -6224,7 +6222,7 @@ const { contains, uses, MECHANISMS } = m51;
 const { $ } = m20;
 const { readDraft, noteChange, flushDraft, clearDraft } = m52;
 const { menuOn, buildTileMenu } = m53;
-const { place, go, current, up } = m21;
+const { place, go, current, up, back } = m21;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
 
@@ -6414,21 +6412,22 @@ function download(name, data) {
 }
 
 // Back to the room: the pop-ups close, and the Rooms page goes up to the room under it.
-const closeAll = () => { for (const id of ['newBox', 'infoBox']) if ($(id).open) $(id).close(); if (current()?.name === 'rooms') up(); };
+const closeAll = () => { for (const id of ['newBox', 'infoBox']) if ($(id).open) $(id).close(); if (current()?.name === 'rooms') back('room'); };
 
 function buildRooms(actions) {
   A = actions;
-  // The templates show under New room; the library's foot shows only the examples (register 358).
+  // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
   const EXAMPLES = ['Hex counter'];
   const templateRows = (list = TEMPLATES) => list.map(t => {
     const { level } = splitRoom(t.level);
     return row(level, t.name, `Template, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } });
   });
-  $('templateList').replaceChildren(...templateRows());
+  window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
   $('exampleList').replaceChildren(...templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name))));
   // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
   // generate, templates) and This room (name, note, save, share, delete), from the header title.
-  place('rooms', { page: 'roomsBox', parent: () => 'room', enter: async () => { await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
+  // From the menu (rooms/start) the page is the Sandbox's first screen, so its way back is the menu, and Close goes (register 395).
+  place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
   place('room', { parent: () => 'menu', enter: enterSandbox, exit: leaveSandbox });
   $('roomsBtn').onclick = () => go('rooms');
   buildTileMenu({ say, fillCurrent, refresh, remember, syncRoomsButton });

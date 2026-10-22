@@ -44,7 +44,7 @@ try {
   check('Levels after a reload (no history) still goes to the list', (await at()).open === 'campBox');
   // Ruling 1: Back goes where you came from, so a made level opened from the Maker goes back to it.
   await page.click('#campMenu'); await settle();
-  await page.click('#menuMaker'); await page.check('#makerPal tr[data-el="door"] [data-in]');
+  await page.evaluate(() => document.getElementById('menuMaker').click()); await page.check('#makerPal tr[data-el="door"] [data-in]');
   await page.selectOption('#makerGoals li[data-goal="throughOpenDoor"] select', 'require');
   await page.click('#makerBuild'); await settle();
   check('a made level has its address too', /^#\/level\/m\d+$/.test((await at()).hash));
@@ -57,8 +57,17 @@ try {
   check('the logo is on screen on a phone', await page.locator('#logo').isVisible());
   // The Sandbox: the Rooms page, the room, Close, Menu and a reload.
   await page.click('#menuSandbox'); await page.waitForTimeout(800);
-  check('the Sandbox opens on its Rooms page, at #/rooms', (await at()).hash === '#/rooms' && (await at()).open === 'roomsBox');
+  check('the Sandbox opens on its Rooms page, at #/rooms/start', (await at()).hash === '#/rooms/start' && (await at()).open === 'roomsBox');
   check('a fresh Sandbox asks nothing', asked.length === 0, asked.join(' | '));
+  // Its first screen has one way back, Menu, and Escape goes there too (register 395).
+  check('the first Sandbox screen has Menu and no Close', await page.locator('#roomsMenu').isVisible() && await page.locator('#roomsClose').isHidden());
+  await page.keyboard.press('Escape'); await settle();
+  check('Escape on the first Sandbox screen goes to the menu, not the editor', (await at()).open === 'menuBox', JSON.stringify(await at()));
+  await page.click('#menuSandbox'); await settle();
+  await page.click('#roomNew'); await page.click('#newBlank'); await settle();
+  check('a new room from the first screen lands in the room', (await at()).hash === '#/room' && (await at()).open === '', JSON.stringify(await at()));
+  await page.evaluate(() => document.getElementById('roomsBtn').click()); await settle();
+  check('from the room, the Rooms page has Close', await page.locator('#roomsClose').isVisible());
   await page.click('#roomsBox .roomsHead form button'); await settle();
   check('Close on the Rooms page goes to the room', (await at()).hash === '#/room' && (await at()).open === '');
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await settle();

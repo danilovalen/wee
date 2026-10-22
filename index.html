@@ -228,7 +228,7 @@
     <div class="menuList">
       <section class="menuSec"><h2>For the robot</h2><p>Build a room and the robot plays it</p>
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
-        <button id="menuMaker" type="button" class="primary">Level maker</button></section>
+        <button id="menuMaker" type="button" class="primary" hidden>Level maker</button></section>
       <section class="menuSec"><h2>For you</h2><p>Play as the little circle</p>
         <button id="menuPuzzles" type="button" class="primary">Puzzles</button>
         <button id="menuSandbox" type="button" class="primary">Sandbox</button></section>
@@ -274,7 +274,7 @@
     <div class="row"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="roomsBox" class="rooms library">
-    <div class="roomsHead"><b>Rooms</b><span class="row"><button id="roomsMenu" type="button">Menu</button><form method="dialog"><button>Close</button></form></span></div>
+    <div class="roomsHead"><b>Rooms</b><span class="row"><button id="roomsMenu" type="button">Menu</button><form method="dialog" id="roomsClose"><button>Close</button></form></span></div>
     <div class="row libBar">
       <button id="roomNew" type="button" autofocus>New room</button>
       <button id="codeBtn" type="button" aria-expanded="false">Open a code</button>
@@ -311,8 +311,6 @@
       <button id="newBlank" type="button">Empty room</button>
       <button id="roomGen" type="button">Generate a room</button>
     </div>
-    <h3>Templates</h3>
-    <ul id="templateList" class="roomList tiles"></ul>
   </dialog>
   <dialog id="infoBox" class="rooms">
     <div class="roomsHead"><b>This room</b><form method="dialog"><button>Close</button></form></div>

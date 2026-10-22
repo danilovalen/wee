@@ -259,7 +259,7 @@ export function buildCampaign(actions) {
   // A level goes back to where it was opened from; with no history, a made level's parent is the maker.
   place('level', { parent: id => (levelOf(id) || {}).made ? 'maker' : 'levels', enter: id => (S.camp && S.camp.def.id === id) || enterLevel(id), exit: () => { noteLeaving(); leaveLevel(); } });
   $('menuCampaign').onclick = () => go('levels');
-  $('menuSandbox').onclick = () => go('rooms');
+  $('menuSandbox').onclick = () => go('rooms', 'start');
   $('campMenu').onclick = () => back('menu');
   // The Sandbox's way back (register 357): its Rooms page has a Menu button, as the other modes' pages do.
   $('roomsMenu').onclick = () => back('menu');

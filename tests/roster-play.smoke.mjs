@@ -20,8 +20,7 @@ try {
     await page.goto(`http://localhost:${PORT}/?sandbox`);
     await page.waitForFunction(() => window.wee && window.wee.roomsReady);
     await page.evaluate(() => window.wee.roomsReady);
-    await page.click('#roomNew');
-    await page.locator('#templateList .roomRow', { hasText: name }).click();
+    await page.evaluate(n => window.wee.openTemplate(n), name);
     const moves = solve(TEMPLATES.find(t => t.name === name).level).moves;
     await page.evaluate(() => { window.__manualClock = true; });
     await page.keyboard.press('e');
@@ -34,7 +33,7 @@ try {
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   const asked = []; page.on('dialog', d => { asked.push(d.message()); d.dismiss(); });
-  const pick = async name => { await page.evaluate(() => { for (const id of ['roomsBox', 'newBox']) if (document.getElementById(id).open) document.getElementById(id).close(); }); await page.evaluate(() => document.getElementById('newBox').showModal()); await page.locator('#templateList .roomRow', { hasText: name }).click(); };
+  const pick = async name => { await page.evaluate(() => { for (const id of ['roomsBox', 'newBox']) if (document.getElementById(id).open) document.getElementById(id).close(); }); await page.evaluate(n => window.wee.openTemplate(n), name); };
   await pick('Overshoot'); await pick('Short fuse');
   check('an untouched template is left without asking about unsaved changes', !asked.length && (await page.evaluate(() => window.wee.getLevel().w)) === 8, JSON.stringify(asked));
   await pickTool(page, 'wall');

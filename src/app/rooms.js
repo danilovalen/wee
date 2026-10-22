@@ -12,7 +12,7 @@ import { contains, uses, MECHANISMS } from '../solve/tags.js';
 import { $ } from './dom.js';
 import { readDraft, noteChange, flushDraft, clearDraft } from './draft.js';
 import { menuOn, buildTileMenu } from './tilemenu.js';
-import { place, go, current, up } from './nav.js';
+import { place, go, current, up, back } from './nav.js';
 
 const LAST = 'wee.last';
 let A = null; // the page actions (setMode, syncPanel, fit), passed in to avoid an import cycle
@@ -188,21 +188,22 @@ function download(name, data) {
 }
 
 // Back to the room: the pop-ups close, and the Rooms page goes up to the room under it.
-const closeAll = () => { for (const id of ['newBox', 'infoBox']) if ($(id).open) $(id).close(); if (current()?.name === 'rooms') up(); };
+const closeAll = () => { for (const id of ['newBox', 'infoBox']) if ($(id).open) $(id).close(); if (current()?.name === 'rooms') back('room'); };
 
 export function buildRooms(actions) {
   A = actions;
-  // The templates show under New room; the library's foot shows only the examples (register 358).
+  // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
   const EXAMPLES = ['Hex counter'];
   const templateRows = (list = TEMPLATES) => list.map(t => {
     const { level } = splitRoom(t.level);
     return row(level, t.name, `Template, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } });
   });
-  $('templateList').replaceChildren(...templateRows());
+  window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
   $('exampleList').replaceChildren(...templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name))));
   // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
   // generate, templates) and This room (name, note, save, share, delete), from the header title.
-  place('rooms', { page: 'roomsBox', parent: () => 'room', enter: async () => { await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
+  // From the menu (rooms/start) the page is the Sandbox's first screen, so its way back is the menu, and Close goes (register 395).
+  place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
   place('room', { parent: () => 'menu', enter: enterSandbox, exit: leaveSandbox });
   $('roomsBtn').onclick = () => go('rooms');
   buildTileMenu({ say, fillCurrent, refresh, remember, syncRoomsButton });

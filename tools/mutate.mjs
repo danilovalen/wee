@@ -975,7 +975,10 @@ const M = [
   ['src/app/strip.js', "      if (mine && members(g).length > 1) setOpen(open === g ? null : g);", "      if (false) setOpen(g);", 'browser'],
   ['src/app/strip.js', "    b.querySelector('.more').hidden = m.length < 2;", "    b.querySelector('.more').hidden = false;", 'modes'],
   ['src/app/strip.js', "  if (on && pal.parentNode !== document.body) document.body.append(pal);", "", 'phone'],
-  ['src/app/generator.js', "sel.closest('li').hidden = !on;", "sel.closest('li').hidden = false;", 'modes'],
+  ['src/app/generator.js', "sel.closest('li').hidden = !on;", "sel.closest('li').hidden = false;", 'modes'],  ['src/app/rooms.js', "parent: arg => arg === 'start' ? 'menu' : 'room',", "parent: () => 'room',", 'nav'],
+  ['src/app/rooms.js', "$('roomsClose').hidden = arg === 'start';", "", 'nav'],
+  ['src/app/rooms.js', "if (current()?.name === 'rooms') back('room'); };", "if (current()?.name === 'rooms') up(); };", 'nav'],
+  ['index.html', 'class="primary" hidden>Level maker', 'class="primary">Level maker', 'modes'],
 ];
 
 // SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.
