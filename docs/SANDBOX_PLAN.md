@@ -41,5 +41,5 @@ are "buttons everywhere" (378), and a new room still opens inside a wall border 
 
 ## Open questions
 
-1. The groups: Lasers with Relay, and One-way with Doors, are the two I am least sure of.
+1. ~~The groups~~: settled (2026-10-22): Relay stays with Lasers and One-way with Doors, "for now" (register 383).
 2. Does the simple Sandbox (from the menu) get the strip too, or keep its single row?
