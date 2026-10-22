@@ -3,6 +3,7 @@
 // after a win it keeps going for fewer moves and a smaller room. Usage: node tools/levelSearch.mjs <level> [--seconds S] [--seed N] [--all]
 // --all keeps going and prints every distinct win with its length; otherwise it stops at one.
 // --require a,b and --steps min,max try the level with other requirements or other bounds on moves;
+// --palette 'relay=0;door=1,1' tries it with other piece limits (min, optional max);
 // --from 'rows' and --seeded add rooms that a fifth of the climbs start from.
 import { LEVELS } from '../src/level/campaign.js';
 import { search } from './climb.mjs';
@@ -10,7 +11,8 @@ import { roomsOf } from '../tests/knownRooms.mjs';
 
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const base = LEVELS.find(l => l.id === process.argv[2]);
-const def = base && { ...base, ...(arg('--require') ? { require: arg('--require').split(',') } : {}), ...(arg('--steps') ? { steps: { ...base.steps, min: +arg('--steps').split(',')[0], max: +arg('--steps').split(',')[1] } } : {}) };
+const pal = arg('--palette') && Object.fromEntries(arg('--palette').split(';').map(kv => { const [k, v] = kv.split('='); const [lo, hi] = v.split(','); return [k, [+lo, hi == null || hi === '' ? null : +hi]]; }));
+const def = base && { ...base, ...(pal ? { palette: { ...base.palette, ...pal } } : {}), ...(arg('--require') ? { require: arg('--require').split(',') } : {}), ...(arg('--steps') ? { steps: { ...base.steps, min: +arg('--steps').split(',')[0], max: +arg('--steps').split(',')[1] } } : {}) };
 if (!def) { console.log('Usage: node tools/levelSearch.mjs <level> [--seconds S] [--seed N] [--all]'); process.exit(1); }
 const seconds = +arg('--seconds', 60), all = process.argv.includes('--all');
 // --from 'rows ...' adds a room to climb from (the legend of roomSearch's show()); --seeded adds the
