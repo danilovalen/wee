@@ -126,9 +126,9 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const lots = build(d3, ['']); for (let x = 1; x <= 5; x++) { lots.cells[2 * 7 + x] = 'toggle:red'; lots.cells[3 * 7 + x] = 'door:red'; }
   ok('a level with no maximum takes any number', placementErrors(d3, lots).length === 0, JSON.stringify(placementErrors(d3, lots)));
   const d4 = level('7'), onButton = build(d4, ['', '', '..o']); onButton.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
-  ok('a box cannot start on a button', placementErrors(d4, onButton).some(e => /Nothing can start on a button or a switch/.test(e.msg)));
+  ok('a box cannot start on a button', placementErrors(d4, onButton).some(e => /Nothing can start on a button, a switch/.test(e.msg)));
   const d6 = level('6'), onSwitch = build(d6, ['', '', '..t']); onSwitch.entities.push({ kind: 'box', x: 2, y: 2, dir: 1, mode: 'input' });
-  ok('a box cannot start on a switch, in any level', placementErrors(d6, onSwitch).some(e => /Nothing can start on a button or a switch/.test(e.msg)));
+  ok('a box cannot start on a switch, in any level', placementErrors(d6, onSwitch).some(e => /Nothing can start on a button, a switch/.test(e.msg)));
   const robotOn = build(d6, ['', '', '..t']); robotOn.start = { x: 2, y: 2 };
   ok('nor can the robot', placementErrors(d6, robotOn).some(e => /Nothing can start/.test(e.msg)));
   const end7 = REQUIREMENTS.boxOffButtonAtEnd;
@@ -467,6 +467,10 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('a relay collides with a relay: a pushed relay meets another in its line, not one off its line', hit(['#######', '#Pr..r#', '#.....#', '#######'], ['right']) && !hit(['#######', '#Pr...#', '#....r#', '#######'], ['right']));
   ok('at least 3 relays counts the room', REQUIREMENTS.threeRelays.judge(room(['#######', '#Pr.r.r#', '#######']), []) && !REQUIREMENTS.threeRelays.judge(room(['######', '#Pr.r#', '######']), []));
   ok('box touches a laser and a pushable laser: one kind alone is not enough', !req('boxTouchesBothLasers', ['#######', '#PB.T.#', '#######'], ['right']) && !req('boxTouchesBothLasers', ['#######', '#PB.K.#', '#######'], ['right']));
+  // Register 435: leaving means having been there; nothing starts on spikes.
+  ok('a box leaves spikes: met when a box crosses them, not when it stops on them', req('boxLeavesSpikes', ['#######', '#PB.X.#', '#######'], ['right']) && !req('boxLeavesSpikes', ['######', '#PB.X#', '######'], ['right']));
+  ok('a box leaves the goal: met when a box crosses the goal, not when it never reaches it', req('boxLeavesGoal', ['#######', '#PBG..#', '#######'], ['right']) && !req('boxLeavesGoal', ['#######', '#PB#G.#', '#######'], ['right']));
+  ok('a box cannot start on spikes', placementErrors({ ...level('1'), palette: { block: [0, null], box: [0, null], spikes: [0, null] } }, (() => { const r = room(['P.X', '...', '..G']); r.entities.push({ kind: 'box', x: 2, y: 0, dir: 1, mode: 'input' }); return r; })()).some(e => e.msg === 'Nothing can start on a button, a switch or spikes.'));
   ok('robot and box collide with a relay: met when both stop against one', req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#.....#', '#....r#', '#######'], ['right', 'down', 'right']) && !req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#######'], ['right']));
 }
 { // every level's own optional goal can be met: a winning room that meets it, found by tools/levelSearch.mjs (registers 262-269)

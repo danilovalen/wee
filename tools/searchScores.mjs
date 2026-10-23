@@ -20,7 +20,11 @@ const you = s => [[s.player.x, s.player.y]];
 const stops = s => (s.beams || []).map(b => b.stop).filter(Boolean);
 const beamTiles = s => (s.beams || []).flatMap(b => b.path.slice(1));
 const mean = xs => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
+const boxesAt = s => s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.x, e.y]);
 export const SCORES = {
+  // A box nearer spikes or the goal is warmer, half credit once on them: leaving is the other half (register 435).
+  boxLeavesSpikes: (room, moves) => Math.min(0.5, nearest(room, moves, boxesAt, 'death')),
+  boxLeavesGoal: (room, moves) => Math.min(0.5, nearest(room, moves, boxesAt, 'goal')),
   everyBoxPushedTwice: (room, moves) => mean(boxMoves(room, moves).map(b => Math.min(b.pushes, 2) / 2)),
   everyBoxHitOnce: (room, moves) => mean(boxMoves(room, moves).map(b => b.hits >= 1 ? 1 : 0)),
   // The nearer a stopped box ends to another box, the warmer.

@@ -3,6 +3,7 @@
 import { replayPath } from './robot.js';
 import { ONE_WAY_REQUIREMENTS } from './oneWay.js';
 import { EXTRA_REQUIREMENTS } from './extras.js';
+import { SPIKE_REQUIREMENTS } from './spikes.js';
 import { boxMoves } from './pushes.js';
 
 
@@ -199,7 +200,7 @@ Object.assign(REQUIREMENTS, {
       return ok && boxes.size > 0;
     },
   },
-}, ONE_WAY_REQUIREMENTS, EXTRA_REQUIREMENTS);
+}, ONE_WAY_REQUIREMENTS, EXTRA_REQUIREMENTS, SPIKE_REQUIREMENTS);
 
 // A path drawn on its room: where the robot is after each move, and each box's places in order.
 export function trailOf(room, moves) {

@@ -6,7 +6,7 @@ import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { allShortest, replayPath } from '../src/campaign/robot.js';
 import { miss } from './searchScores.mjs';
 
-const CELL = { block: 'wall', toggle: 'toggle', door: 'door', button: 'button', idoor: 'idoor', relay: 'sensor' };
+const CELL = { spikes: 'death', block: 'wall', toggle: 'toggle', door: 'door', button: 'button', idoor: 'idoor', relay: 'sensor' };
 const TINTS = ['toggle', 'door', 'button', 'gate', 'idoor', 'relay'];
 // A laser in the legend: n, e, s or w, the way it fires.
 const LASER = { up: 'n', right: 'e', down: 's', left: 'w' }, FROM_LASER = { n: 'up', e: 'right', s: 'down', w: 'left' };
@@ -35,7 +35,7 @@ export function searcher(def, seed = 1, opts = {}) {
       if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right') + (def.colours ? '@' + col : '');
       else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
       else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, ...(crateOf(c) ? { crate: true } : {}), turret: { dirs: [d || 'right'], mode: 'input' } });
-      else r.cells[y * g.w + x] = el === 'block' ? 'wall' : CELL[el] + ':' + col;
+      else r.cells[y * g.w + x] = el === 'block' ? 'wall' : el === 'spikes' ? 'death' : CELL[el] + ':' + col;
       if (['gate', 'door', 'idoor', 'relay'].includes(el) && pushingsOf(def, el)[0]) (r.crates ||= []).push({ x, y });
     }
     return r;
@@ -171,12 +171,14 @@ export function searcher(def, seed = 1, opts = {}) {
     if (c.includes('|')) return 'X';
     if (c.startsWith('idoor')) return blue ? 'J' : 'I';
     if (c.startsWith('sensor')) return blue ? 'R' : 'r';
+    // x: spikes, in this legend only (the tests' X is taken by a two-colour door here).
+    if (c === 'death') return 'x';
     return c === 'wall' ? '#' : c.startsWith('gate:') ? { up: '^', right: '>', down: 'v', left: '<' }[c.slice(5).split('@')[0]] : c === 'goal' ? 'G' : c.startsWith('toggle') ? (blue ? 'T' : 't') : c.startsWith('door') ? (blue ? 'Q' : 'D') : c.startsWith('button') ? (blue ? 'q' : 'o') : '.';
   }).join('')).join(' ');
   // A genome from rows in show()'s legend, so a climb can start from a known room.
   function parse(rows) {
     const g = { w: rows[0].length, h: rows.length, start: null, goal: null, items: [] };
-    const EL = { '#': ['block'], t: ['toggle', 'red'], T: ['toggle', 'blue'], D: ['door', 'red'], Q: ['door', 'blue'], o: ['button', 'red'], q: ['button', 'blue'], B: ['box'], I: ['idoor', 'red'], J: ['idoor', 'blue'], r: ['relay', 'red'], R: ['relay', 'blue'], X: ['door', 'red|blue'] };
+    const EL = { x: ['spikes'], '#': ['block'], t: ['toggle', 'red'], T: ['toggle', 'blue'], D: ['door', 'red'], Q: ['door', 'blue'], o: ['button', 'red'], q: ['button', 'blue'], B: ['box'], I: ['idoor', 'red'], J: ['idoor', 'blue'], r: ['relay', 'red'], R: ['relay', 'blue'], X: ['door', 'red|blue'] };
     rows.forEach((row, y) => [...row].forEach((c, x) => {
       if (c === 'P') g.start = { x, y }; else if (c === 'G') g.goal = { x, y };
       else if (EL[c]) g.items.push([EL[c][0], x, y, null, EL[c][1] || null]);

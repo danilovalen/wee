@@ -1008,7 +1008,8 @@ const M = [
   ['src/editor/state.js', "  return emptyLevel(7, 7);", "  return tall ? emptyLevel(12, 14) : emptyLevel(20, 12);", 'campaign'],
   ['src/app/nav.js', "    if (n > 0 && !fixed) { toMenu = true; ours = true; history.go(-n); return; }", "", 'nav'],
   ['src/app/levelParts.js', "  if (cols.length < 2) return dots;", "  return dots;", 'campaign-play'],
-  ['src/app/levelParts.js', "    const crate = pushingsOf(def, el).every(Boolean);", "    const crate = false;", 'campaign-play'],
+  ['src/app/levelParts.js', "    const crate = pushingsOf(def, el).every(Boolean);", "    const crate = false;", 'campaign-play'],  ['src/campaign/spikes.js', "if (s.cells[e.y * s.w + e.x] === cell) was.add(e.id); else if (was.has(e.id)) ok = true;", "if (s.cells[e.y * s.w + e.x] === cell) ok = true;", 'campaign'],
+  ['src/campaign/rules.js', "/^(button|toggle):|^death$/", "/^(button|toggle):/", 'campaign'],
 ];
 
 // SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.

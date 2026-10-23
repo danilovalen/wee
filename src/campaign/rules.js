@@ -18,6 +18,8 @@ export const ELEMENTS = {
   idoor: { label: 'Inverted door', cell: 'idoor:red', kind: 'idoor:' },
   // A block a beam goes through, lighting it (register 312).
   relay: { label: 'Laser relay', cell: 'sensor:red', kind: 'sensor:' },
+  // Spikes, the death block: a box covers them, the robot dies on them (registers 431, 435).
+  spikes: { label: 'Spikes', cell: 'death' },
 };
 const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind));
 // A level's colours (def.colours, red when it names none). A one-way takes one only in a level
@@ -72,7 +74,7 @@ export function placed(def, room) {
 // An element's name in lower case, plural unless there is one: switch, switches.
 export const nameOf = (el, n) => { const w = ELEMENTS[el].label.toLowerCase(); return n === 1 ? w : /(s|sh|ch|x)$/.test(w) ? w + 'es' : w + 's'; };
 
-export const START_ON = 'Nothing can start on a button or a switch.';
+export const START_ON = 'Nothing can start on a button, a switch or spikes.';
 // Why the room cannot be run yet: each is { msg, at? }. Empty when it can.
 // The maximums a room goes over: each a goal row, missed at Run.
 export function overLimits(def, room) {
@@ -98,8 +100,8 @@ export function placementErrors(def, room) {
     // A maximum above 0 is a goal, judged at Run, not a rule that stops building (register 306).
     if (max === 0 && list.length) errs.push({ msg: `This level has no ${nameOf(el, 2)}.` });
   }
-  // Nothing starts on a button or a switch, in every level: no box, and not the robot.
-  const under = (x, y) => /^(button|toggle):/.test(room.cells[y * room.w + x] || '');
+  // Nothing starts on a button, a switch or spikes, in every level: no box, and not the robot (register 435).
+  const under = (x, y) => /^(button|toggle):|^death$/.test(room.cells[y * room.w + x] || '');
   for (const e of room.entities) if (under(e.x, e.y)) errs.push({ msg: START_ON, at: e.y * room.w + e.x });
   if (room.start && under(room.start.x, room.start.y)) errs.push({ msg: START_ON, at: room.start.y * room.w + room.start.x });
   return errs;
