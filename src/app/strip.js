@@ -1,10 +1,10 @@
 // The Sandbox's tool strip (registers 381-384): one slot per group, showing the tool last used from it,
-// with a mark when the group holds more. A tap on another group's slot picks its tool; a tap on the
-// chosen slot, a hold or a right click opens the group's flyout, which is the palette showing only that
-// group: beside the slot on a wide screen, rising out of it on a phone. Levels keep their single buttons.
+// with a mark when the group holds more. A tap picks that tool and opens the group's flyout (register 406),
+// the palette showing only that group: beside the slot on a wide screen, rising out of it on a phone; a
+// tap on the open slot shuts it. Levels keep their single buttons.
 import { STRIP, stripOf, TOOLS } from '../editor/palette.js';
 import { S } from '../editor/state.js';
-import { $, touch } from './dom.js';
+import { $ } from './dom.js';
 import { icon } from './icons.js';
 
 const HOLD_MS = 450;
@@ -34,9 +34,9 @@ export function buildStrip(actions) {
     b.oncontextmenu = ev => { ev.preventDefault(); if (members(g).length > 1) setOpen(g); };
     b.onclick = () => {
       if (held) { held = false; return; }
-      const mine = (stripOf(S.ui.tool) || [])[0] === g;
-      if (mine && members(g).length > 1) setOpen(open === g ? null : g);
-      else { open = null; A.pick(lastOf(g)); }
+      if (open === g) { setOpen(null); return; }
+      // The pick must not read as a choice from the flyout, which would shut it again.
+      open = members(g).length > 1 ? g : null; before = lastOf(g); A.pick(before);
     };
     $('strip').append(b);
   }
@@ -93,7 +93,7 @@ export function syncStrip() {
       b.querySelector('.slotIcon').replaceChildren(icon(t, TINTED.includes(t) && !S.ui.colour.includes('|') && S.ui.colour !== 'wire' ? S.ui.colour : 'red'));
     }
     b.dataset.picks = t;
-    b.title = STRIP.find(([id]) => id === g)[1] + ': ' + label(t) + (m.length > 1 ? (touch ? ', hold for more' : ', right click for more') : '');
+    b.title = STRIP.find(([id]) => id === g)[1] + ': ' + label(t) + (m.length > 1 ? ', tap for more' : '');
     b.querySelector('.more').hidden = m.length < 2;
     b.classList.toggle('on', g === mine);
     b.classList.toggle('open', g === open);

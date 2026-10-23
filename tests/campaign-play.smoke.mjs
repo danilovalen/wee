@@ -50,6 +50,14 @@ try {
   check('the level list shows every level', rows.length >= 5 && rows[0] === '1', rows.join());
   const parts = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part).join()])));
   check('each level in the list shows the elements it uses', parts['1'] === 'block' && parts['5'] === 'block,box' && parts['6'] === 'block,box,toggle,door', JSON.stringify(parts));
+  // Register 402: a version per colour and per pushable kind, each one-line row of 16 px icons.
+  const versions = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part + (c.dataset.colour ? ':' + c.dataset.colour : '') + ('crate' in c.dataset ? '+' : '')).join()])));
+  check('level 11 shows its buttons and doors in red and in blue', versions['11'] === 'block,box,button:red,button:blue,door:red,door:blue', versions['11']);
+  check('level 16 shows a plain and a pushable laser', versions['16'].endsWith('laser,laser+'), versions['16']);
+  check('level 20 shows its relay pushable only', versions['20'].includes('relay:red+') && !versions['20'].includes('relay:red,'), versions['20']);
+  check('level 12 shows its one-way red', versions['12'].includes('gate:red'), versions['12']);
+  const lines = await page.$$eval('.campParts', ps => ps.filter(p => { const ys = new Set([...p.querySelectorAll('canvas')].map(c => Math.round(c.getBoundingClientRect().top))); return ys.size > 1; }).length);
+  check('every level\'s icons fit on one line', lines === 0, String(lines));
   const listing = await page.evaluate(() => { const rows = [...document.querySelectorAll('.campRow')]; return { cols: new Set(rows.map(r => Math.round(r.getBoundingClientRect().left / 10))).size, said: rows.filter(r => /shortest path/i.test(r.textContent)).length }; });
   check('the level list lays its levels out two to a row', listing.cols === 2, JSON.stringify(listing));
   check('no level row repeats the 4-move rule', listing.said === 0, JSON.stringify(listing));

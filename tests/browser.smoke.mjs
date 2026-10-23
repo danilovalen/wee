@@ -42,6 +42,15 @@ try {
   // On a wide screen the Sandbox's tools are a strip of nine group slots, no tabs (register 381).
   const wide = await page.evaluate(() => ({ tabs: !!document.getElementById('groups').offsetParent, slots: [...document.querySelectorAll('#strip [data-slot]')].filter(b => b.offsetParent).length, palette: !!document.getElementById('palette').offsetParent }));
   check('on desktop the Sandbox tools are nine group slots, the palette closed, no tabs', !wide.tabs && wide.slots === 9 && !wide.palette, JSON.stringify(wide));
+  // Register 406: one tap on a slot picks its group's last tool and opens the group; a tap on the open slot shuts it.
+  await page.click('#strip [data-slot="walls"]');
+  const tapped = await page.evaluate(() => ({ tool: document.querySelector('#strip [data-slot="walls"]').classList.contains('on'), open: document.getElementById('palette').classList.contains('fly'), shown: [...document.querySelectorAll('#palette [data-tool]')].filter(b => b.offsetParent).map(b => b.dataset.tool).join() }));
+  check('a tap on a slot picks its tool and opens its group at once', tapped.tool && tapped.open && tapped.shown.startsWith('wall,'), JSON.stringify(tapped));
+  await page.click('#palette [data-tool="crack"]');
+  check('picking from the group shuts it and the slot shows the pick', await page.evaluate(() => !document.getElementById('palette').classList.contains('fly') && document.querySelector('#strip [data-slot="walls"]').dataset.picks === 'crack'));
+  await page.click('#strip [data-slot="walls"]'); await page.click('#strip [data-slot="walls"]');
+  check('a second tap on the open slot shuts it', await page.evaluate(() => !document.getElementById('palette').classList.contains('fly')));
+  await page.click('#strip [data-slot="edit"]'); await page.click('#strip [data-slot="edit"]');
   // nothing in a panel is cut by its panel: every control sits inside its box
   const type = await page.evaluate(async () => {
     await document.fonts.ready;

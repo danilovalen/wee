@@ -9,6 +9,7 @@ import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { $, portrait, now } from './dom.js';
 import { icon } from './icons.js';
+import { levelParts } from './levelParts.js';
 import { noteLeaving, copyDebug } from './debug.js';
 import { buildMenuScene } from './menuScene.js';
 import { madeLevel } from './made.js';
@@ -229,12 +230,7 @@ function renderList() {
     const name = document.createElement('b'), small = document.createElement('small');
     name.textContent = def.name;
     small.textContent = rec.beaten ? `Beaten, optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}${scoreText(def, rec.best)}` : '';
-    // The elements the level hands you, as the palette draws them.
-    const parts = document.createElement('span'); parts.className = 'campParts';
-    for (const el of Object.keys(def.palette)) {
-      const c = icon(TOOL[el]); c.dataset.part = el; c.title = ELEMENTS[el].label; c.setAttribute('aria-label', ELEMENTS[el].label);
-      parts.append(c);
-    }
+    const parts = levelParts(def, TOOL);
     b.append(name, parts, small);
     if (def.id === p.last) b.classList.add('sel');
     b.onclick = () => go('level', def.id);

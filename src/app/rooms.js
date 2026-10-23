@@ -128,8 +128,7 @@ let sandboxOpen = false;
 async function enterSandbox() {
   if (sandboxOpen) return;
   sandboxOpen = true;
-  // Every way in opens the campaign's pieces only (register 410); the full editor is kept for tests, at ?sandbox=full.
-  const full = new URLSearchParams(location.search).get('sandbox') === 'full';
+  const full = new URLSearchParams(location.search).get('sandbox') === 'full';  // tests only: every way in is the campaign's pieces (register 410)
   S.simple = !full; document.body.classList.toggle('simple', !full);
   await (window.wee.roomsReady = bootRooms()); A.syncPanel();
 }
