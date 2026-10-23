@@ -3,6 +3,8 @@ import { placementErrors } from '../campaign/rules.js';
 import { place, moveAt, swapAt } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
+import { T } from '../view/ink.js';
+import { toScreen } from './camera.js';
 
 // Move: carries the thing on one tile to another, when the target can take it and the room
 // breaks no rule it kept before. Where a plain move would break one (a box or the robot left on a
@@ -48,10 +50,10 @@ export function refuse(x, y, why) {
 
 // A line on a tile, for a moment.
 export function say(x, y, why, ms = 1500) {
-  const tip = $('campTip'), c = $('game'), w = $('roomWrap').getBoundingClientRect(), r = c.getBoundingClientRect();
+  const tip = $('campTip'), w = $('roomWrap').getBoundingClientRect(), at = toScreen((x + 0.5) * T, y * T);
   tip.textContent = why;
-  tip.style.left = `${r.left - w.left + (x + 0.5) * r.width / S.level.w}px`;
-  tip.style.top = `${r.top - w.top + y * r.height / S.level.h}px`;
+  tip.style.left = `${at.x - w.left}px`;
+  tip.style.top = `${at.y - w.top}px`;
   tip.hidden = false;
   clearTimeout(say.t); say.t = setTimeout(() => { tip.hidden = true; }, ms);
 }

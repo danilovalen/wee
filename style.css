@@ -686,3 +686,8 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 /* A box with one button lets it take the whole row (register 400). */
 .menuSec:not(:has(button:not([hidden]) ~ button:not([hidden]))) > button { grid-column: 1 / -1; }
 
+/* The camera (register 408): Fit while zoomed in; the resize bars wait until the whole room shows. */
+.fitBtn { position: absolute; right: 8px; bottom: 8px; z-index: 3; line-height: 1.2; }
+.fitBtn[hidden] { display: none; }
+.roomWrap.zoomed .growBar { display: none; }
+

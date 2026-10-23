@@ -21,6 +21,7 @@ import { respawn } from '../rules/life.js';
 // The run as Reset would leave it, to tell whether Reset would change anything.
 const resetKey = game => { const c = structuredClone(game); respawn(c); return stateKey(c); };
 import { syncEnabled } from './enabled.js';
+import { enterPlay, leavePlay, follow } from './camera.js';
 
 export function snapshot(s) {
   const ents = {};
@@ -63,6 +64,7 @@ export const aim = k => S.game ? aimKey(S.game, k, S.acc / TICK_MS) : k;
 export function setMode(m, keep) {
   if (keep) { $('keys').textContent = keysText(); return; }
   if (m === 'play' && !S.playFrom && !S.level.start) return;
+  if (m === 'play' && S.mode !== 'play') enterPlay(); else if (m !== 'play' && S.mode === 'play') leavePlay();
   S.mode = m;
   document.body.classList.toggle('play', m === 'play');
   $('mode').textContent = m === 'play' ? 'Edit' : 'Play';
@@ -102,6 +104,7 @@ export function frame(t) {
     S.acc += dt;
     while (S.acc >= TICK_MS) { tick(); S.acc -= TICK_MS; }
   }
+  follow();
   if (S.mode === 'play' || editNeedsDraw(t)) { render(); S.redraw = false; S.drawnAt = t; }
   syncWell();
   syncChips();

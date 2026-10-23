@@ -12,11 +12,12 @@ import { fit } from './fit.js';
 import { toolForKey, bareKey, showKeys } from './keys.js';
 import { TOOLS } from '../editor/palette.js';
 import { refusal, moveRefusal, moveIn, refuse } from './campaignMove.js';
+import { toRoom } from './camera.js';
+import { T } from '../view/ink.js';
 
 function cellFromEvent(ev) {
-  const r = canvas.getBoundingClientRect(), level = S.level;
-  const x = Math.floor((ev.clientX - r.left) / r.width * level.w);
-  const y = Math.floor((ev.clientY - r.top) / r.height * level.h);
+  const level = S.level, at = toRoom(ev.clientX, ev.clientY);
+  const x = Math.floor(at.x / T), y = Math.floor(at.y / T);
   return x >= 0 && y >= 0 && x < level.w && y < level.h ? { x, y } : null;
 }
 
@@ -43,7 +44,7 @@ export function bindInput() {
     if (S.mode === 'play' && !control(ev.target)) S.swipe = { x: ev.clientX, y: ev.clientY, last: null };
   });
   window.addEventListener('pointermove', ev => {
-    if (S.mode !== 'play' || !S.swipe) return;
+    if (S.mode !== 'play' || !S.swipe || S.pinch) return;
     const sw = S.swipe, dx = ev.clientX - sw.x, dy = ev.clientY - sw.y;
     if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_PX) return;
     const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
@@ -80,7 +81,7 @@ export function bindInput() {
     paint(c.x, c.y, S.painting, true);
   });
   canvas.addEventListener('pointermove', ev => {
-    if (S.mode === 'play') return;
+    if (S.mode === 'play' || S.pinch) return;
     const c = S.mode === 'edit' ? cellFromEvent(ev) : null;
     // The outline follows a mouse only; a finger would leave it behind on lift.
     S.hover = touch && S.ui.tool !== 'select' && !S.carry ? null : c;

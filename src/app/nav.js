@@ -38,12 +38,11 @@ async function show(name, arg, popups = false) {
   closePages(def.page, popups);
   // The page opens at once and fills as it loads, so a tap or Escape right after lands on it.
   if (def.page && !$(def.page).open) $(def.page).showModal();
-  // The page starts hidden (index.html), so nothing paints before the first place is up (register 401).
-  if (def.page) document.documentElement.classList.remove('booting');
   const ok = await def.enter(arg);
   if (t !== turn) return;  // a later move overtook this one while it loaded
   if (ok === false) { go(def.parent(arg), null, { replace: true }); return; }
   def.shown?.();
+  // The page starts hidden but for an open page (index.html), so nothing paints before the first place is up (register 401).
   document.documentElement.classList.remove('booting');
   dispatchEvent(new CustomEvent('wee:place', { detail: here }));
 }

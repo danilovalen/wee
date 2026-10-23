@@ -3,6 +3,7 @@ import { T } from '../view/ink.js';
 import { S } from '../editor/state.js';
 import { $, canvas, g } from './dom.js';
 import { syncSize } from './size.js';
+import { setFit, apply } from './camera.js';
 
 // A wide screen is a frame: the tool's options in a bar under the header, the verdict and
 // keys in a bar at the bottom, the play buttons in that bar too. Only the room flexes. A phone
@@ -57,7 +58,7 @@ export function fit() {
   const cw = Math.round(level.w * T * k), ch = Math.round(level.h * T * k), css = Math.round(level.w * T * zoom) + 'px';
   if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
   if (canvas.style.width !== css) canvas.style.width = css;
-  g.setTransform(canvas.width / (level.w * T), 0, 0, canvas.height / (level.h * T), 0, 0);
+  setFit(zoom); apply();
   $('w').value = level.w; $('h').value = level.h;
   syncSize(level);
   S.redraw = true;

@@ -982,7 +982,21 @@ const M = [
   ['src/app/more.js', "if (ev.target.closest('button')) more(false);", "", 'browser'],
   ['src/app/rooms.js', "    if (!filter) ul.append(...exampleRows());", "", 'nav'],
   ['src/app/rooms.js', "$('roomsMenu').hidden = arg !== 'start';", "", 'nav'],
-  ['index.html', '<button id="roomNew" type="button" class="primary" autofocus>', '<button id="roomNew" type="button" autofocus>', 'browser'],
+  ['index.html', '<button id="roomNew" type="button" class="primary" autofocus>', '<button id="roomNew" type="button" autofocus>', 'browser'],  ['style.css', ".slot[hidden] { display: none; }", "", 'modes'],
+  ['src/app/panels.js', "if (S.simple) return { all: ['red', 'blue', 'wire']", "if (S.simple) return { all: ['red', 'blue', 'red|blue', 'wire']", 'modes'],
+  ['src/app/rooms.js', "const full = new URLSearchParams(location.search).get('sandbox') === 'full';", "const full = new URLSearchParams(location.search).has('sandbox');", 'modes'],
+  ['src/app/nav.js', "  document.documentElement.classList.remove('booting');\n", "", 'campaign-play'],
+  ['style.css', "html.booting body > :not(dialog[open]) { visibility: hidden; }", "", 'campaign-play'],
+  ['style.css', ".menuSec:not(:has(button:not([hidden]) ~ button:not([hidden]))) > button { grid-column: 1 / -1; }", "", 'campaign-play'],
+  ['src/app/rooms.js', "{ name: kind === 'Example' ? t.name : '' }", "{ name: '' }", 'nav'],
+  ['src/app/strip.js', "open = members(g).length > 1 ? g : null; before = lastOf(g);", "open = null; before = lastOf(g);", 'browser'],
+  ['src/app/levelParts.js', "for (const crate of pushingsOf(def, el))", "for (const crate of [false])", 'campaign-play'],
+  ['src/app/levelParts.js', "? colouringsOf(def, el) : [null];", "? colouringsOf(def, el).slice(0, 1) : [null];", 'campaign-play'],
+  ['src/app/camera.js', "export const zoomable = () => cam.fit * T < MIN_TILE;", "export const zoomable = () => true;", 'camera'],
+  ['src/app/camera.js', "    if (S.before !== null && S.before !== undefined) { S.level = JSON.parse(S.before); S.before = null; }\n", "", 'camera'],
+  ['src/app/camera.js', "  return { x: cam.x + (cx - r.left) / r.width * W / cam.z,", "  return { x: (cx - r.left) / r.width * W / cam.z,", 'camera'],
+  ['src/app/camera.js', "  if (cam.held) return;", "  return;", 'camera'],
+  ['src/app/camera.js', "export function leavePlay() { if (editView)", "export function leavePlay() { if (false)", 'camera'],
 ];
 
 // SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.
