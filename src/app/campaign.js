@@ -9,7 +9,7 @@ import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { $, portrait, now } from './dom.js';
 import { icon } from './icons.js';
-import { levelParts } from './levelParts.js';
+import { levelParts, levelColours } from './levelParts.js';
 import { noteWin, bindWin } from './winCard.js';
 import { noteLeaving, copyDebug } from './debug.js';
 import { buildMenuScene } from './menuScene.js';
@@ -233,7 +233,8 @@ function renderList() {
     name.textContent = def.name;
     small.textContent = rec.beaten ? `Beaten, optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}${scoreText(def, rec.best)}` : '';
     const parts = levelParts(def, TOOL);
-    b.append(name, parts, small);
+    const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name, levelColours(def));
+    b.append(top, parts, small);
     if (def.id === p.last) b.classList.add('sel');
     b.onclick = () => go('level', def.id);
     li.append(b);

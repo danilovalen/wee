@@ -10,10 +10,12 @@ const places = {}; // name -> { page, parent(arg), enter(arg), shown(), exit(nex
 let here = null, ours = false, turn = 0;
 const shut = new Set();
 // A preview frame (about:srcdoc, blob:) cannot change its address, so there the entries live here instead.
-let fixed = false;
+let fixed = false, toMenu = false, queued = null;
 const stack = [];
 const state = () => fixed ? stack[stack.length - 1] : history.state;
+// Each entry carries n, its depth: the menu unwinds history to the first entry (register 424).
 function write(entry, replace) {
+  entry.n = replace ? state()?.n ?? 0 : (state()?.n ?? 0) + 1;
   if (!fixed) try { history[replace ? 'replaceState' : 'pushState'](entry, '', location.pathname + location.search + entry.path); return; } catch { fixed = true; }
   if (replace && stack.length) stack[stack.length - 1] = entry; else stack.push(entry);
 }
@@ -49,8 +51,18 @@ async function show(name, arg, popups = false) {
 
 // The only way to change screen: a history entry, then the place.
 export function go(name, arg = null, { replace = false } = {}) {
+  // A move asked for while history unwinds to the menu waits for it.
+  if (toMenu) { queued = [name, arg, { replace }]; return; }
   const path = pathOf(name, arg), from = here && pathOf(here.name, here.arg);
   if (path === from) return show(name, arg);
+  // The menu is where history starts, so Back from it leaves the game instead of going to a room.
+  if (name === 'menu') {
+    const n = state()?.n ?? 0;
+    if (n > 0 && !fixed) { toMenu = true; ours = true; history.go(-n); return; }
+    if (n > 0) stack.length = 1;
+    write({ path, prev: null }, true);
+    return show(name, arg);
+  }
   write({ path, prev: replace ? state()?.prev ?? null : from }, replace);
   return show(name, arg);
 }
@@ -75,7 +87,14 @@ export function start() {
 }
 
 export function bindNav() {
-  addEventListener('popstate', () => { const { name, arg } = parse(location.hash); const popups = !ours; ours = false; show(name, arg, popups); });
+  addEventListener('popstate', () => {
+    if (toMenu) {
+      toMenu = false; ours = false; write({ path: pathOf('menu'), prev: null }, true); show('menu', null, true);
+      if (queued) { const q = queued; queued = null; go(...q); }
+      return;
+    }
+    const { name, arg } = parse(location.hash); const popups = !ours; ours = false; show(name, arg, popups);
+  });
   // Escape on a page goes up a place, never into the screen behind it; the menu has nowhere up.
   for (const id of PAGES) $(id).addEventListener('cancel', ev => { ev.preventDefault(); if (here && here.name !== 'menu') up(); });
   // A page closed by its own Close button (the Rooms page) goes to its parent, the room; the event comes

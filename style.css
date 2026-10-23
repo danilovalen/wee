@@ -431,6 +431,8 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 .roomList.tiles { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
 .roomList.tiles .empty { grid-column: 1 / -1; }
 #openNow:empty { display: none; }
+/* The open room and your saved rooms are two lists: space them as a list spaces its own cards (register 422). */
+#openNow:not(:empty) { margin-bottom: 8px; }
 .tiles .roomRow { flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; height: 100%; }
 .tiles .thumb { width: 100%; height: 96px; max-height: none; background: var(--bg); }
 .tiles .roomRow span { gap: 1px; }
@@ -450,7 +452,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 
 
 /* A saved room's own menu, at its tile. */
-.tileMenu { position: fixed; z-index: 5; display: grid; gap: 4px; min-width: 150px; padding: 6px; background: var(--panel); border-radius: var(--r-m); box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
+.tileMenu { position: fixed; z-index: 5; display: grid; gap: 8px; min-width: 150px; padding: 6px; background: var(--panel); border-radius: var(--r-m); box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
 .tileMenu[hidden] { display: none; }
 .tileMenu button { justify-content: flex-start; text-align: left; }
 .tileMenu .del { color: #c8283c; }
@@ -519,8 +521,10 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .campList { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .campRow { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; }
 .campParts { display: flex; gap: 4px; }
-.campPart { display: inline-flex; gap: 1px; }
 .campParts canvas { width: 16px; height: 16px; }
+.campRowHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.campDots { display: inline-flex; gap: 3px; }
+.campDots i { width: 10px; height: 10px; border-radius: 50%; }
 .campRow.sel { outline: 2px solid var(--accent, #6b5cff); }
 .campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
 .campGoal { padding: 8px 10px; border-radius: var(--r-s); background: var(--field); }
@@ -621,7 +625,7 @@ body.campaign #campReset { order: 6; margin-left: auto; }
   body:is(.campaign, .simple) :is(#campTools, #palette) { gap: 1px; }
   body:is(.campaign, .simple) main { padding: 0 4px; gap: 2px; }
   body:is(.campaign, .simple) #tools { padding: 4px 4px 6px; }
-  body:is(.campaign, .simple) #campTop { margin: 0 0 4px; }
+  body:is(.campaign, .simple) #campTop { margin: 0 0 10px; }
   .campBrief { margin: 0 0 4px; gap: 4px; }
   .campGoal { padding: 5px 8px; }
   .campHead { margin: 0 0 2px; }
@@ -640,7 +644,7 @@ body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; ali
    room on a wide screen; powers and status open from the header's Powers button. */
 .strip, #powersBtn { display: none; }
 body.sandbox:not(.simple) #powersBtn { display: inline-block; }
-body.sandbox #strip { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+body.sandbox #strip { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 body.sandbox #groups, body.sandbox #tools > h2, body.sandbox #palette .ghead { display: none !important; }
 body.sandbox #palette:not(.fly) { display: none !important; }
 .slot { position: relative; width: 52px; height: 48px; padding: 0; display: grid; place-items: center; }
@@ -663,7 +667,7 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
   body.sandbox #ctx #campTop { margin: 0; }
 }
 @media (max-width: 700px) {
-  body.sandbox #strip { flex-direction: row; justify-content: space-between; gap: 2px; order: 9; }
+  body.sandbox #strip { flex-direction: row; justify-content: space-between; gap: 6px; order: 9; margin-top: 8px; }
   body.sandbox .slot { width: auto; flex: 1; max-width: 46px; height: 46px; }
   body.sandbox .slot .slotIcon canvas { width: 26px; height: 26px; }
   /* On a phone the flyout rises out of its slot: same panel, no gap, the slot open beneath it like a tab. */
@@ -679,12 +683,13 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
 .roomsHead > form { margin: 0; }
 #roomsWhere { margin: 2px 0 0; }
 .libBarWrap { position: relative; }
-.moreMenu { position: absolute; right: 0; top: calc(100% - 2px); }
+.moreMenu { position: absolute; right: 0; top: calc(100% + 8px); gap: 8px; }
 
 /* Until the first place is up the page shows nothing but its ground (register 401). */
 html.booting body > :not(dialog[open]) { visibility: hidden; }
-/* A box with one button lets it take the whole row (register 400). */
-.menuSec:not(:has(button:not([hidden]) ~ button:not([hidden]))) > button { grid-column: 1 / -1; }
+/* One menu box (register 433): Campaign takes its own row, Puzzles and Sandbox share the next (registers 400, 418). */
+#menuCampaign { grid-column: 1 / -1; }
+.menuSec p { margin-top: 0; }
 
 /* The camera (register 408): Fit while zoomed in; the resize bars wait until the whole room shows. */
 .fitBtn { position: absolute; right: 8px; bottom: 8px; z-index: 3; line-height: 1.2; }

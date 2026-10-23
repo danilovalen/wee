@@ -29,6 +29,8 @@ try {
   check('a fresh start has no unsaved tile', await page.locator('#openNow').isHidden());
   check('floors are their own section: water, sticky puddle, gravel and wire', (await page.$$eval('[data-tool][data-in=floors]', bs => bs.map(b => b.dataset.tool).join())) === 'water,sticky,gravel,wire' && await page.locator('[data-group=floors]').count() === 1);
   await page.click('#roomsBox .roomsHead form button');
+  // These checks were written against the old starter room; a new room is 7x7 now (register 430).
+  await page.evaluate(() => window.wee.loadLevel(window.wee.blank(20, 12)));
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
   const pick = t => pickTool(page, t);

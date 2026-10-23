@@ -22,8 +22,8 @@ export const KNOWN = {
     19: ['#D.##', '...##', 'rG.WP', 'rW..D', 'D....', '..#..', '.....'],
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
     14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
-    // Found by tools/levelSearch.mjs (register 373): 9 moves, 6x5; the box shoves the pushable laser and stops against the plain one.
-    16: ['#D..##', '.n.B..', '..E.Q.', '....GP', '.....o'],
+    // Found by tools/climb.mjs (register 425): no pushable laser, the box pushed in 2 moves and hit once, 7 moves, 6x6.
+    16: ['..o.q.', '.BD..G', '.P....', '..s.s.', 'Q.q#..', 'Qs..D.'],
     // Found by tools/levelSearch.mjs (register 371): 9 moves, 4x7; the robot and a box each stop against a relay.
     18: ['.II.', 'I..s', 'B.Br', '....', '.B..', '...P', '.G.r'],
     // His room (register 293): a box goes through the one-way.

@@ -54,11 +54,11 @@ export function stepTo(s, x, y, d, wet = true, heavy = false, beam = false) {
   return { x: nx, y: ny, d };
 }
 
-// Where a piece at (x, y) pushed d would go, if that tile is free. A death block
-// always takes it.
+// Where a piece at (x, y) pushed d would go, if that tile is free: a death block is, unless a
+// box already covers it.
 export function pushTo(s, x, y, d, wet) {
   const t = stepTo(s, x, y, d, wet);
-  return t && (t.death || (!entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y))) ? t : null;
+  return t && !entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y) ? t : null;
 }
 
 export const inWater = (s, x, y) => inb(s, x, y) && cellAt(s, x, y) === 'water';
@@ -72,7 +72,7 @@ export const crushes = (s, e) => e.kind === 'heavy' || e.kind === 'strong' || !s
 export function shift(s, x, y, dx, dy, wet, not) {
   const t = stepTo(s, x, y, DIR_OF(dx, dy), wet);
   if (!t || t.x !== x + dx || t.y !== y + dy) return null;
-  if (!t.death && entAt(s, t.x, t.y, not)) return null;
+  if (entAt(s, t.x, t.y, not)) return null;
   return t;
 }
 

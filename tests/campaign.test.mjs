@@ -57,6 +57,7 @@ const build = (def, rows) => {
 
 // A new Sandbox room is open floor, upright or wide (register 380).
 ok('a new room has no wall border', [false, true].every(tall => !starterLevel(tall).cells.some(c => c === 'wall')));
+ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall => starterLevel(tall).w === 7 && starterLevel(tall).h === 7));
 
 { // the level's own room
   const d = level('1'), r = roomOf(d);
@@ -116,7 +117,8 @@ ok('a new room has no wall border', [false, true].every(tall => !starterLevel(ta
   // Too few is judged at Run, never a reason not to run (register 321).
   ok('too few of a required element does not stop a run', !placementErrors(d3, roomOf(d3)).some(e => /at least/.test(e.msg)));
   // The score is tiles (register 328): the fewest in any win, then per optional goal met.
-  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, boxTouchesBothLasers: 6 }) === ', fewest tiles 3; exactly 4: 5; 3×4 or smaller: 4; box touches a laser and a pushable laser: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, boxTouchesBothLasers: 6 }));
+  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }) === ', fewest tiles 3; exactly 4: 5; 3×4 or smaller: 4; one box pushed in at least 2 moves, and hit once by the robot without moving: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }));
+  ok('level 16 offers no pushable laser and its side goal is the box pushed twice and hit once (register 426)', !level('16').pushable && level('16').optional.join() === 'boxPushedTwiceHitOnce');
   ok('no win, no score', scoreText(level('16'), {}) === '' && scoreText(level('16'), undefined) === '');
   ok('too few of a required element is missed at Run', underLimits(d3, roomOf(d3)).some(e => e.msg === 'Place at least 1 switch.'));
   const few = check(d3, build(d3, ['P#...', '.#.#.', '.#.#.', '...#G']));

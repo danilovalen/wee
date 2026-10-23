@@ -40,13 +40,10 @@
   "laserThroughButton"
  ],
  "optional": [
-  "boxTouchesBothLasers"
+  "boxPushedTwiceHitOnce"
  ],
  "colours": [
   "red",
   "blue"
- ],
- "pushable": {
-  "laser": "also"
- }
+ ]
 }

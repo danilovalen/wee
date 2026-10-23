@@ -449,6 +449,8 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 .roomList.tiles { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
 .roomList.tiles .empty { grid-column: 1 / -1; }
 #openNow:empty { display: none; }
+/* The open room and your saved rooms are two lists: space them as a list spaces its own cards (register 422). */
+#openNow:not(:empty) { margin-bottom: 8px; }
 .tiles .roomRow { flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; height: 100%; }
 .tiles .thumb { width: 100%; height: 96px; max-height: none; background: var(--bg); }
 .tiles .roomRow span { gap: 1px; }
@@ -468,7 +470,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 
 
 /* A saved room's own menu, at its tile. */
-.tileMenu { position: fixed; z-index: 5; display: grid; gap: 4px; min-width: 150px; padding: 6px; background: var(--panel); border-radius: var(--r-m); box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
+.tileMenu { position: fixed; z-index: 5; display: grid; gap: 8px; min-width: 150px; padding: 6px; background: var(--panel); border-radius: var(--r-m); box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
 .tileMenu[hidden] { display: none; }
 .tileMenu button { justify-content: flex-start; text-align: left; }
 .tileMenu .del { color: #c8283c; }
@@ -537,8 +539,10 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .campList { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .campRow { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; }
 .campParts { display: flex; gap: 4px; }
-.campPart { display: inline-flex; gap: 1px; }
 .campParts canvas { width: 16px; height: 16px; }
+.campRowHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.campDots { display: inline-flex; gap: 3px; }
+.campDots i { width: 10px; height: 10px; border-radius: 50%; }
 .campRow.sel { outline: 2px solid var(--accent, #6b5cff); }
 .campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
 .campGoal { padding: 8px 10px; border-radius: var(--r-s); background: var(--field); }
@@ -639,7 +643,7 @@ body.campaign #campReset { order: 6; margin-left: auto; }
   body:is(.campaign, .simple) :is(#campTools, #palette) { gap: 1px; }
   body:is(.campaign, .simple) main { padding: 0 4px; gap: 2px; }
   body:is(.campaign, .simple) #tools { padding: 4px 4px 6px; }
-  body:is(.campaign, .simple) #campTop { margin: 0 0 4px; }
+  body:is(.campaign, .simple) #campTop { margin: 0 0 10px; }
   .campBrief { margin: 0 0 4px; gap: 4px; }
   .campGoal { padding: 5px 8px; }
   .campHead { margin: 0 0 2px; }
@@ -658,7 +662,7 @@ body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; ali
    room on a wide screen; powers and status open from the header's Powers button. */
 .strip, #powersBtn { display: none; }
 body.sandbox:not(.simple) #powersBtn { display: inline-block; }
-body.sandbox #strip { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+body.sandbox #strip { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 body.sandbox #groups, body.sandbox #tools > h2, body.sandbox #palette .ghead { display: none !important; }
 body.sandbox #palette:not(.fly) { display: none !important; }
 .slot { position: relative; width: 52px; height: 48px; padding: 0; display: grid; place-items: center; }
@@ -681,7 +685,7 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
   body.sandbox #ctx #campTop { margin: 0; }
 }
 @media (max-width: 700px) {
-  body.sandbox #strip { flex-direction: row; justify-content: space-between; gap: 2px; order: 9; }
+  body.sandbox #strip { flex-direction: row; justify-content: space-between; gap: 6px; order: 9; margin-top: 8px; }
   body.sandbox .slot { width: auto; flex: 1; max-width: 46px; height: 46px; }
   body.sandbox .slot .slotIcon canvas { width: 26px; height: 26px; }
   /* On a phone the flyout rises out of its slot: same panel, no gap, the slot open beneath it like a tab. */
@@ -697,12 +701,13 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
 .roomsHead > form { margin: 0; }
 #roomsWhere { margin: 2px 0 0; }
 .libBarWrap { position: relative; }
-.moreMenu { position: absolute; right: 0; top: calc(100% - 2px); }
+.moreMenu { position: absolute; right: 0; top: calc(100% + 8px); gap: 8px; }
 
 /* Until the first place is up the page shows nothing but its ground (register 401). */
 html.booting body > :not(dialog[open]) { visibility: hidden; }
-/* A box with one button lets it take the whole row (register 400). */
-.menuSec:not(:has(button:not([hidden]) ~ button:not([hidden]))) > button { grid-column: 1 / -1; }
+/* One menu box (register 433): Campaign takes its own row, Puzzles and Sandbox share the next (registers 400, 418). */
+#menuCampaign { grid-column: 1 / -1; }
+.menuSec p { margin-top: 0; }
 
 /* The camera (register 408): Fit while zoomed in; the resize bars wait until the whole room shows. */
 .fitBtn { position: absolute; right: 8px; bottom: 8px; z-index: 3; line-height: 1.2; }
@@ -955,10 +960,9 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
     <div id="menuScene" class="menuScene" aria-hidden="true"></div>
     <b class="logo menuLogo">wee</b>
     <div class="menuList">
-      <section class="menuSec"><h2>For the robot</h2><p>Build a room and the robot plays it</p>
+      <section class="menuSec"><p>Play as the robot</p>
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
-        <button id="menuMaker" type="button" class="primary" hidden>Level maker</button></section>
-      <section class="menuSec"><h2>For you</h2><p>Play as the little circle</p>
+        <button id="menuMaker" type="button" class="primary" hidden>Level maker</button>
         <button id="menuPuzzles" type="button" class="primary">Puzzles</button>
         <button id="menuSandbox" type="button" class="primary">Sandbox</button></section>
       <button id="menuDebug" type="button" title="Copies what the game knows about where you are.">Debug</button>
@@ -1442,11 +1446,11 @@ function stepTo(s, x, y, d, wet = true, heavy = false, beam = false) {
   return { x: nx, y: ny, d };
 }
 
-// Where a piece at (x, y) pushed d would go, if that tile is free. A death block
-// always takes it.
+// Where a piece at (x, y) pushed d would go, if that tile is free: a death block is, unless a
+// box already covers it.
 function pushTo(s, x, y, d, wet) {
   const t = stepTo(s, x, y, d, wet);
-  return t && (t.death || (!entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y))) ? t : null;
+  return t && !entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y) ? t : null;
 }
 
 const inWater = (s, x, y) => inb(s, x, y) && cellAt(s, x, y) === 'water';
@@ -1460,7 +1464,7 @@ const crushes = (s, e) => e.kind === 'heavy' || e.kind === 'strong' || !s.powers
 function shift(s, x, y, dx, dy, wet, not) {
   const t = stepTo(s, x, y, DIR_OF(dx, dy), wet);
   if (!t || t.x !== x + dx || t.y !== y + dy) return null;
-  if (!t.death && entAt(s, t.x, t.y, not)) return null;
+  if (entAt(s, t.x, t.y, not)) return null;
   return t;
 }
 
@@ -1658,17 +1662,19 @@ function kill(s, e, how) {
   s.events.push({ type: 'kill', id: e.id, how });
 }
 
-// Puts a piece on t, or destroys it when t is a death block. A puddle makes it sticky
-// (a turret never is), water washes that off.
+// A box or a heavy box on spikes sits there whole, covering them (registers 427, 428, 431).
+const covers = e => e.kind === 'box' || e.kind === 'heavy';
+// Puts a piece on t, or destroys it when t is a death block it cannot cover. A puddle makes it
+// sticky (a turret never is), water washes that off.
 function land(s, e, t) {
-  if (t.death) { kill(s, e, 'death'); return false; }
+  if (t.death && !covers(e)) { kill(s, e, 'death'); return false; }
   e.x = t.x; e.y = t.y;
   const c = cellAt(s, e.x, e.y);
   if (c === 'sticky' && e.kind !== 'turret' && !e.glue && !e.sticky) { e.sticky = true; s.events.push({ type: 'sticky', id: e.id }); }
   if (c === 'water') { e.sticky = false; if (e.fuse != null) { e.fuse = null; s.events.push({ type: 'fizzle', id: e.id }); } }
   return true;
 }
-return { startAim, freshPieces, switchesOf, flipToggles, refreshDoors, respawn, smash, light, explode, die, kill, land };
+return { startAim, freshPieces, switchesOf, flipToggles, refreshDoors, respawn, smash, light, explode, die, kill, covers, land };
 })();
 // ---- src/rules/beams.js
 const m5 = (() => {
@@ -2138,7 +2144,8 @@ function playerStep(s, d, diving) {
   }
   const t = stepTo(s, p.x, p.y, d, p.swimming, diving);
   if (!t) return 'blocked';
-  if (t.death) { die(s); return 'died'; }
+  // Spikes a box covers are a box to push; bare spikes kill (register 431).
+  if (t.death && !entAt(s, t.x, t.y)) { die(s); return 'died'; }
   smash(s, t);
   const nx = t.x, ny = t.y, e = entAt(s, nx, ny), g = p.stuck && !p.stuck.ride ? stuckTo(s) : null;
   const dx = nx - p.x, dy = ny - p.y, ahead = !!e && e === g;
@@ -2172,6 +2179,8 @@ function playerStep(s, d, diving) {
   p.pushing = pushed;
   p.from = { x: p.x, y: p.y };
   p.x = nx; p.y = ny; p.moved++;
+  // Pushing a box off its spikes leaves them bare under you.
+  if (cellAt(s, nx, ny) === 'death') { die(s); return 'died'; }
   if (p.dir) p.dir = t.d;
   if (g && !ahead) drag(s, g, dx, dy);
   entered(s);
@@ -3623,10 +3632,12 @@ const places = {}; // name -> { page, parent(arg), enter(arg), shown(), exit(nex
 let here = null, ours = false, turn = 0;
 const shut = new Set();
 // A preview frame (about:srcdoc, blob:) cannot change its address, so there the entries live here instead.
-let fixed = false;
+let fixed = false, toMenu = false, queued = null;
 const stack = [];
 const state = () => fixed ? stack[stack.length - 1] : history.state;
+// Each entry carries n, its depth: the menu unwinds history to the first entry (register 424).
 function write(entry, replace) {
+  entry.n = replace ? state()?.n ?? 0 : (state()?.n ?? 0) + 1;
   if (!fixed) try { history[replace ? 'replaceState' : 'pushState'](entry, '', location.pathname + location.search + entry.path); return; } catch { fixed = true; }
   if (replace && stack.length) stack[stack.length - 1] = entry; else stack.push(entry);
 }
@@ -3662,8 +3673,18 @@ async function show(name, arg, popups = false) {
 
 // The only way to change screen: a history entry, then the place.
 function go(name, arg = null, { replace = false } = {}) {
+  // A move asked for while history unwinds to the menu waits for it.
+  if (toMenu) { queued = [name, arg, { replace }]; return; }
   const path = pathOf(name, arg), from = here && pathOf(here.name, here.arg);
   if (path === from) return show(name, arg);
+  // The menu is where history starts, so Back from it leaves the game instead of going to a room.
+  if (name === 'menu') {
+    const n = state()?.n ?? 0;
+    if (n > 0 && !fixed) { toMenu = true; ours = true; history.go(-n); return; }
+    if (n > 0) stack.length = 1;
+    write({ path, prev: null }, true);
+    return show(name, arg);
+  }
   write({ path, prev: replace ? state()?.prev ?? null : from }, replace);
   return show(name, arg);
 }
@@ -3688,7 +3709,14 @@ function start() {
 }
 
 function bindNav() {
-  addEventListener('popstate', () => { const { name, arg } = parse(location.hash); const popups = !ours; ours = false; show(name, arg, popups); });
+  addEventListener('popstate', () => {
+    if (toMenu) {
+      toMenu = false; ours = false; write({ path: pathOf('menu'), prev: null }, true); show('menu', null, true);
+      if (queued) { const q = queued; queued = null; go(...q); }
+      return;
+    }
+    const { name, arg } = parse(location.hash); const popups = !ours; ours = false; show(name, arg, popups);
+  });
   // Escape on a page goes up a place, never into the screen behind it; the menu has nowhere up.
   for (const id of PAGES) $(id).addEventListener('cancel', ev => { ev.preventDefault(); if (here && here.name !== 'menu') up(); });
   // A page closed by its own Close button (the Rooms page) goes to its parent, the room; the event comes
@@ -3831,10 +3859,10 @@ const { newHistory } = m23;
 // the run being played. Every app file reads and writes it here, never in a copy.
 
 
-// A new room takes the screen's shape: taller than wide on a phone held upright.
-// A new room is open floor: the room's edge stops the robot, so it needs no wall border (register 380).
-function starterLevel(tall) {
-  return tall ? emptyLevel(12, 14) : emptyLevel(20, 12);
+// A new room is 7x7 open floor (register 430): the room's edge stops the robot, so it needs no wall
+// border (register 380). tall is kept for callers; the size no longer follows the screen.
+function starterLevel(tall) { // eslint-disable-line no-unused-vars
+  return emptyLevel(7, 7);
 }
 
 const S = {
@@ -4002,7 +4030,7 @@ return { bests, keep, buildPuzzles };
 const m28 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"small":[3,3],"rules":[],"require":[],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,3],"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,4],"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"small":[8,6],"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"optional":[]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,5],"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"small":[4,4],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"small":[4,5],"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"small":[3,5],"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"small":[6,3],"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"small":[4,4],"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"small":[6,2],"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"small":[7,3],"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"small":[6,5],"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["boxTouchesBothLasers"],"colours":["red","blue"],"pushable":{"laser":"also"}},{"id":"17","name":"Level 17","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"idoor":[1,1],"laser":[1,null]},"steps":{"best":7},"small":[5,6],"rules":[],"require":["laserStoppedByIdoor","robotThroughIdoor"]},{"id":"18","name":"Level 18","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"idoor":[1,null],"relay":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["boxHitsIdoor","allRelaysLitAtEnd"],"optional":["robotAndBoxHitRelay"]},{"id":"19","name":"Level 19","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[1,null],"door":[1,null]},"pushable":{"laser":"only"},"steps":{"best":7},"small":[4,4],"rules":[],"require":["laserPushedThrice","throughOpenDoor"],"optional":["laserThroughGoal"]},{"id":"20","name":"Level 20","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[0,null],"door":[1,1],"box":[0,null]},"pushable":{"relay":"only"},"steps":{"best":8},"small":[8,3],"rules":[],"require":["laserThroughNoRelay","laserThroughADoor","throughOpenDoor"],"optional":["relayHitsRelay"]},{"id":"twocolour","name":"Two colours","size":[7,7],"palette":{"block":[0,null],"button":[1,null],"door":[1,null],"relay":[1,null],"laser":[1,null]},"colours":["red","blue"],"twoColour":{"door":"only"},"steps":{"best":9},"small":[4,5],"rules":[],"require":[],"hidden":true}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"small":[3,3],"rules":[],"require":[],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,3],"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,4],"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"small":[8,6],"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"optional":[]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,5],"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"small":[4,4],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"small":[4,5],"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"small":[3,5],"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"small":[6,3],"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"small":[4,4],"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"small":[6,2],"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"small":[7,3],"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"small":[6,5],"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["boxPushedTwiceHitOnce"],"colours":["red","blue"]},{"id":"17","name":"Level 17","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"idoor":[1,1],"laser":[1,null]},"steps":{"best":7},"small":[5,6],"rules":[],"require":["laserStoppedByIdoor","robotThroughIdoor"]},{"id":"18","name":"Level 18","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"idoor":[1,null],"relay":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["boxHitsIdoor","allRelaysLitAtEnd"],"optional":["robotAndBoxHitRelay"]},{"id":"19","name":"Level 19","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[1,null],"door":[1,null]},"pushable":{"laser":"only"},"steps":{"best":7},"small":[4,4],"rules":[],"require":["laserPushedThrice","throughOpenDoor"],"optional":["laserThroughGoal"]},{"id":"20","name":"Level 20","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[0,null],"door":[1,1],"box":[0,null]},"pushable":{"relay":"only"},"steps":{"best":8},"small":[8,3],"rules":[],"require":["laserThroughNoRelay","laserThroughADoor","throughOpenDoor"],"optional":["relayHitsRelay"]},{"id":"twocolour","name":"Two colours","size":[7,7],"palette":{"block":[0,null],"button":[1,null],"door":[1,null],"relay":[1,null],"laser":[1,null]},"colours":["red","blue"],"twoColour":{"door":"only"},"steps":{"best":9},"small":[4,5],"rules":[],"require":[],"hidden":true}];
 return { LEVELS };
 })();
 // ---- src/view/ink.js
@@ -5031,33 +5059,39 @@ return { icon };
 })();
 // ---- src/app/levelParts.js
 const m37 = (() => {
-const { colouringsOf, pushingsOf, ELEMENTS } = m18;
+const { coloursOf, pushingsOf, ELEMENTS } = m18;
+const { INK } = m29;
 const { icon } = m36;
-// A level's elements on its row in the level list, as the palette draws them: one icon per colour and
-// per pushable version, the versions of one element kept together (register 402).
+// A level's row in the level list: one icon per element, as the palette draws it, wearing the pushable
+// frame when that element only comes pushable (registers 402, 419, 420); the level's colours, when it
+// has more than one, as dots on the title line.
 
 
-const COLOURED = ['button', 'door', 'toggle', 'idoor', 'relay'];
 
 // tool: each element's palette tool (campaign.js's TOOL).
 function levelParts(def, tool) {
   const parts = document.createElement('span'); parts.className = 'campParts';
   for (const el of Object.keys(def.palette)) {
-    const g = document.createElement('span'); g.className = 'campPart';
+    const crate = pushingsOf(def, el).every(Boolean);
     // A one-way takes a colour only in a level that names its colours (register 241).
-    const cols = COLOURED.includes(el) || (el === 'gate' && def.colours) ? colouringsOf(def, el) : [null];
-    for (const col of cols) for (const crate of pushingsOf(def, el)) {
-      const c = el === 'gate' ? icon('gate', 'red', col, crate) : icon(tool[el], col || 'red', null, crate);
-      const name = [crate ? 'pushable' : '', col ? col.replace('|', ' and ') : '', ELEMENTS[el].label.toLowerCase()].filter(Boolean).join(' ');
-      c.dataset.part = el; if (col) c.dataset.colour = col; if (crate) c.dataset.crate = '';
-      c.title = name[0].toUpperCase() + name.slice(1); c.setAttribute('aria-label', c.title);
-      g.append(c);
-    }
-    parts.append(g);
+    const c = el === 'gate' ? icon('gate', 'red', def.colours ? 'red' : null, crate) : icon(tool[el], 'red', null, crate);
+    const name = (crate ? 'pushable ' : '') + ELEMENTS[el].label.toLowerCase();
+    c.dataset.part = el; if (crate) c.dataset.crate = '';
+    c.title = name[0].toUpperCase() + name.slice(1); c.setAttribute('aria-label', c.title);
+    parts.append(c);
   }
   return parts;
 }
-return { levelParts };
+
+function levelColours(def) {
+  const cols = coloursOf(def), dots = document.createElement('span');
+  dots.className = 'campDots';
+  if (cols.length < 2) return dots;
+  dots.title = `Colours: ${cols.join(' and ')}`; dots.setAttribute('aria-label', dots.title);
+  for (const c of cols) { const d = document.createElement('i'); d.dataset.colour = c; d.style.background = INK[c]; dots.append(d); }
+  return dots;
+}
+return { levelParts, levelColours };
 })();
 // ---- src/app/winCard.js
 const m38 = (() => {
@@ -5227,7 +5261,7 @@ const { newHistory } = m23;
 const { S, starterLevel } = m24;
 const { $, portrait, now } = m20;
 const { icon } = m36;
-const { levelParts } = m37;
+const { levelParts, levelColours } = m37;
 const { noteWin, bindWin } = m38;
 const { noteLeaving, copyDebug } = m39;
 const { buildMenuScene } = m40;
@@ -5467,7 +5501,8 @@ function renderList() {
     name.textContent = def.name;
     small.textContent = rec.beaten ? `Beaten, optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}${scoreText(def, rec.best)}` : '';
     const parts = levelParts(def, TOOL);
-    b.append(name, parts, small);
+    const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name, levelColours(def));
+    b.append(top, parts, small);
     if (def.id === p.last) b.classList.add('sel');
     b.onclick = () => go('level', def.id);
     li.append(b);

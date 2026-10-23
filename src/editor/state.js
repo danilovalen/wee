@@ -3,10 +3,10 @@
 import { emptyLevel } from '../level/format.js';
 import { newHistory } from './history.js';
 
-// A new room takes the screen's shape: taller than wide on a phone held upright.
-// A new room is open floor: the room's edge stops the robot, so it needs no wall border (register 380).
-export function starterLevel(tall) {
-  return tall ? emptyLevel(12, 14) : emptyLevel(20, 12);
+// A new room is 7x7 open floor (register 430): the room's edge stops the robot, so it needs no wall
+// border (register 380). tall is kept for callers; the size no longer follows the screen.
+export function starterLevel(tall) { // eslint-disable-line no-unused-vars
+  return emptyLevel(7, 7);
 }
 
 export const S = {

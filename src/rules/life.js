@@ -172,10 +172,12 @@ export function kill(s, e, how) {
   s.events.push({ type: 'kill', id: e.id, how });
 }
 
-// Puts a piece on t, or destroys it when t is a death block. A puddle makes it sticky
-// (a turret never is), water washes that off.
+// A box or a heavy box on spikes sits there whole, covering them (registers 427, 428, 431).
+export const covers = e => e.kind === 'box' || e.kind === 'heavy';
+// Puts a piece on t, or destroys it when t is a death block it cannot cover. A puddle makes it
+// sticky (a turret never is), water washes that off.
 export function land(s, e, t) {
-  if (t.death) { kill(s, e, 'death'); return false; }
+  if (t.death && !covers(e)) { kill(s, e, 'death'); return false; }
   e.x = t.x; e.y = t.y;
   const c = cellAt(s, e.x, e.y);
   if (c === 'sticky' && e.kind !== 'turret' && !e.glue && !e.sticky) { e.sticky = true; s.events.push({ type: 'sticky', id: e.id }); }

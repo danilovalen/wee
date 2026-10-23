@@ -987,7 +987,7 @@ const M = [
   ['src/app/rooms.js', "const full = new URLSearchParams(location.search).get('sandbox') === 'full';", "const full = new URLSearchParams(location.search).has('sandbox');", 'modes'],
   ['src/app/nav.js', "  document.documentElement.classList.remove('booting');\n", "", 'campaign-play'],
   ['style.css', "html.booting body > :not(dialog[open]) { visibility: hidden; }", "", 'campaign-play'],
-  ['style.css', ".menuSec:not(:has(button:not([hidden]) ~ button:not([hidden]))) > button { grid-column: 1 / -1; }", "", 'campaign-play'],
+  ['style.css', "#menuCampaign { grid-column: 1 / -1; }", "", 'campaign-play'],
   ['src/app/rooms.js', "{ name: kind === 'Example' ? t.name : '' }", "{ name: '' }", 'nav'],
   ['src/app/strip.js', "open = members(g).length > 1 ? g : null; before = lastOf(g);", "open = null; before = lastOf(g);", 'browser'],
   ['src/app/levelParts.js', "for (const crate of pushingsOf(def, el))", "for (const crate of [false])", 'campaign-play'],
@@ -1001,7 +1001,14 @@ const M = [
   ['src/app/winCard.js', "  if (before.beaten && (!gold || all(before))) return;", "  if (before.beaten) return;", 'win'],
   ['src/app/winCard.js', "  $('winBox').addEventListener('click', ev => { if (ev.target === $('winBox')) $('winBox').close(); });\n", "", 'win'],
   ['src/app/winCard.js', "  if (p.gold) burst(box);", "", 'win'],
-  ['src/app/winCard.js', "return n ? { label: 'Next level', go: () => go('level', n.id) }", "return n ? { label: 'Next level', go: () => go('level', def.id) }", 'win'],
+  ['src/app/winCard.js', "return n ? { label: 'Next level', go: () => go('level', n.id) }", "return n ? { label: 'Next level', go: () => go('level', def.id) }", 'win'],  ['style.css', "#openNow:not(:empty) { margin-bottom: 8px; }", "", 'spacing'],
+  ['style.css', ".moreMenu { position: absolute; right: 0; top: calc(100% + 8px); gap: 8px; }", ".moreMenu { position: absolute; right: 0; top: calc(100% - 2px); }", 'spacing'],  ['src/rules/life.js', "  if (t.death && !covers(e)) { kill(s, e, 'death'); return false; }", "  if (t.death) { kill(s, e, 'death'); return false; }", 'sim'],
+  ['src/rules/player.js', "  if (t.death && !entAt(s, t.x, t.y)) { die(s); return 'died'; }", "  if (t.death) { die(s); return 'died'; }", 'sim'],
+  ['src/rules/player.js', "  if (cellAt(s, nx, ny) === 'death') { die(s); return 'died'; }", "", 'sim'],
+  ['src/editor/state.js', "  return emptyLevel(7, 7);", "  return tall ? emptyLevel(12, 14) : emptyLevel(20, 12);", 'campaign'],
+  ['src/app/nav.js', "    if (n > 0 && !fixed) { toMenu = true; ours = true; history.go(-n); return; }", "", 'nav'],
+  ['src/app/levelParts.js', "  if (cols.length < 2) return dots;", "  return dots;", 'campaign-play'],
+  ['src/app/levelParts.js', "    const crate = pushingsOf(def, el).every(Boolean);", "    const crate = false;", 'campaign-play'],
 ];
 
 // SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.

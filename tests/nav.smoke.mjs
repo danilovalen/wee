@@ -114,6 +114,17 @@ try {
     check('in a preview frame the logo goes to the menu', await fat() === 'menuBox' && ferr.length === 0, ferr.join(' | '));
     await fp.close();
   } else check('the built single file is served for the preview-frame check', false, 'run npm run build');
+  // Register 424: the menu is where history starts, so Back from it leaves the game, never into a room.
+  await page.goto('about:blank'); await page.goto(B); await settle();
+  await page.click('#menuSandbox'); await settle(); await page.click('#roomNew'); await settle();
+  await page.click('#logo'); await settle();
+  check('the logo goes to the menu', (await at()).open === 'menuBox' && (await at()).hash === '#/');
+  await page.goBack(); await settle();
+  check('Back from the menu leaves the game, not into the editor', page.url() === 'about:blank', page.url());
+  await page.goto(B); await settle();
+  await page.click('#menuCampaign'); await settle(); await page.click('#campList button[data-level="2"]'); await settle();
+  await page.click('#logo'); await settle(); await page.goBack(); await settle();
+  check('from a level too, Back from the menu leaves the game', page.url() === 'about:blank', page.url());
   check('no page errors', errors.length === 0, errors.join(' | '));
 } finally {
   await browser.close();

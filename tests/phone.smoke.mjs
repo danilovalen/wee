@@ -20,6 +20,8 @@ try {
   await page.evaluate(() => window.wee.roomsReady);
   check('wee starts on the library, full screen', await page.evaluate(() => { const r = document.getElementById('roomsBox').getBoundingClientRect(); return document.getElementById('roomsBox').open && r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }));
   await page.click('#roomsBox .roomsHead form button');
+  // These checks were written against the old starter room; a new room is 7x7 now (register 430).
+  await page.evaluate(() => window.wee.loadLevel(window.wee.blank(12, 14)));
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
   const pick = t => pickTool(page, t);

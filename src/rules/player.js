@@ -32,7 +32,8 @@ export function playerStep(s, d, diving) {
   }
   const t = stepTo(s, p.x, p.y, d, p.swimming, diving);
   if (!t) return 'blocked';
-  if (t.death) { die(s); return 'died'; }
+  // Spikes a box covers are a box to push; bare spikes kill (register 431).
+  if (t.death && !entAt(s, t.x, t.y)) { die(s); return 'died'; }
   smash(s, t);
   const nx = t.x, ny = t.y, e = entAt(s, nx, ny), g = p.stuck && !p.stuck.ride ? stuckTo(s) : null;
   const dx = nx - p.x, dy = ny - p.y, ahead = !!e && e === g;
@@ -66,6 +67,8 @@ export function playerStep(s, d, diving) {
   p.pushing = pushed;
   p.from = { x: p.x, y: p.y };
   p.x = nx; p.y = ny; p.moved++;
+  // Pushing a box off its spikes leaves them bare under you.
+  if (cellAt(s, nx, ny) === 'death') { die(s); return 'died'; }
   if (p.dir) p.dir = t.d;
   if (g && !ahead) drag(s, g, dx, dy);
   entered(s);

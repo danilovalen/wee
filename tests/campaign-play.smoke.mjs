@@ -32,6 +32,7 @@ try {
   // Register 400: a box with one button gives it the whole row.
   const spans = await page.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(); return Math.abs(r('menuCampaign').width - (r('menuSandbox').right - r('menuPuzzles').left)) < 1; });
   check('Campaign, alone in its box, is as wide as Puzzles and Sandbox together', spans);
+  check('the menu is one box saying Play as the robot (registers 418, 433)', await page.evaluate(() => document.querySelectorAll('.menuSec').length === 1 && document.querySelector('.menuSec').textContent.includes('Play as the robot') && !document.querySelector('.menuList').textContent.includes('little circle')));
   // Register 401: the page paints nothing but its ground until the first place is up.
   check('once loaded the page is no longer booting', await page.evaluate(() => !document.documentElement.classList.contains('booting')));
   check('while booting the editor is hidden', await page.evaluate(() => { document.documentElement.classList.add('booting'); const v = getComputedStyle(document.querySelector('header')).visibility; document.documentElement.classList.remove('booting'); return v === 'hidden'; }));
@@ -51,11 +52,16 @@ try {
   const parts = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part).join()])));
   check('each level in the list shows the elements it uses', parts['1'] === 'block' && parts['5'] === 'block,box' && parts['6'] === 'block,box,toggle,door', JSON.stringify(parts));
   // Register 402: a version per colour and per pushable kind, each one-line row of 16 px icons.
-  const versions = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part + (c.dataset.colour ? ':' + c.dataset.colour : '') + ('crate' in c.dataset ? '+' : '')).join()])));
-  check('level 11 shows its buttons and doors in red and in blue', versions['11'] === 'block,box,button:red,button:blue,door:red,door:blue', versions['11']);
-  check('level 16 shows a plain and a pushable laser', versions['16'].endsWith('laser,laser+'), versions['16']);
-  check('level 20 shows its relay pushable only', versions['20'].includes('relay:red+') && !versions['20'].includes('relay:red,'), versions['20']);
-  check('level 12 shows its one-way red', versions['12'].includes('gate:red'), versions['12']);
+  // Registers 419, 420: one icon per element, the pushable frame only where it comes pushable only, and a
+  // level with two colours shows them as dots on its title line, at the right.
+  const versions = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part + ('crate' in c.dataset ? '+' : '')).join()])));
+  check('level 11 shows one button and one door', versions['11'] === 'block,box,button,door', versions['11']);
+  check('level 16 shows one plain laser', versions['16'] === 'block,box,button,door,laser', versions['16']);
+  check('level 20 shows its relay pushable only', versions['20'].includes('relay+'), versions['20']);
+  const rowDots = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campDots i')].map(d => d.dataset.colour).join()])));
+  check('levels 11 and 16 show red and blue dots; one-colour levels none', rowDots['11'] === 'red,blue' && rowDots['16'] === 'red,blue' && rowDots['7'] === '' && rowDots['12'] === '', JSON.stringify([rowDots['11'], rowDots['16'], rowDots['7'], rowDots['12']]));
+  const rightDots = await page.$eval('.campRow[data-level="11"]', r => { const d = r.querySelector('.campDots').getBoundingClientRect(), n = r.querySelector('.campRowHead b').getBoundingClientRect(), b = r.getBoundingClientRect(); return Math.abs(d.top + d.height / 2 - (n.top + n.height / 2)) < 4 && b.right - d.right < 24; });
+  check('the dots sit on the title line, at the right', rightDots);
   const lines = await page.$$eval('.campParts', ps => ps.filter(p => { const ys = new Set([...p.querySelectorAll('canvas')].map(c => Math.round(c.getBoundingClientRect().top))); return ys.size > 1; }).length);
   check('every level\'s icons fit on one line', lines === 0, String(lines));
   const listing = await page.evaluate(() => { const rows = [...document.querySelectorAll('.campRow')]; return { cols: new Set(rows.map(r => Math.round(r.getBoundingClientRect().left / 10))).size, said: rows.filter(r => /shortest path/i.test(r.textContent)).length }; });

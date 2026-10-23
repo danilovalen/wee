@@ -72,7 +72,8 @@ const level = id => LEVELS.find(l => l.id === id);
   const end = s19.make(polish(s19, level('19'), known, BY_AREA, 300, x => met.push(x.r.w * x.r.h)));
   ok('polishing a win reports wins and ends on a smaller room', met.length > 0 && end.w * end.h < 25, `${met.length} wins, ends ${end.w}x${end.h}`);
   // A level offering lasers plain and pushable gets both from the search (register 373: it took the first, plain, always).
-  const s16 = searcher(level('16'), 5), kinds = new Set();
+  // Level 16 offered them until register 426; it stands in here with its old offer.
+  const s16 = searcher({ ...level('16'), pushable: { laser: 'also' } }, 5), kinds = new Set();
   for (let i = 0; i < 200; i++) for (const e of s16.make(s16.random()).entities) if (e.turret) kinds.add(!!e.crate);
   ok('the search builds plain and pushable lasers where a level offers both', kinds.size === 2, [...kinds].join());
   const g = s19.random();

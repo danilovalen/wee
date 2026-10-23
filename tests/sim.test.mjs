@@ -560,7 +560,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   const h = createGame(room(['#########', '#P..H.X.#', '#.......#', '#########']));
   step(h, ['right']); step(h, ['right']);
   for (let i = 0; i < 5; i++) step(h);
-  check('a thrown heavy box is destroyed', h.entities[0].dead);
+  check('a thrown heavy box crosses the spikes whole (register 431)', !h.entities[0].dead, JSON.stringify(h.entities[0]));
   const t = createGame(room(['########', '#T..X.P#', '#......#', '########']));
   step(t);
   check('a beam stops at it', t.deaths === 0 && t.beams[0].path.at(-1)[0] === 3, JSON.stringify(t.beams[0].path));
@@ -873,10 +873,22 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a glued box does not slide off on a turn', gl.player.stuck && Math.abs(gl.entities[0].x - gl.player.x) === 1, JSON.stringify([gl.player, gl.entities[0]]));
 }
 
-{ // a moving block pushing a box into a death block destroys the box at once
+{ // a moving block pushing a box onto spikes: the box covers them, whole (register 431)
   const g = createGame(room(['########', '#M.B.X.#', '#P.....#', '########']));
   worldStep(g, 'right'); worldStep(g, 'right'); worldStep(g, 'right');
-  check('the box is gone the moment it is pushed in', g.entities.find(e => e.kind === 'box').dead, JSON.stringify(g.entities));
+  check('a box pushed onto spikes is not destroyed', !g.entities.find(e => e.kind === 'box').dead, JSON.stringify(g.entities));
+}
+
+{ // boxes cover spikes (registers 427, 428, 431): the box sits there whole; whoever steps onto bare spikes dies
+  const g = createGame(room(['######', '#PB.X#', '######']));
+  step(g, ['right']); for (let i = 0; i < 6; i++) step(g);
+  check('pushed onto spikes against a wall, a box stays there whole and the robot lives', !g.entities[0].dead && g.entities[0].x === 4 && g.deaths === 0 && g.player.x === 3, JSON.stringify([g.entities[0], g.player]));
+  const on = createGame(room(['#######', '#PB.X.#', '#######']));
+  step(on, ['right']); for (let i = 0; i < 6; i++) step(on);
+  check('pushing a box on over spikes, the robot follows onto them and dies', on.deaths === 1, String(on.deaths));
+  const en = createGame(room(['#######', '#S.X..#', '#P....#', '#######']));
+  worldStep(en, 'right'); worldStep(en, 'right');
+  check('an enemy still dies on spikes', en.entities[0].dead);
 }
 { // one death per moment: pieces from before a reset do not act after it
   const l = room(['#####', '#.PE#', '#...#', '#F..#', '#####']);
