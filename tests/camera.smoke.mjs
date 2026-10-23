@@ -36,9 +36,13 @@ try {
   await page.evaluate(() => { const l = window.wee.blank(60, 46); l.start = { x: 0, y: 0 }; window.wee.loadLevel(l); });
   await page.waitForTimeout(100);
   const before = await walls();
+  const fitted = await page.locator('#game').boundingBox();
   await pinch();
   const c1 = await cam();
   check('a pinch on a big room zooms in', c1.z > 1.5, JSON.stringify(c1));
+  // Register 414: zoomed in, the view fills the room's area instead of keeping the fitted room's shape.
+  const zoomedBox = await page.locator('#game').boundingBox();
+  check('zoomed in, the view grows to fill the area', zoomedBox.height > fitted.height + 100 && zoomedBox.width >= fitted.width - 1, `${Math.round(fitted.width)}x${Math.round(fitted.height)} -> ${Math.round(zoomedBox.width)}x${Math.round(zoomedBox.height)}`);
   check('Fit shows while zoomed, and the resize bars wait', await page.locator('#fitBtn').isVisible() && await page.locator('.growBar').first().isHidden());
   check('the pinch placed nothing: the first finger\'s stroke is taken back', (await walls()) === before, `${before} -> ${await walls()}`);
   // A tap lands on the tile drawn under the finger: the pixel there turns from floor to wall.
@@ -50,8 +54,12 @@ try {
   const placed = await page.evaluate(() => { const l = window.wee.getLevel(); return l.cells.map((c, i) => c === 'wall' ? `${i % l.w},${Math.floor(i / l.w)}` : null).filter(Boolean); });
   check('a tap while zoomed places on the tile under it', placed.includes('30,23') && placed.length === before + 1, placed.join(' '));
   check('and the wall is drawn under the finger', (await pixel()) !== floor, `${floor} -> ${await pixel()}`);
+  // Zoomed only a little, the view is taller than the room: the space past its edges is clear, not stale.
+  const past = await page.evaluate(async () => { const { cam, apply } = await import('/src/app/camera.js'); cam.z = 1.2; apply(); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); const c = document.getElementById('game'); return c.getContext('2d').getImageData(Math.round(c.width / 2), 1, 1, 1).data[3]; });
+  check('past the room\'s edges the zoomed view is clear', past === 0, String(past));
   await page.click('#fitBtn');
-  check('Fit shows the whole room again', (await cam()).z === 1 && await page.locator('#fitBtn').isHidden());
+  const refit = await page.locator('#game').boundingBox();
+  check('Fit shows the whole room again, at its fitted size', (await cam()).z === 1 && await page.locator('#fitBtn').isHidden() && Math.abs(refit.height - fitted.height) < 2, `${Math.round(refit.height)} vs ${Math.round(fitted.height)}`);
   // Play follows the mover: zoom in on the start corner, walk to the far side, and the view goes too.
   await pinch(200);
   await page.evaluate(async () => { const { cam, apply } = await import('/src/app/camera.js'); cam.x = 0; cam.y = 0; apply(); });

@@ -6712,6 +6712,7 @@ const { $, canvas, g } = m20;
 // a pinch or Ctrl and the wheel zooms around the fingers or the pointer, two fingers or the wheel pan,
 // and Fit shows the whole room again. One finger keeps editing and playing. While playing zoomed in,
 // the view follows the mover, still while they stay in the middle and sliding only as they near an edge.
+// Zoomed in, the view fills the room's whole area, not the fitted room's shape (register 414).
 
 
 
@@ -6721,51 +6722,66 @@ const SLACK = 0.25;
 // cam.fit: the fitted scale (CSS px per room px); z: how far in, 1 being fitted; x, y: the view's
 // top left in room px; held: a pan by hand, so following waits for the mover's next step.
 const cam = { fit: 1, z: 1, x: 0, y: 0, held: false };
-let editView = null, lastAt = null;
+let editView = null, lastAt = null, avail = { w: 0, h: 0 };
 
 const zoomable = () => cam.fit * T < MIN_TILE;
 const size = () => ({ W: S.level.w * T, H: S.level.h * T });
 const maxZ = () => Math.max(1, MAX_TILE / (cam.fit * T));
 
-function clamp() {
-  const { W, H } = size();
-  cam.z = zoomable() ? Math.min(maxZ(), Math.max(1, cam.z)) : 1;
-  cam.x = Math.min(W - W / cam.z, Math.max(0, cam.x));
-  cam.y = Math.min(H - H / cam.z, Math.max(0, cam.y));
+const scale = () => cam.fit * cam.z;  // CSS px per room px
+const isZoomed = () => cam.z > 1.001;
+// The view's box in CSS px: the fitted room, or zoomed in, the whole area the room may use.
+function box() { const { W, H } = size(); return isZoomed() ? { w: Math.max(avail.w, W * cam.fit), h: Math.max(avail.h, H * cam.fit) } : { w: W * cam.fit, h: H * cam.fit }; }
+// Along each side the view stays on the room, or centres it where the room is the smaller.
+function clampXY() {
+  const { W, H } = size(), b = box(), k = scale();
+  const one = (c, R, v) => R >= v ? Math.min(R - v, Math.max(0, c)) : (R - v) / 2;
+  cam.x = one(cam.x, W, b.w / k); cam.y = one(cam.y, H, b.h / k);
 }
 
-// The drawing transform; fit() sizes the canvas, this decides what of the room it shows.
-function apply() {
-  clamp();
-  const s = canvas.width / size().W, k = s * cam.z;
-  g.setTransform(k, 0, 0, k, -cam.x * k, -cam.y * k);
-  const zoomed = cam.z > 1.001;
+// Sizes the canvas to the view and sets the drawing transform. anchor: a room point to keep under
+// a screen point, worked out after the canvas takes its new size.
+function apply(anchor) {
+  cam.z = zoomable() ? Math.min(maxZ(), Math.max(1, cam.z)) : 1;
+  const b = box(), dpr = window.devicePixelRatio || 1;
+  // Setting a canvas size clears it, even to the same size, so only a real change is written.
+  const cw = Math.round(b.w * dpr), ch = Math.round(b.h * dpr), w = Math.round(b.w) + 'px', h = Math.round(b.h) + 'px';
+  if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+  if (canvas.style.width !== w) canvas.style.width = w;
+  if (canvas.style.height !== h) canvas.style.height = h;
+  if (anchor) {
+    const r = canvas.getBoundingClientRect(), k = r.width / b.w * scale();
+    cam.x = anchor.at.x - (anchor.cx - r.left) / k; cam.y = anchor.at.y - (anchor.cy - r.top) / k;
+  }
+  clampXY();
+  const kd = canvas.width / b.w * scale();
+  g.setTransform(kd, 0, 0, kd, -cam.x * kd, -cam.y * kd);
+  const zoomed = isZoomed();
   $('fitBtn').hidden = !zoomed;
   // The room's resize bars act on its edges, which a zoomed view may not show: Fit first.
   $('roomWrap').classList.toggle('zoomed', zoomed);
   S.redraw = true;
 }
 
-function setFit(z) { cam.fit = z; }
+// fit() hands over the fitted scale and the area the room may use, in CSS px.
+function setFit(z, w, h) { cam.fit = z; avail = { w, h }; }
+
+// A zoomed view can show past the room's edges, which the scene does not paint: clear first.
+function clearView() { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, canvas.width, canvas.height); g.restore(); }
 
 // A point on the screen as room px, and back.
+const perRoom = () => canvas.getBoundingClientRect().width / box().w * scale();  // screen px per room px
 function toRoom(cx, cy) {
-  const r = canvas.getBoundingClientRect(), { W, H } = size();
-  return { x: cam.x + (cx - r.left) / r.width * W / cam.z, y: cam.y + (cy - r.top) / r.height * H / cam.z };
+  const r = canvas.getBoundingClientRect(), k = perRoom();
+  return { x: cam.x + (cx - r.left) / k, y: cam.y + (cy - r.top) / k };
 }
 function toScreen(x, y) {
-  const r = canvas.getBoundingClientRect(), { W } = size(), k = r.width / W * cam.z;
+  const r = canvas.getBoundingClientRect(), k = perRoom();
   return { x: r.left + (x - cam.x) * k, y: r.top + (y - cam.y) * k };
 }
 
 // Zoom to z keeping the room point under (cx, cy) where it is.
-function zoomTo(z, cx, cy) {
-  const at = toRoom(cx, cy), r = canvas.getBoundingClientRect(), { W, H } = size();
-  cam.z = z; clamp();
-  cam.x = at.x - (cx - r.left) / r.width * W / cam.z;
-  cam.y = at.y - (cy - r.top) / r.height * H / cam.z;
-  apply();
-}
+function zoomTo(z, cx, cy) { const at = toRoom(cx, cy); cam.z = z; apply({ at, cx, cy }); }
 
 function fitView() { cam.z = 1; cam.x = cam.y = 0; apply(); }
 
@@ -6779,7 +6795,7 @@ function follow() {
   const p = S.game.player, at = `${p.x},${p.y}`;
   if (at !== lastAt) { lastAt = at; cam.held = false; }
   if (cam.held) return;
-  const { W, H } = size(), vw = W / cam.z, vh = H / cam.z, px = (p.x + 0.5) * T, py = (p.y + 0.5) * T;
+  const b = box(), vw = b.w / scale(), vh = b.h / scale(), px = (p.x + 0.5) * T, py = (p.y + 0.5) * T;
   const want = (c, v, m) => m < c + SLACK * v ? m - SLACK * v : m > c + (1 - SLACK) * v ? m - (1 - SLACK) * v : c;
   const tx = want(cam.x, vw, px), ty = want(cam.y, vh, py);
   if (Math.abs(tx - cam.x) + Math.abs(ty - cam.y) < 0.5) return;
@@ -6809,13 +6825,10 @@ function bindCamera() {
     if (!fingers.has(ev.pointerId)) return;
     fingers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     if (!pinch || fingers.size < 2) return;
-    const t = two(), r = canvas.getBoundingClientRect(), { W, H } = size();
-    cam.z = pinch.z * t.d / pinch.d; clamp();
+    const t = two();
+    cam.z = pinch.z * t.d / pinch.d; cam.held = true;
     // The room point first under the fingers stays under them, so the room zooms and pans at once.
-    cam.x = pinch.at.x - (t.mx - r.left) / r.width * W / cam.z;
-    cam.y = pinch.at.y - (t.my - r.top) / r.height * H / cam.z;
-    cam.held = true;
-    apply();
+    apply({ at: pinch.at, cx: t.mx, cy: t.my });
   }, true);
   const up = ev => { fingers.delete(ev.pointerId); if (fingers.size < 2) { pinch = null; if (!fingers.size) S.pinch = false; } };
   canvas.addEventListener('pointerup', up, true);
@@ -6824,18 +6837,18 @@ function bindCamera() {
     if (!zoomable()) return;
     ev.preventDefault();
     if (ev.ctrlKey || ev.metaKey) { zoomTo(cam.z * Math.exp(-ev.deltaY * 0.01), ev.clientX, ev.clientY); return; }
-    const r = canvas.getBoundingClientRect(), per = size().W / r.width / cam.z;
+    const per = 1 / perRoom();
     cam.x += ev.deltaX * per; cam.y += ev.deltaY * per; cam.held = true;
     apply();
   }, { passive: false });
 }
-return { cam, zoomable, apply, setFit, toRoom, toScreen, fitView, enterPlay, leavePlay, follow, bindCamera };
+return { cam, zoomable, apply, setFit, clearView, toRoom, toScreen, fitView, enterPlay, leavePlay, follow, bindCamera };
 })();
 // ---- src/app/fit.js
 const m60 = (() => {
 const { T } = m29;
 const { S } = m24;
-const { $, canvas, g } = m20;
+const { $ } = m20;
 const { syncSize } = m58;
 const { setFit, apply } = m59;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
@@ -6892,12 +6905,8 @@ function fit() {
     : S.mode === 'play' && !S.camp ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
       : area.clientHeight - 2 * BAR;
   const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
-  const k = (window.devicePixelRatio || 1) * zoom;
-  // Setting a canvas size clears it, even to the same size, so only a real change is written.
-  const cw = Math.round(level.w * T * k), ch = Math.round(level.h * T * k), css = Math.round(level.w * T * zoom) + 'px';
-  if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
-  if (canvas.style.width !== css) canvas.style.width = css;
-  setFit(zoom); apply();
+  // The camera sizes the canvas: to the fitted room, or zoomed in, to the whole of stage x room.
+  setFit(zoom, stage, room); apply();
   $('w').value = level.w; $('h').value = level.h;
   syncSize(level);
   S.redraw = true;
@@ -8420,7 +8429,7 @@ const { gust } = m42;
 const { stateKey } = m12;
 const { respawn } = m4;
 const { syncEnabled } = m47;
-const { enterPlay, leavePlay, follow } = m59;
+const { enterPlay, leavePlay, follow, clearView } = m59;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
 
@@ -8538,6 +8547,7 @@ function render() {
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   look.avatar = S.camp ? 'robot' : 'you';
+  clearView();
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
   else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
 }

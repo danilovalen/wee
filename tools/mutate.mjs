@@ -996,7 +996,8 @@ const M = [
   ['src/app/camera.js', "    if (S.before !== null && S.before !== undefined) { S.level = JSON.parse(S.before); S.before = null; }\n", "", 'camera'],
   ['src/app/camera.js', "  return { x: cam.x + (cx - r.left) / r.width * W / cam.z,", "  return { x: (cx - r.left) / r.width * W / cam.z,", 'camera'],
   ['src/app/camera.js', "  if (cam.held) return;", "  return;", 'camera'],
-  ['src/app/camera.js', "export function leavePlay() { if (editView)", "export function leavePlay() { if (false)", 'camera'],
+  ['src/app/camera.js', "export function leavePlay() { if (editView)", "export function leavePlay() { if (false)", 'camera'],  ['src/app/camera.js', "return isZoomed() ? { w: Math.max(avail.w, W * cam.fit), h: Math.max(avail.h, H * cam.fit) } :", "return false ? 0 :", 'camera'],
+  ['src/app/play.js', "  clearView();\n", "", 'camera'],
 ];
 
 // SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.

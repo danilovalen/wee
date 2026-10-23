@@ -1,7 +1,7 @@
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 import { T } from '../view/ink.js';
 import { S } from '../editor/state.js';
-import { $, canvas, g } from './dom.js';
+import { $ } from './dom.js';
 import { syncSize } from './size.js';
 import { setFit, apply } from './camera.js';
 
@@ -53,12 +53,8 @@ export function fit() {
     : S.mode === 'play' && !S.camp ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
       : area.clientHeight - 2 * BAR;
   const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
-  const k = (window.devicePixelRatio || 1) * zoom;
-  // Setting a canvas size clears it, even to the same size, so only a real change is written.
-  const cw = Math.round(level.w * T * k), ch = Math.round(level.h * T * k), css = Math.round(level.w * T * zoom) + 'px';
-  if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
-  if (canvas.style.width !== css) canvas.style.width = css;
-  setFit(zoom); apply();
+  // The camera sizes the canvas: to the fitted room, or zoomed in, to the whole of stage x room.
+  setFit(zoom, stage, room); apply();
   $('w').value = level.w; $('h').value = level.h;
   syncSize(level);
   S.redraw = true;
