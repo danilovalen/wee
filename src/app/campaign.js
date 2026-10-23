@@ -10,6 +10,7 @@ import { S, starterLevel } from '../editor/state.js';
 import { $, portrait, now } from './dom.js';
 import { icon } from './icons.js';
 import { levelParts } from './levelParts.js';
+import { noteWin, bindWin } from './winCard.js';
 import { noteLeaving, copyDebug } from './debug.js';
 import { buildMenuScene } from './menuScene.js';
 import { madeLevel } from './made.js';
@@ -197,7 +198,7 @@ export function run() {
   S.camp.verdict = v;
   save();
   if (v.ok && v.won) {
-    const p = progress(), rec = p.levels[def.id] ||= {}, goals = rec.goals || {};
+    const p = progress(), rec = p.levels[def.id] ||= {}, goals = rec.goals || {}, before = { beaten: !!rec.beaten, goals: { ...goals } };
     rec.goals = Object.fromEntries(v.optional.map(o => [o.id, !!goals[o.id] || o.met]));
     // Statistics to compare with other players: every win's moves and tiles placed (the start and
     // the goal not counted), fewest and most of each. A save that kept tiles per area starts over.
@@ -209,6 +210,7 @@ export function run() {
     for (const o of v.optional) if (o.met && o.id !== 'mix') low(o.id, v.tiles);
     rec.beaten = true; rec.room = S.level;
     write(p);
+    noteWin(def, before, rec, v, words);
   }
   S.camp.ranOn = JSON.stringify(S.level);
   const show = v.ok ? (v.won ? v.path : v.fail.path) : null;
@@ -265,6 +267,7 @@ export function buildCampaign(actions) {
   // Test: the room played by hand, the robot not involved; nothing is judged or saved.
   $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.verdictGone = true; S.camp.testing = true; A.setMode('play'); };
   // After a Run the robot has shown its path: back to editing, so a tap on the room places again.
+  bindWin();
   addEventListener('wee:demoDone', () => setTimeout(() => { if (S.camp && !S.camp.testing && S.mode === 'play') A.setMode('edit'); }, 900));
   addEventListener('wee:win', ev => {
     if (!S.camp || !S.camp.testing) return;

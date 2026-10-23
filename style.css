@@ -691,3 +691,28 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 .fitBtn[hidden] { display: none; }
 .roomWrap.zoomed .growBar { display: none; }
 
+/* The win cards (registers 415, 416): a sheet from the bottom, the room above it still in view. */
+.winCard { width: min(420px, 100vw - 24px); margin: auto auto 12px; padding: 18px 18px 16px; border: 0; border-radius: var(--r-l); background: var(--panel); color: inherit; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); overflow: visible; }
+.winCard::backdrop { background: rgba(40, 44, 60, .18); }
+.winCard[open] { animation: winUp .28s cubic-bezier(.2, .8, .3, 1); }
+@keyframes winUp { from { transform: translateY(40px); opacity: 0; } }
+.winTitle { margin: 0; font: 800 22px var(--label-face); }
+.winSay { margin: 4px 0 12px; color: var(--dim); }
+.winStars { display: flex; gap: 8px; margin: 0 0 10px; }
+.winStar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; color: var(--sticker); box-shadow: inset 0 0 0 2px var(--sticker); }
+.winStar.on { background: #f2b632; color: #fff; box-shadow: 0 0 0 3px rgba(242, 182, 50, .25); }
+.winStar.new { animation: winPop .5s .3s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes winPop { from { transform: scale(.4); } }
+.winGoals { list-style: none; margin: 0 0 14px; padding: 0; font-size: 14px; }
+.winGoals li { display: flex; gap: 8px; align-items: center; margin: 4px 0; color: var(--dim); }
+.winGoals li.on { color: inherit; }
+.winGoals i { font-style: normal; color: var(--sticker); }
+.winGoals li.on i { color: #d89a12; }
+.winCard .primary { background: var(--accent); color: var(--on-accent); }
+.winCard .bar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.winCard.gold { background: linear-gradient(180deg, #fff3d1, var(--panel) 65%); }
+.winCard.gold .winTitle { color: #a86f00; }
+.burst { position: absolute; left: 50%; top: 30%; color: #f2b632; font-size: 18px; pointer-events: none; animation: burst 1.1s ease-out forwards; }
+@keyframes burst { to { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .winCard[open], .winStar.new { animation: none; } }
+

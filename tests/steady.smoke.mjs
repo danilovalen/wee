@@ -16,11 +16,11 @@ const errors = [];
 try {
   // Every menu is a page that fills the window, never a box over the game (register 220).
   for (const viewport of [{ width: 393, height: 852 }, { width: 1280, height: 800 }]) {
-    const page = await browser.newPage({ viewport });
+    const page = await browser.newPage({ viewport }); await page.addInitScript(() => { window.__noWinCard = true; });
     page.on('pageerror', e => errors.push(e.message));
     await page.goto('http://localhost:5219/');
-    // A yes-or-no question (dialog.confirm, register 291) is not a menu: it stays small over the room.
-    const sizes = await page.evaluate(() => [...document.querySelectorAll('dialog:not(.confirm)')].map(d => {
+    // A yes-or-no question (dialog.confirm, register 291) and a win card (register 415) are not menus: they stay small over the room.
+    const sizes = await page.evaluate(() => [...document.querySelectorAll('dialog:not(.confirm):not(.winCard)')].map(d => {
       for (const o of document.querySelectorAll('dialog[open]')) o.close();
       d.showModal(); const r = d.getBoundingClientRect(), out = `${d.id} ${Math.round(r.x)},${Math.round(r.y)} ${Math.round(r.width)}x${Math.round(r.height)}`; d.close();
       return { id: d.id, full: r.x === 0 && r.y === 0 && Math.round(r.width) === innerWidth && Math.round(r.height) === innerHeight, out };
@@ -29,7 +29,7 @@ try {
     await page.close();
   }
   for (const [name, viewport, opts] of [['phone', { width: 393, height: 852 }, { hasTouch: true, isMobile: true }], ['desktop', { width: 1280, height: 800 }, {}]]) for (const [id, rows] of ROOMS) {
-    const page = await browser.newPage({ viewport, ...opts });
+    const page = await browser.newPage({ viewport, ...opts }); await page.addInitScript(() => { window.__noWinCard = true; });
     page.on('pageerror', e => errors.push(e.message));
     await page.goto('http://localhost:5219/');
     await page.click('#menuCampaign'); await page.click(`.campRow[data-level="${id}"]`);

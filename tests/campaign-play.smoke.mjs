@@ -7,7 +7,7 @@ import { suite } from './lib.mjs';
 const { check, done } = suite('campaign-play');
 const server = await serve(5217);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+const page = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await page.addInitScript(() => { window.__noWinCard = true; });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 const visibleTools = () => page.$$eval('[data-tool]', bs => bs.filter(b => !b.hidden).map(b => b.dataset.tool));
@@ -338,7 +338,7 @@ try {
   await page.keyboard.press('Escape');
   check('the sandbox shows the whole palette again', !(await page.evaluate(() => document.body.classList.contains('campaign'))) && (await page.locator('[data-tool="wall"] .countDot').count()) === 0);
   // On a phone, a palette wider than the screen scrolls by itself and the page stays put.
-  const phone = await browser.newPage({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true });
+  const phone = await browser.newPage({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true }); await phone.addInitScript(() => { window.__noWinCard = true; });
   await phone.goto('http://localhost:5217/');
   const phoneLay = await phone.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(); return { goal: r('.msGoal').bottom, door: r('.msDoor').left, btn: r('#menuCampaign').top, logo: r('.menuLogo').height, w: innerWidth }; });
   check('on a phone the menu shows the wordmark, and the goal and door sit above the buttons', phoneLay.logo > 0 && phoneLay.goal < phoneLay.btn && phoneLay.door < phoneLay.w, JSON.stringify(phoneLay));
@@ -356,26 +356,26 @@ try {
   check('in play the editing buttons are hidden, not greyed (register 332)', inPlay === 'undo:false,redo:false,campReset:false,campRun:false,mode:true', inPlay);
   await phone.close();
   // 226: level 8 became level 7 (243 moved it to 8 for a day; 246 moved it back). A v1 save's level 8 record ends on 7, the old 7 dropped.
-  const oldSave = await browser.newPage();
+  const oldSave = await browser.newPage(); await oldSave.addInitScript(() => { window.__noWinCard = true; });
   await oldSave.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ last: '8', levels: { 7: { best: 'old seven' }, 8: { best: 'old eight' } } })); } });
   await oldSave.goto('http://localhost:5217/'); await oldSave.click('#menuCampaign');
   const migrated = await oldSave.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')));
   check('an old save moves level 8 to 7 and drops the old 7', migrated.v === 4 && migrated.levels['7'] && migrated.levels['7'].best === 'old eight' && !migrated.levels['8'] && migrated.last === '7', JSON.stringify(migrated));
   await oldSave.close();
-  const only7 = await browser.newPage();
+  const only7 = await browser.newPage(); await only7.addInitScript(() => { window.__noWinCard = true; });
   await only7.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ last: '7', levels: { 7: { best: 'old seven' } } })); } });
   await only7.goto('http://localhost:5217/'); await only7.click('#menuCampaign');
   const dropped = await only7.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')));
   check('a save with only the old level 7 loses it', !dropped.levels['7'] && !dropped.levels['8'] && dropped.last === null, JSON.stringify(dropped));
   await only7.close();
-  const v2 = await browser.newPage();
+  const v2 = await browser.newPage(); await v2.addInitScript(() => { window.__noWinCard = true; });
   await v2.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ v: 3, last: '7', levels: { 6: { best: 'six' }, 7: { best: 'colours' }, 8: { best: 'seven' }, 11: { best: 'ten' } } })); } });
   await v2.goto('http://localhost:5217/'); await v2.click('#menuCampaign');
   const up = await v2.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')));
   check('a save from the day the colour level was 7 moves 8-11 back to 7-10 and that level to 11', up.v === 4 && up.levels['6']?.best === 'six' && up.levels['7']?.best === 'seven' && up.levels['10']?.best === 'ten' && up.levels['11']?.best === 'colours' && !up.levels['8'] && up.last === '11', JSON.stringify(up));
   await v2.close();
   // Level 9: a one-way is placed pointing right, and a tap on it with its tool turns it; the robot is drawn as a robot.
-  const nine = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const nine = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await nine.addInitScript(() => { window.__noWinCard = true; });
   nine.on('pageerror', e => errors.push(e.message));
   await nine.goto('http://localhost:5217/');
   await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="9"]'); await nine.click('[data-tool="gate"]');

@@ -709,6 +709,31 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 .fitBtn[hidden] { display: none; }
 .roomWrap.zoomed .growBar { display: none; }
 
+/* The win cards (registers 415, 416): a sheet from the bottom, the room above it still in view. */
+.winCard { width: min(420px, 100vw - 24px); margin: auto auto 12px; padding: 18px 18px 16px; border: 0; border-radius: var(--r-l); background: var(--panel); color: inherit; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); overflow: visible; }
+.winCard::backdrop { background: rgba(40, 44, 60, .18); }
+.winCard[open] { animation: winUp .28s cubic-bezier(.2, .8, .3, 1); }
+@keyframes winUp { from { transform: translateY(40px); opacity: 0; } }
+.winTitle { margin: 0; font: 800 22px var(--label-face); }
+.winSay { margin: 4px 0 12px; color: var(--dim); }
+.winStars { display: flex; gap: 8px; margin: 0 0 10px; }
+.winStar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; color: var(--sticker); box-shadow: inset 0 0 0 2px var(--sticker); }
+.winStar.on { background: #f2b632; color: #fff; box-shadow: 0 0 0 3px rgba(242, 182, 50, .25); }
+.winStar.new { animation: winPop .5s .3s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes winPop { from { transform: scale(.4); } }
+.winGoals { list-style: none; margin: 0 0 14px; padding: 0; font-size: 14px; }
+.winGoals li { display: flex; gap: 8px; align-items: center; margin: 4px 0; color: var(--dim); }
+.winGoals li.on { color: inherit; }
+.winGoals i { font-style: normal; color: var(--sticker); }
+.winGoals li.on i { color: #d89a12; }
+.winCard .primary { background: var(--accent); color: var(--on-accent); }
+.winCard .bar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.winCard.gold { background: linear-gradient(180deg, #fff3d1, var(--panel) 65%); }
+.winCard.gold .winTitle { color: #a86f00; }
+.burst { position: absolute; left: 50%; top: 30%; color: #f2b632; font-size: 18px; pointer-events: none; animation: burst 1.1s ease-out forwards; }
+@keyframes burst { to { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .winCard[open], .winStar.new { animation: none; } }
+
 </style>
 </head>
 <body>
@@ -938,6 +963,13 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
         <button id="menuSandbox" type="button" class="primary">Sandbox</button></section>
       <button id="menuDebug" type="button" title="Copies what the game knows about where you are.">Debug</button>
     </div>
+  </dialog>
+  <dialog id="winBox" class="winCard">
+    <p id="winTitle" class="winTitle"></p>
+    <p id="winSay" class="winSay"></p>
+    <div id="winStars" class="winStars"></div>
+    <ul id="winGoals" class="winGoals"></ul>
+    <div class="row bar"><button id="winNext" type="button" class="primary">Next level</button><button id="winStay" type="button">Stay</button></div>
   </dialog>
   <dialog id="resetBox" class="confirm">
     <p>Reset the room to the level's start, which Undo can bring back?</p>
@@ -5027,8 +5059,80 @@ function levelParts(def, tool) {
 }
 return { levelParts };
 })();
-// ---- src/app/debug.js
+// ---- src/app/winCard.js
 const m38 = (() => {
+const { LEVELS } = m28;
+const { optionalGoals } = m18;
+const { $ } = m20;
+const { go, up } = m21;
+// The two win moments of a level (registers 415, 416): the first win, and the run that meets the
+// last side goal (a side goal counts once met in any run). Each asks Next level or Stay, once the
+// robot has finished its run. A first win that meets every side goal shows only the second.
+
+
+
+
+let pending = null;
+
+// before: the level's record before this run; rec: after it; words: draws a goal's short words.
+function noteWin(def, before, rec, v, words) {
+  const goals = optionalGoals(def), all = r => goals.length > 0 && goals.every(o => r.goals && r.goals[o.id]);
+  const gold = all(rec);
+  if (before.beaten && (!gold || all(before))) return;
+  const fresh = goals.filter(o => rec.goals[o.id] && !(before.goals && before.goals[o.id])).map(o => o.id);
+  pending = { def, gold, moves: v.length, goals, met: rec.goals, fresh, words };
+}
+
+function next(def) {
+  if (def.made) return { label: 'Maker', go: up };
+  const list = LEVELS.filter(l => !l.hidden), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
+  return n ? { label: 'Next level', go: () => go('level', n.id) } : { label: 'Levels', go: up };
+}
+
+// Stars out of the gold card for about a second; none when motion is turned down.
+function burst(box) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement('span'), a = i / 14 * Math.PI * 2;
+    s.className = 'burst'; s.textContent = '★';
+    s.style.setProperty('--dx', `${Math.cos(a) * 140}px`); s.style.setProperty('--dy', `${Math.sin(a) * 110 - 40}px`);
+    box.append(s); setTimeout(() => s.remove(), 1200);
+  }
+}
+
+function show(p) {
+  // Older tests that win and carry on clicking switch the cards off.
+  if (window.__noWinCard) return;
+  const box = $('winBox'), n = next(p.def);
+  box.classList.toggle('gold', p.gold);
+  $('winTitle').textContent = p.gold ? 'Every side goal met' : `${p.def.name} beaten`;
+  $('winSay').textContent = p.gold ? `${p.def.name} is done, all ${p.goals.length} stars.` : `The robot made it in ${p.moves} ${p.moves === 1 ? 'move' : 'moves'}.`;
+  $('winStars').replaceChildren(...p.goals.map(o => {
+    const s = document.createElement('span');
+    s.className = 'winStar' + (p.met[o.id] ? ' on' : '') + (p.fresh.includes(o.id) ? ' new' : ''); s.textContent = '★';
+    return s;
+  }));
+  $('winGoals').replaceChildren(...p.goals.map(o => {
+    const li = document.createElement('li'); li.className = p.met[o.id] ? 'on' : ''; li.dataset.goal = o.id;
+    const m = document.createElement('i'); m.textContent = '★';
+    li.append(m, p.words(o.parts)); return li;
+  }));
+  $('winNext').textContent = n.label;
+  $('winNext').onclick = () => { box.close(); n.go(); };
+  box.showModal();
+  if (p.gold) burst(box);
+}
+
+function bindWin() {
+  addEventListener('wee:demoDone', () => { if (pending) { const p = pending; pending = null; show(p); } });
+  $('winStay').onclick = () => $('winBox').close();
+  // A tap outside the card is Stay too.
+  $('winBox').addEventListener('click', ev => { if (ev.target === $('winBox')) $('winBox').close(); });
+}
+return { noteWin, bindWin };
+})();
+// ---- src/app/debug.js
+const m39 = (() => {
 const { S } = m24;
 const { $ } = m20;
 // A report for a bug that only shows on a real device: the last taps and keys, and the
@@ -5075,7 +5179,7 @@ function copyDebug() {
 return { noteLeaving, bindDebug, copyDebug };
 })();
 // ---- src/app/menuScene.js
-const m39 = (() => {
+const m40 = (() => {
 
 // The main menu's background: a small room the robot plays on a loop (the box blocks a laser, the
 // robot bumps the closed door, steps on the switch, goes through). Drawn in CSS, not the game's
@@ -5115,7 +5219,7 @@ function buildMenuScene(host) {
 return { buildMenuScene };
 })();
 // ---- src/app/campaign.js
-const m40 = (() => {
+const m41 = (() => {
 const { LEVELS } = m28;
 const { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, scoreText } = m18;
 const { REQUIREMENTS, trailOf } = m17;
@@ -5124,14 +5228,16 @@ const { S, starterLevel } = m24;
 const { $, portrait, now } = m20;
 const { icon } = m36;
 const { levelParts } = m37;
-const { noteLeaving, copyDebug } = m38;
-const { buildMenuScene } = m39;
+const { noteWin, bindWin } = m38;
+const { noteLeaving, copyDebug } = m39;
+const { buildMenuScene } = m40;
 const { madeLevel } = m19;
 const { place, go, back, up } = m21;
 // The campaign: a main menu at launch, the level list, and building a level's room for the
 // robot. Run judges the room (src/campaign/rules.js) and the robot plays a shortest path:
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
+
 
 
 
@@ -5326,7 +5432,7 @@ function run() {
   S.camp.verdict = v;
   save();
   if (v.ok && v.won) {
-    const p = progress(), rec = p.levels[def.id] ||= {}, goals = rec.goals || {};
+    const p = progress(), rec = p.levels[def.id] ||= {}, goals = rec.goals || {}, before = { beaten: !!rec.beaten, goals: { ...goals } };
     rec.goals = Object.fromEntries(v.optional.map(o => [o.id, !!goals[o.id] || o.met]));
     // Statistics to compare with other players: every win's moves and tiles placed (the start and
     // the goal not counted), fewest and most of each. A save that kept tiles per area starts over.
@@ -5338,6 +5444,7 @@ function run() {
     for (const o of v.optional) if (o.met && o.id !== 'mix') low(o.id, v.tiles);
     rec.beaten = true; rec.room = S.level;
     write(p);
+    noteWin(def, before, rec, v, words);
   }
   S.camp.ranOn = JSON.stringify(S.level);
   const show = v.ok ? (v.won ? v.path : v.fail.path) : null;
@@ -5394,6 +5501,7 @@ function buildCampaign(actions) {
   // Test: the room played by hand, the robot not involved; nothing is judged or saved.
   $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.verdictGone = true; S.camp.testing = true; A.setMode('play'); };
   // After a Run the robot has shown its path: back to editing, so a tap on the room places again.
+  bindWin();
   addEventListener('wee:demoDone', () => setTimeout(() => { if (S.camp && !S.camp.testing && S.mode === 'play') A.setMode('edit'); }, 900));
   addEventListener('wee:win', ev => {
     if (!S.camp || !S.camp.testing) return;
@@ -5425,8 +5533,8 @@ function buildCampaign(actions) {
 return { TOOL, progress, migrate, write, unframe, toolsFor, syncBrief, enterLevel, run, showList, buildCampaign };
 })();
 // ---- src/app/progressCode.js
-const m41 = (() => {
-const { progress, write, migrate, showList } = m40;
+const m42 = (() => {
+const { progress, write, migrate, showList } = m41;
 const { list, put } = m25;
 const { bests, keep } = m27;
 const { madeLevels, saveMade } = m19;
@@ -5478,7 +5586,7 @@ function buildProgress() {
 return { toCode, fromCode, buildProgress };
 })();
 // ---- src/app/snow.js
-const m42 = (() => {
+const m43 = (() => {
 
 // Drift: snow behind the shell. It falls slowly, and when the player starts a slide it rushes the
 // same way for a moment, then settles. Still under reduced motion.
@@ -5521,7 +5629,7 @@ function startSnow(cv) {
 return { gust, windNow, startSnow };
 })();
 // ---- src/solve/lint.js
-const m43 = (() => {
+const m44 = (() => {
 const { DIRS } = m0;
 const { createGame, step } = m11;
 const { parseMove } = m12;
@@ -5573,7 +5681,7 @@ function brokenAt(level, moves) {
 return { lint, brokenAt };
 })();
 // ---- src/solve/design.js
-const m44 = (() => {
+const m45 = (() => {
 const { createGame } = m11;
 const { NEEDS, POWERS } = m0;
 const { search, successors, stateKey, unsearchable, MAX_STATES } = m12;
@@ -5683,7 +5791,7 @@ function* routes(level, max = MAX_STATES) {
 return { powerCheck, elementCheck, NOTES_MAX, idleElements, routes };
 })();
 // ---- src/app/well.js
-const m45 = (() => {
+const m46 = (() => {
 const { S } = m24;
 const { $ } = m20;
 // The well: a fixed-height drawer under the room, with a tab for findings (warnings and
@@ -5737,11 +5845,11 @@ function buildWell() {
 return { WELL, openWell, closeWell, syncWell, buildWell };
 })();
 // ---- src/app/design.js
-const m46 = (() => {
-const { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } = m44;
+const m47 = (() => {
+const { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } = m45;
 const { S } = m24;
 const { $, now } = m20;
-const { syncWell } = m45;
+const { syncWell } = m46;
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
 // how many shortest routes there are, and how many positions trap you. Runs a slice at a
 // time and stops when the room changes. All copy is draft.
@@ -5819,7 +5927,7 @@ function runDesign(par) {
 return { sliced, clearDesign, runDesign };
 })();
 // ---- src/app/enabled.js
-const m47 = (() => {
+const m48 = (() => {
 const { S } = m24;
 const { $ } = m20;
 const { moveSide } = m2;
@@ -5852,14 +5960,14 @@ function syncEnabled() {
 return { syncEnabled };
 })();
 // ---- src/app/check.js
-const m48 = (() => {
+const m49 = (() => {
 const { search, parseMove } = m12;
-const { lint, brokenAt } = m43;
+const { lint, brokenAt } = m44;
 const { now } = m20;
 const { S } = m24;
 const { $ } = m20;
-const { runDesign, clearDesign } = m46;
-const { syncEnabled } = m47;
+const { runDesign, clearDesign } = m47;
+const { syncEnabled } = m48;
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
 
@@ -5983,14 +6091,14 @@ function syncLint() {
 return { checkText, runCheck, syncCheck, feedDemo, syncLint };
 })();
 // ---- src/level/templates.js
-const m49 = (() => {
+const m50 = (() => {
 
 // Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.
 const TEMPLATES = [{"name":"4-bit counter","level":{"format":"wee-level","version":1,"w":31,"h":19,"cells":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","idoor:wire","sensor:yellow","wall","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:yellow","","","","","idoor:yellow","","","","","","idoor:yellow","","","","","idoor:yellow","","","","","","","door:wire","sensor:wire","wall","","","","","","door:wire","","","","","door:green","","","","","","door:blue","","","","","door:red","","","","","","","","","","","","","","wall","sensor:wire","idoor:wire","door:yellow","door:wire","","sensor:green","door:blue","door:red","door:yellow","idoor:green","","sensor:blue","door:red","door:yellow","idoor:blue","","sensor:red","door:yellow","idoor:red","","","","","door:wire","sensor:wire","wall","","","","","","door:wire","","","","","door:green","","","","","","door:blue","","","","","wall","","","","","","","","","","","","","","","idoor:wire","","","","","idoor:wire","","","","","","idoor:red","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"start":{"x":8,"y":18},"entities":[{"kind":"turret","x":1,"y":2,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":4,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":6,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":8,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":12,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":14,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":4,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":29,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":26,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":25,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":21,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":21,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":20,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":15,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":15,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":14,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":10,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":10,"y":12,"turret":{"dirs":["up"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile","wires":[{"x":3,"y":2,"w":"teal"},{"x":3,"y":3,"w":"teal"},{"x":2,"y":3,"w":"teal"},{"x":2,"y":4,"w":"teal"},{"x":3,"y":4,"w":"violet"},{"x":3,"y":5,"w":"violet"},{"x":2,"y":5,"w":"violet"},{"x":2,"y":6,"w":"violet"},{"x":3,"y":6,"w":"teal"},{"x":3,"y":7,"w":"teal"},{"x":2,"y":7,"w":"teal"},{"x":2,"y":8,"w":"teal"},{"x":3,"y":8,"w":"violet"},{"x":3,"y":9,"w":"violet"},{"x":2,"y":9,"w":"violet"},{"x":2,"y":10,"w":"violet"},{"x":3,"y":10,"w":"teal"},{"x":3,"y":11,"w":"teal"},{"x":2,"y":11,"w":"teal"},{"x":2,"y":12,"w":"teal"},{"x":3,"y":12,"w":"violet"},{"x":3,"y":13,"w":"violet"},{"x":2,"y":13,"w":"violet"},{"x":2,"y":14,"w":"violet"},{"x":3,"y":14,"w":"teal"},{"x":3,"y":15,"w":"teal"},{"x":2,"y":15,"w":"teal"},{"x":2,"y":16,"w":"teal"},{"x":3,"y":16,"w":"charcoal"},{"x":3,"y":17,"w":"charcoal"},{"x":2,"y":17,"w":"charcoal"},{"x":1,"y":17,"w":"charcoal"},{"x":0,"y":17,"w":"charcoal"},{"x":0,"y":16,"w":"charcoal"},{"x":0,"y":15,"w":"charcoal"},{"x":0,"y":14,"w":"charcoal"},{"x":0,"y":13,"w":"charcoal"},{"x":0,"y":12,"w":"charcoal"},{"x":0,"y":11,"w":"charcoal"},{"x":0,"y":10,"w":"charcoal"},{"x":0,"y":9,"w":"charcoal"},{"x":0,"y":8,"w":"charcoal"},{"x":0,"y":7,"w":"charcoal"},{"x":0,"y":6,"w":"charcoal"},{"x":0,"y":5,"w":"charcoal"},{"x":0,"y":4,"w":"charcoal"},{"x":0,"y":3,"w":"charcoal"},{"x":0,"y":2,"w":"charcoal"},{"x":0,"y":1,"w":"charcoal"},{"x":1,"y":1,"w":"charcoal"},{"x":2,"y":1,"w":"charcoal"},{"x":2,"y":2,"w":"charcoal"},{"x":4,"y":3,"w":"teal"},{"x":5,"y":3,"w":"teal"},{"x":4,"y":4,"w":"violet"},{"x":5,"y":4,"w":"violet"},{"x":6,"y":4,"w":"violet"},{"x":6,"y":3,"w":"violet"},{"x":26,"y":9,"w":"teal"},{"x":25,"y":9,"w":"teal"},{"x":24,"y":9,"w":"teal"},{"x":23,"y":9,"w":"teal"},{"x":22,"y":9,"w":"teal"},{"x":21,"y":9,"w":"teal"},{"x":20,"y":9,"w":"teal"},{"x":19,"y":9,"w":"teal"},{"x":18,"y":9,"w":"teal"},{"x":17,"y":9,"w":"teal"},{"x":16,"y":9,"w":"teal"},{"x":16,"y":10,"w":"teal"},{"x":16,"y":11,"w":"teal"},{"x":15,"y":11,"w":"teal"},{"x":26,"y":9,"w":"violet"},{"x":25,"y":9,"w":"violet"},{"x":24,"y":9,"w":"violet"},{"x":23,"y":9,"w":"violet"},{"x":22,"y":9,"w":"violet"},{"x":21,"y":9,"w":"violet"},{"x":20,"y":9,"w":"violet"},{"x":19,"y":9,"w":"violet"},{"x":18,"y":9,"w":"violet"},{"x":17,"y":9,"w":"violet"},{"x":16,"y":9,"w":"violet"},{"x":15,"y":9,"w":"violet"},{"x":14,"y":9,"w":"violet"},{"x":13,"y":9,"w":"violet"},{"x":13,"y":10,"w":"violet"},{"x":13,"y":11,"w":"violet"},{"x":12,"y":11,"w":"violet"},{"x":11,"y":11,"w":"violet"},{"x":10,"y":11,"w":"violet"},{"x":10,"y":9,"w":"charcoal"},{"x":10,"y":8,"w":"charcoal"},{"x":10,"y":10,"w":"charcoal"},{"x":11,"y":9,"w":"charcoal"}],"name":"4-bit counter"}},{"name":"7-segment counter","level":{"format":"wee-level","version":1,"w":40,"h":30,"cells":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","idoor:wire","sensor:yellow","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:yellow","","","","","","idoor:yellow","","","","","idoor:yellow","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","door:green","","","","","","door:blue","","","","","door:red","","","","","","","","","","","","","","","","","","","","","","","","","","","","wall","sensor:green","door:blue","door:red","door:yellow","idoor:green","","sensor:blue","door:red","door:yellow","idoor:blue","","sensor:red","door:yellow","idoor:red","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","door:green","","","","","","door:blue","","","","","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","","","idoor:red","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","idoor:wire","","","","","door:wire","sensor:wire","wall","","","","","door:red","","","","","","","door:red","","","","","","","","","","","","","","idoor:green","","","","idoor:wire","","","","idoor:wire","","","","","","","","","","","door:green","","","","","","","door:blue","","","","","","","idoor:blue","","","","","","","idoor:red","","","","idoor:wire","","","","idoor:wire","","","","door:wire","sensor:wire","wall","","","","door:blue","sensor:wire","idoor:green","idoor:red","","","","idoor:green","sensor:wire","idoor:blue","idoor:red","","","","door:green","sensor:wire","door:red","","","","","door:blue","sensor:wire","door:red","door:green","","idoor:wire","","","","idoor:wire","","","","","","","","","","","wall","","","","","","","wall","","","","","","","wall","","","","","","","wall","","","","","idoor:wire","idoor:wire","idoor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","idoor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","idoor:wire","","","","","","","","","","","","","","","","","","door:blue","","","","","","","idoor:blue","","","","","","","idoor:blue","","","","idoor:wire","","","","idoor:wire","","","","","","","","","","","idoor:red","","","","","","","idoor:red","","","","","","","door:green","","","","","","","door:green","","","","","idoor:wire","idoor:wire","idoor:wire","","","","","","","","","","","idoor:blue","sensor:wire","idoor:green","","","","idoor:green","idoor:red","sensor:wire","","","","","idoor:red","idoor:blue","sensor:wire","door:green","idoor:red","","","idoor:green","door:blue","sensor:wire","door:green","idoor:red","","","","","","","","","","","","","","","","","wall","","","","","","","wall","","","","","","","wall","","","","","","","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"start":{"x":38,"y":28},"entities":[{"kind":"turret","x":1,"y":2,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":4,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":6,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":8,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":12,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":14,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":4,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":24,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":21,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":20,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":16,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":16,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":15,"y":9,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":10,"y":6,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":10,"y":12,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":7,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":9,"y":13,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":12,"y":16,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":14,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":16,"y":13,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":19,"y":16,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":21,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":23,"y":14,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":25,"y":16,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":28,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":30,"y":13,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":33,"y":16,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":7,"y":22,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":9,"y":20,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":11,"y":22,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":13,"y":22,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":16,"y":19,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":20,"y":22,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":23,"y":19,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":26,"y":22,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":27,"y":22,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":30,"y":19,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":33,"y":22,"turret":{"dirs":["left"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile","wires":[{"x":3,"y":2,"w":"teal"},{"x":3,"y":3,"w":"teal"},{"x":2,"y":3,"w":"teal"},{"x":2,"y":4,"w":"teal"},{"x":3,"y":4,"w":"violet"},{"x":3,"y":5,"w":"violet"},{"x":2,"y":5,"w":"violet"},{"x":2,"y":6,"w":"violet"},{"x":3,"y":6,"w":"teal"},{"x":3,"y":7,"w":"teal"},{"x":2,"y":7,"w":"teal"},{"x":2,"y":8,"w":"teal"},{"x":3,"y":8,"w":"violet"},{"x":3,"y":9,"w":"violet"},{"x":2,"y":9,"w":"violet"},{"x":2,"y":10,"w":"violet"},{"x":3,"y":10,"w":"teal"},{"x":3,"y":11,"w":"teal"},{"x":2,"y":11,"w":"teal"},{"x":2,"y":12,"w":"teal"},{"x":3,"y":12,"w":"violet"},{"x":3,"y":13,"w":"violet"},{"x":2,"y":13,"w":"violet"},{"x":2,"y":14,"w":"violet"},{"x":3,"y":14,"w":"teal"},{"x":3,"y":15,"w":"teal"},{"x":2,"y":15,"w":"teal"},{"x":2,"y":16,"w":"teal"},{"x":3,"y":16,"w":"charcoal"},{"x":3,"y":17,"w":"charcoal"},{"x":2,"y":17,"w":"charcoal"},{"x":1,"y":17,"w":"charcoal"},{"x":0,"y":17,"w":"charcoal"},{"x":0,"y":16,"w":"charcoal"},{"x":0,"y":15,"w":"charcoal"},{"x":0,"y":14,"w":"charcoal"},{"x":0,"y":13,"w":"charcoal"},{"x":0,"y":12,"w":"charcoal"},{"x":0,"y":11,"w":"charcoal"},{"x":0,"y":10,"w":"charcoal"},{"x":0,"y":9,"w":"charcoal"},{"x":0,"y":8,"w":"charcoal"},{"x":0,"y":7,"w":"charcoal"},{"x":0,"y":6,"w":"charcoal"},{"x":0,"y":5,"w":"charcoal"},{"x":0,"y":4,"w":"charcoal"},{"x":0,"y":3,"w":"charcoal"},{"x":0,"y":2,"w":"charcoal"},{"x":0,"y":1,"w":"charcoal"},{"x":1,"y":1,"w":"charcoal"},{"x":2,"y":1,"w":"charcoal"},{"x":2,"y":2,"w":"charcoal"},{"x":4,"y":3,"w":"teal"},{"x":5,"y":3,"w":"teal"},{"x":4,"y":4,"w":"violet"},{"x":5,"y":4,"w":"violet"},{"x":6,"y":4,"w":"violet"},{"x":6,"y":3,"w":"violet"},{"x":21,"y":9,"w":"teal"},{"x":20,"y":9,"w":"teal"},{"x":19,"y":9,"w":"teal"},{"x":18,"y":9,"w":"teal"},{"x":17,"y":9,"w":"teal"},{"x":16,"y":9,"w":"teal"},{"x":15,"y":9,"w":"teal"},{"x":14,"y":9,"w":"teal"},{"x":13,"y":9,"w":"teal"},{"x":12,"y":9,"w":"teal"},{"x":11,"y":9,"w":"teal"},{"x":11,"y":10,"w":"teal"},{"x":11,"y":11,"w":"teal"},{"x":10,"y":11,"w":"teal"},{"x":38,"y":18,"w":"teal"},{"x":38,"y":19,"w":"teal"},{"x":38,"y":20,"w":"teal"},{"x":23,"y":16,"w":"teal"},{"x":23,"y":17,"w":"teal"},{"x":23,"y":18,"w":"teal"},{"x":23,"y":19,"w":"teal"},{"x":23,"y":20,"w":"teal"},{"x":23,"y":21,"w":"teal"},{"x":24,"y":21,"w":"teal"},{"x":25,"y":21,"w":"teal"},{"x":26,"y":21,"w":"teal"},{"x":27,"y":21,"w":"teal"},{"x":28,"y":21,"w":"teal"},{"x":29,"y":21,"w":"teal"},{"x":30,"y":21,"w":"teal"},{"x":31,"y":21,"w":"teal"},{"x":31,"y":22,"w":"teal"},{"x":32,"y":22,"w":"teal"},{"x":33,"y":22,"w":"teal"},{"x":34,"y":22,"w":"teal"},{"x":35,"y":22,"w":"teal"},{"x":36,"y":22,"w":"teal"},{"x":37,"y":22,"w":"teal"},{"x":38,"y":22,"w":"teal"},{"x":38,"y":21,"w":"teal"},{"x":34,"y":14,"w":"violet"},{"x":34,"y":15,"w":"violet"},{"x":34,"y":16,"w":"violet"},{"x":23,"y":22,"w":"violet"},{"x":23,"y":21,"w":"violet"},{"x":23,"y":20,"w":"violet"},{"x":23,"y":19,"w":"violet"},{"x":23,"y":18,"w":"violet"},{"x":23,"y":17,"w":"violet"},{"x":24,"y":17,"w":"violet"},{"x":25,"y":17,"w":"violet"},{"x":26,"y":17,"w":"violet"},{"x":27,"y":17,"w":"violet"},{"x":28,"y":17,"w":"violet"},{"x":29,"y":17,"w":"violet"},{"x":30,"y":17,"w":"violet"},{"x":31,"y":17,"w":"violet"},{"x":31,"y":16,"w":"violet"},{"x":32,"y":16,"w":"violet"},{"x":33,"y":16,"w":"violet"},{"x":38,"y":14,"w":"teal"},{"x":38,"y":15,"w":"teal"},{"x":38,"y":16,"w":"teal"},{"x":16,"y":16,"w":"teal"},{"x":16,"y":15,"w":"teal"},{"x":16,"y":14,"w":"teal"},{"x":16,"y":13,"w":"teal"},{"x":16,"y":12,"w":"teal"},{"x":17,"y":12,"w":"teal"},{"x":18,"y":12,"w":"teal"},{"x":19,"y":12,"w":"teal"},{"x":20,"y":12,"w":"teal"},{"x":21,"y":12,"w":"teal"},{"x":22,"y":12,"w":"teal"},{"x":23,"y":12,"w":"teal"},{"x":24,"y":12,"w":"teal"},{"x":25,"y":12,"w":"teal"},{"x":26,"y":12,"w":"teal"},{"x":27,"y":12,"w":"teal"},{"x":28,"y":12,"w":"teal"},{"x":29,"y":12,"w":"teal"},{"x":30,"y":12,"w":"teal"},{"x":31,"y":12,"w":"teal"},{"x":32,"y":12,"w":"teal"},{"x":33,"y":12,"w":"teal"},{"x":34,"y":12,"w":"teal"},{"x":35,"y":12,"w":"teal"},{"x":36,"y":12,"w":"teal"},{"x":37,"y":12,"w":"teal"},{"x":38,"y":12,"w":"teal"},{"x":38,"y":13,"w":"teal"},{"x":34,"y":18,"w":"teal"},{"x":34,"y":19,"w":"teal"},{"x":34,"y":20,"w":"teal"},{"x":16,"y":22,"w":"teal"},{"x":16,"y":21,"w":"teal"},{"x":16,"y":20,"w":"teal"},{"x":16,"y":19,"w":"teal"},{"x":16,"y":18,"w":"teal"},{"x":17,"y":18,"w":"teal"},{"x":17,"y":17,"w":"teal"},{"x":18,"y":17,"w":"teal"},{"x":18,"y":16,"w":"teal"},{"x":18,"y":15,"w":"teal"},{"x":18,"y":14,"w":"teal"},{"x":19,"y":14,"w":"teal"},{"x":20,"y":14,"w":"teal"},{"x":21,"y":14,"w":"teal"},{"x":22,"y":14,"w":"teal"},{"x":23,"y":14,"w":"teal"},{"x":24,"y":14,"w":"teal"},{"x":24,"y":15,"w":"teal"},{"x":25,"y":15,"w":"teal"},{"x":25,"y":16,"w":"teal"},{"x":25,"y":17,"w":"teal"},{"x":25,"y":18,"w":"teal"},{"x":26,"y":18,"w":"teal"},{"x":27,"y":18,"w":"teal"},{"x":28,"y":18,"w":"teal"},{"x":29,"y":18,"w":"teal"},{"x":30,"y":18,"w":"teal"},{"x":31,"y":18,"w":"teal"},{"x":32,"y":18,"w":"teal"},{"x":33,"y":18,"w":"teal"},{"x":35,"y":13,"w":"violet"},{"x":36,"y":13,"w":"violet"},{"x":37,"y":13,"w":"violet"},{"x":9,"y":16,"w":"violet"},{"x":9,"y":15,"w":"violet"},{"x":9,"y":14,"w":"violet"},{"x":9,"y":13,"w":"violet"},{"x":9,"y":12,"w":"violet"},{"x":10,"y":12,"w":"violet"},{"x":11,"y":12,"w":"violet"},{"x":12,"y":12,"w":"violet"},{"x":13,"y":12,"w":"violet"},{"x":14,"y":12,"w":"violet"},{"x":15,"y":12,"w":"violet"},{"x":16,"y":12,"w":"violet"},{"x":17,"y":12,"w":"violet"},{"x":18,"y":12,"w":"violet"},{"x":19,"y":12,"w":"violet"},{"x":20,"y":12,"w":"violet"},{"x":21,"y":12,"w":"violet"},{"x":22,"y":12,"w":"violet"},{"x":23,"y":12,"w":"violet"},{"x":24,"y":12,"w":"violet"},{"x":25,"y":12,"w":"violet"},{"x":26,"y":12,"w":"violet"},{"x":27,"y":12,"w":"violet"},{"x":28,"y":12,"w":"violet"},{"x":29,"y":12,"w":"violet"},{"x":30,"y":12,"w":"violet"},{"x":31,"y":12,"w":"violet"},{"x":32,"y":12,"w":"violet"},{"x":33,"y":12,"w":"violet"},{"x":34,"y":12,"w":"violet"},{"x":35,"y":12,"w":"violet"},{"x":35,"y":21,"w":"charcoal"},{"x":36,"y":21,"w":"charcoal"},{"x":37,"y":21,"w":"charcoal"},{"x":30,"y":16,"w":"charcoal"},{"x":30,"y":17,"w":"charcoal"},{"x":30,"y":18,"w":"charcoal"},{"x":30,"y":19,"w":"charcoal"},{"x":30,"y":20,"w":"charcoal"},{"x":30,"y":21,"w":"charcoal"},{"x":31,"y":21,"w":"charcoal"},{"x":32,"y":21,"w":"charcoal"},{"x":33,"y":21,"w":"charcoal"},{"x":34,"y":21,"w":"charcoal"},{"x":9,"y":22,"w":"charcoal"},{"x":9,"y":21,"w":"charcoal"},{"x":10,"y":21,"w":"charcoal"},{"x":11,"y":21,"w":"charcoal"},{"x":12,"y":21,"w":"charcoal"},{"x":13,"y":21,"w":"charcoal"},{"x":14,"y":21,"w":"charcoal"},{"x":15,"y":21,"w":"charcoal"},{"x":16,"y":21,"w":"charcoal"},{"x":17,"y":21,"w":"charcoal"},{"x":18,"y":21,"w":"charcoal"},{"x":19,"y":21,"w":"charcoal"},{"x":20,"y":21,"w":"charcoal"},{"x":21,"y":21,"w":"charcoal"},{"x":22,"y":21,"w":"charcoal"},{"x":23,"y":21,"w":"charcoal"},{"x":24,"y":21,"w":"charcoal"},{"x":25,"y":21,"w":"charcoal"},{"x":26,"y":21,"w":"charcoal"},{"x":27,"y":21,"w":"charcoal"},{"x":28,"y":21,"w":"charcoal"},{"x":29,"y":21,"w":"charcoal"},{"x":35,"y":17,"w":"violet"},{"x":36,"y":17,"w":"violet"},{"x":37,"y":17,"w":"violet"},{"x":30,"y":22,"w":"violet"},{"x":31,"y":22,"w":"violet"},{"x":32,"y":22,"w":"violet"},{"x":33,"y":22,"w":"violet"},{"x":34,"y":22,"w":"violet"},{"x":35,"y":22,"w":"violet"},{"x":36,"y":22,"w":"violet"},{"x":37,"y":22,"w":"violet"},{"x":38,"y":22,"w":"violet"},{"x":38,"y":21,"w":"violet"},{"x":39,"y":21,"w":"violet"},{"x":39,"y":20,"w":"violet"},{"x":39,"y":19,"w":"violet"},{"x":39,"y":18,"w":"violet"},{"x":39,"y":17,"w":"violet"},{"x":38,"y":17,"w":"violet"}],"name":"7-segment counter"}},{"name":"First room","level":{"format":"wee-level","version":1,"w":5,"h":9,"cells":["wall","","","wall","wall","wall","","","","button:red","wall","","","","","wall","door:red","","","","wall","wall","","","","wall","","","","","wall","","","","","wall","wall","wall","wall","door:red","wall","wall","wall","wall","goal"],"start":{"x":1,"y":1},"entities":[{"kind":"box","x":3,"y":1,"dir":1,"mode":"input"},{"kind":"turret","x":0,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"box","x":2,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Hex counter","level":{"format":"wee-level","version":1,"w":60,"h":46,"cells":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","idoor:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","","","","","","","idoor:wire","","","","","","","","","","idoor:wire","","","","","","","","","","idoor:wire","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","","","","","","","","","door:wire","","","","","","","","","","door:wire","","","","","","","","","","door:wire","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","idoor:wire","","sensor:wire","wall","","","door:wire","","door:wire","","idoor:wire","","sensor:wire","wall","","","door:wire","","door:wire","","idoor:wire","","sensor:wire","wall","","","door:wire","","door:wire","","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","","","","","","","","","door:wire","","","","","","","","","","door:wire","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","","","","","","","","","idoor:wire","","","","","","","","","","idoor:wire","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","","door:wire","door:wire","idoor:wire","idoor:wire","","","","door:wire","door:wire","idoor:wire","","","door:wire","idoor:wire","idoor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","idoor:wire","","idoor:wire","door:wire","","","door:wire","door:wire","idoor:wire","idoor:wire","idoor:wire","","door:wire","","door:wire","door:wire","idoor:wire","idoor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","door:wire","","door:wire","door:wire","","idoor:wire","idoor:wire","","door:wire","idoor:wire","door:wire","door:wire","idoor:wire","door:wire","","idoor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","idoor:wire","door:wire","idoor:wire","door:wire","idoor:wire","","door:wire","idoor:wire","","","door:wire","","","idoor:wire","door:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","sensor:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","door:wire","door:wire","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","","","idoor:wire","idoor:wire","","","idoor:wire","","","idoor:wire","idoor:wire","idoor:wire","","","idoor:wire","","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","","","idoor:wire","idoor:wire","idoor:wire","","","","idoor:wire","","","","","idoor:wire","idoor:wire","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","door:wire","door:wire","","","","","","","","","","","","","","","","","","","","idoor:wire","","","idoor:wire","","","","idoor:wire","idoor:wire","idoor:wire","","idoor:wire","","","","","idoor:wire","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","idoor:wire","","idoor:wire","idoor:wire","","","idoor:wire","idoor:wire","idoor:wire","","idoor:wire","idoor:wire","","","","idoor:wire","idoor:wire","","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","door:wire","","","","door:wire","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","door:wire","door:wire","door:wire","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","","","","idoor:wire","","idoor:wire","","","","","idoor:wire","","idoor:wire","","idoor:wire","","","","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","idoor:wire","idoor:wire","idoor:wire","","idoor:wire","","","idoor:wire","idoor:wire","idoor:wire","","","","idoor:wire","","idoor:wire","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","idoor:wire","","idoor:wire","","idoor:wire","","","idoor:wire","","idoor:wire","idoor:wire","","","","idoor:wire","idoor:wire","","idoor:wire","","sensor:wire","wall","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"start":{"x":58,"y":44},"entities":[{"kind":"turret","x":1,"y":2,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":4,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":6,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":8,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":12,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":14,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":16,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":4,"y":3,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":13,"y":9,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":18,"y":4,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":21,"y":9,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":28,"y":4,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":28,"y":14,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":31,"y":9,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":38,"y":4,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":38,"y":14,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":41,"y":9,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":48,"y":4,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":48,"y":14,"turret":{"dirs":["up"],"mode":"input"}},{"kind":"turret","x":12,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":13,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":14,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":15,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":16,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":17,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":18,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":19,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":20,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":21,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":22,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":23,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":24,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":25,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":26,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":27,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":28,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":29,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":30,"y":18,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":10,"y":31,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":33,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":35,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":37,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":39,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":41,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":10,"y":43,"turret":{"dirs":["right"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile","wires":[{"x":3,"y":2,"w":"teal"},{"x":3,"y":3,"w":"teal"},{"x":2,"y":3,"w":"teal"},{"x":2,"y":4,"w":"teal"},{"x":3,"y":4,"w":"violet"},{"x":3,"y":5,"w":"violet"},{"x":2,"y":5,"w":"violet"},{"x":2,"y":6,"w":"violet"},{"x":3,"y":6,"w":"teal"},{"x":3,"y":7,"w":"teal"},{"x":2,"y":7,"w":"teal"},{"x":2,"y":8,"w":"teal"},{"x":3,"y":8,"w":"violet"},{"x":3,"y":9,"w":"violet"},{"x":2,"y":9,"w":"violet"},{"x":2,"y":10,"w":"violet"},{"x":3,"y":10,"w":"teal"},{"x":3,"y":11,"w":"teal"},{"x":2,"y":11,"w":"teal"},{"x":2,"y":12,"w":"teal"},{"x":3,"y":12,"w":"violet"},{"x":3,"y":13,"w":"violet"},{"x":2,"y":13,"w":"violet"},{"x":2,"y":14,"w":"violet"},{"x":3,"y":14,"w":"teal"},{"x":3,"y":15,"w":"teal"},{"x":2,"y":15,"w":"teal"},{"x":2,"y":16,"w":"teal"},{"x":3,"y":16,"w":"charcoal"},{"x":3,"y":17,"w":"charcoal"},{"x":2,"y":17,"w":"charcoal"},{"x":1,"y":17,"w":"charcoal"},{"x":0,"y":17,"w":"charcoal"},{"x":0,"y":16,"w":"charcoal"},{"x":0,"y":15,"w":"charcoal"},{"x":0,"y":14,"w":"charcoal"},{"x":0,"y":13,"w":"charcoal"},{"x":0,"y":12,"w":"charcoal"},{"x":0,"y":11,"w":"charcoal"},{"x":0,"y":10,"w":"charcoal"},{"x":0,"y":9,"w":"charcoal"},{"x":0,"y":8,"w":"charcoal"},{"x":0,"y":7,"w":"charcoal"},{"x":0,"y":6,"w":"charcoal"},{"x":0,"y":5,"w":"charcoal"},{"x":0,"y":4,"w":"charcoal"},{"x":0,"y":3,"w":"charcoal"},{"x":0,"y":2,"w":"charcoal"},{"x":0,"y":1,"w":"charcoal"},{"x":1,"y":1,"w":"charcoal"},{"x":2,"y":1,"w":"charcoal"},{"x":2,"y":2,"w":"charcoal"},{"x":4,"y":3,"w":"teal"},{"x":5,"y":3,"w":"teal"},{"x":4,"y":4,"w":"violet"},{"x":5,"y":4,"w":"violet"},{"x":6,"y":4,"w":"violet"},{"x":6,"y":3,"w":"violet"},{"x":12,"y":28,"w":"violet"},{"x":12,"y":29,"w":"violet"},{"x":12,"y":30,"w":"violet"},{"x":12,"y":31,"w":"violet"},{"x":12,"y":32,"w":"violet"},{"x":12,"y":33,"w":"violet"},{"x":12,"y":34,"w":"violet"},{"x":12,"y":35,"w":"violet"},{"x":12,"y":36,"w":"violet"},{"x":12,"y":37,"w":"violet"},{"x":12,"y":38,"w":"violet"},{"x":12,"y":39,"w":"violet"},{"x":13,"y":28,"w":"charcoal"},{"x":13,"y":29,"w":"charcoal"},{"x":13,"y":30,"w":"charcoal"},{"x":13,"y":31,"w":"charcoal"},{"x":13,"y":32,"w":"charcoal"},{"x":13,"y":33,"w":"charcoal"},{"x":13,"y":34,"w":"charcoal"},{"x":13,"y":35,"w":"charcoal"},{"x":13,"y":36,"w":"charcoal"},{"x":13,"y":37,"w":"charcoal"},{"x":13,"y":38,"w":"charcoal"},{"x":13,"y":39,"w":"charcoal"},{"x":13,"y":40,"w":"charcoal"},{"x":13,"y":41,"w":"charcoal"},{"x":13,"y":42,"w":"charcoal"},{"x":13,"y":43,"w":"charcoal"},{"x":14,"y":28,"w":"violet"},{"x":14,"y":29,"w":"violet"},{"x":14,"y":30,"w":"violet"},{"x":14,"y":31,"w":"violet"},{"x":14,"y":32,"w":"violet"},{"x":14,"y":33,"w":"violet"},{"x":14,"y":34,"w":"violet"},{"x":14,"y":35,"w":"violet"},{"x":14,"y":36,"w":"violet"},{"x":14,"y":37,"w":"violet"},{"x":14,"y":38,"w":"violet"},{"x":14,"y":39,"w":"violet"},{"x":14,"y":40,"w":"violet"},{"x":14,"y":41,"w":"violet"},{"x":15,"y":28,"w":"charcoal"},{"x":15,"y":29,"w":"charcoal"},{"x":15,"y":30,"w":"charcoal"},{"x":15,"y":31,"w":"charcoal"},{"x":15,"y":32,"w":"charcoal"},{"x":15,"y":33,"w":"charcoal"},{"x":15,"y":34,"w":"charcoal"},{"x":15,"y":35,"w":"charcoal"},{"x":15,"y":36,"w":"charcoal"},{"x":15,"y":37,"w":"charcoal"},{"x":15,"y":38,"w":"charcoal"},{"x":15,"y":39,"w":"charcoal"},{"x":15,"y":40,"w":"charcoal"},{"x":15,"y":41,"w":"charcoal"},{"x":15,"y":42,"w":"charcoal"},{"x":15,"y":43,"w":"charcoal"},{"x":16,"y":28,"w":"violet"},{"x":16,"y":29,"w":"violet"},{"x":16,"y":30,"w":"violet"},{"x":16,"y":31,"w":"violet"},{"x":16,"y":32,"w":"violet"},{"x":16,"y":33,"w":"violet"},{"x":16,"y":34,"w":"violet"},{"x":16,"y":35,"w":"violet"},{"x":16,"y":36,"w":"violet"},{"x":16,"y":37,"w":"violet"},{"x":16,"y":38,"w":"violet"},{"x":16,"y":39,"w":"violet"},{"x":16,"y":40,"w":"violet"},{"x":16,"y":41,"w":"violet"},{"x":17,"y":28,"w":"charcoal"},{"x":17,"y":29,"w":"charcoal"},{"x":17,"y":30,"w":"charcoal"},{"x":17,"y":31,"w":"charcoal"},{"x":17,"y":32,"w":"charcoal"},{"x":17,"y":33,"w":"charcoal"},{"x":17,"y":34,"w":"charcoal"},{"x":17,"y":35,"w":"charcoal"},{"x":17,"y":36,"w":"charcoal"},{"x":17,"y":37,"w":"charcoal"},{"x":17,"y":38,"w":"charcoal"},{"x":17,"y":39,"w":"charcoal"},{"x":17,"y":40,"w":"charcoal"},{"x":17,"y":41,"w":"charcoal"},{"x":17,"y":42,"w":"charcoal"},{"x":17,"y":43,"w":"charcoal"},{"x":18,"y":28,"w":"violet"},{"x":18,"y":29,"w":"violet"},{"x":18,"y":30,"w":"violet"},{"x":18,"y":31,"w":"violet"},{"x":18,"y":32,"w":"violet"},{"x":18,"y":33,"w":"violet"},{"x":18,"y":34,"w":"violet"},{"x":18,"y":35,"w":"violet"},{"x":18,"y":36,"w":"violet"},{"x":18,"y":37,"w":"violet"},{"x":18,"y":38,"w":"violet"},{"x":18,"y":39,"w":"violet"},{"x":18,"y":40,"w":"violet"},{"x":18,"y":41,"w":"violet"},{"x":19,"y":28,"w":"charcoal"},{"x":19,"y":29,"w":"charcoal"},{"x":19,"y":30,"w":"charcoal"},{"x":19,"y":31,"w":"charcoal"},{"x":19,"y":32,"w":"charcoal"},{"x":19,"y":33,"w":"charcoal"},{"x":19,"y":34,"w":"charcoal"},{"x":19,"y":35,"w":"charcoal"},{"x":19,"y":36,"w":"charcoal"},{"x":19,"y":37,"w":"charcoal"},{"x":19,"y":38,"w":"charcoal"},{"x":19,"y":39,"w":"charcoal"},{"x":20,"y":28,"w":"violet"},{"x":20,"y":29,"w":"violet"},{"x":20,"y":30,"w":"violet"},{"x":20,"y":31,"w":"violet"},{"x":20,"y":32,"w":"violet"},{"x":20,"y":33,"w":"violet"},{"x":20,"y":34,"w":"violet"},{"x":20,"y":35,"w":"violet"},{"x":20,"y":36,"w":"violet"},{"x":20,"y":37,"w":"violet"},{"x":20,"y":38,"w":"violet"},{"x":20,"y":39,"w":"violet"},{"x":20,"y":40,"w":"violet"},{"x":20,"y":41,"w":"violet"},{"x":20,"y":42,"w":"violet"},{"x":20,"y":43,"w":"violet"},{"x":21,"y":28,"w":"charcoal"},{"x":21,"y":29,"w":"charcoal"},{"x":21,"y":30,"w":"charcoal"},{"x":21,"y":31,"w":"charcoal"},{"x":21,"y":32,"w":"charcoal"},{"x":21,"y":33,"w":"charcoal"},{"x":21,"y":34,"w":"charcoal"},{"x":21,"y":35,"w":"charcoal"},{"x":21,"y":36,"w":"charcoal"},{"x":21,"y":37,"w":"charcoal"},{"x":21,"y":38,"w":"charcoal"},{"x":21,"y":39,"w":"charcoal"},{"x":21,"y":40,"w":"charcoal"},{"x":21,"y":41,"w":"charcoal"},{"x":22,"y":28,"w":"violet"},{"x":22,"y":29,"w":"violet"},{"x":22,"y":30,"w":"violet"},{"x":22,"y":31,"w":"violet"},{"x":22,"y":32,"w":"violet"},{"x":22,"y":33,"w":"violet"},{"x":22,"y":34,"w":"violet"},{"x":22,"y":35,"w":"violet"},{"x":22,"y":36,"w":"violet"},{"x":22,"y":37,"w":"violet"},{"x":22,"y":38,"w":"violet"},{"x":22,"y":39,"w":"violet"},{"x":22,"y":40,"w":"violet"},{"x":22,"y":41,"w":"violet"},{"x":22,"y":42,"w":"violet"},{"x":22,"y":43,"w":"violet"},{"x":23,"y":28,"w":"charcoal"},{"x":23,"y":29,"w":"charcoal"},{"x":23,"y":30,"w":"charcoal"},{"x":23,"y":31,"w":"charcoal"},{"x":23,"y":32,"w":"charcoal"},{"x":23,"y":33,"w":"charcoal"},{"x":23,"y":34,"w":"charcoal"},{"x":23,"y":35,"w":"charcoal"},{"x":23,"y":36,"w":"charcoal"},{"x":23,"y":37,"w":"charcoal"},{"x":23,"y":38,"w":"charcoal"},{"x":23,"y":39,"w":"charcoal"},{"x":23,"y":40,"w":"charcoal"},{"x":23,"y":41,"w":"charcoal"},{"x":23,"y":42,"w":"charcoal"},{"x":23,"y":43,"w":"charcoal"},{"x":24,"y":28,"w":"violet"},{"x":24,"y":29,"w":"violet"},{"x":24,"y":30,"w":"violet"},{"x":24,"y":31,"w":"violet"},{"x":24,"y":32,"w":"violet"},{"x":24,"y":33,"w":"violet"},{"x":24,"y":34,"w":"violet"},{"x":24,"y":35,"w":"violet"},{"x":24,"y":36,"w":"violet"},{"x":24,"y":37,"w":"violet"},{"x":24,"y":38,"w":"violet"},{"x":24,"y":39,"w":"violet"},{"x":25,"y":28,"w":"charcoal"},{"x":25,"y":29,"w":"charcoal"},{"x":25,"y":30,"w":"charcoal"},{"x":25,"y":31,"w":"charcoal"},{"x":26,"y":28,"w":"violet"},{"x":26,"y":29,"w":"violet"},{"x":26,"y":30,"w":"violet"},{"x":26,"y":31,"w":"violet"},{"x":26,"y":32,"w":"violet"},{"x":26,"y":33,"w":"violet"},{"x":26,"y":34,"w":"violet"},{"x":26,"y":35,"w":"violet"},{"x":26,"y":36,"w":"violet"},{"x":26,"y":37,"w":"violet"},{"x":26,"y":38,"w":"violet"},{"x":26,"y":39,"w":"violet"},{"x":27,"y":28,"w":"charcoal"},{"x":27,"y":29,"w":"charcoal"},{"x":27,"y":30,"w":"charcoal"},{"x":27,"y":31,"w":"charcoal"},{"x":27,"y":32,"w":"charcoal"},{"x":27,"y":33,"w":"charcoal"},{"x":27,"y":34,"w":"charcoal"},{"x":27,"y":35,"w":"charcoal"},{"x":27,"y":36,"w":"charcoal"},{"x":27,"y":37,"w":"charcoal"},{"x":27,"y":38,"w":"charcoal"},{"x":27,"y":39,"w":"charcoal"},{"x":27,"y":40,"w":"charcoal"},{"x":27,"y":41,"w":"charcoal"},{"x":27,"y":42,"w":"charcoal"},{"x":27,"y":43,"w":"charcoal"},{"x":28,"y":28,"w":"violet"},{"x":28,"y":29,"w":"violet"},{"x":28,"y":30,"w":"violet"},{"x":28,"y":31,"w":"violet"},{"x":28,"y":32,"w":"violet"},{"x":28,"y":33,"w":"violet"},{"x":28,"y":34,"w":"violet"},{"x":28,"y":35,"w":"violet"},{"x":28,"y":36,"w":"violet"},{"x":28,"y":37,"w":"violet"},{"x":28,"y":38,"w":"violet"},{"x":28,"y":39,"w":"violet"},{"x":28,"y":40,"w":"violet"},{"x":28,"y":41,"w":"violet"},{"x":28,"y":42,"w":"violet"},{"x":28,"y":43,"w":"violet"},{"x":29,"y":28,"w":"charcoal"},{"x":29,"y":29,"w":"charcoal"},{"x":29,"y":30,"w":"charcoal"},{"x":29,"y":31,"w":"charcoal"},{"x":29,"y":32,"w":"charcoal"},{"x":29,"y":33,"w":"charcoal"},{"x":29,"y":34,"w":"charcoal"},{"x":29,"y":35,"w":"charcoal"},{"x":29,"y":36,"w":"charcoal"},{"x":29,"y":37,"w":"charcoal"},{"x":29,"y":38,"w":"charcoal"},{"x":29,"y":39,"w":"charcoal"},{"x":29,"y":40,"w":"charcoal"},{"x":29,"y":41,"w":"charcoal"},{"x":30,"y":28,"w":"violet"},{"x":30,"y":29,"w":"violet"},{"x":30,"y":30,"w":"violet"},{"x":30,"y":31,"w":"violet"},{"x":30,"y":32,"w":"violet"},{"x":30,"y":33,"w":"violet"},{"x":30,"y":34,"w":"violet"},{"x":30,"y":35,"w":"violet"},{"x":30,"y":36,"w":"violet"},{"x":30,"y":37,"w":"violet"},{"x":30,"y":38,"w":"violet"},{"x":30,"y":39,"w":"violet"},{"x":30,"y":40,"w":"violet"},{"x":30,"y":41,"w":"violet"},{"x":30,"y":42,"w":"violet"},{"x":30,"y":43,"w":"violet"},{"x":32,"y":37,"w":"charcoal"},{"x":51,"y":34,"w":"charcoal"},{"x":50,"y":34,"w":"charcoal"},{"x":49,"y":34,"w":"charcoal"},{"x":48,"y":34,"w":"charcoal"},{"x":47,"y":34,"w":"charcoal"},{"x":47,"y":35,"w":"charcoal"},{"x":47,"y":36,"w":"charcoal"},{"x":47,"y":37,"w":"charcoal"},{"x":46,"y":37,"w":"charcoal"},{"x":45,"y":37,"w":"charcoal"},{"x":44,"y":37,"w":"charcoal"},{"x":43,"y":37,"w":"charcoal"},{"x":42,"y":37,"w":"charcoal"},{"x":41,"y":37,"w":"charcoal"},{"x":40,"y":37,"w":"charcoal"},{"x":39,"y":37,"w":"charcoal"},{"x":38,"y":37,"w":"charcoal"},{"x":37,"y":37,"w":"charcoal"},{"x":36,"y":37,"w":"charcoal"},{"x":35,"y":37,"w":"charcoal"},{"x":34,"y":37,"w":"charcoal"},{"x":33,"y":37,"w":"charcoal"},{"x":52,"y":34,"w":"charcoal"},{"x":53,"y":34,"w":"charcoal"},{"x":32,"y":33,"w":"teal"},{"x":50,"y":31,"w":"teal"},{"x":49,"y":31,"w":"teal"},{"x":48,"y":31,"w":"teal"},{"x":47,"y":31,"w":"teal"},{"x":46,"y":31,"w":"teal"},{"x":46,"y":32,"w":"teal"},{"x":45,"y":32,"w":"teal"},{"x":45,"y":33,"w":"teal"},{"x":44,"y":33,"w":"teal"},{"x":43,"y":33,"w":"teal"},{"x":42,"y":33,"w":"teal"},{"x":41,"y":33,"w":"teal"},{"x":40,"y":33,"w":"teal"},{"x":39,"y":33,"w":"teal"},{"x":38,"y":33,"w":"teal"},{"x":37,"y":33,"w":"teal"},{"x":36,"y":33,"w":"teal"},{"x":35,"y":33,"w":"teal"},{"x":34,"y":33,"w":"teal"},{"x":33,"y":33,"w":"teal"},{"x":50,"y":32,"w":"teal"},{"x":50,"y":33,"w":"teal"},{"x":32,"y":39,"w":"violet"},{"x":50,"y":37,"w":"violet"},{"x":50,"y":38,"w":"violet"},{"x":50,"y":39,"w":"violet"},{"x":50,"y":40,"w":"violet"},{"x":49,"y":40,"w":"violet"},{"x":48,"y":40,"w":"violet"},{"x":47,"y":40,"w":"violet"},{"x":46,"y":40,"w":"violet"},{"x":45,"y":40,"w":"violet"},{"x":44,"y":40,"w":"violet"},{"x":43,"y":40,"w":"violet"},{"x":42,"y":40,"w":"violet"},{"x":41,"y":40,"w":"violet"},{"x":40,"y":40,"w":"violet"},{"x":39,"y":40,"w":"violet"},{"x":38,"y":40,"w":"violet"},{"x":37,"y":40,"w":"violet"},{"x":36,"y":40,"w":"violet"},{"x":35,"y":40,"w":"violet"},{"x":34,"y":40,"w":"violet"},{"x":34,"y":39,"w":"violet"},{"x":33,"y":39,"w":"violet"},{"x":50,"y":35,"w":"violet"},{"x":50,"y":36,"w":"violet"},{"x":32,"y":41,"w":"teal"},{"x":54,"y":36,"w":"teal"},{"x":55,"y":36,"w":"teal"},{"x":55,"y":37,"w":"teal"},{"x":56,"y":37,"w":"teal"},{"x":56,"y":38,"w":"teal"},{"x":56,"y":39,"w":"teal"},{"x":56,"y":40,"w":"teal"},{"x":56,"y":41,"w":"teal"},{"x":56,"y":42,"w":"teal"},{"x":56,"y":43,"w":"teal"},{"x":55,"y":43,"w":"teal"},{"x":54,"y":43,"w":"teal"},{"x":53,"y":43,"w":"teal"},{"x":52,"y":43,"w":"teal"},{"x":51,"y":43,"w":"teal"},{"x":50,"y":43,"w":"teal"},{"x":49,"y":43,"w":"teal"},{"x":48,"y":43,"w":"teal"},{"x":47,"y":43,"w":"teal"},{"x":46,"y":43,"w":"teal"},{"x":45,"y":43,"w":"teal"},{"x":44,"y":43,"w":"teal"},{"x":43,"y":43,"w":"teal"},{"x":42,"y":43,"w":"teal"},{"x":41,"y":43,"w":"teal"},{"x":40,"y":43,"w":"teal"},{"x":39,"y":43,"w":"teal"},{"x":38,"y":43,"w":"teal"},{"x":37,"y":43,"w":"teal"},{"x":36,"y":43,"w":"teal"},{"x":35,"y":43,"w":"teal"},{"x":35,"y":42,"w":"teal"},{"x":35,"y":41,"w":"teal"},{"x":34,"y":41,"w":"teal"},{"x":33,"y":41,"w":"teal"},{"x":54,"y":35,"w":"teal"},{"x":54,"y":37,"w":"teal"},{"x":32,"y":35,"w":"violet"},{"x":54,"y":32,"w":"violet"},{"x":55,"y":32,"w":"violet"},{"x":55,"y":31,"w":"violet"},{"x":56,"y":31,"w":"violet"},{"x":56,"y":30,"w":"violet"},{"x":56,"y":29,"w":"violet"},{"x":56,"y":28,"w":"violet"},{"x":56,"y":27,"w":"violet"},{"x":55,"y":27,"w":"violet"},{"x":54,"y":27,"w":"violet"},{"x":53,"y":27,"w":"violet"},{"x":52,"y":27,"w":"violet"},{"x":51,"y":27,"w":"violet"},{"x":50,"y":27,"w":"violet"},{"x":50,"y":28,"w":"violet"},{"x":49,"y":28,"w":"violet"},{"x":48,"y":28,"w":"violet"},{"x":47,"y":28,"w":"violet"},{"x":46,"y":28,"w":"violet"},{"x":45,"y":28,"w":"violet"},{"x":45,"y":29,"w":"violet"},{"x":44,"y":29,"w":"violet"},{"x":44,"y":30,"w":"violet"},{"x":43,"y":30,"w":"violet"},{"x":42,"y":30,"w":"violet"},{"x":41,"y":30,"w":"violet"},{"x":40,"y":30,"w":"violet"},{"x":39,"y":30,"w":"violet"},{"x":38,"y":30,"w":"violet"},{"x":37,"y":30,"w":"violet"},{"x":36,"y":30,"w":"violet"},{"x":35,"y":30,"w":"violet"},{"x":34,"y":30,"w":"violet"},{"x":34,"y":31,"w":"violet"},{"x":34,"y":32,"w":"violet"},{"x":34,"y":33,"w":"violet"},{"x":34,"y":34,"w":"violet"},{"x":34,"y":35,"w":"violet"},{"x":33,"y":35,"w":"violet"},{"x":54,"y":31,"w":"violet"},{"x":54,"y":33,"w":"violet"},{"x":32,"y":31,"w":"charcoal"},{"x":52,"y":30,"w":"charcoal"},{"x":52,"y":29,"w":"charcoal"},{"x":52,"y":28,"w":"charcoal"},{"x":52,"y":27,"w":"charcoal"},{"x":52,"y":26,"w":"charcoal"},{"x":52,"y":25,"w":"charcoal"},{"x":52,"y":24,"w":"charcoal"},{"x":51,"y":24,"w":"charcoal"},{"x":50,"y":24,"w":"charcoal"},{"x":49,"y":24,"w":"charcoal"},{"x":49,"y":25,"w":"charcoal"},{"x":48,"y":25,"w":"charcoal"},{"x":47,"y":25,"w":"charcoal"},{"x":46,"y":25,"w":"charcoal"},{"x":45,"y":25,"w":"charcoal"},{"x":44,"y":25,"w":"charcoal"},{"x":44,"y":26,"w":"charcoal"},{"x":43,"y":26,"w":"charcoal"},{"x":43,"y":27,"w":"charcoal"},{"x":42,"y":27,"w":"charcoal"},{"x":41,"y":27,"w":"charcoal"},{"x":40,"y":27,"w":"charcoal"},{"x":39,"y":27,"w":"charcoal"},{"x":38,"y":27,"w":"charcoal"},{"x":37,"y":27,"w":"charcoal"},{"x":36,"y":27,"w":"charcoal"},{"x":35,"y":27,"w":"charcoal"},{"x":34,"y":27,"w":"charcoal"},{"x":33,"y":27,"w":"charcoal"},{"x":33,"y":28,"w":"charcoal"},{"x":33,"y":29,"w":"charcoal"},{"x":33,"y":30,"w":"charcoal"},{"x":33,"y":31,"w":"charcoal"},{"x":51,"y":30,"w":"charcoal"},{"x":53,"y":30,"w":"charcoal"},{"x":32,"y":43,"w":"charcoal"},{"x":51,"y":38,"w":"charcoal"},{"x":51,"y":39,"w":"charcoal"},{"x":51,"y":40,"w":"charcoal"},{"x":51,"y":41,"w":"charcoal"},{"x":51,"y":42,"w":"charcoal"},{"x":51,"y":43,"w":"charcoal"},{"x":50,"y":43,"w":"charcoal"},{"x":49,"y":43,"w":"charcoal"},{"x":48,"y":43,"w":"charcoal"},{"x":47,"y":43,"w":"charcoal"},{"x":46,"y":43,"w":"charcoal"},{"x":45,"y":43,"w":"charcoal"},{"x":44,"y":43,"w":"charcoal"},{"x":43,"y":43,"w":"charcoal"},{"x":42,"y":43,"w":"charcoal"},{"x":41,"y":43,"w":"charcoal"},{"x":40,"y":43,"w":"charcoal"},{"x":39,"y":43,"w":"charcoal"},{"x":38,"y":43,"w":"charcoal"},{"x":37,"y":43,"w":"charcoal"},{"x":36,"y":43,"w":"charcoal"},{"x":35,"y":43,"w":"charcoal"},{"x":34,"y":43,"w":"charcoal"},{"x":33,"y":43,"w":"charcoal"},{"x":52,"y":38,"w":"charcoal"},{"x":53,"y":38,"w":"charcoal"},{"x":42,"y":9,"w":"violet"},{"x":48,"y":13,"w":"violet"},{"x":48,"y":12,"w":"violet"},{"x":47,"y":12,"w":"violet"},{"x":47,"y":11,"w":"violet"},{"x":47,"y":10,"w":"violet"},{"x":46,"y":10,"w":"violet"},{"x":45,"y":10,"w":"violet"},{"x":44,"y":10,"w":"violet"},{"x":43,"y":10,"w":"violet"},{"x":43,"y":9,"w":"violet"},{"x":18,"y":9,"w":"violet"},{"x":18,"y":10,"w":"violet"},{"x":19,"y":10,"w":"violet"},{"x":20,"y":10,"w":"violet"},{"x":21,"y":10,"w":"violet"},{"x":22,"y":10,"w":"violet"},{"x":23,"y":10,"w":"violet"},{"x":24,"y":10,"w":"violet"},{"x":25,"y":10,"w":"violet"},{"x":26,"y":10,"w":"violet"},{"x":27,"y":10,"w":"violet"},{"x":28,"y":10,"w":"violet"},{"x":29,"y":10,"w":"violet"},{"x":30,"y":10,"w":"violet"},{"x":31,"y":10,"w":"violet"},{"x":32,"y":10,"w":"violet"},{"x":33,"y":10,"w":"violet"},{"x":34,"y":10,"w":"violet"},{"x":35,"y":10,"w":"violet"},{"x":36,"y":10,"w":"violet"},{"x":37,"y":10,"w":"violet"},{"x":37,"y":9,"w":"violet"},{"x":38,"y":9,"w":"violet"},{"x":39,"y":9,"w":"violet"},{"x":40,"y":9,"w":"violet"},{"x":41,"y":9,"w":"violet"},{"x":28,"y":9,"w":"violet"},{"x":32,"y":9,"w":"charcoal"},{"x":38,"y":13,"w":"charcoal"},{"x":37,"y":13,"w":"charcoal"},{"x":36,"y":13,"w":"charcoal"},{"x":35,"y":13,"w":"charcoal"},{"x":34,"y":13,"w":"charcoal"},{"x":33,"y":13,"w":"charcoal"},{"x":32,"y":13,"w":"charcoal"},{"x":32,"y":12,"w":"charcoal"},{"x":32,"y":11,"w":"charcoal"},{"x":32,"y":10,"w":"charcoal"},{"x":18,"y":9,"w":"charcoal"},{"x":18,"y":10,"w":"charcoal"},{"x":18,"y":11,"w":"charcoal"},{"x":18,"y":12,"w":"charcoal"},{"x":18,"y":13,"w":"charcoal"},{"x":18,"y":14,"w":"charcoal"},{"x":19,"y":14,"w":"charcoal"},{"x":20,"y":14,"w":"charcoal"},{"x":21,"y":14,"w":"charcoal"},{"x":22,"y":14,"w":"charcoal"},{"x":23,"y":14,"w":"charcoal"},{"x":24,"y":14,"w":"charcoal"},{"x":25,"y":14,"w":"charcoal"},{"x":26,"y":14,"w":"charcoal"},{"x":27,"y":14,"w":"charcoal"},{"x":28,"y":14,"w":"charcoal"},{"x":29,"y":14,"w":"charcoal"},{"x":29,"y":13,"w":"charcoal"},{"x":30,"y":13,"w":"charcoal"},{"x":31,"y":13,"w":"charcoal"},{"x":28,"y":9,"w":"charcoal"},{"x":29,"y":9,"w":"charcoal"},{"x":30,"y":9,"w":"charcoal"},{"x":31,"y":9,"w":"charcoal"},{"x":46,"y":9,"w":"charcoal"},{"x":48,"y":7,"w":"charcoal"},{"x":47,"y":7,"w":"charcoal"},{"x":46,"y":7,"w":"charcoal"},{"x":46,"y":8,"w":"charcoal"},{"x":48,"y":11,"w":"charcoal"},{"x":49,"y":11,"w":"charcoal"},{"x":50,"y":11,"w":"charcoal"},{"x":50,"y":10,"w":"charcoal"},{"x":50,"y":9,"w":"charcoal"},{"x":50,"y":8,"w":"charcoal"},{"x":50,"y":7,"w":"charcoal"},{"x":49,"y":7,"w":"charcoal"},{"x":48,"y":9,"w":"charcoal"},{"x":48,"y":8,"w":"charcoal"},{"x":30,"y":26,"w":"charcoal"},{"x":30,"y":25,"w":"charcoal"},{"x":31,"y":25,"w":"charcoal"},{"x":31,"y":24,"w":"charcoal"},{"x":31,"y":23,"w":"charcoal"},{"x":31,"y":22,"w":"charcoal"},{"x":31,"y":21,"w":"charcoal"},{"x":31,"y":20,"w":"charcoal"},{"x":31,"y":19,"w":"charcoal"},{"x":31,"y":18,"w":"charcoal"},{"x":31,"y":17,"w":"charcoal"},{"x":31,"y":16,"w":"charcoal"},{"x":32,"y":16,"w":"charcoal"},{"x":33,"y":16,"w":"charcoal"},{"x":34,"y":16,"w":"charcoal"},{"x":35,"y":16,"w":"charcoal"},{"x":36,"y":16,"w":"charcoal"},{"x":37,"y":16,"w":"charcoal"},{"x":38,"y":16,"w":"charcoal"},{"x":39,"y":16,"w":"charcoal"},{"x":40,"y":16,"w":"charcoal"},{"x":41,"y":16,"w":"charcoal"},{"x":42,"y":16,"w":"charcoal"},{"x":43,"y":16,"w":"charcoal"},{"x":44,"y":16,"w":"charcoal"},{"x":45,"y":16,"w":"charcoal"},{"x":46,"y":16,"w":"charcoal"},{"x":47,"y":16,"w":"charcoal"},{"x":48,"y":16,"w":"charcoal"},{"x":49,"y":16,"w":"charcoal"},{"x":49,"y":15,"w":"charcoal"},{"x":50,"y":15,"w":"charcoal"},{"x":50,"y":14,"w":"charcoal"},{"x":51,"y":14,"w":"charcoal"},{"x":51,"y":13,"w":"charcoal"},{"x":51,"y":12,"w":"charcoal"},{"x":51,"y":11,"w":"charcoal"},{"x":12,"y":26,"w":"charcoal"},{"x":13,"y":26,"w":"charcoal"},{"x":14,"y":26,"w":"charcoal"},{"x":15,"y":26,"w":"charcoal"},{"x":16,"y":26,"w":"charcoal"},{"x":17,"y":26,"w":"charcoal"},{"x":18,"y":26,"w":"charcoal"},{"x":19,"y":26,"w":"charcoal"},{"x":20,"y":26,"w":"charcoal"},{"x":21,"y":26,"w":"charcoal"},{"x":22,"y":26,"w":"charcoal"},{"x":23,"y":26,"w":"charcoal"},{"x":24,"y":26,"w":"charcoal"},{"x":25,"y":26,"w":"charcoal"},{"x":26,"y":26,"w":"charcoal"},{"x":27,"y":26,"w":"charcoal"},{"x":28,"y":26,"w":"charcoal"},{"x":29,"y":26,"w":"charcoal"},{"x":16,"y":9,"w":"teal"},{"x":18,"y":7,"w":"teal"},{"x":17,"y":7,"w":"teal"},{"x":16,"y":7,"w":"teal"},{"x":16,"y":8,"w":"teal"},{"x":18,"y":9,"w":"teal"},{"x":17,"y":9,"w":"teal"},{"x":22,"y":9,"w":"teal"},{"x":22,"y":8,"w":"teal"},{"x":22,"y":7,"w":"teal"},{"x":21,"y":7,"w":"teal"},{"x":20,"y":7,"w":"teal"},{"x":19,"y":7,"w":"teal"},{"x":28,"y":13,"w":"teal"},{"x":28,"y":14,"w":"teal"},{"x":28,"y":15,"w":"teal"},{"x":28,"y":16,"w":"teal"},{"x":28,"y":17,"w":"teal"},{"x":27,"y":17,"w":"teal"},{"x":26,"y":17,"w":"teal"},{"x":25,"y":17,"w":"teal"},{"x":24,"y":17,"w":"teal"},{"x":23,"y":17,"w":"teal"},{"x":22,"y":17,"w":"teal"},{"x":21,"y":17,"w":"teal"},{"x":20,"y":17,"w":"teal"},{"x":19,"y":17,"w":"teal"},{"x":18,"y":17,"w":"teal"},{"x":17,"y":17,"w":"teal"},{"x":17,"y":16,"w":"teal"},{"x":16,"y":16,"w":"teal"},{"x":16,"y":15,"w":"teal"},{"x":15,"y":15,"w":"teal"},{"x":15,"y":14,"w":"teal"},{"x":15,"y":13,"w":"teal"},{"x":15,"y":12,"w":"teal"},{"x":15,"y":11,"w":"teal"},{"x":15,"y":10,"w":"teal"},{"x":15,"y":9,"w":"teal"},{"x":28,"y":20,"w":"teal"},{"x":28,"y":19,"w":"teal"},{"x":28,"y":18,"w":"teal"},{"x":12,"y":20,"w":"teal"},{"x":13,"y":20,"w":"teal"},{"x":14,"y":20,"w":"teal"},{"x":15,"y":20,"w":"teal"},{"x":16,"y":20,"w":"teal"},{"x":17,"y":20,"w":"teal"},{"x":18,"y":20,"w":"teal"},{"x":19,"y":20,"w":"teal"},{"x":20,"y":20,"w":"teal"},{"x":21,"y":20,"w":"teal"},{"x":22,"y":20,"w":"teal"},{"x":23,"y":20,"w":"teal"},{"x":24,"y":20,"w":"teal"},{"x":25,"y":20,"w":"teal"},{"x":26,"y":20,"w":"teal"},{"x":27,"y":20,"w":"teal"},{"x":29,"y":20,"w":"teal"},{"x":30,"y":20,"w":"teal"},{"x":26,"y":9,"w":"teal"},{"x":28,"y":7,"w":"teal"},{"x":27,"y":7,"w":"teal"},{"x":26,"y":7,"w":"teal"},{"x":26,"y":8,"w":"teal"},{"x":28,"y":11,"w":"teal"},{"x":28,"y":10,"w":"teal"},{"x":28,"y":9,"w":"teal"},{"x":27,"y":9,"w":"teal"},{"x":12,"y":22,"w":"teal"},{"x":11,"y":22,"w":"teal"},{"x":10,"y":22,"w":"teal"},{"x":10,"y":21,"w":"teal"},{"x":9,"y":21,"w":"teal"},{"x":9,"y":20,"w":"teal"},{"x":9,"y":19,"w":"teal"},{"x":9,"y":18,"w":"teal"},{"x":9,"y":17,"w":"teal"},{"x":9,"y":16,"w":"teal"},{"x":9,"y":15,"w":"teal"},{"x":9,"y":14,"w":"teal"},{"x":9,"y":13,"w":"teal"},{"x":9,"y":12,"w":"teal"},{"x":9,"y":11,"w":"teal"},{"x":9,"y":10,"w":"teal"},{"x":9,"y":9,"w":"teal"},{"x":9,"y":8,"w":"teal"},{"x":9,"y":7,"w":"teal"},{"x":9,"y":6,"w":"teal"},{"x":9,"y":5,"w":"teal"},{"x":9,"y":4,"w":"teal"},{"x":10,"y":4,"w":"teal"},{"x":11,"y":4,"w":"teal"},{"x":12,"y":4,"w":"teal"},{"x":13,"y":4,"w":"teal"},{"x":14,"y":4,"w":"teal"},{"x":15,"y":4,"w":"teal"},{"x":16,"y":4,"w":"teal"},{"x":17,"y":4,"w":"teal"},{"x":18,"y":4,"w":"teal"},{"x":19,"y":4,"w":"teal"},{"x":20,"y":4,"w":"teal"},{"x":21,"y":4,"w":"teal"},{"x":22,"y":4,"w":"teal"},{"x":23,"y":4,"w":"teal"},{"x":23,"y":5,"w":"teal"},{"x":24,"y":5,"w":"teal"},{"x":24,"y":6,"w":"teal"},{"x":25,"y":6,"w":"teal"},{"x":25,"y":7,"w":"teal"},{"x":13,"y":22,"w":"teal"},{"x":14,"y":22,"w":"teal"},{"x":15,"y":22,"w":"teal"},{"x":16,"y":22,"w":"teal"},{"x":17,"y":22,"w":"teal"},{"x":18,"y":22,"w":"teal"},{"x":19,"y":22,"w":"teal"},{"x":20,"y":22,"w":"teal"},{"x":21,"y":22,"w":"teal"},{"x":22,"y":22,"w":"teal"},{"x":23,"y":22,"w":"teal"},{"x":24,"y":22,"w":"teal"},{"x":25,"y":22,"w":"teal"},{"x":26,"y":22,"w":"teal"},{"x":27,"y":22,"w":"teal"},{"x":28,"y":22,"w":"teal"},{"x":29,"y":22,"w":"teal"},{"x":30,"y":22,"w":"teal"},{"x":36,"y":9,"w":"teal"},{"x":38,"y":7,"w":"teal"},{"x":38,"y":6,"w":"teal"},{"x":37,"y":6,"w":"teal"},{"x":36,"y":6,"w":"teal"},{"x":36,"y":7,"w":"teal"},{"x":36,"y":8,"w":"teal"},{"x":38,"y":11,"w":"teal"},{"x":38,"y":10,"w":"teal"},{"x":38,"y":9,"w":"teal"},{"x":37,"y":9,"w":"teal"},{"x":30,"y":24,"w":"teal"},{"x":31,"y":24,"w":"teal"},{"x":32,"y":24,"w":"teal"},{"x":33,"y":24,"w":"teal"},{"x":34,"y":24,"w":"teal"},{"x":34,"y":23,"w":"teal"},{"x":34,"y":22,"w":"teal"},{"x":34,"y":21,"w":"teal"},{"x":34,"y":20,"w":"teal"},{"x":34,"y":19,"w":"teal"},{"x":35,"y":19,"w":"teal"},{"x":36,"y":19,"w":"teal"},{"x":37,"y":19,"w":"teal"},{"x":37,"y":18,"w":"teal"},{"x":37,"y":17,"w":"teal"},{"x":37,"y":16,"w":"teal"},{"x":37,"y":15,"w":"teal"},{"x":37,"y":14,"w":"teal"},{"x":37,"y":13,"w":"teal"},{"x":37,"y":12,"w":"teal"},{"x":37,"y":11,"w":"teal"},{"x":12,"y":24,"w":"teal"},{"x":13,"y":24,"w":"teal"},{"x":14,"y":24,"w":"teal"},{"x":15,"y":24,"w":"teal"},{"x":16,"y":24,"w":"teal"},{"x":17,"y":24,"w":"teal"},{"x":18,"y":24,"w":"teal"},{"x":19,"y":24,"w":"teal"},{"x":20,"y":24,"w":"teal"},{"x":21,"y":24,"w":"teal"},{"x":22,"y":24,"w":"teal"},{"x":23,"y":24,"w":"teal"},{"x":24,"y":24,"w":"teal"},{"x":25,"y":24,"w":"teal"},{"x":26,"y":24,"w":"teal"},{"x":27,"y":24,"w":"teal"},{"x":28,"y":24,"w":"teal"},{"x":29,"y":24,"w":"teal"},{"x":7,"y":3,"w":"charcoal"},{"x":14,"y":9,"w":"charcoal"},{"x":14,"y":8,"w":"charcoal"},{"x":13,"y":8,"w":"charcoal"},{"x":13,"y":7,"w":"charcoal"},{"x":13,"y":6,"w":"charcoal"},{"x":13,"y":5,"w":"charcoal"},{"x":13,"y":4,"w":"charcoal"},{"x":13,"y":3,"w":"charcoal"},{"x":13,"y":2,"w":"charcoal"},{"x":13,"y":1,"w":"charcoal"},{"x":12,"y":1,"w":"charcoal"},{"x":11,"y":1,"w":"charcoal"},{"x":10,"y":1,"w":"charcoal"},{"x":9,"y":1,"w":"charcoal"},{"x":8,"y":1,"w":"charcoal"},{"x":8,"y":2,"w":"charcoal"},{"x":8,"y":3,"w":"charcoal"},{"x":18,"y":5,"w":"charcoal"},{"x":18,"y":4,"w":"charcoal"},{"x":18,"y":3,"w":"charcoal"},{"x":18,"y":2,"w":"charcoal"},{"x":18,"y":1,"w":"charcoal"},{"x":17,"y":1,"w":"charcoal"},{"x":16,"y":1,"w":"charcoal"},{"x":15,"y":1,"w":"charcoal"},{"x":14,"y":1,"w":"charcoal"},{"x":24,"y":9,"w":"charcoal"},{"x":24,"y":8,"w":"charcoal"},{"x":24,"y":7,"w":"charcoal"},{"x":24,"y":6,"w":"charcoal"},{"x":24,"y":5,"w":"charcoal"},{"x":24,"y":4,"w":"charcoal"},{"x":24,"y":3,"w":"charcoal"},{"x":24,"y":2,"w":"charcoal"},{"x":24,"y":1,"w":"charcoal"},{"x":23,"y":1,"w":"charcoal"},{"x":22,"y":1,"w":"charcoal"},{"x":21,"y":1,"w":"charcoal"},{"x":20,"y":1,"w":"charcoal"},{"x":19,"y":1,"w":"charcoal"},{"x":28,"y":5,"w":"charcoal"},{"x":28,"y":4,"w":"charcoal"},{"x":28,"y":3,"w":"charcoal"},{"x":27,"y":3,"w":"charcoal"},{"x":26,"y":3,"w":"charcoal"},{"x":25,"y":3,"w":"charcoal"},{"x":34,"y":9,"w":"charcoal"},{"x":34,"y":8,"w":"charcoal"},{"x":34,"y":7,"w":"charcoal"},{"x":33,"y":7,"w":"charcoal"},{"x":33,"y":6,"w":"charcoal"},{"x":33,"y":5,"w":"charcoal"},{"x":32,"y":5,"w":"charcoal"},{"x":31,"y":5,"w":"charcoal"},{"x":30,"y":5,"w":"charcoal"},{"x":29,"y":5,"w":"charcoal"},{"x":38,"y":5,"w":"charcoal"},{"x":38,"y":4,"w":"charcoal"},{"x":38,"y":3,"w":"charcoal"},{"x":37,"y":3,"w":"charcoal"},{"x":36,"y":3,"w":"charcoal"},{"x":35,"y":3,"w":"charcoal"},{"x":35,"y":4,"w":"charcoal"},{"x":34,"y":4,"w":"charcoal"},{"x":34,"y":5,"w":"charcoal"},{"x":44,"y":9,"w":"charcoal"},{"x":44,"y":8,"w":"charcoal"},{"x":44,"y":7,"w":"charcoal"},{"x":44,"y":6,"w":"charcoal"},{"x":44,"y":5,"w":"charcoal"},{"x":44,"y":4,"w":"charcoal"},{"x":43,"y":4,"w":"charcoal"},{"x":42,"y":4,"w":"charcoal"},{"x":41,"y":4,"w":"charcoal"},{"x":40,"y":4,"w":"charcoal"},{"x":39,"y":4,"w":"charcoal"},{"x":48,"y":5,"w":"charcoal"},{"x":48,"y":4,"w":"charcoal"},{"x":47,"y":4,"w":"charcoal"},{"x":46,"y":4,"w":"charcoal"},{"x":45,"y":4,"w":"charcoal"}],"name":"Hex counter"}},{"name":"Overshoot","level":{"format":"wee-level","version":1,"name":"Overshoot","w":7,"h":7,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","","","","","","wall","wall","","","wall","","","wall","wall","wall","goal","","","","wall","wall","wall","","","","wall","wall","wall","","","","","","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":2,"y":4},"entities":[{"kind":"box","x":4,"y":3,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"}},{"name":"Sample","level":{"format":"wee-level","version":1,"w":20,"h":12,"cells":["wall","sensor:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","tri:se","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:red","","","","","","","tri:ne","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","sensor:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","","","button:red","","","","","","wall","","","","","","","","","","wall","wall","","","","","","","","","door:blue","","","","","","","","checkpoint","","wall","wall","","button:blue","","","","","","","wall","","","","","tri:sw","","","","","wall","wall","","","","","","","","","wall","","","","","","","","","","wall","wall","sensor:red","wall","wall","wall","","wall","wall","wall","wall","","","","","","","","","","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"enemy","x":13,"y":2,"axis":"h","dir":1,"mode":"realtime","turret":{"dirs":["down"],"mode":"realtime"}},{"kind":"box","x":3,"y":3,"dir":1,"mode":"input"},{"kind":"heavy","x":15,"y":4,"dir":1,"mode":"input"},{"kind":"strong","x":13,"y":6,"axis":"h","dir":1,"mode":"input"},{"kind":"mover","x":6,"y":7,"axis":"h","dir":1,"mode":"input"},{"kind":"turret","x":1,"y":10,"turret":{"dirs":["up","right"],"mode":"input"}},{"kind":"box","x":14,"y":10,"dir":1,"mode":"input","turret":{"dirs":["up","right","down","left"],"mode":"input"}}],"powers":{"boomerang":true,"dive":true,"laser":true,"cycle":true,"swim":false,"light":false},"clock":"tile"}},{"name":"Short fuse","level":{"format":"wee-level","version":1,"name":"Short fuse","w":8,"h":8,"cells":["wall","wall","wall","wall","wall","wall","wall","wall","wall","","wall","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","","","","","wall","wall","","","wall","","crack","","wall","wall","wall","wall","wall","wall","goal","wall","wall","wall","wall","wall","wall","wall","wall","wall","wall"],"start":{"x":1,"y":1},"entities":[{"kind":"bomb","x":4,"y":4,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":true,"swim":false,"light":false,"armored":false},"clock":"tile"}}];
 return { TEMPLATES };
 })();
 // ---- src/level/code.js
-const m50 = (() => {
+const m51 = (() => {
 const { parseLevel } = m2;
 // A share code: the level as compressed, URL-safe text, so a room fits in a message or
 // a link (#room=<code>). Uses the platform's own deflate, in the page and in Node.
@@ -6022,7 +6130,7 @@ async function decodeRoom(code) {
 return { encodeRoom, decodeRoom };
 })();
 // ---- src/view/thumb.js
-const m51 = (() => {
+const m52 = (() => {
 const { INK } = m29;
 // A room's thumbnail: one small square per tile in the tile's main colour, so a list of
 // many rooms costs little to draw. Returns a data URL.
@@ -6050,7 +6158,7 @@ function thumbURL(level) {
 return { thumbURL };
 })();
 // ---- src/solve/tags.js
-const m52 = (() => {
+const m53 = (() => {
 const { createGame, step } = m11;
 const { parseMove } = m12;
 // The mechanism index: what a room contains, and what its solution actually does.
@@ -6135,7 +6243,7 @@ function uses(level, moves) {
 return { MECHANISMS, LABEL, contains, uses };
 })();
 // ---- src/app/draft.js
-const m53 = (() => {
+const m54 = (() => {
 const { S } = m24;
 // Autosave: the room being edited, with its name and note, kept in this browser after
 // every change, so a closed tab or a phone that drops the page loses nothing. Saving the
@@ -6168,8 +6276,8 @@ function flushDraft(dirty) { if (dirty && timer) { clearTimeout(timer); write();
 return { readDraft, clearDraft, noteChange, flushDraft };
 })();
 // ---- src/app/tilemenu.js
-const m54 = (() => {
-const { encodeRoom } = m50;
+const m55 = (() => {
+const { encodeRoom } = m51;
 const { splitRoom } = m26;
 const { S } = m24;
 const { put, remove, newId } = m25;
@@ -6256,7 +6364,7 @@ function buildTileMenu(lib) {
 return { menuOn, buildTileMenu };
 })();
 // ---- src/app/more.js
-const m55 = (() => {
+const m56 = (() => {
 const { $ } = m20;
 // The Rooms page's More (register 399): what is done rarely (open a code, import, export) waits behind one button.
 
@@ -6271,21 +6379,21 @@ function buildMore() {
 return { buildMore };
 })();
 // ---- src/app/rooms.js
-const m56 = (() => {
-const { TEMPLATES } = m49;
-const { encodeRoom, decodeRoom } = m50;
+const m57 = (() => {
+const { TEMPLATES } = m50;
+const { encodeRoom, decodeRoom } = m51;
 const { splitRoom, joinRoom, stampOf, pack, unpack } = m26;
 const { starterLevel } = m24;
 const { newHistory } = m23;
 const { S } = m24;
-const { thumbURL } = m51;
+const { thumbURL } = m52;
 const { list, put, remove, where, newId, detect } = m25;
-const { contains, uses, MECHANISMS } = m52;
+const { contains, uses, MECHANISMS } = m53;
 const { $ } = m20;
-const { readDraft, noteChange, flushDraft, clearDraft } = m53;
-const { menuOn, buildTileMenu } = m54;
+const { readDraft, noteChange, flushDraft, clearDraft } = m54;
+const { menuOn, buildTileMenu } = m55;
 const { place, go, current, back } = m21;
-const { buildMore } = m55;
+const { buildMore } = m56;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
 
@@ -6587,13 +6695,13 @@ async function bootRooms() {
 return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, fillCurrent, say, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m57 = (() => {
+const m58 = (() => {
 const { record, undo, redo } = m23;
 const { S } = m24;
 const { $ } = m20;
-const { syncCheck, syncLint } = m48;
-const { syncRoomsButton, followUndo } = m56;
-const { syncEnabled } = m47;
+const { syncCheck, syncLint } = m49;
+const { syncRoomsButton, followUndo } = m57;
+const { syncEnabled } = m48;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -6634,11 +6742,11 @@ function step(back, after) {
 return { syncUndo, begin, end, change, step };
 })();
 // ---- src/app/size.js
-const m58 = (() => {
+const m59 = (() => {
 const { $, now } = m20;
 const { S } = m24;
 const { moveSide } = m2;
-const { change } = m57;
+const { change } = m58;
 // The room's size: a + and a − for each side add or cut a row or a column there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
 
@@ -6704,7 +6812,7 @@ function buildSize({ after }) {
 return { syncSize, closeSize, buildSize };
 })();
 // ---- src/app/camera.js
-const m59 = (() => {
+const m60 = (() => {
 const { T } = m29;
 const { S } = m24;
 const { $, canvas, g } = m20;
@@ -6845,12 +6953,12 @@ function bindCamera() {
 return { cam, zoomable, apply, setFit, clearView, toRoom, toScreen, fitView, enterPlay, leavePlay, follow, bindCamera };
 })();
 // ---- src/app/fit.js
-const m60 = (() => {
+const m61 = (() => {
 const { T } = m29;
 const { S } = m24;
 const { $ } = m20;
-const { syncSize } = m58;
-const { setFit, apply } = m59;
+const { syncSize } = m59;
+const { setFit, apply } = m60;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 
 
@@ -6919,7 +7027,7 @@ function watchStage() {
 return { fit, watchStage };
 })();
 // ---- src/editor/palette.js
-const m61 = (() => {
+const m62 = (() => {
 
 // The palette: every tool, its group and label, and the words the editor uses for
 // powers, colours, clocks and directions. Draft copy throughout.
@@ -6992,7 +7100,7 @@ const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'b
 return { TOOLS, STRIP, stripOf, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, WIRE_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/solve/lenses.js
-const m62 = (() => {
+const m63 = (() => {
 const { createGame } = m11;
 const { computeBeams } = m5;
 const { successors, stateKey, unsearchable, MAX_STATES } = m12;
@@ -7077,15 +7185,15 @@ function* lensData(level, max = MAX_STATES) {
 return { lensData };
 })();
 // ---- src/app/lenses.js
-const m63 = (() => {
+const m64 = (() => {
 const { reach } = m12;
-const { routes } = m44;
-const { lensData } = m62;
+const { routes } = m45;
+const { lensData } = m63;
 const { INK } = m29;
 const { S } = m24;
 const { $ } = m20;
-const { sliced } = m46;
-const { WELL, closeWell } = m45;
+const { sliced } = m47;
+const { WELL, closeWell } = m46;
 // Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
 // you pick one in that group. Data comes from searches run a slice at a time, again whenever
@@ -7276,10 +7384,10 @@ function buildLenses() {
 return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
 // ---- src/editor/edit.js
-const m64 = (() => {
+const m65 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
 const { CRATED } = m2;
-const { TOOLS, WIRE_NAME, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m61;
+const { TOOLS, WIRE_NAME, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m62;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -7498,12 +7606,12 @@ function place(level, ui, x, y, how) {
 return { CRATE_TOOLS, crateAt, moveAt, swapAt, turnGate, turnLaser, wiresAt, holds, describe, place };
 })();
 // ---- src/app/chips.js
-const m65 = (() => {
-const { describe } = m64;
+const m66 = (() => {
+const { describe } = m65;
 const { S } = m24;
 const { INK } = m29;
 const { $, touch } = m20;
-const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m63;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m64;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
@@ -7565,11 +7673,11 @@ function syncInfo() {
 return { buildChips, syncChips };
 })();
 // ---- src/app/reset.js
-const m66 = (() => {
+const m67 = (() => {
 const { S } = m24;
 const { roomOf } = m18;
 const { $ } = m20;
-const { change } = m57;
+const { change } = m58;
 // Reset: the room goes back to the level's start, after a yes (register 291). One undo step.
 
 
@@ -7584,9 +7692,9 @@ function buildReset(after) {
 return { buildReset };
 })();
 // ---- src/app/sheets.js
-const m67 = (() => {
+const m68 = (() => {
 const { $ } = m20;
-const { closeWell } = m45;
+const { closeWell } = m46;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
 // Rooms opens the rooms list. One sheet at a time; Build, Escape or play closes it.
 
@@ -7612,8 +7720,8 @@ function buildSheets() {
 return { openSheet, buildSheets };
 })();
 // ---- src/app/keys.js
-const m68 = (() => {
-const { TOOLS } = m61;
+const m69 = (() => {
+const { TOOLS } = m62;
 const { $ } = m20;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
 // every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
@@ -7665,7 +7773,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m69 = (() => {
+const m70 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -7730,10 +7838,10 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m70 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m69;
+const m71 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m70;
 const { S } = m24;
-const { change } = m57;
+const { change } = m58;
 const { $ } = m20;
 // The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
 // it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
@@ -7854,7 +7962,7 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/join.js
-const m71 = (() => {
+const m72 = (() => {
 
 // A strip of buttons reads as one object (register 322): square seams inside, round only at its two
 // ends. Which buttons are the ends depends on what shows, so they are marked again on every sync.
@@ -7871,8 +7979,8 @@ function joinEnds() {
 return { joinEnds };
 })();
 // ---- src/app/strip.js
-const m72 = (() => {
-const { STRIP, stripOf, TOOLS } = m61;
+const m73 = (() => {
+const { STRIP, stripOf, TOOLS } = m62;
 const { S } = m24;
 const { $ } = m20;
 const { icon } = m36;
@@ -7985,29 +8093,29 @@ function syncStrip() {
 return { inSandbox, buildStrip, syncStrip };
 })();
 // ---- src/app/panels.js
-const m73 = (() => {
+const m74 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m2;
 const { INK } = m29;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m61;
-const { toolsFor, syncBrief, TOOL } = m40;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m62;
+const { toolsFor, syncBrief, TOOL } = m41;
 const { coloursOf, colouringsOf, pushingsOf } = m18;
 const { S } = m24;
 const { $, canvas, touch } = m20;
-const { change, step: undoStep, syncUndo } = m57;
-const { runCheck, syncCheck, syncLint } = m48;
-const { buildLenses, syncLenses } = m63;
-const { buildWell, openWell } = m45;
-const { buildChips } = m65;
-const { buildReset } = m66;
-const { buildSize } = m58;
-const { buildSheets } = m67;
-const { buildKeys } = m68;
-const { syncRoomsButton } = m56;
-const { buildSelect, syncSelect } = m70;
+const { change, step: undoStep, syncUndo } = m58;
+const { runCheck, syncCheck, syncLint } = m49;
+const { buildLenses, syncLenses } = m64;
+const { buildWell, openWell } = m46;
+const { buildChips } = m66;
+const { buildReset } = m67;
+const { buildSize } = m59;
+const { buildSheets } = m68;
+const { buildKeys } = m69;
+const { syncRoomsButton } = m57;
+const { buildSelect, syncSelect } = m71;
 const { icon } = m36;
-const { joinEnds } = m71;
-const { buildStrip, syncStrip } = m72;
+const { joinEnds } = m72;
+const { buildStrip, syncStrip } = m73;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -8305,13 +8413,13 @@ function syncColours() {
 return { keysText, buildPanels, syncPanel, SIMPLE, pairInk };
 })();
 // ---- src/app/campaignMove.js
-const m74 = (() => {
+const m75 = (() => {
 const { placementErrors } = m18;
-const { place, moveAt, swapAt } = m64;
+const { place, moveAt, swapAt } = m65;
 const { S } = m24;
 const { $, now } = m20;
 const { T } = m29;
-const { toScreen } = m59;
+const { toScreen } = m60;
 // Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
 
 
@@ -8373,7 +8481,7 @@ function say(x, y, why, ms = 1500) {
 return { moveIn, refusal, allows, moveRefusal, refuse, say };
 })();
 // ---- src/app/stuck.js
-const m75 = (() => {
+const m76 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m12;
 const { S } = m24;
 const { $ } = m20;
@@ -8408,7 +8516,7 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m76 = (() => {
+const m77 = (() => {
 const { frame: look } = m29;
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m11;
@@ -8416,20 +8524,20 @@ const { aimKey } = m10;
 const { drawEdit, drawPlay } = m35;
 const { S } = m24;
 const { $, g, now } = m20;
-const { openSheet } = m67;
-const { syncPanel, keysText } = m73;
-const { feedDemo } = m48;
-const { selectOverlay } = m70;
-const { moveRefusal } = m74;
-const { watchStuck, resetStuck } = m75;
-const { lensMarks, lensBusy } = m63;
-const { syncWell } = m45;
-const { syncChips } = m65;
-const { gust } = m42;
+const { openSheet } = m68;
+const { syncPanel, keysText } = m74;
+const { feedDemo } = m49;
+const { selectOverlay } = m71;
+const { moveRefusal } = m75;
+const { watchStuck, resetStuck } = m76;
+const { lensMarks, lensBusy } = m64;
+const { syncWell } = m46;
+const { syncChips } = m66;
+const { gust } = m43;
 const { stateKey } = m12;
 const { respawn } = m4;
-const { syncEnabled } = m47;
-const { enterPlay, leavePlay, follow, clearView } = m59;
+const { syncEnabled } = m48;
+const { enterPlay, leavePlay, follow, clearView } = m60;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
 
@@ -8583,21 +8691,21 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m77 = (() => {
-const { describe, holds, place, turnGate, turnLaser } = m64;
+const m78 = (() => {
+const { describe, holds, place, turnGate, turnLaser } = m65;
 const { S } = m24;
 const { $, canvas, touch, now } = m20;
-const { setMode, aim } = m76;
-const { begin, end, change, step: undoStep } = m57;
-const { save } = m56;
-const { selectDown, selectMove, selectUp, selectKey } = m70;
-const { LENS_GROUPS, cycleLens, lensesOff } = m63;
-const { syncPanel } = m73;
-const { fit } = m60;
-const { toolForKey, bareKey, showKeys } = m68;
-const { TOOLS } = m61;
-const { refusal, moveRefusal, moveIn, refuse } = m74;
-const { toRoom } = m59;
+const { setMode, aim } = m77;
+const { begin, end, change, step: undoStep } = m58;
+const { save } = m57;
+const { selectDown, selectMove, selectUp, selectKey } = m71;
+const { LENS_GROUPS, cycleLens, lensesOff } = m64;
+const { syncPanel } = m74;
+const { fit } = m61;
+const { toolForKey, bareKey, showKeys } = m69;
+const { TOOLS } = m62;
+const { refusal, moveRefusal, moveIn, refuse } = m75;
+const { toRoom } = m60;
 const { T } = m29;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
@@ -8738,7 +8846,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m78 = (() => {
+const m79 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -8849,12 +8957,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m79 = (() => {
+const m80 = (() => {
 const { search, move, stateKey } = m12;
 const { createGame } = m11;
-const { elementCheck, idleElements, NOTES_MAX } = m44;
-const { contains } = m52;
-const { ING, variants } = m78;
+const { elementCheck, idleElements, NOTES_MAX } = m45;
+const { contains } = m53;
+const { ING, variants } = m79;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -8940,7 +9048,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m80 = (() => {
+const m81 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -8957,13 +9065,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m81 = (() => {
+const m82 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m2;
-const { INGREDIENTS, ING, spot } = m78;
-const { judge, lockedIn } = m79;
-const { contains } = m52;
-const { rng } = m80;
+const { INGREDIENTS, ING, spot } = m79;
+const { judge, lockedIn } = m80;
+const { contains } = m53;
+const { rng } = m81;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -9118,19 +9226,19 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m82 = (() => {
-const { INGREDIENTS } = m78;
-const { generate, normalize, recipeLabel, LIMITS } = m81;
+const m83 = (() => {
+const { INGREDIENTS } = m79;
+const { generate, normalize, recipeLabel, LIMITS } = m82;
 const { stampOf } = m26;
 const { S } = m24;
-const { thumbURL } = m51;
+const { thumbURL } = m52;
 const { $ } = m20;
-const { change } = m57;
-const { dirty, remember, syncRoomsButton } = m56;
+const { change } = m58;
+const { dirty, remember, syncRoomsButton } = m57;
 const { icon } = m36;
 const { current, back } = m21;
-const { TOOLS, GROUPS } = m61;
-const { SIMPLE } = m73;
+const { TOOLS, GROUPS } = m62;
+const { SIMPLE } = m74;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
@@ -9328,27 +9436,27 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m83 = (() => {
+const m84 = (() => {
 const { buildMaker } = m22;
 const { buildPuzzles } = m27;
-const { buildProgress } = m41;
+const { buildProgress } = m42;
 const { TICK_MS } = m0;
 const { replay, gameText } = m11;
 const { parseLevel, emptyLevel } = m2;
 const { newHistory } = m23;
 const { S, starterLevel } = m24;
 const { portrait, $ } = m20;
-const { startSnow, windNow } = m42;
-const { fit, watchStage } = m60;
-const { buildPanels, syncPanel } = m73;
-const { bindInput } = m77;
-const { setMode, frame, render, tick, report, copyReport } = m76;
-const { bindCamera } = m59;
-const { buildRooms } = m56;
-const { buildGenerator } = m82;
-const { buildCampaign } = m40;
+const { startSnow, windNow } = m43;
+const { fit, watchStage } = m61;
+const { buildPanels, syncPanel } = m74;
+const { bindInput } = m78;
+const { setMode, frame, render, tick, report, copyReport } = m77;
+const { bindCamera } = m60;
+const { buildRooms } = m57;
+const { buildGenerator } = m83;
+const { buildCampaign } = m41;
 const { bindNav, start } = m21;
-const { bindDebug } = m38;
+const { bindDebug } = m39;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 
