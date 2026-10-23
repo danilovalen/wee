@@ -128,7 +128,8 @@ let sandboxOpen = false;
 async function enterSandbox() {
   if (sandboxOpen) return;
   sandboxOpen = true;
-  const full = new URLSearchParams(location.search).has('sandbox') || location.hash.startsWith('#room=');
+  // Every way in opens the campaign's pieces only (register 410); the full editor is kept for tests, at ?sandbox=full.
+  const full = new URLSearchParams(location.search).get('sandbox') === 'full';
   S.simple = !full; document.body.classList.toggle('simple', !full);
   await (window.wee.roomsReady = bootRooms()); A.syncPanel();
 }
@@ -198,7 +199,7 @@ export function buildRooms(actions) {
   // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
   const EXAMPLES = ['Hex counter'];
   const templateRows = (list = TEMPLATES, kind = 'Template') => list.map(t => { const { level } = splitRoom(t.level);
-    return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
+    return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: kind === 'Example' ? t.name : '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
   exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
   // Rooms from the menu (rooms/start) is the Sandbox's first screen, its way back Menu; from a room, Close (registers 395, 399).

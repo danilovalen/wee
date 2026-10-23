@@ -29,6 +29,12 @@ try {
   check('the menu offers Campaign and Sandbox', await page.locator('#menuCampaign').isVisible() && await page.locator('#menuSandbox').isVisible());
   const look = sel => page.$eval(sel, b => { const c = getComputedStyle(b); return [c.backgroundColor, c.color, c.boxShadow, c.font, c.height].join(' | '); });
   check('Sandbox looks exactly like Campaign (register 218)', await look('#menuCampaign') === await look('#menuSandbox'), await look('#menuSandbox'));
+  // Register 400: a box with one button gives it the whole row.
+  const spans = await page.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(); return Math.abs(r('menuCampaign').width - (r('menuSandbox').right - r('menuPuzzles').left)) < 1; });
+  check('Campaign, alone in its box, is as wide as Puzzles and Sandbox together', spans);
+  // Register 401: the page paints nothing but its ground until the first place is up.
+  check('once loaded the page is no longer booting', await page.evaluate(() => !document.documentElement.classList.contains('booting')));
+  check('while booting the editor is hidden', await page.evaluate(() => { document.documentElement.classList.add('booting'); const v = getComputedStyle(document.querySelector('header')).visibility; document.documentElement.classList.remove('booting'); return v === 'hidden'; }));
   // The menu is a screen of its own, not a box over the editor, with the robot playing behind it.
   const menuRect = await page.locator('#menuBox').boundingBox();
   check('the menu fills the whole window', menuRect && menuRect.x === 0 && menuRect.y === 0 && menuRect.width === 1280 && menuRect.height === 800, JSON.stringify(menuRect));

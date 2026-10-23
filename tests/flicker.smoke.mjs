@@ -37,7 +37,7 @@ const watch = async (ms, act) => {
 };
 
 try {
-  await page.goto(`http://localhost:${PORT}/?sandbox`);
+  await page.goto(`http://localhost:${PORT}/?sandbox=full`);
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => document.getElementById('roomsBox').close());

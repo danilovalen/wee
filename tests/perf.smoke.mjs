@@ -15,7 +15,7 @@ await page.addInitScript(() => { window.__long = []; new PerformanceObserver(l =
 const worst = async fn => { await page.evaluate(() => { window.__long = []; }); await fn(); await page.waitForTimeout(100); return Math.round(await page.evaluate(() => Math.max(0, ...window.__long))); };
 const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'));
 try {
-  await page.goto('http://localhost:5195/?sandbox');
+  await page.goto('http://localhost:5195/?sandbox=full');
   await page.evaluate(f => { const rooms = []; for (let i = 0; i < 100; i++) rooms.push({ ...f, id: 'r' + i, name: 'Room ' + i, updated: new Date(Date.now() - i * 864e5).toISOString() }); localStorage.setItem('wee.rooms', JSON.stringify(rooms)); }, first);
   await page.reload();
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
@@ -69,7 +69,7 @@ try {
   check(`and never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
 
   // a generator run: turret rooms are the slowest to judge
-  await page.click('#navRooms'); await page.click('#roomGen');
+  await page.click('#navRooms'); await page.evaluate(() => document.getElementById('roomGen').click());
   await page.locator('.genIngBox summary').click();
   for (const id of ['sensor', 'box', 'enemy']) await page.selectOption(`#genIng select[data-id=${id}]`, 'must');
   for (const [id, v] of [['genW', 12], ['genH', 12], ['genMin', 8], ['genMax', 14], ['genSeed', 4], ['genTime', 5]]) await page.fill('#' + id, String(v));

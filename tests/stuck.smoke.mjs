@@ -14,7 +14,7 @@ const oneWay = room(['########', '#...P>.#', '########']);
 oneWay.cells[1 * oneWay.w + 1] = 'goal';
 const shown = () => page.locator('#stuck').isVisible();
 try {
-  await page.goto('http://localhost:5211/?sandbox');
+  await page.goto('http://localhost:5211/?sandbox=full');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => document.getElementById('roomsBox').close());

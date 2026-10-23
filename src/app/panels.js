@@ -223,13 +223,13 @@ function placeTools() {
   }
 }
 // What the chosen tool may come in, and every choice the row offers: a level's colours, then red+blue
-// as a third dot where the level offers some piece in two (register 316); the simple Sandbox offers all three.
+// as a third dot where the level offers some piece in two (register 316); the Sandbox offers red, blue and wire, not red+blue (register 407).
 // The pieces that come in a pushable version (register 336).
 const PUSHABLE = ['laser', 'relay', 'gate', 'door', 'idoor'];
 const ELEMENT_OF = Object.fromEntries(Object.entries(TOOL).map(([el, t]) => [t, el]));
 function colourChoices() {
   // Grey (register 347) is a Sandbox and editor colour only; a one-way never takes it.
-  if (S.simple) return { all: ['red', 'blue', 'red|blue', 'wire'], fits: S.ui.tool === 'gate' ? ['red', 'blue', 'red|blue'] : ['red', 'blue', 'red|blue', 'wire'] };
+  if (S.simple) return { all: ['red', 'blue', 'wire'], fits: S.ui.tool === 'gate' ? ['red', 'blue'] : ['red', 'blue', 'wire'] };
   if (!S.camp) return { all: null, fits: null };
   const def = S.camp.def, el = ELEMENT_OF[S.ui.tool], each = Object.keys(def.palette).flatMap(k => colouringsOf(def, k));
   const all = [...coloursOf(def), ...new Set(each.filter(c => c.includes('|')))];

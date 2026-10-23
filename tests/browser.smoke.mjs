@@ -20,7 +20,7 @@ page.on('pageerror', e => errors.push(e.message));
 mkdirSync('shots', { recursive: true });
 
 try {
-  await page.goto(`http://localhost:${PORT}/?sandbox`);
+  await page.goto(`http://localhost:${PORT}/?sandbox=full`);
   await page.waitForFunction(() => window.wee);
   await page.waitForFunction(() => window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
@@ -372,7 +372,7 @@ try {
   check('the panel says where rooms are kept', (await page.textContent('#roomsWhere')).includes('this browser'));
   check('an empty library hides its filter and explored count', await page.locator('#libTools').isHidden());
   check('the library holds no templates of its own', (await page.locator('#roomsBox #templateList').count()) === 0);
-  check('Rooms has one bar: New room first and marked, then Generate and More (register 399)', (await page.$$eval('#roomsBox .libBar > button', bs => bs.map(b => b.textContent + (b.classList.contains('primary') ? '*' : '')).join())) === 'New room*,Generate,More');
+  check('Rooms has one bar: New room first and marked, then More, and no Generate (registers 399, 404)', (await page.$$eval('#roomsBox .libBar > button', bs => bs.filter(b => b.getBoundingClientRect().width > 0).map(b => b.textContent + (b.classList.contains('primary') ? '*' : '')).join())) === 'New room*,More');
   check('New room has no page of its own and there are no templates', (await page.locator('#newBox').count()) === 0 && (await page.locator('#templateList').count()) === 0);
   const asks = []; page.once('dialog', d => { asks.push(d.message()); d.dismiss(); });
   await page.click('#roomNew');
@@ -698,7 +698,7 @@ try {
   await page.keyboard.press('Escape');
   const sp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   sp.on('pageerror', e => errors.push(e.message));
-  await sp.goto(`http://localhost:${PORT + 1}/?sandbox`);
+  await sp.goto(`http://localhost:${PORT + 1}/?sandbox=full`);
   await sp.waitForFunction(() => window.wee && window.wee.roomsReady);
   await sp.evaluate(() => window.wee.roomsReady);
   await sp.evaluate(() => document.getElementById('roomsBox').close());

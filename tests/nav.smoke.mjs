@@ -87,6 +87,7 @@ try {
   const hex = page.locator('#roomList .example .roomRow', { hasText: 'Hex counter' });
   check('the example ends the room list (register 399)', await hex.count() === 1);
   if (await hex.count()) { await hex.click(); await settle(); }
+  check('the example opens under its own name, unsaved (register 409)', (await page.textContent('#roomTitle')).includes('Hex counter'), await page.textContent('#roomTitle'));
   check('opening an example from an untouched room asks nothing and lands in the room', asked.length === 0 && (await at()).hash === '#/room', asked.join(' | '));
   // A link to a place opens it; a link to a level that does not exist falls back to its list.
   await page.goto(B + '#/levels'); await settle();

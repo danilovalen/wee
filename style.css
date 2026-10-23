@@ -643,6 +643,7 @@ body.sandbox #strip { display: flex; flex-direction: column; align-items: center
 body.sandbox #groups, body.sandbox #tools > h2, body.sandbox #palette .ghead { display: none !important; }
 body.sandbox #palette:not(.fly) { display: none !important; }
 .slot { position: relative; width: 52px; height: 48px; padding: 0; display: grid; place-items: center; }
+.slot[hidden] { display: none; }
 .slot .slotIcon { display: grid; place-items: center; }
 .slot .slotIcon canvas { width: 30px; height: 30px; }
 .slot .more { position: absolute; right: 5px; bottom: 5px; width: 6px; height: 6px; background: linear-gradient(135deg, transparent 50%, var(--soft) 50%); }
@@ -678,4 +679,9 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
 #roomsWhere { margin: 2px 0 0; }
 .libBarWrap { position: relative; }
 .moreMenu { position: absolute; right: 0; top: calc(100% - 2px); }
+
+/* Until the first place is up the page shows nothing but its ground (register 401). */
+html.booting body > :not(dialog[open]) { visibility: hidden; }
+/* A box with one button lets it take the whole row (register 400). */
+.menuSec:not(:has(button:not([hidden]) ~ button:not([hidden]))) > button { grid-column: 1 / -1; }
 

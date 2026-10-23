@@ -15,7 +15,7 @@ page.on('pageerror', e => errors.push(e.message));
 mkdirSync('shots', { recursive: true });
 
 try {
-  await page.goto(`http://localhost:${PORT}/?sandbox`);
+  await page.goto(`http://localhost:${PORT}/?sandbox=full`);
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   check('wee starts on the library, full screen', await page.evaluate(() => { const r = document.getElementById('roomsBox').getBoundingClientRect(); return document.getElementById('roomsBox').open && r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }));

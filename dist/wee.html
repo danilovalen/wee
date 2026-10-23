@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="booting">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -661,6 +661,7 @@ body.sandbox #strip { display: flex; flex-direction: column; align-items: center
 body.sandbox #groups, body.sandbox #tools > h2, body.sandbox #palette .ghead { display: none !important; }
 body.sandbox #palette:not(.fly) { display: none !important; }
 .slot { position: relative; width: 52px; height: 48px; padding: 0; display: grid; place-items: center; }
+.slot[hidden] { display: none; }
 .slot .slotIcon { display: grid; place-items: center; }
 .slot .slotIcon canvas { width: 30px; height: 30px; }
 .slot .more { position: absolute; right: 5px; bottom: 5px; width: 6px; height: 6px; background: linear-gradient(135deg, transparent 50%, var(--soft) 50%); }
@@ -696,6 +697,11 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
 #roomsWhere { margin: 2px 0 0; }
 .libBarWrap { position: relative; }
 .moreMenu { position: absolute; right: 0; top: calc(100% - 2px); }
+
+/* Until the first place is up the page shows nothing but its ground (register 401). */
+html.booting body > :not(dialog[open]) { visibility: hidden; }
+/* A box with one button lets it take the whole row (register 400). */
+.menuSec:not(:has(button:not([hidden]) ~ button:not([hidden]))) > button { grid-column: 1 / -1; }
 
 </style>
 </head>
@@ -970,7 +976,7 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
     <div class="libBarWrap">
       <div class="row bar libBar">
         <button id="roomNew" type="button" class="primary" autofocus>New room</button>
-        <button id="roomGen" type="button">Generate</button>
+        <button id="roomGen" type="button" hidden>Generate</button>
         <button id="moreBtn" type="button" aria-haspopup="menu" aria-expanded="false">More</button>
       </div>
       <div id="moreMenu" class="tileMenu moreMenu" role="menu" hidden>
@@ -3606,10 +3612,13 @@ async function show(name, arg, popups = false) {
   closePages(def.page, popups);
   // The page opens at once and fills as it loads, so a tap or Escape right after lands on it.
   if (def.page && !$(def.page).open) $(def.page).showModal();
+  // The page starts hidden (index.html), so nothing paints before the first place is up (register 401).
+  if (def.page) document.documentElement.classList.remove('booting');
   const ok = await def.enter(arg);
   if (t !== turn) return;  // a later move overtook this one while it loaded
   if (ok === false) { go(def.parent(arg), null, { replace: true }); return; }
   def.shown?.();
+  document.documentElement.classList.remove('booting');
   dispatchEvent(new CustomEvent('wee:place', { detail: here }));
 }
 
@@ -6373,7 +6382,8 @@ let sandboxOpen = false;
 async function enterSandbox() {
   if (sandboxOpen) return;
   sandboxOpen = true;
-  const full = new URLSearchParams(location.search).has('sandbox') || location.hash.startsWith('#room=');
+  // Every way in opens the campaign's pieces only (register 410); the full editor is kept for tests, at ?sandbox=full.
+  const full = new URLSearchParams(location.search).get('sandbox') === 'full';
   S.simple = !full; document.body.classList.toggle('simple', !full);
   await (window.wee.roomsReady = bootRooms()); A.syncPanel();
 }
@@ -6443,7 +6453,7 @@ function buildRooms(actions) {
   // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
   const EXAMPLES = ['Hex counter'];
   const templateRows = (list = TEMPLATES, kind = 'Template') => list.map(t => { const { level } = splitRoom(t.level);
-    return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
+    return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: kind === 'Example' ? t.name : '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
   exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
   // Rooms from the menu (rooms/start) is the Sandbox's first screen, its way back Menu; from a room, Close (registers 395, 399).
@@ -8051,13 +8061,13 @@ function placeTools() {
   }
 }
 // What the chosen tool may come in, and every choice the row offers: a level's colours, then red+blue
-// as a third dot where the level offers some piece in two (register 316); the simple Sandbox offers all three.
+// as a third dot where the level offers some piece in two (register 316); the Sandbox offers red, blue and wire, not red+blue (register 407).
 // The pieces that come in a pushable version (register 336).
 const PUSHABLE = ['laser', 'relay', 'gate', 'door', 'idoor'];
 const ELEMENT_OF = Object.fromEntries(Object.entries(TOOL).map(([el, t]) => [t, el]));
 function colourChoices() {
   // Grey (register 347) is a Sandbox and editor colour only; a one-way never takes it.
-  if (S.simple) return { all: ['red', 'blue', 'red|blue', 'wire'], fits: S.ui.tool === 'gate' ? ['red', 'blue', 'red|blue'] : ['red', 'blue', 'red|blue', 'wire'] };
+  if (S.simple) return { all: ['red', 'blue', 'wire'], fits: S.ui.tool === 'gate' ? ['red', 'blue'] : ['red', 'blue', 'wire'] };
   if (!S.camp) return { all: null, fits: null };
   const def = S.camp.def, el = ELEMENT_OF[S.ui.tool], each = Object.keys(def.palette).flatMap(k => colouringsOf(def, k));
   const all = [...coloursOf(def), ...new Set(each.filter(c => c.includes('|')))];

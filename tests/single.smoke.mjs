@@ -10,7 +10,7 @@ const page = await browser.newPage({ viewport: { width: 390, height: 844 }, devi
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 try {
-  await page.goto('file://' + process.cwd() + '/dist/wee.html?sandbox');
+  await page.goto('file://' + process.cwd() + '/dist/wee.html?sandbox=full');
   await page.waitForFunction(() => window.wee, null, { timeout: 5000 });
   check('the file opens from disk', true);
   check('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

@@ -9,7 +9,7 @@ const server = await serve(5237);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
 const page = await browser.newPage({ viewport: { width: 393, height: 873 }, hasTouch: true, isMobile: true });
 try {
-  await page.goto('http://localhost:5237/?sandbox');
+  await page.goto('http://localhost:5237/?sandbox=full');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });

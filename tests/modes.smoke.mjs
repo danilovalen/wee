@@ -25,8 +25,10 @@ try {
   await page.goto('http://localhost:5241/');
   await page.click('#menuSandbox'); await page.waitForTimeout(600);
   await page.click('#roomNew'); await page.waitForTimeout(300);
+  check('the Sandbox paints only its own groups (the strip bug of register 411)', (await page.evaluate(() => [...document.querySelectorAll('#strip .slot')].filter(s => s.getBoundingClientRect().width > 0).length)) === 7);
+  check('the Sandbox offers red, blue and wire, and no red+blue (register 407)', (await page.evaluate(() => { document.querySelector('#strip [data-slot=doors]').click(); return [...document.querySelectorAll('[data-camp-colour]')].map(b => b.dataset.campColour).join(); })) === 'red,blue,wire');
   check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,death,door,erase,gate,goal,idoor,look,move,sensor,start,toggle,turret,wall,wire', await shown());
-  check('the Sandbox offers red, blue, both and grey, and no powers', await page.evaluate(() => document.querySelectorAll('[data-camp-colour]').length === 4 && getComputedStyle(document.querySelector('[data-sheet=powers]')).display === 'none'));
+  check('the Sandbox offers red, blue and grey, and no powers', await page.evaluate(() => document.querySelectorAll('[data-camp-colour]').length === 3 && getComputedStyle(document.querySelector('[data-sheet=powers]')).display === 'none'));
   // Register 379: the Sandbox's generator offers only what the Sandbox can place, and no powers.
   const ing = await page.evaluate(() => { document.getElementById('roomGen').click(); const on = [...document.querySelectorAll('#genIng select')].filter(s => s.offsetParent).map(s => s.dataset.id); document.getElementById('genBox').close(); return on; });
   check('the Sandbox\'s generator offers only its own pieces', ing.length > 0 && ing.includes('box') && !['enemy', 'water', 'mover', 'dive', 'laser', 'spring'].some(id => ing.includes(id)), ing.join());
@@ -79,10 +81,22 @@ try {
   await page.evaluate(() => { localStorage.removeItem('wee-made'); localStorage.removeItem('wee-puzzles'); });
   await page.click('#progLoad'); await page.fill('#progCode', all); await page.click('#progYes'); await page.waitForTimeout(200);
   check('a progress code brings back made levels and Puzzles bests', await page.evaluate(() => JSON.parse(localStorage.getItem('wee-made') || '[]').length === 1 && JSON.parse(localStorage.getItem('wee-puzzles') || '{}').pz1 === 2));
-  await page.goto('http://localhost:5241/?sandbox');
+  await page.goto('http://localhost:5241/?sandbox=full');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady); await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });
-  check('?sandbox still opens the full sandbox, its tools grouped in the strip', await page.evaluate(() => !document.body.classList.contains('simple') && document.querySelectorAll('#strip .slot:not([hidden])').length === 9 && getComputedStyle(document.getElementById('strip')).display !== 'none'));
+  // Register 410: a plain ?sandbox and a shared room link open the campaign's pieces only; ?sandbox=full is the tests' full editor.
+  const painted = () => page.evaluate(() => [...document.querySelectorAll('#strip .slot')].filter(s => s.getBoundingClientRect().width > 0).map(s => s.dataset.slot).join());
+  const code = await page.evaluate(async () => (await import('/src/level/code.js')).encodeRoom(window.wee.getLevel()));
+  for (const url of ['http://localhost:5241/?sandbox', 'http://localhost:5241/#room=' + code]) {
+    await page.goto('about:blank'); await page.goto(url);
+    await page.waitForFunction(() => window.wee && window.wee.roomsReady); await page.evaluate(() => window.wee.roomsReady);
+    await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); }); await page.waitForTimeout(200);
+    check(`${url.includes('#room') ? 'a room link' : '?sandbox'} paints only the Sandbox's seven groups: no enemies, no floors`, (await painted()) === 'edit,room,walls,pieces,lasers,switches,doors', await painted());
+  }
+  await page.goto('about:blank'); await page.goto('http://localhost:5241/?sandbox=full');
+  await page.waitForFunction(() => window.wee && window.wee.roomsReady); await page.evaluate(() => window.wee.roomsReady);
+  await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });
+  check('?sandbox=full opens the full editor, its tools grouped in the strip', await page.evaluate(() => !document.body.classList.contains('simple') && document.querySelectorAll('#strip .slot:not([hidden])').length === 9 && getComputedStyle(document.getElementById('strip')).display !== 'none'));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } finally {
   await browser.close();
