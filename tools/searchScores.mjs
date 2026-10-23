@@ -5,6 +5,7 @@ import { boxMoves } from '../src/campaign/pushes.js';
 import { stoppedPushes } from '../src/campaign/extras.js';
 import { replayPath } from '../src/campaign/robot.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
+import { boxesLeaving } from '../src/campaign/spikes.js';
 
 // The nearest any of pick(s)'s points comes, over a path, to a tile whose kind starts with prefix:
 // 0.8 standing on one, falling off with distance (register 335).
@@ -20,11 +21,11 @@ const you = s => [[s.player.x, s.player.y]];
 const stops = s => (s.beams || []).map(b => b.stop).filter(Boolean);
 const beamTiles = s => (s.beams || []).flatMap(b => b.path.slice(1));
 const mean = xs => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
-const boxesAt = s => s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.x, e.y]);
+const leaving = b => b.left ? 1 : b.was ? 0.5 : b.d === Infinity ? 0 : 0.4 / (1 + b.d);
 export const SCORES = {
-  // A box nearer spikes or the goal is warmer, half credit once on them: leaving is the other half (register 435).
-  boxLeavesSpikes: (room, moves) => Math.min(0.5, nearest(room, moves, boxesAt, 'death')),
-  boxLeavesGoal: (room, moves) => Math.min(0.5, nearest(room, moves, boxesAt, 'goal')),
+  // Per box: warmer the nearer it comes to spikes or the goal, half credit on them, full once it leaves (register 435).
+  everyBoxLeavesSpikes: (room, moves) => mean(boxesLeaving(room, moves, 'death').map(leaving)),
+  everyBoxLeavesGoal: (room, moves) => mean(boxesLeaving(room, moves, 'goal').map(leaving)),
   everyBoxPushedTwice: (room, moves) => mean(boxMoves(room, moves).map(b => Math.min(b.pushes, 2) / 2)),
   everyBoxHitOnce: (room, moves) => mean(boxMoves(room, moves).map(b => b.hits >= 1 ? 1 : 0)),
   // The nearer a stopped box ends to another box, the warmer.
