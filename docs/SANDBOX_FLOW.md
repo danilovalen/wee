@@ -8,6 +8,11 @@
 - 396: New room has no templates. The library shows one example, Hex counter. The other templates
   stay in `src/level/templates.js` as test rooms, opened by tests through `window.wee.openTemplate`.
 
+- 399, the proposal below, built (2026-10-23): every page header has one button (Menu or Close);
+  action rows are one full-width bar (`.bar`), buttons sharing it equally on one line, the main one
+  first; Rooms is New room, Generate and More (`src/app/more.js`: Open a code, Import, Export all);
+  New room opens an empty room at once and its page is gone; the example closes your list.
+
 ## Diagnosis
 
 The Sandbox is five pages: Rooms (the library), New room, This room, Generate a room, and the

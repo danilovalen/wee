@@ -978,7 +978,11 @@ const M = [
   ['src/app/generator.js', "sel.closest('li').hidden = !on;", "sel.closest('li').hidden = false;", 'modes'],  ['src/app/rooms.js', "parent: arg => arg === 'start' ? 'menu' : 'room',", "parent: () => 'room',", 'nav'],
   ['src/app/rooms.js', "$('roomsClose').hidden = arg === 'start';", "", 'nav'],
   ['src/app/rooms.js', "if (current()?.name === 'rooms') back('room'); };", "if (current()?.name === 'rooms') up(); };", 'nav'],
-  ['index.html', 'class="primary" hidden>Level maker', 'class="primary">Level maker', 'modes'],
+  ['index.html', 'class="primary" hidden>Level maker', 'class="primary">Level maker', 'modes'],  ['src/app/more.js', "if (ev.key === 'Escape' && !$('moreMenu').hidden) {", "if (false) {", 'browser'],
+  ['src/app/more.js', "if (ev.target.closest('button')) more(false);", "", 'browser'],
+  ['src/app/rooms.js', "    if (!filter) ul.append(...exampleRows());", "", 'nav'],
+  ['src/app/rooms.js', "$('roomsMenu').hidden = arg !== 'start';", "", 'nav'],
+  ['index.html', '<button id="roomNew" type="button" class="primary" autofocus>', '<button id="roomNew" type="button" autofocus>', 'browser'],
 ];
 
 // SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.

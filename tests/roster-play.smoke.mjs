@@ -33,7 +33,7 @@ try {
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   const asked = []; page.on('dialog', d => { asked.push(d.message()); d.dismiss(); });
-  const pick = async name => { await page.evaluate(() => { for (const id of ['roomsBox', 'newBox']) if (document.getElementById(id).open) document.getElementById(id).close(); }); await page.evaluate(n => window.wee.openTemplate(n), name); };
+  const pick = async name => { await page.evaluate(() => { for (const id of ['roomsBox']) if (document.getElementById(id).open) document.getElementById(id).close(); }); await page.evaluate(n => window.wee.openTemplate(n), name); };
   await pick('Overshoot'); await pick('Short fuse');
   check('an untouched template is left without asking about unsaved changes', !asked.length && (await page.evaluate(() => window.wee.getLevel().w)) === 8, JSON.stringify(asked));
   await pickTool(page, 'wall');

@@ -455,8 +455,6 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 .tiles .roomRow b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .libBar { margin-top: 10px; }
 #libTools[hidden], #codeRow[hidden] { display: none; }
-.libFoot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; }
-.libFoot .hint { margin: 0; }
 .rooms button.primary { background: var(--accent); color: var(--on-accent); }
 .rooms .danger { margin-top: 16px; padding-top: 10px; box-shadow: inset 0 1px 0 var(--rule); }
 .rooms .danger button { color: #c8283c; }
@@ -602,7 +600,7 @@ body.campaign #campColours:not([hidden]), body.simple #campColours:not([hidden])
 /* A yes-or-no question over the room (register 291): small and centred, not a page. */
 .confirm { width: min(340px, 100vw - 32px); background: var(--panel); color: inherit; border: 0; border-radius: var(--r-l); padding: 16px; }
 .confirm p { margin: 0 0 14px; line-height: 1.4; }
-.confirm .row { display: flex; gap: 8px; justify-content: flex-end; }
+.confirm .row { display: flex; gap: 8px; }
 .confirm::backdrop { background: rgba(40, 44, 60, .35); }
 .confirm textarea { width: 100%; box-sizing: border-box; margin: 0 0 12px; font: 12px monospace; word-break: break-all; }
 .progRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
@@ -690,6 +688,15 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
   body.sandbox #palette.fly [data-tool] .lbl, body.sandbox #palette.fly [data-tool] kbd { display: none; }
   body.sandbox .slot.open { border-radius: 0 0 var(--r-s) var(--r-s); box-shadow: 0 4px 10px rgba(0, 0, 0, .1); }
 }
+
+/* One action bar per page (register 399): full width, the buttons share it equally, labels on one line, the main one first. */
+.rooms .bar, .confirm .bar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
+.bar > button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; justify-content: center; }
+.roomsHead > form { margin: 0; }
+#roomsWhere { margin: 2px 0 0; }
+.libBarWrap { position: relative; }
+.moreMenu { position: absolute; right: 0; top: calc(100% - 2px); }
+
 </style>
 </head>
 <body>
@@ -921,7 +928,7 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
   </dialog>
   <dialog id="resetBox" class="confirm">
     <p>Reset the room to the level's start, which Undo can bring back?</p>
-    <div class="row"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
+    <div class="row bar"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="makerBox" class="rooms maker">
     <div class="roomsHead"><b>Level maker</b><button id="makerMenu" type="button">Menu</button></div>
@@ -936,7 +943,7 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
     <h3>Goals</h3>
     <ul id="makerGoals" class="mkGoals"></ul>
     <p id="makerSay" class="hint" role="status"></p>
-    <div class="row"><button id="makerBuild" type="button" class="primary">Build it</button><button id="makerNew" type="button">New</button><button id="makerDelete" type="button" hidden>Delete</button></div>
+    <div class="row bar"><button id="makerBuild" type="button" class="primary">Build it</button><button id="makerNew" type="button">New</button><button id="makerDelete" type="button" hidden>Delete</button></div>
   </dialog>
   <dialog id="puzzleBox" class="rooms">
     <div class="roomsHead"><b>Puzzles</b><button id="puzzleMenu" type="button">Menu</button></div>
@@ -946,23 +953,31 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
   <dialog id="campBox" class="rooms">
     <div class="roomsHead"><b>Campaign</b><button id="campMenu" type="button">Menu</button></div>
     <ul id="campList" class="campList"></ul>
-    <div class="row progRow"><button id="progCopy" type="button">Copy progress</button><button id="progLoad" type="button">Load progress</button><button id="progReset" type="button">Reset progress</button></div>
+    <div class="row bar progRow"><button id="progCopy" type="button">Copy progress</button><button id="progLoad" type="button">Load progress</button><button id="progReset" type="button">Reset progress</button></div>
   </dialog>
   <dialog id="progBox" class="confirm">
     <p id="progSay"></p>
     <textarea id="progCode" rows="4" spellcheck="false"></textarea>
-    <div class="row"><button id="progYes" type="button" class="primary">Load</button><button id="progNo" type="button">Close</button></div>
+    <div class="row bar"><button id="progYes" type="button" class="primary">Load</button><button id="progNo" type="button">Close</button></div>
   </dialog>
   <dialog id="progResetBox" class="confirm">
     <p>To keep your wins, rooms and goals, copy your progress before you reset every level.</p>
-    <div class="row"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
+    <div class="row bar"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="roomsBox" class="rooms library">
-    <div class="roomsHead"><b>Rooms</b><span class="row"><button id="roomsMenu" type="button">Menu</button><form method="dialog" id="roomsClose"><button>Close</button></form></span></div>
-    <div class="row libBar">
-      <button id="roomNew" type="button" autofocus>New room</button>
-      <button id="codeBtn" type="button" aria-expanded="false">Open a code</button>
-      <button id="importBtn" type="button">Import</button>
+    <div class="roomsHead"><b>Rooms</b><button id="roomsMenu" type="button">Menu</button><form method="dialog" id="roomsClose"><button>Close</button></form></div>
+    <p id="roomsWhere" class="hint"></p>
+    <div class="libBarWrap">
+      <div class="row bar libBar">
+        <button id="roomNew" type="button" class="primary" autofocus>New room</button>
+        <button id="roomGen" type="button">Generate</button>
+        <button id="moreBtn" type="button" aria-haspopup="menu" aria-expanded="false">More</button>
+      </div>
+      <div id="moreMenu" class="tileMenu moreMenu" role="menu" hidden>
+        <button id="codeBtn" type="button" role="menuitem" aria-expanded="false">Open a code</button>
+        <button id="importBtn" type="button" role="menuitem">Import</button>
+        <button id="exportAll" type="button" role="menuitem">Export all</button>
+      </div>
       <input id="importFile" type="file" accept=".weepack,.wee,.json" hidden>
     </div>
     <div id="codeRow" class="row" hidden>
@@ -976,8 +991,6 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
       <details class="explored"><summary id="exploredSum"></summary><p class="hint">Not in any room yet:</p><ul id="unexplored"></ul></details>
     </div>
     <ul id="roomList" class="roomList tiles"></ul>
-    <h3>Examples</h3>
-    <ul id="exampleList" class="roomList tiles"></ul>
     <div id="tileMenu" class="tileMenu" role="menu" hidden>
       <button type="button" role="menuitem" data-act="rename">Rename</button>
       <button type="button" role="menuitem" data-act="duplicate">Duplicate</button>
@@ -987,32 +1000,24 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
       <form id="tileRename" class="row" hidden><input id="tileName" aria-label="Room name"><button type="submit">Save</button></form>
       <input id="tileCode" readonly hidden aria-label="Room code">
     </div>
-    <div class="libFoot"><p id="roomsWhere" class="hint"></p><button id="exportAll" type="button">Export all</button></div>
-  </dialog>
-  <dialog id="newBox" class="rooms">
-    <div class="roomsHead"><b>New room</b><form method="dialog"><button>Close</button></form></div>
-    <div class="row">
-      <button id="newBlank" type="button">Empty room</button>
-      <button id="roomGen" type="button">Generate a room</button>
-    </div>
   </dialog>
   <dialog id="infoBox" class="rooms">
     <div class="roomsHead"><b>This room</b><form method="dialog"><button>Close</button></form></div>
     <label class="field">Name <input id="roomName" type="text" maxlength="60" placeholder="Name this room"></label>
     <label class="field">Note <textarea id="roomNote" rows="2" maxlength="400" placeholder="What is this room about?"></textarea></label>
-    <div class="row">
+    <div class="row bar">
       <button id="roomSave" type="button" class="primary">Save</button>
       <button id="roomSaveAs" type="button">Save as new</button>
     </div>
     <p id="infoSay" class="hint"></p>
     <h3>Share</h3>
-    <div class="row">
+    <div class="row bar">
       <button id="copyCode" type="button">Copy code</button>
       <button id="copyLink" type="button">Copy link</button>
       <button id="roomDownload" type="button">Download</button>
     </div>
     <input id="shareOut" type="text" readonly hidden>
-    <div class="danger"><button id="roomDelete" type="button">Delete this room</button></div>
+    <div class="danger row bar"><button id="roomDelete" type="button">Delete this room</button></div>
   </dialog>
   <dialog id="genBox" class="rooms gen">
     <div class="roomsHead"><b>Generate a room</b><form method="dialog"><button>Close</button></form></div>
@@ -1027,7 +1032,7 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
       <button id="genReroll" type="button">Re-roll</button>
       <label>Seconds <input id="genTime" type="number" min="5" max="60"></label>
     </div>
-    <div class="row">
+    <div class="row bar">
       <button id="genGo" type="button">Generate</button>
       <button id="genStop" type="button" hidden>Stop</button>
     </div>
@@ -1035,7 +1040,7 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
     <div id="genResult" class="genResult" hidden>
       <img id="genThumb" alt="">
       <div><p id="genInfo"></p>
-        <div class="row"><button id="genOpen" type="button">Open in editor</button><button id="genAgain" type="button">Try again</button></div>
+        <div class="row bar"><button id="genOpen" type="button">Open in editor</button><button id="genAgain" type="button">Try again</button></div>
       </div>
     </div>
     <details class="genIngBox"><summary>What it is made of</summary><ul id="genIng" class="genIng"></ul></details>
@@ -6208,8 +6213,23 @@ function buildTileMenu(lib) {
 }
 return { menuOn, buildTileMenu };
 })();
-// ---- src/app/rooms.js
+// ---- src/app/more.js
 const m54 = (() => {
+const { $ } = m20;
+// The Rooms page's More (register 399): what is done rarely (open a code, import, export) waits behind one button.
+
+function buildMore() {
+  const more = open => { $('moreMenu').hidden = !open; $('moreBtn').setAttribute('aria-expanded', String(open)); };
+  $('moreBtn').onclick = () => more($('moreMenu').hidden);
+  $('moreMenu').addEventListener('click', ev => { if (ev.target.closest('button')) more(false); });
+  document.addEventListener('pointerdown', ev => { if (!$('moreMenu').hidden && !ev.target.closest('#moreMenu, #moreBtn')) more(false); }, true);
+  // Escape closes More before it would close the page.
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('moreMenu').hidden) { ev.preventDefault(); ev.stopPropagation(); more(false); } }, true);
+}
+return { buildMore };
+})();
+// ---- src/app/rooms.js
+const m55 = (() => {
 const { TEMPLATES } = m48;
 const { encodeRoom, decodeRoom } = m49;
 const { splitRoom, joinRoom, stampOf, pack, unpack } = m26;
@@ -6222,9 +6242,11 @@ const { contains, uses, MECHANISMS } = m51;
 const { $ } = m20;
 const { readDraft, noteChange, flushDraft, clearDraft } = m52;
 const { menuOn, buildTileMenu } = m53;
-const { place, go, current, up, back } = m21;
+const { place, go, current, back } = m21;
+const { buildMore } = m54;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
+
 
 
 
@@ -6281,7 +6303,7 @@ function fillCurrent() {
   $('roomDelete').disabled = !S.room || !S.room.id;
 }
 
-const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only, so Export all to keep a copy.'; };
+const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only: Export all, under More, keeps a copy.'; };
 
 function say(msg) { $('roomsSay').textContent = msg; $('infoSay').textContent = msg; }
 
@@ -6369,7 +6391,7 @@ function tagsOf(r) {
 // Built a few rooms at a time, so a long list never freezes the page; a newer call
 // abandons an older one still building.
 const SLICE_MS = 12;
-let building = 0;
+let building = 0, exampleRows = () => [];
 function renderList() {
   const my = ++building, filter = $('tagFilter').value, ul = $('roomList'), counts = {};
   let i = 0, shown = 0;
@@ -6389,7 +6411,9 @@ function renderList() {
       shown++;
     }
     if (i < saved.length) { setTimeout(slice, 0); return; }
-    if (!shown) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'To save a room, make one with New room.'; ul.append(li); }
+    if (!shown && saved.length) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = 'No room has this yet.'; ul.append(li); }
+    // The example closes the same list, marked as one (register 399).
+    if (!filter) ul.append(...exampleRows());
     $('libTools').hidden = !saved.length;
     // The filter lists every mechanism with how many rooms have it; the tally shows the gaps.
     const opts = [new Option('All rooms', ''), new Option(`Started generated (${counts[GENERATED] || 0})`, GENERATED)];
@@ -6412,22 +6436,18 @@ function download(name, data) {
 }
 
 // Back to the room: the pop-ups close, and the Rooms page goes up to the room under it.
-const closeAll = () => { for (const id of ['newBox', 'infoBox']) if ($(id).open) $(id).close(); if (current()?.name === 'rooms') back('room'); };
+const closeAll = () => { if ($('infoBox').open) $('infoBox').close(); if (current()?.name === 'rooms') back('room'); };
 
 function buildRooms(actions) {
   A = actions;
   // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
   const EXAMPLES = ['Hex counter'];
-  const templateRows = (list = TEMPLATES) => list.map(t => {
-    const { level } = splitRoom(t.level);
-    return row(level, t.name, `Template, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } });
-  });
+  const templateRows = (list = TEMPLATES, kind = 'Template') => list.map(t => { const { level } = splitRoom(t.level);
+    return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
-  $('exampleList').replaceChildren(...templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name))));
-  // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
-  // generate, templates) and This room (name, note, save, share, delete), from the header title.
-  // From the menu (rooms/start) the page is the Sandbox's first screen, so its way back is the menu, and Close goes (register 395).
-  place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
+  exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
+  // Rooms from the menu (rooms/start) is the Sandbox's first screen, its way back Menu; from a room, Close (registers 395, 399).
+  place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; $('roomsMenu').hidden = arg !== 'start'; await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
   place('room', { parent: () => 'menu', enter: enterSandbox, exit: leaveSandbox });
   $('roomsBtn').onclick = () => go('rooms');
   buildTileMenu({ say, fillCurrent, refresh, remember, syncRoomsButton });
@@ -6437,8 +6457,9 @@ function buildRooms(actions) {
   $('roomSave').onclick = () => save(false);
   $('roomSaveAs').onclick = () => save(true);
   $('roomName').oninput = $('roomNote').oninput = () => { if (S.room) S.room.edited = true; else S.room = { id: null, name: '', note: '', saved: null, edited: true }; syncRoomsButton(); };
-  $('roomNew').onclick = () => $('newBox').showModal();
-  $('newBlank').onclick = () => { if (!leaveOk()) return; openRoom(starterLevel(innerHeight > innerWidth), {}); closeAll(); };
+  // New room opens an empty room at once (register 399).
+  $('roomNew').onclick = () => { if (!leaveOk()) return; openRoom(starterLevel(innerHeight > innerWidth), {}); closeAll(); };
+  buildMore();
   $('roomDelete').onclick = async () => {
     if (!S.room || !S.room.id || !confirm(`Delete "${S.room.name}"? This cannot be undone.`)) return;
     try { await remove(S.room.id); } catch (e) { say(e.message); return; }
@@ -6524,12 +6545,12 @@ async function bootRooms() {
 return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, fillCurrent, say, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m55 = (() => {
+const m56 = (() => {
 const { record, undo, redo } = m23;
 const { S } = m24;
 const { $ } = m20;
 const { syncCheck, syncLint } = m47;
-const { syncRoomsButton, followUndo } = m54;
+const { syncRoomsButton, followUndo } = m55;
 const { syncEnabled } = m46;
 // Every change to the level goes through change(), so it can be undone as one step.
 
@@ -6571,11 +6592,11 @@ function step(back, after) {
 return { syncUndo, begin, end, change, step };
 })();
 // ---- src/app/size.js
-const m56 = (() => {
+const m57 = (() => {
 const { $, now } = m20;
 const { S } = m24;
 const { moveSide } = m2;
-const { change } = m55;
+const { change } = m56;
 // The room's size: a + and a − for each side add or cut a row or a column there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
 
@@ -6641,11 +6662,11 @@ function buildSize({ after }) {
 return { syncSize, closeSize, buildSize };
 })();
 // ---- src/app/fit.js
-const m57 = (() => {
+const m58 = (() => {
 const { T } = m29;
 const { S } = m24;
 const { $, canvas, g } = m20;
-const { syncSize } = m56;
+const { syncSize } = m57;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 
 
@@ -6717,7 +6738,7 @@ function watchStage() {
 return { fit, watchStage };
 })();
 // ---- src/editor/palette.js
-const m58 = (() => {
+const m59 = (() => {
 
 // The palette: every tool, its group and label, and the words the editor uses for
 // powers, colours, clocks and directions. Draft copy throughout.
@@ -6790,7 +6811,7 @@ const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'b
 return { TOOLS, STRIP, stripOf, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, WIRE_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/solve/lenses.js
-const m59 = (() => {
+const m60 = (() => {
 const { createGame } = m11;
 const { computeBeams } = m5;
 const { successors, stateKey, unsearchable, MAX_STATES } = m12;
@@ -6875,10 +6896,10 @@ function* lensData(level, max = MAX_STATES) {
 return { lensData };
 })();
 // ---- src/app/lenses.js
-const m60 = (() => {
+const m61 = (() => {
 const { reach } = m12;
 const { routes } = m43;
-const { lensData } = m59;
+const { lensData } = m60;
 const { INK } = m29;
 const { S } = m24;
 const { $ } = m20;
@@ -7074,10 +7095,10 @@ function buildLenses() {
 return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
 // ---- src/editor/edit.js
-const m61 = (() => {
+const m62 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m0;
 const { CRATED } = m2;
-const { TOOLS, WIRE_NAME, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m58;
+const { TOOLS, WIRE_NAME, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m59;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -7296,12 +7317,12 @@ function place(level, ui, x, y, how) {
 return { CRATE_TOOLS, crateAt, moveAt, swapAt, turnGate, turnLaser, wiresAt, holds, describe, place };
 })();
 // ---- src/app/chips.js
-const m62 = (() => {
-const { describe } = m61;
+const m63 = (() => {
+const { describe } = m62;
 const { S } = m24;
 const { INK } = m29;
 const { $, touch } = m20;
-const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m60;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m61;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
@@ -7363,11 +7384,11 @@ function syncInfo() {
 return { buildChips, syncChips };
 })();
 // ---- src/app/reset.js
-const m63 = (() => {
+const m64 = (() => {
 const { S } = m24;
 const { roomOf } = m18;
 const { $ } = m20;
-const { change } = m55;
+const { change } = m56;
 // Reset: the room goes back to the level's start, after a yes (register 291). One undo step.
 
 
@@ -7382,7 +7403,7 @@ function buildReset(after) {
 return { buildReset };
 })();
 // ---- src/app/sheets.js
-const m64 = (() => {
+const m65 = (() => {
 const { $ } = m20;
 const { closeWell } = m44;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
@@ -7410,8 +7431,8 @@ function buildSheets() {
 return { openSheet, buildSheets };
 })();
 // ---- src/app/keys.js
-const m65 = (() => {
-const { TOOLS } = m58;
+const m66 = (() => {
+const { TOOLS } = m59;
 const { $ } = m20;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
 // every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
@@ -7463,7 +7484,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m66 = (() => {
+const m67 = (() => {
 const { CLOCKWISE } = m0;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -7528,10 +7549,10 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m67 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m66;
+const m68 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m67;
 const { S } = m24;
-const { change } = m55;
+const { change } = m56;
 const { $ } = m20;
 // The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
 // it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
@@ -7652,7 +7673,7 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/join.js
-const m68 = (() => {
+const m69 = (() => {
 
 // A strip of buttons reads as one object (register 322): square seams inside, round only at its two
 // ends. Which buttons are the ends depends on what shows, so they are marked again on every sync.
@@ -7669,8 +7690,8 @@ function joinEnds() {
 return { joinEnds };
 })();
 // ---- src/app/strip.js
-const m69 = (() => {
-const { STRIP, stripOf, TOOLS } = m58;
+const m70 = (() => {
+const { STRIP, stripOf, TOOLS } = m59;
 const { S } = m24;
 const { $, touch } = m20;
 const { icon } = m36;
@@ -7783,29 +7804,29 @@ function syncStrip() {
 return { inSandbox, buildStrip, syncStrip };
 })();
 // ---- src/app/panels.js
-const m70 = (() => {
+const m71 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m0;
 const { resizeLevel, moveSide, wallBorder } = m2;
 const { INK } = m29;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m58;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m59;
 const { toolsFor, syncBrief, TOOL } = m39;
 const { coloursOf, colouringsOf, pushingsOf } = m18;
 const { S } = m24;
 const { $, canvas, touch } = m20;
-const { change, step: undoStep, syncUndo } = m55;
+const { change, step: undoStep, syncUndo } = m56;
 const { runCheck, syncCheck, syncLint } = m47;
-const { buildLenses, syncLenses } = m60;
+const { buildLenses, syncLenses } = m61;
 const { buildWell, openWell } = m44;
-const { buildChips } = m62;
-const { buildReset } = m63;
-const { buildSize } = m56;
-const { buildSheets } = m64;
-const { buildKeys } = m65;
-const { syncRoomsButton } = m54;
-const { buildSelect, syncSelect } = m67;
+const { buildChips } = m63;
+const { buildReset } = m64;
+const { buildSize } = m57;
+const { buildSheets } = m65;
+const { buildKeys } = m66;
+const { syncRoomsButton } = m55;
+const { buildSelect, syncSelect } = m68;
 const { icon } = m36;
-const { joinEnds } = m68;
-const { buildStrip, syncStrip } = m69;
+const { joinEnds } = m69;
+const { buildStrip, syncStrip } = m70;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -8103,9 +8124,9 @@ function syncColours() {
 return { keysText, buildPanels, syncPanel, SIMPLE, pairInk };
 })();
 // ---- src/app/campaignMove.js
-const m71 = (() => {
+const m72 = (() => {
 const { placementErrors } = m18;
-const { place, moveAt, swapAt } = m61;
+const { place, moveAt, swapAt } = m62;
 const { S } = m24;
 const { $, now } = m20;
 // Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
@@ -8167,7 +8188,7 @@ function say(x, y, why, ms = 1500) {
 return { moveIn, refusal, allows, moveRefusal, refuse, say };
 })();
 // ---- src/app/stuck.js
-const m72 = (() => {
+const m73 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m12;
 const { S } = m24;
 const { $ } = m20;
@@ -8202,7 +8223,7 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m73 = (() => {
+const m74 = (() => {
 const { frame: look } = m29;
 const { TICK_MS } = m0;
 const { createGame, step, gameText } = m11;
@@ -8210,15 +8231,15 @@ const { aimKey } = m10;
 const { drawEdit, drawPlay } = m35;
 const { S } = m24;
 const { $, g, now } = m20;
-const { openSheet } = m64;
-const { syncPanel, keysText } = m70;
+const { openSheet } = m65;
+const { syncPanel, keysText } = m71;
 const { feedDemo } = m47;
-const { selectOverlay } = m67;
-const { moveRefusal } = m71;
-const { watchStuck, resetStuck } = m72;
-const { lensMarks, lensBusy } = m60;
+const { selectOverlay } = m68;
+const { moveRefusal } = m72;
+const { watchStuck, resetStuck } = m73;
+const { lensMarks, lensBusy } = m61;
 const { syncWell } = m44;
-const { syncChips } = m62;
+const { syncChips } = m63;
 const { gust } = m41;
 const { stateKey } = m12;
 const { respawn } = m4;
@@ -8372,20 +8393,20 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m74 = (() => {
-const { describe, holds, place, turnGate, turnLaser } = m61;
+const m75 = (() => {
+const { describe, holds, place, turnGate, turnLaser } = m62;
 const { S } = m24;
 const { $, canvas, touch, now } = m20;
-const { setMode, aim } = m73;
-const { begin, end, change, step: undoStep } = m55;
-const { save } = m54;
-const { selectDown, selectMove, selectUp, selectKey } = m67;
-const { LENS_GROUPS, cycleLens, lensesOff } = m60;
-const { syncPanel } = m70;
-const { fit } = m57;
-const { toolForKey, bareKey, showKeys } = m65;
-const { TOOLS } = m58;
-const { refusal, moveRefusal, moveIn, refuse } = m71;
+const { setMode, aim } = m74;
+const { begin, end, change, step: undoStep } = m56;
+const { save } = m55;
+const { selectDown, selectMove, selectUp, selectKey } = m68;
+const { LENS_GROUPS, cycleLens, lensesOff } = m61;
+const { syncPanel } = m71;
+const { fit } = m58;
+const { toolForKey, bareKey, showKeys } = m66;
+const { TOOLS } = m59;
+const { refusal, moveRefusal, moveIn, refuse } = m72;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
 
@@ -8524,7 +8545,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m75 = (() => {
+const m76 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m0;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -8635,12 +8656,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m76 = (() => {
+const m77 = (() => {
 const { search, move, stateKey } = m12;
 const { createGame } = m11;
 const { elementCheck, idleElements, NOTES_MAX } = m43;
 const { contains } = m51;
-const { ING, variants } = m75;
+const { ING, variants } = m76;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -8726,7 +8747,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m77 = (() => {
+const m78 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -8743,13 +8764,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m78 = (() => {
+const m79 = (() => {
 const { CLOCKWISE, CORNERS } = m0;
 const { emptyLevel, wallBorder } = m2;
-const { INGREDIENTS, ING, spot } = m75;
-const { judge, lockedIn } = m76;
+const { INGREDIENTS, ING, spot } = m76;
+const { judge, lockedIn } = m77;
 const { contains } = m51;
-const { rng } = m77;
+const { rng } = m78;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -8904,19 +8925,19 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m79 = (() => {
-const { INGREDIENTS } = m75;
-const { generate, normalize, recipeLabel, LIMITS } = m78;
+const m80 = (() => {
+const { INGREDIENTS } = m76;
+const { generate, normalize, recipeLabel, LIMITS } = m79;
 const { stampOf } = m26;
 const { S } = m24;
 const { thumbURL } = m50;
 const { $ } = m20;
-const { change } = m55;
-const { dirty, remember, syncRoomsButton } = m54;
+const { change } = m56;
+const { dirty, remember, syncRoomsButton } = m55;
 const { icon } = m36;
-const { current, up } = m21;
-const { TOOLS, GROUPS } = m58;
-const { SIMPLE } = m70;
+const { current, back } = m21;
+const { TOOLS, GROUPS } = m59;
+const { SIMPLE } = m71;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
@@ -9102,7 +9123,7 @@ function buildGenerator(actions) {
   $('genKeep').checked = $('genW').disabled = $('genH').disabled = !!(saved && saved.recipe.keep);
   $('genKeep').onchange = () => fillForm(recipeFromForm());
   $('genTime').value = saved ? saved.seconds : 15;
-  const open = () => { if ($('newBox').open) $('newBox').close(); if (current()?.name === 'rooms') up(); showOffered(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
+  const open = () => { if (current()?.name === 'rooms') back('room'); showOffered(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
   $('roomGen').onclick = $('genBtn').onclick = open;
   $('genReroll').onclick = () => { $('genSeed').value = newSeed(); };
   const seconds = () => Math.max(5, Math.min(60, +$('genTime').value || 15));
@@ -9114,7 +9135,7 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/main.js
-const m80 = (() => {
+const m81 = (() => {
 const { buildMaker } = m22;
 const { buildPuzzles } = m27;
 const { buildProgress } = m40;
@@ -9125,12 +9146,12 @@ const { newHistory } = m23;
 const { S, starterLevel } = m24;
 const { portrait, $ } = m20;
 const { startSnow, windNow } = m41;
-const { fit, watchStage } = m57;
-const { buildPanels, syncPanel } = m70;
-const { bindInput } = m74;
-const { setMode, frame, render, tick, report, copyReport } = m73;
-const { buildRooms } = m54;
-const { buildGenerator } = m79;
+const { fit, watchStage } = m58;
+const { buildPanels, syncPanel } = m71;
+const { bindInput } = m75;
+const { setMode, frame, render, tick, report, copyReport } = m74;
+const { buildRooms } = m55;
+const { buildGenerator } = m80;
 const { buildCampaign } = m39;
 const { bindNav, start } = m21;
 const { bindDebug } = m37;

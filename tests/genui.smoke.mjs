@@ -16,7 +16,7 @@ let dialogs = [], answers = [];
 page.on('dialog', d => { dialogs.push(d.message()); const a = answers.shift(); a ? d.accept() : d.dismiss(); });
 const level = async () => JSON.stringify(await page.evaluate(() => window.wee.getLevel()));
 const shelfLevel = async i => JSON.stringify(await page.evaluate(i => JSON.parse(localStorage.getItem('wee.generated'))[i].level, i));
-const openPanel = async () => { await page.click('#roomsBtn'); await page.click('#roomNew'); await page.click('#roomGen'); };
+const openPanel = async () => { await page.click('#roomsBtn'); await page.click('#roomGen'); };
 
 try {
   await page.goto(`http://localhost:${PORT}/?sandbox`);

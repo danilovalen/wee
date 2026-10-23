@@ -30,8 +30,8 @@ try {
   await page.waitForFunction(() => document.getElementById('roomTitle').textContent === 'Held');
   await page.keyboard.press('Escape');
   await page.click('#navRooms');
-  await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 1);
-  const hold = async ms => page.$eval('#roomList .roomRow', async (b, ms) => {
+  await page.waitForFunction(() => document.querySelectorAll('#roomList li:not(.example) .roomRow').length === 1);
+  const hold = async ms => page.$eval('#roomList li:not(.example) .roomRow', async (b, ms) => {
     const at = b.getBoundingClientRect(), o = { pointerType: 'touch', bubbles: true, clientX: at.x + 20, clientY: at.y + 20 };
     b.dispatchEvent(new PointerEvent('pointerdown', o)); await new Promise(r => setTimeout(r, ms));
     b.dispatchEvent(new PointerEvent('pointerup', o)); b.click();

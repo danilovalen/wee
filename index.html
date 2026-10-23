@@ -237,7 +237,7 @@
   </dialog>
   <dialog id="resetBox" class="confirm">
     <p>Reset the room to the level's start, which Undo can bring back?</p>
-    <div class="row"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
+    <div class="row bar"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="makerBox" class="rooms maker">
     <div class="roomsHead"><b>Level maker</b><button id="makerMenu" type="button">Menu</button></div>
@@ -252,7 +252,7 @@
     <h3>Goals</h3>
     <ul id="makerGoals" class="mkGoals"></ul>
     <p id="makerSay" class="hint" role="status"></p>
-    <div class="row"><button id="makerBuild" type="button" class="primary">Build it</button><button id="makerNew" type="button">New</button><button id="makerDelete" type="button" hidden>Delete</button></div>
+    <div class="row bar"><button id="makerBuild" type="button" class="primary">Build it</button><button id="makerNew" type="button">New</button><button id="makerDelete" type="button" hidden>Delete</button></div>
   </dialog>
   <dialog id="puzzleBox" class="rooms">
     <div class="roomsHead"><b>Puzzles</b><button id="puzzleMenu" type="button">Menu</button></div>
@@ -262,23 +262,31 @@
   <dialog id="campBox" class="rooms">
     <div class="roomsHead"><b>Campaign</b><button id="campMenu" type="button">Menu</button></div>
     <ul id="campList" class="campList"></ul>
-    <div class="row progRow"><button id="progCopy" type="button">Copy progress</button><button id="progLoad" type="button">Load progress</button><button id="progReset" type="button">Reset progress</button></div>
+    <div class="row bar progRow"><button id="progCopy" type="button">Copy progress</button><button id="progLoad" type="button">Load progress</button><button id="progReset" type="button">Reset progress</button></div>
   </dialog>
   <dialog id="progBox" class="confirm">
     <p id="progSay"></p>
     <textarea id="progCode" rows="4" spellcheck="false"></textarea>
-    <div class="row"><button id="progYes" type="button" class="primary">Load</button><button id="progNo" type="button">Close</button></div>
+    <div class="row bar"><button id="progYes" type="button" class="primary">Load</button><button id="progNo" type="button">Close</button></div>
   </dialog>
   <dialog id="progResetBox" class="confirm">
     <p>To keep your wins, rooms and goals, copy your progress before you reset every level.</p>
-    <div class="row"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
+    <div class="row bar"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="roomsBox" class="rooms library">
-    <div class="roomsHead"><b>Rooms</b><span class="row"><button id="roomsMenu" type="button">Menu</button><form method="dialog" id="roomsClose"><button>Close</button></form></span></div>
-    <div class="row libBar">
-      <button id="roomNew" type="button" autofocus>New room</button>
-      <button id="codeBtn" type="button" aria-expanded="false">Open a code</button>
-      <button id="importBtn" type="button">Import</button>
+    <div class="roomsHead"><b>Rooms</b><button id="roomsMenu" type="button">Menu</button><form method="dialog" id="roomsClose"><button>Close</button></form></div>
+    <p id="roomsWhere" class="hint"></p>
+    <div class="libBarWrap">
+      <div class="row bar libBar">
+        <button id="roomNew" type="button" class="primary" autofocus>New room</button>
+        <button id="roomGen" type="button">Generate</button>
+        <button id="moreBtn" type="button" aria-haspopup="menu" aria-expanded="false">More</button>
+      </div>
+      <div id="moreMenu" class="tileMenu moreMenu" role="menu" hidden>
+        <button id="codeBtn" type="button" role="menuitem" aria-expanded="false">Open a code</button>
+        <button id="importBtn" type="button" role="menuitem">Import</button>
+        <button id="exportAll" type="button" role="menuitem">Export all</button>
+      </div>
       <input id="importFile" type="file" accept=".weepack,.wee,.json" hidden>
     </div>
     <div id="codeRow" class="row" hidden>
@@ -292,8 +300,6 @@
       <details class="explored"><summary id="exploredSum"></summary><p class="hint">Not in any room yet:</p><ul id="unexplored"></ul></details>
     </div>
     <ul id="roomList" class="roomList tiles"></ul>
-    <h3>Examples</h3>
-    <ul id="exampleList" class="roomList tiles"></ul>
     <div id="tileMenu" class="tileMenu" role="menu" hidden>
       <button type="button" role="menuitem" data-act="rename">Rename</button>
       <button type="button" role="menuitem" data-act="duplicate">Duplicate</button>
@@ -303,32 +309,24 @@
       <form id="tileRename" class="row" hidden><input id="tileName" aria-label="Room name"><button type="submit">Save</button></form>
       <input id="tileCode" readonly hidden aria-label="Room code">
     </div>
-    <div class="libFoot"><p id="roomsWhere" class="hint"></p><button id="exportAll" type="button">Export all</button></div>
-  </dialog>
-  <dialog id="newBox" class="rooms">
-    <div class="roomsHead"><b>New room</b><form method="dialog"><button>Close</button></form></div>
-    <div class="row">
-      <button id="newBlank" type="button">Empty room</button>
-      <button id="roomGen" type="button">Generate a room</button>
-    </div>
   </dialog>
   <dialog id="infoBox" class="rooms">
     <div class="roomsHead"><b>This room</b><form method="dialog"><button>Close</button></form></div>
     <label class="field">Name <input id="roomName" type="text" maxlength="60" placeholder="Name this room"></label>
     <label class="field">Note <textarea id="roomNote" rows="2" maxlength="400" placeholder="What is this room about?"></textarea></label>
-    <div class="row">
+    <div class="row bar">
       <button id="roomSave" type="button" class="primary">Save</button>
       <button id="roomSaveAs" type="button">Save as new</button>
     </div>
     <p id="infoSay" class="hint"></p>
     <h3>Share</h3>
-    <div class="row">
+    <div class="row bar">
       <button id="copyCode" type="button">Copy code</button>
       <button id="copyLink" type="button">Copy link</button>
       <button id="roomDownload" type="button">Download</button>
     </div>
     <input id="shareOut" type="text" readonly hidden>
-    <div class="danger"><button id="roomDelete" type="button">Delete this room</button></div>
+    <div class="danger row bar"><button id="roomDelete" type="button">Delete this room</button></div>
   </dialog>
   <dialog id="genBox" class="rooms gen">
     <div class="roomsHead"><b>Generate a room</b><form method="dialog"><button>Close</button></form></div>
@@ -343,7 +341,7 @@
       <button id="genReroll" type="button">Re-roll</button>
       <label>Seconds <input id="genTime" type="number" min="5" max="60"></label>
     </div>
-    <div class="row">
+    <div class="row bar">
       <button id="genGo" type="button">Generate</button>
       <button id="genStop" type="button" hidden>Stop</button>
     </div>
@@ -351,7 +349,7 @@
     <div id="genResult" class="genResult" hidden>
       <img id="genThumb" alt="">
       <div><p id="genInfo"></p>
-        <div class="row"><button id="genOpen" type="button">Open in editor</button><button id="genAgain" type="button">Try again</button></div>
+        <div class="row bar"><button id="genOpen" type="button">Open in editor</button><button id="genAgain" type="button">Try again</button></div>
       </div>
     </div>
     <details class="genIngBox"><summary>What it is made of</summary><ul id="genIng" class="genIng"></ul></details>

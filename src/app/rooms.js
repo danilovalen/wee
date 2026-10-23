@@ -12,7 +12,8 @@ import { contains, uses, MECHANISMS } from '../solve/tags.js';
 import { $ } from './dom.js';
 import { readDraft, noteChange, flushDraft, clearDraft } from './draft.js';
 import { menuOn, buildTileMenu } from './tilemenu.js';
-import { place, go, current, up, back } from './nav.js';
+import { place, go, current, back } from './nav.js';
+import { buildMore } from './more.js';
 
 const LAST = 'wee.last';
 let A = null; // the page actions (setMode, syncPanel, fit), passed in to avoid an import cycle
@@ -57,7 +58,7 @@ export function fillCurrent() {
   $('roomDelete').disabled = !S.room || !S.room.id;
 }
 
-const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only, so Export all to keep a copy.'; };
+const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only: Export all, under More, keeps a copy.'; };
 
 export function say(msg) { $('roomsSay').textContent = msg; $('infoSay').textContent = msg; }
 
@@ -145,7 +146,7 @@ function tagsOf(r) {
 // Built a few rooms at a time, so a long list never freezes the page; a newer call
 // abandons an older one still building.
 const SLICE_MS = 12;
-let building = 0;
+let building = 0, exampleRows = () => [];
 function renderList() {
   const my = ++building, filter = $('tagFilter').value, ul = $('roomList'), counts = {};
   let i = 0, shown = 0;
@@ -165,7 +166,9 @@ function renderList() {
       shown++;
     }
     if (i < saved.length) { setTimeout(slice, 0); return; }
-    if (!shown) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = saved.length ? 'No room has this yet.' : 'To save a room, make one with New room.'; ul.append(li); }
+    if (!shown && saved.length) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = 'No room has this yet.'; ul.append(li); }
+    // The example closes the same list, marked as one (register 399).
+    if (!filter) ul.append(...exampleRows());
     $('libTools').hidden = !saved.length;
     // The filter lists every mechanism with how many rooms have it; the tally shows the gaps.
     const opts = [new Option('All rooms', ''), new Option(`Started generated (${counts[GENERATED] || 0})`, GENERATED)];
@@ -188,22 +191,18 @@ function download(name, data) {
 }
 
 // Back to the room: the pop-ups close, and the Rooms page goes up to the room under it.
-const closeAll = () => { for (const id of ['newBox', 'infoBox']) if ($(id).open) $(id).close(); if (current()?.name === 'rooms') back('room'); };
+const closeAll = () => { if ($('infoBox').open) $('infoBox').close(); if (current()?.name === 'rooms') back('room'); };
 
 export function buildRooms(actions) {
   A = actions;
   // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
   const EXAMPLES = ['Hex counter'];
-  const templateRows = (list = TEMPLATES) => list.map(t => {
-    const { level } = splitRoom(t.level);
-    return row(level, t.name, `Template, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } });
-  });
+  const templateRows = (list = TEMPLATES, kind = 'Template') => list.map(t => { const { level } = splitRoom(t.level);
+    return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
-  $('exampleList').replaceChildren(...templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name))));
-  // Three pages: the library (your rooms, new, open a code, import, export), New room (empty,
-  // generate, templates) and This room (name, note, save, share, delete), from the header title.
-  // From the menu (rooms/start) the page is the Sandbox's first screen, so its way back is the menu, and Close goes (register 395).
-  place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
+  exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
+  // Rooms from the menu (rooms/start) is the Sandbox's first screen, its way back Menu; from a room, Close (registers 395, 399).
+  place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; $('roomsMenu').hidden = arg !== 'start'; await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
   place('room', { parent: () => 'menu', enter: enterSandbox, exit: leaveSandbox });
   $('roomsBtn').onclick = () => go('rooms');
   buildTileMenu({ say, fillCurrent, refresh, remember, syncRoomsButton });
@@ -213,8 +212,9 @@ export function buildRooms(actions) {
   $('roomSave').onclick = () => save(false);
   $('roomSaveAs').onclick = () => save(true);
   $('roomName').oninput = $('roomNote').oninput = () => { if (S.room) S.room.edited = true; else S.room = { id: null, name: '', note: '', saved: null, edited: true }; syncRoomsButton(); };
-  $('roomNew').onclick = () => $('newBox').showModal();
-  $('newBlank').onclick = () => { if (!leaveOk()) return; openRoom(starterLevel(innerHeight > innerWidth), {}); closeAll(); };
+  // New room opens an empty room at once (register 399).
+  $('roomNew').onclick = () => { if (!leaveOk()) return; openRoom(starterLevel(innerHeight > innerWidth), {}); closeAll(); };
+  buildMore();
   $('roomDelete').onclick = async () => {
     if (!S.room || !S.room.id || !confirm(`Delete "${S.room.name}"? This cannot be undone.`)) return;
     try { await remove(S.room.id); } catch (e) { say(e.message); return; }

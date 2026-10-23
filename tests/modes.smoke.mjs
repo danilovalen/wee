@@ -24,7 +24,7 @@ async function shown() {
 try {
   await page.goto('http://localhost:5241/');
   await page.click('#menuSandbox'); await page.waitForTimeout(600);
-  await page.click('#roomNew'); await page.click('#newBlank'); await page.waitForTimeout(300);
+  await page.click('#roomNew'); await page.waitForTimeout(300);
   check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,death,door,erase,gate,goal,idoor,look,move,sensor,start,toggle,turret,wall,wire', await shown());
   check('the Sandbox offers red, blue, both and grey, and no powers', await page.evaluate(() => document.querySelectorAll('[data-camp-colour]').length === 4 && getComputedStyle(document.querySelector('[data-sheet=powers]')).display === 'none'));
   // Register 379: the Sandbox's generator offers only what the Sandbox can place, and no powers.
@@ -32,10 +32,12 @@ try {
   check('the Sandbox\'s generator offers only its own pieces', ing.length > 0 && ing.includes('box') && !['enemy', 'water', 'mover', 'dive', 'laser', 'spring'].some(id => ing.includes(id)), ing.join());
   // Registers 357 and 358: the Rooms page lists the example rooms and has a way back to the menu.
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await page.waitForTimeout(300);
-  const examples = await page.$$eval('#exampleList li', ls => ls.map(l => l.textContent).join('|'));
+  const examples = await page.$$eval('#roomList li', ls => ls.map(l => l.textContent).filter(t => t.includes('Example')).join('|'));
   check('the Rooms page lists the hex counter as its one example', /Hex counter/.test(examples) && !examples.includes('|'), examples);
+  // Opened from the room, Rooms has Close; its first screen, from the menu, has Menu (register 399).
+  await page.evaluate(() => document.getElementById('logo').click()); await page.click('#menuSandbox'); await page.waitForTimeout(400);
   await page.click('#roomsMenu');
-  check('the Rooms page has a Menu button that returns to the menu', await page.evaluate(() => document.getElementById('menuBox').open && !document.getElementById('roomsBox').open));
+  check('the first Sandbox screen has a Menu button that returns to the menu', await page.evaluate(() => document.getElementById('menuBox').open && !document.getElementById('roomsBox').open));
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });
   // Puzzles: a room marked in the Sandbox is offered, played by hand, and the win names the fewest.
   await page.evaluate(async () => {

@@ -39,7 +39,7 @@ try {
   check('a room with a goal redraws slowly, for its pulse', amb >= 3 && amb <= 15, `${amb} draws in 1 s`);
 
   // the Rooms panel with 100 rooms, about three months of one a day
-  let w = await worst(async () => { await page.click('#navRooms'); await page.waitForFunction(() => document.querySelectorAll('#roomList .roomRow').length === 100); });
+  let w = await worst(async () => { await page.click('#navRooms'); await page.waitForFunction(() => document.querySelectorAll('#roomList li:not(.example) .roomRow').length === 100); });
   check(`opening Rooms with 100 rooms never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
   await page.keyboard.press('Escape');
   await page.click('#roomTitle');
@@ -53,9 +53,9 @@ try {
   // a filter change while the list is still building replaces it, never adds to it
   await page.selectOption('#tagFilter', '');
   await page.evaluate(() => { const f = document.getElementById('tagFilter'); f.value = 'tile:goal'; f.dispatchEvent(new Event('change')); });
-  await page.waitForFunction(() => /^Explored/.test(document.getElementById('exploredSum').textContent) && document.querySelectorAll('#roomList .roomRow').length >= 100, null, { timeout: 30000 });
+  await page.waitForFunction(() => /^Explored/.test(document.getElementById('exploredSum').textContent) && document.querySelectorAll('#roomList li:not(.example) .roomRow').length >= 100, null, { timeout: 30000 });
   await page.waitForTimeout(500);
-  check('a filter change mid-build does not duplicate rooms', await page.evaluate(() => document.querySelectorAll('#roomList .roomRow').length) === 101, String(await page.evaluate(() => document.querySelectorAll('#roomList .roomRow').length)));
+  check('a filter change mid-build does not duplicate rooms', await page.evaluate(() => document.querySelectorAll('#roomList li:not(.example) .roomRow').length) === 101, String(await page.evaluate(() => document.querySelectorAll('#roomList li:not(.example) .roomRow').length)));
   await page.keyboard.press('Escape');
 
   // Check and Show stops on his room
@@ -69,7 +69,7 @@ try {
   check(`and never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
 
   // a generator run: turret rooms are the slowest to judge
-  await page.click('#navRooms'); await page.click('#roomNew'); await page.click('#roomGen');
+  await page.click('#navRooms'); await page.click('#roomGen');
   await page.locator('.genIngBox summary').click();
   for (const id of ['sensor', 'box', 'enemy']) await page.selectOption(`#genIng select[data-id=${id}]`, 'must');
   for (const [id, v] of [['genW', 12], ['genH', 12], ['genMin', 8], ['genMax', 14], ['genSeed', 4], ['genTime', 5]]) await page.fill('#' + id, String(v));

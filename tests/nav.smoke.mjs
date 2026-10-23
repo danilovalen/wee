@@ -64,10 +64,10 @@ try {
   await page.keyboard.press('Escape'); await settle();
   check('Escape on the first Sandbox screen goes to the menu, not the editor', (await at()).open === 'menuBox', JSON.stringify(await at()));
   await page.click('#menuSandbox'); await settle();
-  await page.click('#roomNew'); await page.click('#newBlank'); await settle();
+  await page.click('#roomNew'); await settle();
   check('a new room from the first screen lands in the room', (await at()).hash === '#/room' && (await at()).open === '', JSON.stringify(await at()));
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await settle();
-  check('from the room, the Rooms page has Close', await page.locator('#roomsClose').isVisible());
+  check('from the room, the Rooms page has Close and no Menu (register 399)', await page.locator('#roomsClose').isVisible() && await page.locator('#roomsMenu').isHidden());
   await page.click('#roomsBox .roomsHead form button'); await settle();
   check('Close on the Rooms page goes to the room', (await at()).hash === '#/room' && (await at()).open === '');
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await settle();
@@ -84,7 +84,9 @@ try {
   check('a reload in the room stays in the room', (await at()).hash === '#/room' && (await at()).open === '');
   // Opening a template from a fresh Sandbox asks nothing: nothing has changed.
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await settle();
-  await page.click('#exampleList button'); await settle();
+  const hex = page.locator('#roomList .example .roomRow', { hasText: 'Hex counter' });
+  check('the example ends the room list (register 399)', await hex.count() === 1);
+  if (await hex.count()) { await hex.click(); await settle(); }
   check('opening an example from an untouched room asks nothing and lands in the room', asked.length === 0 && (await at()).hash === '#/room', asked.join(' | '));
   // A link to a place opens it; a link to a level that does not exist falls back to its list.
   await page.goto(B + '#/levels'); await settle();
