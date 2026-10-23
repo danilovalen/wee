@@ -408,3 +408,5 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 400 | "Extend this campaign button length to the entire container, so it doesn't keep floating there on left" (the menu, now that Level maker is gone) | **logged for the next batch (2026-10-23).** |
 | 401 | "When the game loads a bunch of stuff flickers on screen" | **logged for the next batch (2026-10-23).** |
 | 402 | "Elements on campaign level selection screen should also show if they are pushable and colors, as that is part of the requirement that changes, we can reduce the size of the icons if needed" | **logged for the next batch (2026-10-23).** |
+| 403 | "Kill this screen" (the New room page: Empty room, Generate a room) | **already built (2026-10-23) as 399.** His screenshot is from an older file; since `7c07c15` New room opens an empty room at once and the page is gone. |
+| 404 | "Remove the generator access for now" | **logged for the next batch (2026-10-23).** The Generate button on the Rooms page and the editor header's Generate. |
