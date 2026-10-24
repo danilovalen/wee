@@ -53,6 +53,13 @@ try {
   check('the gold card bursts stars', c2.burst > 0, String(c2.burst));
   await page.click('#winNext'); await page.waitForTimeout(500);
   check('Next level opens the next level', (await page.evaluate(() => location.hash)) === '#/level/2' && !(await card()).open);
+  // Register 447: a page that cannot save (opened as a file on a phone) still shows the first card once.
+  await page.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } }); });
+  await page.goto(`http://localhost:${PORT}/#/level/1`); await page.reload(); await page.waitForTimeout(600);
+  await runRoom(ROOM);
+  const once = (await card()).open; if (once) await page.click('#winStay');
+  await runRoom(ROOM);
+  check('without saved progress the first card shows once, not on every win', once && !(await card()).open);
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the win smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

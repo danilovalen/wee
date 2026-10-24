@@ -7,12 +7,18 @@ import { $ } from './dom.js';
 import { go, up } from './nav.js';
 
 let pending = null;
+// Cards already shown this session, by level: kept apart from saved progress, which a page opened as
+// a file on a phone may not keep, so a level never shows its first or its gold card twice (register 447).
+const shown = new Set();
 
 // before: the level's record before this run; rec: after it; words: draws a goal's short words.
 export function noteWin(def, before, rec, v, words) {
   const goals = optionalGoals(def), all = r => goals.length > 0 && goals.every(o => r.goals && r.goals[o.id]);
   const gold = all(rec);
   if (before.beaten && (!gold || all(before))) return;
+  const key = `${def.id}:${gold ? 'gold' : 'first'}`;
+  if (shown.has(key)) return;
+  shown.add(key);
   const fresh = goals.filter(o => rec.goals[o.id] && !(before.goals && before.goals[o.id])).map(o => o.id);
   pending = { def, gold, moves: v.length, goals, met: rec.goals, fresh, words };
 }
