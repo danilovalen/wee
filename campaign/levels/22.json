@@ -1,0 +1,44 @@
+{
+ "name": "Level 22",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "box": [
+   1,
+   null
+  ],
+  "gate": [
+   1,
+   null
+  ],
+  "spikes": [
+   1,
+   null
+  ]
+ },
+ "pushable": {
+  "gate": "only"
+ },
+ "steps": {
+  "best": 10
+ },
+ "small": [
+  7,
+  3
+ ],
+ "rules": [],
+ "require": [
+  "boxPushesEveryOneWay",
+  "robotThroughEveryPushedOneWay",
+  "everyOneWayOverSpikes"
+ ],
+ "optional": [
+  "twoOneWays"
+ ]
+}

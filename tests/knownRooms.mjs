@@ -16,8 +16,13 @@ export const KNOWN = {
     // Found by tools/levelSearch.mjs --seeded (register 386): one door, four relays, 6 moves, 8x3.
     20: ['..B.....', '.B......', 'DGrrrrPw'],
     // Found by tools/climb.mjs (register 444): 3x5 in 4 moves, each box onto the spikes and one over the goal.
-    21: ['#P.', 'xB#', '.B#', '.Gx', '#xx'] },
+    21: ['#P.', 'xB#', '.B#', '.Gx', '#xx'],
+    // Found by tools/climb.mjs (registers 448, 452): 22 is 7x3 in 4 moves, 23 is 4x5 in 8.
+    22: ['..Bx<B.', 'B....#P', 'B....GB'], 23: ['B...', 'PBDx', '..B.', '.BxG', '.o.x'] },
   optional: {
+    // Found by tools/climb.mjs (registers 450, 454): two one-ways in 9 moves, 16x5; two doors in 18 moves, 6x7.
+    22: ['................', '..P.........B.x.', '..B..x...xxB....', '.B..>xG......B..', '.B>.........xB..'],
+    23: ['..G.B.', '.##...', '.o..x.', '#B..D.', '....D.', '..B.B.', '...BP.'],
     // Sketched by hand (registers 436, 439): 28 moves, 8x9, the boxes push each other off the spike.
     21: ['.#..#..#', '.#......', '#..#....', '....G.#.', 'PBBx.#..', '.....#..', '#......#', '....#...', '..#.....'],
     // Found by tools/levelSearch.mjs --all (register 387): the fewest moves found with a relay pushed into another, 5, in 9x3.
@@ -48,6 +53,8 @@ export const KNOWN = {
     20: ['...GB..#', '.B.B....', 'D.r..rPw'],
     // Found by tools/climb.mjs (register 444): 12 moves, level 21's exact count.
     21: ['..#.P...', 'xxxBB.x.', '.x.G....'],
+    // Found by tools/climb.mjs (registers 448, 452): the exact counts, 22 in 10 and 23 in 12.
+    22: ['..BBx<B.', '..G..B.P', 'xB.....B'], 23: ['....', 'PBD.', 'B.Bx', '.BxG', 'xox.'],
     1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
     2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
     3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],

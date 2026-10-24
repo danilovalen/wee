@@ -1,0 +1,48 @@
+{
+ "name": "Level 23",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "box": [
+   1,
+   null
+  ],
+  "button": [
+   1,
+   null
+  ],
+  "door": [
+   1,
+   null
+  ],
+  "spikes": [
+   1,
+   null
+  ]
+ },
+ "pushable": {
+  "door": "only"
+ },
+ "steps": {
+  "best": 12
+ },
+ "small": [
+  4,
+  5
+ ],
+ "rules": [],
+ "require": [
+  "everyDoorOverSpikes",
+  "boxLeavesEveryDoor",
+  "robotLeavesEveryDoor"
+ ],
+ "optional": [
+  "twoDoors"
+ ]
+}
