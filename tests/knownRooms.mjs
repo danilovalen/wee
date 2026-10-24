@@ -18,7 +18,9 @@ export const KNOWN = {
     // Found by tools/climb.mjs (register 444): 3x5 in 4 moves, each box onto the spikes and one over the goal.
     21: ['#P.', 'xB#', '.B#', '.Gx', '#xx'],
     // Found by tools/climb.mjs (registers 448, 452): 22 is 7x3 in 4 moves, 23 is 4x5 in 8.
-    22: ['..Bx<B.', 'B....#P', 'B....GB'], 23: ['B...', 'PBDx', '..B.', '.BxG', '.o.x'] },
+    22: ['..Bx<B.', 'B....#P', 'B....GB'], 23: ['B...', 'PBDx', '..B.', '.BxG', '.o.x'],
+    // Found by tools/climb.mjs (register 456): 4x6 in 7 moves; two pushable lasers push each other over the spike.
+    24: ['....', '.r.x', 'NN.G', 'v.#.', 'N..N', '..P.'] },
   optional: {
     // Found by tools/climb.mjs (registers 450, 454): two one-ways in 9 moves, 16x5; two doors in 18 moves, 6x7.
     22: ['................', '..P.........B.x.', '..B..x...xxB....', '.B..>xG......B..', '.B>.........xB..'],
@@ -55,6 +57,8 @@ export const KNOWN = {
     21: ['..#.P...', 'xxxBB.x.', '.x.G....'],
     // Found by tools/climb.mjs (registers 448, 452): the exact counts, 22 in 10 and 23 in 12.
     22: ['..BBx<B.', '..G..B.P', 'xB.....B'], 23: ['....', 'PBD.', 'B.Bx', '.BxG', 'xox.'],
+    // Found by tools/climb.mjs (register 456): 11 moves, level 24's exact count.
+    24: ['.#..', '.r.x', '.N.G', 'v.#.', '.N.N', '..P.'],
     1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
     2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
     3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],

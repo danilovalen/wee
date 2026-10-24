@@ -7,6 +7,8 @@ import { replayPath } from '../src/campaign/robot.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { boxesLeaving } from '../src/campaign/spikes.js';
 import { tileLog } from '../src/campaign/tiles.js';
+import { laserOverSpikes } from '../src/campaign/laserGoals.js';
+import { oneWayLog } from '../src/campaign/oneWay.js';
 
 // The nearest any of pick(s)'s points comes, over a path, to a tile whose kind starts with prefix:
 // 0.8 standing on one, falling off with distance (register 335).
@@ -23,7 +25,21 @@ const stops = s => (s.beams || []).map(b => b.stop).filter(Boolean);
 const beamTiles = s => (s.beams || []).flatMap(b => b.path.slice(1));
 const mean = xs => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
 const leaving = b => b.left ? 1 : b.was ? 0.5 : b.d === Infinity ? 0 : 0.4 / (1 + b.d);
+function shareCrossed(room, moves, test) {
+  const want = new Set(room.cells.flatMap((c, i) => test(c || '') ? [i] : [])), got = new Set();
+  replayPath(room, moves, s => { for (const b of s.beams || []) for (const [x, y] of b.path.slice(1)) if (want.has(y * room.w + x)) got.add(y * room.w + x); });
+  return want.size ? got.size / want.size : 0;
+}
 export const SCORES = {
+  // Register 457: the share of one-ways or spikes done.
+  laserOverEveryOneWay: (room, moves) => shareCrossed(room, moves, c => c.startsWith('gate:')),
+  laserOverEverySpike: (room, moves) => shareCrossed(room, moves, c => c === 'death'),
+  laserCrossesEverySpike: (room, moves) => { const { want, left } = laserOverSpikes(room, moves); return want.size ? [...want].filter(i => left.has(i)).length / want.size : 0; },
+  robotThroughEveryOneWayBothWays: (room, moves) => {
+    const gs = room.cells.flatMap((c, i) => (c || '').startsWith('gate:') ? [i] : []), w = oneWayLog(room, moves).robotWays;
+    return mean(gs.map(i => !w[i] ? 0 : w[i].size >= 2 ? 1 : 0.5));
+  },
+  threeSpikes: room => Math.min(1, room.cells.filter(c => c === 'death').length / 3),
   // Per pushable tile, the share of tiles that did it (registers 448, 452); a half step for being on the way.
   boxPushesEveryOneWay: (room, moves) => mean(tileLog(room, moves, 'gate').map(t => t.byBox ? 1 : 0)),
   robotThroughEveryPushedOneWay: (room, moves) => mean(tileLog(room, moves, 'gate').map(t => t.robotLeft ? 1 : t.robotIn ? 0.5 : 0)),

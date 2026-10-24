@@ -496,6 +496,13 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
     // The one-way is stuck against the goal, so the box steps onto it and then off it alone.
     const combo = replayPath(build(g, ['#######', '#PB>G.#', '#######']), ['right'], () => {});
     ok('a box on a one-way is pushed off alone, the one-way stays', combo.cells[1 * 7 + 3].startsWith('gate:') && combo.entities.some(e => e.kind === 'box' && e.x === 5), combo.cells.slice(7, 14).join() + JSON.stringify(combo.entities));
+    // Register 457: beams and pushable lasers over spikes.
+    const lz = { ...level('1'), palette: { block: [0, null], laser: [0, null], gate: [0, null], spikes: [0, null] }, pushable: { laser: 'only' } };
+    const lreq = (id, rows, moves) => REQUIREMENTS[id].judge(build(lz, rows), moves);
+    ok('a laser goes over every spike: met when the beam crosses them all', lreq('laserOverEverySpike', ['#######', '#ex.x.#', '#P...G#', '#######'], []) && !lreq('laserOverEverySpike', ['#######', '#e#.x.#', '#P...G#', '#######'], []));
+    ok('a pushable laser crosses every spike: met when pushed over them', lreq('laserCrossesEverySpike', ['########', '#PNx..##', '#.....G#', '########'], ['right']) && !lreq('laserCrossesEverySpike', ['########', '#PN.x.##', '#x....G#', '########'], ['right']));
+    ok('a laser goes over every one-way', lreq('laserOverEveryOneWay', ['#######', '#e>.>.#', '#P...G#', '#######'], []) && !lreq('laserOverEveryOneWay', ['#######', '#e>#>.#', '#P...G#', '#######'], []));
+    ok('at least 3 spikes counts the room', lreq('threeSpikes', ['#######', '#xxx..#', '#P...G#', '#######'], []) && !lreq('threeSpikes', ['#######', '#xx...#', '#P...G#', '#######'], []));
     ok('a box pushes every one-way: met when the box pushes it, not when the robot does', greq('boxPushesEveryOneWay', ['########', '#PB>.x#G', '########'], ['right']) && !greq('boxPushesEveryOneWay', ['########', '#P>..x#G', '########'], ['right']));
     ok('every one-way goes over spikes: met when pushed onto them', greq('everyOneWayOverSpikes', ['#######', '#PB>x#G', '#######'], ['right']) && !greq('everyOneWayOverSpikes', ['#######', '#PB>.#G', '#######'], ['right']));
     ok('at least 2 one-ways counts the room', greq('twoOneWays', ['######', '#P>>.G', '######'], []) && !greq('twoOneWays', ['######', '#P>..G', '######'], []));
@@ -519,7 +526,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   for (const l of LEVELS) {
     const v = WINS[l.id] && check(l, build(l, WINS[l.id]));
     ok(`level ${l.id} can be won`, v && v.ok && v.won, JSON.stringify(v && (v.errors || v.fail)));
-    if (['5', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', 'twocolour'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
+    if (['5', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', 'twocolour'].includes(l.id)) ok(`level ${l.id}'s exact count is reachable: its known win takes exactly ${l.steps.best}`, v && v.length === l.steps.best, String(v && v.length));
     if (l.id === '7') { const six = check(l, build(l, ['#B.....o..', '........D.', '.#...#....', '.#B.#..B..', '....DP..D.', '#..G##..#.'])); ok('level 7\'s exact count is reachable: a found room wins in exactly 6', six.won && six.length === l.steps.best, String(six.length)); }
     ok(`level ${l.id}'s win marks every row of its goal card met`, v && v.inRange && (l.require || []).every(id => v.reqs[id] === true), JSON.stringify(v && v.reqs));
   }

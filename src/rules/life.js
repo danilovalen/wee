@@ -173,8 +173,8 @@ export function kill(s, e, how) {
   s.events.push({ type: 'kill', id: e.id, how });
 }
 
-// A box or a heavy box on spikes sits there whole, covering them (registers 427, 428, 431).
-export const covers = e => e.kind === 'box' || e.kind === 'heavy';
+// A box, a heavy box or a pushable laser on spikes sits there whole, covering them (registers 427, 428, 431, 457).
+export const covers = e => e.kind === 'box' || e.kind === 'heavy' || (e.kind === 'turret' && !!e.crate);
 // Puts a piece on t, or destroys it when t is a death block it cannot cover. A puddle makes it
 // sticky (a turret never is), water washes that off.
 export function land(s, e, t) {

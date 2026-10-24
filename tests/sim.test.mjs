@@ -563,7 +563,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a thrown heavy box crosses the spikes whole (register 431)', !h.entities[0].dead, JSON.stringify(h.entities[0]));
   const t = createGame(room(['########', '#T..X.P#', '#......#', '########']));
   step(t);
-  check('a beam stops at it', t.deaths === 0 && t.beams[0].path.at(-1)[0] === 3, JSON.stringify(t.beams[0].path));
+  check('a beam passes over spikes (register 457)', t.beams[0].path.some(([x]) => x === 4) && t.beams[0].path.some(([x]) => x === 5), JSON.stringify(t.beams[0].path));
   const r = createGame(room(['#######', '#.....#', '#..M..#', '#..X..#', '#P....#', '#######']));
   r.entities[0].axis = 'v';
   r.checkpoint = { x: 1, y: 4 };

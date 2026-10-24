@@ -1,0 +1,52 @@
+{
+ "name": "Level 24",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "spikes": [
+   1,
+   null
+  ],
+  "laser": [
+   1,
+   null
+  ],
+  "gate": [
+   1,
+   null
+  ],
+  "relay": [
+   1,
+   null
+  ]
+ },
+ "pushable": {
+  "laser": "only"
+ },
+ "colours": [
+  "red"
+ ],
+ "steps": {
+  "best": 11
+ },
+ "small": [
+  4,
+  6
+ ],
+ "rules": [],
+ "require": [
+  "laserOverEveryOneWay",
+  "robotThroughEveryOneWayBothWays",
+  "laserOverEverySpike",
+  "laserCrossesEverySpike"
+ ],
+ "optional": [
+  "threeSpikes"
+ ]
+}
