@@ -1,4 +1,4 @@
-// Known winning rooms per level, in the tests' legend (# block, t switch, D door, o button, B box,
+// Known winning rooms per level, in the tests' legend (x spikes, # block, t switch, D door, o button, B box,
 // P start, G goal; blue Q door, q button, T switch; ^>v< one-ways; n e s w a laser firing that way). The campaign tests prove each
 // one wins, and tools/levelSearch.mjs --seeded climbs from them (register 272).
 export const KNOWN = {
@@ -14,7 +14,9 @@ export const KNOWN = {
     // Found by tools/climb.mjs (register 365): 4x4 in 7 moves; 16 and 18 likewise, 3x4 in 4.
     19: ['##..', '.DD.', 'DESG', '.Pr.'],
     // Found by tools/levelSearch.mjs --seeded (register 386): one door, four relays, 6 moves, 8x3.
-    20: ['..B.....', '.B......', 'DGrrrrPw'] },
+    20: ['..B.....', '.B......', 'DGrrrrPw'],
+    // Sketched by hand (register 436): 28 moves, 8x9, the boxes push each other off the spikes.
+    21: ['.#..#..#', '.#......', '#..#....', '....G.#.', 'PBBx.#..', '.....#..', '#......#', '....#...', '..#....x'] },
   optional: {
     // Found by tools/levelSearch.mjs --all (register 387): the fewest moves found with a relay pushed into another, 5, in 9x3.
     20: ['....G...e', '........e', '.BD.r.rPw'],
@@ -42,6 +44,7 @@ export const KNOWN = {
   wins: {
     // Found by tools/levelSearch.mjs (register 388): 8 moves, level 20's exact count, a relay pushed into another on the way.
     20: ['...GB..#', '.B.B....', 'D.r..rPw'],
+    21: ['.#..#..#', '.#......', '#..#....', '....G.#.', 'PBBx.#..', '.....#..', '#......#', '....#...', '..#....x'],
     1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
     2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
     3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],

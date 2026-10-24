@@ -1,0 +1,34 @@
+{
+ "name": "Level 21",
+ "size": [
+  7,
+  7
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ],
+  "box": [
+   2,
+   null
+  ],
+  "spikes": [
+   2,
+   null
+  ]
+ },
+ "steps": {
+  "best": 28
+ },
+ "small": [
+  8,
+  9
+ ],
+ "rules": [],
+ "require": [
+  "everyBoxLeavesSpikes",
+  "everyBoxLeavesGoal"
+ ],
+ "optional": []
+}
