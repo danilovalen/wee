@@ -22,6 +22,8 @@ export const KNOWN = {
     // Found by tools/climb.mjs (register 456): 4x6 in 7 moves; two pushable lasers push each other over the spike.
     24: ['....', '.r.x', 'NN.G', 'v.#.', 'N..N', '..P.'] },
   optional: {
+    // Found by tools/climb.mjs from level 24's wins (register 458): three spikes, 7 moves, 10x3.
+    24: ['#.xG...S..', '....rW.r..', '.xx.EE>>WP'],
     // Found by tools/climb.mjs (registers 450, 454): two one-ways in 9 moves, 16x5; two doors in 18 moves, 6x7.
     22: ['................', '..P.........B.x.', '..B..x...xxB....', '.B..>xG......B..', '.B>.........xB..'],
     23: ['..G.B.', '.##...', '.o..x.', '#B..D.', '....D.', '..B.B.', '...BP.'],
