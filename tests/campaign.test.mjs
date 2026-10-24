@@ -220,6 +220,9 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const beam = why(['#######', '#TP..G#', '#######']);
   ok('a laser in the way is named, and the laser shown', /a laser hits it/.test(beam.why) && at(beam, 1, 1), JSON.stringify(beam));
   ok('a room with no laser is not blamed on one', !/laser/.test(why(['#######', '#P.#.G#', '#######']).why));
+  // Spikes in the way are not blamed on a laser (register 437).
+  const bare = why(['#######', '#P.X.G#', '#######']);
+  ok('bare spikes in the way are named, and the spikes shown', /bare spikes/.test(bare.why) && !/laser/.test(bare.why) && at(bare, 3, 1), JSON.stringify(bare));
   const behind = why(['########', '#Pt.D.tG', '########']);
   ok('a switch behind its own door is named', behind.why === 'The robot cannot reach the goal: the red door never opens, because 1 of its 2 switches never turns on.', behind.why);
   ok('it points at the door and that switch, not the one that turns on', at(behind, 4, 1) && at(behind, 6, 1) && !at(behind, 2, 1));

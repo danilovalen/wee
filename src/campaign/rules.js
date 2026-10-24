@@ -160,7 +160,9 @@ export function stuckText(room) {
   if (w.capped) return { why: 'The robot cannot reach the goal, and the room is too big to say why.', at: [] };
   // A move that ends with the robot hit says so, and shows the lasers (register 286).
   const lasers = () => room.entities.filter(e => e.turret).map(e => ({ x: e.x, y: e.y }));
-  if (!w.door && w.hit) return { why: 'The robot cannot reach the goal: a laser hits it on the way.', at: lasers() };
+  const spikes = () => room.cells.flatMap((c, i) => c === 'death' ? [xy(i)] : []);
+  if (!w.door && w.hit && (w.by || []).includes('laser')) return { why: 'The robot cannot reach the goal: a laser hits it on the way.', at: lasers() };
+  if (!w.door && w.hit && (w.by || []).includes('spikes')) return { why: 'The robot cannot reach the goal: it would have to step on bare spikes.', at: spikes() };
   if (!w.door) return { why: 'The robot cannot reach the goal from anywhere it can get to.', at: [] };
   const has = c => c.split(':')[1].split('|').includes(w.door);
   const doors = room.cells.flatMap((c, i) => c.startsWith('door:') && has(c) ? [xy(i)] : []);

@@ -33,7 +33,7 @@ export function entered(s) {
 export function carry(s, dx, dy) {
   const p = s.player, t = shift(s, p.x, p.y, dx, dy, p.swimming, stuckTo(s));
   if (!t) return;
-  if (t.death) { die(s); return; }
+  if (t.death) { die(s, 'spikes'); return; }
   p.x = t.x; p.y = t.y;
   entered(s);
 }

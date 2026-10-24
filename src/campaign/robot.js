@@ -71,6 +71,7 @@ export function whyStuck(level, { max = MAX_STATES } = {}) {
   const start = createGame(level), keys = [...KEYS, ...(start.powers.cycle || start.powers.swim ? ['hide'] : [])];
   const seen = new Set([stateKey(start)]), opened = new Set(), held = new Set();
   let hit = false;
+  const by = new Set();
   const note = s => {
     for (const [c, on] of Object.entries(s.open)) if (on) opened.add(c);
     s.cells.forEach((c, i) => {
@@ -83,8 +84,8 @@ export function whyStuck(level, { max = MAX_STATES } = {}) {
   while (frontier.length) {
     const next = [];
     for (const s of frontier) {
-      // The solver drops a move that kills the robot; replaying each tick shows a laser hit it.
-      if (!hit) for (const k of keys) move(s, k, t => { if (t.deaths > s.deaths) hit = true; });
+      // The solver drops a move that kills the robot; replaying each tick shows what killed it.
+      if (by.size < 2) for (const k of keys) move(s, k, t => { if (t.deaths > s.deaths) { hit = true; const d = t.events.findLast(e => e.type === 'die'); if (d && d.how) by.add(d.how); } });
     }
     for (const s of frontier) for (const pair of successors(s, keys)) {
       if (!pair || pair[1].won) continue;
@@ -98,8 +99,8 @@ export function whyStuck(level, { max = MAX_STATES } = {}) {
   // A door of two colours is stuck only when neither of them ever opens.
   const sets = [...new Set(start.cells.filter(c => /^door:/.test(c)).map(c => c.slice(5)))].map(c => c.split('|'));
   const door = (sets.find(cs => !cs.some(c => opened.has(c))) || [null])[0];
-  if (door === null) return { door, stuck: [], apart: false, hit };
+  if (door === null) return { door, stuck: [], apart: false, hit, by: [...by] };
   const own = start.cells.flatMap((c, i) => /^(button|toggle|sensor):/.test(c) && c.split(':')[1].split('|').includes(door) ? [i] : []);
   const stuck = own.filter(i => !held.has(i));
-  return { door, stuck, apart: own.length > 0 && stuck.length === 0, hit };
+  return { door, stuck, apart: own.length > 0 && stuck.length === 0, hit, by: [...by] };
 }

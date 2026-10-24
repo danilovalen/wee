@@ -35,7 +35,7 @@ export function laser(s, d, from) {
   const r = trace(s, o.x, o.y, d, o => laserHit(s, o, 'laser'), false);
   const pools = shockPools(s, r.path);
   s.events.push({ type: 'laser', d, ...r, shocked: [...pools] });
-  if (shockHarms(s, pools, 'laser')) die(s);
+  if (shockHarms(s, pools, 'laser')) die(s, 'laser');
 }
 
 // Every body of water a beam touches: the cells joined to it side by side.
@@ -81,5 +81,5 @@ export function computeBeams(s, harm) {
     s.beams.push({ id: e.id, d: aimOf(e.turret), ...r });
   }
   if (harm && shockHarms(s, s.shocked, 'turret')) hitYou = true;
-  if (harm && hitYou) die(s);
+  if (harm && hitYou) die(s, 'laser');
 }

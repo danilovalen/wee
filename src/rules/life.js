@@ -159,8 +159,9 @@ function blast(s, e) {
 }
 export function explode(s, e) { if (blast(s, e)) die(s); }
 
-export function die(s) {
-  s.events.push({ type: 'die', x: s.player.x, y: s.player.y });
+// how: what killed the robot ('laser', 'spikes'), so a room that cannot be won can say which.
+export function die(s, how) {
+  s.events.push({ type: 'die', x: s.player.x, y: s.player.y, how });
   s.deaths++;
   respawn(s);
 }
