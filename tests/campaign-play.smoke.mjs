@@ -272,6 +272,15 @@ try {
   await page.click('[data-tool="wall"]');
   const g = await tile(5, 5); await page.mouse.click(...g);
   check('a refused tap changes nothing and says why on the tile', (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === room && await page.locator('#campTip').isVisible() && /move the goal, use Move/.test(await page.locator("#campTip").textContent()) && (await page.evaluate(() => window.wee.fxTypes())).includes('refuse'), await page.locator('#campTip').textContent());
+  // Register 441: a box placed on spikes takes their place, and spikes placed on a box take its, with no refusal.
+  await page.click('#campBack'); await page.click('.campRow[data-level="21"]');
+  const cell = () => page.evaluate(() => { const l = window.wee.getLevel(); return [l.cells[3 * l.w + 3] || '', l.entities.filter(e => e.x === 3 && e.y === 3).map(e => e.kind).join()].join('|'); });
+  await page.click('[data-tool="death"]'); await page.mouse.click(...await tile(3, 3));
+  await page.click('[data-tool="box"]'); await page.mouse.click(...await tile(3, 3)); await page.waitForTimeout(100);
+  check('a box placed on spikes takes their place, with no error', (await cell()) === '|box' && !/Nothing can start/.test(await page.locator('#campTip').textContent().catch(() => '')), await cell());
+  await page.click('[data-tool="death"]'); await page.mouse.click(...await tile(3, 3)); await page.waitForTimeout(100);
+  check('spikes placed on a box take its place', (await cell()) === 'death|', await cell());
+  await page.click('#campBack'); await page.click('.campRow[data-level="2"]');
   // Move's preview: the tile under a carried start changes while held; over the goal the two
   // swap, so the copy is not red; releasing swaps them, one undo step.
   await page.click('[data-tool="move"]');

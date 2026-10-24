@@ -1,5 +1,5 @@
 // Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
-import { placementErrors } from '../campaign/rules.js';
+import { placementErrors, START_ON } from '../campaign/rules.js';
 import { place, moveAt, swapAt } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
@@ -25,10 +25,30 @@ function newError(level, next) {
 // something is fine while building; Run says so.
 export function refusal(level, ui, x, y, how) {
   if (!S.camp) return null;
-  const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg)), next = structuredClone(level);
-  place(next, ui, x, y, how);
-  const e = placementErrors(def, next).find(e => !/^Place at least/.test(e.msg) && !before.has(e.msg));
+  const e = newPlacementError(level, placed(level, ui, x, y, how));
+  // The robot's start is never removed, so a tile placed under it cannot take its place.
+  if (e && e.msg === START_ON && level.start && level.start.x === x && level.start.y === y) return tipOf('Place the start.');
   return e ? tipOf(e.msg) : null;
+}
+const placed = (level, ui, x, y, how, first) => { const next = structuredClone(level); if (first) first(next); place(next, ui, x, y, how); return next; };
+function newPlacementError(level, next) {
+  const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg));
+  return placementErrors(def, next).find(e => !/^Place at least/.test(e.msg) && !before.has(e.msg)) || null;
+}
+// A box or the robot placed onto a button, a switch or spikes takes the tile's place, and one of
+// those placed under a box takes the box's, instead of refusing (register 441). Returns the room or null.
+const UNDER_TILE = c => /^(button|toggle):|^death$/.test(c || '');
+export function replacing(level, ui, x, y, how) {
+  if (!S.camp || how !== 'place') return null;
+  const first = placed(level, ui, x, y, how), e = newPlacementError(level, first);
+  if (!e || e.msg !== START_ON) return null;
+  const i = y * level.w + x;
+  // The tile was already there, so the newcomer is the box or the robot: the tile goes.
+  const clear = UNDER_TILE(level.cells[i])
+    ? l => { l.cells[i] = ''; }
+    : l => { l.entities = l.entities.filter(p => p.x !== x || p.y !== y); };
+  const next = placed(level, ui, x, y, how, clear);
+  return newPlacementError(level, next) ? null : next;
 }
 export const allows = (level, ui, x, y, how) => !refusal(level, ui, x, y, how);
 // A refusal said on the tile: the start and goal are never removed, only moved.

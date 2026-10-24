@@ -11,7 +11,7 @@ import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
 import { toolForKey, bareKey, showKeys } from './keys.js';
 import { TOOLS } from '../editor/palette.js';
-import { refusal, moveRefusal, moveIn, refuse } from './campaignMove.js';
+import { refusal, moveRefusal, moveIn, refuse, replacing } from './campaignMove.js';
 import { toRoom } from './camera.js';
 import { T } from '../view/ink.js';
 
@@ -23,6 +23,8 @@ function cellFromEvent(ev) {
 
 // fresh: the press itself, not a drag across tiles, which would say it on every tile.
 function paint(x, y, how, fresh) {
+  const swapped = replacing(S.level, S.ui, x, y, how);
+  if (swapped) { Object.assign(S.level, swapped); S.fx.push({ type: 'place', x, y, at: now() }); return; }
   const no = refusal(S.level, S.ui, x, y, how);
   if (no) { if (fresh) refuse(x, y, no); return; }
   const t = now();
