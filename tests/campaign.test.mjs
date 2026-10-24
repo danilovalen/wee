@@ -473,6 +473,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('box touches a laser and a pushable laser: one kind alone is not enough', !req('boxTouchesBothLasers', ['#######', '#PB.T.#', '#######'], ['right']) && !req('boxTouchesBothLasers', ['#######', '#PB.K.#', '#######'], ['right']));
   // Register 435: leaving means having been there; nothing starts on spikes.
   ok('every box leaves spikes: met when a box crosses them, not when it stops on them', req('everyBoxLeavesSpikes', ['#######', '#PB.X.#', '#######'], ['right']) && !req('everyBoxLeavesSpikes', ['######', '#PB.X#', '######'], ['right']));
+  ok('every box goes onto spikes: met when it crosses them, not when one never reaches them', req('everyBoxEntersSpikes', ['#######', '#PB.X.#', '#######'], ['right']) && !req('everyBoxEntersSpikes', ['#######', '#PB.X.#', '#.....#', '#B....#', '#######'], ['right']));
   ok('every box leaves spikes: not met when a second box never does', !req('everyBoxLeavesSpikes', ['#######', '#PB.X.#', '#.....#', '#B....#', '#######'], ['right']));
   ok('every box leaves the goal: met when a box crosses the goal, not when it never reaches it', req('everyBoxLeavesGoal', ['#######', '#PBG..#', '#######'], ['right']) && !req('everyBoxLeavesGoal', ['#######', '#PB#G.#', '#######'], ['right']));
   ok('every box leaves the goal: not met when a second box never does', !req('everyBoxLeavesGoal', ['#######', '#PBG..#', '#.....#', '#B....#', '#######'], ['right']));

@@ -211,7 +211,7 @@ try {
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(700);
   await page.keyboard.press('ArrowDown'); await page.waitForTimeout(900);
   const said = await page.locator('#campVerdictText').textContent();
-  check('reaching the goal in a test says so, and that it does not count', /You reached the goal in 2 moves/.test(said) && /does not count/.test(said), said);
+  check('reaching the goal in a test says so, and that it does not count', /You reached the goal in 2 moves/.test(said) && /does not beat the level: press Run/.test(said), said);
   const kept1 = await page.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')).levels['1']);
   check('a test changes no record', JSON.stringify(kept1.goals) === JSON.stringify(JSON.parse(kept0).levels['1'].goals) && JSON.stringify(kept1.stats) === JSON.stringify(JSON.parse(kept0).levels['1'].stats));
   await page.click('#mode');
@@ -266,6 +266,10 @@ try {
   await page.click('#campBack'); await page.click('.campRow[data-level="16"]');
   const max16 = await page.locator('.campReqs li[data-req="max-box"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');
   check('level 16 lists its one-box limit as a goal, drawn as the box', max16 === 'exactly 1|box', max16);
+  // Register 445: a goal names level 20's relays, which come only pushable, with the pushable frame.
+  await page.click('#campBack'); await page.click('.campRow[data-level="20"]');
+  const relay20 = await page.locator('.campReqs li[data-req="relayHitsRelay"] [data-part="relay"]').evaluateAll(cs => cs.map(c => 'crate' in c.dataset).join()).catch(() => 'none');
+  check('level 20\'s relay goal draws its relays with the pushable frame', relay20 === 'true,true', relay20);
   await page.click('#campBack'); await page.click('.campRow[data-level="2"]');
   // A refused tap: a block on the goal. The room stays, the tile says why.
   const room = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));

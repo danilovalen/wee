@@ -19,16 +19,18 @@
   ]
  },
  "steps": {
-  "best": 28
+  "best": 12
  },
  "small": [
-  8,
-  9
+  3,
+  5
  ],
  "rules": [],
  "require": [
-  "everyBoxLeavesSpikes",
+  "everyBoxEntersSpikes",
   "everyBoxLeavesGoal"
  ],
- "optional": []
+ "optional": [
+  "everyBoxLeavesSpikes"
+ ]
 }

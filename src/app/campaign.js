@@ -1,9 +1,9 @@
 // The campaign: a main menu at launch, the level list, and building a level's room for the
-// robot. Run judges the room (src/campaign/rules.js) and the robot plays a shortest path:
+// robot. Run checks the room (src/campaign/rules.js) and the robot plays a shortest path:
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS } from '../level/campaign.js';
-import { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, scoreText } from '../campaign/rules.js';
+import { roomOf, coloursOf, placed, placementErrors, check, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, scoreText, pushingsOf } from '../campaign/rules.js';
 import { REQUIREMENTS, trailOf } from '../campaign/requirements.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -74,7 +74,7 @@ function save() {
   write(p);
 }
 
-// A row's words, each object drawn as its palette icon; the robot and the goal have their own.
+// A row's words, each object drawn as its palette icon (framed when the level offers it only pushable); the robot and the goal have their own.
 const WORD_ICON = { start: ['robot', 'Robot'], goal: ['goal', 'Goal'] };
 function words(parts) {
   const span = document.createElement('span'); span.className = 'words';
@@ -83,8 +83,8 @@ function words(parts) {
 }
 function word(p) {
   if (typeof p === 'string') return document.createTextNode(p);
-  const [tool, name] = WORD_ICON[p.el] || [TOOL[p.el], ELEMENTS[p.el].label], c = icon(tool);
-  c.className = 'campIcon'; c.dataset.part = p.el; c.title = name; c.setAttribute('aria-label', name); c.setAttribute('role', 'img');
+  const def = S.camp && S.camp.def, crate = !!def && !!def.palette[p.el] && pushingsOf(def, p.el).every(Boolean), [tool, name] = WORD_ICON[p.el] || [TOOL[p.el], (crate ? 'Pushable ' + ELEMENTS[p.el].label.toLowerCase() : ELEMENTS[p.el].label)], c = icon(tool, 'red', null, crate);
+  c.className = 'campIcon'; c.dataset.part = p.el; if (crate) c.dataset.crate = ''; c.title = name; c.setAttribute('aria-label', name); c.setAttribute('role', 'img');
   return c;
 }
 
@@ -274,7 +274,7 @@ export function buildCampaign(actions) {
     if (!S.camp || !S.camp.testing) return;
     const out = $('campVerdict');
     out.className = 'campVerdict won'; out.hidden = false;
-    $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}, and since a test does not count, Run judges the room.`;
+    $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}, but playing it yourself does not beat the level: press Run and the robot plays it.`;
     $('campVerdictText').onclick = null;
   });
   // The verdict is read once: the next touch anywhere else blanks it (its band keeps its place); the card keeps the marks.

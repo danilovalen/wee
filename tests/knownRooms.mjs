@@ -15,9 +15,11 @@ export const KNOWN = {
     19: ['##..', '.DD.', 'DESG', '.Pr.'],
     // Found by tools/levelSearch.mjs --seeded (register 386): one door, four relays, 6 moves, 8x3.
     20: ['..B.....', '.B......', 'DGrrrrPw'],
-    // Sketched by hand (register 436): 28 moves, 8x9, the boxes push each other off the spikes; one spike (register 439).
-    21: ['.#..#..#', '.#......', '#..#....', '....G.#.', 'PBBx.#..', '.....#..', '#......#', '....#...', '..#.....'] },
+    // Found by tools/climb.mjs (register 444): 3x5 in 4 moves, each box onto the spikes and one over the goal.
+    21: ['#P.', 'xB#', '.B#', '.Gx', '#xx'] },
   optional: {
+    // Sketched by hand (registers 436, 439): 28 moves, 8x9, the boxes push each other off the spike.
+    21: ['.#..#..#', '.#......', '#..#....', '....G.#.', 'PBBx.#..', '.....#..', '#......#', '....#...', '..#.....'],
     // Found by tools/levelSearch.mjs --all (register 387): the fewest moves found with a relay pushed into another, 5, in 9x3.
     20: ['....G...e', '........e', '.BD.r.rPw'],
     // Found by tools/levelSearch.mjs with the goal required (register 365): 8 moves, the laser through the goal.
@@ -44,7 +46,8 @@ export const KNOWN = {
   wins: {
     // Found by tools/levelSearch.mjs (register 388): 8 moves, level 20's exact count, a relay pushed into another on the way.
     20: ['...GB..#', '.B.B....', 'D.r..rPw'],
-    21: ['.#..#..#', '.#......', '#..#....', '....G.#.', 'PBBx.#..', '.....#..', '#......#', '....#...', '..#.....'],
+    // Found by tools/climb.mjs (register 444): 12 moves, level 21's exact count.
+    21: ['..#.P...', 'xxxBB.x.', '.x.G....'],
     1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
     2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
     3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],

@@ -24,6 +24,7 @@ const mean = xs => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
 const leaving = b => b.left ? 1 : b.was ? 0.5 : b.d === Infinity ? 0 : 0.4 / (1 + b.d);
 export const SCORES = {
   // Per box: warmer the nearer it comes to spikes or the goal, half credit on them, full once it leaves (register 435).
+  everyBoxEntersSpikes: (room, moves) => mean(boxesLeaving(room, moves, 'death').map(b => b.was ? 1 : b.d === Infinity ? 0 : 0.8 / (1 + b.d))),
   everyBoxLeavesSpikes: (room, moves) => mean(boxesLeaving(room, moves, 'death').map(leaving)),
   everyBoxLeavesGoal: (room, moves) => mean(boxesLeaving(room, moves, 'goal').map(leaving)),
   everyBoxPushedTwice: (room, moves) => mean(boxMoves(room, moves).map(b => Math.min(b.pushes, 2) / 2)),

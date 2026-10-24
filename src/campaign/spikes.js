@@ -20,6 +20,11 @@ export function boxesLeaving(room, moves, cell) {
 const everyBoxLeaves = (room, moves, cell) => { const bs = boxesLeaving(room, moves, cell); return bs.length > 0 && bs.every(b => b.left); };
 
 export const SPIKE_REQUIREMENTS = {
+  everyBoxEntersSpikes: {
+    text: 'Every box goes onto spikes.',
+    short: ['every', { el: 'box' }, 'onto', { el: 'spikes' }],
+    judge: (room, moves) => { const bs = boxesLeaving(room, moves, 'death'); return bs.length > 0 && bs.every(b => b.was); },
+  },
   everyBoxLeavesSpikes: {
     text: 'Every box leaves spikes it was on.',
     short: ['every', { el: 'box' }, 'leaves', { el: 'spikes' }],

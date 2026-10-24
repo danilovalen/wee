@@ -121,7 +121,7 @@ export function start(recipe, seconds) {
       const r = it.next();
       if (r.done) { finish(r.value); return; }
       if (performance.now() > until || $('genStop').dataset.stop === String(my)) {
-        if (!out.best) { setRunning(false); say('Stopped before the first room was judged.'); return; }
+        if (!out.best) { setRunning(false); say('Stopped before any room was made.'); return; }
         finish({ fit: false, level: out.best.level, verdict: out.best.verdict, tries: out.tries });
         return;
       }
