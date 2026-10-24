@@ -19,7 +19,7 @@ export function pushesTile(s, x, y, d) {
 }
 
 // Pushes the row starting at (x, y) one tile d: pushable tiles and pushed pieces go as one train.
-// A tile lands only on bare floor. Returns false, moving nothing, when the front cannot go.
+// A tile lands on bare floor or on spikes, which it covers (registers 449, 453). Returns false, moving nothing, when the front cannot go.
 export function pushChain(s, x, y, d) {
   const [dx, dy] = DIRS[d], list = [];
   for (let cx = x, cy = y; ; cx += dx, cy += dy) {
@@ -34,7 +34,7 @@ export function pushChain(s, x, y, d) {
     const last = list.at(-1);
     if (!last) return false;
     if (last.e) { const t = pushTo(s, last.x, last.y, d, wades(last.e)); if (!t || t.x !== cx || t.y !== cy) return false; last.to = t; }
-    else if (cellAt(s, cx, cy) !== '') return false;
+    else if (cellAt(s, cx, cy) !== '' && cellAt(s, cx, cy) !== 'death') return false;
     break;
   }
   const cells = [...s.cells], crates = new Set(s.crates);
@@ -42,9 +42,10 @@ export function pushChain(s, x, y, d) {
     const o = list[i];
     if (o.e) continue;
     const from = o.y * s.w + o.x, to = from + dy * s.w + dx;
-    cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from]; cells[from] = '';
+    cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from]; cells[from] = s.spikes && s.spikes.has(from) ? 'death' : '';
     crates.delete(from); crates.add(to);
-    s.events.push({ type: 'tilePush', x: o.x, y: o.y, d });
+    // by: a box earlier in the row pushed this tile, not the robot.
+    s.events.push({ type: 'tilePush', x: o.x, y: o.y, d, by: list.slice(0, i).some(p => p.e && p.e.kind === 'box') ? 'box' : 'robot' });
   }
   s.cells = cells; s.crates = crates;
   for (let i = list.length - 1; i >= 0; i--) {

@@ -32,7 +32,7 @@ const build = (def, rows) => {
     const i = y * r.w + x;
     if (c === '#') r.cells[i] = 'wall';
     if (c === 't') r.cells[i] = 'toggle:red';
-    if (c === 'D') r.cells[i] = 'door:red';
+    if (c === 'D') { r.cells[i] = 'door:red'; if (def.pushable && def.pushable.door === 'only') (r.crates ||= []).push({ x, y }); }
     if (c === 'o') r.cells[i] = 'button:red';
     if (c === 'T') r.cells[i] = 'toggle:blue';
     if (c === 'Q') r.cells[i] = 'door:blue';
@@ -43,7 +43,7 @@ const build = (def, rows) => {
     if (c === 'R') r.cells[i] = 'sensor:blue';
     if (c === 'X') r.cells[i] = 'door:red|blue';
     if (c === 'x') r.cells[i] = 'death';
-    if ('^>v<'.includes(c)) r.cells[i] = 'gate:' + { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c] + (def.colours ? '@' + def.colours[0] : '');
+    if ('^>v<'.includes(c)) { r.cells[i] = 'gate:' + { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c] + (def.colours ? '@' + def.colours[0] : ''); if (def.pushable && def.pushable.gate === 'only') (r.crates ||= []).push({ x, y }); }
     if (c === 'G') { r.cells[i] = 'goal'; goal = true; }
     if (c === 'P') r.start = { x, y };
     if (c === 'B') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
@@ -477,6 +477,31 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('every box leaves spikes: not met when a second box never does', !req('everyBoxLeavesSpikes', ['#######', '#PB.X.#', '#.....#', '#B....#', '#######'], ['right']));
   ok('every box leaves the goal: met when a box crosses the goal, not when it never reaches it', req('everyBoxLeavesGoal', ['#######', '#PBG..#', '#######'], ['right']) && !req('everyBoxLeavesGoal', ['#######', '#PB#G.#', '#######'], ['right']));
   ok('every box leaves the goal: not met when a second box never does', !req('everyBoxLeavesGoal', ['#######', '#PBG..#', '#.....#', '#B....#', '#######'], ['right']));
+  { // Registers 448-454: pushable one-ways and doors cover spikes and are followed as they move.
+    const g = { ...level('1'), palette: { block: [0, null], box: [0, null], gate: [0, null], spikes: [0, null] }, pushable: { gate: 'only' } };
+    const d = { ...level('1'), palette: { block: [0, null], box: [0, null], door: [0, null], button: [0, null], spikes: [0, null] }, pushable: { door: 'only' } };
+    const greq = (id, rows, moves) => REQUIREMENTS[id].judge(build(g, rows), moves), dreq = (id, rows, moves) => REQUIREMENTS[id].judge(build(d, rows), moves);
+    // The box pushes the one-way onto the spikes and stops against the block; the one-way covers them.
+    const over = replayPath(build(g, ['#######', '#PB>x#G', '#######']), ['right'], () => {});
+    ok('a box pushes a one-way onto spikes, and it covers them', over.cells[1 * 7 + 4].startsWith('gate:') && over.spikes.has(1 * 7 + 4), over.cells.join());
+    // The robot pushes a one-way across spikes: once it leaves them they are bare, and the robot following it dies.
+    let died = false; replayPath(build(g, ['########', '#P>x..#G', '########']), ['right'], t => { if (t.deaths) died = true; });
+    ok('pushed off the spikes, the one-way leaves them bare again', died);
+    // Register 455: a one-way that cannot move is entered by the box; pushing that box moves only the box.
+    const onIt = replayPath(build(g, ['#######', '#PB>#.G', '#######']), ['right'], () => {});
+    ok('a box enters a one-way that cannot move', onIt.cells[1 * 7 + 3].startsWith('gate:') && onIt.entities.some(e => e.kind === 'box' && e.x === 3 && e.y === 1), JSON.stringify(onIt.entities));
+    // Pushed into the far wall's row: the one-way goes until it is stuck, then the box steps onto it.
+    const off = replayPath(build(g, ['#########', '#.PB>...#', '#.#######', '#.......G', '#########']), ['right'], () => {});
+    ok('a box pushes a one-way until it cannot move, then stands on it', off.cells[1 * 9 + 7].startsWith('gate:') && off.entities.some(e => e.kind === 'box' && e.x === 7 && e.y === 1), off.cells.slice(9, 18).join() + JSON.stringify(off.entities));
+    // The one-way is stuck against the goal, so the box steps onto it and then off it alone.
+    const combo = replayPath(build(g, ['#######', '#PB>G.#', '#######']), ['right'], () => {});
+    ok('a box on a one-way is pushed off alone, the one-way stays', combo.cells[1 * 7 + 3].startsWith('gate:') && combo.entities.some(e => e.kind === 'box' && e.x === 5), combo.cells.slice(7, 14).join() + JSON.stringify(combo.entities));
+    ok('a box pushes every one-way: met when the box pushes it, not when the robot does', greq('boxPushesEveryOneWay', ['########', '#PB>.x#G', '########'], ['right']) && !greq('boxPushesEveryOneWay', ['########', '#P>..x#G', '########'], ['right']));
+    ok('every one-way goes over spikes: met when pushed onto them', greq('everyOneWayOverSpikes', ['#######', '#PB>x#G', '#######'], ['right']) && !greq('everyOneWayOverSpikes', ['#######', '#PB>.#G', '#######'], ['right']));
+    ok('at least 2 one-ways counts the room', greq('twoOneWays', ['######', '#P>>.G', '######'], []) && !greq('twoOneWays', ['######', '#P>..G', '######'], []));
+    ok('every door goes over spikes: met when pushed onto them', dreq('everyDoorOverSpikes', ['#######', '#PBDx#G', '#######'], ['right']) && !dreq('everyDoorOverSpikes', ['#######', '#PBD.#G', '#######'], ['right']));
+    ok('at least 2 doors counts the room', dreq('twoDoors', ['######', '#PDD.G', '######'], []) && !dreq('twoDoors', ['######', '#PD..G', '######'], []));
+  }
   ok('a box cannot start on spikes', placementErrors({ ...level('1'), palette: { block: [0, null], box: [0, null], spikes: [0, null] } }, (() => { const r = room(['P.X', '...', '..G']); r.entities.push({ kind: 'box', x: 2, y: 0, dir: 1, mode: 'input' }); return r; })()).some(e => e.msg === 'Nothing can start on a button, a switch or spikes.'));
   ok('robot and box collide with a relay: met when both stop against one', req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#.....#', '#....r#', '#######'], ['right', 'down', 'right']) && !req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#######'], ['right']));
 }

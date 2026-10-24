@@ -6,6 +6,7 @@ import { stoppedPushes } from '../src/campaign/extras.js';
 import { replayPath } from '../src/campaign/robot.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { boxesLeaving } from '../src/campaign/spikes.js';
+import { tileLog } from '../src/campaign/tiles.js';
 
 // The nearest any of pick(s)'s points comes, over a path, to a tile whose kind starts with prefix:
 // 0.8 standing on one, falling off with distance (register 335).
@@ -23,6 +24,15 @@ const beamTiles = s => (s.beams || []).flatMap(b => b.path.slice(1));
 const mean = xs => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
 const leaving = b => b.left ? 1 : b.was ? 0.5 : b.d === Infinity ? 0 : 0.4 / (1 + b.d);
 export const SCORES = {
+  // Per pushable tile, the share of tiles that did it (registers 448, 452); a half step for being on the way.
+  boxPushesEveryOneWay: (room, moves) => mean(tileLog(room, moves, 'gate').map(t => t.byBox ? 1 : 0)),
+  robotThroughEveryPushedOneWay: (room, moves) => mean(tileLog(room, moves, 'gate').map(t => t.robotLeft ? 1 : t.robotIn ? 0.5 : 0)),
+  everyOneWayOverSpikes: (room, moves) => mean(tileLog(room, moves, 'gate').map(t => t.spikes ? 1 : 0)),
+  everyDoorOverSpikes: (room, moves) => mean(tileLog(room, moves, 'door').map(t => t.spikes ? 1 : 0)),
+  boxLeavesEveryDoor: (room, moves) => mean(tileLog(room, moves, 'door').map(t => t.boxLeft ? 1 : t.boxIn ? 0.5 : 0)),
+  robotLeavesEveryDoor: (room, moves) => mean(tileLog(room, moves, 'door').map(t => t.robotLeft ? 1 : t.robotIn ? 0.5 : 0)),
+  twoOneWays: room => Math.min(1, room.cells.filter(c => (c || '').startsWith('gate:')).length / 2),
+  twoDoors: room => Math.min(1, room.cells.filter(c => (c || '').startsWith('door:')).length / 2),
   // Per box: warmer the nearer it comes to spikes or the goal, half credit on them, full once it leaves (register 435).
   everyBoxEntersSpikes: (room, moves) => mean(boxesLeaving(room, moves, 'death').map(b => b.was ? 1 : b.d === Infinity ? 0 : 0.8 / (1 + b.d))),
   everyBoxLeavesSpikes: (room, moves) => mean(boxesLeaving(room, moves, 'death').map(leaving)),

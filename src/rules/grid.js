@@ -58,6 +58,12 @@ export function stepTo(s, x, y, d, wet = true, heavy = false, beam = false) {
 // box already covers it.
 export function pushTo(s, x, y, d, wet) {
   const t = stepTo(s, x, y, d, wet);
+  // A pushable one-way along its arrow is pushed by a box, as by the robot; one that cannot move is
+  // entered, and a box standing on it is then pushed off alone (register 455).
+  if (t && s.crates && s.crates.has(t.y * s.w + t.x) && cellAt(s, t.x, t.y).startsWith('gate:') && !(t.x === x && t.y === y)) {
+    const [dx, dy] = DIRS[d], nx = t.x + dx, ny = t.y + dy, c = cellAt(s, nx, ny);
+    if (inb(s, nx, ny) && (c === '' || c === 'death') && !entAt(s, nx, ny) && !playerAt(s, nx, ny)) return null;
+  }
   return t && !entAt(s, t.x, t.y) && !playerAt(s, t.x, t.y) ? t : null;
 }
 

@@ -26,7 +26,8 @@ function train(s, e, dx, dy, d) {
 export function playerStep(s, d, diving) {
   const p = s.player, pd = facing(s, p.x, p.y, d), ax = p.x + DIRS[pd][0], ay = p.y + DIRS[pd][1];
   // A pushable tile ahead goes first, with whatever it pushes in turn.
-  if (crateAt(s, ax, ay) && pushesTile(s, ax, ay, pd)) {
+  // A box standing on a pushable tile is pushed off it alone (register 455).
+  if (crateAt(s, ax, ay) && pushesTile(s, ax, ay, pd) && !entAt(s, ax, ay)) {
     const g = gateAt(s, p.x, p.y);
     if ((g && !g.includes(pd)) || !pushChain(s, ax, ay, pd)) return 'blocked';
   }
