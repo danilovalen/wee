@@ -10,6 +10,8 @@ let pending = null;
 // Cards already shown this session, by level: kept apart from saved progress, which a page opened as
 // a file on a phone may not keep, so a level never shows its first or its gold card twice (register 447).
 const shown = new Set();
+// A reset or a loaded progress code starts the cards over.
+export const forgetWins = () => shown.clear();
 
 // before: the level's record before this run; rec: after it; words: draws a goal's short words.
 export function noteWin(def, before, rec, v, words) {

@@ -6,6 +6,7 @@ import { list, put } from './store.js';
 import { bests, keep } from './puzzles.js';
 import { madeLevels, saveMade } from './made.js';
 import { $ } from './dom.js';
+import { forgetWins } from './winCard.js';
 
 const enc = o => btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 export const toCode = async () => enc({ campaign: progress(), rooms: await list().catch(() => []), puzzles: bests(), made: madeLevels() });
@@ -17,7 +18,7 @@ export function fromCode(code) {
   } catch { return null; }
 }
 async function load(all) {
-  write(all.campaign);
+  write(all.campaign); forgetWins();
   for (const r of all.rooms || []) await put(r).catch(() => {});
   if (all.puzzles) keep(all.puzzles);
   if (all.made) saveMade(all.made);
@@ -41,5 +42,5 @@ export function buildProgress() {
   $('progNo').onclick = () => box.close();
   $('progReset').onclick = () => $('progResetBox').showModal();
   $('progResetNo').onclick = () => $('progResetBox').close();
-  $('progResetYes').onclick = () => { write({ ...progress(), last: null, levels: {} }); $('progResetBox').close(); showList(); };
+  $('progResetYes').onclick = () => { write({ ...progress(), last: null, levels: {} }); forgetWins(); $('progResetBox').close(); showList(); };
 }

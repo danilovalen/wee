@@ -53,6 +53,19 @@ try {
   check('the gold card bursts stars', c2.burst > 0, String(c2.burst));
   await page.click('#winNext'); await page.waitForTimeout(500);
   check('Next level opens the next level', (await page.evaluate(() => location.hash)) === '#/level/2' && !(await card()).open);
+  // Review (register 459): resetting progress shows the first card again in the same session.
+  await page.goto(`http://localhost:${PORT}/#/level/1`); await page.waitForTimeout(600);
+  await page.evaluate(async () => { (await import('/src/app/winCard.js')).forgetWins(); const p = JSON.parse(localStorage.getItem('wee.campaign')); delete p.levels['1']; localStorage.setItem('wee.campaign', JSON.stringify(p)); });
+  await runRoom(ROOM);
+  check('the first win of the session shows its card', (await card()).open);
+  if ((await card()).open) await page.click('#winStay');
+  await page.evaluate(() => { location.hash = '#/levels'; }); await page.waitForTimeout(400);
+  await page.evaluate(() => document.getElementById('progReset').click()); await page.waitForTimeout(150);
+  await page.evaluate(() => document.getElementById('progResetYes').click()); await page.waitForTimeout(150);
+  await page.evaluate(() => { location.hash = '#/level/1'; }); await page.waitForTimeout(600);
+  await runRoom(ROOM);
+  check('after a progress reset the first card shows again', (await card()).open, JSON.stringify(await card()));
+  if ((await card()).open) await page.click('#winStay');
   // Register 447: a page that cannot save (opened as a file on a phone) still shows the first card once.
   await page.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } }); });
   await page.goto(`http://localhost:${PORT}/#/level/1`); await page.reload(); await page.waitForTimeout(600);
