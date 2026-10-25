@@ -4,6 +4,11 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 const M = [
+  // tiles as pieces, the robot on a stuck one-way, win cards after a reset (registers 460, 461, 459)
+  ['src/rules/crates.js', "cells[from] = s.ground[from];", "cells[from] = '';", 'campaign'],
+  ['src/campaign/tiles.js', "if (s.ground[t.y * s.w + t.x] === 'death') l.spikes = true;", "", 'campaign'],
+  ['src/rules/player.js', "if (!pushChain(s, ax, ay, pd) && !cellAt(s, ax, ay).startsWith('gate:')) return 'blocked';", "if (!pushChain(s, ax, ay, pd)) return 'blocked';", 'campaign'],
+  ['src/app/progressCode.js', "levels: {} }); forgetWins();", "levels: {} });", 'win'],
   // resize blockers, tools line (registers 252, 251)
   ['src/app/size.js', "    if (k < 0) { for (const b of blockers(S.level, side))", "    if (false) { for (const b of blockers(S.level, side))", 'steady'],
   ['src', "    if (lined() && b.parentNode !== box) {", "    if (false) {", 'campaign-play'],

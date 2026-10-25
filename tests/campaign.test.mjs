@@ -483,7 +483,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
     const greq = (id, rows, moves) => REQUIREMENTS[id].judge(build(g, rows), moves), dreq = (id, rows, moves) => REQUIREMENTS[id].judge(build(d, rows), moves);
     // The box pushes the one-way onto the spikes and stops against the block; the one-way covers them.
     const over = replayPath(build(g, ['#######', '#PB>x#G', '#######']), ['right'], () => {});
-    ok('a box pushes a one-way onto spikes, and it covers them', over.cells[1 * 7 + 4].startsWith('gate:') && over.spikes.has(1 * 7 + 4), over.cells.join());
+    ok('a box pushes a one-way onto spikes, and it covers them', over.cells[1 * 7 + 4].startsWith('gate:') && over.ground[1 * 7 + 4] === 'death' && over.tiles[0].x === 4, over.cells.join());
     // The robot pushes a one-way across spikes: once it leaves them they are bare, and the robot following it dies.
     let died = false; replayPath(build(g, ['########', '#P>x..#G', '########']), ['right'], t => { if (t.deaths) died = true; });
     ok('pushed off the spikes, the one-way leaves them bare again', died);

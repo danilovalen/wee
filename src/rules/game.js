@@ -22,11 +22,13 @@ export function createGame(level) {
     entities: freshPieces(l.entities),
     colours: [...COLOURS, ...nets.ids], wires: l.wires || [], wireOf: nets.of, wireAt: nets.at,
     crates: new Set((l.crates || []).map(c => c.y * l.w + c.x)),
-    // Where the room's spikes are: a pushable tile may cover them, and they come back when it leaves.
-    spikes: new Set(l.cells.flatMap((c, i) => c === 'death' ? [i] : [])),
+    // Pushable tiles are pieces (register 461): each keeps its id and its tile; cells shows them over
+    // the ground, which keeps what lies under them (spikes come back when a tile leaves).
+    tiles: (l.crates || []).map((c, id) => ({ id, x: c.x, y: c.y, cell: l.cells[c.y * l.w + c.x] })),
+    ground: l.cells.map((c, i) => (l.crates || []).some(k => k.y * l.w + k.x === i) ? '' : c),
     open: {}, broken: [], toggled: [], onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };
-  s.originCrates = s.crates;
+  s.originCrates = s.crates; s.originTiles = s.tiles;
   computeBeams(s, false);
   flipToggles(s, false);
   refreshDoors(s);

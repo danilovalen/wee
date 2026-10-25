@@ -37,17 +37,18 @@ export function pushChain(s, x, y, d) {
     else if (cellAt(s, cx, cy) !== '' && cellAt(s, cx, cy) !== 'death') return false;
     break;
   }
-  const cells = [...s.cells], crates = new Set(s.crates);
+  const cells = [...s.cells], crates = new Set(s.crates), tiles = s.tiles.map(t => ({ ...t }));
   for (let i = list.length - 1; i >= 0; i--) {
     const o = list[i];
     if (o.e) continue;
     const from = o.y * s.w + o.x, to = from + dy * s.w + dx;
-    cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from]; cells[from] = s.spikes && s.spikes.has(from) ? 'death' : '';
+    cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from]; cells[from] = s.ground[from];
     crates.delete(from); crates.add(to);
+    const t = tiles.find(t => t.y * s.w + t.x === from); t.x += dx; t.y += dy; t.cell = cells[to];
     // by: a box earlier in the row pushed this tile, not the robot.
-    s.events.push({ type: 'tilePush', x: o.x, y: o.y, d, by: list.slice(0, i).some(p => p.e && p.e.kind === 'box') ? 'box' : 'robot' });
+    s.events.push({ type: 'tilePush', id: t.id, x: o.x, y: o.y, d, by: list.slice(0, i).some(p => p.e && p.e.kind === 'box') ? 'box' : 'robot' });
   }
-  s.cells = cells; s.crates = crates;
+  s.cells = cells; s.crates = crates; s.tiles = tiles;
   for (let i = list.length - 1; i >= 0; i--) {
     const o = list[i];
     if (o.e) land(s, o.e, o.to || { x: o.x + dx, y: o.y + dy, d });

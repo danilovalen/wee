@@ -2,29 +2,23 @@
 import { replayPath } from './robot.js';
 
 const KIND = { gate: 'gate:', door: 'door:' };
-// Per pushable tile of a kind, over a path: whether a box pushed it, whether it stood over spikes,
-// and whether the robot and a box each stood in it and later stood off it.
+// Per pushable tile of a kind, over a path, followed by its id (register 461): whether a box pushed it,
+// whether it stood over spikes, and whether the robot and a box each stood in it and later off it.
 export function tileLog(room, moves, kind) {
-  const at = new Map();
-  for (const c of room.crates || []) if ((room.cells[c.y * room.w + c.x] || '').startsWith(KIND[kind])) at.set(c.y * room.w + c.x, { byBox: false, spikes: false, robotIn: false, robotLeft: false, boxIn: false, boxLeft: false });
+  const log = new Map();
   replayPath(room, moves, s => {
-    for (const ev of s.events) {
-      if (ev.type !== 'tilePush') continue;
-      const from = ev.y * s.w + ev.x, t = at.get(from);
-      if (!t) continue;
-      const [dx, dy] = { up: [0, -1], right: [1, 0], down: [0, 1], left: [-1, 0] }[ev.d];
-      at.delete(from); at.set(from + dy * s.w + dx, t);
-      if (ev.by === 'box') t.byBox = true;
+    for (const t of s.tiles) {
+      if (!t.cell.startsWith(KIND[kind])) continue;
+      const l = log.get(t.id) || { byBox: false, spikes: false, robotIn: false, robotLeft: false, boxIn: false, boxLeft: false };
+      log.set(t.id, l);
+      if (s.ground[t.y * s.w + t.x] === 'death') l.spikes = true;
+      const you = s.player.x === t.x && s.player.y === t.y, box = s.entities.some(e => !e.dead && e.kind === 'box' && e.x === t.x && e.y === t.y);
+      if (you) l.robotIn = true; else if (l.robotIn) l.robotLeft = true;
+      if (box) l.boxIn = true; else if (l.boxIn) l.boxLeft = true;
     }
-    for (const [i, t] of at) {
-      if (s.spikes && s.spikes.has(i)) t.spikes = true;
-      const x = i % s.w, y = Math.floor(i / s.w), you = s.player.x === x && s.player.y === y;
-      const box = s.entities.some(e => !e.dead && e.kind === 'box' && e.x === x && e.y === y);
-      if (you) t.robotIn = true; else if (t.robotIn) t.robotLeft = true;
-      if (box) t.boxIn = true; else if (t.boxIn) t.boxLeft = true;
-    }
+    for (const ev of s.events) if (ev.type === 'tilePush' && ev.by === 'box' && log.has(ev.id)) log.get(ev.id).byBox = true;
   });
-  return [...at.values()];
+  return [...log.values()];
 }
 const every = (room, moves, kind, f) => { const ts = tileLog(room, moves, kind); return ts.length > 0 && ts.every(f); };
 const count = (room, kind) => room.cells.filter(c => (c || '').startsWith(KIND[kind])).length;

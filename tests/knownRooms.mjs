@@ -24,8 +24,8 @@ export const KNOWN = {
   optional: {
     // Found by tools/climb.mjs from level 24's wins (register 458): three spikes, 7 moves, 10x3.
     24: ['#.xG...S..', '....rW.r..', '.xx.EE>>WP'],
-    // Found by tools/climb.mjs (registers 450, 454): two one-ways in 9 moves, 16x5; two doors in 18 moves, 6x7.
-    22: ['................', '..P.........B.x.', '..B..x...xxB....', '.B..>xG......B..', '.B>.........xB..'],
+    // Found by tools/climb.mjs (registers 450, 454, 460): two one-ways in 5 moves, 7x3; two doors in 18 moves, 6x7.
+    22: ['..Bx<BP', '#......', '..B>xG.'],
     23: ['..G.B.', '.##...', '.o..x.', '#B..D.', '....D.', '..B.B.', '...BP.'],
     // Sketched by hand (registers 436, 439): 28 moves, 8x9, the boxes push each other off the spike.
     21: ['.#..#..#', '.#......', '#..#....', '....G.#.', 'PBBx.#..', '.....#..', '#......#', '....#...', '..#.....'],
