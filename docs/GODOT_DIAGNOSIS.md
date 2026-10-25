@@ -18,6 +18,9 @@ and it is measured in the first week, not guessed.**
 - **The look is open** (2026-10-25: "might be pixel, SVG, voxel"; the UI grows from the current
   one). So the board is one skin reading the state, swappable between 2D and 3D (voxel means Godot
   3D nodes); no rule, input or menu may depend on how a piece is drawn. The slice uses a stand-in.
+- **Both orientations** (2026-10-25). The room is centred and never moves between modes (the
+  existing rule, row 222); the palette and goal card sit beside it in landscape and below it in
+  portrait. Built with anchors and containers, checked at a phone and a 16:9 TV size from the slice.
 
 ## How the chip game's migration was planned (bag-crawler, 2026-09-24 to 10-01)
 
