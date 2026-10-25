@@ -503,6 +503,8 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
     ok('a pushable laser crosses every spike: met when pushed over them', lreq('laserCrossesEverySpike', ['########', '#PNx..##', '#.....G#', '########'], ['right']) && !lreq('laserCrossesEverySpike', ['########', '#PN.x.##', '#x....G#', '########'], ['right']));
     ok('a laser goes over every one-way', lreq('laserOverEveryOneWay', ['#######', '#e>.>.#', '#P...G#', '#######'], []) && !lreq('laserOverEveryOneWay', ['#######', '#e>#>.#', '#P...G#', '#######'], []));
     ok('at least 3 spikes counts the room', lreq('threeSpikes', ['#######', '#xxx..#', '#P...G#', '#######'], []) && !lreq('threeSpikes', ['#######', '#xx...#', '#P...G#', '#######'], []));
+    const stepOn = replayPath(build(g, ['#######', '#P>#.G#', '#######']), ['right'], () => {});
+    ok('the robot steps onto a one-way that cannot move (register 460)', stepOn.player.x === 2 && stepOn.cells[1 * 7 + 2].startsWith('gate:'), JSON.stringify(stepOn.player));
     ok('a box pushes every one-way: met when the box pushes it, not when the robot does', greq('boxPushesEveryOneWay', ['########', '#PB>.x#G', '########'], ['right']) && !greq('boxPushesEveryOneWay', ['########', '#P>..x#G', '########'], ['right']));
     ok('every one-way goes over spikes: met when pushed onto them', greq('everyOneWayOverSpikes', ['#######', '#PB>x#G', '#######'], ['right']) && !greq('everyOneWayOverSpikes', ['#######', '#PB>.#G', '#######'], ['right']));
     ok('at least 2 one-ways counts the room', greq('twoOneWays', ['######', '#P>>.G', '######'], []) && !greq('twoOneWays', ['######', '#P>..G', '######'], []));

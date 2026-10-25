@@ -29,7 +29,9 @@ export function playerStep(s, d, diving) {
   // A box standing on a pushable tile is pushed off it alone (register 455).
   if (crateAt(s, ax, ay) && pushesTile(s, ax, ay, pd) && !entAt(s, ax, ay)) {
     const g = gateAt(s, p.x, p.y);
-    if ((g && !g.includes(pd)) || !pushChain(s, ax, ay, pd)) return 'blocked';
+    if (g && !g.includes(pd)) return 'blocked';
+    // A one-way that cannot move is stepped onto, as a box does (register 460).
+    if (!pushChain(s, ax, ay, pd) && !cellAt(s, ax, ay).startsWith('gate:')) return 'blocked';
   }
   const t = stepTo(s, p.x, p.y, d, p.swimming, diving);
   if (!t) return 'blocked';
