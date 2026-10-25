@@ -1,5 +1,4 @@
-// Known winning rooms per level, in the tests' legend (x spikes, # block, t switch, D door, o button, B box,
-// P start, G goal; blue Q door, q button, T switch; ^>v< one-ways; n e s w a laser firing that way). The campaign tests prove each
+// Known winning rooms per level, in the one legend (tools/legend.mjs). The campaign tests prove each
 // one wins, and tools/levelSearch.mjs --seeded climbs from them (register 272).
 export const KNOWN = {
   small: { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],

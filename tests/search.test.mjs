@@ -41,6 +41,10 @@ const level = id => LEVELS.find(l => l.id === id);
     if (!v.won) bad.push(l.id + ': ' + rows.join(' '));
   }
   ok('the search reads every known room as a winning room', bad.length === 0, bad.join(' | '));
+  // One legend (register 462): the search prints back every known room exactly as written.
+  const drift = [];
+  for (const l of LEVELS) for (const rows of roomsOf(l.id)) { const s = searcher(l, 1), back = s.show(s.make(s.parse(rows))); if (back !== rows.join(' ')) drift.push(`${l.id}: ${rows.join(' ')} -> ${back}`); }
+  ok('the search reads and prints every known room in the one legend', drift.length === 0, drift.slice(0, 3).join(' | '));
   // The climb stops at penalty 0, so a room the game refuses must never score 0 (register 335).
   const nonzero = [];
   for (const l of LEVELS) for (const rows of roomsOf(l.id)) { const s = searcher(l, 1); if (s.penalty(s.parse(rows)) !== 0) nonzero.push(l.id); }
@@ -50,10 +54,10 @@ const level = id => LEVELS.find(l => l.id === id);
 }
 { // partial credit for the laser and inverted-door goals (register 335)
   const off = rows => { const r = room(rows); for (const k of Object.keys(r.powers)) r.powers[k] = false; return r; };
-  const nearI = off(['#######', '#P..N.#', '#######']), farI = off(['########', '#P.#...#', '#.....N#', '########']);
+  const nearI = off(['#######', '#P..I.#', '#######']), farI = off(['########', '#P.#...#', '#.....I#', '########']);
   ok('a robot that ends beside an inverted door costs less than one far from it', miss('robotThroughIdoor', nearI, ['right']) < miss('robotThroughIdoor', farI, ['right']));
   const lit = l => { const r = off(l); return miss('allRelaysLitAtEnd', r, []); };
-  ok('every relay lit costs less than none lit', lit(['#######', '#PT.s.#', '#######']) < lit(['#######', '#PT#s.#', '#######']));
+  ok('every relay lit costs less than none lit', lit(['#######', '#Pe.r.#', '#######']) < lit(['#######', '#Pe#r.#', '#######']));
 }
 { // register 364: partial credit for every goal, a climb that keeps near-misses and polishes a win, a prover for every piece
   // Goals about a count or the room's end state have no distance to measure; any other goal must have credit.
@@ -61,7 +65,7 @@ const level = id => LEVELS.find(l => l.id === id);
   const bare = Object.keys(REQUIREMENTS).filter(id => !SCORES[id] && !derived(id) && !STATE.includes(id));
   ok('every goal but the count and end-state ones gives the search partial credit', bare.length === 0, bare.join(' '));
   const beam = (rows, id) => miss(id, room(rows), []);
-  ok('a goal scored from its own row: a beam ending nearer a button costs less', beam(['#######', '#PT..#o', '#######'], 'laserThroughButton') < beam(['########', '#PT#...#', '#.....o#', '########'], 'laserThroughButton'));
+  ok('a goal scored from its own row: a beam ending nearer a button costs less', beam(['#######', '#Pe..#o', '#######'], 'laserThroughButton') < beam(['########', '#Pe#...#', '#.....o#', '########'], 'laserThroughButton'));
   ok('a gate goal derives from its row too', derived('robotThroughOneWay') && derived('laserThroughOneWay') && derived('laserThroughGoal'));
   // The climb on level 18 (seed 3) wins in under a second; then its polish finds rooms smaller than the first.
   const sizes = [];

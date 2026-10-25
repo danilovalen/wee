@@ -10,6 +10,7 @@ import { emptyLevel } from '../src/level/format.js';
 import { starterLevel } from '../src/editor/state.js';
 import { moveAt } from '../src/editor/edit.js';
 import { room, suite } from './lib.mjs';
+import { CELL, PIECE, LASER, pushableLaser } from '../tools/legend.mjs';
 import { KNOWN } from './knownRooms.mjs';
 
 const { check: ok, done } = suite('campaign');
@@ -19,37 +20,26 @@ const level = id => LEVELS.find(l => l.id === id);
 const WIN5 = ['....', '....', '....', '....', '.BB.', 'PB..', '..G.', '....'];
 const boxCounts = (rows, moves) => boxMoves(room(rows), moves);
 const HIS = ['.#..#.....', '....#.....', '....#.....', '....#.....', '.#.BP#....', '....#.....', '..........', '..........', '........G.', '###.......', '..........', '..........'];
-// A room in the level's legend: # block, t switch, D door, o button, B box, P start, G goal; blue
-// Q door, q button, T switch; a laser n, e, s or w (the way it fires). A one-way takes the level's first colour when it names colours.
+// A room in the one legend (tools/legend.mjs), shaped by the level: a one-way takes its first colour
+// when it names colours, and what it offers only pushable comes pushable.
 // Full rows (all one length) set the room's size; otherwise the level's size is used. With no
 // P or G the start goes top left and the goal bottom right, one tile in.
 const build = (def, rows) => {
   const full = rows.length >= 2 && rows.every(r => r.length === rows[0].length && r.length >= 2);
   const r = full ? emptyLevel(rows[0].length, rows.length) : roomOf(def);
   r.powers = roomOf(def).powers; r.start = null; r.cells.fill('');
+  const only = el => def.pushable && def.pushable[el] === 'only';
   let goal = false;
   rows.forEach((row, y) => [...row].forEach((c, x) => {
-    const i = y * r.w + x;
-    if (c === '#') r.cells[i] = 'wall';
-    if (c === 't') r.cells[i] = 'toggle:red';
-    if (c === 'D') { r.cells[i] = 'door:red'; if (def.pushable && def.pushable.door === 'only') (r.crates ||= []).push({ x, y }); }
-    if (c === 'o') r.cells[i] = 'button:red';
-    if (c === 'T') r.cells[i] = 'toggle:blue';
-    if (c === 'Q') r.cells[i] = 'door:blue';
-    if (c === 'q') r.cells[i] = 'button:blue';
-    if (c === 'I') r.cells[i] = 'idoor:red';
-    if (c === 'J') r.cells[i] = 'idoor:blue';
-    if (c === 'r') { r.cells[i] = 'sensor:red'; if (def.pushable && def.pushable.relay === 'only') (r.crates ||= []).push({ x, y }); }
-    if (c === 'R') r.cells[i] = 'sensor:blue';
-    if (c === 'X') r.cells[i] = 'door:red|blue';
-    if (c === 'x') r.cells[i] = 'death';
-    if ('^>v<'.includes(c)) { r.cells[i] = 'gate:' + { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c] + (def.colours ? '@' + def.colours[0] : ''); if (def.pushable && def.pushable.gate === 'only') (r.crates ||= []).push({ x, y }); }
-    if (c === 'G') { r.cells[i] = 'goal'; goal = true; }
+    const i = y * r.w + x, cell = CELL[c];
     if (c === 'P') r.start = { x, y };
-    if (c === 'B') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
-    if ('nesw'.includes(c)) r.entities.push({ kind: 'turret', x, y, turret: { dirs: [{ n: 'up', e: 'right', s: 'down', w: 'left' }[c]], mode: 'input' } });
-    // N E S W: a pushable laser (register 336).
-    if ('NESW'.includes(c)) r.entities.push({ kind: 'turret', x, y, crate: true, turret: { dirs: [{ N: 'up', E: 'right', S: 'down', W: 'left' }[c]], mode: 'input' } });
+    else if (cell) {
+      r.cells[i] = cell.startsWith('gate:') && def.colours ? cell + '@' + def.colours[0] : cell;
+      if (cell === 'goal') goal = true;
+      const el = cell.startsWith('gate:') ? 'gate' : cell.startsWith('sensor:') ? 'relay' : cell.split(':')[0];
+      if (['gate', 'door', 'idoor', 'relay'].includes(el) && only(el)) (r.crates ||= []).push({ x, y });
+    } else if (PIECE[c]) r.entities.push({ ...PIECE[c], x, y, dir: 1, mode: 'input' });
+    else if (LASER[c]) r.entities.push({ kind: 'turret', x, y, ...(pushableLaser(c) ? { crate: true } : {}), turret: { dirs: [LASER[c]], mode: 'input' } });
   }));
   if (!r.start) r.start = { x: 1, y: 1 };
   if (!goal) r.cells[(r.h - 2) * r.w + r.w - 2] = 'goal';
@@ -217,11 +207,11 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const why = rows => stuckText(room(rows));
   const at = (r, x, y) => r.at.some(t => t.x === x && t.y === y);
   // The only way to the goal runs along a laser's beam (register 286).
-  const beam = why(['#######', '#TP..G#', '#######']);
+  const beam = why(['#######', '#eP..G#', '#######']);
   ok('a laser in the way is named, and the laser shown', /a laser hits it/.test(beam.why) && at(beam, 1, 1), JSON.stringify(beam));
   ok('a room with no laser is not blamed on one', !/laser/.test(why(['#######', '#P.#.G#', '#######']).why));
   // Spikes in the way are not blamed on a laser (register 437).
-  const bare = why(['#######', '#P.X.G#', '#######']);
+  const bare = why(['#######', '#P.x.G#', '#######']);
   ok('bare spikes in the way are named, and the spikes shown', /bare spikes/.test(bare.why) && !/laser/.test(bare.why) && at(bare, 3, 1), JSON.stringify(bare));
   const behind = why(['########', '#Pt.D.tG', '########']);
   ok('a switch behind its own door is named', behind.why === 'The robot cannot reach the goal: the red door never opens, because 1 of its 2 switches never turns on.', behind.why);
@@ -351,51 +341,51 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const end = replayPath(thrown, ['right'], () => {});
   ok('a box thrown out by a turning one-way: not met when only the robot is thrown', !REQUIREMENTS.boxLaunched.judge(thrown, ['right']) && end.player.x === 1, JSON.stringify(end.player));
   // Lasers (registers 255, 256): T is a laser firing right.
-  const D = ['##########', '#T.D.D...#', '#Pt......#', '##########'];
+  const D = ['##########', '#e.D.D...#', '#Pt......#', '##########'];
   ok('a laser through 2 open doors: met once the switch opens both', req('laserThroughTwoDoors', D, ['right']));
   ok('a laser through 2 open doors: not met while they are closed', !req('laserThroughTwoDoors', D, []));
-  ok('a laser through 2 open doors: not met through one', !req('laserThroughTwoDoors', ['##########', '#T.D.....#', '#Pt......#', '##########'], ['right']));
-  ok('a laser through an open door: met once the switch opens it', req('laserThroughOpenDoor', ['##########', '#T.D.....#', '#Pt......#', '##########'], ['right']));
+  ok('a laser through 2 open doors: not met through one', !req('laserThroughTwoDoors', ['##########', '#e.D.....#', '#Pt......#', '##########'], ['right']));
+  ok('a laser through an open door: met once the switch opens it', req('laserThroughOpenDoor', ['##########', '#e.D.....#', '#Pt......#', '##########'], ['right']));
   ok('a laser through an open door: not met while it is closed', !req('laserThroughOpenDoor', D, []));
   // Two lasers firing right; only the top one's door opens with the switch.
-  const two = ['##########', '#T.D.....#', '#Pt......#', '#T.Q.....#', '##########'];
+  const two = ['##########', '#e.D.....#', '#Pt......#', '#e.Q.....#', '##########'];
   ok('every laser through an open door: not met when one laser never gets through', !req('laserThroughOpenDoor', two, ['right']));
-  ok('a laser through a button: met over an empty one', req('laserThroughButton', ['########', '#T.o...#', '#P.....#', '########'], []));
-  const boxed = off(['########', '#T.....#', '#P.....#', '########']); boxed.cells[1 * 8 + 3] = 'button:red'; boxed.entities.push({ kind: 'box', x: 3, y: 1, dir: 1, mode: 'input' });
+  ok('a laser through a button: met over an empty one', req('laserThroughButton', ['########', '#e.o...#', '#P.....#', '########'], []));
+  const boxed = off(['########', '#e.....#', '#P.....#', '########']); boxed.cells[1 * 8 + 3] = 'button:red'; boxed.entities.push({ kind: 'box', x: 3, y: 1, dir: 1, mode: 'input' });
   ok('a laser through a button: not met when a box on it stops the beam', !REQUIREMENTS.laserThroughButton.judge(boxed, []));
   ok('the robot steps on a button: met when it slides over one', req('robotOnButton', ['#######', '#P.o..#', '#######'], ['right']));
   ok('the robot steps on a button: not met when it passes beside it', !req('robotOnButton', ['#######', '#P....#', '#..o..#', '#######'], ['right']));
   // Inverted doors, relays and the two-colour door (registers 311-313).
-  ok('robot through an inverted door: met while it is open', req('robotThroughIdoor', ['#######', '#P.N.G#', '#######'], ['right']));
+  ok('robot through an inverted door: met while it is open', req('robotThroughIdoor', ['#######', '#P.I.G#', '#######'], ['right']));
   ok('robot through an inverted door: not met with none', !req('robotThroughIdoor', ['#######', '#P...G#', '#######'], ['right']));
   // Register 341: a pushable laser pushed in 3 moves.
-  ok('a laser through the goal: met when the beam crosses it', req('laserThroughGoal', ['#######', '#T.G..#', '#P....#', '#######'], []));
-  ok('a laser through the goal: not met when the beam misses it', !req('laserThroughGoal', ['#######', '#T....#', '#P..G.#', '#######'], []));
-  ok('laser pushed ×3: met by three pushes', req('laserPushedThrice', ['###########', '#PK.g.g.g.#', '###########'], ['right', 'right', 'right']));
-  ok('laser pushed ×3: not met by two', !req('laserPushedThrice', ['###########', '#PK.g.g.g.#', '###########'], ['right', 'right']));
+  ok('a laser through the goal: met when the beam crosses it', req('laserThroughGoal', ['#######', '#e.G..#', '#P....#', '#######'], []));
+  ok('a laser through the goal: not met when the beam misses it', !req('laserThroughGoal', ['#######', '#e....#', '#P..G.#', '#######'], []));
+  ok('laser pushed ×3: met by three pushes', req('laserPushedThrice', ['###########', '#PN.g.g.g.#', '###########'], ['right', 'right', 'right']));
+  ok('laser pushed ×3: not met by two', !req('laserPushedThrice', ['###########', '#PN.g.g.g.#', '###########'], ['right', 'right']));
   ok('laser pushed ×3: a box pushed three times is not a laser', !req('laserPushedThrice', ['###########', '#PB.g.g.g.#', '###########'], ['right', 'right', 'right']));
   // Register 329: every relay lit when the run ends.
-  ok('every relay lit at the end: met while the beam reaches it', req('allRelaysLitAtEnd', ['#######', '#T.s..#', '#P...G#', '#######'], ['right']));
-  ok('every relay lit at the end: not met when one relay is dark', !req('allRelaysLitAtEnd', ['#######', '#T.s..#', '#P..sG#', '#######'], ['right']));
-  ok('every relay lit at the end: not met when a box blocks the beam by the end', !req('allRelaysLitAtEnd', ['#######', '#T.s..#', '#.B...#', '#.P#..#', '#######'], ['left', 'right', 'up']));
-  ok('laser stopped by an inverted door: met once a button closes it', req('laserStoppedByIdoor', ['#######', '#T.N..#', '#Po####', '#######'], ['right']));
-  ok('laser stopped by an inverted door: not met while it is open', !req('laserStoppedByIdoor', ['#######', '#T.N..#', '#Po####', '#######'], []));
-  ok('box hits an inverted door: met when a lit relay closes it', req('boxHitsIdoor', ['########', '#T.s...#', '#PB.N..#', '########'], ['right']));
-  ok('box hits an inverted door: not met while it is open', !req('boxHitsIdoor', ['########', '#..s...#', '#PB.N..#', '########'], ['right']));
-  ok('a laser holds its own door: met when a blue press opens it and the red relay past it holds it', req('laserHoldsOwnDoor', ['#########', '#T.Y.s..#', '#Pu.....#', '#########'], ['right']));
-  ok('a laser holds its own door: not met when the relay comes first and opens the door for any beam', !req('laserHoldsOwnDoor', ['#########', '#T.s.D..#', '#P......#', '#########'], ['right']));
-  ok('a laser holds its own door: not met by a one-colour door, which needs the button too', !req('laserHoldsOwnDoor', ['#########', '#T.D.s..#', '#Po.....#', '#########'], ['right']));
+  ok('every relay lit at the end: met while the beam reaches it', req('allRelaysLitAtEnd', ['#######', '#e.r..#', '#P...G#', '#######'], ['right']));
+  ok('every relay lit at the end: not met when one relay is dark', !req('allRelaysLitAtEnd', ['#######', '#e.r..#', '#P..rG#', '#######'], ['right']));
+  ok('every relay lit at the end: not met when a box blocks the beam by the end', !req('allRelaysLitAtEnd', ['#######', '#e.r..#', '#.B...#', '#.P#..#', '#######'], ['left', 'right', 'up']));
+  ok('laser stopped by an inverted door: met once a button closes it', req('laserStoppedByIdoor', ['#######', '#e.I..#', '#Po####', '#######'], ['right']));
+  ok('laser stopped by an inverted door: not met while it is open', !req('laserStoppedByIdoor', ['#######', '#e.I..#', '#Po####', '#######'], []));
+  ok('box hits an inverted door: met when a lit relay closes it', req('boxHitsIdoor', ['########', '#e.r...#', '#PB.I..#', '########'], ['right']));
+  ok('box hits an inverted door: not met while it is open', !req('boxHitsIdoor', ['########', '#..r...#', '#PB.I..#', '########'], ['right']));
+  ok('a laser holds its own door: met when a blue press opens it and the red relay past it holds it', req('laserHoldsOwnDoor', ['#########', '#e.X.r..#', '#Pq.....#', '#########'], ['right']));
+  ok('a laser holds its own door: not met when the relay comes first and opens the door for any beam', !req('laserHoldsOwnDoor', ['#########', '#e.r.D..#', '#P......#', '#########'], ['right']));
+  ok('a laser holds its own door: not met by a one-colour door, which needs the button too', !req('laserHoldsOwnDoor', ['#########', '#e.D.r..#', '#Po.....#', '#########'], ['right']));
   ok('a closed door stops every laser: met by both', req('laserBlockedByDoor', two, []));
-  ok('a closed door stops every laser: not met when one hits a wall', !req('laserBlockedByDoor', ['##########', '#T.D.....#', '#P.......#', '#T.......#', '##########'], []));
+  ok('a closed door stops every laser: not met when one hits a wall', !req('laserBlockedByDoor', ['##########', '#e.D.....#', '#P.......#', '#e.......#', '##########'], []));
   const ways = (a, b) => { const r = off(['######', '#P...#', '#....#', '######']); r.entities.push({ kind: 'turret', x: 2, y: 2, turret: { dirs: [a], mode: 'input' } }, { kind: 'turret', x: 4, y: 2, turret: { dirs: [b], mode: 'input' } }); return REQUIREMENTS.lasersTwoWays.judge(r, []); };
   ok('lasers pointing 2 ways: met by right and down', ways('right', 'down'));
   ok('lasers pointing 2 ways: not met when both point right', !ways('right', 'right'));
   ok('a closed door stops a laser: met', req('laserBlockedByDoor', D, []));
-  ok('a closed door stops a laser: not met by a wall', !req('laserBlockedByDoor', ['########', '#T.....#', '#P.....#', '########'], []));
-  ok('a laser through a one-way: met along its arrow', req('laserThroughOneWay', ['########', '#T.>...#', '#P.....#', '########'], []));
-  ok('a laser through a one-way: not met against it', !req('laserThroughOneWay', ['########', '#T.<...#', '#P.....#', '########'], []));
-  ok('a one-way stops a laser: met against its arrow', req('laserBlockedByOneWay', ['########', '#T.<...#', '#P.....#', '########'], []));
-  ok('a one-way stops a laser: not met along it', !req('laserBlockedByOneWay', ['########', '#T.>...#', '#P.....#', '########'], []));
+  ok('a closed door stops a laser: not met by a wall', !req('laserBlockedByDoor', ['########', '#e.....#', '#P.....#', '########'], []));
+  ok('a laser through a one-way: met along its arrow', req('laserThroughOneWay', ['########', '#e.>...#', '#P.....#', '########'], []));
+  ok('a laser through a one-way: not met against it', !req('laserThroughOneWay', ['########', '#e.<...#', '#P.....#', '########'], []));
+  ok('a one-way stops a laser: met against its arrow', req('laserBlockedByOneWay', ['########', '#e.<...#', '#P.....#', '########'], []));
+  ok('a one-way stops a laser: not met along it', !req('laserBlockedByOneWay', ['########', '#e.>...#', '#P.....#', '########'], []));
   ok('the robot through a one-way: met', req('robotThroughOneWay', ['#######', '#P.>..#', '#######'], ['right']));
   ok('the robot through a one-way: not met when it stops on it', !req('robotThroughOneWay', ['######', '#P.>#', '######'].map(r => r.slice(0, 5)), ['right']));
   ok('a 3rd switch on at the end: met with three, one on', req('thirdToggleOnAtEnd', ['########', '#Pt....#', '#t.t...#', '########'], ['right']));
@@ -465,16 +455,16 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
 }
 { // the goals a level gives its rooms (register 366)
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
-  ok('a laser through every relay: met when one beam lights them all, not when one is dark', req('laserThroughEveryRelay', ['########', '#PT.r.r#', '########'], []) && !req('laserThroughEveryRelay', ['########', '#PT.r#r#', '########'], []));
-  ok('a laser through no relay: met at a moment with every relay dark', req('laserThroughNoRelay', ['########', '#PT#r..#', '########'], []) && !req('laserThroughNoRelay', ['########', '#PT.r..#', '########'], []));
+  ok('a laser through every relay: met when one beam lights them all, not when one is dark', req('laserThroughEveryRelay', ['########', '#Pe.r.r#', '########'], []) && !req('laserThroughEveryRelay', ['########', '#Pe.r#r#', '########'], []));
+  ok('a laser through no relay: met at a moment with every relay dark', req('laserThroughNoRelay', ['########', '#Pe#r..#', '########'], []) && !req('laserThroughNoRelay', ['########', '#Pe.r..#', '########'], []));
   const l20 = level('20'), hit = (rows, moves) => REQUIREMENTS.relayHitsRelay.judge(build(l20, rows), moves);
   ok('a relay collides with a relay: a pushed relay meets another in its line, not one off its line', hit(['#######', '#Pr..r#', '#.....#', '#######'], ['right']) && !hit(['#######', '#Pr...#', '#....r#', '#######'], ['right']));
   ok('at least 3 relays counts the room', REQUIREMENTS.threeRelays.judge(room(['#######', '#Pr.r.r#', '#######']), []) && !REQUIREMENTS.threeRelays.judge(room(['######', '#Pr.r#', '######']), []));
-  ok('box touches a laser and a pushable laser: one kind alone is not enough', !req('boxTouchesBothLasers', ['#######', '#PB.T.#', '#######'], ['right']) && !req('boxTouchesBothLasers', ['#######', '#PB.K.#', '#######'], ['right']));
+  ok('box touches a laser and a pushable laser: one kind alone is not enough', !req('boxTouchesBothLasers', ['#######', '#PB.e.#', '#######'], ['right']) && !req('boxTouchesBothLasers', ['#######', '#PB.N.#', '#######'], ['right']));
   // Register 435: leaving means having been there; nothing starts on spikes.
-  ok('every box leaves spikes: met when a box crosses them, not when it stops on them', req('everyBoxLeavesSpikes', ['#######', '#PB.X.#', '#######'], ['right']) && !req('everyBoxLeavesSpikes', ['######', '#PB.X#', '######'], ['right']));
-  ok('every box goes onto spikes: met when it crosses them, not when one never reaches them', req('everyBoxEntersSpikes', ['#######', '#PB.X.#', '#######'], ['right']) && !req('everyBoxEntersSpikes', ['#######', '#PB.X.#', '#.....#', '#B....#', '#######'], ['right']));
-  ok('every box leaves spikes: not met when a second box never does', !req('everyBoxLeavesSpikes', ['#######', '#PB.X.#', '#.....#', '#B....#', '#######'], ['right']));
+  ok('every box leaves spikes: met when a box crosses them, not when it stops on them', req('everyBoxLeavesSpikes', ['#######', '#PB.x.#', '#######'], ['right']) && !req('everyBoxLeavesSpikes', ['######', '#PB.x#', '######'], ['right']));
+  ok('every box goes onto spikes: met when it crosses them, not when one never reaches them', req('everyBoxEntersSpikes', ['#######', '#PB.x.#', '#######'], ['right']) && !req('everyBoxEntersSpikes', ['#######', '#PB.x.#', '#.....#', '#B....#', '#######'], ['right']));
+  ok('every box leaves spikes: not met when a second box never does', !req('everyBoxLeavesSpikes', ['#######', '#PB.x.#', '#.....#', '#B....#', '#######'], ['right']));
   ok('every box leaves the goal: met when a box crosses the goal, not when it never reaches it', req('everyBoxLeavesGoal', ['#######', '#PBG..#', '#######'], ['right']) && !req('everyBoxLeavesGoal', ['#######', '#PB#G.#', '#######'], ['right']));
   ok('every box leaves the goal: not met when a second box never does', !req('everyBoxLeavesGoal', ['#######', '#PBG..#', '#.....#', '#B....#', '#######'], ['right']));
   { // Registers 448-454: pushable one-ways and doors cover spikes and are followed as they move.
@@ -511,7 +501,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
     ok('every door goes over spikes: met when pushed onto them', dreq('everyDoorOverSpikes', ['#######', '#PBDx#G', '#######'], ['right']) && !dreq('everyDoorOverSpikes', ['#######', '#PBD.#G', '#######'], ['right']));
     ok('at least 2 doors counts the room', dreq('twoDoors', ['######', '#PDD.G', '######'], []) && !dreq('twoDoors', ['######', '#PD..G', '######'], []));
   }
-  ok('a box cannot start on spikes', placementErrors({ ...level('1'), palette: { block: [0, null], box: [0, null], spikes: [0, null] } }, (() => { const r = room(['P.X', '...', '..G']); r.entities.push({ kind: 'box', x: 2, y: 0, dir: 1, mode: 'input' }); return r; })()).some(e => e.msg === 'Nothing can start on a button, a switch or spikes.'));
+  ok('a box cannot start on spikes', placementErrors({ ...level('1'), palette: { block: [0, null], box: [0, null], spikes: [0, null] } }, (() => { const r = room(['P.x', '...', '..G']); r.entities.push({ kind: 'box', x: 2, y: 0, dir: 1, mode: 'input' }); return r; })()).some(e => e.msg === 'Nothing can start on a button, a switch or spikes.'));
   ok('robot and box collide with a relay: met when both stop against one', req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#.....#', '#....r#', '#######'], ['right', 'down', 'right']) && !req('robotAndBoxHitRelay', ['#######', '#PB.r.#', '#######'], ['right']));
 }
 { // every level's own optional goal can be met: a winning room that meets it, found by tools/levelSearch.mjs (registers 262-269)

@@ -9,7 +9,7 @@ const cut = moveSide(box, 'bottom', -1);
 check('a cut inside a border keeps the border', cut && rows(cut).join('/') === '#####/#...#/#...#/#####', cut && rows(cut).join('/'));
 const grow = moveSide(box, 'right', 2);
 check('a grow inside a border keeps it closed', grow && rows(grow).join('/') === '#######/#.....#/#.....#/#.....#/#######', grow && rows(grow).join('/'));
-const goal = room(['#####', '#P..#', '#...#', '#..w#', '#####']);
+const goal = room(['#####', '#P..#', '#...#', '#..~#', '#####']);
 check('a cut that would take something you placed changes nothing', moveSide(goal, 'bottom', -1) === null && !!moveSide(goal, 'left', -1));
 const thru = moveSide(room(['.....', '.P...', '.....']), 'left', -2);
 check('a cut through the start takes it off', thru && thru.w === 3 && thru.start === null);

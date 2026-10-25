@@ -5,11 +5,13 @@ import { roomOf, placementErrors, check, bounds, coloursOf, colouringsOf, pushin
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
 import { allShortest, replayPath } from '../src/campaign/robot.js';
 import { miss } from './searchScores.mjs';
+import { CELL as LEGEND, LASER as FROM_LETTER } from './legend.mjs';
 
 const CELL = { spikes: 'death', block: 'wall', toggle: 'toggle', door: 'door', button: 'button', idoor: 'idoor', relay: 'sensor' };
 const TINTS = ['toggle', 'door', 'button', 'gate', 'idoor', 'relay'];
-// A laser in the legend: n, e, s or w, the way it fires.
-const LASER = { up: 'n', right: 'e', down: 's', left: 'w' }, FROM_LASER = { n: 'up', e: 'right', s: 'down', w: 'left' };
+// The legend (tools/legend.mjs) read back: a tile's letter, and a laser's letter by the way it fires.
+const LETTER = Object.fromEntries(Object.entries(LEGEND).map(([k, v]) => [v, k]));
+const LASER = { up: 'n', right: 'e', down: 's', left: 'w' };
 const DIRS = ['up', 'right', 'down', 'left'];
 const D4 = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 // Rooms up to 16 on a side, 120 tiles (register 272): long thin rooms, like his 6x11 level 5 win, need it.
@@ -166,24 +168,19 @@ export function searcher(def, seed = 1, opts = {}) {
     if (r.start.x === x && r.start.y === y) return 'P';
     const ent = r.entities.find(e => e.x === x && e.y === y);
     if (ent) return ent.turret ? (ent.crate ? LASER[ent.turret.dirs[0]].toUpperCase() : LASER[ent.turret.dirs[0]]) : 'B';
-    // Blue in the tests' legend: Q door, q button, T switch, J inverted door, R relay; X a two-colour door.
-    const blue = /:blue$/.test(c);
-    if (c.includes('|')) return 'X';
-    if (c.startsWith('idoor')) return blue ? 'J' : 'I';
-    if (c.startsWith('sensor')) return blue ? 'R' : 'r';
-    // x: spikes, in this legend only (the tests' X is taken by a two-colour door here).
-    if (c === 'death') return 'x';
-    return c === 'wall' ? '#' : c.startsWith('gate:') ? { up: '^', right: '>', down: 'v', left: '<' }[c.slice(5).split('@')[0]] : c === 'goal' ? 'G' : c.startsWith('toggle') ? (blue ? 'T' : 't') : c.startsWith('door') ? (blue ? 'Q' : 'D') : c.startsWith('button') ? (blue ? 'q' : 'o') : '.';
+    return LETTER[c.replace(/@.*/, '')] || '.';
   }).join('')).join(' ');
   // A genome from rows in show()'s legend, so a climb can start from a known room.
   function parse(rows) {
     const g = { w: rows[0].length, h: rows.length, start: null, goal: null, items: [] };
-    const EL = { x: ['spikes'], '#': ['block'], t: ['toggle', 'red'], T: ['toggle', 'blue'], D: ['door', 'red'], Q: ['door', 'blue'], o: ['button', 'red'], q: ['button', 'blue'], B: ['box'], I: ['idoor', 'red'], J: ['idoor', 'blue'], r: ['relay', 'red'], R: ['relay', 'blue'], X: ['door', 'red|blue'] };
+    // A tile's letter gives its palette element and colour: door:red is ['door', 'red'], death is spikes.
+    const element = cell => { const [kind, col] = cell.split(':'); return [{ death: 'spikes', wall: 'block', sensor: 'relay' }[kind] || kind, col || null]; };
     rows.forEach((row, y) => [...row].forEach((c, x) => {
       if (c === 'P') g.start = { x, y }; else if (c === 'G') g.goal = { x, y };
-      else if (EL[c]) g.items.push([EL[c][0], x, y, null, EL[c][1] || null]);
-      else if ('^>v<'.includes(c)) g.items.push(['gate', x, y, { '^': 'up', '>': 'right', v: 'down', '<': 'left' }[c], cols[0]]);
-      else if ('nesw'.includes(c) || 'NESW'.includes(c)) g.items.push(['laser', x, y, FROM_LASER[c.toLowerCase()], c === c.toUpperCase() ? 'crate' : null]);
+      else if ('^>v<'.includes(c)) g.items.push(['gate', x, y, LEGEND[c].slice(5), cols[0]]);
+      else if (LEGEND[c]) { const [el, col] = element(LEGEND[c]); g.items.push([el, x, y, null, col]); }
+      else if (c === 'B') g.items.push(['box', x, y, null, null]);
+      else if (FROM_LETTER[c]) g.items.push(['laser', x, y, FROM_LETTER[c], c === c.toUpperCase() ? 'crate' : null]);
     }));
     return g;
   }

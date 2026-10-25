@@ -1,17 +1,8 @@
 import { emptyLevel } from '../src/level/format.js';
+import { CELL, PIECE, LASER, pushableLaser } from '../tools/legend.mjs';
 
-// A room drawn in text. Legend:
-//   #  wall          P  player start     C  checkpoint
-//   M  mover, h      V  mover, v         E  enemy, h     F  enemy, v
-//   S  strong enemy, h                  T  laser turret (fires right)
-//   B  box           H  heavy box       O  bomb
-//   o  red button    D  red door         u  blue button  Q  blue door    N  red inverted door    r  red laser relay (as s)  s  red laser relay  w  water  %  sticky puddle
-//   > < ^ v  one-way tile (that way)      =  two-way, across      |  two-way, up and down
-//   g  gravel        k  breakable block   t  red toggle   G  goal
-//   Y  two-colour door, red and blue
-//   X  death block    8 6 2 4  spring facing up, right, down, left (numpad)
-//   7 9 1 3  triangle, solid in the corner a numpad key points to (7 = north-west)
-// Movers are 'input' unless opts.mode says 'realtime'.
+// A room drawn in text, in the one legend (tools/legend.mjs). Pieces and lasers are 'input' unless
+// opts.mode says 'realtime'.
 export function room(rows, opts = {}) {
   const h = rows.length, w = rows[0].length;
   const l = emptyLevel(w, h);
@@ -22,53 +13,12 @@ export function room(rows, opts = {}) {
   const mode = opts.mode || 'input';
   rows.forEach((row, y) => [...row].forEach((ch, x) => {
     const i = y * w + x;
-    const put = (kind, axis) => l.entities.push({ kind, x, y, axis, dir: 1, mode });
-    switch (ch) {
-      case '#': l.cells[i] = 'wall'; break;
-      case 'C': l.cells[i] = 'checkpoint'; break;
-      case 'o': l.cells[i] = 'button:red'; break;
-      case 'D': l.cells[i] = 'door:red'; break;
-      case 'u': l.cells[i] = 'button:blue'; break;
-      case 'r': l.cells[i] = 'sensor:red'; break;
-      case 's': l.cells[i] = 'sensor:red'; break;
-      case 'Y': l.cells[i] = 'door:red|blue'; break;
-      case 'w': l.cells[i] = 'water'; break;
-      case '%': l.cells[i] = 'sticky'; break;
-      case 'Q': l.cells[i] = 'door:blue'; break;
-      case 'N': l.cells[i] = 'idoor:red'; break;
-      case 'P': l.start = { x, y }; break;
-      case 'M': put('mover', 'h'); break;
-      case 'V': put('mover', 'v'); break;
-      case 'E': put('enemy', 'h'); break;
-      case 'F': put('enemy', 'v'); break;
-      case 'S': put('strong', 'h'); break;
-      case 'T': l.entities.push({ kind: 'turret', x, y, turret: { dirs: ['right'], mode } }); break;
-      case 'K': l.entities.push({ kind: 'turret', x, y, crate: true, turret: { dirs: ['up'], mode } }); break;
-      case 'B': put('box'); break;
-      case 'H': put('heavy'); break;
-      case 'O': put('bomb'); break;
-      case '7': l.cells[i] = 'tri:nw'; break;
-      case '9': l.cells[i] = 'tri:ne'; break;
-      case '1': l.cells[i] = 'tri:sw'; break;
-      case '3': l.cells[i] = 'tri:se'; break;
-      case '>': l.cells[i] = 'gate:right'; break;
-      case '<': l.cells[i] = 'gate:left'; break;
-      case '^': l.cells[i] = 'gate:up'; break;
-      case 'v': l.cells[i] = 'gate:down'; break;
-      case '=': l.cells[i] = 'gate:right,left'; break;
-      case '|': l.cells[i] = 'gate:up,down'; break;
-      case 'X': l.cells[i] = 'death'; break;
-      case 'g': l.cells[i] = 'gravel'; break;
-      case 'k': l.cells[i] = 'crack'; break;
-      case 't': l.cells[i] = 'toggle:red'; break;
-      case 'G': l.cells[i] = 'goal'; break;
-      case '8': l.cells[i] = 'spring:up'; break;
-      case '6': l.cells[i] = 'spring:right'; break;
-      case '2': l.cells[i] = 'spring:down'; break;
-      case '4': l.cells[i] = 'spring:left'; break;
-      case '.': break;
-      default: throw new Error('Unknown map character: ' + ch);
-    }
+    if (ch === '.') return;
+    if (ch === 'P') l.start = { x, y };
+    else if (CELL[ch]) l.cells[i] = CELL[ch];
+    else if (PIECE[ch]) l.entities.push({ ...PIECE[ch], x, y, dir: 1, mode });
+    else if (LASER[ch]) l.entities.push({ kind: 'turret', x, y, ...(pushableLaser(ch) ? { crate: true } : {}), turret: { dirs: [LASER[ch]], mode } });
+    else throw new Error('Unknown map character: ' + ch);
   }));
   return l;
 }

@@ -28,7 +28,7 @@ const two = goal(room(['#######', '#P....#', '#.#####', '#######']), 3, 1);
 check('a goal you can only slide over is unsolvable', solve(two).status === 'unsolvable');
 
 // A turret's aim counts up forever; two states a whole turn apart are the same state.
-const aimed = room(['#######', '#P....#', '#.....#', '#T....#', '#######']);
+const aimed = room(['#######', '#P....#', '#.....#', '#e....#', '#######']);
 aimed.entities[0].turret.dirs = ['up', 'right'];
 const ar = solve(goal(aimed, 5, 2));
 check('a turret room is searched to the end, not to the cap', ar.status !== 'capped' && ar.states < 200, JSON.stringify({ status: ar.status, states: ar.states }));
@@ -49,14 +49,14 @@ check('and its solution wins when replayed by the plain rules', replays(first, r
 check('a room without a goal is not searched', solve(room(['#####', '#P..#', '#####'])).status === 'nogoal');
 const rt = goal(room(['#######', '#P..M.#', '#.....#', '#######'], { mode: 'realtime' }), 5, 2);
 check('a room with real-time pieces is not searched', unsearchable(rt) === 'realtime' && solve(rt).status === 'realtime');
-const rtt = goal(room(['#######', '#P....#', '#T....#', '#######'], { mode: 'realtime' }), 5, 2);
+const rtt = goal(room(['#######', '#P....#', '#e....#', '#######'], { mode: 'realtime' }), 5, 2);
 check('real-time turrets count too', unsearchable(rtt) === 'realtime');
 check('the search stops at its cap and says so', solve(first, 5).status === 'capped');
 
 const s = createGame(goal(room(['#####', '#P..#', '#####']), 3, 1));
 check('a move into a wall changes nothing and is skipped', move(s, 'left') === null);
 check('a move leaves the original state alone', move(s, 'right') && s.player.x === 1);
-const death = room(['#####', '#P.X#', '#####']); death.cells[8] = 'death';
+const death = room(['#####', '#P.x#', '#####']); death.cells[8] = 'death';
 check('a move that kills you is skipped', move(createGame(goal(death, 1, 1)), 'right') === null);
 const a = createGame(one), b = createGame(one);
 check('two fresh games have one key', stateKey(a) === stateKey(b));

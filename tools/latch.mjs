@@ -5,7 +5,7 @@
 import { createGame, step } from '../src/rules/game.js';
 import { room } from '../tests/lib.mjs';
 
-const l = room(['#########', '#T.N.r..#', '#.......#', '#T.N.r..#', '#.......#', '#..B.B.P#', '#.......#', '#########']);
+const l = room(['#########', '#e.I.r..#', '#.......#', '#e.I.r..#', '#.......#', '#..B.B.P#', '#.......#', '#########']);
 l.cells[1 * 9 + 3] = 'idoor:red|green'; l.cells[1 * 9 + 5] = 'sensor:blue'; l.cells[1 * 9 + 6] = 'wall';
 l.cells[3 * 9 + 3] = 'idoor:yellow|blue'; l.cells[3 * 9 + 5] = 'sensor:green'; l.cells[3 * 9 + 6] = 'wall';
 l.cells[6 * 9 + 1] = 'button:yellow'; l.cells[6 * 9 + 7] = 'button:red';

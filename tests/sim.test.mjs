@@ -72,12 +72,12 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a blocked slide gives no world step', u.worldSteps === 0, 'worldSteps ' + u.worldSteps);
 }
 { // laser kills an enemy across its beam, and the slide goes on
-  const s = createGame(room(['#########', '#P......#', '#.......#', '#..E....#', '#########'], { mode: 'realtime' }));
+  const s = createGame(room(['#########', '#P......#', '#.......#', '#..Z....#', '#########'], { mode: 'realtime' }));
   step(s, ['right']); step(s);
   step(s, ['down']);
   check('laser kills the enemy', alive(s).length === 0);
   check('the slide continues after firing', s.player.dir === 'right' && at(s.player, 4, 1), JSON.stringify(s.player));
-  const t = createGame(room(['#########', '#P......#', '#.......#', '#..E....#', '#########'], { mode: 'realtime', powers: { laser: false } }));
+  const t = createGame(room(['#########', '#P......#', '#.......#', '#..Z....#', '#########'], { mode: 'realtime', powers: { laser: false } }));
   step(t, ['right']); step(t); step(t, ['down']);
   check('no beam without laser', alive(t).length === 1);
 }
@@ -100,10 +100,10 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('the diver stays at the crash tile', at(t.player, 4, 1));
 }
 { // a moving heavy box squashes an enemy, a light box does not
-  const s = createGame(room(['##########', '#P...H.E.#', '##########'], { mode: 'realtime' }));
+  const s = createGame(room(['##########', '#P...H.Z.#', '##########'], { mode: 'realtime' }));
   step(s, ['right']); step(s, ['right']); step(s);
   check('heavy box squashes the enemy', s.entities.find(e => e.kind === 'enemy').dead);
-  const t = createGame(room(['#######', '#.E.B.#', '#P....#', '#######']));
+  const t = createGame(room(['#######', '#.Z.B.#', '#P....#', '#######']));
   worldStep(t);
   check('an enemy pushes a light box', at(t.entities.find(e => e.kind === 'box'), 5, 1) && at(t.entities.find(e => e.kind === 'enemy'), 4, 1));
 }
@@ -143,14 +143,14 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a closed door stops a slide', at(t.player, 2, 1));
 }
 { // a hide cycles the world; what passes over you misses you, what ends on you squashes you
-  const l = room(['######', '#.PE.#', '######']);
+  const l = room(['######', '#.PZ.#', '######']);
   l.entities[0].dir = -1;
   const s = createGame(l);
   step(s, ['hide']);
   check('hide gives the world a step', s.worldSteps === 1 && s.player.hidden);
   for (let i = 0; i < 8; i++) step(s);
   check('an enemy passes over you while you hide', !s.entities[0].dead && s.deaths === 0 && at(s.entities[0], 1, 1) && !s.player.hidden, JSON.stringify(s.entities[0]));
-  const q = room(['#####', '#PE.#', '#...#', '#####']);
+  const q = room(['#####', '#PZ.#', '#...#', '#####']);
   q.entities[0].dir = -1;
   const sq = createGame(q);
   sq.checkpoint = { x: 3, y: 2 };
@@ -170,7 +170,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('hidden, you cannot slide', k.player.dir === null && at(k.player, 2, 1));
   step(k, ['hide']);
   check('hiding again while hidden does nothing', k.worldSteps === 1);
-  const lv = room(['##########', '#T.P.....#', '#E.......#', '##########']);
+  const lv = room(['##########', '#e.P.....#', '#Z.......#', '##########']);
   lv.entities.find(e => e.kind === 'turret').turret = { dirs: ['right', 'down'], mode: 'realtime' };
   const sw = createGame(lv);
   sw.checkpoint = { x: 8, y: 2 };
@@ -182,7 +182,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   t.checkpoint = { x: 4, y: 1 };
   worldStep(t);
   check('the same enemy kills you on the ground', t.deaths === 1);
-  const u = createGame(room(['######', '#.PE.#', '######'], { powers: { cycle: false } }));
+  const u = createGame(room(['######', '#.PZ.#', '######'], { powers: { cycle: false } }));
   step(u, ['hide']);
   check('no hide without cycle', u.worldSteps === 0);
 }
@@ -206,7 +206,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('with no checkpoint, R returns you to the start', at(t.player, 1, 1));
 }
 { // replay: the same keys end in the same state, different keys do not
-  const l = room(['##########', '#P..E...##', '#........#', '#..B..C..#', '##########'], { mode: 'realtime' });
+  const l = room(['##########', '#P..Z...##', '#........#', '#..B..C..#', '##########'], { mode: 'realtime' });
   const log = [{ t: 0, k: 'down' }, { t: 4, k: 'right' }, { t: 12, k: 'up' }, { t: 20, k: 'hide' }];
   const a = gameText(replay(l, log, 40)), b = gameText(replay(l, log, 40));
   check('replay is deterministic', a === b);
@@ -224,7 +224,7 @@ const LONG = ['##########', '#..P....##', '##########'];
 }
 
 { // weak enemy: a dive kills it and the dive goes on; a plain slide into it kills you
-  const W = ['##########', '#P...E...#', '#........#', '##########'];
+  const W = ['##########', '#P...Z...#', '#........#', '##########'];
   const s = createGame(room(W, { mode: 'realtime' }));
   step(s, ['right']); step(s, ['right']);
   check('a dive kills a weak enemy', s.entities[0].dead && s.deaths === 0);
@@ -233,28 +233,28 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('sliding into a weak enemy kills you', t.deaths === 1);
 }
 { // strong enemy: only a moving heavy box kills it
-  const L = ['#########', '#P......#', '#.......#', '#..S....#', '#########'];
+  const L = ['#########', '#P......#', '#.......#', '#..A....#', '#########'];
   const s = createGame(room(L, { mode: 'realtime' }));
   step(s, ['right']); step(s); step(s, ['down']);
   check('a laser does not kill a strong enemy', !s.entities[0].dead);
-  const D = ['##########', '#P...S...#', '#........#', '##########'];
+  const D = ['##########', '#P...A...#', '#........#', '##########'];
   const t = createGame(room(D, { mode: 'realtime' }));
   t.checkpoint = { x: 1, y: 2 };
   step(t, ['right']); step(t, ['right']);
   check('diving into a strong enemy kills you', t.deaths === 1 && !t.entities[0].dead);
-  const l = room(['######', '#PS..#', '#....#', '######']);
+  const l = room(['######', '#PA..#', '#....#', '######']);
   l.entities[0].dir = -1;
   const u = createGame(l);
   u.checkpoint = { x: 4, y: 2 };
   step(u, ['hide']);
   for (let i = 0; i < 8; i++) step(u);
   check('a strong enemy that stops on you squashes you too', !u.entities[0].dead && u.deaths === 1);
-  const v = createGame(room(['##########', '#P...H.S.#', '##########'], { mode: 'realtime' }));
+  const v = createGame(room(['##########', '#P...H.A.#', '##########'], { mode: 'realtime' }));
   step(v, ['right']); step(v, ['right']); step(v);
   check('a thrown heavy box kills a strong enemy', v.entities.find(e => e.kind === 'strong').dead);
 }
 { // turret: one continuous beam that turns clockwise, one direction per world step
-  const l = room(['#######', '#.....#', '#..T..#', '#.....#', '#P....#', '#######']);
+  const l = room(['#######', '#.....#', '#..e..#', '#.....#', '#P....#', '#######']);
   l.entities[0].turret.dirs = ['left', 'up', 'down'];
   const s = createGame(l);
   const aims = [s.beams[0].d];
@@ -265,38 +265,38 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('and turns once as you leave your tile, when your move starts', s.player.dir === 'up' && s.player.y === 3 && s.beams[0].d === 'down', JSON.stringify([s.player.y, s.beams[0].d]));
   slide(s, 'up');
   check('then holds still for the rest of the slide', s.beams[0].d === 'down', s.beams[0].d);
-  const w = createGame(room(['#######', '#T....#', '#.....#', '#..P..#', '#.....#', '#######']));
+  const w = createGame(room(['#######', '#e....#', '#.....#', '#..P..#', '#.....#', '#######']));
   w.checkpoint = { x: 5, y: 4 };
   slide(w, 'up');
   check('sliding into a beam kills you', w.deaths === 1, JSON.stringify(w.player));
   // a dive crosses every tile it skips, so a beam on the way kills you as a slide would
-  const across = () => { const l = room(['#########', '#...T...#', '#P......#', '#########']); l.entities[0].turret.dirs = ['down']; return createGame(l); };
+  const across = () => { const l = room(['#########', '#...e...#', '#P......#', '#########']); l.entities[0].turret.dirs = ['down']; return createGame(l); };
   const dv = across(); step(dv, ['right']); step(dv, ['right']);
   const sl = slide(across(), 'right');
   check('diving through a beam kills you, as sliding through does', dv.deaths === 1 && sl.deaths === 1, `dive ${dv.deaths}, slide ${sl.deaths}`);
-  const j = createGame(room(['#######', '#T..P.#', '#.....#', '#######']));
+  const j = createGame(room(['#######', '#e..P.#', '#.....#', '#######']));
   j.checkpoint = { x: 5, y: 2 };
   step(j, ['hide']);
   check('you are safe in a beam while you hide', j.deaths === 0);
   for (let i = 0; i < 8; i++) step(j);
   check('and it is still there when you come back', j.deaths === 1);
-  const b = createGame(room(['########', '#T.B..P#', '#......#', '########']));
+  const b = createGame(room(['########', '#e.B..P#', '#......#', '########']));
   step(b);
   const end = b.beams[0].path.at(-1);
   check('a box blocks the beam', b.deaths === 0 && end[0] === 3, JSON.stringify(b.beams[0].path));
-  const kl = room(['########', '#T.E.S.#', '#P.....#', '########']);
+  const kl = room(['########', '#e.Z.A.#', '#P.....#', '########']);
   const k = createGame(kl);
   step(k);
   const kend = k.beams[0].path.at(-1);
   check('a beam kills a weak enemy and stops at a strong one', k.entities.find(e => e.kind === 'enemy').dead && !k.entities.find(e => e.kind === 'strong').dead && kend[0] === 5, JSON.stringify(k.beams[0].path));
   for (let i = 0; i < 30; i++) step(k);
   check('a strong enemy takes no harm from a beam', !k.entities.find(e => e.kind === 'strong').dead);
-  const rl = room(['#######', '#.....#', '#..T..#', '#.....#', '#P....#', '#######'], { mode: 'realtime' });
+  const rl = room(['#######', '#.....#', '#..e..#', '#.....#', '#P....#', '#######'], { mode: 'realtime' });
   rl.entities[0].turret.dirs = ['up', 'right'];
   const r = createGame(rl);
   for (let i = 0; i < RT_PERIOD; i++) step(r);
   check('a real-time turret turns on its own', r.beams[0].d === 'right', r.beams[0].d);
-  const ql = room(['#######', '#.....#', '#..T..#', '#.....#', '#P....#', '#######']);
+  const ql = room(['#######', '#.....#', '#..e..#', '#.....#', '#P....#', '#######']);
   ql.entities[0].turret.dirs = ['up', 'right'];
   const q = createGame(ql);
   for (let i = 0; i < RT_PERIOD * 2; i++) step(q);
@@ -309,17 +309,17 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('the turret moves with its box', at(s.entities[0], 7, 1));
   const p0 = s.beams[0].path[0];
   check('and its beam starts at the box', p0[0] === 7 && p0[1] === 1 && s.beams[0].d === 'down', JSON.stringify(s.beams[0]));
-  const t = slide(createGame(room(['######', '#P.T.#', '######'])), 'right');
+  const t = slide(createGame(room(['######', '#P.e.#', '######'])), 'right');
   check('a turret block stops a slide', at(t.player, 2, 1));
   let refused = 0;
   for (const dirs of [[], ['up', 'up'], ['north'], ['up', 'right', 'down', 'left', 'up']]) {
-    const bad = room(['####', '#PT#', '####']); bad.entities[0].turret.dirs = dirs;
+    const bad = room(['####', '#Pe#', '####']); bad.entities[0].turret.dirs = dirs;
     try { parseLevel(JSON.stringify(bad)); } catch { refused++; }
   }
   check('a turret with bad directions is refused', refused === 4, refused + '/4');
 }
 { // a relay is a button that a beam holds down; with a wall behind it does what a catcher did (register 353)
-  const s = createGame(room(['########', '#T..s#.#', '#.oD...#', '#P.....#', '########']));
+  const s = createGame(room(['########', '#e..r#.#', '#.oD...#', '#P.....#', '########']));
   step(s);
   check('a lit relay alone is not enough when its colour has a button', !s.open.red);
   s.player.x = 2; s.player.y = 2; step(s);
@@ -327,7 +327,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   s.entities.push({ id: 99, kind: 'box', x: 2, y: 1, dead: false, turret: null });
   step(s);
   check('blocking the beam closes the door again', !s.open.red && s.lit.size === 0);
-  const t = createGame(room(['#######', '#T..s#', '#..D..#', '#P....#', '#######'].map(r => r.padEnd(7, '#').slice(0, 7))));
+  const t = createGame(room(['#######', '#e..r#', '#..D..#', '#P....#', '#######'].map(r => r.padEnd(7, '#').slice(0, 7))));
   check('a lone relay opens its colour from the start', t.open.red);
   let refused = 0;
   try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: ['sensor:pink', ...Array(8).fill('')] })); } catch { refused++; }
@@ -351,7 +351,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a follower ignores its patrol axis', at(v.entities[0], 5, 3), JSON.stringify(v.entities[0]));
 }
 { // a follow turret points the way you moved, if it has that barrel
-  const l = room(['########', '#..T...#', '#P.....#', '########'], { mode: 'follow' });
+  const l = room(['########', '#..e...#', '#P.....#', '########'], { mode: 'follow' });
   l.entities[0].turret.dirs = ['up', 'right'];
   const s = createGame(l);
   step(s, ['right']); step(s);
@@ -387,12 +387,12 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a patrol boxed in on both sides stays put', at(u.entities[0], 1, 1));
 }
 { // a hide sends each on-your-move piece sliding until something stops it
-  const s = createGame(room(['##########', '#E.......#', '#P.......#', '##########']));
+  const s = createGame(room(['##########', '#Z.......#', '#P.......#', '##########']));
   step(s, ['hide']);
   for (let i = 0; i < 12; i++) step(s);
   check('after a hide the enemy slides to the wall', at(s.entities[0], 8, 1), JSON.stringify(s.entities[0]));
   check('a hide is still one world step', s.worldSteps === 1);
-  const t = createGame(room(['##########', '#E.......#', '#P.......#', '##########']));
+  const t = createGame(room(['##########', '#Z.......#', '#P.......#', '##########']));
   step(t, ['hide']); step(t);
   check('the slide takes a tile per tick, so you see it travel', t.entities[0].x === 3, JSON.stringify(t.entities[0]));
 }
@@ -403,7 +403,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a solid side stops a slide like a wall', at(t.player, 3, 2), JSON.stringify(t.player));
   const u = slide(createGame(room(['#######', '#.....#', '#.....#', '#PB..3#', '#######'])), 'right');
   check('a pushed box turns with the triangle', at(u.entities[0], 5, 1) && at(u.player, 5, 2), JSON.stringify(u.entities[0]) + JSON.stringify(u.player));
-  const v = createGame(room(['#######', '#..E..#', '#.....#', '#..3..#', '#P....#', '#######'], { mode: 'realtime' }));
+  const v = createGame(room(['#######', '#..Z..#', '#.....#', '#..3..#', '#P....#', '#######'], { mode: 'realtime' }));
   v.player.x = 1; v.player.y = 3; v.player.dir = 'up';
   step(v, ['right']);
   check('a laser turns at a triangle', v.entities[0].dead, JSON.stringify(v.events.find(e => e.type === 'laser')));
@@ -439,10 +439,10 @@ const LONG = ['##########', '#..P....##', '##########'];
   const m = createGame(room(['#######', '#M.<..#', '#P....#', '#######']));
   worldStep(m, 'right'); worldStep(m, 'right');
   check('a moving block turns back at an arrow against it', at(m.entities[0], 1, 1), JSON.stringify(m.entities[0]));
-  const l = createGame(room(['########', '#T.<..P#', '#......#', '########']));
+  const l = createGame(room(['########', '#e.<..P#', '#......#', '########']));
   step(l);
   check('a beam stops at an arrow against it', l.deaths === 0 && l.beams[0].path.at(-1)[0] === 2, JSON.stringify(l.beams[0].path));
-  const k = createGame(room(['########', '#T.>..P#', '#......#', '########']));
+  const k = createGame(room(['########', '#e.>..P#', '#......#', '########']));
   k.checkpoint = { x: 1, y: 2 };
   step(k);
   check('and passes one going its way', k.deaths === 1);
@@ -528,7 +528,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   for (let i = 0; i < 6; i++) step(b);
   check('a pushed box gets launched', at(b.entities[0], 3, 1), JSON.stringify(b.entities[0]));
   check('and you, stepping in front after it, get launched behind it', at(b.player, 3, 2), JSON.stringify(b.player));
-  const e = createGame(room(['#######', '#P....#', '#.....#', '#.E...#', '#..8..#', '#######']));
+  const e = createGame(room(['#######', '#P....#', '#.....#', '#.Z...#', '#..8..#', '#######']));
   worldStep(e, 'right');
   for (let i = 0; i < 6; i++) step(e);
   check('an enemy stepping in front gets launched', at(e.entities[0], 3, 1), JSON.stringify(e.entities[0]));
@@ -542,29 +542,29 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('it does not launch into a wall', w.player.dir === null);
   const v = slide(createGame(room(['#######', '#P..8.#', '#######'])), 'right');
   check('a spring is solid from its sides', at(v.player, 3, 1), JSON.stringify(v.player));
-  const l = createGame(room(['########', '#T.....#', '#P.8...#', '########']));
+  const l = createGame(room(['########', '#e.....#', '#P.8...#', '########']));
   step(l);
   check('a beam crossing it is untouched', l.beams[0].path.at(-1)[0] === 6, JSON.stringify(l.beams[0].path));
 }
 { // a death block destroys whatever moves into it
-  const s = slide(createGame(room(['#######', '#.....#', '#P..X.#', '#######'])), 'right');
+  const s = slide(createGame(room(['#######', '#.....#', '#P..x.#', '#######'])), 'right');
   check('you die sliding into one', s.deaths === 1);
-  const b = slide(createGame(room(['#######', '#PB.X.#', '#######'])), 'right');
+  const b = slide(createGame(room(['#######', '#PB.x.#', '#######'])), 'right');
   check('a pushed box is destroyed, and on ice you follow it in', b.deaths === 1, JSON.stringify(b.player));
-  const m = createGame(room(['#######', '#M.X..#', '#P....#', '#######']));
+  const m = createGame(room(['#######', '#M.x..#', '#P....#', '#######']));
   worldStep(m, 'right'); worldStep(m, 'right');
   check('a moving block is destroyed', m.entities[0].dead);
-  const g = createGame(room(['#######', '#S.X..#', '#P....#', '#######']));
+  const g = createGame(room(['#######', '#A.x..#', '#P....#', '#######']));
   worldStep(g, 'right'); worldStep(g, 'right');
   check('even a strong enemy is destroyed', g.entities[0].dead);
-  const h = createGame(room(['#########', '#P..H.X.#', '#.......#', '#########']));
+  const h = createGame(room(['#########', '#P..H.x.#', '#.......#', '#########']));
   step(h, ['right']); step(h, ['right']);
   for (let i = 0; i < 5; i++) step(h);
   check('a thrown heavy box crosses the spikes whole (register 431)', !h.entities[0].dead, JSON.stringify(h.entities[0]));
-  const t = createGame(room(['########', '#T..X.P#', '#......#', '########']));
+  const t = createGame(room(['########', '#e..x.P#', '#......#', '########']));
   step(t);
   check('a beam passes over spikes (register 457)', t.beams[0].path.some(([x]) => x === 4) && t.beams[0].path.some(([x]) => x === 5), JSON.stringify(t.beams[0].path));
-  const r = createGame(room(['#######', '#.....#', '#..M..#', '#..X..#', '#P....#', '#######']));
+  const r = createGame(room(['#######', '#.....#', '#..M..#', '#..x..#', '#P....#', '#######']));
   r.entities[0].axis = 'v';
   r.checkpoint = { x: 1, y: 4 };
   worldStep(r, 'right');
@@ -572,21 +572,21 @@ const LONG = ['##########', '#..P....##', '##########'];
 }
 
 { // a laser sensor is a floor button that only a turret beam crossing it holds down
-  const s = createGame(room(['########', '#T.s...#', '#P....D#', '########']));
+  const s = createGame(room(['########', '#e.r...#', '#P....D#', '########']));
   step(s);
   check('a beam crossing a sensor opens its colour', s.open.red && s.beams[0].path.at(-1)[0] === 6, JSON.stringify(s.beams[0].path));
-  const b = createGame(room(['########', '#T.s...#', '#P....D#', '########']));
+  const b = createGame(room(['########', '#e.r...#', '#P....D#', '########']));
   b.entities.push({ id: 99, kind: 'box', x: 3, y: 1, axis: 'h', dir: 1, mode: 'input', slide: null, dead: false, rush: false });
   step(b);
   check('a box on the sensor keeps the beam off it', !b.open.red);
-  const t = createGame(room(['########', '#..s...#', '#P....D#', '########']));
+  const t = createGame(room(['########', '#..r...#', '#P....D#', '########']));
   step(t);
   check('with no beam it stays off', !t.open.red);
   let bad = 0;
   try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: ['sensor:purple', ...Array(8).fill('')] })); } catch { bad++; }
   try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: ['sensor:red', ...Array(8).fill('')] })); } catch { bad += 10; }
   check('a sensor of no colour is refused, a coloured one is kept', bad === 1, String(bad));
-  const a = room(['########', '#T.s...#', '#P.B..D#', '########']);
+  const a = room(['########', '#e.r...#', '#P.B..D#', '########']);
   a.cells[2 * 8 + 4] = 'button:red';
   const off = createGame(a);
   step(off);
@@ -623,14 +623,14 @@ const LONG = ['##########', '#..P....##', '##########'];
 }
 { // armored: weak enemies, blocks and doors cannot crush you; strong enemies, heavy boxes, beams and death blocks still can
   const A = { powers: { armored: true } };
-  const l = room(['######', '#.PE.#', '######'], A);
+  const l = room(['######', '#.PZ.#', '######'], A);
   l.entities[0].dir = -1;
   const e = createGame(l);
   worldStep(e);
   check('a weak enemy sliding into you stops and turns back', e.deaths === 0 && at(e.entities[0], 3, 1) && e.entities[0].dir === 1, JSON.stringify(e.entities[0]));
-  const sl = slide(createGame(room(['#######', '#P..E.#', '#######'], { ...A, mode: 'realtime' })), 'right');
+  const sl = slide(createGame(room(['#######', '#P..Z.#', '#######'], { ...A, mode: 'realtime' })), 'right');
   check('sliding into a weak enemy stops you in front', sl.deaths === 0 && at(sl.player, 3, 1), JSON.stringify(sl.player));
-  const st = room(['######', '#.PS.#', '#....#', '######'], A);
+  const st = room(['######', '#.PA.#', '#....#', '######'], A);
   st.entities[0].dir = -1;
   const sg = createGame(st);
   sg.checkpoint = { x: 1, y: 2 };
@@ -644,20 +644,20 @@ const LONG = ['##########', '#..P....##', '##########'];
   hv.entities[0].slide = 'left';
   for (let i = 0; i < 5; i++) step(hv);
   check('a heavy box still squashes you', hv.deaths === 1);
-  const sw = createGame(room(['#######', '#.....#', '#P..X.#', '#######'], A));
+  const sw = createGame(room(['#######', '#.....#', '#P..x.#', '#######'], A));
   slide(sw, 'right');
   check('a death block still kills you', sw.deaths === 1);
-  const bm = createGame(room(['#######', '#T..P.#', '#.....#', '#######'], A));
+  const bm = createGame(room(['#######', '#e..P.#', '#.....#', '#######'], A));
   bm.checkpoint = { x: 5, y: 2 };
   step(bm);
   check('a beam still kills you', bm.deaths === 1);
-  const q = room(['#####', '#PE.#', '#...#', '#####'], A);
+  const q = room(['#####', '#PZ.#', '#...#', '#####'], A);
   q.entities[0].dir = -1;
   const hq = createGame(q);
   step(hq, ['hide']);
   for (let i = 0; i < 8; i++) step(hq);
   check('coming back under a weak enemy, you are fine', hq.deaths === 0);
-  const sq = room(['#####', '#PS.#', '#...#', '#####'], A);
+  const sq = room(['#####', '#PA.#', '#...#', '#####'], A);
   sq.entities[0].dir = -1;
   const hs = createGame(sq);
   hs.checkpoint = { x: 3, y: 2 };
@@ -667,7 +667,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   const pushed = createGame(room(['######', '#MP..#', '######'], A));
   worldStep(pushed);
   check('a block still pushes you as far as it can', pushed.deaths === 0 && at(pushed.player, 4, 1), JSON.stringify(pushed.player));
-  const ls = createGame(room(['#######', '#P...E#', '#######'], A));
+  const ls = createGame(room(['#######', '#P...Z#', '#######'], A));
   ls.entities[0].slide = 'left';
   for (let i = 0; i < 6; i++) step(ls);
   check('a launched weak enemy stops at you', ls.deaths === 0 && at(ls.entities[0], 2, 1), JSON.stringify(ls.entities[0]));
@@ -675,7 +675,7 @@ const LONG = ['##########', '#..P....##', '##########'];
 
 { // water: only swimmers, strong enemies, heavy boxes and blocks go in; a beam shocks the whole pool
   const SW = { powers: { swim: true } };
-  const dry = slide(createGame(room(['########', '#P..ww.#', '########'], SW)), 'right');
+  const dry = slide(createGame(room(['########', '#P..~~.#', '########'], SW)), 'right');
   check('not swimming, water stops you in front like a block', dry.deaths === 0 && at(dry.player, 3, 1), JSON.stringify(dry.player));
   const t = createGame(room(['#######', '#P....#', '#######'], { powers: { swim: true, cycle: false } }));
   step(t, ['hide']);
@@ -688,14 +688,14 @@ const LONG = ['##########', '#..P....##', '##########'];
   const none = createGame(room(['#######', '#P....#', '#######'], { powers: { swim: false, cycle: false } }));
   step(none, ['hide']);
   check('with neither, the tap does nothing', none.worldSteps === 0 && !none.player.swimming);
-  const sw = createGame(room(['##########', '#Pwwwwww.#', '##########'], { powers: { swim: true, cycle: false } }));
+  const sw = createGame(room(['##########', '#P~~~~~~.#', '##########'], { powers: { swim: true, cycle: false } }));
   step(sw, ['hide']); step(sw, ['right']);
   for (let i = 0; i < 6; i++) step(sw);
   check('swimming, you go in, then a tile every other tick (land would be 7)', sw.player.x === 5 && sw.player.swimming, JSON.stringify(sw.player));
   step(sw, ['hide']);
   for (let i = 0; i < 20; i++) step(sw);
   check('in water the tap cannot stop swimming', sw.player.swimming && at(sw.player, 8, 1), JSON.stringify(sw.player));
-  const wb = createGame(room(['#######', '#.....#', '#P.ww.#', '#######'], SW));
+  const wb = createGame(room(['#######', '#.....#', '#P.~~.#', '#######'], SW));
   wb.player.swimming = true; wb.player.x = 3; wb.player.y = 2;
   const steps = wb.worldSteps;
   wb.powers.cycle = false;
@@ -704,31 +704,31 @@ const LONG = ['##########', '#..P....##', '##########'];
   wb.powers.cycle = true;
   step(wb, ['hide']);
   check('with Cycle, in water the tap still hides you', wb.player.hidden && wb.player.swimming);
-  for (const [k, ch, goes] of [['enemy', 'E', false], ['box', 'B', false], ['strong', 'S', true], ['mover', 'M', true]]) {
-    const g = createGame(room(['########', `#P${ch}ww..#`, '#......#', '########']));
+  for (const [k, ch, goes] of [['enemy', 'Z', false], ['box', 'B', false], ['strong', 'A', true], ['mover', 'M', true]]) {
+    const g = createGame(room(['########', `#P${ch}~~..#`, '#......#', '########']));
     g.player.y = 2; g.player.x = 1;
     if (k === 'box') g.entities[0].slide = 'right'; else for (let i = 0; i < 3; i++) worldStep(g);
     for (let i = 0; i < 6; i++) step(g);
     const e = g.entities[0];
     check(goes ? `a ${k} goes through water` : `a ${k} stops at water`, goes ? e.x >= 3 : (e.x <= 2 && !e.dead), JSON.stringify(e));
   }
-  const pb = slide(createGame(room(['#######', '#PB.ww#', '#######'])), 'right');
+  const pb = slide(createGame(room(['#######', '#PB.~~#', '#######'])), 'right');
   check('a box you push stops at water, and so do you', at(pb.entities[0], 3, 1) && at(pb.player, 2, 1), JSON.stringify(pb.entities[0]));
   let wbad = 0;
   try { parseLevel(JSON.stringify({ ...room(['###', '#P#', '###']), cells: ['water', ...Array(8).fill('')] })); } catch { wbad++; }
   check('a level file keeps water', wbad === 0);
-  const hv = createGame(room(['#########', '#.H.ww..#', '#P......#', '#########']));
+  const hv = createGame(room(['#########', '#.H.~~..#', '#P......#', '#########']));
   hv.entities[0].slide = 'right';
   for (let i = 0; i < 8; i++) step(hv);
   check('a heavy box slides through water', at(hv.entities[0], 7, 1), JSON.stringify(hv.entities[0]));
   // the shock
-  const pool = room(['#########', '#T.wwww.#', '#...w...#', '#P..ww..#', '#.......#', '#########']);
+  const pool = room(['#########', '#e.~~~~.#', '#...~...#', '#P..~~..#', '#.......#', '#########']);
   const pg = createGame(pool);
   pg.player.swimming = true; pg.player.x = 5; pg.player.y = 3; pg.checkpoint = { x: 1, y: 4 };
   step(pg);
   check('a beam over water passes on', pg.beams[0].path.at(-1)[0] === 7, JSON.stringify(pg.beams[0].path));
   check('and shocks the whole pool: swimming far from the beam, you die', pg.deaths === 1);
-  const apart = room(['#########', '#T.ww...#', '#.......#', '#P..ww..#', '#.......#', '#########']);
+  const apart = room(['#########', '#e.~~...#', '#.......#', '#P..~~..#', '#.......#', '#########']);
   const ag = createGame(apart);
   ag.player.swimming = true; ag.player.x = 5; ag.player.y = 3;
   step(ag);
@@ -746,7 +746,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   en.entities.push({ id: 97, kind: 'strong', x: 4, y: 3, axis: 'h', dir: 1, mode: 'input', slide: null, dead: false, rush: false });
   step(en);
   check('a weak enemy in the pool dies, a strong one does not', en.entities.find(e => e.id === 98).dead && !en.entities.find(e => e.id === 97).dead);
-  const my = createGame(room(['#########', '#.......#', '#P......#', '#.wwww..#', '#.......#', '#########'], { powers: { swim: true } }));
+  const my = createGame(room(['#########', '#.......#', '#P......#', '#.~~~~..#', '#.......#', '#########'], { powers: { swim: true } }));
   my.player.swimming = true; my.player.x = 5; my.player.y = 3; my.checkpoint = { x: 1, y: 1 };
   my.player.dir = 'left';
   step(my, ['up']);
@@ -756,7 +756,7 @@ const LONG = ['##########', '#..P....##', '##########'];
 { // sticky: a puddle makes you sticky until water or until you stick to something
   const pass = slide(createGame(room(['########', '#P.%...#', '########'])), 'right');
   check('sliding through a puddle makes you sticky', pass.player.sticky && at(pass.player, 6, 1), JSON.stringify(pass.player));
-  const wash = createGame(room(['#########', '#P%.ww..#', '#########'], { powers: { swim: true, cycle: false } }));
+  const wash = createGame(room(['#########', '#P%.~~..#', '#########'], { powers: { swim: true, cycle: false } }));
   step(wash, ['hide']); slide(wash, 'right');
   check('water washes it off', !wash.player.sticky && wash.player.x === 7, JSON.stringify(wash.player));
   const g = slide(createGame(room(['#########', '#.......#', '#P%..B..#', '#########'])), 'right');
@@ -835,11 +835,11 @@ const LONG = ['##########', '#..P....##', '##########'];
   step(g, ['respawn']);
   check('Reset puts every piece back where the room starts', g.entities.length === 1 && at(g.entities[0], 3, 1) && !g.entities[0].dead, JSON.stringify(g.entities));
   check('and you on your last checkpoint', at(g.player, 2, 2));
-  const d = createGame(room(['#######', '#.....#', '#PB.X.#', '#######']));
+  const d = createGame(room(['#######', '#.....#', '#PB.x.#', '#######']));
   d.checkpoint = { x: 1, y: 1 };
   slide(d, 'right');
   check('dying resets the room too: the box you lost is back', d.deaths === 1 && at(d.entities[0], 2, 2) && !d.entities[0].dead && at(d.player, 1, 1), JSON.stringify(d.entities[0]));
-  const t = room(['#######', '#.....#', '#T....#', '#P....#', '#######']);
+  const t = room(['#######', '#.....#', '#e....#', '#P....#', '#######']);
   t.entities[0].turret = { dirs: ['up', 'right'], mode: 'input' };
   const tg = createGame(t);
   slide(tg, 'right');
@@ -874,24 +874,24 @@ const LONG = ['##########', '#..P....##', '##########'];
 }
 
 { // a moving block pushing a box onto spikes: the box covers them, whole (register 431)
-  const g = createGame(room(['########', '#M.B.X.#', '#P.....#', '########']));
+  const g = createGame(room(['########', '#M.B.x.#', '#P.....#', '########']));
   worldStep(g, 'right'); worldStep(g, 'right'); worldStep(g, 'right');
   check('a box pushed onto spikes is not destroyed', !g.entities.find(e => e.kind === 'box').dead, JSON.stringify(g.entities));
 }
 
 { // boxes cover spikes (registers 427, 428, 431): the box sits there whole; whoever steps onto bare spikes dies
-  const g = createGame(room(['######', '#PB.X#', '######']));
+  const g = createGame(room(['######', '#PB.x#', '######']));
   step(g, ['right']); for (let i = 0; i < 6; i++) step(g);
   check('pushed onto spikes against a wall, a box stays there whole and the robot lives', !g.entities[0].dead && g.entities[0].x === 4 && g.deaths === 0 && g.player.x === 3, JSON.stringify([g.entities[0], g.player]));
-  const on = createGame(room(['#######', '#PB.X.#', '#######']));
+  const on = createGame(room(['#######', '#PB.x.#', '#######']));
   step(on, ['right']); for (let i = 0; i < 6; i++) step(on);
   check('pushing a box on over spikes, the robot follows onto them and dies', on.deaths === 1, String(on.deaths));
-  const en = createGame(room(['#######', '#S.X..#', '#P....#', '#######']));
+  const en = createGame(room(['#######', '#A.x..#', '#P....#', '#######']));
   worldStep(en, 'right'); worldStep(en, 'right');
   check('an enemy still dies on spikes', en.entities[0].dead);
 }
 { // one death per moment: pieces from before a reset do not act after it
-  const l = room(['#####', '#.PE#', '#...#', '#F..#', '#####']);
+  const l = room(['#####', '#.PZ#', '#...#', '#F..#', '#####']);
   l.entities[0].dir = -1; l.entities[1].dir = -1;
   const g = createGame(l);
   g.checkpoint = { x: 1, y: 2 };
@@ -941,24 +941,24 @@ const LONG = ['##########', '#..P....##', '##########'];
 }
 
 { // an inverted door is open until every switch of its colour is held, then closes
-  const s = createGame(room(['#######', '#P.N..#', '#o....#', '#######']));
+  const s = createGame(room(['#######', '#P.I..#', '#o....#', '#######']));
   check('with no switch held, an inverted door is open', !s.open.red && !solidCell(s, 3, 1));
-  const lone = createGame(room(['#####', '#PN.#', '#####']));
+  const lone = createGame(room(['#####', '#PI.#', '#####']));
   check('with no switch of its colour at all, it is open', !solidCell(lone, 2, 1));
   s.player.x = 1; s.player.y = 2; step(s);
   check('pressing the button closes it', s.open.red && solidCell(s, 3, 1));
   s.player.x = 2; s.player.y = 2; step(s);
   check('releasing the button opens it again', !s.open.red && !solidCell(s, 3, 1));
-  const t = room(['#######', '#P.N..#', '#B....#', '#######']);
+  const t = room(['#######', '#P.I..#', '#B....#', '#######']);
   t.cells[2 * 7 + 1] = 'button:red';
   const g = slide(createGame(t), 'right');
   check('a closed inverted door stops a slide', at(g.player, 2, 1), JSON.stringify(g.player));
-  const both = room(['#######', '#PDN..#', '#.....#', '#######']);
+  const both = room(['#######', '#PDI..#', '#.....#', '#######']);
   both.cells[2 * 7 + 1] = 'button:red';
   const bg = createGame(both);
   bg.player.x = 1; bg.player.y = 2; step(bg);
   check('one colour opens its doors and closes its inverted doors together', !solidCell(bg, 2, 1) && solidCell(bg, 3, 1));
-  const beam = room(['#######', '#T.N..#', '#o....#', '#######']);
+  const beam = room(['#######', '#e.I..#', '#o....#', '#######']);
   const bm = createGame(beam);
   check('an open inverted door lets a beam through', bm.beams[0].path.length === 5, JSON.stringify(bm.beams[0].path));
   bm.player.x = 1; bm.player.y = 2; step(bm); step(bm);
@@ -966,7 +966,7 @@ const LONG = ['##########', '#..P....##', '##########'];
 }
 { // a closing inverted door squashes and is held like a door
   const idoorRoom = (kind, opts) => {
-    const l = room(['#######', '#N....#', '#.M...#', '#.....#', '#######'], opts);
+    const l = room(['#######', '#I....#', '#.M...#', '#.....#', '#######'], opts);
     l.cells[2 * 7 + 5] = 'button:red';
     if (kind) { l.start = { x: 4, y: 3 }; l.entities.push({ kind, x: 1, y: 1, axis: 'h', dir: 1, mode: 'realtime' }); }
     else l.start = { x: 1, y: 1 };
@@ -990,7 +990,7 @@ const LONG = ['##########', '#..P....##', '##########'];
 }
 { // the editor places, names and reads back an inverted door
   check('idoor:red is a cell', isCell('idoor:red') && !isCell('idoor:pink'));
-  const l = room(['#####', '#P.E#', '#####']);
+  const l = room(['#####', '#P.Z#', '#####']);
   place(l, { tool: 'idoor', colour: 'blue' }, 3, 1, 'place');
   check('placing one clears the piece there', l.cells[8] === 'idoor:blue' && l.entities.length === 0, JSON.stringify(l.entities));
   check('Look names it', describe(l, 3, 1) === 'Blue inverted door');
@@ -1011,17 +1011,17 @@ const LONG = ['##########', '#..P....##', '##########'];
   worldStep(g); worldStep(g);
   check('the box ahead goes first, until it cannot: then they come apart', at(b, 5, 1) && !m.glue && !b.glue, JSON.stringify(g.entities));
   check('back over the puddle alone, the block is sticky again', m.sticky && at(m, 1, 1), JSON.stringify(m));
-  const e = createGame(room(['#######', '#E%..B#', '#.....#', '#######'], { mode: 'input' }));
+  const e = createGame(room(['#######', '#Z%..B#', '#.....#', '#######'], { mode: 'input' }));
   e.player.x = 1; e.player.y = 2;
   worldStep(e);
   check('an enemy glues to a box too', e.entities[0].glue === e.entities[1].id, JSON.stringify(e.entities));
-  const w = createGame(room(['#######', '#M%w..#', '#.....#', '#######']));
+  const w = createGame(room(['#######', '#M%~..#', '#.....#', '#######']));
   w.player.x = 1; w.player.y = 2;
   w.move++; rawWorldStep(w); step(w);
   check('crossing a puddle makes a piece sticky', w.entities[0].sticky && JSON.parse(gameText(w)).pieces[0].sticky, JSON.stringify(w.entities));
   settle(w);
   check('water washes it off', !w.entities[0].sticky, JSON.stringify(w.entities));
-  const t = createGame(room(['#######', '#M%..T#', '#.....#', '#######']));
+  const t = createGame(room(['#######', '#M%..e#', '#.....#', '#######']));
   t.player.x = 1; t.player.y = 2;
   worldStep(t);
   check('a turret does not glue', !t.entities[0].glue && !t.entities[1].glue, JSON.stringify(t.entities));
@@ -1199,11 +1199,11 @@ const LONG = ['##########', '#..P....##', '##########'];
 }
 
 { // a relay is a block a beam goes through (register 312); a two-colour door opens on either colour (313)
-  const g = createGame(room(['#######', '#P.s..#', '#######'])); slide(g, 'right');
+  const g = createGame(room(['#######', '#P.r..#', '#######'])); slide(g, 'right');
   check('a relay stops the robot', at(g.player, 2, 1), JSON.stringify(g.player));
-  const b = createGame(room(['#######', '#T.s..#', '#P....#', '#######'])); step(b);
+  const b = createGame(room(['#######', '#e.r..#', '#P....#', '#######'])); step(b);
   check('a beam goes through a relay and lights it', b.lit.has(1 * 7 + 3) && b.beams[0].path.some(([x]) => x === 5), JSON.stringify(b.beams[0].path));
-  const d = createGame(room(['#####', '#PY.#', '#####']));
+  const d = createGame(room(['#####', '#PX.#', '#####']));
   const shut = solidCell(d, 2, 1); d.open.blue = true; const blue = solidCell(d, 2, 1); d.open = { red: true }; const red = solidCell(d, 2, 1);
   check('a two-colour door is shut with neither colour, open with either', shut && !blue && !red);
   check('a room with a two-colour door reads back', isCell('door:red|blue') && !isCell('door:red|red') && !isCell('door:red|pink'));
@@ -1239,20 +1239,20 @@ const LONG = ['##########', '#..P....##', '##########'];
 
 { // a pushable laser (register 336): pushed like a box, keeps its aim, joins a train; a plain one is a wall
   const turret = g => g.entities.find(e => e.kind === 'turret');
-  const a = createGame(room(['#######', '#P.K..#', '#######'])); slide(a, 'right');
+  const a = createGame(room(['#######', '#P.N..#', '#######'])); slide(a, 'right');
   check('the robot pushes a pushable laser, which keeps its aim', turret(a).x === 5 && a.player.x === 4 && turret(a).turret.dirs[0] === 'up', JSON.stringify([turret(a).x, a.player.x]));
-  const b = createGame(room(['#######', '#P.T..#', '#######'])); slide(b, 'right');
+  const b = createGame(room(['#######', '#P.e..#', '#######'])); slide(b, 'right');
   check('a plain laser stops the robot', turret(b).x === 3 && b.player.x === 2);
-  const c = createGame(room(['#######', '#PBK..#', '#######'])); slide(c, 'right');
+  const c = createGame(room(['#######', '#PBN..#', '#######'])); slide(c, 'right');
   check('a box pushes a pushable laser ahead of it, as a train', turret(c).x === 5 && c.entities.find(e => e.kind === 'box').x === 4, JSON.stringify(c.entities.map(e => [e.kind, e.x])));
-  check('a pushable laser reads back', parseLevel(JSON.stringify(room(['#P.K#']))).entities[0].crate === true);
+  check('a pushable laser reads back', parseLevel(JSON.stringify(room(['#P.N#']))).entities[0].crate === true);
 }
 
 { // pushable tiles (register 336): a relay, a one-way along its arrow, a closed door or inverted door
   const run = (rows, crates, k = 'right') => slide(createGame(room(rows, { crates })), k);
-  const r = run(['#######', '#P.s..#', '#######'], [[3, 1]]);
+  const r = run(['#######', '#P.r..#', '#######'], [[3, 1]]);
   check('the robot pushes a pushable relay to the wall', cellAt(r, 5, 1) === 'sensor:red' && cellAt(r, 3, 1) === '' && r.player.x === 4 && r.crates.has(12), JSON.stringify([r.cells, [...r.crates], r.player.x]));
-  check('a plain relay stops the robot', run(['#######', '#P.s..#', '#######'], []).player.x === 2);
+  check('a plain relay stops the robot', run(['#######', '#P.r..#', '#######'], []).player.x === 2);
   const g = run(['#######', '#P.>..#', '#######'], [[3, 1]]);
   check('a pushable one-way is pushed along its arrow, then stepped onto once it cannot move (register 460)', cellAt(g, 5, 1) === 'gate:right' && g.player.x === 5, JSON.stringify([g.cells.slice(7, 14), g.player.x]));
   const gw = run(['#######', '#..<.P#', '#######'], [[3, 1]], 'left');
@@ -1263,15 +1263,15 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a closed pushable door is pushed', cellAt(d, 5, 1) === 'door:red' && d.player.x === 4);
   const od = (() => { const l = room(['########', '#P.D...#', '#B.....#', '########'], { crates: [[3, 1]] }); l.cells[17] = 'button:red'; return slide(createGame(l), 'right'); })();
   check('an open pushable door is walked through, not pushed', cellAt(od, 3, 1) === 'door:red' && od.player.x === 6, JSON.stringify([od.cells.slice(8, 16), od.player.x]));
-  const nd = (() => { const l = room(['########', '#P.N...#', '#B.....#', '########'], { crates: [[3, 1]] }); l.cells[17] = 'button:red'; return slide(createGame(l), 'right'); })();
+  const nd = (() => { const l = room(['########', '#P.I...#', '#B.....#', '########'], { crates: [[3, 1]] }); l.cells[17] = 'button:red'; return slide(createGame(l), 'right'); })();
   check('a closed (pressed) pushable inverted door is pushed', cellAt(nd, 6, 1) === 'idoor:red' && nd.player.x === 5, JSON.stringify([nd.cells.slice(8, 16), nd.player.x]));
-  const tr = run(['########', '#PBs.B.#', '########'], [[3, 1]]);
+  const tr = run(['########', '#PBr.B.#', '########'], [[3, 1]]);
   check('a box pushes a pushable relay that pushes a box, as one train', cellAt(tr, 5, 1) === 'sensor:red' && tr.entities.map(e => e.x).join() === '4,6' && tr.player.x === 3, JSON.stringify([tr.cells.slice(8, 16), tr.entities.map(e => e.x), tr.player.x]));
-  const fl = run(['#######', '#P.sg.#', '#######'], [[3, 1]]);
+  const fl = run(['#######', '#P.rg.#', '#######'], [[3, 1]]);
   check('a pushable tile lands only on bare floor', cellAt(fl, 3, 1) === 'sensor:red' && fl.player.x === 2);
-  const rs = run(['#######', '#P.s..#', '#######'], [[3, 1]]); respawn(rs);
+  const rs = run(['#######', '#P.r..#', '#######'], [[3, 1]]); respawn(rs);
   check('a reset puts pushed tiles back', cellAt(rs, 3, 1) === 'sensor:red' && rs.crates.has(10) && cellAt(rs, 5, 1) === '');
-  const k1 = createGame(room(['#######', '#P.s..#', '#######'], { crates: [[3, 1]] })), k2 = slide(cloneGame(k1), 'right');
+  const k1 = createGame(room(['#######', '#P.r..#', '#######'], { crates: [[3, 1]] })), k2 = slide(cloneGame(k1), 'right');
   const k3 = cloneGame(k1); k3.cells = [...k1.cells]; k3.cells[11] = k3.cells[10]; k3.cells[10] = ''; k3.crates = new Set([11]);
   check('a pushed tile changes the search key, and a copy of a run is untouched by the push', stateKey(k1) !== stateKey(k3) && stateKey(k1) !== stateKey(k2) && cellAt(k1, 3, 1) === 'sensor:red');
   const ed = room(['#P...#']), ui = { tool: 'sensor', colour: 'red', crate: true };
@@ -1283,9 +1283,9 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('erasing a pushable tile takes the mark too', !ed.crates && ed.cells[3] === '');
   place(ed, ui, 3, 0, 'place'); const mv = moveAt(ed, { x: 3, y: 0 }, { x: 4, y: 0 }), gr = resizeSide(ed, 'left', 1);
   check('moving or growing the room carries the mark with its tile', mv.crates[0].x === 4 && mv.cells[4] === 'sensor:red' && gr.crates[0].x === 4, JSON.stringify([mv.crates, gr.crates]));
-  const bord = room(['#####', '#.s.#', '#####'], { crates: [[2, 1]] }), grown = moveSide(bord, 'left', 1);
+  const bord = room(['#####', '#.r.#', '#####'], { crates: [[2, 1]] }), grown = moveSide(bord, 'left', 1);
   check('growing a walled room carries the mark too', grown && grown.crates[0].x === 3 && grown.cells[grown.w + 3] === 'sensor:red', JSON.stringify(grown && grown.crates));
-  check('pushable tiles read back', parseLevel(JSON.stringify(room(['#P.s#'], { crates: [[3, 0]] }))).crates[0].x === 3);
+  check('pushable tiles read back', parseLevel(JSON.stringify(room(['#P.r#'], { crates: [[3, 0]] }))).crates[0].x === 3);
   let bad = ''; try { parseLevel(JSON.stringify(room(['#P..#'], { crates: [[3, 0]] }))); } catch (e) { bad = e.message; }
   check('a pushable mark on a tile that cannot be pushed is refused', /pushable/i.test(bad), bad);
 }
@@ -1391,15 +1391,15 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a pushed box stops against it', at(b.entities[0], 4, 1) && !b.broken.length, JSON.stringify(b.entities[0]));
   const h = run((s => { step(s, ['right']); step(s, ['right']); return s; })(createGame(room(['##########', '#P.H.k...#', '##########'], { powers: { dive: true } }))));
   check('a heavy box sent sliding breaks it and slides on through', at(h.entities[0], 8, 1) && kAt(h, 5, 1), JSON.stringify([h.entities[0], h.broken]));
-  const st = createGame(room(['########', '#P.....#', '#S..k..#', '########']));
+  const st = createGame(room(['########', '#P.....#', '#A..k..#', '########']));
   settle(worldStep(st, 'right'));
   check('a strong enemy on patrol breaks it and goes on through', at(st.entities[0], 6, 2) && kAt(st, 4, 2), JSON.stringify([st.entities[0], st.broken]));
-  const we = createGame(room(['########', '#P.....#', '#E..k..#', '########']));
+  const we = createGame(room(['########', '#P.....#', '#Z..k..#', '########']));
   settle(worldStep(we, 'right'));
   check('a weak enemy stops against it', at(we.entities[0], 3, 2) && !we.broken.length, JSON.stringify(we.entities[0]));
   const sp = run((s => { step(s); return s; })(createGame(room(['#######', '#6Hk..#', '#P....#', '#######']))));
   check('a spring launches a heavy box into it, and the box breaks it', kAt(sp, 3, 1) && sp.entities[0].x === 5, JSON.stringify([sp.entities[0], sp.broken]));
-  const t = createGame(room(['########', '#T.k..P#', '########'])); step(t);
+  const t = createGame(room(['########', '#e.k..P#', '########'])); step(t);
   check('a turret beam stops at it and does not break it', !t.deaths && !t.broken.length && t.beams[0].path.at(-1)[0] === 2, JSON.stringify([t.deaths, t.beams[0]?.path]));
   const c = createGame(room(['########', '#P..k..#', '########'], { powers: { dive: true } })), copy = cloneGame(c);
   step(copy, ['right']); step(copy, ['right']); run(copy);
@@ -1426,18 +1426,18 @@ const LONG = ['##########', '#..P....##', '##########'];
   const re = createGame(room(['#########', '#PO.g...#', '#########']));
   slide(re, 'right'); slide(re, 'right');
   check('pushing a burning bomb again does not restart its fuse', at(re.entities[0], 7, 1) && re.entities[0].fuse === 1, JSON.stringify(re.entities[0]));
-  const ch = createGame(room(['#########', '#...k..P#', '#.OOB...#', '#.EHS...#', '#########']));
+  const ch = createGame(room(['#########', '#...k..P#', '#.OOB...#', '#.ZHA...#', '#########']));
   explode(ch, ch.entities[0]);
   const [o1, o2, bx, en, hv, st] = ch.entities;
   check('a blast sets off a bomb beside it, which breaks what is in its own reach', o1.dead && o2.dead && bx.dead && ch.broken.includes(1 * 9 + 4), JSON.stringify(ch.entities.map(e => [e.kind, e.dead])));
   check('a blast breaks weak enemies but not heavy boxes or strong enemies', en.dead && !hv.dead && !st.dead, JSON.stringify([en.dead, hv.dead, st.dead]));
-  const t = createGame(room(['########', '#T..O..#', '#.....P#', '########'])); step(t);
+  const t = createGame(room(['########', '#e..O..#', '#.....P#', '########'])); step(t);
   check('a turret beam sets a bomb off at once', t.entities[1].dead && t.events.some(e => e.type === 'blast'), JSON.stringify(t.entities[1]));
-  const w = createGame(room(['########', '#PO..ww#', '########']));
+  const w = createGame(room(['########', '#PO..~~#', '########']));
   const seen = []; step(w, ['right']); for (let i = 0; i < 50 && w.player.dir; i++) { seen.push(...w.events.map(e => e.type)); step(w); }
   seen.push(...w.events.map(e => e.type));
   check('water puts its fuse out, and it does not light while in water', at(w.entities[0], 5, 1) && w.entities[0].fuse === null && seen.includes('fizzle'), JSON.stringify([w.entities[0], seen]));
-  const dry = createGame(room(['########', '#PO.w..#', '########'], { powers: { swim: true, cycle: false } }));
+  const dry = createGame(room(['########', '#PO.~..#', '########'], { powers: { swim: true, cycle: false } }));
   step(dry, ['hide']); slide(dry, 'right');
   check('pushed out of the water, it lights again', at(dry.entities[0], 6, 1) && dry.entities[0].fuse === 2, JSON.stringify(dry.entities[0]));
   step(dry, ['respawn']);
@@ -1445,10 +1445,10 @@ const LONG = ['##########', '#..P....##', '##########'];
   const hs = createGame(room(['#########', '#P.H.O..#', '#########'], { powers: { dive: true } }));
   const hev = []; step(hs, ['right']); step(hs, ['right']); for (let i = 0; i < 60 && (hs.player.dir || hs.entities.some(e => !e.dead && e.slide)); i++) { hev.push(...hs.events.map(e => e.type)); step(hs); }
   check('a heavy box sliding into a bomb sets it off', hs.entities[1].dead && hev.includes('blast') && !hs.entities[0].dead && !hs.deaths, JSON.stringify([hs.entities, hev]));
-  const dz = createGame(room(['#######', '#POX..#', '#######']));
+  const dz = createGame(room(['#######', '#POx..#', '#######']));
   step(dz, ['right']);
   check('a bomb pushed into a death block goes off there, and you beside it die', dz.deaths === 1 && dz.events.some(e => e.type === 'blast'), JSON.stringify(dz.events));
-  const ar = createGame(room(['#######', '#POX..#', '#######'], { powers: { armored: true } }));
+  const ar = createGame(room(['#######', '#POx..#', '#######'], { powers: { armored: true } }));
   step(ar, ['right']);
   check('armored, a blast does not hurt you', !ar.deaths && ar.events.some(e => e.type === 'blast'), JSON.stringify(ar.events));
   const mt = createGame(room(['########', '#.OB..P#', '#..H...#', '########']));

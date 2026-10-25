@@ -7,7 +7,7 @@ import { room, suite } from './lib.mjs';
 const { check, done } = suite('tags');
 check('every tag has one label', new Set(MECHANISMS.map(m => m[0])).size === MECHANISMS.length);
 
-const l = room(['########', '#P.B.oD#', '#M...H.#', '#T.....#', '########']);
+const l = room(['########', '#P.B.oD#', '#M...H.#', '#e.....#', '########']);
 l.cells[3 * 8 + 6] = 'goal';
 l.cells[2 * 8 + 6] = 'sticky';
 const c = contains(l);
@@ -16,7 +16,7 @@ check('pieces are read off the pieces', ['piece:box', 'piece:heavy', 'piece:move
 check('a moving piece gives its clock', c.includes('clock:input') && !c.includes('clock:realtime'));
 check('powers that are on are tags', c.includes('power:boomerang') && !c.includes('power:swim'));
 check('one switch of one colour is not AND wiring', !c.includes('wiring:and') && !c.includes('wiring:colours'));
-const w = room(['#######', '#Poou.#', '#######']);
+const w = room(['#######', '#Pooq.#', '#######']);
 check('two switches of one colour is AND wiring, two colours is colours', contains(w).includes('wiring:and') && contains(w).includes('wiring:colours'));
 const m = room(['#####', '#PB.#', '#####']); m.entities[0].turret = { dirs: ['right'], mode: 'realtime' };
 check('a turret on a box is a mounted turret, with its clock', contains(m).includes('piece:mounted') && contains(m).includes('clock:realtime'));

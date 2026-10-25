@@ -62,7 +62,7 @@ check('a change keeps the walls, one goal, and the start and pieces inside on fl
 check('a change returns a new room and leaves the old one alone', JSON.stringify(mutate(base, one, rng(1))) !== JSON.stringify(base) && JSON.stringify(base) === JSON.stringify(build(one, rng(5))));
 
 // Taking an ingredient out.
-const mixed = room(['########', '#PoDB.r#', '#.E.T..#', '########'], { powers: { laser: true } });
+const mixed = room(['########', '#PoDB.r#', '#.Z.e..#', '########'], { powers: { laser: true } });
 mixed.entities.push({ kind: 'box', x: 5, y: 2, turret: { dirs: ['up'], mode: 'input' } }, { kind: 'mover', x: 6, y: 2, axis: 'h', mode: 'follow' });
 const kept = JSON.stringify(mixed);
 check('a door is taken out by losing its buttons, so it stays shut', !knock(ING.door, mixed).cells.some(c => c.startsWith('button:')) && knock(ING.door, mixed).cells.includes('door:red'));
@@ -94,14 +94,14 @@ const around = solve(knock(ING.tri, slope));
 check('a triangle that saves moves counts', cut.status === 'solved' && cut.par === 1 && around.moves.length === 3 && !cut.missing.length, JSON.stringify({ cut, around: around.moves }));
 
 // Water you only stop against does a wall's job, so it is not being used as water.
-const pond = goal(room(['#########', '#P......#', '#w#####.#', '#.......#', '#########']), 1, 3);
+const pond = goal(room(['#########', '#P......#', '#~#####.#', '#.......#', '#########']), 1, 3);
 const used = run(judge(pond, normalize({ ing: { water: 'must' }, min: 1, max: 9 })));
 check('water that only acts as a wall is missing', used.status === 'solved' && used.par === 3 && used.missing.includes('water'), JSON.stringify(used));
-const swim = goal(room(['#######', '#P.w.##', '#######'], { powers: { swim: true } }), 4, 1);
+const swim = goal(room(['#######', '#P.~.##', '#######'], { powers: { swim: true } }), 4, 1);
 swim.powers.swim = true;
 const swum = run(judge(swim, normalize({ ing: { water: 'must', swim: 'must' }, min: 1, max: 9 })));
 check('water you swim through counts: as floor it is shorter, as wall it is unsolvable', swum.status === 'solved' && !swum.missing.length, JSON.stringify(swum));
-const idle = goal(room(['#########', '#P......#', '#.#w###.#', '#.......#', '#########']), 1, 3);
+const idle = goal(room(['#########', '#P......#', '#.#~###.#', '#.......#', '#########']), 1, 3);
 idle.cells[2 * 9 + 1] = 'wall';
 const unused = run(judge(idle, normalize({ ing: { water: 'must' }, min: 1, max: 9 })));
 check('water out of the way is missing', unused.status === 'solved' && unused.missing.includes('water'), JSON.stringify(unused));

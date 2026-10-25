@@ -24,7 +24,7 @@ check('a longer way lists every stop on it', t2.solution.join() === [6, 8, 13].j
 check('and each stop knows how far it is', t2.distance.get(6) === 2 && t2.distance.get(8) === 1, JSON.stringify([...t2.distance]));
 
 // A turret firing right covers the row up to the wall; a box can be pushed along its lane.
-const lit = room(['#######', '#T....#', '#P.B..#', '#######'], { powers: OFF });
+const lit = room(['#######', '#e....#', '#P.B..#', '#######'], { powers: OFF });
 const l = run(lensData(lit));
 check('a beam covers the tiles it crosses', [2, 3, 4, 5].every(x => l.beams.has(1 * 7 + x)) && !l.beams.has(1 * 7 + 1), JSON.stringify([...l.beams]));
 check('a box covers every tile it can be pushed to', l.pieces.has(2 * 7 + 3) && l.pieces.has(2 * 7 + 5), JSON.stringify([...l.pieces]));
@@ -40,7 +40,7 @@ check('the solution in his room is its 21 moves', run(lensData(his)).solution.le
 const hall = room(['######', '#P..#', '######'].map(r => r.slice(0, 5)), { powers: OFF });
 const hp = run(lensData(hall));
 check('a slide passes the tiles between its stops', [...hp.passes].join() === '7' && [...hp.stops].sort().join() === '6,8', JSON.stringify([[...hp.passes], [...hp.stops]]));
-const pit = room(['######', '#P..X#', '######'], { powers: OFF });
+const pit = room(['######', '#P..x#', '######'], { powers: OFF });
 check('a move that kills you passes nothing', run(lensData(pit)).passes.size === 0);
 // Moves: every stop-to-stop move, counted by how many positions make it.
 check('the moves between stops are listed with how many positions make them', hp.moves.get('6>8') === 1 && hp.moves.get('8>6') === 1 && hp.moves.size === 2, JSON.stringify([...hp.moves]));
@@ -53,6 +53,6 @@ const dz = run(lensData(pit));
 check('sliding into a death block marks the tile you die on, beside it', [...dz.danger].join() === String(1 * 6 + 3), JSON.stringify([...dz.danger]));
 check('a room with no way to die has no danger', hp.danger.size === 0);
 check('a search past its cap says so', run(lensData(oneWay, 1)).capped === true);
-const rt = room(['#####', '#P.E#', '#####'], { mode: 'realtime' });
+const rt = room(['#####', '#P.Z#', '#####'], { mode: 'realtime' });
 check('a room with real-time pieces gives no answer', run(lensData(rt)) === null);
 done();
