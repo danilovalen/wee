@@ -1,7 +1,7 @@
 // The robot: every shortest way to the goal, not just one. A breadth-first search by layers
 // that keeps every parent of a state reached at its first depth, so two equal-length routes
 // into one position both survive, then walks back from each winning move.
-import { createGame } from '../rules/game.js';
+import { createGame, cloneGame } from '../rules/game.js';
 import { entAt, playerAt } from '../rules/grid.js';
 import { stateKey, successors, unsearchable, move, MAX_STATES } from '../solve/solve.js';
 
@@ -56,11 +56,24 @@ export function allShortest(level, opts) {
 
 // One path replayed tick by tick with the solver's own move(), so it is the path it found:
 // see(state) runs on the start and after every tick. Returns the end state.
+// Each path is replayed once per room and its ticks kept, so every goal judged on it reads the same
+// frames (register 462).
+const replays = new WeakMap(), KEEP_PATHS = 4000;
 export function replayPath(level, moves, see) {
-  let s = createGame(level);
-  see(s);
-  for (const m of moves) s = move(s, m, see) || s;
-  return s;
+  const byRoom = replays.get(level) || new Map(), key = moves.join(' ');
+  if (!replays.has(level)) replays.set(level, byRoom);
+  let r = byRoom.get(key);
+  if (!r) {
+    const frames = [], keep = t => frames.push(cloneGame(t));
+    let s = createGame(level);
+    keep(s);
+    for (const m of moves) s = move(s, m, keep) || s;
+    r = { frames, end: s };
+    if (byRoom.size >= KEEP_PATHS) byRoom.clear();
+    byRoom.set(key, r);
+  }
+  for (const f of r.frames) see(f);
+  return r.end;
 }
 
 // Why the robot cannot finish: every position it can reach, and what never happens there.
