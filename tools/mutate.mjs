@@ -27,8 +27,8 @@ const M = [
   ['src', "if (lined()) { ui.mount = false;", "if (lined()) { ui.mount = true;", 'campaign-play'],
   ['src', "change(() => (tool === 'turret' ? turnLaser : turnGate)(S.level, at.x, at.y));", "change(() => turnGate(S.level, at.x, at.y));", 'campaign-play'],
   // boxes push boxes (register 278)
-  ['src', "if (!(b = train(s, e, dx, dy, t.d))) { if (!pushChain(s, nx, ny, t.d)) return 'blocked'; chained = true; }", "if (!(b = train(s, e, dx, dy, t.d))) { return 'blocked'; }", 'sim'],
-  ['src', "  for (let i = list.length - 2; i >= 1; i--) land(s, list[i], at[i + 1]);\n", "", 'sim'],
+  ['src/rules/player.js', "        if (!pushChain(s, nx, ny, t.d)) return 'blocked';", "        return 'blocked';", 'sim'],
+  ['src/rules/crates.js', "if (!e && crateAt(s, cx, cy) && pushesTile(s, cx, cy, d))", "if (crateAt(s, cx, cy) && pushesTile(s, cx, cy, d))", 'campaign'],
   ['src', "    else if (PUSHED(e) && PUSHED(o) && !o.glue) { e.slide = null; o.slide = t.d; o.rush = false; return; }\n", "", 'sim'],
   ['src', "{ if (now.touched.has(id)) b.pushes++; }", "b.pushes++;", 'campaign'],
   // the room search (register 272)

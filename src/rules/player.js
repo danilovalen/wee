@@ -8,20 +8,6 @@ import { burnFuses, hideCycle, worldStep } from './pieces.js';
 import { STICKS, drag, entered, stick, stuckTo, unstick } from './sticky.js';
 import { follow, lead, meet, partnerAt } from './glue.js';
 
-// Boxes in a row ahead of the one you push go with it, a train (register 278): the front one moves on
-// if it can and each of the rest takes the tile ahead of it. Returns where the pushed box goes, or null.
-function train(s, e, dx, dy, d) {
-  const list = [e];
-  for (let o; (o = entAt(s, list.at(-1).x + dx, list.at(-1).y + dy, list.at(-1))) && PUSHED(o) && !o.glue && !e.glue;) list.push(o);
-  if (list.length < 2) return null;
-  const front = list.at(-1), go = pushTo(s, front.x, front.y, d, wades(front));
-  if (!go) return null;
-  const at = list.map(o => ({ x: o.x, y: o.y, d }));
-  land(s, front, go);
-  for (let i = list.length - 2; i >= 1; i--) land(s, list[i], at[i + 1]);
-  return at[1];
-}
-
 // One player tile. Returns 'moved', 'blocked' or 'died'. A triangle turns the slide.
 export function playerStep(s, d, diving) {
   const p = s.player, pd = facing(s, p.x, p.y, d), ax = p.x + DIRS[pd][0], ay = p.y + DIRS[pd][1];
@@ -62,7 +48,9 @@ export function playerStep(s, d, diving) {
       if (!(b = pushTo(s, nx, ny, t.d, wades(e)))) {
         const o = entAt(s, nx + dx, ny + dy, e);
         if (o && meet(s, e, o)) return 'blocked';
-        if (!(b = train(s, e, dx, dy, t.d))) { if (!pushChain(s, nx, ny, t.d)) return 'blocked'; chained = true; }
+        // A row of boxes, lasers and tiles goes as one train (registers 278, 336, 462).
+        if (!pushChain(s, nx, ny, t.d)) return 'blocked';
+        chained = true;
       }
       if (chained ? !e.dead : land(s, e, b)) { pushed = { id: e.id, d: chained ? t.d : b.d }; light(s, e); if (!led) follow(s, e, dx, dy); }
     } else return 'blocked';

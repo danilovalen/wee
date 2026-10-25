@@ -25,7 +25,8 @@ export function pushChain(s, x, y, d) {
   for (let cx = x, cy = y; ; cx += dx, cy += dy) {
     if (!inb(s, cx, cy) || playerAt(s, cx, cy)) return false;
     const e = entAt(s, cx, cy);
-    if (crateAt(s, cx, cy) && pushesTile(s, cx, cy, d)) { if (e) return false; list.push({ x: cx, y: cy }); continue; }
+    // A piece standing on a pushable tile is pushed off it alone (register 455).
+    if (!e && crateAt(s, cx, cy) && pushesTile(s, cx, cy, d)) { list.push({ x: cx, y: cy }); continue; }
     if (e) {
       const g = gateAt(s, cx, cy);
       if (!PUSHED(e) || e.glue || (g && !g.includes(d))) return false;
@@ -33,7 +34,9 @@ export function pushChain(s, x, y, d) {
     }
     const last = list.at(-1);
     if (!last) return false;
-    if (last.e) { const t = pushTo(s, last.x, last.y, d, wades(last.e)); if (!t || t.x !== cx || t.y !== cy) return false; last.to = t; }
+    // The front piece lands where it would alone; only a row of pieces alone lets a triangle turn it
+    // (a box train, register 278), a row with a tile in it goes straight.
+    if (last.e) { const t = pushTo(s, last.x, last.y, d, wades(last.e)); if (!t || ((t.x !== cx || t.y !== cy) && !list.every(o => o.e))) return false; last.to = t; }
     else if (cellAt(s, cx, cy) !== '' && cellAt(s, cx, cy) !== 'death') return false;
     break;
   }
