@@ -15,6 +15,9 @@ and it is measured in the first week, not guessed.**
 - **Every platform** (2026-10-25): phone apps, PC with Steam and Deck, console through a porting
   house, web build. Touch, mouse, keyboard and controller are all first-class from the first build;
   GDScript, not C#, since C# loses the web export and complicates the console route.
+- **The look is open** (2026-10-25: "might be pixel, SVG, voxel"; the UI grows from the current
+  one). So the board is one skin reading the state, swappable between 2D and 3D (voxel means Godot
+  3D nodes); no rule, input or menu may depend on how a piece is drawn. The slice uses a stand-in.
 
 ## How the chip game's migration was planned (bag-crawler, 2026-09-24 to 10-01)
 
