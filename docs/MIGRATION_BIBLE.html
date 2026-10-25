@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wee Migration Bible</title>
+<style>
+:root{--bg:#f6f3ec;--panel:#fffdf8;--ink:#1d1b18;--soft:#5d574d;--accent:#d2552b;--rim:#e3dccd;--code:#efe9dd;
+ --c-plat:#6b5aa8;--c-pres:#3f63a8;--c-sess:#2f7a4a;--c-host:#b0471f;--c-rules:#8a6f12;--c-data:#5d574d}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17161a;--panel:#211f25;--ink:#ece7de;--soft:#a69f93;--accent:#ff7a4d;--rim:#34303a;--code:#2b2830;
+ --c-plat:#b5a6f0;--c-pres:#86a8ef;--c-sess:#6cc48e;--c-host:#ff8a5c;--c-rules:#ddbe52;--c-data:#b8b0a3}}
+:root[data-theme="dark"]{--bg:#17161a;--panel:#211f25;--ink:#ece7de;--soft:#a69f93;--accent:#ff7a4d;--rim:#34303a;--code:#2b2830;
+ --c-plat:#b5a6f0;--c-pres:#86a8ef;--c-sess:#6cc48e;--c-host:#ff8a5c;--c-rules:#ddbe52;--c-data:#b8b0a3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:820px;margin:0 auto;padding:20px 16px 64px}
+h1{font-size:1.6rem;margin:.2em 0}
+h2{font-size:1.2rem;margin:2em 0 .5em}
+h3{font-size:1rem;margin:1.2em 0 .3em}
+.sub{color:var(--soft);margin-top:0}
+.card{background:var(--panel);border-radius:10px;padding:14px 16px;margin:12px 0;box-shadow:4px 4px 0 0 var(--rim)}
+.warn{box-shadow:inset 4px 0 0 var(--accent),4px 4px 0 0 var(--rim)}
+figure{margin:12px 0;background:var(--panel);border-radius:10px;padding:12px;box-shadow:4px 4px 0 0 var(--rim)}
+figure svg{width:100%;height:auto;display:block;color:var(--ink)}
+figcaption{color:var(--soft);font-size:.9rem;margin-top:8px}
+code{font:13.5px ui-monospace,Menlo,monospace;background:var(--code);padding:1px 5px;border-radius:6px}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+td,th{text-align:left;vertical-align:top;padding:6px 8px;box-shadow:inset 0 -1px 0 var(--rim)}
+th{color:var(--soft);font-weight:600}
+.tw{overflow-x:auto}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:0}
+ol,ul{padding-left:1.3em}
+.k{color:var(--soft);font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:.6em 0 .1em}
+svg text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+nav.toc ol{margin:6px 0 0;columns:2;column-gap:24px}nav.toc a{color:var(--accent)}@media (max-width:560px){nav.toc ol{columns:1}}
+h2{scroll-margin-top:12px}
+
+.bar{position:sticky;top:0;z-index:20;background:var(--bg);box-shadow:0 2px 0 var(--rim)}
+.bar-in{max-width:820px;margin:0 auto;padding:8px 16px 0}
+.bar-title{display:block;font-weight:800;font-size:.95rem;color:var(--ink);text-decoration:none;margin-bottom:6px}
+.bar-nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.bar-nav a{flex:none;font-size:.85rem;font-weight:600;color:var(--soft);text-decoration:none;padding:6px 11px;border-radius:999px;background:var(--code);min-height:32px;display:flex;align-items:center}
+.bar-nav a.on{background:var(--accent);color:#fff}
+h2[id]{scroll-margin-top:96px}
+main{padding-top:12px}
+</style>
+
+</head>
+<body>
+<header class="bar"><div class="bar-in"><a class="bar-title" href="#top">Migration bible</a><nav class="bar-nav" aria-label="Sections"><a href="#decided" data-sec="decided">1. Decided</a><a href="#route" data-sec="route">2. Route</a><a href="#screen" data-sec="screen">3. Screen</a><a href="#arch" data-sec="arch">4. Architecture</a><a href="#multi" data-sec="multi">5. Multiplayer</a><a href="#features" data-sec="features">6. Features</a><a href="#planets" data-sec="planets">7. Planets</a><a href="#assets" data-sec="assets">8. Assets</a><a href="#sound" data-sec="sound">9. Sound</a><a href="#anim" data-sec="anim">10. Animation</a><a href="#learn" data-sec="learn">11. Lessons</a><a href="#open" data-sec="open">12. Open questions</a></nav></div></header>
+<main id="top">
+</head>
+<body>
+<header class="bar"><div class="bar-in"><a class="bar-title" href="#top">wee: migration bible</a><nav class="bar-nav" aria-label="Sections"><a href="#answer" data-sec="answer">1. Answer</a><a href="#before" data-sec="before">2. How we did it</a><a href="#here" data-sec="here">3. What is here</a><a href="#risk" data-sec="risk">4. The risk</a><a href="#route" data-sec="route">5. Route</a><a href="#must" data-sec="must">6. From day one</a><a href="#features" data-sec="features">7. Features</a><a href="#open" data-sec="open">8. Open</a></nav></div></header>
+<main id="top">
+<h1>wee: moving to Godot</h1>
+<p class="sub">Register 464, 2026-10-25. The plan, built the way the chip game's was. Reasons and counts live in <code>docs/GODOT_DIAGNOSIS.md</code>.</p>
+
+<h2 id="answer">1. The answer</h2>
+<div class="card">
+<p><b>Godot 4 fits wee better than it fitted the chip game, and the expensive half is already done.</b> The rules are already pure and apart from the screen. Port once the rules stop moving; keep designing levels on the web until then.</p>
+<p>The one real risk is speed: pressing Run searches the room. That gets measured in the first week.</p>
+</div>
+
+<div class="card"><p><b>Decided, 2026-10-25: every platform.</b> Phone apps, PC with Steam and Deck, console through a porting house, and a web build. So touch, mouse, keyboard and controller are all first-class from the first build, and the layout has to hold both a phone and a TV.</p></div>
+
+<h2 id="before">2. How the chip game did it</h2>
+<ol>
+<li><b>Measure first.</b> Lines per part, how many times the rules touched the screen.</li>
+<li><b>Name what would change the answer.</b> Its first answer was "stay on the web". You said audio, controller, console, and learning a real engine, so Godot moved to first.</li>
+<li><b>Split first, as the test harness.</b> Rules in one module with no screen in it, the web game kept playable, then the Godot rules run beside it with the same seed and moves, and the two states compared.</li>
+<li><b>A one-week slice to learn on</b>: one chip, one socket, one animation, controller, one sound.</li>
+<li><b>Decide the cheap things early</b>: controller-first, landscape, 640x360 pixel art, GDScript.</li>
+<li><b>Your feature picks became hooks.</b> Want or maybe scheduled nothing; both set what the code must allow.</li>
+</ol>
+<div class="card warn"><p><b>What does not carry over:</b> the chip game's screen is dense text, which the web is best at. wee is a grid of tiles and sliding pieces, which a game engine is best at.</p></div>
+
+<h2 id="here">3. What is here, and what happens to it</h2>
+<figure>
+<svg viewBox="0 0 640 250" role="img" aria-label="The rules, solver, campaign and level data port or survive; the screen and app are rebuilt; the Node tools stay and keep using the JavaScript rules.">
+<g fill="none" stroke="currentColor" stroke-width="1.5">
+<rect x="10" y="20" width="190" height="210" rx="8"/><rect x="225" y="20" width="190" height="210" rx="8"/><rect x="440" y="20" width="190" height="210" rx="8"/>
+</g>
+<g fill="currentColor" font-size="13" text-anchor="middle">
+<text x="105" y="44" font-weight="700">Survives as it is</text>
+<text x="105" y="76">level JSON (25 files)</text><text x="105" y="100">room and progress codes</text><text x="105" y="124">22 Node gates</text><text x="105" y="148">search, measure, climb</text><text x="105" y="172">legend, mutate</text>
+<text x="320" y="44" font-weight="700">Ported to GDScript</text>
+<text x="320" y="76">rules (1,073 lines)</text><text x="320" y="100">solver (508)</text><text x="320" y="124">campaign + goals (1,151)</text><text x="320" y="148">level, gen, editor (970)</text><text x="320" y="196" font-size="12">about 3,700 lines</text>
+<text x="535" y="44" font-weight="700">Rebuilt in Godot</text>
+<text x="535" y="76">renderer (957)</text><text x="535" y="100">screens, menus (3,444)</text><text x="535" y="124">input, camera</text><text x="535" y="148">21 browser gates</text><text x="535" y="196" font-size="12">about 4,400 lines</text>
+</g>
+</svg>
+<figcaption>The middle column is checked against the left one: the Node gates and recorded traces say what the Godot rules must answer.</figcaption>
+</figure>
+
+<h2 id="risk">4. The one real risk: Run is a search</h2>
+<p>Run does not replay a stored answer. It searches the room (up to 20,000 positions, up to 2,000 shortest paths), replays each path and judges every goal. In the browser, every known room's check adds up to <b>0.8 seconds</b>. GDScript runs that kind of loop many times slower than a browser does.</p>
+<div class="tw"><table>
+<tr><th>Route</th><th>Cost</th></tr>
+<tr><td>1. Typed GDScript</td><td>none extra; often enough</td></tr>
+<tr><td>2. Positions stored as bytes, not text</td><td>a small rewrite of the visited list</td></tr>
+<tr><td>3. The solver alone in C++ (GDExtension)</td><td>a build per platform</td></tr>
+</table></div>
+<p>Which one is a measurement, not a choice: the slice times the worst known room.</p>
+
+<h2 id="route">5. The route</h2>
+<ol>
+<li><b>Freeze a rule set</b> and tag it. Rules moved twice today; porting a moving target doubles every change.</li>
+<li><b>Record traces in JavaScript</b>: every known room, every robot path, what the game reads at every tick. One Node script.</li>
+<li><b>The slice, one week</b>: the solver timed, one room drawn, the robot sliding, Run's verdict, by touch and by controller.</li>
+<li><b>Port rules, then solver, then campaign</b>, each checked against the traces.</li>
+<li><b>Rebuild the screens, editor first</b>: building the room is the game.</li>
+<li>The web game stays playable the whole time. Levels keep being designed there.</li>
+</ol>
+
+<h2 id="must">6. Must be there from the first build</h2>
+<div class="tw"><table>
+<tr><th>Hook</th><th>Pays for</th></tr>
+<tr><td>Game state is plain data, nothing tied to the screen</td><td>saves, undo, cloud saves, sharing, replays</td></tr>
+<tr><td>One room format, the same as the web's</td><td>a room built on the web opens in Godot and in the tools</td></tr>
+<tr><td>Run judged by the same rules the tools use, checked by the traces</td><td>a level measured by the tools gives the same verdict in the game</td></tr>
+<tr><td>Every input is a named action</td><td>touch, mouse, keyboard and controller alike; remapping</td></tr>
+<tr><td>The editor is a real screen</td><td>the game itself</td></tr>
+<tr><td>No sentence built in the rules</td><td>translations (pt-BR exists)</td></tr>
+<tr><td>Every animation scaled by one setting</td><td>speed, skip, reduced motion</td></tr>
+<tr><td>Progress in a profile, apart from rooms</td><td>progress codes, cloud saves, unlocks</td></tr>
+<tr><td>Colour never the only signal</td><td>colour-blind play</td></tr>
+</table></div>
+
+<h2 id="features">7. Features it could have</h2>
+<p>Mark each <b>want</b>, <b>maybe</b> or <b>no</b>, as with the chip game. Neither word schedules anything.</p>
+<div class="tw"><table>
+<tr><th>Group</th><th>Features</th></tr>
+<tr><td>Play</td><td>more campaign worlds; daily room; stars per level; a hint that plays one robot move; undo inside Run</td></tr>
+<tr><td>Build and share</td><td>room by link; room browser; community levels with a proven "it wins" badge; Steam Workshop</td></tr>
+<tr><td>Platform</td><td>Android and iOS apps; Steam and Deck; Switch through a porting house; cloud saves; achievements bound to unlocks</td></tr>
+<tr><td>Feel</td><td>sound per piece; music; particles on spikes and beams; phone haptics</td></tr>
+<tr><td>Access</td><td>controller; remapping; colour-blind marks; reduced motion; text size; translations</td></tr>
+<tr><td>Tools in the game</td><td>the robot's paths on demand; why it is stuck; the sandbox lenses</td></tr>
+</table></div>
+
+<h2 id="open">8. Open questions, all yours</h2>
+<p>Asked one at a time in the session.</p>
+<ol>
+<li>Look: keep today's style, or pixel art like the chip game?</li>
+<li>Orientation: portrait, landscape, or both?</li>
+<li>When to freeze the rules and start.</li>
+<li>Your marks on the features above.</li>
+</ol>
+</main>
+
+<script>
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.bar-nav a'));
+  var heads = links.map(function (a) { return document.getElementById(a.dataset.sec); });
+  var nav = document.querySelector('.bar-nav');
+  function mark() {
+    var y = window.scrollY + 110, on = 0;
+    heads.forEach(function (h, i) { if (h && h.offsetTop <= y) on = i; });
+    links.forEach(function (a, i) {
+      var was = a.classList.contains('on');
+      a.classList.toggle('on', i === on);
+      if (i === on && !was) {
+        var l = a.offsetLeft - 16, r = a.offsetLeft + a.offsetWidth + 16;
+        if (l < nav.scrollLeft || r > nav.scrollLeft + nav.clientWidth) nav.scrollTo({ left: l, behavior: 'smooth' });
+      }
+    });
+  }
+  window.addEventListener('scroll', mark, { passive: true });
+  mark();
+})();
+</script>
+</body>
+</html>
