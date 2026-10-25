@@ -2,13 +2,9 @@
 // from 0 (nowhere near) toward 1, so a climb can tell "warmer" from "colder". Only the search reads
 // these; the game judges goals as met or not.
 import { boxMoves } from '../src/campaign/pushes.js';
-import { stoppedPushes } from '../src/campaign/extras.js';
 import { replayPath } from '../src/campaign/robot.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
-import { boxesLeaving } from '../src/campaign/spikes.js';
-import { tileLog } from '../src/campaign/tiles.js';
-import { laserOverSpikes } from '../src/campaign/laserGoals.js';
-import { oneWayLog } from '../src/campaign/oneWay.js';
+import { stoppedPushes, boxesLeaving, tileLog, laserOverSpikes, oneWayLog } from '../src/campaign/goals/helpers.js';
 
 // The nearest any of pick(s)'s points comes, over a path, to a tile whose kind starts with prefix:
 // 0.8 standing on one, falling off with distance (register 335).
