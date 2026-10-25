@@ -44,6 +44,10 @@ const level = id => LEVELS.find(l => l.id === id);
   // One legend (register 462): the search prints back every known room exactly as written.
   const drift = [];
   for (const l of LEVELS) for (const rows of roomsOf(l.id)) { const s = searcher(l, 1), back = s.show(s.make(s.parse(rows))); if (back !== rows.join(' ')) drift.push(`${l.id}: ${rows.join(' ')} -> ${back}`); }
+  // Register 462: the measuring tool counts wins by moves and keeps the smallest room for each.
+  const measured = spawnSync(process.execPath, ['tools/measureLevel.mjs', '1', '--seconds', '3', '--runs', '2'], { encoding: 'utf8' }).stdout.trim().split('\n').at(-1);
+  const mj = JSON.parse(measured), firstCount = Object.keys(mj.counts)[0];
+  ok('measureLevel counts wins by moves, each with its smallest room', mj.wins > 0 && mj.runs === 2 && mj.smallest[firstCount][0] === +firstCount && Object.values(mj.counts).reduce((a, b) => a + b, 0) === mj.wins, measured.slice(0, 300));
   ok('the search reads and prints every known room in the one legend', drift.length === 0, drift.slice(0, 3).join(' | '));
   // The climb stops at penalty 0, so a room the game refuses must never score 0 (register 335).
   const nonzero = [];
