@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wee Feature Picks</title>
+<style>
+:root{--bg:#f6f3ec;--panel:#fffdf8;--ink:#1d1b18;--soft:#5d574d;--accent:#d2552b;--rim:#e3dccd;--want:#2f7a4a;--maybe:#8a6f12;--no:#9a3b2a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17161a;--panel:#211f25;--ink:#ece7de;--soft:#a69f93;--accent:#ff7a4d;--rim:#34303a;--want:#6cc48e;--maybe:#ddbe52;--no:#ff8a72}}
+:root[data-theme="dark"]{--bg:#17161a;--panel:#211f25;--ink:#ece7de;--soft:#a69f93;--accent:#ff7a4d;--rim:#34303a;--want:#6cc48e;--maybe:#ddbe52;--no:#ff8a72}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:760px;margin:0 auto;padding:20px 16px 120px}
+h1{font-size:1.5rem;margin:.2em 0}
+h2{font-size:1.1rem;margin:1.8em 0 .4em}
+.sub{color:var(--soft);margin-top:0}
+.f{background:var(--panel);border-radius:10px;padding:12px 14px;margin:10px 0;box-shadow:4px 4px 0 0 var(--rim)}
+.f b{display:block}
+.f p{margin:.2em 0 .6em;color:var(--soft);font-size:.92rem}
+.pick{display:flex;gap:6px}
+.pick button{flex:1;min-height:44px;border:0;border-radius:8px;background:var(--rim);color:var(--ink);font:600 .95rem system-ui,sans-serif;cursor:pointer}
+.pick button[aria-pressed="true"][data-v="want"]{background:var(--want);color:#fff}
+.pick button[aria-pressed="true"][data-v="maybe"]{background:var(--maybe);color:#fff}
+.pick button[aria-pressed="true"][data-v="no"]{background:var(--no);color:#fff}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);box-shadow:0 -2px 0 var(--rim)}
+.bar-in{max-width:760px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center}
+.bar span{flex:1;color:var(--soft);font-size:.9rem}
+.bar button{min-height:44px;padding:0 16px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:700 .95rem system-ui,sans-serif;cursor:pointer}
+textarea{width:100%;min-height:160px;margin-top:12px;font:13px ui-monospace,Menlo,monospace;background:var(--panel);color:var(--ink);border:2px solid var(--rim);border-radius:8px;padding:8px}
+</style>
+</head>
+<body>
+<main>
+<h1>wee: which features do you want?</h1>
+<p class="sub">Tap one per feature. <b>Want</b> and <b>Maybe</b> schedule nothing: they decide what the Godot version must leave room for. When you are done, tap <b>Copy my picks</b> and paste them in the chat.</p>
+<div id="list"></div>
+<textarea id="out" readonly hidden aria-label="Your picks as text"></textarea>
+</main>
+<div class="bar"><div class="bar-in"><span id="count"></span><button id="copy" type="button">Copy my picks</button></div></div>
+<script>
+(function () {
+  var GROUPS = [
+    ['Play', [
+      ['More campaign worlds', 'New sets of levels, each built around new pieces.'],
+      ['Daily room', 'One level a day, the same for everyone.'],
+      ['Stars per level', 'Side goals and fewest moves earn stars to collect.'],
+      ['Hint', 'Shows the robot one move of a winning path.'],
+      ['Undo inside Run', 'Step back while watching the robot play.'],
+      ['Endless mode', 'Generated levels, one after another.'],
+      ['Timed challenges', 'Build a winning room against a clock.']
+    ]],
+    ['Build and share', [
+      ['Share a room by link', 'Open a friend\'s room from a link, not only a code.'],
+      ['Room browser', 'Browse and play rooms other players made.'],
+      ['Proven-win badge', 'Shared rooms show the solver proved they can be won.'],
+      ['Steam Workshop', 'Rooms and level packs through Steam.'],
+      ['Level packs', 'Group your rooms into a campaign of your own.']
+    ]],
+    ['Progress', [
+      ['Unlocks', 'New pieces or worlds open as you play.'],
+      ['Achievements', 'Tied to the unlocks, fired on each platform.'],
+      ['Cloud saves', 'Progress follows you between phone, PC and console.'],
+      ['Stats per level', 'Your moves, attempts and best runs.'],
+      ['Leaderboards', 'Fewest moves or fastest solve per level.']
+    ]],
+    ['Feel', [
+      ['Sound per piece', 'Slides, pushes, doors and beams each have a sound.'],
+      ['Music', 'A soundtrack, layered by world.'],
+      ['Particles', 'Sparks on spikes, glow on beams, dust on pushes.'],
+      ['Phone haptics', 'A buzz when the robot hits or wins.'],
+      ['Replays', 'Watch and share a run.']
+    ]],
+    ['Access', [
+      ['Remappable controls', 'Change every key and button.'],
+      ['Colour-blind marks', 'Every colour also has a shape.'],
+      ['Reduced motion', 'Calmer animations.'],
+      ['Game speed and skip', 'Speed up or skip the robot.'],
+      ['Text size', 'Larger text everywhere.'],
+      ['Translations', 'More languages beside English and Portuguese.']
+    ]],
+    ['Tools in the game', [
+      ['Robot paths on demand', 'See every path the robot tried.'],
+      ['Why it is stuck', 'The game says what blocked the robot.'],
+      ['Sandbox lenses', 'The sandbox views that show beams, wires and reach.'],
+      ['Room generator', 'Get a random room to start from.']
+    ]],
+    ['Platform', [
+      ['Demo build', 'A free first world.'],
+      ['Opt-in play stats', 'Anonymous data on where players get stuck.']
+    ]]
+  ];
+  var KEY = 'wee.featurePicks', picks = {};
+  try { picks = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { picks = {}; }
+  var save = function () { try { localStorage.setItem(KEY, JSON.stringify(picks)); } catch (e) {} };
+  var list = document.getElementById('list'), total = 0, html = '';
+  GROUPS.forEach(function (g) {
+    html += '<h2>' + g[0] + '</h2>';
+    g[1].forEach(function (f) {
+      total++;
+      html += '<div class="f" data-f="' + f[0] + '"><b>' + f[0] + '</b><p>' + f[1] + '</p><div class="pick">' +
+        ['want', 'maybe', 'no'].map(function (v) {
+          return '<button type="button" data-v="' + v + '" aria-pressed="' + (picks[f[0]] === v) + '">' + v[0].toUpperCase() + v.slice(1) + '</button>';
+        }).join('') + '</div></div>';
+    });
+  });
+  list.innerHTML = html;
+  var count = document.getElementById('count');
+  var tally = function () { count.textContent = Object.keys(picks).length + ' of ' + total + ' picked'; };
+  tally();
+  list.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var f = b.closest('.f'), name = f.dataset.f, v = b.dataset.v;
+    if (picks[name] === v) delete picks[name]; else picks[name] = v;
+    f.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(picks[name] === x.dataset.v)); });
+    save(); tally();
+  });
+  document.getElementById('copy').addEventListener('click', function () {
+    var lines = ['wee feature picks'];
+    ['want', 'maybe', 'no'].forEach(function (v) {
+      var names = Object.keys(picks).filter(function (n) { return picks[n] === v; });
+      lines.push(v.toUpperCase() + ': ' + (names.join('; ') || 'none'));
+    });
+    var rest = [];
+    GROUPS.forEach(function (g) { g[1].forEach(function (f) { if (!picks[f[0]]) rest.push(f[0]); }); });
+    if (rest.length) lines.push('NOT PICKED: ' + rest.join('; '));
+    var text = lines.join('\n'), out = document.getElementById('out'), btn = this;
+    out.value = text; out.hidden = false;
+    var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy my picks'; }, 1500); };
+    try { navigator.clipboard.writeText(text).then(done, function () { out.select(); }); } catch (e) { out.select(); }
+  });
+})();
+</script>
+</body>
+</html>
