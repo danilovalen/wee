@@ -167,6 +167,34 @@ Grouped; he marks each want, maybe or no, as in the chip game.
 - **Tools inside the game**: the robot's paths drawn on demand, "why is it stuck" (exists as
   `whyStuck`), the sandbox's lenses.
 
+## His picks (2026-10-26, registers 466 and 467)
+
+Neither word schedules anything; both bind the architecture.
+
+- **Want**: More campaign worlds; Hint; Undo inside Run; Room browser; Steam Workshop; Proven-win badge; Unlocks; Achievements; Cloud saves; Stats per level; Leaderboards; Sound per piece; Music; Particles; Phone haptics; Colour-blind marks; Reduced motion; Translations; Why it is stuck.
+- **Maybe**: Stars per level; Level packs; Replays; Remappable controls; Game speed and skip; Text size; Robot paths on demand; Sandbox lenses; Demo build; Opt-in play stats.
+- **No**: Daily room; Endless mode; Timed challenges; Share a room by link; Room generator.
+- **Achievements may unlock cosmetics**: robot and object skins, palettes (466).
+
+⚠ Room codes stay (no link sharing, but the browser and Workshop need a room format). The in-game
+room generator is a no; `src/gen` stays a design tool on the web side, not ported.
+
+### What the picks need from the first build
+
+| hook | pays for |
+|---|---|
+| Unlocks and achievements are one system: a condition over events the rules announce, declared as data, unlocking content in the profile and firing the platform's achievement through an adapter | unlocks, achievements, cosmetic rewards |
+| Cosmetics are catalog entries: a robot skin, a piece skin, a palette. The board skin draws what the profile has equipped | robot and object skins, palettes |
+| Colours are roles (red door, blue door, laser, robot), never hex values in code; every palette must keep the roles apart and keep the colour-blind marks | palettes and colour-blind play together |
+| The rules announce named events (push, slide, hit, beam, door, death and its cause) | sound per piece, particles, haptics, achievements, why it is stuck |
+| Every Run keeps its ticks as plain data | undo inside Run, hint, replays, robot paths on demand |
+| A room carries a format version and the rules version it was judged under; the badge is recomputed on load, never trusted from the file | room browser, Workshop, proven-win badge |
+| A level's score comes from the room and the level alone (moves, size, side goals) | leaderboards verified by re-running Run, stats per level, stars |
+| Progress, unlocks, equipped cosmetics and stats live in one profile file | cloud saves |
+
+⚠ **Leaderboards need a server and accounts**, which neither wee nor the chip game has. The hook
+above keeps them cheap; the server is its own decision.
+
 ## What would change this answer
 
 - If the solver measures too slow in typed GDScript and GDExtension is unwanted, the web build with a

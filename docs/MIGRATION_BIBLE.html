@@ -51,7 +51,7 @@ main{padding-top:12px}
 <main id="top">
 </head>
 <body>
-<header class="bar"><div class="bar-in"><a class="bar-title" href="#top">wee: migration bible</a><nav class="bar-nav" aria-label="Sections"><a href="#answer" data-sec="answer">1. Answer</a><a href="#before" data-sec="before">2. How we did it</a><a href="#here" data-sec="here">3. What is here</a><a href="#risk" data-sec="risk">4. The risk</a><a href="#route" data-sec="route">5. Route</a><a href="#must" data-sec="must">6. From day one</a><a href="#features" data-sec="features">7. Features</a><a href="#open" data-sec="open">8. Open</a></nav></div></header>
+<header class="bar"><div class="bar-in"><a class="bar-title" href="#top">wee: migration bible</a><nav class="bar-nav" aria-label="Sections"><a href="#answer" data-sec="answer">1. Answer</a><a href="#before" data-sec="before">2. How we did it</a><a href="#here" data-sec="here">3. What is here</a><a href="#risk" data-sec="risk">4. The risk</a><a href="#route" data-sec="route">5. Route</a><a href="#must" data-sec="must">6. From day one</a><a href="#features" data-sec="features">7. Your picks</a><a href="#open" data-sec="open">8. Open</a></nav></div></header>
 <main id="top">
 <h1>wee: moving to Godot</h1>
 <p class="sub">Register 464, 2026-10-25. The plan, built the way the chip game's was. Reasons and counts live in <code>docs/GODOT_DIAGNOSIS.md</code>.</p>
@@ -127,22 +127,34 @@ main{padding-top:12px}
 <tr><td>Colour never the only signal</td><td>colour-blind play</td></tr>
 </table></div>
 
-<h2 id="features">7. Features it could have</h2>
-<p>Mark each <b>want</b>, <b>maybe</b> or <b>no</b> on the separate page <code>docs/FEATURE_PICKS.html</code>. Neither word schedules anything.</p>
+<h2 id="features">7. Your feature picks, and what they need</h2>
+<p>Picked 2026-10-26. Neither Want nor Maybe schedules anything; both decide what the code must leave room for.</p>
 <div class="tw"><table>
-<tr><th>Group</th><th>Features</th></tr>
-<tr><td>Play</td><td>more campaign worlds; daily room; stars per level; a hint that plays one robot move; undo inside Run</td></tr>
-<tr><td>Build and share</td><td>room by link; room browser; community levels with a proven "it wins" badge; Steam Workshop</td></tr>
-<tr><td>Platform</td><td>Android and iOS apps; Steam and Deck; Switch through a porting house; cloud saves; achievements bound to unlocks</td></tr>
-<tr><td>Feel</td><td>sound per piece; music; particles on spikes and beams; phone haptics</td></tr>
-<tr><td>Access</td><td>controller; remapping; colour-blind marks; reduced motion; text size; translations</td></tr>
-<tr><td>Tools in the game</td><td>the robot's paths on demand; why it is stuck; the sandbox lenses</td></tr>
+<tr><th></th><th>Features</th></tr>
+<tr><td><b>Want</b></td><td>More campaign worlds; Hint; Undo inside Run; Room browser; Steam Workshop; Proven-win badge; Unlocks; Achievements; Cloud saves; Stats per level; Leaderboards; Sound per piece; Music; Particles; Phone haptics; Colour-blind marks; Reduced motion; Translations; Why it is stuck</td></tr>
+<tr><td><b>Maybe</b></td><td>Stars per level; Level packs; Replays; Remappable controls; Game speed and skip; Text size; Robot paths on demand; Sandbox lenses; Demo build; Opt-in play stats</td></tr>
+<tr><td><b>No</b></td><td>Daily room; Endless mode; Timed challenges; Share a room by link; Room generator</td></tr>
 </table></div>
+<div class="card"><p><b>Achievements unlock looks</b>: skins for the robot and objects, palettes. One system: a condition met in play unlocks a cosmetic in your profile and fires the platform's achievement.</p></div>
+<h3>What the picks need from the first build</h3>
+<div class="tw"><table>
+<tr><th>Hook</th><th>Pays for</th></tr>
+<tr><td>Unlocks and achievements are one system: a condition over events the rules announce, declared as data, unlocking content in the profile and firing the platform's achievement through an adapter</td><td>unlocks, achievements, cosmetic rewards</td></tr>
+<tr><td>Cosmetics are catalog entries: a robot skin, a piece skin, a palette. The board skin draws what the profile has equipped</td><td>robot and object skins, palettes</td></tr>
+<tr><td>Colours are roles (red door, blue door, laser, robot), never hex values in code; every palette must keep the roles apart and keep the colour-blind marks</td><td>palettes and colour-blind play together</td></tr>
+<tr><td>The rules announce named events (push, slide, hit, beam, door, death and its cause)</td><td>sound per piece, particles, haptics, achievements, why it is stuck</td></tr>
+<tr><td>Every Run keeps its ticks as plain data</td><td>undo inside Run, hint, replays, robot paths on demand</td></tr>
+<tr><td>A room carries a format version and the rules version it was judged under; the badge is recomputed on load, never trusted from the file</td><td>room browser, Workshop, proven-win badge</td></tr>
+<tr><td>A level's score comes from the room and the level alone (moves, size, side goals)</td><td>leaderboards verified by re-running Run, stats per level, stars</td></tr>
+<tr><td>Progress, unlocks, equipped cosmetics and stats live in one profile file</td><td>cloud saves</td></tr>
+</table></div>
+<div class="card warn"><p><b>Leaderboards need a server and accounts.</b> Neither game has one. The hooks keep it cheap; the server is its own decision.</p></div>
 
 <h2 id="open">8. Open questions, all yours</h2>
-<p>Asked one at a time in the session.</p>
 <ol>
-<li>Your marks on the features above.</li>
+<li>Is the game worth continuing? Answered by the MVP playtests; everything here waits on it.</li>
+<li>The look: pixel, SVG or voxel. Its own round, once the port is on.</li>
+<li>A server and accounts for leaderboards and the room browser.</li>
 </ol>
 </main>
 
