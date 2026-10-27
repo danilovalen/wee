@@ -32,7 +32,7 @@ try {
   // Register 400: a box with one button gives it the whole row.
   const spans = await page.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(); return Math.abs(r('menuCampaign').width - (r('menuSandbox').right - r('menuPuzzles').left)) < 1; });
   check('Campaign, alone in its box, is as wide as Puzzles and Sandbox together', spans);
-  check('the menu is one box saying Play as the robot (registers 418, 433)', await page.evaluate(() => document.querySelectorAll('.menuSec').length === 1 && document.querySelector('.menuSec').textContent.includes('Play as the robot') && !document.querySelector('.menuList').textContent.includes('little circle')));
+  check('the menu is one box with no heading line (registers 418, 433, 468)', await page.evaluate(() => document.querySelectorAll('.menuSec').length === 1 && !document.querySelector('.menuSec p') && !document.querySelector('.menuSec').textContent.includes('Play as the robot') && !document.querySelector('.menuList').textContent.includes('little circle')));
   // Register 401: the page paints nothing but its ground until the first place is up.
   check('once loaded the page is no longer booting', await page.evaluate(() => !document.documentElement.classList.contains('booting')));
   check('while booting the editor is hidden', await page.evaluate(() => { document.documentElement.classList.add('booting'); const v = getComputedStyle(document.querySelector('header')).visibility; document.documentElement.classList.remove('booting'); return v === 'hidden'; }));
