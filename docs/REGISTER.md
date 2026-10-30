@@ -486,5 +486,6 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 478 | Level 5: "Box with box should be optional" (boxHitsBox moves from required to side goal) | **registered (2026-10-30), waiting for the batch.** |
 | 479 | Level 5: "19 might be too much" (the exactly-19-moves side goal) | **registered (2026-10-30), waiting for the batch.** Re-measure the exact count once 478 changes the required goals. |
 | 480 | Level 5: new side goal "every box collides with a wall 2+ times" | **registered (2026-10-30), waiting for the batch.** |
-| 481 | "Level 6 new optional is two buttons" | **registered (2026-10-30), waiting for the batch.** Level 6 offers switches, not buttons: read as two switches, to confirm at build. |
-| 482 | Level 7: "Same for level 7" (new side goal: two buttons) | **registered (2026-10-30), waiting for the batch.** Level 7 has buttons, so this one is literal. |
+| 481 | "Level 6 new optional is two buttons" | **registered (2026-10-30), waiting for the batch.** Two or more (his ruling: a count means "or more" unless he says exactly). Level 6 offers switches, not buttons: read as switches, to confirm at build. |
+| 482 | Level 7: "Same for level 7" (new side goal: two or more buttons) | **registered (2026-10-30), waiting for the batch.** |
+| 483 | "Two or more, when I say exactly, I'll say so" | **Standing rule (2026-10-30).** A count in a goal means that many or more unless he says exactly. Added to CLAUDE.md. |
