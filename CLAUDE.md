@@ -21,6 +21,7 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
 
 ## Rules
 
+- **Nothing on the game screen folds open or shut to save space** (owner, 2026-10-30, row 524: *"Avoid dynamic things opening and closing. Not good practice for games."*). Find room by removing waste (gaps, oversized rows), not by hiding parts behind a tap.
 - **Push after every commit.** A cloud container can be reset at any moment and takes every
   unpushed commit with it: the whole `wee-game` fork was lost that way on 2026-10-16 and
   rebuilt from a downloaded `dist/wee.html`. If a new repo cannot be created, push to a branch
