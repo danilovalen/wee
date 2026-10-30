@@ -12,7 +12,7 @@ import { noteWin, bindWin } from './winCard.js';
 import { noteLeaving, copyDebug } from './debug.js';
 import { buildMenuScene } from './menuScene.js';
 import { madeLevel } from './made.js';
-import { progress, write } from './progress.js';
+import { progress, write, firstTime } from './progress.js';
 import { TOOL, words, syncBrief, clearTrail, flashStuck, bindGoalCard } from './goalCard.js';
 import { place, go, back, up } from './nav.js';
 
@@ -50,7 +50,8 @@ export function enterLevel(id) {
   S.camp = { def, verdict: null }; S.trail = null; $('campBack').textContent = def.made ? 'Maker' : 'Levels';
   const kept = rec && rec.room && unframe(rec.room);
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
-  S.level = kept && placementErrors(def, kept).every(e => /^(Place at least|Place the |Nothing can start)/.test(e.msg)) ? kept : roomOf(def);
+  // The tutorial always starts from its own room (register 512).
+  S.level = !def.tutorial && kept && placementErrors(def, kept).every(e => /^(Place at least|Place the |Nothing can start)/.test(e.msg)) ? kept : roomOf(def);
   S.history = newHistory();
   S.ui.tool = 'look'; S.ui.colour = coloursOf(def)[0];
   p.last = id; write(p);
@@ -116,7 +117,8 @@ function stars(def, rec) {
   const row = document.createElement('span'), best = rec.best || {}, line = document.createElement('span');
   row.className = 'campStars'; line.className = 'campStarLine';
   const met = id => rec.goals && rec.goals[id] ? best[id] ?? best.win ?? '' : null;
-  row.append(star(rec.beaten ? best.win ?? '' : null, true, 'Win'), line, ...optionalGoals(def).map(o => star(met(o.id), false, o.text)));
+  const side = optionalGoals(def);
+  row.append(star(rec.beaten ? best.win ?? '' : null, true, 'Win'), ...(side.length ? [line] : []), ...side.map(o => star(met(o.id), false, o.text)));
   row.setAttribute('aria-label', rec.beaten ? `Beaten, ${Object.values(rec.goals || {}).filter(Boolean).length} of ${optionalGoals(def).length} side goals` : 'Not beaten');
   return row;
 }
@@ -153,7 +155,8 @@ export function buildCampaign(actions) {
   place('levels', { page: 'campBox', parent: () => 'menu', enter: () => {}, shown: showList });
   // A level goes back to where it was opened from; with no history, a made level's parent is the maker.
   place('level', { parent: id => (levelOf(id) || {}).made ? 'maker' : 'levels', enter: id => (S.camp && S.camp.def.id === id) || enterLevel(id), exit: () => { noteLeaving(); leaveLevel(); } });
-  $('menuCampaign').onclick = () => go('levels');
+  // A first-time player lands in the tutorial (register 512).
+  $('menuCampaign').onclick = () => firstTime(progress()) && !window.__noTutorial ? go('level', 'tutorial') : go('levels');
   $('menuSandbox').onclick = () => go('rooms', 'start');
   $('campMenu').onclick = () => back('menu');
   // The Sandbox's way back (register 357): its Rooms page has a Menu button, as the other modes' pages do.

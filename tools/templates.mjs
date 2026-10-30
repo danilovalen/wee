@@ -12,10 +12,11 @@ export function templatesSource() {
   return `// Generated from rooms/*.wee by tools/templates.mjs. Do not edit by hand.\nexport const TEMPLATES = ${JSON.stringify(rooms)};\n`;
 }
 
-// The campaign's levels, in number order; a named one (hidden, kept for later) comes after them.
+// The campaign's levels, in number order, the tutorial first (register 512); a named one (hidden, kept for later) comes after them.
+const order = f => f === 'tutorial.json' ? -1 : parseInt(f) || 1e9;
 export function campaignSource() {
   const levels = readdirSync('campaign/levels').filter(f => f.endsWith('.json'))
-    .sort((a, b) => (parseInt(a) || 1e9) - (parseInt(b) || 1e9))
+    .sort((a, b) => order(a) - order(b))
     .map(f => ({ id: f.replace(/\.json$/, ''), ...JSON.parse(readFileSync('campaign/levels/' + f, 'utf8')) }));
   return `// Generated from campaign/ by tools/templates.mjs. Do not edit by hand.\nexport const LEVELS = ${JSON.stringify(levels)};\n`;
 }

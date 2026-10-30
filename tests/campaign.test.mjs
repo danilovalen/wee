@@ -60,8 +60,9 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const two = build(d, ['', '', '', '', '', 'G', 'G']);
   ok('only one goal', placementErrors(d, two).some(e => e.msg === 'Place only one goal.'));
   ok('a level has no powers', Object.values(r.powers).every(p => !p));
-  ok('levels are numbered from 1 in order, a hidden one after them', LEVELS.filter(l => !l.hidden).map(l => l.id).join() === LEVELS.filter(l => !l.hidden).map((_, i) => String(i + 1)).join());
-  ok('every level starts 7x7', LEVELS.every(l => l.size.join() === '7,7'));
+  const NUMBERED = LEVELS.filter(l => !l.tutorial);
+  ok('the tutorial comes first, then levels numbered from 1 in order, a hidden one after them (register 512)', LEVELS[0].id === 'tutorial' && NUMBERED.filter(l => !l.hidden).map(l => l.id).join() === NUMBERED.filter(l => !l.hidden).map((_, i) => String(i + 1)).join());
+  ok('every level but the tutorial starts 7x7', LEVELS.every(l => l.tutorial || l.size.join() === '7,7'));
   // Through an open door already turns every switch on: every switch and door in a level is red.
   ok('level 3 does not ask for what the open door already implies', level('3').require.join() === 'throughOpenDoor,doorClosedAtEnd', level('3').require.join());
 }
@@ -155,7 +156,9 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const v = check(d, win);
   ok('a room in range wins', v.ok && v.won && v.length === 4, JSON.stringify(v.fail));
   // No level has a range any more: at least 4 moves for every level, and no most.
-  ok('no level sets a range; every level needs at least 4 moves', LEVELS.every(l => l.steps.range === undefined && l.steps.min === undefined && l.steps.max === undefined));
+  ok('no level sets a range; every level but the tutorial needs at least 4 moves', LEVELS.every(l => l.tutorial || (l.steps.range === undefined && l.steps.min === undefined && l.steps.max === undefined)));
+  { const t = level('tutorial'), r = roomOf(t), empty = check(t, r); r.cells[1 * r.w + 4] = 'wall'; const one = check(t, r);
+    ok('the tutorial room: empty it cannot be won; one block at its ringed tile wins it in 2 moves (register 512)', !empty.won && one.won && one.length === 2 && one.paths === 1, JSON.stringify([empty.won, one.length])); }
   const his11 = build(d, ['..##P#.', '.#.G...', '....#..', '#.....#', '...#...', '.#...#.', '.......']);
   const long = check(d, his11);
   ok('a long path wins: his 11-move level 1 room, once refused for passing 8', long.won && long.length === 11, JSON.stringify(long.fail));
@@ -434,7 +437,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
 { // every level's room-size goal is reachable: the smallest winning room tools/tilesArea.mjs found
   // (levels 11 and 12: his rooms, 2026-10-19, registers 249 and 250)
   const SMALL = KNOWN.small;
-  for (const l of LEVELS) {
+  for (const l of LEVELS.filter(l => l.small)) {
     const v = check(l, build(l, SMALL[l.id]));
     // Mix holds where one room meets two goals at once: level 5's smallest room also takes exactly 8.
     if (l.id === '2') {
@@ -563,6 +566,6 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
     const l = level(id), v = check(l, build(l, rows));
     ok(`level ${id} has a room meeting two side goals at once`, v.won && v.optional.find(o => o.id === 'mix').met, JSON.stringify(v.fail || v.optional));
   }
-  ok('every level the list shows has such a room', LEVELS.filter(l => !l.hidden).every(l => KNOWN.pair[l.id]));
+  ok('every level the list shows has such a room (the tutorial has no side goals)', LEVELS.filter(l => !l.hidden && !l.tutorial).every(l => KNOWN.pair[l.id]));
 }
 done();

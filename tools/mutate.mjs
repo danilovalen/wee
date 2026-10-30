@@ -11,6 +11,8 @@ const M = [
   ['src/campaign/goals/helpers.js', "export const boxIds = room => idsOf(room, e => e.kind === 'box');", "export const boxIds = room => room.entities.filter(e => e.kind === 'box').map(e => e.id);", 'campaign'],
   ['src/app/campaign.js', "    b.append(top, parts, stars(def, rec));", "    b.append(top, parts);", 'campaign-play'],
   ['src/app/play.js', "  requestAnimationFrame(frame);\n  try { frameBody(t); } catch (e) { noteError(e); }", "  frameBody(t);\n  requestAnimationFrame(frame);", 'freeze'],
+  ['src/app/tutorial.js', "    if (!active() || allowed(ev)) return;", "    return;", 'tutorial'],
+  ['src/app/campaign.js', "firstTime(progress()) ? go('level', 'tutorial') : go('levels')", "go('levels')", 'tutorial'],
   ['src/app/nav.js', "      unanswered(pops, () => { toMenu = false;", "      (() => {}) && (() => { toMenu = false;", 'freeze'],
   ['src/campaign/goals/helpers.js', "if (s.ground[t.y * s.w + t.x] === 'death') l.spikes = true;", "", 'campaign'],
   ['src/rules/player.js', "if (!pushChain(s, ax, ay, pd) && !cellAt(s, ax, ay).startsWith('gate:')) return 'blocked';", "if (!pushChain(s, ax, ay, pd)) return 'blocked';", 'campaign'],

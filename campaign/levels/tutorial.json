@@ -1,0 +1,28 @@
+{
+ "name": "How to play",
+ "tutorial": true,
+ "size": [
+  5,
+  5
+ ],
+ "start": [
+  1,
+  1
+ ],
+ "goal": [
+  3,
+  4
+ ],
+ "palette": {
+  "block": [
+   0,
+   null
+  ]
+ },
+ "steps": {
+  "min": 1
+ },
+ "rules": [],
+ "require": [],
+ "optional": []
+}

@@ -7,7 +7,7 @@ import { suite, pickTool } from './lib.mjs';
 const { check, done } = suite('nav');
 const server = await serve(5243);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const page = await browser.newPage({ viewport: { width: 393, height: 873 }, isMobile: true, hasTouch: true });
+const page = await browser.newPage({ viewport: { width: 393, height: 873 }, isMobile: true, hasTouch: true }); await page.addInitScript(() => { window.__noTutorial = true; });
 const errors = [], asked = [];
 page.on('pageerror', e => errors.push(e.message));
 page.on('dialog', d => { asked.push(d.message()); d.accept(); });
@@ -98,7 +98,7 @@ try {
   // menu and every way back still works, from entries the router keeps itself.
   const html = await (await fetch(B + 'dist/wee.html')).text().catch(() => '');
   if (html) {
-    const fp = await browser.newPage({ viewport: { width: 393, height: 873 } });
+    const fp = await browser.newPage({ viewport: { width: 393, height: 873 } }); await fp.addInitScript(() => { window.__noTutorial = true; });
     const ferr = []; fp.on('pageerror', e => ferr.push(e.message));
     await fp.setContent('<iframe sandbox="allow-scripts allow-modals" style="width:393px;height:860px;border:0"></iframe>');
     await fp.$eval('iframe', (f, h) => { f.srcdoc = h; }, html); await fp.waitForTimeout(1200);

@@ -11,7 +11,7 @@ const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
 const url = path => `http://localhost:${PORT}/index.html${path}`;
 try {
-  const page = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true });
+  const page = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true }); await page.addInitScript(() => { window.__noTutorial = true; });
   await page.goto(url('#/level/1')); await page.waitForTimeout(600);
   await page.evaluate(() => window.wee.setMode('play')); await page.waitForTimeout(200);
   await page.evaluate(() => { const o = CanvasRenderingContext2D.prototype.fillRect; let once = true; CanvasRenderingContext2D.prototype.fillRect = function (...a) { if (once) { once = false; throw new Error('one bad frame'); } return o.apply(this, a); }; });
@@ -22,7 +22,7 @@ try {
   await page.evaluate(() => document.getElementById('menuDebug').click());
   check('the Debug copy carries the error', /one bad frame/.test(await page.inputValue('#reportText')));
 
-  const nav = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true });
+  const nav = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true }); await nav.addInitScript(() => { window.__noTutorial = true; });
   await nav.goto(url('#/level/3')); await nav.waitForTimeout(600);
   // An entry that says the tab is deeper than it is: history.go(-n) then never answers.
   await nav.evaluate(() => history.replaceState({ ...history.state, n: 5 }, '', location.href));

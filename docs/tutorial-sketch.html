@@ -81,22 +81,22 @@ var card = '<div class="card"><b>How to play</b>Get the robot to the star.</div>
 var F = [
   ['1. What stops the robot', 'The robot goes right on its own and the wall stops it.',
     bar() + card + room(grid(['.....', 'P~~~~', '.....', '.....', '...G.'])),
-    'A block or a wall stops the robot. Nothing else does.', 'Next'],
+    'The robot slides in a straight line until a block or a wall stops it.', 'Next'],
   ['2. The target', 'The star pulses. The robot passed its column, so it missed the star.',
     bar() + card + room(grid(['.....', '....P', '.....', '.....', '...g.'])),
-    'The robot passed the star: nothing stopped it in time.', 'Next'],
+    'With nothing to stop it above the star, the robot slid right past it.', 'Next'],
   ['3. You build the room', 'No arrows on screen. The block tool lights up.',
     bar() + card + room(grid(['.....', '.P...', '.....', '.....', '...G.'])) + '<div class="pal"><span class="on"><i></i></span></div>',
-    'You don\'t move the robot. You build the room. Run moves the robot for you.', 'Next'],
+    'You don\u2019t move the robot yourself: you build its room with blocks.', 'Next'],
   ['4. Place one block', 'One tile is marked. A tap anywhere else does nothing.',
     bar() + card + room(grid(['.....', '.P..?', '.....', '.....', '...G.'])) + '<div class="pal"><span class="on"><i></i></span></div>',
-    'Place a block here. It stops the robot above the star.', null],
+    'Place a block here, so the robot stops right above the star.', null],
   ['5. Run', 'Run is ringed. The robot goes right, the block stops it, then it goes down to the star.',
     bar('Run') + card + room(grid(['.....', '.P~~#', '...~.', '...~.', '...G.'])),
-    'Tap Run. Run checks every shortest path to the star. Every path must meet the goals.', null],
+    'By tapping Run, the robot will find the shortest path to the star and walk through it.', null],
   ['6. Stars', 'The win card, then the level card with its stars.',
     bar() + '<div class="card"><b>How to play: beaten</b>Your score is the tiles you placed: 1.</div><div class="stars">' + star(1, true) + '<span class="sep"></span>' + star(null) + star(null) + '</div>',
-    'A win earns the big star. Each side goal earns a small one. The number shows the tiles you placed. To score better, place fewer.', 'Level 1'],
+    'The big star means you won, the small stars are side goals, and the number counts the tiles you placed: fewer is better.', 'Level 1'],
 ];
 document.getElementById('frames').innerHTML = F.map(function (f) {
   return '<div class="frame"><h2>' + f[0] + '</h2><p class="what">' + f[1] + '</p><div class="phone">' + f[2] +

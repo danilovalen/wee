@@ -33,7 +33,9 @@ export function syncBrief() {
   if (!S.camp) return;
   const def = S.camp.def, v = S.camp.verdict;
   const ran = v && v.ok && v.length != null;
-  const rows = [{ id: 'steps', parts: [rangeShort(def.steps)], text: stepsText(def.steps), met: ran ? v.inRange : null }];
+  // The tutorial teaches one thing, so its card is one order (registers 511, 512).
+  const rows = def.tutorial ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
+    : [{ id: 'steps', parts: [rangeShort(def.steps)], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
   const { by } = placed(def, S.level);

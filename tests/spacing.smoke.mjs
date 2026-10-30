@@ -33,7 +33,7 @@ const collisions = page => page.evaluate(({ SHADOW, GAP }) => {
 }, { SHADOW, GAP });
 try {
   for (const [label, viewport] of [['phone', { width: 393, height: 852 }], ['computer', { width: 1280, height: 800 }]]) {
-    const page = await browser.newPage({ viewport });
+    const page = await browser.newPage({ viewport }); await page.addInitScript(() => { window.__noTutorial = true; });
     await page.addInitScript(() => { window.__noWinCard = false; });
     await page.goto(`http://localhost:${PORT}/`); await page.waitForTimeout(500);
     const see = async name => { await page.mouse.move(1, 1); await page.waitForTimeout(200); const c = await collisions(page); check(`${label}: nothing collides on ${name}`, !c.length, c.slice(0, 6).join(', ')); };

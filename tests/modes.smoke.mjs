@@ -7,7 +7,7 @@ import { suite } from './lib.mjs';
 const { check, done } = suite('modes');
 const server = await serve(5241);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const page = await browser.newPage({ viewport: { width: 393, height: 873 }, isMobile: true, hasTouch: true });
+const page = await browser.newPage({ viewport: { width: 393, height: 873 }, isMobile: true, hasTouch: true }); await page.addInitScript(() => { window.__noTutorial = true; });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 // Every tool the strip reaches: a slot's own, or its flyout's when it holds more.

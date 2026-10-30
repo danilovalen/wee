@@ -15,6 +15,7 @@ export const forgetWins = () => shown.clear();
 
 // before: the level's record before this run; rec: after it; words: draws a goal's short words.
 export function noteWin(def, before, rec, v, words) {
+  if (def.tutorial) return;  // its last step says it instead (register 512)
   const goals = optionalGoals(def), all = r => goals.length > 0 && goals.every(o => r.goals && r.goals[o.id]);
   const gold = all(rec);
   if (before.beaten && (!gold || all(before))) return;

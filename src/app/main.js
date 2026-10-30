@@ -20,6 +20,7 @@ import { buildGenerator } from './generator.js';
 import { buildCampaign } from './campaign.js';
 import { bindNav, start } from './nav.js';
 import { bindDebug } from './debug.js';
+import { bindTutorial } from './tutorial.js';
 
 S.level = starterLevel(portrait());
 
@@ -35,6 +36,7 @@ buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
+bindTutorial();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });
 buildMaker();

@@ -50,8 +50,10 @@ function colourFits(def, c) {
 export function roomOf(def) {
   const [w, h] = def.size, l = emptyLevel(w, h);
   for (const p of Object.keys(l.powers)) l.powers[p] = !!(def.powers || []).includes(p);
-  l.start = { x: 1, y: 1 };
-  l.cells[(h - 2) * w + w - 2] = 'goal';
+  // A level may place its start and goal (the tutorial, register 512); otherwise one tile in from opposite corners.
+  const [sx, sy] = def.start || [1, 1], [gx, gy] = def.goal || [w - 2, h - 2];
+  l.start = { x: sx, y: sy };
+  l.cells[gy * w + gx] = 'goal';
   return l;
 }
 

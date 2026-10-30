@@ -30,4 +30,6 @@ export function migrate(p) {
   p.v = 4; write(p);
   return p;
 }
+// Whether a player opening Campaign should land in the tutorial (register 512): nothing beaten and the tutorial unseen.
+export const firstTime = p => !Object.values(p.levels || {}).some(r => r && r.beaten) && !(p.levels || {}).tutorial;
 export const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };

@@ -90,6 +90,8 @@ export const KNOWN = {
     10: ['.....v..', '..#....#', '.....B.v', '#...<...', '#<GP<...'],
   },
   wins: {
+    // The tutorial's own answer: one block stops the robot above the star (register 512).
+    tutorial: ['.....', '.P..#', '.....', '.....', '...G.'],
     // Found by tools/levelSearch.mjs (register 388): 8 moves, level 20's exact count, a relay pushed into another on the way.
     20: ['...GB..#', '.B.B....', 'D.r..rPw'],
     // Found by tools/climb.mjs (register 444): 12 moves, level 21's exact count.
