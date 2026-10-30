@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tutorial Sketch</title>
+<style>
+:root{--paper:#eceef2;--panel:#f8f9fb;--ink:#2a2730;--soft:#6f6876;--accent:#7b6cff;--sticker:#c8ccd5;--gold:#ffc23d;--cell:#e3e6ec;--line:#d3d7df;--block:#a9adb8}
+*{box-sizing:border-box}
+body{margin:0;background:#dfe2e8;color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1240px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--soft);margin:0 0 16px;font-size:14px}
+.frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+.frame{display:grid;gap:6px}
+.frame h2{font-size:14px;margin:0}
+.frame p.what{margin:0;font-size:13px;color:var(--soft)}
+.phone{position:relative;background:var(--paper);border-radius:18px;padding:10px;height:470px;box-shadow:4px 4px 0 0 var(--sticker);overflow:hidden}
+.bar{display:flex;gap:4px;margin-bottom:8px}
+.bar span{background:var(--panel);border-radius:10px;padding:6px 9px;font-weight:700;font-size:12px;box-shadow:3px 3px 0 0 var(--sticker)}
+.bar span.on{outline:2px solid var(--accent)}
+.bar span.dim{opacity:.35}
+.card{background:#dcdfe5;border-radius:12px;padding:8px 10px;font-size:12px;margin-bottom:10px}
+.card b{display:block;font-size:13px}
+.room{display:grid;gap:2px;margin:0 auto;background:var(--line);border-radius:8px;padding:2px;width:180px}
+.room i{aspect-ratio:1;background:var(--cell);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:15px;position:relative}
+.room i.b{background:var(--block)}
+.room i.ghost{outline:2px dashed var(--accent);outline-offset:-3px;background:#ece9ff}
+.room i.trail{background:#d8d2ff}
+.room i.ring{outline:2px solid var(--accent);outline-offset:-2px}
+.pal{position:absolute;left:10px;bottom:10px;display:flex;gap:6px}
+.pal span{width:38px;height:38px;border-radius:9px;background:var(--panel);box-shadow:3px 3px 0 0 var(--sticker);display:flex;align-items:center;justify-content:center}
+.pal span.on{outline:2px solid var(--accent)}
+.pal span i{width:20px;height:20px;background:var(--block);border-radius:3px}
+.coach{position:absolute;left:10px;right:10px;bottom:60px;background:var(--ink);color:#fff;border-radius:12px;padding:10px 12px;font-size:13px}
+.coach small{display:block;opacity:.7;margin-top:4px;font-size:11px}
+.coach .next{float:right;background:var(--accent);border-radius:8px;padding:2px 8px;font-weight:700;margin-left:6px}
+.stars{display:flex;align-items:center;gap:2px;justify-content:center;margin-top:12px}
+.stars .s{width:22px;height:22px;position:relative}
+.stars .s.m{width:30px;height:30px}
+.stars svg{width:100%;height:100%;display:block}
+.stars .s i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-top:3px;font:800 10px system-ui;color:#5a3f00;font-style:normal}
+.sep{width:2px;height:20px;background:#cfd3db;margin:0 4px}
+.plan{margin-top:24px;background:#fff;border-radius:12px;padding:12px 16px;font-size:14px}
+.plan h2{font-size:16px;margin:4px 0 8px}
+.plan li{margin:4px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Tutorial level: sketch (register 507)</h1>
+<p class="sub">A first level, before Level 1, that walks a new player through one room. The dark bubble is the coach; the ring shows where to tap. Words are drafts.</p>
+<div class="frames" id="frames"></div>
+<section class="plan">
+<h2>The plan</h2>
+<ol>
+<li><b>Where it lives:</b> "How to play", the first card of the level list. A first-time player opening Campaign lands in it. It can be played again any time, and skipped.</li>
+<li><b>One room, 5×5</b>, only blocks, the start and the star already placed. The bubble waits for each action; a wrong tap does nothing.</li>
+<li><b>Six steps:</b> the robot slides; the star is the target; you build, the robot plays; place one block; Run; the stars on the card.</li>
+<li><b>What it teaches:</b> sliding until stopped, building instead of steering, Run trying every shortest way, the main star and side stars, fewest tiles as the score.</li>
+<li><b>Its own rules:</b> it is won in 2 moves, so it lifts the 4-move minimum every other level has, and has no side goals to meet (the two small stars show what Level 1 adds).</li>
+<li><b>What it leaves for Level 1:</b> the 4-move minimum, Test, the side goals list, resizing the room. Level 1's first open could show one bubble for the minimum.</li>
+<li><b>Built from the game's own pieces:</b> a coach bubble, a ring on the thing to tap, and a step list per level. The same parts could guide the first time a new piece appears (doors, boxes) later.</li>
+</ol>
+</section>
+</main>
+<script>
+var STAR = 'M12 1.8l3 6.4 7 .8-5.2 4.8 1.4 6.9L12 17.2 5.8 20.7l1.4-6.9L2 9l7-.8z';
+function room(cells) {
+  return '<div class="room" style="grid-template-columns:repeat(5,1fr)">' + cells.map(function (c) {
+    var cls = { '#': 'b', '?': 'ghost', '~': 'trail' }[c[0]] || '', ring = c.indexOf('!') >= 0 ? ' ring' : '';
+    if (c === 'g') { ring = ' ring'; c = 'G'; }
+    var ink = c.indexOf('P') >= 0 ? '🤖' : c.indexOf('G') >= 0 ? '⭐' : '';
+    return '<i class="' + cls + ring + '">' + ink + '</i>';
+  }).join('') + '</div>';
+}
+function grid(rows) { return rows.join('').split(''); }
+function star(n, m) { var on = n != null; return '<span class="s' + (m ? ' m' : '') + '"><svg viewBox="0 0 24 24"><path d="' + STAR + '" fill="' + (on ? 'var(--gold)' : 'none') + '" stroke="' + (on ? 'var(--gold)' : '#cfd3db') + '" stroke-width="2" stroke-linejoin="round"/></svg>' + (on ? '<i>' + n + '</i>' : '') + '</span>'; }
+function bar(on) { return '<div class="bar">' + ['Levels', 'Run', 'Test'].map(function (b) { return '<span class="' + (b === on ? 'on' : on ? 'dim' : '') + '">' + b + '</span>'; }).join('') + '</div>'; }
+var card = '<div class="card"><b>How to play</b>Robot reaches the star.</div>';
+var F = [
+  ['1. The robot slides', 'The robot slides right on its own, to the wall, and stops.',
+    bar() + card + room(grid(['.....', 'P~~~~', '.....', '.....', '...G.'])),
+    'The robot slides until something stops it.', 'Next'],
+  ['2. The target', 'The star pulses. The robot slides past its column, so it misses.',
+    bar() + card + room(grid(['.....', '....P', '.....', '.....', '...g.'])),
+    'Get the robot to the star.', 'Next'],
+  ['3. You build, it plays', 'No arrows on screen. The block tool lights up.',
+    bar() + card + room(grid(['.....', '.P...', '.....', '.....', '...G.'])) + '<div class="pal"><span class="on"><i></i></span></div>',
+    'You never steer the robot. You build its room, then it plays.', 'Next'],
+  ['4. Place one block', 'One tile is marked. A tap anywhere else does nothing.',
+    bar() + card + room(grid(['.....', '.P..?', '.....', '.....', '...G.'])) + '<div class="pal"><span class="on"><i></i></span></div>',
+    'Place a block here, so the robot stops in line with the star.', null],
+  ['5. Run', 'Run is ringed. The robot plays: right, stops at the block, down to the star.',
+    bar('Run') + card + room(grid(['.....', '.P~~#', '...~.', '...~.', '...G.'])),
+    'Tap Run. The robot tries every shortest way to the star. Each one must meet the goals.', null],
+  ['6. Stars', 'The win card, then the level card with its stars.',
+    bar() + '<div class="card"><b>How to play: beaten</b>Your score is the tiles you placed: 1.</div><div class="stars">' + star(1, true) + '<span class="sep"></span>' + star(null) + star(null) + '</div>',
+    'Winning gives the big star. Side goals give the small ones. The number is the tiles you used: fewer is better.', 'Level 1'],
+];
+document.getElementById('frames').innerHTML = F.map(function (f) {
+  return '<div class="frame"><h2>' + f[0] + '</h2><p class="what">' + f[1] + '</p><div class="phone">' + f[2] +
+    '<div class="coach">' + (f[4] ? '<span class="next">' + f[4] + '</span>' : '') + f[3] + (f[4] ? '' : '<small>Waits for your tap.</small>') + '</div></div></div>';
+}).join('');
+</script>
+</body>
+</html>
