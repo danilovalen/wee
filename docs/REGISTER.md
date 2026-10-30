@@ -474,3 +474,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 466 | "Also, achievements might unlock aesthetic things. Skins for the robot and objects, palettes, stuff like that." | **Recorded (2026-10-26).** Bible §7 and diagnosis: one system, conditions over announced events unlock cosmetics in the profile; colours are roles so any palette keeps them apart. |
 | 467 | Feature picks (pasted from `docs/FEATURE_PICKS.html`): want 19, maybe 10, no 5 | **Recorded (2026-10-26).** Bible §7 and diagnosis, with eight hooks the picks need from the first build. |
 | 468 | "Remove Play as the robot text" | **Done (2026-10-27).** The menu box holds only its four buttons; the line and its two unused style rules are gone. `campaign-play.smoke` now fails if any text line comes back in the box. `npm test` 40/40. |
+| 469 | "Level 1. Minimum is 3x2." | **registered (2026-10-30), waiting for the batch.** |
