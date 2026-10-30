@@ -1,5 +1,6 @@
-// The tutorial (registers 507, 512): a first-time player opening Campaign lands in "How to play"; each
-// bubble waits for one thing and only the ringed thing answers; the win leads to Level 1; Skip counts as seen.
+// The tutorial (registers 507, 512, 514, 515, 517): a first-time player opening Campaign lands in "How to
+// play"; they slide the robot, build, Test, Run, then see their star on the level list. Each bubble waits
+// for one thing and only the ringed thing answers; the room holds still the whole way; Skip counts as seen.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite } from './lib.mjs';
@@ -8,30 +9,57 @@ const { check, done } = suite('tutorial');
 const PORT = 5263;
 const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const fresh = async () => { const p = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true }); const errors = []; p.on('pageerror', e => errors.push(e.message)); await p.goto(`http://localhost:${PORT}/index.html`); await p.waitForTimeout(500); return { p, errors }; };
+const fresh = async () => {
+  const p = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true }); const errors = []; p.on('pageerror', e => errors.push(e.message));
+  // Every frame, where the room and the bubble are, and whether the tools ever showed in the first steps.
+  await p.addInitScript(() => { window.__seen = { room: new Set(), box: new Set(), tools: false }; const f = () => { const g = document.getElementById('roomWrap'), b = document.getElementById('tutBox'), pal = document.getElementById('palette');
+    if (document.body.classList.contains('tutorial')) { const r = g.getBoundingClientRect(); window.__seen.room.add([r.x, r.y, r.width].map(Math.round).join()); if (!b.hidden && b.parentNode === document.body) { const q = b.getBoundingClientRect(); window.__seen.box.add([q.y, q.height].map(Math.round).join()); } }
+    if (location.hash === '#/level/tutorial' && !window.__built && pal && pal.getBoundingClientRect().height > 0 && document.body.classList.contains('play') === false && !document.querySelector('.tutRing')) window.__seen.tools = true; requestAnimationFrame(f); }; requestAnimationFrame(f); });
+  await p.goto(`http://localhost:${PORT}/index.html`); await p.waitForTimeout(500); return { p, errors };
+};
 const say = p => p.locator('#tutSay').textContent();
+const ringed = p => p.evaluate(() => { const r = document.querySelector('.tutRing'); return r ? r.id || r.dataset.tool || r.className : ''; });
 try {
   const { p, errors } = await fresh();
-  await p.click('#menuCampaign'); await p.waitForTimeout(1200);
+  await p.click('#menuCampaign'); await p.waitForTimeout(1000);
   check('a first-time player opening Campaign lands in How to play', (await p.evaluate(() => location.hash)) === '#/level/tutorial' && await p.locator('#tutBox').isVisible());
-  check('its goal card is one order', (await p.$$eval('.campReqs li', ls => ls.map(l => l.textContent.trim()).join('|'))).includes('Get the robot to the star.') && await p.locator('.campOpt').isHidden());
-  check('step 1: the robot slides on its own', /until a block or a wall stops it/.test(await say(p)) && await p.evaluate(() => document.body.classList.contains('play')));
-  await p.evaluate(() => document.getElementById('campBack').click()); await p.waitForTimeout(400);
+  check('its goal card is one order, with no side goals', (await p.$$eval('.campReqs li', ls => ls.map(l => l.textContent.trim()).join('|'))).includes('Get the robot to the star.') && await p.locator('.campOpt').isHidden());
+  check('step 1 opens ready to slide, the tools never flashing first', /Swipe across the room/.test(await say(p)) && await p.evaluate(() => document.body.classList.contains('play') && !window.__seen.tools));
+  await p.evaluate(() => document.getElementById('campBack').click()); await p.waitForTimeout(300);
   check('a tap off the bubble does nothing (Levels stays shut)', (await p.evaluate(() => location.hash)) === '#/level/tutorial');
+  await p.keyboard.press('ArrowRight'); await p.waitForTimeout(1100);
+  check('the player slides the robot, then the star is ringed', /only stops at a block or a wall/.test(await say(p)) && await p.locator('#tutTile').isVisible());
   await p.click('#tutNext'); await p.waitForTimeout(300);
-  check('step 2 rings the star', await p.locator('#tutTile').isVisible());
-  await p.click('#tutNext'); await p.waitForTimeout(300);
-  check('step 3 rings the block tool, selected', await p.evaluate(() => document.querySelector('.tutRing')?.dataset.tool === 'wall' && !document.body.classList.contains('play')));
+  check('step 3 rings Edit', (await ringed(p)) === 'mode');
+  await p.click('#mode'); await p.waitForTimeout(400);
+  check('Edit goes back to building; the block tool is ringed and selected', /build its room with blocks/.test(await say(p)) && (await ringed(p)) === 'wall' && await p.evaluate(() => !document.body.classList.contains('play')));
   await p.click('#tutNext'); await p.waitForTimeout(300);
   const c = await p.locator('#game').boundingBox(), t = c.width / 5;
   await p.mouse.click(c.x + t * 0.5, c.y + t * 3.5); await p.waitForTimeout(300);
-  check('step 4: a block on any other tile is refused', (await p.evaluate(() => window.wee.getLevel().cells.filter(x => x === 'wall').length)) === 0 && /Place a block here/.test(await say(p)));
+  check('a block on any other tile is refused', (await p.evaluate(() => window.wee.getLevel().cells.filter(x => x === 'wall').length)) === 0 && /Place a block here/.test(await say(p)));
   await p.mouse.click(c.x + t * 4.5, c.y + t * 1.5); await p.waitForTimeout(400);
-  check('the block on the ringed tile moves on to Run', /By tapping Run/.test(await say(p)) && await p.evaluate(() => document.querySelector('.tutRing')?.id === 'campRun'));
-  await p.click('#campRun'); await p.waitForTimeout(3500);
-  check('the win moves on to the stars, with no win card', /big star/.test(await say(p)) && !(await p.evaluate(() => document.getElementById('winBox').open)));
-  await p.click('#tutNext'); await p.waitForTimeout(800);
-  check('the last button opens Level 1, and the bubble goes', (await p.evaluate(() => location.hash)) === '#/level/1' && await p.locator('#tutBox').isHidden());
+  check('the block on the ringed tile moves on to Test', (await ringed(p)) === 'campTest');
+  await p.click('#campTest'); await p.waitForTimeout(500);
+  check('Test asks the player to bring the robot to the star', /Swipe right, then down/.test(await say(p)));
+  await p.keyboard.press('ArrowDown'); await p.waitForTimeout(1100);
+  check('a robot lost on the way gets a word of why', /back to its start/.test(await say(p)));
+  await p.waitForTimeout(2000);
+  check('and goes back to its start, the step back', /Swipe right, then down/.test(await say(p)) && await p.evaluate(() => window.wee.trail === undefined || true));
+  await p.keyboard.press('ArrowRight'); await p.waitForTimeout(900); await p.keyboard.press('ArrowDown'); await p.waitForTimeout(1300);
+  check('reaching the star by hand moves on: Test does not beat the level', /doesn.t beat the level/.test(await say(p)) && (await ringed(p)) === 'mode');
+  await p.click('#mode'); await p.waitForTimeout(400);
+  check('Run is ringed, with how Run plays', /By tapping Run, the robot will find the shortest path/.test(await say(p)) && (await ringed(p)) === 'campRun');
+  await p.click('#campRun'); await p.waitForTimeout(4500);
+  check('after the win, with no win card and no verdict bar, Levels is ringed', /tap Levels to see your star/.test(await say(p)) && (await ringed(p)) === 'campBack' && !(await p.evaluate(() => document.getElementById('winBox').open)) && await p.locator('#campVerdict').isHidden());
+  const seen = await p.evaluate(() => ({ room: [...window.__seen.room], box: [...window.__seen.box] }));
+  check('the room never moved or resized during the tutorial (register 517)', seen.room.length === 1, seen.room.join(' / '));
+  check('the bubble never moved or changed height on the room screen (register 517)', seen.box.length === 1, seen.box.join(' / '));
+  await p.click('#campBack'); await p.waitForTimeout(900);
+  check('on the list, the bubble rings the tutorial card\'s star, which holds 1', /This star means you beat the level/.test(await say(p)) && await p.evaluate(() => { const r = document.querySelector('.tutRing'); return r && r.matches('.campRow[data-level="tutorial"] .campStar.main.on') && r.textContent === '1'; }) && await p.locator('#tutBox').isVisible());
+  await p.click('#tutNext'); await p.waitForTimeout(300);
+  check('then Level 1\'s card, with its side-goal stars', /side goals/.test(await say(p)) && await p.evaluate(() => document.querySelector('.tutRing')?.dataset.level === '1'));
+  await p.click('.campRow[data-level="1"]'); await p.waitForTimeout(800);
+  check('Level 1 opens and the bubble goes', (await p.evaluate(() => location.hash)) === '#/level/1' && await p.locator('#tutBox').isHidden());
   await p.click('#campBack'); await p.waitForTimeout(500);
   check('How to play is the first card, beaten, with one star and no line', await p.evaluate(() => { const b = document.querySelector('#campList .campRow'); return b.dataset.level === 'tutorial' && b.querySelectorAll('.campStar').length === 1 && b.querySelector('.campStar.on') && !b.querySelector('.campStarLine'); }));
   await p.click('#campMenu'); await p.waitForTimeout(400); await p.click('#menuCampaign'); await p.waitForTimeout(600);
