@@ -503,3 +503,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 495 | Level 15 new side goal: "all boxes leave laser (laser itself not laser box)" | **registered (2026-10-30), waiting for the batch.** Read as every box leaves a fixed laser's beam; a pushable laser does not count. To confirm at build. |
 | 496 | Level 16 new side goal: "you through door" (the robot goes through a door) | **registered (2026-10-30), waiting for the batch.** |
 | 497 | Level 17 new side goal: "box collides AND goes through inverted door" | **registered (2026-10-30), waiting for the batch.** One box both hits an inverted door and goes through one, in the same run. |
+| 498 | Level 18: "box goes through between two laser relays" | **registered (2026-10-30), waiting for the batch.** Read as a new side goal: a box crosses the cell line between two laser relays. To confirm at build. |
