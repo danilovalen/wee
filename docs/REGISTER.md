@@ -504,3 +504,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 496 | Level 16 new side goal: "you through door" (the robot goes through a door) | **registered (2026-10-30), waiting for the batch.** |
 | 497 | Level 17 new side goal: "box collides AND goes through inverted door" | **registered (2026-10-30), waiting for the batch.** One box both hits an inverted door and goes through one, in the same run. |
 | 498 | Level 18: "box goes through between two laser relays" | **registered (2026-10-30), waiting for the batch.** Read as a new side goal: a box crosses the cell line between two laser relays. To confirm at build. |
+| 499 | Level 19: "laser through open and closed door (the laser ray itself)" | **registered (2026-10-30), waiting for the batch.** Read as a new side goal on the beam, not the laser box: the beam goes through an open door and meets a closed door. A closed door blocks a beam today, so "through a closed door" needs his reading at build. |
