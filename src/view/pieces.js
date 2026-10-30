@@ -25,12 +25,10 @@ export function drawTurret(g, t, badge, mounted) {
   for (const d of t.dirs) {
     g.save(); g.translate(16, 16); g.rotate(AIM[d]);
     g.fillStyle = d === next ? INK.zap : INK.barrel;
-    roundRect(g, 4, -3, 11, 6, 2); g.fill();
+    // Only the barrels (register 493): no base plate, no hub.
+    roundRect(g, -5, -4, 20, 8, 3); g.fill();
     g.restore();
   }
-  g.fillStyle = '#20242f'; g.beginPath(); g.arc(16, 16, 7, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = INK.zap; g.lineWidth = 1.5; g.stroke();
-  g.fillStyle = INK.zap; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
   g.restore();
   // One direction always fires the same way, so how it turns says nothing (register 300).
   if (badge && t.dirs.length > 1) modeBadge(g, t.mode, badge[0], badge[1]);
@@ -66,11 +64,8 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
     modeBadge(g, e.mode);
   } else if (e.kind === 'turret') {
-    // A pushable laser wears the box's brown border, its base cut to fit inside (registers 336-338).
-    if (e.crate) { g.save(); roundRect(g, 4, 4, T - 8, T - 8, 3); g.clip(); }
-    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
-    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
-    if (e.crate) { g.restore(); g.strokeStyle = INK.boxEdge; g.lineWidth = 2; roundRect(g, 3, 3, T - 6, T - 6, 3.5); g.stroke(); }
+    // A pushable laser wears the box's brown border (registers 336-338); a fixed one has no base (register 493).
+    if (e.crate) { g.strokeStyle = INK.boxEdge; g.lineWidth = 2; roundRect(g, 3, 3, T - 6, T - 6, 3.5); g.stroke(); }
   } else if (e.kind === 'box') {
     g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
     g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();

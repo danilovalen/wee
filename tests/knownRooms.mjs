@@ -1,25 +1,62 @@
 // Known winning rooms per level, in the one legend (tools/legend.mjs). The campaign tests prove each
 // one wins, and tools/levelSearch.mjs --seeded climbs from them (register 272).
 export const KNOWN = {
-  small: { 1: ['.GP', '...', '..#'], 2: ['.tD', '...', '.GP'], 3: ['D..', 't.G', '..P'], 4: ['Pt.', 'D..', 'G.t', '...'],
-    5: ['...#....', '.....PG.', '..#.B...', '...#....', '....B...', '....#...'], 6: ['...', '.P.', '.D.', 'GB.', 'tB.'], 7: ['.GoD', '....', '..B.', '..P.'], 8: ['..P..', '...D.', '...BG', '...Bo'],
-    9: ['#..', '.v.', '.G.', '...', 'P>.'], 10: ['..P<B.', '.B.G.^', '......'], 11: ['...P', 'BBDq', 'o.Q#', '#..G'], 12: ['#P.#..', 'G>.>Bo'], 13: ['PB>..GD', '.......', '#t.....'],
-    14: ['GD.', 'Dw.', 'tP.'], // His 6x5 room (register 293) plus one block from a search: 11 moves.
-    15: ['#..##.', '...P..', '...B..', '#.....', 'e..>G#'],
-    // His room (registers 304, 306): 7 moves, 5x4, two lasers; the robot steps on the button.
+  // The smallest winning room found per level; its size is the size goal (register 486).
+  small: {
+    1: ['P#', 'G.', '..'],
+    2: ['.tD', 'G.#', 'DP.'],
+    3: ['#G#', 'PtD', '#.D'],
+    4: ['Pt.', 'D.t', '..G', 'D.D'],
+    5: ['.G..', '.#..', '.B.P', '....'],
+    6: ['DD.', 'DD.', 'GB.', 'tBP'],
+    7: ['BP#B', 'DB..', '.oG.'],
+    8: ['P##', '.D.', '.BG', '.Bo'],
+    9: ['P>..', '#..#', '..>G'],
+    10: ['..#^vP', 'G...^.', '>..<B.'],
+    11: ['PBB.', 'BBDq', 'oGQB'],
+    12: ['#P.#..', 'G>.>Bo'],
+    13: ['PB>..GD', '.......', '#t.....'],
+    14: ['GD.', 'Dw.', 'tP.'],
+    15: ['...#.P.', '#....B.', '.B.#..B', 'e....>G'],
     16: ['o..', 'GBP', '.eD', 'n..'],
-    // 17 built by hand (register 325): one inverted door, 7 moves; 18 found by tools/levelSearch.mjs (register 329): 4x5 in 4 moves, and 6x9 in 11.
-    17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['rP#', 'nB.', '.G.', '#I#'], twocolour: ['....', '.r..', '.X.q', '....', 'PnG.'],
-    // Found by tools/climb.mjs (register 365): 4x4 in 7 moves; 16 and 18 likewise, 3x4 in 4.
+    17: ['oB.wB', 'PBBB#', '.IG.w'],
+    18: ['rP#', 'nB.', '.G.', '#I#'],
     19: ['##..', '.DD.', 'DESG', '.Pr.'],
-    // Found by tools/levelSearch.mjs --seeded (register 386): one door, four relays, 6 moves, 8x3.
-    20: ['..B.....', '.B......', 'DGrrrrPw'],
-    // Found by tools/climb.mjs (register 444): 3x5 in 4 moves, each box onto the spikes and one over the goal.
+    20: ['........', '........', '.BDGrrPw'],
     21: ['#P.', 'xB#', '.B#', '.Gx', '#xx'],
-    // Found by tools/climb.mjs (registers 448, 452): 22 is 7x3 in 4 moves, 23 is 4x5 in 8.
-    22: ['..Bx<B.', 'B....#P', 'B....GB'], 23: ['B...', 'PBDx', '..B.', '.BxG', '.o.x'],
-    // Found by tools/climb.mjs (register 456): 4x6 in 7 moves; two pushable lasers push each other over the spike.
-    24: ['....', '.r.x', 'NN.G', 'v.#.', 'N..N', '..P.'] },
+    22: ['#.P..x', '....x.', '.B>xG.'],
+    23: ['.B..', 'PBDx', '.B..', '..xG', '.o..'],
+    24: ['S.#.', '.r.x', '.N.G', 'v##W', 'N.#.', 'P...'],
+    'twocolour': ['X.o', 'G..', 'reP'],
+    5: ['..P#', 'G#B.', '....'],
+  },
+  // A winning room that meets two side goals at once, per level (register 506).
+  pair: {
+    1: ['P.#.', '...#', '.#..', '..#G'],
+    2: ['Dt.', '..P', 'DGD'],
+    3: ['DG.', 't..', 'PD.'],
+    4: ['Pt.', 'D..', 'G.t', '...'],
+    5: ['#..#..', '......', '.B.#..', '#.P...', '...#.#', '......', '.B.#..', '##....', '.#....', '.#.G.#', '..##..'],
+    6: ['GD#', 'DB#', 'tB.', 'tBP'],
+    7: ['.GoD', 'DBB.', 'oBB.', '..P.'],
+    8: ['...', '.DP', '.BG', '.Bo'],
+    9: ['G.<.', '##..', 'P.^#', '#v..', '....'],
+    10: ['.....v..', '..#....#', '.....B.v', '#...<...', '#<GP<...'],
+    11: ['P.Q.D', 'BB.qo', 'oBDQ.', '#.B#.', '#..##', '#..GD', '.QQB#'],
+    12: ['^.B..', 'BG>B.', 'P.Bvo'],
+    13: ['PB>..GD', '.......', '#t.....'],
+    14: ['s..', 'DtG', '#DP'],
+    15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
+    16: ['o..', 'GBP', '.eD', 'n..'],
+    17: ['o.BwB', 'PBG..', 'I...w'],
+    18: ['rP#', 'nB.', '.G.', '#I#'],
+    19: ['##..', '.DD.', 'DESG', '.Pr.'],
+    20: ['..B.....', '.B......', 'DGr.rrPw'],
+    21: ['.x.', 'x..', 'GBP', 'B..', '...'],
+    22: ['..Bx<B.', '#..#P..', '..B>xG.'],
+    23: ['BB..', 'PBDx', 'BBx.', '..xG', 'ooB.'],
+    24: ['.#..', '.r.x', '.N.G', 'v.#.', '.N.N', '..P.'],
+  },
   optional: {
     // Found by tools/climb.mjs from level 24's wins (register 458): three spikes, 7 moves, 10x3.
     24: ['#.xG...S..', '....rW.r..', '.xx.EE>>WP'],
@@ -50,6 +87,7 @@ export const KNOWN = {
     11: ['P.QQ.', 'BB.q.', 'oBBQ.', '#DDB.', 'B..##', '#.BG.', 'BQQ..', '.....'],
     // Found by tools/levelSearch.mjs --seeded (2026-10-19, register 277): 8 moves, a box thrown out by the turning one-way.
     12: ['PBB.v', '.G>.B', '..>.o'],
+    10: ['.....v..', '..#....#', '.....B.v', '#...<...', '#<GP<...'],
   },
   wins: {
     // Found by tools/levelSearch.mjs (register 388): 8 moves, level 20's exact count, a relay pushed into another on the way.
@@ -91,8 +129,11 @@ export const KNOWN = {
     // Exact counts tightened to the search's fewest (register 365): 16 and 18 in 4 moves, 19 in 7.
     16: ['o..', 'GBP', '.eD', 'n..'],
     17: ['.#...', '...#.', 'PBo#.', 'e...I', '..#..', '....G'], 18: ['rP#', 'nB.', '.G.', '#I#'], 19: ['##..', '.DD.', 'DESG', '.Pr.'], twocolour: ['..eXqR', '.G.#P#', 'wX..o.', '..#...'],
+    5: ['..P#', 'G#B.', '....'],
+    10: ['.....v..', '..#....#', '.....B.v', '#...<...', '#<GP<...'],
+    22: ['..Bx<B.', '#..#P..', '..B>xG.'],
   },
 };
 
 // Every known room of a level, as rows.
-export const roomsOf = id => [KNOWN.small, KNOWN.optional, KNOWN.wins].map(m => m[id]).filter(Boolean);
+export const roomsOf = id => [KNOWN.small, KNOWN.pair, KNOWN.optional, KNOWN.wins].map(m => m[id]).filter(Boolean);

@@ -27,7 +27,7 @@
  },
  "small": [
   3,
-  5
+  4
  ],
  "rules": [],
  "require": [
@@ -36,6 +36,7 @@
   "onlyBoxesFlipSwitches"
  ],
  "optional": [
-  "aToggleOffAtEnd"
+  "aToggleOffAtEnd",
+  "twoSwitches"
  ]
 }

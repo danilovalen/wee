@@ -40,7 +40,8 @@
   "laserThroughButton"
  ],
  "optional": [
-  "boxPushedTwiceHitOnce"
+  "boxPushedTwiceHitOnce",
+  "throughOpenDoor"
  ],
  "colours": [
   "red",

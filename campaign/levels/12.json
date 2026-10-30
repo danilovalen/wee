@@ -37,6 +37,7 @@
   "robotThroughOneWayBothWays"
  ],
  "optional": [
-  "boxLaunched"
+  "boxLaunched",
+  "boxHitsOneWayThreeWays"
  ]
 }

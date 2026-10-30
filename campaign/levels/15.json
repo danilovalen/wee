@@ -26,8 +26,8 @@
   "best": 14
  },
  "small": [
-  6,
-  5
+  7,
+  4
  ],
  "rules": [],
  "require": [
@@ -36,6 +36,7 @@
   "boxHitsOneWay"
  ],
  "optional": [
-  "boxThroughOneWay"
+  "boxThroughOneWay",
+  "everyBoxLeavesBeam"
  ]
 }

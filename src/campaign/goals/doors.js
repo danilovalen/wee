@@ -1,7 +1,7 @@
 // Goals about doors and inverted doors: going through, colliding, closing, and pushable doors over
 // spikes (registers 243, 257, 452). All copy is draft.
 import { replayPath } from '../robot.js';
-import { STEP, stoppedPushes, cellOf, everyTile, countKind } from './helpers.js';
+import { STEP, stoppedPushes, cellOf, everyTile, countKind, cellsWhere, boxIds, robotStops } from './helpers.js';
 
 export const DOOR_GOALS = {
   throughOpenDoor: {
@@ -153,5 +153,54 @@ export const DOOR_GOALS = {
     text: 'At least 2 doors in the room.',
     short: ['at least 2', { el: 'door' }],
     judge: room => countKind(room, 'door') >= 2,
+  },
+  // Register 476.
+  atMostOneDoor: {
+    text: 'At most 1 door in the room.',
+    short: ['at most 1', { el: 'door' }],
+    judge: room => countKind(room, 'door') <= 1,
+  },
+  // Register 477: four doors or more, and the robot stands in every one.
+  robotThroughFourDoors: {
+    needs: { door: 4 },
+    text: 'At least 4 doors, and the robot through every one.',
+    short: [{ el: 'start' }, 'through all of 4+', { el: 'door' }],
+    judge: (room, moves) => {
+      const doors = cellsWhere(room, c => /^door:/.test(c)), seen = new Set();
+      replayPath(room, moves, s => { const i = s.player.y * room.w + s.player.x; if (/^door:/.test(s.cells[i] || '')) seen.add(i); });
+      return doors.length >= 4 && doors.every(i => seen.has(i));
+    },
+  },
+  // Register 485: like boxThroughOpenDoor, for every box.
+  everyBoxThroughOpenDoor: {
+    text: 'Every box into an open doorway.',
+    short: ['every', { el: 'box' }, 'into an open', { el: 'door' }],
+    judge: (room, moves) => {
+      const ids = boxIds(room), seen = new Set();
+      replayPath(room, moves, s => { for (const e of s.entities) if (!e.dead && e.kind === 'box' && /^door:/.test(s.cells[e.y * room.w + e.x] || '')) seen.add(e.id); });
+      return ids.length > 0 && ids.every(id => seen.has(id));
+    },
+  },
+  // Register 490: the robot's slides end against closed doors of two colours.
+  robotHitsDoorsOfTwoColours: {
+    needs: { door: 2 },
+    text: 'Robot collides with closed doors of two colours.',
+    short: [{ el: 'start' }, 'collides with closed', { el: 'door' }, 'of 2 colours'],
+    judge: (room, moves) => {
+      const cols = new Set();
+      robotStops(room, moves, (s, x, y) => { const c = x >= 0 && y >= 0 && x < room.w && y < room.h ? s.cells[y * room.w + x] || '' : ''; if (/^door:/.test(c) && !c.slice(5).split('|').some(k => s.open[k])) for (const k of c.slice(5).split('|')) cols.add(k); });
+      return cols.size >= 2;
+    },
+  },
+  // Register 497: one box both collides with a closed inverted door and goes into an open one.
+  boxHitsAndThroughIdoor: {
+    text: 'Box collides with a closed inverted door and goes through an open one.',
+    short: [{ el: 'box' }, 'collides with and goes through an', { el: 'idoor' }],
+    judge: (room, moves) => {
+      const hit = new Set(stoppedPushes(room, moves).out.filter(h => { const c = cellOf(room, [h.x, h.y]); return c.startsWith('idoor:') && c.slice(6).split('|').some(col => h.open[col]); }).map(h => h.box.id));
+      let ok = false;
+      replayPath(room, moves, s => { for (const e of s.entities) if (!e.dead && e.kind === 'box' && hit.has(e.id) && /^idoor:/.test(s.cells[e.y * room.w + e.x] || '')) ok = true; });
+      return ok;
+    },
   },
 };

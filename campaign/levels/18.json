@@ -39,6 +39,7 @@
   "allRelaysLitAtEnd"
  ],
  "optional": [
-  "robotAndBoxHitRelay"
+  "robotAndBoxHitRelay",
+  "boxBetweenTwoRelays"
  ]
 }

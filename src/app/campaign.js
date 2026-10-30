@@ -3,7 +3,7 @@
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS } from '../level/campaign.js';
-import { roomOf, coloursOf, placementErrors, check, optionalGoals, scoreText } from '../campaign/rules.js';
+import { roomOf, coloursOf, placementErrors, check, optionalGoals } from '../campaign/rules.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { $, portrait } from './dom.js';
@@ -88,7 +88,7 @@ export function run() {
     // The score is tiles (register 328): the fewest in any win, and the fewest in a win meeting each optional goal.
     const best = rec.best ||= {}, low = (k, n) => { best[k] = best[k] == null ? n : Math.min(best[k], n); };
     low('win', v.tiles);
-    for (const o of v.optional) if (o.met && o.id !== 'mix') low(o.id, v.tiles);
+    for (const o of v.optional) if (o.met) low(o.id, v.tiles);
     rec.beaten = true; rec.room = S.level;
     write(p);
     noteWin(def, before, rec, v, words);
@@ -101,21 +101,36 @@ export function run() {
   return v;
 }
 
-// A beaten level's statistics, short: moves, fewest to most; tiles are the score, below.
-const range = ([a, b]) => a === b ? `${a}` : `${a}–${b}`;
-const statsText = st => st && st.moves ? `, moves ${range(st.moves)}` : '';
+
+// A level's stars (register 475): the main goal, a line, one per side goal. A met goal's star is
+// filled and holds the fewest tiles placed in a win that met it.
+const STAR = 'M12 1.8l3 6.4 7 .8-5.2 4.8 1.4 6.9L12 17.2 5.8 20.7l1.4-6.9L2 9l7-.8z';
+function star(n, main, label) {
+  const el = document.createElement('span'), on = n != null;
+  el.className = 'campStar' + (main ? ' main' : '') + (on ? ' on' : '');
+  el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR}"/></svg>` + (on ? `<i>${n}</i>` : '');
+  el.title = label;
+  return el;
+}
+function stars(def, rec) {
+  const row = document.createElement('span'), best = rec.best || {}, line = document.createElement('span');
+  row.className = 'campStars'; line.className = 'campStarLine';
+  const met = id => rec.goals && rec.goals[id] ? best[id] ?? best.win ?? '' : null;
+  row.append(star(rec.beaten ? best.win ?? '' : null, true, 'Win'), line, ...optionalGoals(def).map(o => star(met(o.id), false, o.text)));
+  row.setAttribute('aria-label', rec.beaten ? `Beaten, ${Object.values(rec.goals || {}).filter(Boolean).length} of ${optionalGoals(def).length} side goals` : 'Not beaten');
+  return row;
+}
 
 function renderList() {
   const p = progress(), list = $('campList');
   list.replaceChildren(...LEVELS.filter(def => !def.hidden).map(def => {
     const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button');
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
-    const name = document.createElement('b'), small = document.createElement('small');
+    const name = document.createElement('b');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten, optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}${scoreText(def, rec.best)}` : '';
     const parts = levelParts(def, TOOL);
     const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name, levelColours(def));
-    b.append(top, parts, small);
+    b.append(top, parts, stars(def, rec));
     if (def.id === p.last) b.classList.add('sel');
     b.onclick = () => go('level', def.id);
     li.append(b);

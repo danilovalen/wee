@@ -37,7 +37,8 @@ export function pushChain(s, x, y, d) {
     // The front piece lands where it would alone; only a row of pieces alone lets a triangle turn it
     // (a box train, register 278), a row with a tile in it goes straight.
     if (last.e) { const t = pushTo(s, last.x, last.y, d, wades(last.e)); if (!t || ((t.x !== cx || t.y !== cy) && !list.every(o => o.e))) return false; last.to = t; }
-    else if (cellAt(s, cx, cy) !== '' && cellAt(s, cx, cy) !== 'death') return false;
+    // A tile lands like a box (register 505): on floor, on spikes it covers, or into an open doorway.
+    else if (crateAt(s, cx, cy) || !(cellAt(s, cx, cy) === '' || cellAt(s, cx, cy) === 'death' || (/^i?door:/.test(cellAt(s, cx, cy)) && !solidCell(s, cx, cy)))) return false;
     break;
   }
   const cells = [...s.cells], crates = new Set(s.crates), tiles = s.tiles.map(t => ({ ...t }));

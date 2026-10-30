@@ -2,7 +2,7 @@
 // 255, 256, 457). All copy is draft.
 import { replayPath } from '../robot.js';
 import { boxMoves } from '../pushes.js';
-import { STEP, stoppedPushes, beams, everyLaser, through, relaysOf, cellOf, isGate, crossed, laserOverSpikes, allDone, isSpike } from './helpers.js';
+import { STEP, stoppedPushes, beams, everyLaser, through, relaysOf, cellOf, isGate, crossed, laserOverSpikes, allDone, isSpike, boxIds, idsOf, robotStops } from './helpers.js';
 
 export const LASER_GOALS = {
   // Lasers (registers 255, 256).
@@ -180,5 +180,56 @@ export const LASER_GOALS = {
     text: 'A pushable laser crosses every spike.',
     short: [{ el: 'laser' }, 'crosses every', { el: 'spikes' }],
     judge: (room, moves) => allDone(laserOverSpikes(room, moves)),
+  },
+  // Register 494 (level 14): the robot's slides end against each laser at least twice.
+  robotHitsEveryLaserTwice: {
+    text: 'Robot collides with every laser 2 or more times.',
+    short: [{ el: 'start' }, 'collides with every', { el: 'laser' }, '×2'],
+    judge: (room, moves) => {
+      const ids = idsOf(room, e => !!e.turret), hits = {};
+      robotStops(room, moves, (s, x, y) => { const t = s.entities.find(e => !e.dead && e.turret && e.x === x && e.y === y); if (t) hits[t.id] = (hits[t.id] || 0) + 1; });
+      return ids.length > 0 && ids.every(id => (hits[id] || 0) >= 2);
+    },
+  },
+  // Register 495: each box stands in a fixed laser's beam (it stops the beam) and later stands out of every one.
+  everyBoxLeavesBeam: {
+    text: 'Every box leaves a laser beam.',
+    short: ['every', { el: 'box' }, 'leaves a', { el: 'laser' }, 'beam'],
+    judge: (room, moves) => {
+      const ids = boxIds(room), was = new Set(), left = new Set();
+      replayPath(room, moves, s => {
+        const fixed = new Set(s.entities.filter(e => !e.dead && e.turret && !e.crate).map(e => e.id));
+        const stops = new Set((s.beams || []).filter(b => fixed.has(b.id) && b.stop).map(b => b.stop.join()));
+        for (const e of s.entities) { if (e.dead || e.kind !== 'box') continue; if (stops.has(e.x + ',' + e.y)) was.add(e.id); else if (was.has(e.id)) left.add(e.id); }
+      });
+      return ids.length > 0 && ids.every(id => left.has(id));
+    },
+  },
+  // Register 498: a box stands on a tile with a relay on both sides of it (left and right, or above and below).
+  boxBetweenTwoRelays: {
+    text: 'Box goes between two relays.',
+    short: [{ el: 'box' }, 'between two', { el: 'relay' }],
+    judge: (room, moves) => {
+      let ok = false;
+      const relay = (s, x, y) => x >= 0 && y >= 0 && x < room.w && y < room.h && /^sensor:/.test(s.cells[y * room.w + x] || '');
+      replayPath(room, moves, s => { for (const e of s.entities) if (!e.dead && e.kind === 'box' && ((relay(s, e.x - 1, e.y) && relay(s, e.x + 1, e.y)) || (relay(s, e.x, e.y - 1) && relay(s, e.x, e.y + 1)))) ok = true; });
+      return ok;
+    },
+  },
+  // Register 499: in one run, a beam goes through an open door and a beam is stopped by a closed one.
+  laserThroughAndStoppedByDoor: {
+    text: 'Laser through an open door, and stopped by a closed one.',
+    short: [{ el: 'laser' }, 'through an open and stopped by a closed', { el: 'door' }],
+    judge: (room, moves) => {
+      let through_ = false, stopped = false;
+      beams(room, moves, (b, s) => { if (through(b, s).some(at => /^door:/.test(s.cells[at[1] * room.w + at[0]] || ''))) through_ = true; if (/^door:/.test(cellOf(room, b.stop))) stopped = true; });
+      return through_ && stopped;
+    },
+  },
+  // Register 500: the room had relays and a closing door crushed every one (register 505).
+  noRelayAtEnd: {
+    text: 'No relay left at the end.',
+    short: ['no', { el: 'relay' }, 'at the end'],
+    judge: (room, moves) => room.cells.some(c => /^sensor:/.test(c || '')) && !replayPath(room, moves, () => {}).cells.some(c => /^sensor:/.test(c || '')),
   },
 };

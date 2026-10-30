@@ -27,10 +27,11 @@
  ],
  "rules": [],
  "require": [
-  "boxThroughOneWay",
-  "boxHitsOneWay"
+  "everyBoxThroughOneWay",
+  "everyBoxHitsOneWay"
  ],
  "optional": [
-  "boxStuckOnOneWay"
+  "everyBoxStuckOnOneWay",
+  "twoBoxes"
  ]
 }

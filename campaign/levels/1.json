@@ -15,11 +15,12 @@
  },
  "small": [
   3,
-  3
+  2
  ],
  "rules": [],
  "require": [],
  "optional": [
-  "touchBlockFourTimes"
+  "touchBlockFourTimes",
+  "robotTwoDirections"
  ]
 }

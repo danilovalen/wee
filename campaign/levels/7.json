@@ -27,7 +27,7 @@
  },
  "small": [
   4,
-  4
+  3
  ],
  "rules": [],
  "require": [
@@ -35,6 +35,7 @@
   "doorClosedAtEnd"
  ],
  "optional": [
-  "boxOnButtonAtEnd"
+  "boxOnButtonAtEnd",
+  "twoButtons"
  ]
 }

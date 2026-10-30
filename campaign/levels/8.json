@@ -26,14 +26,15 @@
   "best": 7
  },
  "small": [
-  4,
-  5
+  3,
+  4
  ],
  "rules": [],
  "require": [
   "boxThroughOpenDoor"
  ],
  "optional": [
-  "noBoxAtEnd"
+  "noBoxAtEnd",
+  "everyBoxThroughOpenDoor"
  ]
 }

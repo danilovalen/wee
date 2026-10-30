@@ -31,7 +31,7 @@
  },
  "small": [
   4,
-  4
+  3
  ],
  "rules": [],
  "require": [
@@ -39,6 +39,7 @@
   "boxThroughOpenDoor"
  ],
  "optional": [
-  "boxHitsTwoDoors"
+  "boxHitsTwoDoors",
+  "robotHitsDoorsOfTwoColours"
  ]
 }

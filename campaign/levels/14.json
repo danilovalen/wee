@@ -36,6 +36,7 @@
   "throughOpenDoor"
  ],
  "optional": [
-  "lasersTwoWays"
+  "lasersTwoWays",
+  "robotHitsEveryLaserTwice"
  ]
 }

@@ -2,7 +2,8 @@
 // push ends with something stopping the box, and the box moved in that push. All copy is draft.
 import { replayPath } from '../robot.js';
 import { boxMoves } from '../pushes.js';
-import { STEP, live, stoppedPushes, boxCount } from './helpers.js';
+import { parseMove } from '../../solve/solve.js';
+import { STEP, live, stoppedPushes, boxCount, boxIds, blockHits } from './helpers.js';
 
 export const BOX_GOALS = {
   touchBlockFourTimes: {
@@ -64,5 +65,29 @@ export const BOX_GOALS = {
     text: 'No box left at the end.',
     short: ['no', { el: 'box' }, 'at the end'],
     judge: (room, moves) => boxCount(room) > 0 && !replayPath(room, moves, () => {}).entities.some(e => !e.dead && e.kind === 'box'),
+  },
+  // Register 472: every move of the path is one of at most two directions.
+  robotTwoDirections: {
+    text: 'Robot moves in only two directions.',
+    short: [{ el: 'start' }, 'moves only 2 ways'],
+    judge: (room, moves) => new Set(moves.map(m => parseMove(m).k)).size <= 2,
+  },
+  // Register 480: each box stops against a block at least twice.
+  everyBoxHitsBlockTwice: {
+    text: 'Every box collides with a block 2 or more times.',
+    short: ['every', { el: 'box' }, 'collides with a', { el: 'block' }, '×2'],
+    judge: (room, moves) => { const ids = boxIds(room), h = blockHits(room, moves); return ids.length > 0 && ids.every(id => (h[id] || 0) >= 2); },
+  },
+  twoBoxes: {
+    needs: { box: 2 },
+    text: 'At least 2 boxes in the room.',
+    short: ['at least 2', { el: 'box' }],
+    judge: room => boxCount(room) >= 2,
+  },
+  // Register 501: the room has no plain blocks.
+  noBlocks: {
+    text: 'No blocks in the room.',
+    short: ['no', { el: 'block' }],
+    judge: room => !room.cells.includes('wall'),
   },
 };

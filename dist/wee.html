@@ -543,6 +543,15 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .campDots { display: inline-flex; gap: 3px; }
 .campDots i { width: 10px; height: 10px; border-radius: 50%; }
 .campRow.sel { outline: 2px solid var(--accent, #6b5cff); }
+#campList .campRow { height: 104px; grid-template-rows: auto auto 1fr; overflow: hidden; }
+.campStars { display: flex; align-items: center; gap: 1px; align-self: end; min-width: 0; }
+.campStarLine { width: 2px; height: 20px; margin: 0 4px; background: var(--rule); flex: none; }
+.campStar { position: relative; width: 20px; height: 20px; flex: none; }
+.campStar.main { width: 28px; height: 28px; }
+.campStar svg { display: block; width: 100%; height: 100%; fill: none; stroke: var(--rule); stroke-width: 2; stroke-linejoin: round; }
+.campStar.on svg { fill: #ffc23d; stroke: #ffc23d; }
+.campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: #5a3f00; }
+.campStar.main i { font-size: 11px; }
 .campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
 .campGoal { padding: 8px 10px; border-radius: var(--r-s); background: var(--field); }
 .campHead { margin: 0 0 4px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
@@ -1537,7 +1546,8 @@ const pairsOf = (s, kind, col) => Object.entries(doorsOf(s)).flatMap(([c, at]) =
 const DOORS = new WeakMap();
 function doorsOf(s, cell) {
   let by = DOORS.get(s.cells);
-  if (!by) { by = {}; s.cells.forEach((c, i) => { if (/^i?door:/.test(c)) (by[c] ||= []).push([i % s.w, Math.floor(i / s.w)]); }); DOORS.set(s.cells, by); }
+  // A door under a pushable tile in its doorway still opens and closes (register 505).
+  if (!by) { by = {}; s.cells.forEach((c, i) => { const d = /^i?door:/.test(c) ? c : s.ground && /^i?door:/.test(s.ground[i]) ? s.ground[i] : ''; if (d) (by[d] ||= []).push([i % s.w, Math.floor(i / s.w)]); }); DOORS.set(s.cells, by); }
   return cell ? by[cell] || [] : by;
 }
 
@@ -1580,6 +1590,7 @@ function refreshDoors(s) {
       if (doors.some(d => inside(d).some(e => HOLDS_DOOR.includes(e.kind)) || (youIn(d) && s.powers.armored))) continue;
       for (const d of doors) {
         for (const e of inside(d)) kill(s, e, 'door');
+        crushTile(s, d);
         if (youIn(d) && !s.player.hidden) squashed = true;
       }
     }
@@ -1588,6 +1599,18 @@ function refreshDoors(s) {
   }
   launch(s, turned, was);
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
+}
+
+// A closing door destroys a pushable tile standing in it, as it does a box (register 505); the
+// tile's own door is not in its doorway, so a pushable door is never crushed by itself.
+function crushTile(s, [x, y]) {
+  const i = y * s.w + x;
+  if (!s.crates.has(i) || !/^i?door:/.test(s.ground[i] || '')) return;
+  const t = s.tiles.find(t => t.x === x && t.y === y);
+  s.cells = s.cells.map((c, j) => j === i ? s.ground[i] : c);
+  s.crates = new Set([...s.crates].filter(j => j !== i));
+  s.tiles = s.tiles.filter(o => o !== t);
+  s.events.push({ type: 'kill', id: t && t.id, how: 'door', tile: true });
 }
 
 // A one-way of a colour that just turned launches what stands on it along its new arrow, sliding
@@ -2089,7 +2112,8 @@ function pushChain(s, x, y, d) {
     // The front piece lands where it would alone; only a row of pieces alone lets a triangle turn it
     // (a box train, register 278), a row with a tile in it goes straight.
     if (last.e) { const t = pushTo(s, last.x, last.y, d, wades(last.e)); if (!t || ((t.x !== cx || t.y !== cy) && !list.every(o => o.e))) return false; last.to = t; }
-    else if (cellAt(s, cx, cy) !== '' && cellAt(s, cx, cy) !== 'death') return false;
+    // A tile lands like a box (register 505): on floor, on spikes it covers, or into an open doorway.
+    else if (crateAt(s, cx, cy) || !(cellAt(s, cx, cy) === '' || cellAt(s, cx, cy) === 'death' || (/^i?door:/.test(cellAt(s, cx, cy)) && !solidCell(s, cx, cy)))) return false;
     break;
   }
   const cells = [...s.cells], crates = new Set(s.crates), tiles = s.tiles.map(t => ({ ...t }));
@@ -2818,8 +2842,10 @@ const both = ways => Object.values(ways).some(set => [...set].some(d => set.has(
 // Per path: which one-ways the robot went through, which ways, and how often it collided with each;
 // how many times a box went through one and which ways, how often each box collided with one, and
 // whether one ends on one.
-function oneWayLog(room, moves) {
-  const log = { robotThrough: new Set(), robotWays: {}, robotHits: {}, boxThrough: 0, boxWays: {}, boxHits: {}, boxStuck: false };
+// kind follows another piece the same way: a pushable laser is 'turret' (register 504).
+function oneWayLog(room, moves, kind = 'box') {
+  const log = { robotThrough: new Set(), robotWays: {}, robotHits: {}, boxThrough: 0, boxThroughIds: new Set(), boxWays: {}, boxHits: {}, boxHitDirs: new Set(), gateHits: {}, boxStuck: false, boxesStuck: false };
+  const hit = (id, g, d) => { log.boxHits[id] = (log.boxHits[id] || 0) + 1; log.boxHitDirs.add(d); log.gateHits[g] = (log.gateHits[g] || 0) + 1; };
   const pass = (ways, a, b) => (ways[a.y * room.w + a.x] ||= new Set()).add(way(a, b));
   const isGate = (x, y) => (room.cells[y * room.w + x] || '').startsWith('gate:');
   let was = null, dir = null, boxes = {}, before = {}, last = {};
@@ -2833,22 +2859,25 @@ function oneWayLog(room, moves) {
       if (g >= 0) log.robotHits[g] = (log.robotHits[g] || 0) + 1;
       // A push ends when the box ahead is stopped: a one-way past it is what the box collided with,
       // when the box moved in this push.
-      const box = s.entities.find(e => !e.dead && e.kind === 'box' && e.x === p.x + dx && e.y === p.y + dy);
-      if (box && blocker(room, s, box.x, box.y, dir) >= 0 && before[box.id] !== box.x + ',' + box.y) log.boxHits[box.id] = (log.boxHits[box.id] || 0) + 1;
+      const box = s.entities.find(e => !e.dead && e.kind === kind && e.x === p.x + dx && e.y === p.y + dy), bg = box ? blocker(room, s, box.x, box.y, dir) : -1;
+      if (box && bg >= 0 && before[box.id] !== box.x + ',' + box.y) hit(box.id, bg, dir);
     }
     was = { x: p.x, y: p.y }; dir = p.dir;
     const now = {};
     for (const e of s.entities) {
-      if (e.dead || e.kind !== 'box') continue;
+      if (e.dead || e.kind !== kind) continue;
       const b = boxes[e.id];
-      if (b && (b.x !== e.x || b.y !== e.y) && isGate(b.x, b.y)) { log.boxThrough++; pass(log.boxWays, b, e); }
-      if (b && b.slide && !e.slide && blocker(room, s, e.x, e.y, b.slide) >= 0) log.boxHits[e.id] = (log.boxHits[e.id] || 0) + 1;
+      if (b && (b.x !== e.x || b.y !== e.y) && isGate(b.x, b.y)) { log.boxThrough++; log.boxThroughIds.add(e.id); pass(log.boxWays, b, e); }
+      const sg = b && b.slide && !e.slide ? blocker(room, s, e.x, e.y, b.slide) : -1;
+      if (sg >= 0) hit(e.id, sg, b.slide);
       now[e.id] = { x: e.x, y: e.y, slide: e.slide };
     }
     boxes = now;
     last = Object.fromEntries(s.entities.map(e => [e.id, e.x + ',' + e.y]));
   });
-  log.boxStuck = end.entities.some(e => !e.dead && e.kind === 'box' && isGate(e.x, e.y));
+  log.boxStuck = end.entities.some(e => !e.dead && e.kind === kind && isGate(e.x, e.y));
+  const left = end.entities.filter(e => !e.dead && e.kind === kind);
+  log.boxesStuck = left.length > 0 && left.every(e => isGate(e.x, e.y));
   return log;
 }
 
@@ -2915,12 +2944,50 @@ function laserOverSpikes(room, moves) {
   return { want, left };
 }
 const allDone = ({ want, got, left }) => want.size > 0 && [...want].every(i => (got || left).has(i));
-return { STEP, toggleHistory, live, stoppedPushes, switches, boxCount, beams, everyLaser, through, relaysOf, cellOf, gates, blocker, way, both, oneWayLog, boxesLeaving, everyBoxLeaves, KIND, tileLog, everyTile, countKind, cellsWhere, isGate, isSpike, crossed, laserOverSpikes, allDone };
+
+// The ids a run gives the room's pieces (a room's own entities carry none), for goals about every one.
+const idsOf = (room, test) => replayPath(room, [], () => {}).entities.filter(test).map(e => e.id);
+const boxIds = room => idsOf(room, e => e.kind === 'box');
+// Each slide of the robot that ends against something: the tick's state and the tile ahead.
+function robotStops(room, moves, see) {
+  let dir = null;
+  replayPath(room, moves, s => {
+    const p = s.player;
+    if (dir && !p.dir) { const [dx, dy] = STEP[dir]; see(s, p.x + dx, p.y + dy, dir); }
+    dir = p.dir;
+  });
+}
+// Per box id, how many times it collided with a block (register 480): a push or a slide that ends
+// with a block on the next tile, the box having moved in it.
+function blockHits(room, moves) {
+  const hits = {}, isBlock = (x, y) => cellOf(room, [x, y]) === 'wall';
+  let dir = null, boxes = {}, before = {}, last = {};
+  replayPath(room, moves, s => {
+    const p = s.player;
+    if (p.dir && !dir) before = last;
+    if (dir && !p.dir) {
+      const [dx, dy] = STEP[dir], box = live(s, p.x + dx, p.y + dy);
+      if (box && isBlock(box.x + dx, box.y + dy) && before[box.id] !== box.x + ',' + box.y) hits[box.id] = (hits[box.id] || 0) + 1;
+    }
+    dir = p.dir;
+    const now = {};
+    for (const e of s.entities) {
+      if (e.dead || e.kind !== 'box') continue;
+      const b = boxes[e.id];
+      if (b && b.slide && !e.slide) { const [dx, dy] = STEP[b.slide]; if (isBlock(e.x + dx, e.y + dy)) hits[e.id] = (hits[e.id] || 0) + 1; }
+      now[e.id] = { slide: e.slide };
+    }
+    boxes = now;
+    last = Object.fromEntries(s.entities.map(e => [e.id, e.x + ',' + e.y]));
+  });
+  return hits;
+}
+return { STEP, toggleHistory, live, stoppedPushes, switches, boxCount, beams, everyLaser, through, relaysOf, cellOf, gates, blocker, way, both, oneWayLog, boxesLeaving, everyBoxLeaves, KIND, tileLog, everyTile, countKind, cellsWhere, isGate, isSpike, crossed, laserOverSpikes, allDone, idsOf, boxIds, robotStops, blockHits };
 })();
 // ---- src/campaign/goals/doors.js
 const m15 = (() => {
 const { replayPath } = m13;
-const { STEP, stoppedPushes, cellOf, everyTile, countKind } = m14;
+const { STEP, stoppedPushes, cellOf, everyTile, countKind, cellsWhere, boxIds, robotStops } = m14;
 // Goals about doors and inverted doors: going through, colliding, closing, and pushable doors over
 // spikes (registers 243, 257, 452). All copy is draft.
 
@@ -3076,13 +3143,62 @@ const DOOR_GOALS = {
     short: ['at least 2', { el: 'door' }],
     judge: room => countKind(room, 'door') >= 2,
   },
+  // Register 476.
+  atMostOneDoor: {
+    text: 'At most 1 door in the room.',
+    short: ['at most 1', { el: 'door' }],
+    judge: room => countKind(room, 'door') <= 1,
+  },
+  // Register 477: four doors or more, and the robot stands in every one.
+  robotThroughFourDoors: {
+    needs: { door: 4 },
+    text: 'At least 4 doors, and the robot through every one.',
+    short: [{ el: 'start' }, 'through all of 4+', { el: 'door' }],
+    judge: (room, moves) => {
+      const doors = cellsWhere(room, c => /^door:/.test(c)), seen = new Set();
+      replayPath(room, moves, s => { const i = s.player.y * room.w + s.player.x; if (/^door:/.test(s.cells[i] || '')) seen.add(i); });
+      return doors.length >= 4 && doors.every(i => seen.has(i));
+    },
+  },
+  // Register 485: like boxThroughOpenDoor, for every box.
+  everyBoxThroughOpenDoor: {
+    text: 'Every box into an open doorway.',
+    short: ['every', { el: 'box' }, 'into an open', { el: 'door' }],
+    judge: (room, moves) => {
+      const ids = boxIds(room), seen = new Set();
+      replayPath(room, moves, s => { for (const e of s.entities) if (!e.dead && e.kind === 'box' && /^door:/.test(s.cells[e.y * room.w + e.x] || '')) seen.add(e.id); });
+      return ids.length > 0 && ids.every(id => seen.has(id));
+    },
+  },
+  // Register 490: the robot's slides end against closed doors of two colours.
+  robotHitsDoorsOfTwoColours: {
+    needs: { door: 2 },
+    text: 'Robot collides with closed doors of two colours.',
+    short: [{ el: 'start' }, 'collides with closed', { el: 'door' }, 'of 2 colours'],
+    judge: (room, moves) => {
+      const cols = new Set();
+      robotStops(room, moves, (s, x, y) => { const c = x >= 0 && y >= 0 && x < room.w && y < room.h ? s.cells[y * room.w + x] || '' : ''; if (/^door:/.test(c) && !c.slice(5).split('|').some(k => s.open[k])) for (const k of c.slice(5).split('|')) cols.add(k); });
+      return cols.size >= 2;
+    },
+  },
+  // Register 497: one box both collides with a closed inverted door and goes into an open one.
+  boxHitsAndThroughIdoor: {
+    text: 'Box collides with a closed inverted door and goes through an open one.',
+    short: [{ el: 'box' }, 'collides with and goes through an', { el: 'idoor' }],
+    judge: (room, moves) => {
+      const hit = new Set(stoppedPushes(room, moves).out.filter(h => { const c = cellOf(room, [h.x, h.y]); return c.startsWith('idoor:') && c.slice(6).split('|').some(col => h.open[col]); }).map(h => h.box.id));
+      let ok = false;
+      replayPath(room, moves, s => { for (const e of s.entities) if (!e.dead && e.kind === 'box' && hit.has(e.id) && /^idoor:/.test(s.cells[e.y * room.w + e.x] || '')) ok = true; });
+      return ok;
+    },
+  },
 };
 return { DOOR_GOALS };
 })();
 // ---- src/campaign/goals/switches.js
 const m16 = (() => {
 const { replayPath } = m13;
-const { toggleHistory, switches } = m14;
+const { toggleHistory, switches, cellsWhere } = m14;
 // Goals about switches and buttons. All copy is draft.
 
 
@@ -3153,6 +3269,34 @@ const SWITCH_GOALS = {
     short: [{ el: 'box' }, 'on a', { el: 'button' }, 'at the end'],
     judge: (room, moves) => { const end = replayPath(room, moves, () => {}); return end.entities.some(e => !e.dead && e.kind === 'box' && /^button:/.test(end.cells[e.y * room.w + e.x] || '')); },
   },
+  // Register 473: the robot steps onto a switch, flipping it, at least twice (the same switch or another).
+  robotFlipsSwitchTwice: {
+    text: 'Robot flips a switch 2 or more times.',
+    short: [{ el: 'start' }, 'flips a', { el: 'toggle' }, '×2'],
+    judge: (room, moves) => {
+      let flips = 0, was = -1;
+      replayPath(room, moves, s => { const i = s.player.y * room.w + s.player.x, on = (s.cells[i] || '').startsWith('toggle:') ? i : -1; if (on >= 0 && on !== was) flips++; was = on; });
+      return flips >= 2;
+    },
+  },
+  twoSwitches: {
+    needs: { toggle: 2 },
+    text: 'At least 2 switches in the room.',
+    short: ['at least 2', { el: 'toggle' }],
+    judge: room => switches(room).length >= 2,
+  },
+  threeSwitches: {
+    needs: { toggle: 3 },
+    text: 'At least 3 switches in the room.',
+    short: ['at least 3', { el: 'toggle' }],
+    judge: room => switches(room).length >= 3,
+  },
+  twoButtons: {
+    needs: { button: 2 },
+    text: 'At least 2 buttons in the room.',
+    short: ['at least 2', { el: 'button' }],
+    judge: room => cellsWhere(room, c => c.startsWith('button:')).length >= 2,
+  },
 };
 return { SWITCH_GOALS };
 })();
@@ -3193,9 +3337,11 @@ return { boxMoves };
 const m18 = (() => {
 const { replayPath } = m13;
 const { boxMoves } = m17;
-const { STEP, live, stoppedPushes, boxCount } = m14;
+const { parseMove } = m12;
+const { STEP, live, stoppedPushes, boxCount, boxIds, blockHits } = m14;
 // Goals about boxes and blocks: pushes, collisions, where they end. A box collides when the robot's
 // push ends with something stopping the box, and the box moved in that push. All copy is draft.
+
 
 
 
@@ -3260,13 +3406,37 @@ const BOX_GOALS = {
     short: ['no', { el: 'box' }, 'at the end'],
     judge: (room, moves) => boxCount(room) > 0 && !replayPath(room, moves, () => {}).entities.some(e => !e.dead && e.kind === 'box'),
   },
+  // Register 472: every move of the path is one of at most two directions.
+  robotTwoDirections: {
+    text: 'Robot moves in only two directions.',
+    short: [{ el: 'start' }, 'moves only 2 ways'],
+    judge: (room, moves) => new Set(moves.map(m => parseMove(m).k)).size <= 2,
+  },
+  // Register 480: each box stops against a block at least twice.
+  everyBoxHitsBlockTwice: {
+    text: 'Every box collides with a block 2 or more times.',
+    short: ['every', { el: 'box' }, 'collides with a', { el: 'block' }, '×2'],
+    judge: (room, moves) => { const ids = boxIds(room), h = blockHits(room, moves); return ids.length > 0 && ids.every(id => (h[id] || 0) >= 2); },
+  },
+  twoBoxes: {
+    needs: { box: 2 },
+    text: 'At least 2 boxes in the room.',
+    short: ['at least 2', { el: 'box' }],
+    judge: room => boxCount(room) >= 2,
+  },
+  // Register 501: the room has no plain blocks.
+  noBlocks: {
+    text: 'No blocks in the room.',
+    short: ['no', { el: 'block' }],
+    judge: room => !room.cells.includes('wall'),
+  },
 };
 return { BOX_GOALS };
 })();
 // ---- src/campaign/goals/oneWays.js
 const m19 = (() => {
 const { OPPOSITE } = m0;
-const { gates, both, oneWayLog, everyTile, countKind, cellsWhere, isGate } = m14;
+const { gates, both, oneWayLog, everyTile, countKind, cellsWhere, isGate, boxIds } = m14;
 // Goals about one-ways. Going through one is entering it along its arrow and leaving off the far
 // side; colliding with one is a slide that ends against it, from any direction it does not let
 // through. Pushable one-ways are followed as they move (registers 448, 461). All copy is draft.
@@ -3352,6 +3522,47 @@ const ONE_WAY_GOALS = {
       return gs.length > 0 && gs.every(i => w[i] && [...w[i]].some(d => w[i].has(OPPOSITE[d])));
     },
   },
+  threeOneWays: {
+    needs: { gate: 3 },
+    text: 'At least 3 one-ways in the room.',
+    short: ['at least 3', { el: 'gate' }],
+    judge: room => countKind(room, 'gate') >= 3,
+  },
+  // Register 502: the arrows the room's one-ways point, counted as directions.
+  oneWaysTwoWays: {
+    needs: { gate: 2 },
+    text: 'One-ways pointing at least two ways.',
+    short: [{ el: 'gate' }, 'pointing 2 ways'],
+    judge: room => new Set(room.cells.filter(c => c.startsWith('gate:')).flatMap(c => c.slice(5).split('@')[0].split(','))).size >= 2,
+  },
+  // Register 489 (level 10): the box goals, for every box.
+  everyBoxThroughOneWay: {
+    text: 'Every box through a one-way.',
+    short: ['every', { el: 'box' }, 'through a', { el: 'gate' }],
+    judge: (room, moves) => { const ids = boxIds(room), l = oneWayLog(room, moves); return ids.length > 0 && ids.every(id => l.boxThroughIds.has(id)); },
+  },
+  everyBoxHitsOneWay: {
+    text: 'Every box collides with a one-way.',
+    short: ['every', { el: 'box' }, 'collides with a', { el: 'gate' }],
+    judge: (room, moves) => { const ids = boxIds(room), l = oneWayLog(room, moves); return ids.length > 0 && ids.every(id => l.boxHits[id]); },
+  },
+  everyBoxStuckOnOneWay: {
+    text: 'Every box ends on a one-way.',
+    short: ['every', { el: 'box' }, 'ends on a', { el: 'gate' }],
+    judge: (room, moves) => oneWayLog(room, moves).boxesStuck,
+  },
+  // Register 491: boxes collide with one-ways while moving three different ways.
+  boxHitsOneWayThreeWays: {
+    text: 'Box collides with a one-way from three directions.',
+    short: [{ el: 'box' }, 'collides with a', { el: 'gate' }, 'from 3 directions'],
+    judge: (room, moves) => oneWayLog(room, moves).boxHitDirs.size >= 3,
+  },
+  // Register 504: a pushable laser collides with each one-way at least twice.
+  laserBoxHitsEveryOneWayTwice: {
+    text: 'Laser box collides with every one-way 2 or more times.',
+    short: [{ el: 'laser' }, 'collides with every', { el: 'gate' }, '×2'],
+    judge: (room, moves) => { const all = gates(room), h = oneWayLog(room, moves, 'turret').gateHits; return all.length > 0 && all.every(i => (h[i] || 0) >= 2); },
+  },
 };
 return { ONE_WAY_GOALS };
 })();
@@ -3359,7 +3570,7 @@ return { ONE_WAY_GOALS };
 const m20 = (() => {
 const { replayPath } = m13;
 const { boxMoves } = m17;
-const { STEP, stoppedPushes, beams, everyLaser, through, relaysOf, cellOf, isGate, crossed, laserOverSpikes, allDone, isSpike } = m14;
+const { STEP, stoppedPushes, beams, everyLaser, through, relaysOf, cellOf, isGate, crossed, laserOverSpikes, allDone, isSpike, boxIds, idsOf, robotStops } = m14;
 // Goals about lasers and relays: where beams go, what stops them, and pushable lasers (registers
 // 255, 256, 457). All copy is draft.
 
@@ -3541,6 +3752,57 @@ const LASER_GOALS = {
     text: 'A pushable laser crosses every spike.',
     short: [{ el: 'laser' }, 'crosses every', { el: 'spikes' }],
     judge: (room, moves) => allDone(laserOverSpikes(room, moves)),
+  },
+  // Register 494 (level 14): the robot's slides end against each laser at least twice.
+  robotHitsEveryLaserTwice: {
+    text: 'Robot collides with every laser 2 or more times.',
+    short: [{ el: 'start' }, 'collides with every', { el: 'laser' }, '×2'],
+    judge: (room, moves) => {
+      const ids = idsOf(room, e => !!e.turret), hits = {};
+      robotStops(room, moves, (s, x, y) => { const t = s.entities.find(e => !e.dead && e.turret && e.x === x && e.y === y); if (t) hits[t.id] = (hits[t.id] || 0) + 1; });
+      return ids.length > 0 && ids.every(id => (hits[id] || 0) >= 2);
+    },
+  },
+  // Register 495: each box stands in a fixed laser's beam (it stops the beam) and later stands out of every one.
+  everyBoxLeavesBeam: {
+    text: 'Every box leaves a laser beam.',
+    short: ['every', { el: 'box' }, 'leaves a', { el: 'laser' }, 'beam'],
+    judge: (room, moves) => {
+      const ids = boxIds(room), was = new Set(), left = new Set();
+      replayPath(room, moves, s => {
+        const fixed = new Set(s.entities.filter(e => !e.dead && e.turret && !e.crate).map(e => e.id));
+        const stops = new Set((s.beams || []).filter(b => fixed.has(b.id) && b.stop).map(b => b.stop.join()));
+        for (const e of s.entities) { if (e.dead || e.kind !== 'box') continue; if (stops.has(e.x + ',' + e.y)) was.add(e.id); else if (was.has(e.id)) left.add(e.id); }
+      });
+      return ids.length > 0 && ids.every(id => left.has(id));
+    },
+  },
+  // Register 498: a box stands on a tile with a relay on both sides of it (left and right, or above and below).
+  boxBetweenTwoRelays: {
+    text: 'Box goes between two relays.',
+    short: [{ el: 'box' }, 'between two', { el: 'relay' }],
+    judge: (room, moves) => {
+      let ok = false;
+      const relay = (s, x, y) => x >= 0 && y >= 0 && x < room.w && y < room.h && /^sensor:/.test(s.cells[y * room.w + x] || '');
+      replayPath(room, moves, s => { for (const e of s.entities) if (!e.dead && e.kind === 'box' && ((relay(s, e.x - 1, e.y) && relay(s, e.x + 1, e.y)) || (relay(s, e.x, e.y - 1) && relay(s, e.x, e.y + 1)))) ok = true; });
+      return ok;
+    },
+  },
+  // Register 499: in one run, a beam goes through an open door and a beam is stopped by a closed one.
+  laserThroughAndStoppedByDoor: {
+    text: 'Laser through an open door, and stopped by a closed one.',
+    short: [{ el: 'laser' }, 'through an open and stopped by a closed', { el: 'door' }],
+    judge: (room, moves) => {
+      let through_ = false, stopped = false;
+      beams(room, moves, (b, s) => { if (through(b, s).some(at => /^door:/.test(s.cells[at[1] * room.w + at[0]] || ''))) through_ = true; if (/^door:/.test(cellOf(room, b.stop))) stopped = true; });
+      return through_ && stopped;
+    },
+  },
+  // Register 500: the room had relays and a closing door crushed every one (register 505).
+  noRelayAtEnd: {
+    text: 'No relay left at the end.',
+    short: ['no', { el: 'relay' }, 'at the end'],
+    judge: (room, moves) => room.cells.some(c => /^sensor:/.test(c || '')) && !replayPath(room, moves, () => {}).cells.some(c => /^sensor:/.test(c || '')),
   },
 };
 return { LASER_GOALS };
@@ -4263,7 +4525,7 @@ return { bests, keep, buildPuzzles };
 const m33 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"small":[3,3],"rules":[],"require":[],"optional":["touchBlockFourTimes"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,3],"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,4],"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":19},"small":[8,6],"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce","boxHitsBox"],"optional":[]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,5],"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"small":[4,4],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"small":[4,5],"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"small":[3,5],"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"small":[6,3],"rules":[],"require":["boxThroughOneWay","boxHitsOneWay"],"optional":["boxStuckOnOneWay"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"small":[4,4],"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"small":[6,2],"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"small":[7,3],"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"small":[6,5],"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["boxPushedTwiceHitOnce"],"colours":["red","blue"]},{"id":"17","name":"Level 17","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"idoor":[1,1],"laser":[1,null]},"steps":{"best":7},"small":[5,6],"rules":[],"require":["laserStoppedByIdoor","robotThroughIdoor"]},{"id":"18","name":"Level 18","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"idoor":[1,null],"relay":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["boxHitsIdoor","allRelaysLitAtEnd"],"optional":["robotAndBoxHitRelay"]},{"id":"19","name":"Level 19","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[1,null],"door":[1,null]},"pushable":{"laser":"only"},"steps":{"best":7},"small":[4,4],"rules":[],"require":["laserPushedThrice","throughOpenDoor"],"optional":["laserThroughGoal"]},{"id":"20","name":"Level 20","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[0,null],"door":[1,1],"box":[0,null]},"pushable":{"relay":"only"},"steps":{"best":8},"small":[8,3],"rules":[],"require":["laserThroughNoRelay","laserThroughADoor","throughOpenDoor"],"optional":["relayHitsRelay"]},{"id":"21","name":"Level 21","size":[7,7],"palette":{"block":[0,null],"box":[2,null],"spikes":[1,null]},"steps":{"best":12},"small":[3,5],"rules":[],"require":["everyBoxEntersSpikes","everyBoxLeavesGoal"],"optional":["everyBoxLeavesSpikes"]},{"id":"22","name":"Level 22","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null],"spikes":[1,null]},"pushable":{"gate":"only"},"steps":{"best":10},"small":[7,3],"rules":[],"require":["boxPushesEveryOneWay","robotThroughEveryPushedOneWay","everyOneWayOverSpikes"],"optional":["twoOneWays"]},{"id":"23","name":"Level 23","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null],"spikes":[1,null]},"pushable":{"door":"only"},"steps":{"best":12},"small":[4,5],"rules":[],"require":["everyDoorOverSpikes","boxLeavesEveryDoor","robotLeavesEveryDoor"],"optional":["twoDoors"]},{"id":"24","name":"Level 24","size":[7,7],"palette":{"block":[0,null],"spikes":[1,null],"laser":[1,null],"gate":[1,null],"relay":[1,null]},"pushable":{"laser":"only"},"colours":["red"],"steps":{"best":11},"small":[4,6],"rules":[],"require":["laserOverEveryOneWay","robotThroughEveryOneWayBothWays","laserOverEverySpike","laserCrossesEverySpike"],"optional":["threeSpikes"]},{"id":"twocolour","name":"Two colours","size":[7,7],"palette":{"block":[0,null],"button":[1,null],"door":[1,null],"relay":[1,null],"laser":[1,null]},"colours":["red","blue"],"twoColour":{"door":"only"},"steps":{"best":9},"small":[4,5],"rules":[],"require":[],"hidden":true}];
+const LEVELS = [{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"small":[3,2],"rules":[],"require":[],"optional":["touchBlockFourTimes","robotTwoDirections"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,3],"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice","robotFlipsSwitchTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoor","atMostOneDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,4],"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd","robotThroughFourDoors"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":10},"small":[4,3],"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce"],"optional":["boxHitsBox","everyBoxHitsBlockTwice"]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,4],"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd","twoSwitches"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"small":[4,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd","twoButtons"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,4],"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd","everyBoxThroughOpenDoor"]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"small":[4,3],"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays","threeOneWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"small":[6,3],"rules":[],"require":["everyBoxThroughOneWay","everyBoxHitsOneWay"],"optional":["everyBoxStuckOnOneWay","twoBoxes"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"small":[4,3],"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors","robotHitsDoorsOfTwoColours"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"small":[6,2],"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched","boxHitsOneWayThreeWays"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"small":[7,3],"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"optional":["everyToggleOffAtEnd","threeSwitches"]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays","robotHitsEveryLaserTwice"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"small":[7,4],"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay","everyBoxLeavesBeam"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["boxPushedTwiceHitOnce","throughOpenDoor"],"colours":["red","blue"]},{"id":"17","name":"Level 17","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"idoor":[1,1],"laser":[1,null]},"steps":{"best":7},"small":[5,3],"rules":[],"require":["laserStoppedByIdoor","robotThroughIdoor"],"optional":["boxHitsAndThroughIdoor"]},{"id":"18","name":"Level 18","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"idoor":[1,null],"relay":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["boxHitsIdoor","allRelaysLitAtEnd"],"optional":["robotAndBoxHitRelay","boxBetweenTwoRelays"]},{"id":"19","name":"Level 19","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[1,null],"door":[1,null]},"pushable":{"laser":"only"},"steps":{"best":7},"small":[4,4],"rules":[],"require":["laserPushedThrice","throughOpenDoor"],"optional":["laserThroughGoal","laserThroughAndStoppedByDoor"]},{"id":"20","name":"Level 20","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[0,null],"door":[1,1],"box":[0,null]},"pushable":{"relay":"only"},"steps":{"best":8},"small":[8,3],"rules":[],"require":["laserThroughNoRelay","laserThroughADoor","throughOpenDoor"],"optional":["relayHitsRelay","noRelayAtEnd"]},{"id":"21","name":"Level 21","size":[7,7],"palette":{"block":[0,null],"box":[2,null],"spikes":[1,null]},"steps":{"best":12},"small":[3,5],"rules":[],"require":["everyBoxEntersSpikes","everyBoxLeavesGoal"],"optional":["everyBoxLeavesSpikes","noBlocks"]},{"id":"22","name":"Level 22","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null],"spikes":[1,null]},"pushable":{"gate":"only"},"steps":{"best":7},"small":[6,3],"rules":[],"require":["boxPushesEveryOneWay","robotThroughEveryPushedOneWay","everyOneWayOverSpikes"],"optional":["oneWaysTwoWays","oneWaysThreeWays"]},{"id":"23","name":"Level 23","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null],"spikes":[1,null]},"pushable":{"door":"only"},"steps":{"best":12},"small":[4,5],"rules":[],"require":["everyDoorOverSpikes","boxLeavesEveryDoor","robotLeavesEveryDoor"],"optional":["twoDoors","twoButtons"]},{"id":"24","name":"Level 24","size":[7,7],"palette":{"block":[0,null],"spikes":[1,null],"laser":[1,null],"gate":[1,null],"relay":[1,null]},"pushable":{"laser":"only"},"colours":["red"],"steps":{"best":11},"small":[4,6],"rules":[],"require":["laserOverEveryOneWay","robotThroughEveryOneWayBothWays","laserOverEverySpike","laserCrossesEverySpike"],"optional":["threeSpikes","laserBoxHitsEveryOneWayTwice"]},{"id":"twocolour","name":"Two colours","size":[7,7],"palette":{"block":[0,null],"button":[1,null],"door":[1,null],"relay":[1,null],"laser":[1,null]},"colours":["red","blue"],"twoColour":{"door":"only"},"steps":{"best":9},"small":[3,3],"rules":[],"require":[],"hidden":true}];
 return { LEVELS };
 })();
 // ---- src/view/ink.js
@@ -4338,12 +4600,10 @@ function drawTurret(g, t, badge, mounted) {
   for (const d of t.dirs) {
     g.save(); g.translate(16, 16); g.rotate(AIM[d]);
     g.fillStyle = d === next ? INK.zap : INK.barrel;
-    roundRect(g, 4, -3, 11, 6, 2); g.fill();
+    // Only the barrels (register 493): no base plate, no hub.
+    roundRect(g, -5, -4, 20, 8, 3); g.fill();
     g.restore();
   }
-  g.fillStyle = '#20242f'; g.beginPath(); g.arc(16, 16, 7, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = INK.zap; g.lineWidth = 1.5; g.stroke();
-  g.fillStyle = INK.zap; g.beginPath(); g.arc(16, 16, 2.2, 0, Math.PI * 2); g.fill();
   g.restore();
   // One direction always fires the same way, so how it turns says nothing (register 300).
   if (badge && t.dirs.length > 1) modeBadge(g, t.mode, badge[0], badge[1]);
@@ -4379,11 +4639,8 @@ function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
     modeBadge(g, e.mode);
   } else if (e.kind === 'turret') {
-    // A pushable laser wears the box's brown border, its base cut to fit inside (registers 336-338).
-    if (e.crate) { g.save(); roundRect(g, 4, 4, T - 8, T - 8, 3); g.clip(); }
-    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
-    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
-    if (e.crate) { g.restore(); g.strokeStyle = INK.boxEdge; g.lineWidth = 2; roundRect(g, 3, 3, T - 6, T - 6, 3.5); g.stroke(); }
+    // A pushable laser wears the box's brown border (registers 336-338); a fixed one has no base (register 493).
+    if (e.crate) { g.strokeStyle = INK.boxEdge; g.lineWidth = 2; roundRect(g, 3, 3, T - 6, T - 6, 3.5); g.stroke(); }
   } else if (e.kind === 'box') {
     g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
     g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();
@@ -5644,7 +5901,7 @@ return { TOOL, bindGoalCard, words, syncBrief, clearTrail, stuckAt, flashStuck }
 // ---- src/app/campaign.js
 const m48 = (() => {
 const { LEVELS } = m33;
-const { roomOf, coloursOf, placementErrors, check, optionalGoals, scoreText } = m23;
+const { roomOf, coloursOf, placementErrors, check, optionalGoals } = m23;
 const { newHistory } = m28;
 const { S, starterLevel } = m29;
 const { $, portrait } = m25;
@@ -5745,7 +6002,7 @@ function run() {
     // The score is tiles (register 328): the fewest in any win, and the fewest in a win meeting each optional goal.
     const best = rec.best ||= {}, low = (k, n) => { best[k] = best[k] == null ? n : Math.min(best[k], n); };
     low('win', v.tiles);
-    for (const o of v.optional) if (o.met && o.id !== 'mix') low(o.id, v.tiles);
+    for (const o of v.optional) if (o.met) low(o.id, v.tiles);
     rec.beaten = true; rec.room = S.level;
     write(p);
     noteWin(def, before, rec, v, words);
@@ -5758,21 +6015,36 @@ function run() {
   return v;
 }
 
-// A beaten level's statistics, short: moves, fewest to most; tiles are the score, below.
-const range = ([a, b]) => a === b ? `${a}` : `${a}–${b}`;
-const statsText = st => st && st.moves ? `, moves ${range(st.moves)}` : '';
+
+// A level's stars (register 475): the main goal, a line, one per side goal. A met goal's star is
+// filled and holds the fewest tiles placed in a win that met it.
+const STAR = 'M12 1.8l3 6.4 7 .8-5.2 4.8 1.4 6.9L12 17.2 5.8 20.7l1.4-6.9L2 9l7-.8z';
+function star(n, main, label) {
+  const el = document.createElement('span'), on = n != null;
+  el.className = 'campStar' + (main ? ' main' : '') + (on ? ' on' : '');
+  el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR}"/></svg>` + (on ? `<i>${n}</i>` : '');
+  el.title = label;
+  return el;
+}
+function stars(def, rec) {
+  const row = document.createElement('span'), best = rec.best || {}, line = document.createElement('span');
+  row.className = 'campStars'; line.className = 'campStarLine';
+  const met = id => rec.goals && rec.goals[id] ? best[id] ?? best.win ?? '' : null;
+  row.append(star(rec.beaten ? best.win ?? '' : null, true, 'Win'), line, ...optionalGoals(def).map(o => star(met(o.id), false, o.text)));
+  row.setAttribute('aria-label', rec.beaten ? `Beaten, ${Object.values(rec.goals || {}).filter(Boolean).length} of ${optionalGoals(def).length} side goals` : 'Not beaten');
+  return row;
+}
 
 function renderList() {
   const p = progress(), list = $('campList');
   list.replaceChildren(...LEVELS.filter(def => !def.hidden).map(def => {
     const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button');
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
-    const name = document.createElement('b'), small = document.createElement('small');
+    const name = document.createElement('b');
     name.textContent = def.name;
-    small.textContent = rec.beaten ? `Beaten, optional ${Object.values(rec.goals || {}).filter(Boolean).length}/${optionalGoals(def).length}${statsText(rec.stats)}${scoreText(def, rec.best)}` : '';
     const parts = levelParts(def, TOOL);
     const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name, levelColours(def));
-    b.append(top, parts, small);
+    b.append(top, parts, stars(def, rec));
     if (def.id === p.last) b.classList.add('sel');
     b.onclick = () => go('level', def.id);
     li.append(b);

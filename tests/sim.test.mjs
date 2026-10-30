@@ -1290,6 +1290,18 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a pushable mark on a tile that cannot be pushed is refused', /pushable/i.test(bad), bad);
 }
 
+{ // register 505: a pushable tile goes into an open doorway like a box, and a closing door crushes it
+  const make = rows => { const l = room(rows, { crates: [[3, 1]] }); l.cells[l.w * 2 + 1] = 'button:red'; return createGame(l); };
+  const s = slide(make(['#######', '#P.R.D#', '#B.....', '#######'].map(r => r.padEnd(7, '#'))), 'right');
+  check('a pushable relay is pushed into an open doorway and stays there', cellAt(s, 5, 1) === 'sensor:blue' && s.crates.has(12) && s.ground[12] === 'door:red', JSON.stringify([s.cells.slice(7, 14), [...s.crates]]));
+  s.entities.find(e => e.kind === 'box').x = 2; refreshDoors(s);
+  check('the door closing on it destroys it, and the door is back', cellAt(s, 5, 1) === 'door:red' && !s.crates.has(12) && !s.tiles.some(t => t.x === 5) && s.events.some(e => e.type === 'kill' && e.tile), JSON.stringify([s.cells.slice(7, 14), [...s.crates], s.open]));
+  const shut = slide(make(['#######', '#P.R.D#', '#......', '#######'].map(r => r.padEnd(7, '#'))), 'right');
+  check('a closed door still stops a pushed tile', cellAt(shut, 4, 1) === 'sensor:blue' && cellAt(shut, 5, 1) === 'door:red', JSON.stringify(shut.cells.slice(7, 14)));
+  const back = slide(make(['#######', '#P.R.D#', '#B.....', '#######'].map(r => r.padEnd(7, '#'))), 'right'); back.player.x = 6; back.cells = [...back.cells]; back.cells[13] = ''; slide(back, 'left');
+  check('pushed out of the doorway, the door is under it again', cellAt(back, 5, 1) !== 'sensor:blue' && back.ground[12] === 'door:red' && (cellAt(back, 5, 1) === 'door:red' || cellAt(back, 5, 1) === ''), JSON.stringify(back.cells.slice(7, 14)));
+}
+
 { // wires (register 347): a network per colour of touching wire tiles; grey pieces read only theirs
   const line = (x0, x1, y, w) => Array.from({ length: x1 - x0 + 1 }, (_, i) => ({ x: x0 + i, y, w }));
   const make = (rows, wires, set = {}) => { const l = room(rows); l.wires = wires; for (const [i, c] of Object.entries(set)) l.cells[+i] = c; return createGame(l); };

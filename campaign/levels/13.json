@@ -40,5 +40,9 @@
  "require": [
   "boxThroughOneWayBothWays",
   "throughOpenDoor"
+ ],
+ "optional": [
+  "everyToggleOffAtEnd",
+  "threeSwitches"
  ]
 }

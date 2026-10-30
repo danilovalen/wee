@@ -31,11 +31,14 @@
  },
  "small": [
   5,
-  6
+  3
  ],
  "rules": [],
  "require": [
   "laserStoppedByIdoor",
   "robotThroughIdoor"
+ ],
+ "optional": [
+  "boxHitsAndThroughIdoor"
  ]
 }

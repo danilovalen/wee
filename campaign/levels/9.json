@@ -18,8 +18,8 @@
   "best": 8
  },
  "small": [
-  3,
-  5
+  4,
+  3
  ],
  "rules": [],
  "require": [
@@ -27,6 +27,7 @@
   "robotHitsEveryOneWay"
  ],
  "optional": [
-  "oneWaysThreeWays"
+  "oneWaysThreeWays",
+  "threeOneWays"
  ]
 }

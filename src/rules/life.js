@@ -43,7 +43,8 @@ const pairsOf = (s, kind, col) => Object.entries(doorsOf(s)).flatMap(([c, at]) =
 const DOORS = new WeakMap();
 function doorsOf(s, cell) {
   let by = DOORS.get(s.cells);
-  if (!by) { by = {}; s.cells.forEach((c, i) => { if (/^i?door:/.test(c)) (by[c] ||= []).push([i % s.w, Math.floor(i / s.w)]); }); DOORS.set(s.cells, by); }
+  // A door under a pushable tile in its doorway still opens and closes (register 505).
+  if (!by) { by = {}; s.cells.forEach((c, i) => { const d = /^i?door:/.test(c) ? c : s.ground && /^i?door:/.test(s.ground[i]) ? s.ground[i] : ''; if (d) (by[d] ||= []).push([i % s.w, Math.floor(i / s.w)]); }); DOORS.set(s.cells, by); }
   return cell ? by[cell] || [] : by;
 }
 
@@ -86,6 +87,7 @@ export function refreshDoors(s) {
       if (doors.some(d => inside(d).some(e => HOLDS_DOOR.includes(e.kind)) || (youIn(d) && s.powers.armored))) continue;
       for (const d of doors) {
         for (const e of inside(d)) kill(s, e, 'door');
+        crushTile(s, d);
         if (youIn(d) && !s.player.hidden) squashed = true;
       }
     }
@@ -94,6 +96,18 @@ export function refreshDoors(s) {
   }
   launch(s, turned, was);
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
+}
+
+// A closing door destroys a pushable tile standing in it, as it does a box (register 505); the
+// tile's own door is not in its doorway, so a pushable door is never crushed by itself.
+function crushTile(s, [x, y]) {
+  const i = y * s.w + x;
+  if (!s.crates.has(i) || !/^i?door:/.test(s.ground[i] || '')) return;
+  const t = s.tiles.find(t => t.x === x && t.y === y);
+  s.cells = s.cells.map((c, j) => j === i ? s.ground[i] : c);
+  s.crates = new Set([...s.crates].filter(j => j !== i));
+  s.tiles = s.tiles.filter(o => o !== t);
+  s.events.push({ type: 'kill', id: t && t.id, how: 'door', tile: true });
 }
 
 // A one-way of a colour that just turned launches what stands on it along its new arrow, sliding

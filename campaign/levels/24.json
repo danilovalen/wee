@@ -47,6 +47,7 @@
   "laserCrossesEverySpike"
  ],
  "optional": [
-  "threeSpikes"
+  "threeSpikes",
+  "laserBoxHitsEveryOneWayTwice"
  ]
 }

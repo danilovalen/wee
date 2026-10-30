@@ -1,6 +1,6 @@
 // Goals about switches and buttons. All copy is draft.
 import { replayPath } from '../robot.js';
-import { toggleHistory, switches } from './helpers.js';
+import { toggleHistory, switches, cellsWhere } from './helpers.js';
 
 export const SWITCH_GOALS = {
   boxOffButtonAtEnd: {
@@ -68,5 +68,33 @@ export const SWITCH_GOALS = {
     text: 'Box on a button at the end.',
     short: [{ el: 'box' }, 'on a', { el: 'button' }, 'at the end'],
     judge: (room, moves) => { const end = replayPath(room, moves, () => {}); return end.entities.some(e => !e.dead && e.kind === 'box' && /^button:/.test(end.cells[e.y * room.w + e.x] || '')); },
+  },
+  // Register 473: the robot steps onto a switch, flipping it, at least twice (the same switch or another).
+  robotFlipsSwitchTwice: {
+    text: 'Robot flips a switch 2 or more times.',
+    short: [{ el: 'start' }, 'flips a', { el: 'toggle' }, '×2'],
+    judge: (room, moves) => {
+      let flips = 0, was = -1;
+      replayPath(room, moves, s => { const i = s.player.y * room.w + s.player.x, on = (s.cells[i] || '').startsWith('toggle:') ? i : -1; if (on >= 0 && on !== was) flips++; was = on; });
+      return flips >= 2;
+    },
+  },
+  twoSwitches: {
+    needs: { toggle: 2 },
+    text: 'At least 2 switches in the room.',
+    short: ['at least 2', { el: 'toggle' }],
+    judge: room => switches(room).length >= 2,
+  },
+  threeSwitches: {
+    needs: { toggle: 3 },
+    text: 'At least 3 switches in the room.',
+    short: ['at least 3', { el: 'toggle' }],
+    judge: room => switches(room).length >= 3,
+  },
+  twoButtons: {
+    needs: { button: 2 },
+    text: 'At least 2 buttons in the room.',
+    short: ['at least 2', { el: 'button' }],
+    judge: room => cellsWhere(room, c => c.startsWith('button:')).length >= 2,
   },
 };

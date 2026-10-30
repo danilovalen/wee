@@ -525,6 +525,15 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .campDots { display: inline-flex; gap: 3px; }
 .campDots i { width: 10px; height: 10px; border-radius: 50%; }
 .campRow.sel { outline: 2px solid var(--accent, #6b5cff); }
+#campList .campRow { height: 104px; grid-template-rows: auto auto 1fr; overflow: hidden; }
+.campStars { display: flex; align-items: center; gap: 1px; align-self: end; min-width: 0; }
+.campStarLine { width: 2px; height: 20px; margin: 0 4px; background: var(--rule); flex: none; }
+.campStar { position: relative; width: 20px; height: 20px; flex: none; }
+.campStar.main { width: 28px; height: 28px; }
+.campStar svg { display: block; width: 100%; height: 100%; fill: none; stroke: var(--rule); stroke-width: 2; stroke-linejoin: round; }
+.campStar.on svg { fill: #ffc23d; stroke: #ffc23d; }
+.campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: #5a3f00; }
+.campStar.main i { font-size: 11px; }
 .campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
 .campGoal { padding: 8px 10px; border-radius: var(--r-s); background: var(--field); }
 .campHead { margin: 0 0 4px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }

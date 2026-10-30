@@ -4,7 +4,7 @@
 import { boxMoves } from '../src/campaign/pushes.js';
 import { replayPath } from '../src/campaign/robot.js';
 import { REQUIREMENTS } from '../src/campaign/requirements.js';
-import { stoppedPushes, boxesLeaving, tileLog, laserOverSpikes, oneWayLog } from '../src/campaign/goals/helpers.js';
+import { stoppedPushes, boxesLeaving, tileLog, laserOverSpikes, oneWayLog, blockHits, boxIds } from '../src/campaign/goals/helpers.js';
 
 // The nearest any of pick(s)'s points comes, over a path, to a tile whose kind starts with prefix:
 // 0.8 standing on one, falling off with distance (register 335).
@@ -26,7 +26,23 @@ function shareCrossed(room, moves, test) {
   replayPath(room, moves, s => { for (const b of s.beams || []) for (const [x, y] of b.path.slice(1)) if (want.has(y * room.w + x)) got.add(y * room.w + x); });
   return want.size ? got.size / want.size : 0;
 }
+function nearestLaser(room, moves) {
+  let d = Infinity;
+  replayPath(room, moves, s => { for (const t of s.entities) if (!t.dead && t.turret) d = Math.min(d, Math.abs(t.x - s.player.x) + Math.abs(t.y - s.player.y)); });
+  return d === Infinity ? 0 : 1 / d;
+}
+function nearestBeam(room, moves) {
+  let d = Infinity;
+  replayPath(room, moves, s => { for (const e of s.entities) if (!e.dead && e.kind === 'box') for (const b of s.beams || []) for (const [x, y] of b.path) d = Math.min(d, Math.abs(x - e.x) + Math.abs(y - e.y)); });
+  return d === Infinity ? 0 : 1 / (1 + d);
+}
 export const SCORES = {
+  // Register 480: per box, half credit per collision with a block, up to two.
+  everyBoxHitsBlockTwice: (room, moves) => { const h = blockHits(room, moves); return mean(boxIds(room).map(id => Math.min(h[id] || 0, 2) / 2)) * 0.9; },
+  // Register 494: how near the robot comes to a laser.
+  robotHitsEveryLaserTwice: (room, moves) => 0.5 * nearestLaser(room, moves),
+  // Register 495: per box, warmer the nearer it comes to a beam, half credit standing in one.
+  everyBoxLeavesBeam: (room, moves) => 0.5 * nearestBeam(room, moves),
   // Register 457: the share of one-ways or spikes done.
   laserOverEveryOneWay: (room, moves) => shareCrossed(room, moves, c => c.startsWith('gate:')),
   laserOverEverySpike: (room, moves) => shareCrossed(room, moves, c => c === 'death'),

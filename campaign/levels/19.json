@@ -38,6 +38,7 @@
   "throughOpenDoor"
  ],
  "optional": [
-  "laserThroughGoal"
+  "laserThroughGoal",
+  "laserThroughAndStoppedByDoor"
  ]
 }

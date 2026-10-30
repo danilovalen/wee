@@ -32,7 +32,7 @@ try {
   await runRoom(ROOM);
   const c1 = await card();
   check('the first win shows the card, naming the level', c1.open && !c1.gold && c1.title === 'Level 1 beaten', JSON.stringify(c1));
-  check('it shows a star per side goal, those met filled, and lists them', c1.stars === 4 && c1.goals === 4 && c1.on >= 1, JSON.stringify(c1));
+  check('it shows a star per side goal, those met filled, and lists them', c1.stars === 5 && c1.goals === 5 && c1.on >= 1, JSON.stringify(c1));
   check('it offers Next level and Stay', c1.next === 'Next level' && await page.locator('#winStay').isVisible());
   await page.mouse.click(196, 20); await page.waitForTimeout(150);
   check('a tap outside the card closes it, like Stay', !(await card()).open);
@@ -45,11 +45,11 @@ try {
   await runRoom(ROOM);
   check('winning again, with no last star, asks nothing', !(await card()).open);
   // Every side goal but the size one met already: this small room brings the last star.
-  await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('wee.campaign')); p.levels['1'].goals = { best: true, small: false, touchBlockFourTimes: true, mix: true }; localStorage.setItem('wee.campaign', JSON.stringify(p)); });
+  await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('wee.campaign')); p.levels['1'].goals = { best: true, small: false, touchBlockFourTimes: true, robotTwoDirections: true, mix: true }; localStorage.setItem('wee.campaign', JSON.stringify(p)); });
   await page.reload(); await page.waitForTimeout(600);
   await runRoom(ROOM);
   const c2 = await card();
-  check('the last side goal shows the gold card', c2.open && c2.gold && c2.title === 'Every side goal met' && c2.on === 4, JSON.stringify(c2));
+  check('the last side goal shows the gold card', c2.open && c2.gold && c2.title === 'Every side goal met' && c2.on === 5, JSON.stringify(c2));
   check('the gold card bursts stars', c2.burst > 0, String(c2.burst));
   await page.click('#winNext'); await page.waitForTimeout(500);
   check('Next level opens the next level', (await page.evaluate(() => location.hash)) === '#/level/2' && !(await card()).open);

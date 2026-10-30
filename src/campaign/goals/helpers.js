@@ -72,8 +72,10 @@ export const both = ways => Object.values(ways).some(set => [...set].some(d => s
 // Per path: which one-ways the robot went through, which ways, and how often it collided with each;
 // how many times a box went through one and which ways, how often each box collided with one, and
 // whether one ends on one.
-export function oneWayLog(room, moves) {
-  const log = { robotThrough: new Set(), robotWays: {}, robotHits: {}, boxThrough: 0, boxWays: {}, boxHits: {}, boxStuck: false };
+// kind follows another piece the same way: a pushable laser is 'turret' (register 504).
+export function oneWayLog(room, moves, kind = 'box') {
+  const log = { robotThrough: new Set(), robotWays: {}, robotHits: {}, boxThrough: 0, boxThroughIds: new Set(), boxWays: {}, boxHits: {}, boxHitDirs: new Set(), gateHits: {}, boxStuck: false, boxesStuck: false };
+  const hit = (id, g, d) => { log.boxHits[id] = (log.boxHits[id] || 0) + 1; log.boxHitDirs.add(d); log.gateHits[g] = (log.gateHits[g] || 0) + 1; };
   const pass = (ways, a, b) => (ways[a.y * room.w + a.x] ||= new Set()).add(way(a, b));
   const isGate = (x, y) => (room.cells[y * room.w + x] || '').startsWith('gate:');
   let was = null, dir = null, boxes = {}, before = {}, last = {};
@@ -87,22 +89,25 @@ export function oneWayLog(room, moves) {
       if (g >= 0) log.robotHits[g] = (log.robotHits[g] || 0) + 1;
       // A push ends when the box ahead is stopped: a one-way past it is what the box collided with,
       // when the box moved in this push.
-      const box = s.entities.find(e => !e.dead && e.kind === 'box' && e.x === p.x + dx && e.y === p.y + dy);
-      if (box && blocker(room, s, box.x, box.y, dir) >= 0 && before[box.id] !== box.x + ',' + box.y) log.boxHits[box.id] = (log.boxHits[box.id] || 0) + 1;
+      const box = s.entities.find(e => !e.dead && e.kind === kind && e.x === p.x + dx && e.y === p.y + dy), bg = box ? blocker(room, s, box.x, box.y, dir) : -1;
+      if (box && bg >= 0 && before[box.id] !== box.x + ',' + box.y) hit(box.id, bg, dir);
     }
     was = { x: p.x, y: p.y }; dir = p.dir;
     const now = {};
     for (const e of s.entities) {
-      if (e.dead || e.kind !== 'box') continue;
+      if (e.dead || e.kind !== kind) continue;
       const b = boxes[e.id];
-      if (b && (b.x !== e.x || b.y !== e.y) && isGate(b.x, b.y)) { log.boxThrough++; pass(log.boxWays, b, e); }
-      if (b && b.slide && !e.slide && blocker(room, s, e.x, e.y, b.slide) >= 0) log.boxHits[e.id] = (log.boxHits[e.id] || 0) + 1;
+      if (b && (b.x !== e.x || b.y !== e.y) && isGate(b.x, b.y)) { log.boxThrough++; log.boxThroughIds.add(e.id); pass(log.boxWays, b, e); }
+      const sg = b && b.slide && !e.slide ? blocker(room, s, e.x, e.y, b.slide) : -1;
+      if (sg >= 0) hit(e.id, sg, b.slide);
       now[e.id] = { x: e.x, y: e.y, slide: e.slide };
     }
     boxes = now;
     last = Object.fromEntries(s.entities.map(e => [e.id, e.x + ',' + e.y]));
   });
-  log.boxStuck = end.entities.some(e => !e.dead && e.kind === 'box' && isGate(e.x, e.y));
+  log.boxStuck = end.entities.some(e => !e.dead && e.kind === kind && isGate(e.x, e.y));
+  const left = end.entities.filter(e => !e.dead && e.kind === kind);
+  log.boxesStuck = left.length > 0 && left.every(e => isGate(e.x, e.y));
   return log;
 }
 
@@ -169,3 +174,41 @@ export function laserOverSpikes(room, moves) {
   return { want, left };
 }
 export const allDone = ({ want, got, left }) => want.size > 0 && [...want].every(i => (got || left).has(i));
+
+// The ids a run gives the room's pieces (a room's own entities carry none), for goals about every one.
+export const idsOf = (room, test) => replayPath(room, [], () => {}).entities.filter(test).map(e => e.id);
+export const boxIds = room => idsOf(room, e => e.kind === 'box');
+// Each slide of the robot that ends against something: the tick's state and the tile ahead.
+export function robotStops(room, moves, see) {
+  let dir = null;
+  replayPath(room, moves, s => {
+    const p = s.player;
+    if (dir && !p.dir) { const [dx, dy] = STEP[dir]; see(s, p.x + dx, p.y + dy, dir); }
+    dir = p.dir;
+  });
+}
+// Per box id, how many times it collided with a block (register 480): a push or a slide that ends
+// with a block on the next tile, the box having moved in it.
+export function blockHits(room, moves) {
+  const hits = {}, isBlock = (x, y) => cellOf(room, [x, y]) === 'wall';
+  let dir = null, boxes = {}, before = {}, last = {};
+  replayPath(room, moves, s => {
+    const p = s.player;
+    if (p.dir && !dir) before = last;
+    if (dir && !p.dir) {
+      const [dx, dy] = STEP[dir], box = live(s, p.x + dx, p.y + dy);
+      if (box && isBlock(box.x + dx, box.y + dy) && before[box.id] !== box.x + ',' + box.y) hits[box.id] = (hits[box.id] || 0) + 1;
+    }
+    dir = p.dir;
+    const now = {};
+    for (const e of s.entities) {
+      if (e.dead || e.kind !== 'box') continue;
+      const b = boxes[e.id];
+      if (b && b.slide && !e.slide) { const [dx, dy] = STEP[b.slide]; if (isBlock(e.x + dx, e.y + dy)) hits[e.id] = (hits[e.id] || 0) + 1; }
+      now[e.id] = { slide: e.slide };
+    }
+    boxes = now;
+    last = Object.fromEntries(s.entities.map(e => [e.id, e.x + ',' + e.y]));
+  });
+  return hits;
+}

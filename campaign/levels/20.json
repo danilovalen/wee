@@ -43,6 +43,7 @@
   "throughOpenDoor"
  ],
  "optional": [
-  "relayHitsRelay"
+  "relayHitsRelay",
+  "noRelayAtEnd"
  ]
 }

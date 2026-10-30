@@ -26,10 +26,10 @@
   "gate": "only"
  },
  "steps": {
-  "best": 10
+  "best": 7
  },
  "small": [
-  7,
+  6,
   3
  ],
  "rules": [],
@@ -39,6 +39,7 @@
   "everyOneWayOverSpikes"
  ],
  "optional": [
-  "twoOneWays"
+  "oneWaysTwoWays",
+  "oneWaysThreeWays"
  ]
 }
