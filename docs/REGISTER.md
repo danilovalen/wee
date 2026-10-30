@@ -509,3 +509,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 501 | Level 21 new side goal: "no default blocks (walls)" | **registered (2026-10-30), waiting for the batch.** A room with no blocks placed. |
 | 502 | Level 22: change the current side goal (two one-ways) to "at least two one way directions", and add "at least three one way directions" | **registered (2026-10-30), waiting for the batch.** One-ways pointing in 2+ different directions, and a second side goal for 3+ directions. |
 | 503 | Level 23 new side goal: "at least two buttons" | **registered (2026-10-30), waiting for the batch.** |
+| 504 | Level 24 new side goal: "laser box collides twice with every one way" | **registered (2026-10-30), waiting for the batch.** A laser box hits each one-way 2 or more times (483). |
