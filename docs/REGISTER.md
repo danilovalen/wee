@@ -502,3 +502,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 494 | "Level 13 new side quest is you colliding with all laser boxes 2+ times", then "I meant level 14 instead of level 13" | **registered (2026-10-30), waiting for the batch.** Level 14: the robot collides with every laser box 2 or more times. |
 | 495 | Level 15 new side goal: "all boxes leave laser (laser itself not laser box)" | **registered (2026-10-30), waiting for the batch.** Read as every box leaves a fixed laser's beam; a pushable laser does not count. To confirm at build. |
 | 496 | Level 16 new side goal: "you through door" (the robot goes through a door) | **registered (2026-10-30), waiting for the batch.** |
+| 497 | Level 17 new side goal: "box collides AND goes through inverted door" | **registered (2026-10-30), waiting for the batch.** One box both hits an inverted door and goes through one, in the same run. |
