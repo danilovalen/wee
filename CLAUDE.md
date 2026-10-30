@@ -42,6 +42,7 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
 - `dist/wee.html` is built, never edited; rebuild it after any change to `src/`, `index.html` or `style.css`.
 - Draw rooms in tests with `room([...])` from `tests/lib.mjs`.
 - Player-facing text: condition first, imperative, no em dashes. Flag new copy as a draft.
+- Plain, common verbs, used with an object: "A block stops the robot", not "the robot stops"; never an odd verb like "steer" or a vague "then it plays" (register 510).
 - Every playtest report gets a numbered item in `docs/REGISTER.md` and closes with an outcome.
 - Menus are full pages, never a box over the game (owner, 2026-10-18, row 220). A ruling about one screen covers every screen of its kind: ask before treating it as narrower.
 - Nothing moves when the mode changes: the room keeps its place and size from Edit to Run to Test and back (owner, 2026-10-18, row 222).

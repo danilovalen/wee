@@ -48,7 +48,7 @@ h1{font-size:20px;margin:0 0 4px}
 </head>
 <body>
 <main>
-<h1>Tutorial level: sketch (register 507)</h1>
+<h1>Tutorial level: sketch (registers 507, 510)</h1>
 <p class="sub">A first level, before Level 1, that walks a new player through one room. The dark bubble is the coach; the ring shows where to tap. Words are drafts.</p>
 <div class="frames" id="frames"></div>
 <section class="plan">
@@ -56,8 +56,8 @@ h1{font-size:20px;margin:0 0 4px}
 <ol>
 <li><b>Where it lives:</b> "How to play", the first card of the level list. A first-time player opening Campaign lands in it. It can be played again any time, and skipped.</li>
 <li><b>One room, 5×5</b>, only blocks, the start and the star already placed. The bubble waits for each action; a wrong tap does nothing.</li>
-<li><b>Six steps:</b> the robot slides; the star is the target; you build, the robot plays; place one block; Run; the stars on the card.</li>
-<li><b>What it teaches:</b> sliding until stopped, building instead of steering, Run trying every shortest way, the main star and side stars, fewest tiles as the score.</li>
+<li><b>Six steps:</b> what stops the robot; the star is the target; you build the room; place one block; Run; the stars on the card.</li>
+<li><b>What it teaches:</b> only blocks and walls stop the robot; you build the room, Run moves the robot; Run checks every shortest path; the big star and the small ones; fewest tiles as the score.</li>
 <li><b>Its own rules:</b> it is won in 2 moves, so it lifts the 4-move minimum every other level has, and has no side goals to meet (the two small stars show what Level 1 adds).</li>
 <li><b>What it leaves for Level 1:</b> the 4-move minimum, Test, the side goals list, resizing the room. Level 1's first open could show one bubble for the minimum.</li>
 <li><b>Built from the game's own pieces:</b> a coach bubble, a ring on the thing to tap, and a step list per level. The same parts could guide the first time a new piece appears (doors, boxes) later.</li>
@@ -79,24 +79,24 @@ function star(n, m) { var on = n != null; return '<span class="s' + (m ? ' m' : 
 function bar(on) { return '<div class="bar">' + ['Levels', 'Run', 'Test'].map(function (b) { return '<span class="' + (b === on ? 'on' : on ? 'dim' : '') + '">' + b + '</span>'; }).join('') + '</div>'; }
 var card = '<div class="card"><b>How to play</b>Robot reaches the star.</div>';
 var F = [
-  ['1. The robot slides', 'The robot slides right on its own, to the wall, and stops.',
+  ['1. What stops the robot', 'The robot goes right on its own and the wall stops it.',
     bar() + card + room(grid(['.....', 'P~~~~', '.....', '.....', '...G.'])),
-    'The robot slides until something stops it.', 'Next'],
-  ['2. The target', 'The star pulses. The robot slides past its column, so it misses.',
+    'A block or a wall stops the robot. Nothing else does.', 'Next'],
+  ['2. The target', 'The star pulses. The robot passed its column, so it missed the star.',
     bar() + card + room(grid(['.....', '....P', '.....', '.....', '...g.'])),
     'Get the robot to the star.', 'Next'],
-  ['3. You build, it plays', 'No arrows on screen. The block tool lights up.',
+  ['3. You build the room', 'No arrows on screen. The block tool lights up.',
     bar() + card + room(grid(['.....', '.P...', '.....', '.....', '...G.'])) + '<div class="pal"><span class="on"><i></i></span></div>',
-    'You never steer the robot. You build its room, then it plays.', 'Next'],
+    'You don\'t move the robot. You build the room. Run moves the robot for you.', 'Next'],
   ['4. Place one block', 'One tile is marked. A tap anywhere else does nothing.',
     bar() + card + room(grid(['.....', '.P..?', '.....', '.....', '...G.'])) + '<div class="pal"><span class="on"><i></i></span></div>',
-    'Place a block here, so the robot stops in line with the star.', null],
-  ['5. Run', 'Run is ringed. The robot plays: right, stops at the block, down to the star.',
+    'Place a block here. It stops the robot above the star.', null],
+  ['5. Run', 'Run is ringed. The robot goes right, the block stops it, then it goes down to the star.',
     bar('Run') + card + room(grid(['.....', '.P~~#', '...~.', '...~.', '...G.'])),
-    'Tap Run. The robot tries every shortest way to the star. Each one must meet the goals.', null],
+    'Tap Run. Run checks every shortest path to the star. Every path must meet the goals.', null],
   ['6. Stars', 'The win card, then the level card with its stars.',
     bar() + '<div class="card"><b>How to play: beaten</b>Your score is the tiles you placed: 1.</div><div class="stars">' + star(1, true) + '<span class="sep"></span>' + star(null) + star(null) + '</div>',
-    'Winning gives the big star. Side goals give the small ones. The number is the tiles you used: fewer is better.', 'Level 1'],
+    'A win earns the big star. Each side goal earns a small one. The number shows the tiles you placed. To score better, place fewer.', 'Level 1'],
 ];
 document.getElementById('frames').innerHTML = F.map(function (f) {
   return '<div class="frame"><h2>' + f[0] + '</h2><p class="what">' + f[1] + '</p><div class="phone">' + f[2] +
