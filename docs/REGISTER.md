@@ -508,3 +508,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 500 | Level 20 new side goal: "no laser relay box on the level end", "similar to the other one that crushes box" | **registered (2026-10-30), waiting for the batch.** Like level 8's no box at the end (`noBoxAtEnd`): no pushable relay left when the run ends. |
 | 501 | Level 21 new side goal: "no default blocks (walls)" | **registered (2026-10-30), waiting for the batch.** A room with no blocks placed. |
 | 502 | Level 22: change the current side goal (two one-ways) to "at least two one way directions", and add "at least three one way directions" | **registered (2026-10-30), waiting for the batch.** One-ways pointing in 2+ different directions, and a second side goal for 3+ directions. |
+| 503 | Level 23 new side goal: "at least two buttons" | **registered (2026-10-30), waiting for the batch.** |
