@@ -495,3 +495,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 487 | Level 9 new side goal: "three or more one-ways" | **registered (2026-10-30), waiting for the batch.** |
 | 488 | Check, don't build: can a generic "no softlocks" side goal be met on every level; with how many moves; does it combine with another side goal. Same for "x+ ways to softlock", x = 1 to 3 | **in progress (2026-10-30).** Question. |
 | 489 | "Level 10 is 2+ boxes; all goals require \"all boxes\"" | **registered (2026-10-30), waiting for the batch.** New side goal 2+ boxes; every box goal of level 10 (required and side) holds for every box. Read as level 10 only, to confirm at build. |
+| 490 | "Level 11 new optional is colliding with doors of two colors" | **registered (2026-10-30), waiting for the batch.** Read as the robot hitting a closed door of each colour. |
