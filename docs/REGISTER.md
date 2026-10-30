@@ -530,3 +530,6 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 522 | "Even because I got no star by beating the level 0." | **done (2026-10-30), by 521.** The tutorial no longer gives or shows a star: its end now points at Level 1's stars instead. |
 | 523 | (screenshot `docs/grid-small-report.jpg`) "How do we increase the area for play (the grid)? It's too small" | **done (2026-10-30).** The run's message now floats over the top of the goals card instead of keeping its own 48px band, the move row is gone, and the top row is 6px shorter. A 12x12 Level 3 on a 393x735 screen: 203px to 293px. The side margin grew so the side + grips stay 30px off the screen's edges (register 239). |
 | 524 | "Avoid dynamic things opening and closing. Not good practice for games." | **rule (2026-10-30), written into CLAUDE.md.** Nothing on the game screen folds open or shut to save space. |
+| 525 | (screenshot `docs/level-list-report.jpg`) "Hide the levels with buttons/actuators in 2+ colors (level 16). [...] I don't plan adding levels with 2+ colors for a while." | **building (2026-10-30).** |
+| 526 | "Laser blocks are weird, white." | **building (2026-10-30).** |
+| 527 | "Have blocks inline (aligned to the right) to the level number (just write 12 instead of Level 12). That will save up some space." | **building (2026-10-30).** |
