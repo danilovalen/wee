@@ -2,7 +2,7 @@
 // last side goal (a side goal counts once met in any run). Each asks Next level or Stay, once the
 // robot has finished its run. A first win that meets every side goal shows only the second.
 import { LEVELS } from '../level/campaign.js';
-import { optionalGoals } from '../campaign/rules.js';
+import { optionalGoals, listed } from '../campaign/rules.js';
 import { $ } from './dom.js';
 import { go, up } from './nav.js';
 
@@ -28,7 +28,7 @@ export function noteWin(def, before, rec, v, words) {
 
 function next(def) {
   if (def.made) return { label: 'Maker', go: up };
-  const list = LEVELS.filter(l => !l.hidden && !l.tutorial), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
+  const list = LEVELS.filter(listed), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
   return n ? { label: 'Next level', go: () => go('level', n.id) } : { label: 'Levels', go: up };
 }
 

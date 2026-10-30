@@ -3,11 +3,11 @@
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS } from '../level/campaign.js';
-import { roomOf, coloursOf, placementErrors, check, optionalGoals } from '../campaign/rules.js';
+import { roomOf, coloursOf, placementErrors, check, optionalGoals, listed } from '../campaign/rules.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { $, portrait } from './dom.js';
-import { levelParts, levelColours } from './levelParts.js';
+import { levelParts } from './levelParts.js';
 import { noteWin, bindWin } from './winCard.js';
 import { noteLeaving, copyDebug } from './debug.js';
 import { buildMenuScene } from './menuScene.js';
@@ -125,14 +125,14 @@ function stars(def, rec) {
 
 function renderList() {
   const p = progress(), list = $('campList');
-  list.replaceChildren(...LEVELS.filter(def => !def.hidden && !def.tutorial).map(def => {
+  list.replaceChildren(...LEVELS.filter(listed).map(def => {
     const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button');
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b');
-    name.textContent = def.name;
-    const parts = levelParts(def, TOOL);
-    const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name, levelColours(def));
-    b.append(top, parts, stars(def, rec));
+    name.textContent = def.name.replace(/^Level /, ''); name.setAttribute('aria-label', def.name);
+    // The number and its pieces share one line (register 527).
+    const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name, levelParts(def, TOOL));
+    b.append(top, stars(def, rec));
     if (def.id === p.last) b.classList.add('sel');
     b.onclick = () => go('level', def.id);
     li.append(b);

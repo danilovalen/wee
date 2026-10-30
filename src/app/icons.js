@@ -37,7 +37,11 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
   } else if (tool === 'start' || tool === 'robot') {
     // The campaign's goal rows name the robot, which plays them (register 323); a room's start is you.
     x.save(); x.translate(16, 16); x.scale(1.3, 1.3); (tool === 'robot' ? drawRobot : drawYou)(x); x.restore();
-  } else if (tool === 'turret') drawPiece(x, { kind: 'turret', crate, turret: { dirs: ['up', 'right'], mode: 'input' } }, 0, 0);
+  } else if (tool === 'turret') {
+    // On a floor tile like every other piece, one barrel, so it does not read as a white blob (register 526).
+    const l = emptyLevel(1, 1); l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
+    drawPiece(x, { kind: 'turret', crate, turret: { dirs: ['right'], mode: 'input' } }, 0, 0);
+  }
   // Two ingredients that are a tool with a twist: a turret riding a box, a block that copies you.
   else if (tool === 'mounted') drawPiece(x, { kind: 'box', turret: { dirs: ['up'], mode: 'input' } }, 0, 0);
   else if (tool === 'follow') drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);

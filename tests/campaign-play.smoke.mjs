@@ -54,17 +54,16 @@ try {
   check('the level list starts at Level 1: the tutorial is on the menu, not a card (register 521)', rows.length >= 5 && rows[0] === '1' && !rows.includes('tutorial'), rows.join());
   const parts = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part).join()])));
   check('each level in the list shows the elements it uses', parts['1'] === 'block' && parts['5'] === 'block,box' && parts['6'] === 'block,box,toggle,door', JSON.stringify(parts));
+  const laser = await page.$eval('.campRow[data-level="14"] [data-part="laser"]', c => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let clear = 0; for (let i = 3; i < d.length; i += 4) if (d[i] < 10) clear++; return clear; });
+  check('the laser icon sits on a floor tile: no see-through pixels (register 526)', laser === 0, String(laser));
   // Register 402: a version per colour and per pushable kind, each one-line row of 16 px icons.
   // Registers 419, 420: one icon per element, the pushable frame only where it comes pushable only, and a
   // level with two colours shows them as dots on its title line, at the right.
   const versions = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part + ('crate' in c.dataset ? '+' : '')).join()])));
-  check('level 11 shows one button and one door', versions['11'] === 'block,box,button,door', versions['11']);
-  check('level 16 shows one plain laser', versions['16'] === 'block,box,button,door,laser', versions['16']);
+  check('levels with two colours are put away: no 11 or 16 in the list (register 525)', !('11' in versions) && !('16' in versions) && '12' in versions, Object.keys(versions).join());
   check('level 20 shows its relay pushable only', versions['20'].includes('relay+'), versions['20']);
-  const rowDots = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campDots i')].map(d => d.dataset.colour).join()])));
-  check('levels 11 and 16 show red and blue dots; one-colour levels none', rowDots['11'] === 'red,blue' && rowDots['16'] === 'red,blue' && rowDots['7'] === '' && rowDots['12'] === '', JSON.stringify([rowDots['11'], rowDots['16'], rowDots['7'], rowDots['12']]));
-  const rightDots = await page.$eval('.campRow[data-level="11"]', r => { const d = r.querySelector('.campDots').getBoundingClientRect(), n = r.querySelector('.campRowHead b').getBoundingClientRect(), b = r.getBoundingClientRect(); return Math.abs(d.top + d.height / 2 - (n.top + n.height / 2)) < 4 && b.right - d.right < 24; });
-  check('the dots sit on the title line, at the right', rightDots);
+  const head = await page.$eval('.campRow[data-level="12"]', r => { const n = r.querySelector('.campRowHead b'), ps = r.querySelector('.campParts'), nb = n.getBoundingClientRect(), pb = ps.getBoundingClientRect(), b = r.getBoundingClientRect(); return { text: n.textContent, line: Math.abs(nb.top + nb.height / 2 - (pb.top + pb.height / 2)) < 4, right: b.right - pb.right < 24 }; });
+  check('a row reads "12", its pieces on the same line at the right (register 527)', head.text === '12' && head.line && head.right, JSON.stringify(head));
   const lines = await page.$$eval('.campParts', ps => ps.filter(p => { const ys = new Set([...p.querySelectorAll('canvas')].map(c => Math.round(c.getBoundingClientRect().top))); return ys.size > 1; }).length);
   check('every level\'s icons fit on one line', lines === 0, String(lines));
   const listing = await page.evaluate(() => { const rows = [...document.querySelectorAll('.campRow')]; return { cols: new Set(rows.map(r => Math.round(r.getBoundingClientRect().left / 10))).size, said: rows.filter(r => /shortest path/i.test(r.textContent)).length }; });
@@ -267,7 +266,7 @@ try {
   check('the minimum row is marked after a run on an empty room', await page.locator('.campReqs li[data-req="min-gate"].unmet').count() === 1);
   if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
   // A maximum shows as a goal while playing (register 299): level 16 allows exactly one box.
-  await page.click('#campBack'); await page.click('.campRow[data-level="16"]');
+  await page.click('#campBack'); await page.evaluate(() => { location.hash = '#/level/16'; }); await page.waitForTimeout(500);  // off the list (register 525), still playable
   const max16 = await page.locator('.campReqs li[data-req="max-box"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');
   check('level 16 lists its one-box limit as a goal, drawn as the box', max16 === 'exactly 1|box', max16);
   // Register 445: a goal names level 20's relays, which come only pushable, with the pushable frame.
@@ -429,7 +428,7 @@ try {
   check('in a level a laser stands alone: placed on a box it takes the box\'s place, it does not ride it', onBox === 'turret+laser', onBox);
   // Colours (register 245): a level with two shows a row of dots; the pick colours what you place and the palette's pieces.
   await nine.goto('http://localhost:5217/');
-  await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="11"]');
+  await nine.click('#menuCampaign'); await nine.evaluate(() => { location.hash = '#/level/11'; }); await nine.waitForTimeout(500);
   const row7 = await nine.evaluate(() => { const r = document.getElementById('campColours'); return { shown: !r.hidden && r.getBoundingClientRect().height > 0, dots: [...r.querySelectorAll('button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '')).join() }; });
   check('a two-colour level shows its colours as a row of dots, the first chosen', row7.shown && row7.dots === 'red*,blue', JSON.stringify(row7));
   const line = await nine.evaluate(() => { const top = s => document.querySelector(s).getBoundingClientRect(); const tools = ['look', 'erase', 'move'].map(id => document.querySelector(`[data-tool="${id}"]`)); return { inLine: tools.every(b => b.parentNode.id === 'campTools'), left: top('#campTools').left <= top('#campTop').left + 1, right: top('#campColours').right >= top('#campTop').right - 1, same: Math.abs(top('#campColours').top + top('#campColours').height / 2 - (top('#campTools').top + top('#campTools').height / 2)) < 4, below: top('[data-tool="door"]').top > top('#campTools').bottom }; });

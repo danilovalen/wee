@@ -1,8 +1,6 @@
 // A level's row in the level list: one icon per element, as the palette draws it, wearing the pushable
-// frame when that element only comes pushable (registers 402, 419, 420); the level's colours, when it
-// has more than one, as dots on the title line.
-import { coloursOf, pushingsOf, ELEMENTS } from '../campaign/rules.js';
-import { INK } from '../view/ink.js';
+// frame when that element only comes pushable (registers 402, 419, 420), at the right of the level's number (register 527).
+import { pushingsOf, ELEMENTS } from '../campaign/rules.js';
 import { icon } from './icons.js';
 
 // tool: each element's palette tool (campaign.js's TOOL).
@@ -18,13 +16,4 @@ export function levelParts(def, tool) {
     parts.append(c);
   }
   return parts;
-}
-
-export function levelColours(def) {
-  const cols = coloursOf(def), dots = document.createElement('span');
-  dots.className = 'campDots';
-  if (cols.length < 2) return dots;
-  dots.title = `Colours: ${cols.join(' and ')}`; dots.setAttribute('aria-label', dots.title);
-  for (const c of cols) { const d = document.createElement('i'); d.dataset.colour = c; d.style.background = INK[c]; dots.append(d); }
-  return dots;
 }

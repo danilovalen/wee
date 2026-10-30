@@ -530,7 +530,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .campDots { display: inline-flex; gap: 3px; }
 .campDots i { width: 10px; height: 10px; border-radius: 50%; }
 .campRow.sel { outline: 2px solid var(--accent, #6b5cff); }
-#campList .campRow { height: 104px; grid-template-rows: auto auto 1fr; overflow: hidden; }
+#campList .campRow { height: 76px; grid-template-rows: auto 1fr; align-content: start; overflow: hidden; }  /* number and pieces on one line (register 527) */
 .tutBox { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40; max-width: 520px; margin: 0 auto; background: var(--ink); color: #fff; border-radius: var(--r-l); padding: 10px 12px; display: grid; gap: 4px; box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
 .tutBox[hidden], .tutTile[hidden] { display: none; }
 /* In the tutorial the bubble says what the verdict would, so the room never moves under it (register 517). */
