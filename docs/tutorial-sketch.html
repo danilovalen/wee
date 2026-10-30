@@ -77,14 +77,14 @@ function room(cells) {
 function grid(rows) { return rows.join('').split(''); }
 function star(n, m) { var on = n != null; return '<span class="s' + (m ? ' m' : '') + '"><svg viewBox="0 0 24 24"><path d="' + STAR + '" fill="' + (on ? 'var(--gold)' : 'none') + '" stroke="' + (on ? 'var(--gold)' : '#cfd3db') + '" stroke-width="2" stroke-linejoin="round"/></svg>' + (on ? '<i>' + n + '</i>' : '') + '</span>'; }
 function bar(on) { return '<div class="bar">' + ['Levels', 'Run', 'Test'].map(function (b) { return '<span class="' + (b === on ? 'on' : on ? 'dim' : '') + '">' + b + '</span>'; }).join('') + '</div>'; }
-var card = '<div class="card"><b>How to play</b>Robot reaches the star.</div>';
+var card = '<div class="card"><b>How to play</b>Get the robot to the star.</div>';
 var F = [
   ['1. What stops the robot', 'The robot goes right on its own and the wall stops it.',
     bar() + card + room(grid(['.....', 'P~~~~', '.....', '.....', '...G.'])),
     'A block or a wall stops the robot. Nothing else does.', 'Next'],
   ['2. The target', 'The star pulses. The robot passed its column, so it missed the star.',
     bar() + card + room(grid(['.....', '....P', '.....', '.....', '...g.'])),
-    'Get the robot to the star.', 'Next'],
+    'The robot passed the star: nothing stopped it in time.', 'Next'],
   ['3. You build the room', 'No arrows on screen. The block tool lights up.',
     bar() + card + room(grid(['.....', '.P...', '.....', '.....', '...G.'])) + '<div class="pal"><span class="on"><i></i></span></div>',
     'You don\'t move the robot. You build the room. Run moves the robot for you.', 'Next'],

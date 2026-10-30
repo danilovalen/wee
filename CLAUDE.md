@@ -48,5 +48,6 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
 - Nothing moves when the mode changes: the room keeps its place and size from Edit to Run to Test and back (owner, 2026-10-18, row 222).
 - When a rule changes, re-derive every number measured under the old one (size goals, exact counts, "no win found"), and say which ones moved (row 225).
 
-- A goal is an order to the player, never a fact that reads as already happening: "Get the robot to the star.", not "Robot reaches the star." (register 511, replacing 308's subject-first rule). Before writing any player-facing line, re-read the copy rules here and in the danilo-copywriting skill.
+- Goal sentences are direct, starting on their subject with no article: "Laser through an open door.", not "A laser goes through an open door." Opening line after line on "A" or "The" reads machine-written (register 308).
+- Teaching text (the tutorial, a hint) speaks to the player as an order: "Get the robot to the star.", never a goal's short form, which reads as a fact there (register 511). Before writing any player-facing line, re-read the copy rules here and in the danilo-copywriting skill.
 - One sentence per on-screen message: "You are X. That thing Y." strings read machine-made (register 310). The `arch` test holds it.
