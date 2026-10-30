@@ -3,7 +3,9 @@
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 
-const LAST = 40, log = [];
+const LAST = 40, log = [], errors = [];
+// The last errors the page met, newest last: a freeze report needs them (register 508).
+export function noteError(e) { errors.push({ t: Math.round(performance.now()), msg: String(e && (e.stack || e.message) || e).slice(0, 400) }); if (errors.length > 5) errors.shift(); }
 let left = null;
 const name = el => !el || !el.closest ? String(el) : el.id ? '#' + el.id : el.dataset && (el.dataset.plus || el.dataset.tool || el.dataset.req) ? `[${el.dataset.plus || el.dataset.tool || el.dataset.req}]` : el.className ? '.' + String(el.className).split(' ')[0] : el.tagName;
 
@@ -28,6 +30,8 @@ const state = () => ({
 export function noteLeaving() { left = { at: Math.round(performance.now()), ...state() }; }
 
 export function bindDebug() {
+  addEventListener('error', ev => noteError(ev.error || ev.message));
+  addEventListener('unhandledrejection', ev => noteError(ev.reason));
   for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'keydown']) addEventListener(type, ev => {
     log.push({ t: Math.round(performance.now()), type, on: type === 'keydown' ? ev.key : name(ev.target), mode: S.mode, ...(ev.clientX !== undefined ? { x: Math.round(ev.clientX), y: Math.round(ev.clientY) } : {}) });
     if (log.length > LAST) log.shift();
@@ -36,7 +40,7 @@ export function bindDebug() {
 
 // Shown first, then offered to the clipboard: a clipboard that never answers must not hide it.
 export function copyDebug() {
-  const text = JSON.stringify({ format: 'wee-debug', version: 1, now: state(), leftLevel: left, events: log });
+  const text = JSON.stringify({ format: 'wee-debug', version: 1, now: state(), leftLevel: left, events: log, errors });
   $('reportText').value = text; $('reportBox').showModal(); $('reportText').select();
   try { navigator.clipboard.writeText(text).catch(() => {}); } catch { /* no clipboard here */ }
 }

@@ -10,8 +10,14 @@ const places = {}; // name -> { page, parent(arg), enter(arg), shown(), exit(nex
 let here = null, ours = false, turn = 0;
 const shut = new Set();
 // A preview frame (about:srcdoc, blob:) cannot change its address, so there the entries live here instead.
-let fixed = false, toMenu = false, queued = null;
+let fixed = false, toMenu = false, queued = null, pops = 0;
 const stack = [];
+// A frame that takes the history move but never answers (a viewer inside another app) would leave every
+// later move waiting for good (register 508): with no answer in time, the game keeps its own entries from then on.
+const WAIT_MS = 600;
+function unanswered(seen, then) {
+  setTimeout(() => { if (pops !== seen) return; fixed = true; stack.length = 0; then(); }, WAIT_MS);
+}
 const state = () => fixed ? stack[stack.length - 1] : history.state;
 // Each entry carries n, its depth: the menu unwinds history to the first entry (register 424).
 function write(entry, replace) {
@@ -58,7 +64,11 @@ export function go(name, arg = null, { replace = false } = {}) {
   // The menu is where history starts, so Back from it leaves the game instead of going to a room.
   if (name === 'menu') {
     const n = state()?.n ?? 0;
-    if (n > 0 && !fixed) { toMenu = true; ours = true; history.go(-n); return; }
+    if (n > 0 && !fixed) {
+      toMenu = true; ours = true; history.go(-n);
+      unanswered(pops, () => { toMenu = false; ours = false; write({ path, prev: null }, true); show(name, arg, true); if (queued) { const q = queued; queued = null; go(...q); } });
+      return;
+    }
     if (n > 0) stack.length = 1;
     write({ path, prev: null }, true);
     return show(name, arg);
@@ -72,7 +82,7 @@ export function go(name, arg = null, { replace = false } = {}) {
 export function back(target = here && places[here.name].parent(here.arg)) {
   if (!target) return;
   if (state()?.prev !== pathOf(target)) go(target);
-  else if (!fixed) { ours = true; history.back(); }
+  else if (!fixed) { ours = true; history.back(); unanswered(pops, () => { ours = false; write({ path: pathOf(target), prev: null }, true); show(target, null, true); }); }
   else { stack.pop(); const { name, arg } = parse(state().path); show(name, arg); }
 }
 // Up to the place a level, puzzle or room was opened from: its own parent unless history says otherwise.
@@ -88,6 +98,7 @@ export function start() {
 
 export function bindNav() {
   addEventListener('popstate', () => {
+    pops++;
     if (toMenu) {
       toMenu = false; ours = false; write({ path: pathOf('menu'), prev: null }, true); show('menu', null, true);
       if (queued) { const q = queued; queued = null; go(...q); }

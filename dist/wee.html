@@ -4127,8 +4127,14 @@ const places = {}; // name -> { page, parent(arg), enter(arg), shown(), exit(nex
 let here = null, ours = false, turn = 0;
 const shut = new Set();
 // A preview frame (about:srcdoc, blob:) cannot change its address, so there the entries live here instead.
-let fixed = false, toMenu = false, queued = null;
+let fixed = false, toMenu = false, queued = null, pops = 0;
 const stack = [];
+// A frame that takes the history move but never answers (a viewer inside another app) would leave every
+// later move waiting for good (register 508): with no answer in time, the game keeps its own entries from then on.
+const WAIT_MS = 600;
+function unanswered(seen, then) {
+  setTimeout(() => { if (pops !== seen) return; fixed = true; stack.length = 0; then(); }, WAIT_MS);
+}
 const state = () => fixed ? stack[stack.length - 1] : history.state;
 // Each entry carries n, its depth: the menu unwinds history to the first entry (register 424).
 function write(entry, replace) {
@@ -4175,7 +4181,11 @@ function go(name, arg = null, { replace = false } = {}) {
   // The menu is where history starts, so Back from it leaves the game instead of going to a room.
   if (name === 'menu') {
     const n = state()?.n ?? 0;
-    if (n > 0 && !fixed) { toMenu = true; ours = true; history.go(-n); return; }
+    if (n > 0 && !fixed) {
+      toMenu = true; ours = true; history.go(-n);
+      unanswered(pops, () => { toMenu = false; ours = false; write({ path, prev: null }, true); show(name, arg, true); if (queued) { const q = queued; queued = null; go(...q); } });
+      return;
+    }
     if (n > 0) stack.length = 1;
     write({ path, prev: null }, true);
     return show(name, arg);
@@ -4189,7 +4199,7 @@ function go(name, arg = null, { replace = false } = {}) {
 function back(target = here && places[here.name].parent(here.arg)) {
   if (!target) return;
   if (state()?.prev !== pathOf(target)) go(target);
-  else if (!fixed) { ours = true; history.back(); }
+  else if (!fixed) { ours = true; history.back(); unanswered(pops, () => { ours = false; write({ path: pathOf(target), prev: null }, true); show(target, null, true); }); }
   else { stack.pop(); const { name, arg } = parse(state().path); show(name, arg); }
 }
 // Up to the place a level, puzzle or room was opened from: its own parent unless history says otherwise.
@@ -4205,6 +4215,7 @@ function start() {
 
 function bindNav() {
   addEventListener('popstate', () => {
+    pops++;
     if (toMenu) {
       toMenu = false; ours = false; write({ path: pathOf('menu'), prev: null }, true); show('menu', null, true);
       if (queued) { const q = queued; queued = null; go(...q); }
@@ -5671,7 +5682,9 @@ const { $ } = m25;
 // game's state the moment the player left a level, to copy from the menu and paste in chat.
 
 
-const LAST = 40, log = [];
+const LAST = 40, log = [], errors = [];
+// The last errors the page met, newest last: a freeze report needs them (register 508).
+function noteError(e) { errors.push({ t: Math.round(performance.now()), msg: String(e && (e.stack || e.message) || e).slice(0, 400) }); if (errors.length > 5) errors.shift(); }
 let left = null;
 const name = el => !el || !el.closest ? String(el) : el.id ? '#' + el.id : el.dataset && (el.dataset.plus || el.dataset.tool || el.dataset.req) ? `[${el.dataset.plus || el.dataset.tool || el.dataset.req}]` : el.className ? '.' + String(el.className).split(' ')[0] : el.tagName;
 
@@ -5696,6 +5709,8 @@ const state = () => ({
 function noteLeaving() { left = { at: Math.round(performance.now()), ...state() }; }
 
 function bindDebug() {
+  addEventListener('error', ev => noteError(ev.error || ev.message));
+  addEventListener('unhandledrejection', ev => noteError(ev.reason));
   for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'keydown']) addEventListener(type, ev => {
     log.push({ t: Math.round(performance.now()), type, on: type === 'keydown' ? ev.key : name(ev.target), mode: S.mode, ...(ev.clientX !== undefined ? { x: Math.round(ev.clientX), y: Math.round(ev.clientY) } : {}) });
     if (log.length > LAST) log.shift();
@@ -5704,11 +5719,11 @@ function bindDebug() {
 
 // Shown first, then offered to the clipboard: a clipboard that never answers must not hide it.
 function copyDebug() {
-  const text = JSON.stringify({ format: 'wee-debug', version: 1, now: state(), leftLevel: left, events: log });
+  const text = JSON.stringify({ format: 'wee-debug', version: 1, now: state(), leftLevel: left, events: log, errors });
   $('reportText').value = text; $('reportBox').showModal(); $('reportText').select();
   try { navigator.clipboard.writeText(text).catch(() => {}); } catch { /* no clipboard here */ }
 }
-return { noteLeaving, bindDebug, copyDebug };
+return { noteError, noteLeaving, bindDebug, copyDebug };
 })();
 // ---- src/app/menuScene.js
 const m45 = (() => {
@@ -9149,6 +9164,7 @@ const { $, g, now } = m25;
 const { openSheet } = m76;
 const { syncPanel, keysText } = m82;
 const { feedDemo } = m56;
+const { noteError } = m44;
 const { selectOverlay } = m79;
 const { moveRefusal } = m83;
 const { watchStuck, resetStuck } = m84;
@@ -9161,6 +9177,7 @@ const { respawn } = m4;
 const { syncEnabled } = m55;
 const { enterPlay, leavePlay, follow, clearView } = m68;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+
 
 
 
@@ -9259,7 +9276,13 @@ function editNeedsDraw(t) {
   if (S.fx.length || S.paste || S.moving || S.carry || lensBusy()) return true;
   return t - (S.drawnAt || 0) > AMBIENT_MS && S.level.cells.some(c => ANIMATED.test(c));
 }
+// The next frame is asked for first, so one error in a frame cannot stop the game for good (register 508);
+// the error is kept for the Debug copy.
 function frame(t) {
+  requestAnimationFrame(frame);
+  try { frameBody(t); } catch (e) { noteError(e); }
+}
+function frameBody(t) {
   const dt = Math.min(250, t - (S.last || t)); S.last = t;
   if (S.mode === 'play' && !window.__manualClock) {
     S.acc += dt;
@@ -9269,7 +9292,6 @@ function frame(t) {
   if (S.mode === 'play' || editNeedsDraw(t)) { render(); S.redraw = false; S.drawnAt = t; }
   syncWell();
   syncChips();
-  requestAnimationFrame(frame);
 }
 
 function render() {

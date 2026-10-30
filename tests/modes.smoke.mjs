@@ -48,7 +48,8 @@ try {
     await put({ ...l, id: 'pz1', name: 'Corner', puzzle: true });
     await put({ ...l, id: 'pz2', name: 'Not a puzzle' });
   });
-  await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); document.getElementById('menuBox').showModal(); });
+  // To the menu the way a player goes: closing pages behind the game's back raced its history (register 463).
+  await page.evaluate(() => document.getElementById('logo').click()); await page.waitForTimeout(700);
   await page.click('#menuPuzzles'); await page.waitForTimeout(300);
   const names = await page.$$eval('#puzzleList .campRow b', bs => bs.map(b => b.textContent).join());
   check('Puzzles lists the rooms marked as puzzles, and only those', names === 'Corner', names);
@@ -61,7 +62,8 @@ try {
   await page.click('#puzzleBack');
   check('the list keeps your best', /Solved in 2/.test(await page.locator('#puzzleList .campRow small').textContent()));
   // The Level maker: pick elements and goals, build it, it plays like a campaign level, and back.
-  await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); document.getElementById('menuBox').showModal(); });
+  // To the menu the way a player goes: closing pages behind the game's back raced its history (register 463).
+  await page.evaluate(() => document.getElementById('logo').click()); await page.waitForTimeout(700);
   // The Level maker is off the menu for now (register 394); it still opens at its own place.
   check('the menu has no Level maker', await page.locator('#menuMaker').isHidden());
   await page.evaluate(() => document.getElementById('menuMaker').click());

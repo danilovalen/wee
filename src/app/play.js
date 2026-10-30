@@ -9,6 +9,7 @@ import { $, g, now } from './dom.js';
 import { openSheet } from './sheets.js';
 import { syncPanel, keysText } from './panels.js';
 import { feedDemo } from './check.js';
+import { noteError } from './debug.js';
 import { selectOverlay } from './select.js';
 import { moveRefusal } from './campaignMove.js';
 import { watchStuck, resetStuck } from './stuck.js';
@@ -98,7 +99,13 @@ function editNeedsDraw(t) {
   if (S.fx.length || S.paste || S.moving || S.carry || lensBusy()) return true;
   return t - (S.drawnAt || 0) > AMBIENT_MS && S.level.cells.some(c => ANIMATED.test(c));
 }
+// The next frame is asked for first, so one error in a frame cannot stop the game for good (register 508);
+// the error is kept for the Debug copy.
 export function frame(t) {
+  requestAnimationFrame(frame);
+  try { frameBody(t); } catch (e) { noteError(e); }
+}
+function frameBody(t) {
   const dt = Math.min(250, t - (S.last || t)); S.last = t;
   if (S.mode === 'play' && !window.__manualClock) {
     S.acc += dt;
@@ -108,7 +115,6 @@ export function frame(t) {
   if (S.mode === 'play' || editNeedsDraw(t)) { render(); S.redraw = false; S.drawnAt = t; }
   syncWell();
   syncChips();
-  requestAnimationFrame(frame);
 }
 
 export function render() {
