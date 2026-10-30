@@ -492,3 +492,5 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 484 | "Level 8 can be beaten in 3x5" | **registered (2026-10-30), waiting for the batch.** The size goal is 20 cells today; a search on 2026-10-30 already found a 12-cell win (`... .DP .BG .Bo`). Re-measure the size goal at build. |
 | 485 | Level 8 new side goal: "ALL boxes through door" | **registered (2026-10-30), waiting for the batch.** |
 | 486 | "Yeah, for each, area objective should be smallest found" | **registered (2026-10-30), waiting for the batch.** Every level's size goal becomes the smallest winning room found; re-measured after the batch's goal changes, since those move it. |
+| 487 | Level 9 new side goal: "three or more one-ways" | **registered (2026-10-30), waiting for the batch.** |
+| 488 | Check, don't build: can a generic "no softlocks" side goal be met on every level; with how many moves; does it combine with another side goal. Same for "x+ ways to softlock", x = 1 to 3 | **in progress (2026-10-30).** Question. |
