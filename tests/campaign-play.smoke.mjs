@@ -32,8 +32,9 @@ try {
   const look = sel => page.$eval(sel, b => { const c = getComputedStyle(b); return [c.backgroundColor, c.color, c.boxShadow, c.font, c.height].join(' | '); });
   check('Sandbox looks exactly like Campaign (register 218)', await look('#menuCampaign') === await look('#menuSandbox'), await look('#menuSandbox'));
   // Register 400: a box with one button gives it the whole row.
-  const spans = await page.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(); return Math.abs(r('menuCampaign').width - (r('menuSandbox').right - r('menuPuzzles').left)) < 1; });
-  check('Campaign, alone in its box, is as wide as Puzzles and Sandbox together', spans);
+  const spans = await page.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(); return Math.abs(r('menuCampaign').width - (r('menuSandbox').right - r('menuTutorial').left)) < 1 && r('menuTutorial').top === r('menuSandbox').top; });
+  check('Campaign has the top row, as wide as How to play, Puzzles and Sandbox together below it (register 521)', spans);
+  check('How to play fits its button', await page.$eval('#menuTutorial', b => b.scrollWidth <= b.clientWidth));
   check('the menu is one box with no heading line (registers 418, 433, 468)', await page.evaluate(() => document.querySelectorAll('.menuSec').length === 1 && !document.querySelector('.menuSec p') && !document.querySelector('.menuSec').textContent.includes('Play as the robot') && !document.querySelector('.menuList').textContent.includes('little circle')));
   // Register 401: the page paints nothing but its ground until the first place is up.
   check('once loaded the page is no longer booting', await page.evaluate(() => !document.documentElement.classList.contains('booting')));
@@ -50,7 +51,7 @@ try {
   check('the room behind the menu has its laser, door and switch', await page.$$eval('.msBeam, .msDoor, .msSwitch', es => es.filter(e => e.getBoundingClientRect().width > 0).length) === 3);
   await page.click('#menuCampaign');
   const rows = await page.$$eval('.campRow', rs => rs.map(r => r.dataset.level));
-  check('the level list shows every level, the tutorial first', rows.length >= 5 && rows[0] === 'tutorial' && rows[1] === '1', rows.join());
+  check('the level list starts at Level 1: the tutorial is on the menu, not a card (register 521)', rows.length >= 5 && rows[0] === '1' && !rows.includes('tutorial'), rows.join());
   const parts = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part).join()])));
   check('each level in the list shows the elements it uses', parts['1'] === 'block' && parts['5'] === 'block,box' && parts['6'] === 'block,box,toggle,door', JSON.stringify(parts));
   // Register 402: a version per colour and per pushable kind, each one-line row of 16 px icons.

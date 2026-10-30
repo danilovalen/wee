@@ -125,7 +125,7 @@ function stars(def, rec) {
 
 function renderList() {
   const p = progress(), list = $('campList');
-  list.replaceChildren(...LEVELS.filter(def => !def.hidden).map(def => {
+  list.replaceChildren(...LEVELS.filter(def => !def.hidden && !def.tutorial).map(def => {
     const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button');
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b');
@@ -157,6 +157,7 @@ export function buildCampaign(actions) {
   place('level', { parent: id => (levelOf(id) || {}).made ? 'maker' : 'levels', enter: id => (S.camp && S.camp.def.id === id) || enterLevel(id), exit: () => { noteLeaving(); leaveLevel(); } });
   // A first-time player lands in the tutorial (register 512).
   $('menuCampaign').onclick = () => firstTime(progress()) && !window.__noTutorial ? go('level', 'tutorial') : go('levels');
+  $('menuTutorial').onclick = () => go('level', 'tutorial');
   $('menuSandbox').onclick = () => go('rooms', 'start');
   $('campMenu').onclick = () => back('menu');
   // The Sandbox's way back (register 357): its Rooms page has a Menu button, as the other modes' pages do.

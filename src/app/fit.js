@@ -44,7 +44,7 @@ export function fit() {
   place(wide);
   const area = $('roomArea');
   // A level and the simple Sandbox let the room come closer to the screen's sides (register 322).
-  const side = (S.camp || S.simple ? 4 : EDGE) + SIDE;
+  const side = (S.camp || S.simple ? 28 : EDGE) + SIDE;  // the side grips stay 30px off the screen's edges
   const stage = (wide ? area.clientWidth - 2 * side : $('stage').clientWidth - 2 * side) || level.w * T;
   // A phone in play gives the room everything between the header and the play buttons; in a level
   // the room keeps its edit size instead, so nothing moves when the mode changes (register 222).

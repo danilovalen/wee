@@ -28,7 +28,7 @@ export function noteWin(def, before, rec, v, words) {
 
 function next(def) {
   if (def.made) return { label: 'Maker', go: up };
-  const list = LEVELS.filter(l => !l.hidden), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
+  const list = LEVELS.filter(l => !l.hidden && !l.tutorial), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
   return n ? { label: 'Next level', go: () => go('level', n.id) } : { label: 'Levels', go: up };
 }
 

@@ -1,4 +1,4 @@
-// The tutorial (registers 507, 512, 514, 515): "How to play", one room, a coach bubble that walks the
+// The tutorial (registers 507, 512, 514, 515, 519, 521): "How to play", one room, a coach bubble that walks the
 // player through moving the robot, building, Test, Run and the stars on the level list. Strict: each
 // step waits for one thing, and only the ringed thing answers a tap. Copy is a draft.
 import { S } from '../editor/state.js';
@@ -27,9 +27,9 @@ const STEPS = [
     lost: { say: 'The robot can’t reach the star from there, so it goes back to its start.' } },
   { say: 'Playing it yourself doesn’t beat the level, so tap Edit to go back.', ring: '#mode', done: () => S.mode === 'edit' },
   { say: 'By tapping Run, the robot will find the shortest path to the star and walk through it.', ring: '#campRun', enter: () => { ran = false; }, done: () => ran && S.mode === 'edit' },
-  { say: 'You beat the level: tap Levels to see your star.', ring: '#campBack', done: () => current() && current().name === 'levels' },
-  { say: 'This star means you beat the level, and its number counts the tiles you placed: fewer is better.', next: 'Next', ring: '.campRow[data-level="tutorial"] .campStar.main', list: true },
-  { say: 'The other levels also have side goals, and each one you meet fills a small star.', wait: 'Tap Level 1 to start.', ring: '.campRow[data-level="1"]', list: true },
+  { say: 'You beat it, so tap Levels to see the real levels.', ring: '#campBack', done: () => current() && current().name === 'levels' },
+  { say: 'When you beat a level, its big star shows how many tiles you placed: fewer is better.', next: 'Next', ring: '.campRow[data-level="1"] .campStar.main', list: true },
+  { say: 'Each side goal you meet fills one of its small stars.', wait: 'Tap Level 1 to start.', ring: '.campRow[data-level="1"]', list: true },
 ];
 
 let step = -1, ring = null, sel = null, shown = null;
@@ -48,7 +48,7 @@ function draw() {
   const host = s.list ? $('campBox') : document.body;
   if (box.parentNode !== host) host.append(box);
   if (s.list) Object.assign(box.style, { top: '', bottom: '12px' });
-  else Object.assign(box.style, { top: Math.round($('campBrief').getBoundingClientRect().bottom + 8) + 'px', bottom: 'auto' });
+  else Object.assign(box.style, { top: Math.round($('stage').getBoundingClientRect().top + 4) + 'px', bottom: 'auto' });
   if (ring) ring.classList.remove('tutRing');
   sel = s.ring || null; ring = sel ? document.querySelector(sel) : null;
   if (ring) ring.classList.add('tutRing');
