@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Level List Sketch</title>
+<style>
+:root{--paper:#eceef2;--panel:#f8f9fb;--ink:#2a2730;--soft:#6f6876;--accent:#7b6cff;--sticker:#c8ccd5;--gold:#ffc23d;--gold-ink:#5a3f00;--empty:#d5d8df}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:430px;margin:0 auto;padding:16px}.card{min-width:0}
+.note{font-size:13px;color:var(--soft);margin:0 0 14px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+header h1{font:400 26px system-ui,sans-serif;margin:0}
+header button{height:44px;padding:0 18px;border:0;border-radius:16px;background:var(--panel);font:700 17px system-ui,sans-serif;box-shadow:4px 4px 0 0 var(--sticker)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{height:118px;background:var(--panel);border-radius:16px;box-shadow:4px 4px 0 0 var(--sticker);padding:10px 12px;display:grid;grid-template-rows:auto auto 1fr;gap:6px}
+.card.on{box-shadow:inset 0 0 0 2px var(--accent),4px 4px 0 0 var(--sticker)}
+.top{display:flex;justify-content:space-between;align-items:center}
+.top b{font-size:17px}
+.dots i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:3px}
+.icons{display:flex;gap:4px}
+.icons i{width:18px;height:18px;border-radius:3px}
+.stars{display:flex;align-items:center;gap:1px;align-self:end;min-width:0}
+.sep{width:2px;height:22px;background:var(--empty);border-radius:1px;margin:0 4px}
+.star{position:relative;width:20px;height:20px;flex:none}
+.star.main{width:28px;height:28px}
+.star svg{width:100%;height:100%;display:block}
+.star span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-top:3px;font:800 9px system-ui,sans-serif;color:var(--gold-ink)}
+.star.main span{font-size:11px}
+</style>
+</head>
+<body>
+<main>
+<p class="note">Sketch for register 475. Every card is the same size. Left of the line: the main goal. Right: one star per side goal. A filled star carries its number; an empty star is a goal not met yet.</p>
+<header><h1>Campaign</h1><button type="button">Menu</button></header>
+<div class="grid" id="grid"></div>
+</main>
+<script>
+var STAR = 'M12 1.8l3 6.4 7 .8-5.2 4.8 1.4 6.9L12 17.2 5.8 20.7l1.4-6.9L2 9l7-.8z';
+function star(n, main) {
+  var on = n != null;
+  return '<div class="star' + (main ? ' main' : '') + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + STAR + '" fill="' + (on ? 'var(--gold)' : 'none') + '" stroke="' + (on ? 'var(--gold)' : 'var(--empty)') + '" stroke-width="2" stroke-linejoin="round"/></svg>' + (on ? '<span>' + n + '</span>' : '') + '</div>';
+}
+var C = { block: '#a9adb8', box: '#ff9a3d', toggle: '#f58ca0', door: '#f0607a', button: '#ff7d93', oneway: '#2f343c', laser: '#6a6f7a' };
+var LEVELS = [
+  ['Level 1', ['block'], 1, [6, 1, 6, null, null]],
+  ['Level 2', ['block', 'toggle', 'door'], 5, [5, null, 5, null, null], true],
+  ['Level 3', ['block', 'toggle', 'door'], 3, [null, 4, null, null]],
+  ['Level 4', ['block', 'toggle', 'door'], null, [null, null, null, null]],
+  ['Level 5', ['block', 'box'], null, [null, null, null]],
+  ['Level 6', ['block', 'box', 'toggle', 'door'], null, [null, null, null, null]],
+  ['Level 11', ['block', 'box', 'button', 'door'], null, [null, null, null, null], false, true],
+  ['Level 16', ['block', 'box', 'button', 'door', 'laser'], 5, [null, 5, 7, null], false, true]
+];
+document.getElementById('grid').innerHTML = LEVELS.map(function (l) {
+  return '<div class="card' + (l[4] ? ' on' : '') + '"><div class="top"><b>' + l[0] + '</b>' +
+    (l[5] ? '<span class="dots"><i style="background:#ff5c74"></i><i style="background:#4ea4ff"></i></span>' : '') + '</div>' +
+    '<div class="icons">' + l[1].map(function (k) { return '<i style="background:' + C[k] + '"></i>'; }).join('') + '</div>' +
+    '<div class="stars">' + star(l[2], true) + '<div class="sep"></div>' + l[3].map(function (n) { return star(n); }).join('') + '</div></div>';
+}).join('');
+</script>
+</body>
+</html>
