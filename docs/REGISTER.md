@@ -486,3 +486,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 478 | Level 5: "Box with box should be optional" (boxHitsBox moves from required to side goal) | **registered (2026-10-30), waiting for the batch.** |
 | 479 | Level 5: "19 might be too much" (the exactly-19-moves side goal) | **registered (2026-10-30), waiting for the batch.** Re-measure the exact count once 478 changes the required goals. |
 | 480 | Level 5: new side goal "every box collides with a wall 2+ times" | **registered (2026-10-30), waiting for the batch.** |
+| 481 | "Level 6 new optional is two buttons" | **registered (2026-10-30), waiting for the batch.** Level 6 offers switches, not buttons: read as two switches, to confirm at build. |
