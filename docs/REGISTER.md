@@ -498,3 +498,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 490 | "Level 11 new optional is colliding with doors of two colors" | **registered (2026-10-30), waiting for the batch.** Read as the robot hitting a closed door of each colour. |
 | 491 | Level 12 new side goal: "box collides with one way in three directions" | **registered (2026-10-30), waiting for the batch.** |
 | 492 | Level 13 side goals: "all buttons off, and three or more buttons" | **registered (2026-10-30), waiting for the batch.** Level 13 offers switches: read as every switch off at the end and three or more switches, as for level 6 (481). |
+| 493 | "Laser block could be simpler, it has a blue useless rectangle and a useless black circle with triangle" | **registered (2026-10-30), waiting for the batch.** Simplify the laser piece drawing: drop the blue rectangle and the black circle with the triangle. |
