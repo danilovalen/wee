@@ -489,3 +489,5 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 481 | "Level 6 new optional is two buttons" | **registered (2026-10-30), waiting for the batch.** Two or more (his ruling: a count means "or more" unless he says exactly). Level 6 offers switches, not buttons: read as switches, to confirm at build. |
 | 482 | Level 7: "Same for level 7" (new side goal: two or more buttons) | **registered (2026-10-30), waiting for the batch.** |
 | 483 | "Two or more, when I say exactly, I'll say so" | **Standing rule (2026-10-30).** A count in a goal means that many or more unless he says exactly. Added to CLAUDE.md. |
+| 484 | "Level 8 can be beaten in 3x5" | **registered (2026-10-30), waiting for the batch.** The size goal is 20 cells today; a search on 2026-10-30 already found a 12-cell win (`... .DP .BG .Bo`). Re-measure the size goal at build. |
+| 485 | Level 8 new side goal: "ALL boxes through door" | **registered (2026-10-30), waiting for the batch.** |
