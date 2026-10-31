@@ -8,6 +8,7 @@ import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { $, portrait } from './dom.js';
 import { levelParts } from './levelParts.js';
+import { shownName } from '../campaign/names.js';
 import { noteWin, bindWin } from './winCard.js';
 import { noteLeaving, copyDebug } from './debug.js';
 import { buildMenuScene } from './menuScene.js';
@@ -129,7 +130,7 @@ function renderList() {
     const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button');
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b');
-    name.textContent = def.name.replace(/^Level /, ''); name.setAttribute('aria-label', def.name);
+    name.textContent = shownName(def).replace(/^Level /, ''); name.setAttribute('aria-label', shownName(def));
     // The number and its pieces share one line (register 527).
     const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name, levelParts(def, TOOL));
     b.append(top, stars(def, rec));

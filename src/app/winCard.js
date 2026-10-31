@@ -3,6 +3,7 @@
 // robot has finished its run. A first win that meets every side goal shows only the second.
 import { LEVELS } from '../level/campaign.js';
 import { optionalGoals, listed } from '../campaign/rules.js';
+import { shownName } from '../campaign/names.js';
 import { $ } from './dom.js';
 import { go, up } from './nav.js';
 
@@ -48,8 +49,8 @@ function show(p) {
   if (window.__noWinCard) return;
   const box = $('winBox'), n = next(p.def);
   box.classList.toggle('gold', p.gold);
-  $('winTitle').textContent = p.gold ? 'Every side goal met' : `${p.def.name} beaten`;
-  $('winSay').textContent = p.gold ? `${p.def.name} is done, all ${p.goals.length} stars.` : `The robot made it in ${p.moves} ${p.moves === 1 ? 'move' : 'moves'}.`;
+  $('winTitle').textContent = p.gold ? 'Every side goal met' : `${shownName(p.def)} beaten`;
+  $('winSay').textContent = p.gold ? `${shownName(p.def)} is done, all ${p.goals.length} stars.` : `The robot made it in ${p.moves} ${p.moves === 1 ? 'move' : 'moves'}.`;
   $('winStars').replaceChildren(...p.goals.map(o => {
     const s = document.createElement('span');
     s.className = 'winStar' + (p.met[o.id] ? ' on' : '') + (p.fresh.includes(o.id) ? ' new' : ''); s.textContent = '★';

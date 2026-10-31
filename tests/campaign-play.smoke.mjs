@@ -63,7 +63,12 @@ try {
   check('levels with two colours are put away: no 11 or 16 in the list (register 525)', !('11' in versions) && !('16' in versions) && '12' in versions, Object.keys(versions).join());
   check('level 20 shows its relay pushable only', versions['20'].includes('relay+'), versions['20']);
   const head = await page.$eval('.campRow[data-level="12"]', r => { const n = r.querySelector('.campRowHead b'), ps = r.querySelector('.campParts'), nb = n.getBoundingClientRect(), pb = ps.getBoundingClientRect(), b = r.getBoundingClientRect(); return { text: n.textContent, line: Math.abs(nb.top + nb.height / 2 - (pb.top + pb.height / 2)) < 4, right: b.right - pb.right < 24 }; });
-  check('a row reads "12", its pieces on the same line at the right (register 527)', head.text === '12' && head.line && head.right, JSON.stringify(head));
+  check('the old level 12 reads "11", its pieces on the same line at the right (register 527)', head.text === '11' && head.line && head.right, JSON.stringify(head));
+  const nums = await page.$$eval('.campRow b', bs => bs.map(b => +b.textContent));
+  check('the list numbers run 1, 2, 3 with no gap (register 528)', nums.every((n, i) => n === i + 1), nums.join());
+  await page.click('.campRow[data-level="12"]'); await page.waitForTimeout(400);
+  check('its goal card says the same number', (await page.locator('.campGoal b').first().textContent()) === 'Level 11');
+  await page.click('#campBack'); await page.waitForTimeout(300);
   const lines = await page.$$eval('.campParts', ps => ps.filter(p => { const ys = new Set([...p.querySelectorAll('canvas')].map(c => Math.round(c.getBoundingClientRect().top))); return ys.size > 1; }).length);
   check('every level\'s icons fit on one line', lines === 0, String(lines));
   const listing = await page.evaluate(() => { const rows = [...document.querySelectorAll('.campRow')]; return { cols: new Set(rows.map(r => Math.round(r.getBoundingClientRect().left / 10))).size, said: rows.filter(r => /shortest path/i.test(r.textContent)).length }; });

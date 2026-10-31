@@ -2,6 +2,7 @@
 // after a run; a missed row draws a shortest path that misses it; the verdict floats over the room.
 import { placed, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, pushingsOf } from '../campaign/rules.js';
 import { REQUIREMENTS, trailOf } from '../campaign/requirements.js';
+import { shownName } from '../campaign/names.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
 import { icon } from './icons.js';
@@ -52,7 +53,7 @@ export function syncBrief() {
   const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);
   // A win names its tiles too, counted as the stats count them: the start and the goal are not (register 258).
   last.textContent = !v ? '' : !v.ok ? 'not ready' : v.won ? `won in ${v.length}, ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` : v.length != null ? `last run: ${v.length} moves` : 'no way through';
-  head.append(Object.assign(document.createElement('b'), { textContent: def.name }), last);
+  head.append(Object.assign(document.createElement('b'), { textContent: shownName(def) }), last);
   // What a level requires, two to a line; what it only rewards, apart beneath.
   const must = document.createElement('ul'); must.className = 'campReqs campMust';
   const opt = document.createElement('ul'); opt.className = 'campReqs campOpt';
