@@ -1,4 +1,5 @@
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+import { iconOn } from './glyphs.js';
 import { frame as look } from '../view/ink.js';
 import { TICK_MS } from '../rules/base.js';
 import { createGame, step, gameText } from '../rules/game.js';
@@ -68,7 +69,7 @@ export function setMode(m, keep) {
   if (m === 'play' && S.mode !== 'play') enterPlay(); else if (m !== 'play' && S.mode === 'play') leavePlay();
   S.mode = m;
   document.body.classList.toggle('play', m === 'play');
-  $('mode').textContent = m === 'play' ? 'Edit' : 'Play';
+  iconOn($('mode'), m === 'play' ? 'edit' : 'test', m === 'play' ? 'Edit' : 'Play');
   $('keys').textContent = keysText();
   $('pad').hidden = m !== 'play';
   $('win').hidden = true;

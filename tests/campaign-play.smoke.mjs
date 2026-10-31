@@ -82,7 +82,7 @@ try {
   check('no palette button wears a count', await page.locator('.countDot').count() === 0);
   check('a level opens on a 7x7 room, start and goal one step in from their corners', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.start.x === 1 && l.start.y === 1 && l.cells[40] === 'goal' && l.cells.filter(c => c).length === 1; }));
   check('the card keeps no score', await page.locator('.campScore').count() === 0);
-  check('level 1 has five optional goals: the exact count, a room size, its two own goals and mix', (await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join())) === 'best=★exactly 6,small=★3×2 or smaller,touchBlockFourTimes=★touch one  ×4,robotTwoDirections=★ moves only 2 ways,mix=★any 2 optional goals at once', await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join()));
+  check('level 1 has five optional goals: the exact count, a room size, its two own goals and mix', (await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join())) === 'best=exactly 6,small=3×2 or smaller,touchBlockFourTimes=touch one  ×4,robotTwoDirections=moves only 2 ways,mix=any 2 optional goals at once', await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join()));
   check('every row is unmarked before a run', /^steps:-,best:-,small:-,touchBlockFourTimes:-,robotTwoDirections:-,mix:-$/.test(await marks()), await marks());
   // Move: press on the start, release two tiles down; then the goal, one tile left.
   await page.click('[data-tool="move"]');
@@ -123,10 +123,10 @@ try {
   check('the verdict shows in its band and moves nothing', await page.locator('#campVerdict').isVisible() && (await box()) === before, before + ' / ' + await box());
   check('a run too short marks the moves row', (await marks()).startsWith('steps:unmet'), await marks());
   check('an empty 5x5 is too short and says so', /must take at least 4/.test(lost), lost);
-  check('the robot plays the failing path', await page.evaluate(() => document.getElementById('mode').textContent === 'Edit'), await page.locator('#mode').textContent());
+  check('the robot plays the failing path', await page.evaluate(() => document.getElementById('mode').dataset.label === 'Edit'), await page.locator('#mode').textContent());
   // F1: a tap on the failed row draws a shortest path that missed it on the room.
   // Back in edit first, so the room is compared with itself and not with the robot playing.
-  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
   await page.waitForTimeout(100);
   // The pixel under the first move's number (the middle of the first move), before and after.
   const badge = at => page.evaluate(([mx, my]) => { const c = document.getElementById('game'), l = window.wee.getLevel(), t = c.width / l.w, d = c.getContext('2d').getImageData(Math.floor((mx + 0.5) * t), Math.floor((my + 0.5) * t), 1, 1).data; return [d[0], d[1], d[2]].join(); }, at);
@@ -142,7 +142,7 @@ try {
   await page.waitForTimeout(100);
   const plain = await badge(mid);
   check('the path is painted on the room: a numbered move where the floor was', drawn !== plain, plain + ' -> ' + drawn);
-  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
   await load(WIN);
   await page.click('#campRun');
   await page.waitForTimeout(200);
@@ -151,19 +151,19 @@ try {
   check('a 5x5 win misses the 3x2 size goal', /small:unmet,touchBlockFourTimes:unmet,robotTwoDirections:(un)?met,mix:unmet$/.test(await marks()), await marks());
   check('the verdict has no close button: nothing to dismiss', await page.locator('#campVerdict button').count() === 0);
   // The next touch elsewhere puts it away; a touch on it keeps it.
-  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
   await page.click('#campRun'); await page.waitForTimeout(200);
   await page.click('#campVerdictText');
   check('a touch on the verdict keeps it', await page.locator('#campVerdict').isVisible());
   await page.mouse.click(5, 5);
   check('the next touch anywhere else puts the verdict away', await page.locator('#campVerdict').isHidden());
   // And it stays away while the card redraws: a tool, the robot playing and back to edit.
-  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
   await page.click('[data-tool="wall"]'); await page.click('[data-tool="look"]');
   check('a dismissed verdict stays away while the card redraws', await page.locator('#campVerdict').isHidden());
   await page.click('#campRun'); await page.waitForTimeout(200);
   check('the next Run shows its verdict again', await page.locator('#campVerdict').isVisible());
-  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
   await page.mouse.click(5, 5);
   await page.click('#campBack');
   const row = await stars(1);
@@ -192,20 +192,20 @@ try {
   await load(['P#', 'G.', '..']);
   await page.click('#campRun'); await page.waitForTimeout(200);
   check('a 2x3 win meets the size goal (registers 327, 469)', (await marks()).endsWith('small:met,touchBlockFourTimes:unmet,robotTwoDirections:unmet,mix:unmet'), await marks());
-  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
   await page.click('#campBack');
   const row2 = await stars(1);
   await page.click('.campRow[data-level="1"]');
   await load(WIN);
   await page.click('#campRun'); await page.waitForTimeout(200);
-  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
   await page.click('#campBack');
   const row3 = await stars(1);
   check('the list keeps the fewest tiles, overall and per side goal met (registers 328, 475)', /^1 \| - 1 /.test(row3), row3);
   await page.click('.campRow[data-level="1"]');
   await page.evaluate(() => { const rows = ['..##P#.', '.#.G...', '....#..', '#.....#', '...#...', '.#...#.', '.......'], l = window.wee.blank(7, 7); l.start = null; for (const p of Object.keys(l.powers)) l.powers[p] = false; rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '#') l.cells[y * 7 + x] = 'wall'; if (c === 'G') l.cells[y * 7 + x] = 'goal'; if (c === 'P') l.start = { x, y }; })); window.wee.loadLevel(l); });
   await page.click('#campRun'); await page.waitForTimeout(200);
-  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
   await page.click('#campBack');
   const row4 = await stars(1);
   check('more tiles do not raise the score', /^1 \| /.test(row4), row4);
@@ -269,7 +269,7 @@ try {
   check('level 9 lists its 2-one-way minimum as a goal, drawn as the one-way', min9 === '2 or more|gate', min9);
   await page.click('#campRun'); await page.waitForTimeout(150);
   check('the minimum row is marked after a run on an empty room', await page.locator('.campReqs li[data-req="min-gate"].unmet').count() === 1);
-  if (await page.locator('#mode').textContent() === 'Edit') await page.click('#mode');
+  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
   // A maximum shows as a goal while playing (register 299): level 16 allows exactly one box.
   await page.click('#campBack'); await page.evaluate(() => { location.hash = '#/level/16'; }); await page.waitForTimeout(500);  // off the list (register 525), still playable
   const max16 = await page.locator('.campReqs li[data-req="max-box"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');

@@ -6,7 +6,7 @@ Each slice ships on its own, with tests, a build, and a phone check before the n
 
 | # | Slice | What changes | Words on a level screen after | Size |
 |---|---|---|---|---|
-| 1 | Icons | Drawn line icons replace the 28 words and symbols in `docs/icon-sketch.html`; 10 stay words. | 39 to about 33 | small |
+| 1 | Icons (done 2026-10-31) | Drawn line icons replace the 28 words and symbols in `docs/icon-sketch.html`; 10 stay words. | 39 to about 33 | small |
 | 2 | Calmer header, one bottom row | Top bar: logo, Levels, level number, Run, Test. Undo, redo, Reset move down; tools and pieces share one row; the "LOOK" label goes. | about 30 | small |
 | 3 | Side-goal stars | The optional goals list becomes a row of star slots, each with its picture; they light during a Run as each goal is met. | about 18 | medium |
 | 4 | Required goals on the grid | Move dots under the grid that fill as the robot moves; a lock on each door that must end closed; a mark for "through an open door". The goals card is gone; the grid grows (200 to about 290px at 12x12). | about 3 | large: one drawing per kind of goal (about 30 kinds across 22 levels) |
@@ -16,4 +16,4 @@ Each slice ships on its own, with tests, a build, and a phone check before the n
 Still open, his to answer:
 1. Where a goal's full sentence lives once the card is gone: on the level list card, or a long-press label on its icon.
 2. The resize arrows: keep all eight, or show them only while a resize tool is picked (may break rule 524).
-3. Whether Reset becomes an icon (the sketch draws one) or stays a word.
+3. ~~Reset~~: an icon, since it is undoable (538). Test is an arrow pad (543).

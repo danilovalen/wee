@@ -19,15 +19,15 @@ let ran = false;
 const STEPS = [
   { say: 'Swipe across the room, or press an arrow key, to slide the robot.', wait: 'Try any direction.', swipe: true, enter: () => setMode('play'), done: () => S.game && S.game.move > 0 && settled() },
   { say: 'The robot only stops at a block or a wall, so it can’t stop on the star yet.', next: 'Next', tile: goalAt },
-  { say: 'Tap Edit to go back to building the room.', ring: '#mode', done: () => S.mode === 'edit' },
+  { say: 'Tap the pencil to go back to building the room.', ring: '#mode', done: () => S.mode === 'edit' },
   { say: 'You don’t move the robot to win: you build its room with blocks.', next: 'Next', ring: '#palette [data-tool="wall"]', enter: () => { S.ui.tool = 'wall'; syncPanel(); } },
   { say: 'Place a block here, so the robot stops right above the star.', tile: () => BLOCK, done: () => S.level.cells[BLOCK.y * S.level.w + BLOCK.x] === 'wall' },
-  { say: 'Tap Test to try your room yourself.', ring: '#campTest', done: () => S.mode === 'play' },
+  { say: 'Tap the arrows to try your room yourself.', ring: '#campTest', done: () => S.mode === 'play' },
   { say: 'Swipe right, then down, to bring the robot to the star.', wait: 'Arrow keys work too.', swipe: true, tile: goalAt, done: () => S.game && S.game.won && settled(),
     lost: { say: 'The robot can’t reach the star from there, so it goes back to its start.' } },
-  { say: 'Playing it yourself doesn’t beat the level, so tap Edit to go back.', ring: '#mode', done: () => S.mode === 'edit' },
-  { say: 'By tapping Run, the robot will find the shortest path to the star and walk through it.', ring: '#campRun', enter: () => { ran = false; }, done: () => ran && S.mode === 'edit' },
-  { say: 'You beat it, so tap Levels to see the real levels.', ring: '#campBack', done: () => current() && current().name === 'levels' },
+  { say: 'Playing it yourself doesn’t beat the level, so tap the pencil to go back.', ring: '#mode', done: () => S.mode === 'edit' },
+  { say: 'By tapping play, the robot will find the shortest path to the star and walk through it.', ring: '#campRun', enter: () => { ran = false; }, done: () => ran && S.mode === 'edit' },
+  { say: 'You beat it, so tap the four squares to see the real levels.', ring: '#campBack', done: () => current() && current().name === 'levels' },
   { say: 'When you beat a level, its big star shows how many tiles you placed: fewer is better.', next: 'Next', ring: '.campRow[data-level="1"] .campStar.main', list: true },
   { say: 'Each side goal you meet fills one of its small stars.', wait: 'Tap Level 1 to start.', ring: '.campRow[data-level="1"]', list: true },
 ];
@@ -43,7 +43,7 @@ function draw() {
   if (shown === s) return;
   shown = s;
   $('tutSay').textContent = s.say;
-  $('tutNext').hidden = !s.next; $('tutNext').textContent = s.next || '';
+  $('tutNext').hidden = !s.next;
   $('tutWait').textContent = s.wait || (s.next ? '' : 'Tap the ringed spot.');
   const host = s.list ? $('campBox') : document.body;
   if (box.parentNode !== host) host.append(box);

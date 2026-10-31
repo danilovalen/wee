@@ -593,8 +593,8 @@ body.campaign #campVerdict { display: flex; }
 body.campaign #campVerdict { position: absolute; top: 0; left: 50%; translate: -50% 0; z-index: 6; margin: 0; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
 body.campaign #campVerdict[hidden] { visibility: hidden; }
 .campVerdict > span { flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.campVerdict.won > span::before { content: '✓ '; color: #7ee2a8; }
-.campVerdict.lost > span::before { content: '✕ '; color: #ff8a80; }
+.campVerdict.won { background: linear-gradient(90deg, #7ee2a8 0 5px, #24262e 5px); }
+.campVerdict.lost { background: linear-gradient(90deg, #ff8a80 0 5px, #24262e 5px); }
 .campVerdict.points > span { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
 .campTip[hidden] { display: none !important; }
 body:not(.campaign) #campVerdict { display: none !important; }
@@ -762,3 +762,9 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 @keyframes burst { to { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .winCard[open], .winStar.new { animation: none; } }
 
+
+/* The game's line icons (register 535). */
+.glyph { width: 22px; height: 22px; display: block; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+:where(button[data-icon]:not([hidden])) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding-left: 8px; padding-right: 8px; }
+.campReqs .mark .glyph { width: 13px; height: 13px; stroke-width: 3; }
+.tutBtns button[data-icon] { min-width: 40px; }

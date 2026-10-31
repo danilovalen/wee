@@ -8,6 +8,7 @@ import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { $, portrait } from './dom.js';
 import { levelParts } from './levelParts.js';
+import { iconOn, glyph } from './glyphs.js';
 import { shownName } from '../campaign/names.js';
 import { noteWin, bindWin } from './winCard.js';
 import { noteLeaving, copyDebug } from './debug.js';
@@ -48,7 +49,7 @@ export function enterLevel(id) {
   const def = levelOf(id);
   if (!def) return false;
   const p = progress(), rec = p.levels[id];
-  S.camp = { def, verdict: null }; S.trail = null; $('campBack').textContent = def.made ? 'Maker' : 'Levels';
+  S.camp = { def, verdict: null }; S.trail = null; iconOn($('campBack'), 'levels', def.made ? 'Maker' : 'Levels');
   const kept = rec && rec.room && unframe(rec.room);
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
   // The tutorial always starts from its own room (register 512).

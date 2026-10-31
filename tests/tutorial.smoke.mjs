@@ -49,9 +49,9 @@ try {
   await p.keyboard.press('ArrowRight'); await p.waitForTimeout(900); await p.keyboard.press('ArrowDown'); await p.waitForTimeout(1300);
   check('reaching the star by hand moves on: Test does not beat the level', /doesn.t beat the level/.test(await say(p)) && (await ringed(p)) === 'mode');
   await p.click('#mode'); await p.waitForTimeout(400);
-  check('Run is ringed, with how Run plays', /By tapping Run, the robot will find the shortest path/.test(await say(p)) && (await ringed(p)) === 'campRun');
+  check('Run is ringed, with how Run plays', /By tapping play, the robot will find the shortest path/.test(await say(p)) && (await ringed(p)) === 'campRun');
   await p.click('#campRun'); await p.waitForTimeout(4500);
-  check('after the win, with no win card and no verdict bar, Levels is ringed', /tap Levels to see the real levels/.test(await say(p)) && (await ringed(p)) === 'campBack' && !(await p.evaluate(() => document.getElementById('winBox').open)) && await p.locator('#campVerdict').isHidden());
+  check('after the win, with no win card and no verdict bar, Levels is ringed', /tap the four squares to see the real levels/.test(await say(p)) && (await ringed(p)) === 'campBack' && !(await p.evaluate(() => document.getElementById('winBox').open)) && await p.locator('#campVerdict').isHidden());
   const seen = await p.evaluate(() => ({ room: [...window.__seen.room], box: [...window.__seen.box] }));
   check('the room never moved or resized during the tutorial (register 517)', seen.room.length === 1, seen.room.join(' / '));
   check('the bubble never moved or changed height on the room screen (register 517)', seen.box.length === 1, seen.box.join(' / '));

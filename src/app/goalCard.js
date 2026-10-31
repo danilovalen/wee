@@ -3,6 +3,7 @@
 import { placed, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, pushingsOf } from '../campaign/rules.js';
 import { REQUIREMENTS, trailOf } from '../campaign/requirements.js';
 import { shownName } from '../campaign/names.js';
+import { glyph } from './glyphs.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
 import { icon } from './icons.js';
@@ -66,7 +67,7 @@ export function syncBrief() {
     const missed = v && v.missed && v.missed[r.id];
     if (missed) { li.classList.add('points'); li.title = `${r.text} Tap to see a shortest path that misses it.`; li.onclick = () => showTrail(r, missed); }
     if (S.camp.trailOf === r.id) li.classList.add('shown');
-    const mark = document.createElement('span'); mark.className = 'mark'; mark.textContent = r.met === true ? '✓' : r.met === false ? '✕' : r.optional ? '★' : '';
+    const mark = document.createElement('span'); mark.className = 'mark'; const k = r.met === true ? 'check' : r.met === false ? 'cross' : r.optional ? 'star' : ''; if (k) mark.innerHTML = glyph(k);
     li.append(mark, words(r.parts));
     list.append(li);
   }

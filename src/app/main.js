@@ -21,6 +21,7 @@ import { buildCampaign } from './campaign.js';
 import { bindNav, start } from './nav.js';
 import { bindDebug } from './debug.js';
 import { bindTutorial } from './tutorial.js';
+import { bindGlyphs } from './glyphs.js';
 
 S.level = starterLevel(portrait());
 
@@ -36,7 +37,7 @@ buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
-bindTutorial();
+bindGlyphs(); bindTutorial();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });
 buildMaker();
