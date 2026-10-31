@@ -3,7 +3,7 @@
 // on a phone and on a desktop. Sampled through the whole run, not just at its ends.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, dragGrip } from './lib.mjs';
 
 const { check, done } = suite('steady');
 const server = await serve(5219);
@@ -62,37 +62,33 @@ try {
     check(`${name}, level ${id}: the run's verdict never covers the room`, cover === 'clear', cover);
     // A pressed grip stays where it was (it used to jump about 12px sideways).
     if (id === '1') {
-      const grip = page.locator('.plus[data-plus="top"]'), at = () => grip.boundingBox().then(b => [b.x, b.y].map(Math.round).join());
+      const grip = page.locator('[data-grip="top"]'), at = () => grip.boundingBox().then(b => [b.x, b.y].map(Math.round).join());
       const g = await grip.boundingBox(), rest = await at();
-      await page.mouse.move(g.x + 12, g.y + 12); const hovered = await at(); await page.mouse.down(); const pressed = await at(); await page.mouse.up();
+      await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2); const hovered = await at(); await page.mouse.down(); const pressed = await at(); await page.mouse.up();
       if (opts.hasTouch) {
-        // A tap the phone cancels (some viewers do) still adds a line (register 227).
+        // A finger dragging the bottom grip out one tile adds a row (register 540).
         const cdp = await page.context().newCDPSession(page), h0 = await page.evaluate(() => window.wee.getLevel().h);
-        const g2 = await grip.boundingBox(), pt = [{ x: g2.x + 12, y: g2.y + 12 }];
-        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt });
-        await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
-        await page.waitForTimeout(100);
+        const b = await page.locator('[data-grip="bottom"]').boundingBox(), t = (await page.locator('#game').boundingBox()).height / h0, x = b.x + b.width / 2, y = b.y + b.height / 2;
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+        for (let i = 1; i <= 6; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + t * 1.1 * i / 6 }] });
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await page.waitForTimeout(150);
         const h1 = await page.evaluate(() => window.wee.getLevel().h);
-        check(`${name}: a cancelled tap on a + still adds a line`, h1 === h0 + 1, h0 + ' -> ' + h1);
-      }
-      if (opts.hasTouch) {
-        // The side grips stay out of the phone's edge swipe zone, and each takes a 44px touch (register 239).
-        const sides = await page.evaluate(() => { const l = document.querySelector('.plus[data-plus="left"]').getBoundingClientRect(), r = document.querySelector('.plus[data-plus="right"]').getBoundingClientRect(); return { left: l.left, right: innerWidth - r.right }; });
-        check(`${name}: the side + grips sit at least 30px from the screen's edges`, sides.left >= 30 && sides.right >= 30, JSON.stringify(sides));
-        // An ear's touch grows outward only (register 320): 20px out still adds, 20px in is the room.
-        const reach = await page.evaluate(() => { const r = document.querySelector('.plus[data-plus="right"]').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, at = (x, y) => document.elementFromPoint(x, y);
-          return [[cx + 20, cy], [cx, r.top + 2], [cx, r.bottom - 2]].every(([x, y]) => at(x, y)?.dataset?.plus === 'right') && at(cx - 20, cy)?.id === 'game'; });
-        check(`${name}: a + answers a touch up to 20px outward, and a touch 20px in lands on the room`, reach);
+        check(`${name}: a finger dragging the bottom grip out one tile adds a row`, h1 === h0 + 1, h0 + ' -> ' + h1);
+        await page.click('#undo');
+        // The side grips start 40px in from the screen's edges, out of the phone's back-swipe zone (registers 239, 541).
+        const sides = await page.evaluate(() => { const l = document.querySelector('[data-grip="left"]').getBoundingClientRect(), r = document.querySelector('[data-grip="right"]').getBoundingClientRect(); return { left: l.left, right: innerWidth - r.right }; });
+        check(`${name}: the side grips sit at least 40px from the screen's edges`, sides.left >= 40 && sides.right >= 40, JSON.stringify(sides));
       }
       if (!opts.hasTouch) {
-        // A − held back by a placed thing flashes what is in the way (registers 252, 298).
+        // A cut held back by a placed thing flashes what is in the way (registers 252, 298).
         const h0 = await page.evaluate(() => window.wee.getLevel().h);
-        await page.hover('#game'); await page.click('.minus[data-minus="bottom"]');
+        await dragGrip(page, 'bottom', -1);
         const fx = await page.evaluate(() => window.wee.fxTypes());
         const h = await page.evaluate(() => window.wee.getLevel().h);
         check(`${name}: a cut stopped by something in its way flashes it, and cuts nothing`, fx.includes('flash') && h === h0, JSON.stringify({ fx, h, h0 }));
       }
-      check(`${name}: a + stays where it was when hovered and pressed`, rest === hovered && rest === pressed, [rest, hovered, pressed].join(' / '));
+      check(`${name}: a grip stays where it was when hovered and pressed`, rest === hovered && rest === pressed, [rest, hovered, pressed].join(' / '));
     }
     await page.close();
   }

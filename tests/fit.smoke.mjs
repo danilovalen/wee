@@ -64,9 +64,9 @@ try {
     const gb = await page.locator('#game').boundingBox();
     await page.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2);
     // Wait for the fade-in itself, not a fixed time: a loaded machine finishes it late.
-    await page.waitForFunction(() => [...document.querySelectorAll('[data-plus]')].every(b => getComputedStyle(b).opacity >= 0.9), null, { timeout: 3000 }).catch(() => {});
-    const plus = await page.evaluate(() => { const a = document.getElementById('roomArea').getBoundingClientRect(); return [...document.querySelectorAll('[data-plus]')].filter(b => { const r = b.getBoundingClientRect(); return getComputedStyle(b).opacity < 0.9 || r.left < a.left || r.top < a.top || r.right > a.right || r.bottom > a.bottom; }).map(b => b.dataset.plus); });
-    check(`${w}x${h}: the room's four + show on hover, none clipped`, !plus.length, plus.join(' '));
+    await page.waitForFunction(() => [...document.querySelectorAll('[data-grip]')].every(b => getComputedStyle(b).opacity >= 0.9), null, { timeout: 3000 }).catch(() => {});
+    const plus = await page.evaluate(() => { const a = document.getElementById('roomArea').getBoundingClientRect(); return [...document.querySelectorAll('[data-grip]')].filter(b => { const r = b.getBoundingClientRect(); return getComputedStyle(b).opacity < 0.9 || r.left < a.left || r.top < a.top || r.right > a.right || r.bottom > a.bottom; }).map(b => b.dataset.plus); });
+    check(`${w}x${h}: the room's four grips show, none clipped`, !plus.length, plus.join(' '));
     // The Sandbox's strip is icons at every width (register 381); each slot and each flyout tool is named on hover.
     const unnamed = await page.evaluate(() => [...document.querySelectorAll('#strip .slot:not([hidden]), [data-tool]:not([data-camp])')].filter(b => !b.title).map(b => b.dataset.slot || b.dataset.tool));
     check(`${w}x${h}: the tool strip's slots and tools are always named on hover`, !unnamed.length, unnamed.join(' '));

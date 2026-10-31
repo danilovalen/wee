@@ -5,7 +5,7 @@ import { readFileSync, mkdirSync, mkdtempSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { serve } from '../tools/serve.mjs';
-import { room, suite, pickTool } from './lib.mjs';
+import { room, suite, pickTool, dragGrip } from './lib.mjs';
 import { GROUPS } from '../src/editor/palette.js';
 const GROUP_COUNT = GROUPS.length;
 
@@ -325,22 +325,20 @@ try {
   check('and the room itself keeps its start', (await text()).level.start.x === 1);
   // adding and cutting a side, and Border, are single undoable steps
   await page.evaluate(l => window.wee.loadLevel(l), room(['.....', '.P...', '.....']));
-  // The "+" on the room's right edge adds a column there; the status bar reads the new size.
-  await page.click('[data-plus=right]');
-  check('the + on an edge adds a column there, and the size readout follows', (await text()).level.w === 6 && (await page.textContent('#sizeBtn')) === '6\u00d73', await page.textContent('#sizeBtn'));
+  // A grip on each side: drag it out to add lines there, in to cut them, one undo step per drag (register 540).
+  await dragGrip(page, 'right', 1);
+  check('dragging the right grip out one tile adds a column, and the size readout follows', (await text()).level.w === 6 && (await page.textContent('#sizeBtn')) === '6\u00d73', await page.textContent('#sizeBtn'));
   await page.click('#undo');
-  // The + and − beside each side add or cut one line there, one undo step each (register 298).
-  const tap = async (sel) => { await page.hover('#game'); await page.click(sel); };
-  await tap('[data-plus=bottom]'); await tap('[data-plus=bottom]');
-  check('two taps on the bottom + add two rows', (await text()).level.h === 5);
-  await tap('[data-minus=bottom]');
-  check('a tap on the bottom − cuts one', (await text()).level.h === 4);
-  await page.click('#undo'); await page.click('#undo'); await page.click('#undo');
-  check('each tap is one undo step', (await text()).level.h === 3);
-  await tap('[data-minus=top]'); await tap('[data-minus=top]'); await tap('[data-minus=top]');
-  check('a − stops at the room\'s 1-tall floor (register 319)', (await text()).level.h === 1);
-  check('no + or − sits over a tile', await page.evaluate(() => { const g = document.getElementById('game').getBoundingClientRect(); return [...document.querySelectorAll('.plus, .minus')].every(b => { const r = b.getBoundingClientRect(); return r.bottom <= g.top || r.top >= g.bottom || r.right <= g.left || r.left >= g.right; }); }));
+  await dragGrip(page, 'bottom', 2);
+  check('dragging the bottom grip out two tiles adds two rows', (await text()).level.h === 5);
+  await dragGrip(page, 'bottom', -1);
+  check('dragging it in one tile cuts one', (await text()).level.h === 4);
   await page.click('#undo'); await page.click('#undo');
+  check('each drag is one undo step', (await text()).level.h === 3);
+  await dragGrip(page, 'top', -3);
+  check('a drag in stops at the room\'s 1-tall floor (register 319)', (await text()).level.h === 1);
+  check('no grip sits over a tile', await page.evaluate(() => { const g = document.getElementById('game').getBoundingClientRect(); return [...document.querySelectorAll('[data-grip]')].every(b => { const r = b.getBoundingClientRect(); return r.bottom <= g.top + 0.5 || r.top >= g.bottom - 0.5 || r.right <= g.left + 0.5 || r.left >= g.right - 0.5; }); }));
+  await page.click('#undo');
   check('the size readout opens the size controls', await page.locator('#sizePop').isHidden() && await page.click('#sizeBtn').then(() => page.locator('#sizePop').isVisible()));
   await page.keyboard.press('Escape');
   check('Escape shuts them', await page.locator('#sizePop').isHidden());

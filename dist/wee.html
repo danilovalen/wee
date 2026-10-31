@@ -325,25 +325,9 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .growBar[data-bar=left], .growBar[data-bar=right] { top: 50%; translate: 0 -50%; }
 .growBar[data-bar=left] { right: 100%; }
 .growBar[data-bar=right] { left: 100%; }
-.grow { display: flex; overflow: visible; }
-.growBar[data-bar=left] .grow, .growBar[data-bar=right] .grow { flex-direction: column; }
-.plus, .minus { position: relative; width: var(--ear-long); height: var(--ear); padding: 0; border-radius: 0; display: grid; place-items: center; line-height: 1; touch-action: manipulation; box-shadow: none; }
-.growBar[data-bar=left] :is(.plus, .minus), .growBar[data-bar=right] :is(.plus, .minus) { width: var(--ear); height: var(--ear-long); }
-.plus { background: var(--add-bg); color: var(--add-ink); } .minus { background: var(--cut-bg); color: var(--cut-ink); }
-.plus svg, .minus svg { width: 9px; height: 9px; }
 /* Round on the outside, flat where the ear meets the room. */
-.growBar[data-bar=top] .grow > :first-child { border-top-left-radius: 9px; } .growBar[data-bar=top] .grow > :last-child { border-top-right-radius: 9px; }
-.growBar[data-bar=bottom] .grow > :first-child { border-bottom-left-radius: 9px; } .growBar[data-bar=bottom] .grow > :last-child { border-bottom-right-radius: 9px; }
-.growBar[data-bar=left] .grow > :first-child { border-top-left-radius: 9px; } .growBar[data-bar=left] .grow > :last-child { border-bottom-left-radius: 9px; }
-.growBar[data-bar=right] .grow > :first-child { border-top-right-radius: 9px; } .growBar[data-bar=right] .grow > :last-child { border-bottom-right-radius: 9px; }
 /* Never lifted or pressed: the house button motion would move it under the finger (register 227). */
-.plus, .plus:hover:not(:disabled), .plus:active:not(:disabled), .minus, .minus:hover:not(:disabled), .minus:active:not(:disabled) { transform: none; box-shadow: none; }
-.plus:active:not(:disabled), .minus:active:not(:disabled) { filter: brightness(.94); }
-@media (pointer: fine) { .plus, .minus { opacity: .45; transition: opacity .12s; } .roomWrap:hover .plus, .roomWrap:hover .minus, .plus:focus-visible, .minus:focus-visible { opacity: 1; } }
 /* A 44px-deep touch target, grown outward only, so it never covers a tile. */
-.plus::after, .minus::after { content: ''; position: absolute; inset: 0; }
-.growBar[data-bar=top] :is(.plus, .minus)::after { top: -26px; } .growBar[data-bar=bottom] :is(.plus, .minus)::after { bottom: -26px; }
-.growBar[data-bar=left] :is(.plus, .minus)::after { left: -26px; } .growBar[data-bar=right] :is(.plus, .minus)::after { right: -26px; }
 body.play .growBar, body.play #sizeBtn, body.play .sizePop { display: none; }
 .roomArea { padding: 0; }
 @media (max-width: 700px) { .roomArea { padding: 0 0 8px; } }
@@ -790,12 +774,27 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 
 /* Plan step 2: undo, redo and Reset beside the tools in a level. */
 .campHistory { display: flex; gap: 1px; }
-.campHistory > button { border-radius: 0; }
+.campHistory > button { border-radius: 0; display: inline-flex; align-items: center; justify-content: center; }
 .campHistory > button:first-child { border-top-left-radius: var(--r-s); border-bottom-left-radius: var(--r-s); }
 .campHistory > button:last-child { border-top-right-radius: var(--r-s); border-bottom-right-radius: var(--r-s); }
 body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; min-height: 0; margin: 0; padding: 0; }
 .campHistory .glyph { width: 18px; height: 18px; }
 @media (max-width: 700px) { body.campaign .campHistory > button { width: 46px; height: 46px; } .campHistory .glyph { width: 24px; height: 24px; } }
+
+/* The room's grips (registers 540, 541): one per side, flush with the room, dragged out to add lines and in to cut them. */
+.grip { position: relative; padding: 0; border-radius: 0; background: #dfe2e9; display: grid; place-items: center; touch-action: none; box-shadow: none; transform: none; min-width: 0; min-height: 0; }
+.grip, .grip:hover:not(:disabled), .grip:active:not(:disabled) { transform: none; box-shadow: none; }
+.growBar[data-bar=top] .grip, .growBar[data-bar=bottom] .grip { width: 64px; height: 18px; cursor: ns-resize; }
+.growBar[data-bar=left] .grip, .growBar[data-bar=right] .grip { width: 18px; height: 64px; cursor: ew-resize; }
+.growBar[data-bar=top] .grip { border-radius: var(--r-m) var(--r-m) 0 0; } .growBar[data-bar=bottom] .grip { border-radius: 0 0 var(--r-m) var(--r-m); }
+.growBar[data-bar=left] .grip { border-radius: var(--r-m) 0 0 var(--r-m); } .growBar[data-bar=right] .grip { border-radius: 0 var(--r-m) var(--r-m) 0; }
+.grip i { display: block; background: #9aa0ad; border-radius: var(--r-pill); }
+.growBar[data-bar=top] .grip i, .growBar[data-bar=bottom] .grip i { width: 22px; height: 3px; box-shadow: 0 -5px 0 #b8bdc8; }
+.growBar[data-bar=bottom] .grip i { box-shadow: 0 5px 0 #b8bdc8; }
+.growBar[data-bar=left] .grip i, .growBar[data-bar=right] .grip i { width: 3px; height: 22px; box-shadow: -5px 0 0 #b8bdc8; }
+.growBar[data-bar=right] .grip i { box-shadow: 5px 0 0 #b8bdc8; }
+.grip.held { background: #cfd3ff; }
+.grip.held i { background: var(--accent); }
 </style>
 </head>
 <body>
@@ -908,10 +907,10 @@ body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; m
       <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="game"></canvas>
         <div id="campTip" class="campTip" role="status" hidden></div>
         <button id="fitBtn" class="fitBtn" type="button" hidden title="Show the whole room">Fit</button>
-        <div class="growBar" data-bar="top"><div class="grow" data-grow="top"><button type="button" class="plus" data-plus="top" title="Add a row on top" aria-label="Add a row on top"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1 9 8 1 8Z" fill="currentColor"/></svg></button><button type="button" class="minus" data-minus="top" title="Remove the top row" aria-label="Remove the top row"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 9 9 2 1 2Z" fill="currentColor"/></svg></button></div></div>
-        <div class="growBar" data-bar="left"><div class="grow" data-grow="left"><button type="button" class="plus" data-plus="left" title="Add a column on the left" aria-label="Add a column on the left"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 5 8 1 8 9Z" fill="currentColor"/></svg></button><button type="button" class="minus" data-minus="left" title="Remove the column on the left" aria-label="Remove the column on the left"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M9 5 2 1 2 9Z" fill="currentColor"/></svg></button></div></div>
-        <div class="growBar" data-bar="right"><div class="grow" data-grow="right"><button type="button" class="plus" data-plus="right" title="Add a column on the right" aria-label="Add a column on the right"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M9 5 2 1 2 9Z" fill="currentColor"/></svg></button><button type="button" class="minus" data-minus="right" title="Remove the column on the right" aria-label="Remove the column on the right"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 5 8 1 8 9Z" fill="currentColor"/></svg></button></div></div>
-        <div class="growBar" data-bar="bottom"><div class="grow" data-grow="bottom"><button type="button" class="plus" data-plus="bottom" title="Add a row at the bottom" aria-label="Add a row at the bottom"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 9 9 2 1 2Z" fill="currentColor"/></svg></button><button type="button" class="minus" data-minus="bottom" title="Remove the bottom row" aria-label="Remove the bottom row"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1 9 8 1 8Z" fill="currentColor"/></svg></button></div></div>
+        <div class="growBar" data-bar="top"><button type="button" class="grip" data-grip="top" aria-label="Drag to add or remove rows at the top" title="Drag to add or remove rows at the top"><i></i></button></div>
+        <div class="growBar" data-bar="left"><button type="button" class="grip" data-grip="left" aria-label="Drag to add or remove columns on the left" title="Drag to add or remove columns on the left"><i></i></button></div>
+        <div class="growBar" data-bar="right"><button type="button" class="grip" data-grip="right" aria-label="Drag to add or remove columns on the right" title="Drag to add or remove columns on the right"><i></i></button></div>
+        <div class="growBar" data-bar="bottom"><button type="button" class="grip" data-grip="bottom" aria-label="Drag to add or remove rows at the bottom" title="Drag to add or remove rows at the bottom"><i></i></button></div>
       </div>
 </div>
       <div id="lensChips" class="chips" hidden></div>
@@ -5790,15 +5789,15 @@ const LAST = 40, log = [], errors = [];
 // The last errors the page met, newest last: a freeze report needs them (register 508).
 function noteError(e) { errors.push({ t: Math.round(performance.now()), msg: String(e && (e.stack || e.message) || e).slice(0, 400) }); if (errors.length > 5) errors.shift(); }
 let left = null;
-const name = el => !el || !el.closest ? String(el) : el.id ? '#' + el.id : el.dataset && (el.dataset.plus || el.dataset.tool || el.dataset.req) ? `[${el.dataset.plus || el.dataset.tool || el.dataset.req}]` : el.className ? '.' + String(el.className).split(' ')[0] : el.tagName;
+const name = el => !el || !el.closest ? String(el) : el.id ? '#' + el.id : el.dataset && (el.dataset.grip || el.dataset.tool || el.dataset.req) ? `[${el.dataset.grip || el.dataset.tool || el.dataset.req}]` : el.className ? '.' + String(el.className).split(' ')[0] : el.tagName;
 
 // What sits on top of the room's middle and of each grip: the tap goes there.
 function onTop() {
   const at = (x, y) => name(document.elementFromPoint(x, y)), g = $('game').getBoundingClientRect();
   const out = { room: at(g.x + g.width / 2, g.y + g.height / 2) };
-  for (const b of document.querySelectorAll('[data-plus]')) {
+  for (const b of document.querySelectorAll('[data-grip]')) {
     const r = b.getBoundingClientRect();
-    out[b.dataset.plus] = getComputedStyle(b).display === 'none' ? 'hidden' : at(r.x + r.width / 2, r.y + r.height / 2);
+    out[b.dataset.grip] = getComputedStyle(b).display === 'none' ? 'hidden' : at(r.x + r.width / 2, r.y + r.height / 2);
   }
   return out;
 }
@@ -7486,8 +7485,8 @@ const m69 = (() => {
 const { $, now } = m25;
 const { S } = m29;
 const { moveSide } = m2;
-const { change } = m68;
-// The room's size: a + and a − for each side add or cut a row or a column there, and the size
+const { change, begin, end } = m68;
+// The room's size: a grip on each side adds or cuts rows or columns there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
 
 
@@ -7530,20 +7529,50 @@ function resize(side, k, after) {
   change(() => { S.level = l; }); after();
   if (lost) $('placeHint').textContent = 'To play, place the start again.';
 }
-// A tap: a press and its release on the button. A press the phone cancels counts too, since some
-// viewers cancel a plain tap (register 227); a release elsewhere does not.
-function tapper(b, side, k, after) {
-  let down = false;
-  b.addEventListener('pointerdown', ev => { down = true; ev.preventDefault(); });
-  const go = () => { if (down) { down = false; resize(side, k, after); } };
-  b.addEventListener('pointerup', go); b.addEventListener('pointercancel', go);
-  b.addEventListener('pointerleave', () => { down = false; });
-  b.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); resize(side, k, after); } });
+// A grip on each side of the room: drag it out to add lines there, in to cut them, one line per tile
+// dragged, the whole drag one undo step (register 540). A cut that something is in the way of stops
+// there and flashes what is in the way. It starts away from the screen's edge, so the phone's back
+// swipe never takes the drag (register 541).
+const OUT = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] };
+function grip(b, side, after) {
+  let drag = null;
+  const step = k => {
+    const l = moveSide(S.level, side, k);
+    if (!keeps(l)) { if (k < 0) { for (const x of blockers(S.level, side)) S.fx.push({ type: 'flash', x: x.x, y: x.y, at: now() }); S.redraw = true; } return false; }
+    if (!drag.changed) { begin(); drag.changed = true; }
+    if (S.level.start && !l.start) drag.lost = true;
+    S.level = l; drag.done += k; after(); return true;
+  };
+  b.addEventListener('pointerdown', ev => {
+    ev.preventDefault(); b.setPointerCapture?.(ev.pointerId);
+    const r = $('game').getBoundingClientRect();
+    drag = { x: ev.clientX, y: ev.clientY, tile: r.width / S.level.w, done: 0, changed: false, stuck: 0 };
+    b.classList.add('held');
+  });
+  b.addEventListener('pointermove', ev => {
+    if (!drag) return;
+    const [ox, oy] = OUT[side], want = Math.round(((ev.clientX - drag.x) * ox + (ev.clientY - drag.y) * oy) / drag.tile);
+    while (drag.done < want && step(1));
+    while (drag.done > want && drag.stuck !== want) if (!step(-1)) { drag.stuck = want; break; }
+  });
+  const stop = () => {
+    if (!drag) return;
+    b.classList.remove('held');
+    if (drag.changed) { end(); if (drag.lost) $('placeHint').textContent = 'To play, place the start again.'; }
+    drag = null;
+  };
+  b.addEventListener('pointerup', stop); b.addEventListener('pointercancel', stop); b.addEventListener('lostpointercapture', stop);
+  // From the keyboard: the arrow pointing out adds a line, the one pointing in cuts one.
+  b.addEventListener('keydown', ev => {
+    const k = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[ev.key];
+    if (!k) return;
+    ev.preventDefault(); const [ox, oy] = OUT[side], d = k[0] * ox + k[1] * oy;
+    if (d) resize(side, d, after);
+  });
 }
 
 function buildSize({ after }) {
-  document.querySelectorAll('[data-plus]').forEach(b => tapper(b, b.dataset.plus, 1, after));
-  document.querySelectorAll('[data-minus]').forEach(b => tapper(b, b.dataset.minus, -1, after));
+  document.querySelectorAll('[data-grip]').forEach(b => grip(b, b.dataset.grip, after));
   $('sizeBtn').onclick = () => ($('sizePop').hidden ? openSize() : closeSize());
   document.addEventListener('pointerdown', ev => { if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize(); });
   addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSize(); });
@@ -7744,7 +7773,7 @@ function fit() {
   place(wide);
   const area = $('roomArea');
   // A level and the simple Sandbox let the room come closer to the screen's sides (register 322).
-  const side = (S.camp || S.simple ? 28 : EDGE) + SIDE;  // the side grips stay 30px off the screen's edges
+  const side = (S.camp || S.simple ? 38 : EDGE) + SIDE;  // the side grips stay 40px off the screen's edges (register 541)
   const stage = (wide ? area.clientWidth - 2 * side : $('stage').clientWidth - 2 * side) || level.w * T;
   // A phone in play gives the room everything between the header and the play buttons; in a level
   // the room keeps its edit size instead, so nothing moves when the mode changes (register 222).

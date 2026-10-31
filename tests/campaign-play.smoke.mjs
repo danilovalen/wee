@@ -2,7 +2,7 @@
 // its own palette, Run, and the saved best.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, dragGrip } from './lib.mjs';
 
 const { check, done } = suite('campaign-play');
 const server = await serve(5217);
@@ -95,14 +95,13 @@ try {
   await page.click('#undo'); await page.click('#undo');
   check('a move undoes in one step', await page.evaluate(() => { const l = window.wee.getLevel(); return l.start.y === 1 && l.cells[40] === 'goal'; }));
   // The grips on the room's edges work as in the sandbox: a tap adds a line.
-  check('the room can be resized in a level', await page.locator('[data-plus="bottom"]').isVisible());
-  await page.click('[data-plus="bottom"]');
-  await page.waitForTimeout(100);
-  check('a tap on a grip adds a line and the area follows', (await page.evaluate(() => window.wee.getLevel().h)) === 8 );
+  check('the room can be resized in a level', await page.locator('[data-grip="bottom"]').isVisible());
+  await dragGrip(page, 'bottom', 1);
+  check('a drag on a grip adds a line and the area follows', (await page.evaluate(() => window.wee.getLevel().h)) === 8 );
   // A − may not cut the level's start away: the start is at row 1, so the second top cut is refused.
-  await page.click('[data-minus="top"]'); await page.click('[data-minus="top"]'); await page.waitForTimeout(100);
+  await dragGrip(page, 'top', -2);
   check('a cut that would take the start does nothing in a level', await page.evaluate(() => { const l = window.wee.getLevel(); return l.h === 7 && !!l.start && l.start.y === 0; }), await page.evaluate(() => JSON.stringify([window.wee.getLevel().h, window.wee.getLevel().start])));
-  await page.click('[data-plus="top"]'); await page.click('#undo'); await page.click('#undo');
+  await page.click('#undo');
   // Reset (register 291): asks first; Cancel keeps the room; Reset returns the level's start room; Undo brings it back.
   await load(['P.#..', '.....', '..#..', '.....', '....G']);
   const mine = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));
@@ -339,7 +338,7 @@ try {
   const editing = await page.waitForFunction(() => !document.body.classList.contains('play'), null, { timeout: 15000 }).then(() => true).catch(() => false);
   check('after a Run the robot plays, then the level is back in editing by itself', editing);
   const hRun = await page.evaluate(() => window.wee.getLevel().h);
-  await page.click('[data-plus="bottom"]'); await page.waitForTimeout(150);
+  await dragGrip(page, 'bottom', 1);
   check('and the grips work again', (await page.evaluate(() => window.wee.getLevel().h)) === hRun + 1);
   await page.click('#undo');
   await page.click('#campTest'); await page.keyboard.press('ArrowRight'); await page.waitForTimeout(2500);

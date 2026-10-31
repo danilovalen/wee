@@ -7,15 +7,15 @@ const LAST = 40, log = [], errors = [];
 // The last errors the page met, newest last: a freeze report needs them (register 508).
 export function noteError(e) { errors.push({ t: Math.round(performance.now()), msg: String(e && (e.stack || e.message) || e).slice(0, 400) }); if (errors.length > 5) errors.shift(); }
 let left = null;
-const name = el => !el || !el.closest ? String(el) : el.id ? '#' + el.id : el.dataset && (el.dataset.plus || el.dataset.tool || el.dataset.req) ? `[${el.dataset.plus || el.dataset.tool || el.dataset.req}]` : el.className ? '.' + String(el.className).split(' ')[0] : el.tagName;
+const name = el => !el || !el.closest ? String(el) : el.id ? '#' + el.id : el.dataset && (el.dataset.grip || el.dataset.tool || el.dataset.req) ? `[${el.dataset.grip || el.dataset.tool || el.dataset.req}]` : el.className ? '.' + String(el.className).split(' ')[0] : el.tagName;
 
 // What sits on top of the room's middle and of each grip: the tap goes there.
 function onTop() {
   const at = (x, y) => name(document.elementFromPoint(x, y)), g = $('game').getBoundingClientRect();
   const out = { room: at(g.x + g.width / 2, g.y + g.height / 2) };
-  for (const b of document.querySelectorAll('[data-plus]')) {
+  for (const b of document.querySelectorAll('[data-grip]')) {
     const r = b.getBoundingClientRect();
-    out[b.dataset.plus] = getComputedStyle(b).display === 'none' ? 'hidden' : at(r.x + r.width / 2, r.y + r.height / 2);
+    out[b.dataset.grip] = getComputedStyle(b).display === 'none' ? 'hidden' : at(r.x + r.width / 2, r.y + r.height / 2);
   }
   return out;
 }

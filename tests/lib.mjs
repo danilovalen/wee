@@ -37,3 +37,13 @@ export async function pickTool(page, t) {
   if (await b.isVisible()) return b.click();
   await slot.click();
 }
+
+// Drags a room grip n tiles out (n > 0 adds lines) or in (n < 0 cuts them), as a finger would (register 540).
+export async function dragGrip(page, side, n) {
+  const g = await page.locator(`[data-grip="${side}"]`).boundingBox(), lv = await page.evaluate(() => window.wee.getLevel().w), room = await page.locator('#game').boundingBox();
+  const t = room.width / lv, [ox, oy] = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }[side];
+  const x = g.x + g.width / 2, y = g.y + g.height / 2, dx = ox * n * t, dy = oy * n * t;
+  await page.mouse.move(x, y); await page.mouse.down();
+  for (let i = 1; i <= 8; i++) { await page.mouse.move(x + dx * i / 8, y + dy * i / 8); await page.waitForTimeout(15); }
+  await page.mouse.up(); await page.waitForTimeout(120);
+}

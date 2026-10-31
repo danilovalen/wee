@@ -18,7 +18,8 @@ const M = [
   ['src/rules/player.js', "if (!pushChain(s, ax, ay, pd) && !cellAt(s, ax, ay).startsWith('gate:')) return 'blocked';", "if (!pushChain(s, ax, ay, pd)) return 'blocked';", 'campaign'],
   ['src/app/progressCode.js', "levels: {} }); forgetWins();", "levels: {} });", 'win'],
   // resize blockers, tools line (registers 252, 251)
-  ['src/app/size.js', "    if (k < 0) { for (const b of blockers(S.level, side))", "    if (false) { for (const b of blockers(S.level, side))", 'steady'],
+  ['src/app/size.js', "if (k < 0) { for (const x of blockers(S.level, side))", "if (false) { for (const x of blockers(S.level, side))", 'steady'],
+  ['src/app/size.js', "    if (!drag.changed) { begin(); drag.changed = true; }", "    begin(); drag.changed = true;", 'browser'],
   ['src', "    if (lined() && b.parentNode !== box) {", "    if (false) {", 'campaign-play'],
   ['style.css', '@media (max-width: 700px) { #campTools button { width: 46px; height: 46px; }', '@media (max-width: 700px) { #campTools button { width: 52px; height: 52px; }', 'campaign-play'],
   ['src', "short: [{ el: 'start' }, '2 passes through an open', { el: 'door' }],", "short: [{ el: 'start' }, 'through an open', { el: 'door' }, '×2'],", 'campaign'],
@@ -520,8 +521,7 @@ const M = [
   ['src', "  if (!l.open && WELL.open && WELL.tab === 'lenses') closeWell();", "", 'lensui'],
   ['src', "const show = S.lens.open && S.mode === 'edit';", "const show = S.lens.open;", 'fit'],
   // room size on the edges and in the status bar; icon tools when narrow (U3)
-  ['src', "document.querySelectorAll('[data-plus]').forEach(b => tapper(b, b.dataset.plus, 1, after));", "", 'browser'],
-  ['src', "document.querySelectorAll('[data-minus]').forEach(b => tapper(b, b.dataset.minus, -1, after));", "", 'browser'],
+  ['src', "document.querySelectorAll('[data-grip]').forEach(b => grip(b, b.dataset.grip, after));", "", 'browser'],
   ['src', "  syncSize(level);\n", "", 'browser'],
   ['src', "addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSize(); });", "", 'browser'],
   ['src', "if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize();", "", 'browser'],
@@ -564,7 +564,6 @@ const M = [
   ['src/level/format.js', "  if (!clear || l.entities.some(at)) return null;", "  if (l.entities.some(at)) return null;", 'size'],
   ['src/level/format.js', "const wall = bordered(l, side), k = wall ?", "const wall = false, k = wall ?", 'size'],
   ['src/level/format.js', "  if (!bordered(l, side)) return resizeSide(l, side, 1);", "  return resizeSide(l, side, 1);", 'size'],
-  ['src/app/size.js', "  b.addEventListener('pointerleave', () => { down = false; });", "", 'size-buttons'],
   ['style.css', "  .grid button .lbl { display: none; }\n  .grid canvas { width: 28px; height: 28px; }", "  .grid canvas { width: 28px; height: 28px; }", 'phone'],
   ['src/app/fit.js', "    if (!wide) inside(el, sheet);\n", "", 'phone'],
   ['src/app/sheets.js', "  sheet.hidden = !name || name === 'build';", "  sheet.hidden = false;", 'phone'],
@@ -802,9 +801,6 @@ const M = [
   ['src', "export function colouringsOf(def, el) {\n", "export function colouringsOf(def, el) {\n  return coloursOf(def);\n", 'campaign'],
   ['src', "return !pair || !two ? one : two === 'only' ? [pair] : [...one, pair];", "return !pair || !two ? one : [...one, pair];", 'campaign'],
   // Register 318: the side pairs sit beside the room, which leaves them the width.
-  ['src/app/fit.js', "  const side = (S.camp || S.simple ? 4 : EDGE) + SIDE;", "  const side = S.camp || S.simple ? 4 : EDGE;", 'size-buttons'],
-  ['style.css', ".growBar[data-bar=left] { right: 100%; }", ".growBar[data-bar=left] { right: calc(100% + 6px); }", 'size-buttons'],
-  ['style.css', ".plus { background: var(--add-bg); color: var(--add-ink); }", ".plus { background: var(--cut-bg); color: var(--cut-ink); }", 'size-buttons'],
   ['src/app/campaign.js', "start: ['robot', 'Robot']", "start: ['start', 'Robot']", 'campaign-play'],
   ['src/app/icons.js', "(tool === 'robot' ? drawRobot : drawYou)(x)", "drawYou(x)", 'campaign-play'],
   // Registers 336-338, 341: the pushable laser, its offer per level, its look, and level 19's goal.
@@ -901,7 +897,6 @@ const M = [
   ['src', "some(b => b.pushes >= 2 && b.hits >= 1),", "some(b => b.pushes >= 2),", 'campaign'],
   ['src', "if (now.boxes[id] !== undefined && now.boxes[id] !== was.boxes[id]) { if (now.touched.has(id))", "if (now.boxes[id] !== undefined) { if (now.touched.has(id))", 'campaign'],
   ['src', " && (p.x !== was.s.player.x || p.y !== was.s.player.y)) b.hits++;", ") b.hits++;", 'campaign'],
-  ['src/app/size.js', "b.addEventListener('pointerup', go); b.addEventListener('pointercancel', go);", "b.addEventListener('pointerup', go);", 'size-buttons'],
   ['src', "rec.beaten = true;", "", 'campaign-play'],
   // the goal card, refused taps and the move preview
   ['src', "base.reqs = Object.fromEntries((def.require || []).map(id => [id, !(id in failed)]));", "base.reqs = Object.fromEntries((def.require || []).map(id => [id, true]));", 'campaign'],
@@ -958,7 +953,6 @@ const M = [
   ['src/app/rooms.js', "S.simple = false; document.body.classList.remove('simple'); };", "};", 'nav'],
   ['style.css', ".campMust { grid-template-columns: repeat(2, minmax(0, 1fr)); }", "", 'campaign-play'],
   ['src', "    const list = r.optional ? opt : must;", "    const list = must;", 'campaign-play'],
-  ['style.css', ".growBar[data-bar=top] { bottom: 100%; left: 50%;", ".growBar[data-bar=top] { bottom: calc(100% - 20px); left: 50%;", 'size-buttons'],
 
   ['style.css', "box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px;", "box-sizing: border-box; margin: 0 0 6px;", 'steady'],
   ['style.css', "body.campaign #campVerdict[hidden] { visibility: hidden; }", "", 'campaign-play'],
@@ -967,7 +961,6 @@ const M = [
   ['src', "$('moves').textContent = m === 'play' ? 'Moves 0' : '\\u00a0';", "$('moves').textContent = m === 'play' ? 'Moves 0' : '';", 'steady'],
   ['style.css', "body.campaign.play #statusBar { display: revert; visibility: hidden; }", "body.campaign.play #statusBar { display: none; }", 'steady'],
   ['style.css', ".plus, .plus:hover:not(:disabled), .plus:active:not(:disabled), .minus, .minus:hover:not(:disabled), .minus:active:not(:disabled) { transform: none; box-shadow: none; }", "", 'steady'],
-  ['style.css', ".growBar[data-bar=right] { left: 100%; }", ".growBar[data-bar=right] { left: calc(100% - 10px); }", 'size-buttons'],
   ['style.css', ".growBar[data-bar=right] :is(.plus, .minus)::after { right: -26px; }", "", 'steady'],
   ['src', "judge: (room, moves) => Object.values(oneWayLog(room, moves).boxHits).some(n => n >= 1),", "judge: (room, moves) => Object.values(oneWayLog(room, moves).boxHits).some(n => n >= 2),", 'campaign'],
   ['src/level/campaign.js', '"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"]', '"require":["boxCrossesOpenDoor"],"optional":["noBoxAtEnd"]', 'campaign'],

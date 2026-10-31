@@ -306,25 +306,9 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .growBar[data-bar=left], .growBar[data-bar=right] { top: 50%; translate: 0 -50%; }
 .growBar[data-bar=left] { right: 100%; }
 .growBar[data-bar=right] { left: 100%; }
-.grow { display: flex; overflow: visible; }
-.growBar[data-bar=left] .grow, .growBar[data-bar=right] .grow { flex-direction: column; }
-.plus, .minus { position: relative; width: var(--ear-long); height: var(--ear); padding: 0; border-radius: 0; display: grid; place-items: center; line-height: 1; touch-action: manipulation; box-shadow: none; }
-.growBar[data-bar=left] :is(.plus, .minus), .growBar[data-bar=right] :is(.plus, .minus) { width: var(--ear); height: var(--ear-long); }
-.plus { background: var(--add-bg); color: var(--add-ink); } .minus { background: var(--cut-bg); color: var(--cut-ink); }
-.plus svg, .minus svg { width: 9px; height: 9px; }
 /* Round on the outside, flat where the ear meets the room. */
-.growBar[data-bar=top] .grow > :first-child { border-top-left-radius: 9px; } .growBar[data-bar=top] .grow > :last-child { border-top-right-radius: 9px; }
-.growBar[data-bar=bottom] .grow > :first-child { border-bottom-left-radius: 9px; } .growBar[data-bar=bottom] .grow > :last-child { border-bottom-right-radius: 9px; }
-.growBar[data-bar=left] .grow > :first-child { border-top-left-radius: 9px; } .growBar[data-bar=left] .grow > :last-child { border-bottom-left-radius: 9px; }
-.growBar[data-bar=right] .grow > :first-child { border-top-right-radius: 9px; } .growBar[data-bar=right] .grow > :last-child { border-bottom-right-radius: 9px; }
 /* Never lifted or pressed: the house button motion would move it under the finger (register 227). */
-.plus, .plus:hover:not(:disabled), .plus:active:not(:disabled), .minus, .minus:hover:not(:disabled), .minus:active:not(:disabled) { transform: none; box-shadow: none; }
-.plus:active:not(:disabled), .minus:active:not(:disabled) { filter: brightness(.94); }
-@media (pointer: fine) { .plus, .minus { opacity: .45; transition: opacity .12s; } .roomWrap:hover .plus, .roomWrap:hover .minus, .plus:focus-visible, .minus:focus-visible { opacity: 1; } }
 /* A 44px-deep touch target, grown outward only, so it never covers a tile. */
-.plus::after, .minus::after { content: ''; position: absolute; inset: 0; }
-.growBar[data-bar=top] :is(.plus, .minus)::after { top: -26px; } .growBar[data-bar=bottom] :is(.plus, .minus)::after { bottom: -26px; }
-.growBar[data-bar=left] :is(.plus, .minus)::after { left: -26px; } .growBar[data-bar=right] :is(.plus, .minus)::after { right: -26px; }
 body.play .growBar, body.play #sizeBtn, body.play .sizePop { display: none; }
 .roomArea { padding: 0; }
 @media (max-width: 700px) { .roomArea { padding: 0 0 8px; } }
@@ -771,9 +755,24 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 
 /* Plan step 2: undo, redo and Reset beside the tools in a level. */
 .campHistory { display: flex; gap: 1px; }
-.campHistory > button { border-radius: 0; }
+.campHistory > button { border-radius: 0; display: inline-flex; align-items: center; justify-content: center; }
 .campHistory > button:first-child { border-top-left-radius: var(--r-s); border-bottom-left-radius: var(--r-s); }
 .campHistory > button:last-child { border-top-right-radius: var(--r-s); border-bottom-right-radius: var(--r-s); }
 body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; min-height: 0; margin: 0; padding: 0; }
 .campHistory .glyph { width: 18px; height: 18px; }
 @media (max-width: 700px) { body.campaign .campHistory > button { width: 46px; height: 46px; } .campHistory .glyph { width: 24px; height: 24px; } }
+
+/* The room's grips (registers 540, 541): one per side, flush with the room, dragged out to add lines and in to cut them. */
+.grip { position: relative; padding: 0; border-radius: 0; background: #dfe2e9; display: grid; place-items: center; touch-action: none; box-shadow: none; transform: none; min-width: 0; min-height: 0; }
+.grip, .grip:hover:not(:disabled), .grip:active:not(:disabled) { transform: none; box-shadow: none; }
+.growBar[data-bar=top] .grip, .growBar[data-bar=bottom] .grip { width: 64px; height: 18px; cursor: ns-resize; }
+.growBar[data-bar=left] .grip, .growBar[data-bar=right] .grip { width: 18px; height: 64px; cursor: ew-resize; }
+.growBar[data-bar=top] .grip { border-radius: var(--r-m) var(--r-m) 0 0; } .growBar[data-bar=bottom] .grip { border-radius: 0 0 var(--r-m) var(--r-m); }
+.growBar[data-bar=left] .grip { border-radius: var(--r-m) 0 0 var(--r-m); } .growBar[data-bar=right] .grip { border-radius: 0 var(--r-m) var(--r-m) 0; }
+.grip i { display: block; background: #9aa0ad; border-radius: var(--r-pill); }
+.growBar[data-bar=top] .grip i, .growBar[data-bar=bottom] .grip i { width: 22px; height: 3px; box-shadow: 0 -5px 0 #b8bdc8; }
+.growBar[data-bar=bottom] .grip i { box-shadow: 0 5px 0 #b8bdc8; }
+.growBar[data-bar=left] .grip i, .growBar[data-bar=right] .grip i { width: 3px; height: 22px; box-shadow: -5px 0 0 #b8bdc8; }
+.growBar[data-bar=right] .grip i { box-shadow: 5px 0 0 #b8bdc8; }
+.grip.held { background: #cfd3ff; }
+.grip.held i { background: var(--accent); }
