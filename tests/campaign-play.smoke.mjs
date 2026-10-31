@@ -14,7 +14,7 @@ const visibleTools = () => page.$$eval('[data-tool]', bs => bs.filter(b => !b.hi
 const verdict = () => page.locator('#campVerdictText').textContent().catch(() => '');
 // A level card's stars (register 475): the main star, then each side goal's; a number where met, '-' where not.
 const stars = id => page.evaluate(id => { const el = document.querySelector(`.campRow[data-level="${id}"] .campStars`); if (!el) return 'no stars'; const s = [...el.querySelectorAll('.campStar')].map(x => x.classList.contains('on') ? x.textContent : '-'); return s[0] + ' | ' + s.slice(1).join(' '); }, id);
-const marks = () => page.$$eval('.campReqs li', ls => ls.map(l => l.dataset.req + ':' + (l.classList.contains('met') ? 'met' : l.classList.contains('unmet') ? 'unmet' : '-')).join());
+const marks = async () => { await page.waitForFunction(() => !window.wee.demoRunning(), null, { timeout: 20000 }); return page.$$eval('.campReqs li', ls => ls.map(l => l.dataset.req + ':' + (l.classList.contains('met') ? 'met' : l.classList.contains('unmet') ? 'unmet' : '-')).join()); };
 const box = () => page.locator('#game').boundingBox().then(b => [b.x, b.y, b.width, b.height].map(Math.round).join());
 // Level 1's winning room from tests/campaign.test.mjs: # block, t switch, D door, P start, G goal.
 const WIN = ['P.#.#', '.....', '.###.', '.#...', '.#..G'];
@@ -119,7 +119,8 @@ try {
   await page.click('#campRun');
   await page.waitForTimeout(200);
   const lost = await verdict();
-  check('the verdict shows in its band and moves nothing', await page.locator('#campVerdict').isVisible() && (await box()) === before, before + ' / ' + await box());
+  await marks();
+  check('a run too short says no sentence: its empty dots pulse, and nothing moves (plan step 5)', await page.locator('#campVerdict').isHidden() && await page.locator('.moveDots.short').count() === 1 && (await box()) === before, before + ' / ' + await box());
   check('a run too short marks the moves row', (await marks()).startsWith('steps:unmet'), await marks());
   check('an empty 5x5 is too short and says so', /must take at least 4/.test(lost), lost);
   check('the robot plays the failing path', await page.evaluate(() => document.getElementById('mode').dataset.label === 'Edit'), await page.locator('#mode').textContent());
@@ -146,11 +147,13 @@ try {
   await page.click('#campRun');
   await page.waitForTimeout(200);
   const won = await verdict();
-  check('a room in range wins and the card marks every row', /Made it in 4 moves/.test(won) && (await marks()).startsWith('steps:met') && (await page.locator('#campLast').textContent()) === `won in 4, ${await page.evaluate(() => { const l = window.wee.getLevel(); return l.cells.filter(c => c && c !== 'goal').length + l.entities.length; })} tiles`, won + ' ' + await marks() + ' ' + await page.locator('#campLast').textContent());
+  check('a room in range wins and the card marks every row, with no sentence (plan step 5)', /Made it in 4 moves/.test(won) && (await marks()).startsWith('steps:met') && await page.locator('#campVerdict').isHidden() && (await page.locator('#campLast').textContent()) === `won in 4, ${await page.evaluate(() => { const l = window.wee.getLevel(); return l.cells.filter(c => c && c !== 'goal').length + l.entities.length; })} tiles`, won + ' ' + await marks() + ' ' + await page.locator('#campLast').textContent());
   check('a 5x5 win misses the 3x2 size goal', /small:unmet,touchBlockFourTimes:unmet,robotTwoDirections:(un)?met,mix:unmet$/.test(await marks()), await marks());
   check('the verdict has no close button: nothing to dismiss', await page.locator('#campVerdict button').count() === 0);
-  // The next touch elsewhere puts it away; a touch on it keeps it.
+  // The next touch elsewhere puts it away; a touch on it keeps it. Words stay only for what the card
+  // cannot show, such as a room not ready to run: level 9 with no one-ways yet.
   if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
+  await page.evaluate(() => { location.hash = '#/levels'; }); await page.waitForTimeout(300); await page.click('.campRow[data-level="9"]'); await page.waitForTimeout(300);
   await page.click('#campRun'); await page.waitForTimeout(200);
   await page.click('#campVerdictText');
   check('a touch on the verdict keeps it', await page.locator('#campVerdict').isVisible());
@@ -168,7 +171,7 @@ try {
   const row = await stars(1);
   check('the list keeps a beaten level: its main star holds the fewest tiles, one star per side goal (register 475)', /^7 \| /.test(row) && row.split(' | ')[1].split(' ').length === 5, row);
   check('every level card is the same size, with no text line (register 475)', await page.$$eval('#campList .campRow', bs => new Set(bs.map(b => b.offsetHeight)).size === 1 && !bs.some(b => b.querySelector('small'))));
-  check('the level you were on is selected', await page.locator('.campRow[data-level="1"]').evaluate(b => b.classList.contains('sel')));
+  check('the level you were on is selected', await page.locator('.campRow[data-level="9"]').evaluate(b => b.classList.contains('sel')));
   // Progress you carry yourself (register 254): copy a code, reset after a yes, load the code back.
   await page.click('#progCopy');
   const code = await page.inputValue('#progCode');
@@ -239,10 +242,10 @@ try {
   const reqRows = await page.$$eval('.campReqs li', ls => ls.map(l => [l.dataset.req, [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join('+')].join('=')));
   const lay = await page.evaluate(() => { const must = document.querySelector('.campMust'), opt = document.querySelector('.campOpt'), xs = new Set([...must.children].map(li => Math.round(li.getBoundingClientRect().left))); return { cols: xs.size, opt: [...opt.children].map(li => li.dataset.req).join(), must: [...must.children].map(li => li.dataset.req).join(), below: opt.getBoundingClientRect().top >= must.getBoundingClientRect().bottom }; });
   check('required goals sit two to a line', lay.cols === 2, JSON.stringify(lay));
-  const first = await page.evaluate(() => { const m = document.querySelector('.campMust'), s = m.querySelector('[data-req="steps"]'); return { first: m.firstElementChild === s, full: Math.abs(s.getBoundingClientRect().width - m.getBoundingClientRect().width) < 2, text: s.textContent.trim() }; });
+  const first = await page.evaluate(() => { const m = document.querySelector('.campMust'), s = m.querySelector('[data-req="steps"]'); return { first: m.firstElementChild === s, full: Math.abs(s.getBoundingClientRect().width - m.getBoundingClientRect().width) < 2, text: s.textContent.trim(), need: s.querySelector('.moveDots')?.dataset.need }; });
   const sizes = await page.$$eval('.campReqs li', ls => [...new Set(ls.map(l => getComputedStyle(l).fontSize))]);
   check('every goal row has the same type size', sizes.length === 1, sizes.join());
-  check('the 4-move minimum comes first, across the whole card', first.first && first.full && first.text.endsWith('≥4 moves'), JSON.stringify(first));
+  check('the 4-move minimum comes first, across the whole card', first.first && first.full && first.text.endsWith('moves') && first.need === '4', JSON.stringify(first));
   check('the optional goal sits apart, below the required ones', lay.opt === 'best,small,hitsClosedDoor,atMostOneDoor,mix' && !lay.must.includes('best') && lay.below, JSON.stringify(lay));
   check('the goal card has no section headings: a star marks a side goal (plan step 4)', await page.locator('.campLabel').count() === 0 && !/^(optional )?goals$/im.test(await page.locator('#campBrief').innerText()));
   check('requirement rows draw objects as icons', reqRows.includes('throughOpenDoor=start+door') && reqRows.includes('doorClosedAtEnd=door'), reqRows.join());

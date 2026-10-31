@@ -176,6 +176,7 @@ export function buildCampaign(actions) {
   $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.verdictGone = true; S.camp.testing = true; A.setMode('play'); };
   // After a Run the robot has shown its path: back to editing, so a tap on the room places again.
   bindWin();
+  addEventListener('wee:demoDone', () => { if (S.camp) { syncBrief(); $('campBrief').classList.remove('landed'); void $('campBrief').offsetWidth; $('campBrief').classList.add('landed'); } });
   addEventListener('wee:demoDone', () => setTimeout(() => { if (S.camp && !S.camp.testing && S.mode === 'play') A.setMode('edit'); }, 900));
   addEventListener('wee:win', ev => {
     if (!S.camp || !S.camp.testing) return;

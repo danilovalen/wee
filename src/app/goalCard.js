@@ -1,6 +1,6 @@
 // The goal card over the room: one row per requirement, drawn as words and palette icons, marked
 // after a run; a missed row draws a shortest path that misses it; the verdict floats over the room.
-import { placed, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, pushingsOf } from '../campaign/rules.js';
+import { placed, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, pushingsOf, bounds } from '../campaign/rules.js';
 import { REQUIREMENTS, trailOf } from '../campaign/requirements.js';
 import { shownName } from '../campaign/names.js';
 import { glyph } from './glyphs.js';
@@ -16,6 +16,21 @@ export const bindGoalCard = actions => { A = actions; };
 
 // A row's words, each object drawn as its palette icon (framed when the level offers it only pushable); the robot and the goal have their own.
 const WORD_ICON = { start: ['robot', 'Robot'], goal: ['goal', 'Goal'] };
+// The move minimum as dots, one per move, filled as the robot moves; moves past it add smaller dots.
+let dotsEl = null;
+function dots(n) {
+  const d = document.createElement('span'); d.className = 'moveDots'; d.dataset.need = n; d.setAttribute('role', 'img');
+  dotsEl = d; fill(d, S.demoRunning && S.game ? S.game.move : S.camp && S.camp.verdict && S.camp.verdict.ok && S.camp.verdict.length != null ? S.camp.verdict.length : 0);
+  return d;
+}
+function fill(d, moved) {
+  const n = +d.dataset.need, all = Math.min(Math.max(n, moved), 12), have = d.children.length;
+  d.setAttribute('aria-label', `${moved} of at least ${n} moves`);
+  for (let i = have; i < all; i++) { const s = document.createElement('i'); if (i >= n) s.className = 'extra'; d.append(s); }
+  for (let i = all; i < have; i++) d.lastChild.remove();
+  [...d.children].forEach((s, i) => s.classList.toggle('on', i < moved));
+}
+export function syncDots(moved) { if (dotsEl && dotsEl.isConnected) fill(dotsEl, moved); }
 const MARKS = { end: { glyph: 'flag', say: 'at the end' } };
 export function words(parts) {
   const span = document.createElement('span'); span.className = 'words';
@@ -25,6 +40,7 @@ export function words(parts) {
 function word(p) {
   if (typeof p === 'string') return document.createTextNode(p);
   // A drawn mark in place of words: the flag is "at the end" (register 537).
+  if (p.dots) return dots(p.dots);
   if (p.mark) { const m = document.createElement('span'); m.className = 'campMark'; m.dataset.mark = p.mark; m.innerHTML = glyph(MARKS[p.mark].glyph); m.title = MARKS[p.mark].say; m.setAttribute('aria-label', MARKS[p.mark].say); m.setAttribute('role', 'img'); return m; }
   const def = S.camp && S.camp.def, crate = !!def && !!def.palette[p.el] && pushingsOf(def, p.el).every(Boolean), [tool, name] = WORD_ICON[p.el] || [TOOL[p.el], (crate ? 'Pushable ' + ELEMENTS[p.el].label.toLowerCase() : ELEMENTS[p.el].label)], c = icon(tool, 'red', null, crate);
   c.className = 'campIcon'; c.dataset.part = p.el; if (crate) c.dataset.crate = ''; c.title = name; c.setAttribute('aria-label', name); c.setAttribute('role', 'img');
@@ -37,10 +53,11 @@ function word(p) {
 export function syncBrief() {
   if (!S.camp) return;
   const def = S.camp.def, v = S.camp.verdict;
-  const ran = v && v.ok && v.length != null;
+  // While Run's robot plays, the marks wait and the move dots fill; they land when it stops (plan step 3).
+  const ran = v && v.ok && v.length != null && !S.demoRunning;
   // The tutorial teaches one thing, so its card is one order (registers 511, 512).
   const rows = def.tutorial ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
-    : [{ id: 'steps', parts: [rangeShort(def.steps)], text: stepsText(def.steps), met: ran ? v.inRange : null }];
+    : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }, 'moves'], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
   const { by } = placed(def, S.level);
@@ -81,6 +98,12 @@ export function syncBrief() {
   // A message the player put away stays away until the next Run, however often the card redraws.
   out.hidden = !v || S.camp.verdictGone;
   if (!v) return;
+  // Shown, not written (plan step 5): a win, a short run (its empty dots pulse) and a missed goal (its
+  // cross) need no sentence. A robot that cannot get through keeps its words: the flashing tiles say
+  // where, not why. The words stay as the message's text for a screen reader too.
+  const shows = v.ok && stuckAt(v).length === 0 && (v.won || v.inRange === false || (v.reqs && Object.values(v.reqs).some(m => m === false)));
+  if (shows) out.hidden = true;
+  const short = document.querySelector('#campBrief .moveDots'); if (short) short.classList.toggle('short', !!(v.ok && v.inRange === false && !S.demoRunning));
   out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
   $('campVerdictText').textContent = !v.ok ? v.errors[0].msg
     : v.won ? `Made it in ${v.length} moves${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}.`

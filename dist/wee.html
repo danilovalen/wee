@@ -805,6 +805,18 @@ body.tutorial .campNum { display: none; }
 header .campLast { order: 9; margin-left: auto; font-size: 13px; white-space: nowrap; }
 header .campLast:empty + .campNum, header .campLast + .campNum { margin-left: 0; }
 body:not(.campaign) header .campLast, body.tutorial header .campLast { display: none; }
+
+/* The move minimum as dots (plan step 4) and the marks landing when Run's robot stops (plan step 3). */
+.moveDots { display: inline-flex; gap: 4px; align-items: center; vertical-align: -1px; }
+.moveDots i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--dim); transition: background .15s, box-shadow .15s; }
+.moveDots i.extra { width: 7px; height: 7px; }
+.moveDots i.on { background: var(--accent); box-shadow: none; }
+@keyframes markLand { 0% { transform: scale(.4); } 70% { transform: scale(1.18); } 100% { transform: none; } }
+@media (prefers-reduced-motion: no-preference) { #campBrief.landed .met .mark, #campBrief.landed .unmet .mark { animation: markLand .32s ease-out backwards; } #campBrief.landed li:nth-child(2) .mark { animation-delay: .05s; } #campBrief.landed li:nth-child(3) .mark { animation-delay: .1s; } #campBrief.landed li:nth-child(4) .mark { animation-delay: .15s; } #campBrief.landed li:nth-child(n+5) .mark { animation-delay: .2s; } }
+
+/* A run too short: the dots it did not fill pulse (plan step 5). */
+@keyframes dotWant { 50% { box-shadow: inset 0 0 0 2px #e0524f, 0 0 0 3px rgba(224, 82, 79, .25); } }
+.moveDots.short i:not(.on) { animation: dotWant 1s ease-in-out 3; box-shadow: inset 0 0 0 2px #e0524f; }
 </style>
 </head>
 <body>
@@ -5922,7 +5934,7 @@ return { progress, migrate, firstTime, write };
 })();
 // ---- src/app/goalCard.js
 const m49 = (() => {
-const { placed, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, pushingsOf } = m23;
+const { placed, ELEMENTS, nameOf, stepsText, rangeShort, optionalGoals, optionalResults, pushingsOf, bounds } = m23;
 const { REQUIREMENTS, trailOf } = m22;
 const { shownName } = m44;
 const { glyph } = m43;
@@ -5946,6 +5958,21 @@ const bindGoalCard = actions => { A = actions; };
 
 // A row's words, each object drawn as its palette icon (framed when the level offers it only pushable); the robot and the goal have their own.
 const WORD_ICON = { start: ['robot', 'Robot'], goal: ['goal', 'Goal'] };
+// The move minimum as dots, one per move, filled as the robot moves; moves past it add smaller dots.
+let dotsEl = null;
+function dots(n) {
+  const d = document.createElement('span'); d.className = 'moveDots'; d.dataset.need = n; d.setAttribute('role', 'img');
+  dotsEl = d; fill(d, S.demoRunning && S.game ? S.game.move : S.camp && S.camp.verdict && S.camp.verdict.ok && S.camp.verdict.length != null ? S.camp.verdict.length : 0);
+  return d;
+}
+function fill(d, moved) {
+  const n = +d.dataset.need, all = Math.min(Math.max(n, moved), 12), have = d.children.length;
+  d.setAttribute('aria-label', `${moved} of at least ${n} moves`);
+  for (let i = have; i < all; i++) { const s = document.createElement('i'); if (i >= n) s.className = 'extra'; d.append(s); }
+  for (let i = all; i < have; i++) d.lastChild.remove();
+  [...d.children].forEach((s, i) => s.classList.toggle('on', i < moved));
+}
+function syncDots(moved) { if (dotsEl && dotsEl.isConnected) fill(dotsEl, moved); }
 const MARKS = { end: { glyph: 'flag', say: 'at the end' } };
 function words(parts) {
   const span = document.createElement('span'); span.className = 'words';
@@ -5955,6 +5982,7 @@ function words(parts) {
 function word(p) {
   if (typeof p === 'string') return document.createTextNode(p);
   // A drawn mark in place of words: the flag is "at the end" (register 537).
+  if (p.dots) return dots(p.dots);
   if (p.mark) { const m = document.createElement('span'); m.className = 'campMark'; m.dataset.mark = p.mark; m.innerHTML = glyph(MARKS[p.mark].glyph); m.title = MARKS[p.mark].say; m.setAttribute('aria-label', MARKS[p.mark].say); m.setAttribute('role', 'img'); return m; }
   const def = S.camp && S.camp.def, crate = !!def && !!def.palette[p.el] && pushingsOf(def, p.el).every(Boolean), [tool, name] = WORD_ICON[p.el] || [TOOL[p.el], (crate ? 'Pushable ' + ELEMENTS[p.el].label.toLowerCase() : ELEMENTS[p.el].label)], c = icon(tool, 'red', null, crate);
   c.className = 'campIcon'; c.dataset.part = p.el; if (crate) c.dataset.crate = ''; c.title = name; c.setAttribute('aria-label', name); c.setAttribute('role', 'img');
@@ -5967,10 +5995,11 @@ function word(p) {
 function syncBrief() {
   if (!S.camp) return;
   const def = S.camp.def, v = S.camp.verdict;
-  const ran = v && v.ok && v.length != null;
+  // While Run's robot plays, the marks wait and the move dots fill; they land when it stops (plan step 3).
+  const ran = v && v.ok && v.length != null && !S.demoRunning;
   // The tutorial teaches one thing, so its card is one order (registers 511, 512).
   const rows = def.tutorial ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
-    : [{ id: 'steps', parts: [rangeShort(def.steps)], text: stepsText(def.steps), met: ran ? v.inRange : null }];
+    : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }, 'moves'], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
   const { by } = placed(def, S.level);
@@ -6011,6 +6040,12 @@ function syncBrief() {
   // A message the player put away stays away until the next Run, however often the card redraws.
   out.hidden = !v || S.camp.verdictGone;
   if (!v) return;
+  // Shown, not written (plan step 5): a win, a short run (its empty dots pulse) and a missed goal (its
+  // cross) need no sentence. A robot that cannot get through keeps its words: the flashing tiles say
+  // where, not why. The words stay as the message's text for a screen reader too.
+  const shows = v.ok && stuckAt(v).length === 0 && (v.won || v.inRange === false || (v.reqs && Object.values(v.reqs).some(m => m === false)));
+  if (shows) out.hidden = true;
+  const short = document.querySelector('#campBrief .moveDots'); if (short) short.classList.toggle('short', !!(v.ok && v.inRange === false && !S.demoRunning));
   out.className = 'campVerdict ' + (v.won ? 'won' : 'lost');
   $('campVerdictText').textContent = !v.ok ? v.errors[0].msg
     : v.won ? `Made it in ${v.length} moves${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}.`
@@ -6036,7 +6071,7 @@ function clearTrail() { if (S.trail) { S.trail = null; S.redraw = true; } if (S.
 
 const stuckAt = v => (v && v.ok && !v.won && v.fail.at) || [];
 function flashStuck(v) { for (const t of stuckAt(v)) S.fx.push({ type: 'flash', x: t.x, y: t.y, at: now() }); }
-return { TOOL, bindGoalCard, words, syncBrief, clearTrail, stuckAt, flashStuck };
+return { TOOL, bindGoalCard, syncDots, words, syncBrief, clearTrail, stuckAt, flashStuck };
 })();
 // ---- src/app/campaign.js
 const m50 = (() => {
@@ -6232,6 +6267,7 @@ function buildCampaign(actions) {
   $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.verdictGone = true; S.camp.testing = true; A.setMode('play'); };
   // After a Run the robot has shown its path: back to editing, so a tap on the room places again.
   bindWin();
+  addEventListener('wee:demoDone', () => { if (S.camp) { syncBrief(); $('campBrief').classList.remove('landed'); void $('campBrief').offsetWidth; $('campBrief').classList.add('landed'); } });
   addEventListener('wee:demoDone', () => setTimeout(() => { if (S.camp && !S.camp.testing && S.mode === 'play') A.setMode('edit'); }, 900));
   addEventListener('wee:win', ev => {
     if (!S.camp || !S.camp.testing) return;
@@ -9322,6 +9358,7 @@ return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
 const m87 = (() => {
+const { syncDots } = m49;
 const { iconOn } = m43;
 const { frame: look } = m34;
 const { TICK_MS } = m0;
@@ -9367,6 +9404,7 @@ const { enterPlay, leavePlay, follow, clearView } = m70;
 
 
 
+
 // The run as Reset would leave it, to tell whether Reset would change anything.
 const resetKey = game => { const c = structuredClone(game); respawn(c); return stateKey(c); };
 
@@ -9387,6 +9425,7 @@ function tick() {
   S.pending = [];
   const t = now();
   $('moves').textContent = `Moves ${game.move}`;
+  if (S.camp && S.demoRunning) syncDots(game.move);
   // Drift: a slide starting gusts the snow; each tile the player leaves holds a fading ghost.
   if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);
   if ((game.player.x !== before.x || game.player.y !== before.y) && Math.abs(game.player.x - before.x) + Math.abs(game.player.y - before.y) === 1) S.fx.push({ type: 'ghost', x: before.x, y: before.y, at: t });
@@ -9413,6 +9452,8 @@ function setMode(m, keep) {
   if (keep) { $('keys').textContent = keysText(); return; }
   if (m === 'play' && !S.playFrom && !S.level.start) return;
   if (m === 'play' && S.mode !== 'play') enterPlay(); else if (m !== 'play' && S.mode === 'play') leavePlay();
+  // Leaving play ends a Run's robot, so nothing waits on it any more (the goal marks do).
+  if (m !== 'play' && S.demoRunning) { S.demoRunning = false; S.demo = null; if (S.camp) queueMicrotask(() => dispatchEvent(new Event('wee:demoDone'))); }
   S.mode = m;
   document.body.classList.toggle('play', m === 'play');
   iconOn($('mode'), m === 'play' ? 'edit' : 'test', m === 'play' ? 'Edit' : 'Play');
@@ -10434,7 +10475,7 @@ window.advanceTime = ms => {
   for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
   S.acc = 0; render();
 };
-window.wee = { draws: () => S.draws, trail: () => S.trail, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, wind: () => windNow(), fxTypes: () => S.fx.map(f => f.type), loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
+window.wee = { draws: () => S.draws, demoRunning: () => !!S.demoRunning, trail: () => S.trail, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, wind: () => windNow(), fxTypes: () => S.fx.map(f => f.type), loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
 
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });

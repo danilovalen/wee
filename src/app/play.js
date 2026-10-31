@@ -1,4 +1,5 @@
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
+import { syncDots } from './goalCard.js';
 import { iconOn } from './glyphs.js';
 import { frame as look } from '../view/ink.js';
 import { TICK_MS } from '../rules/base.js';
@@ -41,6 +42,7 @@ export function tick() {
   S.pending = [];
   const t = now();
   $('moves').textContent = `Moves ${game.move}`;
+  if (S.camp && S.demoRunning) syncDots(game.move);
   // Drift: a slide starting gusts the snow; each tile the player leaves holds a fading ghost.
   if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);
   if ((game.player.x !== before.x || game.player.y !== before.y) && Math.abs(game.player.x - before.x) + Math.abs(game.player.y - before.y) === 1) S.fx.push({ type: 'ghost', x: before.x, y: before.y, at: t });
@@ -67,6 +69,8 @@ export function setMode(m, keep) {
   if (keep) { $('keys').textContent = keysText(); return; }
   if (m === 'play' && !S.playFrom && !S.level.start) return;
   if (m === 'play' && S.mode !== 'play') enterPlay(); else if (m !== 'play' && S.mode === 'play') leavePlay();
+  // Leaving play ends a Run's robot, so nothing waits on it any more (the goal marks do).
+  if (m !== 'play' && S.demoRunning) { S.demoRunning = false; S.demo = null; if (S.camp) queueMicrotask(() => dispatchEvent(new Event('wee:demoDone'))); }
   S.mode = m;
   document.body.classList.toggle('play', m === 'play');
   iconOn($('mode'), m === 'play' ? 'edit' : 'test', m === 'play' ? 'Edit' : 'Play');

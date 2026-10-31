@@ -59,7 +59,7 @@ try {
       const v = document.getElementById('campVerdict'), g = document.getElementById('game').getBoundingClientRect(), r = v.getBoundingClientRect();
       return v.hidden ? 'hidden' : (r.bottom <= g.top || r.top >= g.bottom || r.right <= g.left || r.left >= g.right) ? 'clear' : 'covers';
     });
-    check(`${name}, level ${id}: the run's verdict never covers the room`, cover === 'clear', cover);
+    check(`${name}, level ${id}: the run's verdict never covers the room`, cover === 'clear' || cover === 'hidden', cover);
     // A pressed grip stays where it was (it used to jump about 12px sideways).
     if (id === '1') {
       const grip = page.locator('[data-grip="top"]'), at = () => grip.boundingBox().then(b => [b.x, b.y].map(Math.round).join());

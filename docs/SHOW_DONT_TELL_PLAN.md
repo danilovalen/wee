@@ -21,3 +21,4 @@ Still open, his to answer:
 ## Progress
 
 - 2026-10-31: steps 1 and 2 built; drag grips replace the arrows (540, 541); goal rows in keywords, card headings gone, level number in the top bar (537). Next: side-goal stars light during a run, move dots, failures shown.
+- 2026-10-31: the move minimum is dots that fill as Run's robot moves; goal marks land when it stops; a win, a short run and a missed goal show no sentence (a robot that cannot get through keeps its words: the flashing tiles say where, not why). Found and fixed on the way: leaving play mid-Run left the robot "still running", which would have held the marks forever.
