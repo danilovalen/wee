@@ -58,6 +58,10 @@ export function enterLevel(id) {
   S.ui.tool = 'look'; S.ui.colour = coloursOf(def)[0];
   p.last = id; write(p);
   document.body.classList.add('campaign'); document.body.classList.remove('simple'); S.simple = false;
+  // In a level, undo, redo and Reset sit with the tools, so the top bar keeps only Levels, Run and Test (plan step 2).
+  $('campTop').prepend(Object.assign($('campHistory') || document.createElement('span'), { id: 'campHistory', className: 'campHistory' }));
+  $('campHistory').dataset.join = '';
+  $('campHistory').append($('undo'), $('redo'), $('campReset'));
   syncBrief();
   A.setMode('edit'); A.syncPanel(); A.fit();
   return true;
@@ -67,6 +71,7 @@ function leaveLevel() {
   save();
   S.camp = null; S.trail = null;
   document.body.classList.remove('campaign');
+  $('campTest').after($('undo'), $('redo'), $('campReset'));
   // The sandbox never inherits a campaign room.
   S.level = starterLevel(portrait()); S.history = newHistory();
   A.setMode('edit');

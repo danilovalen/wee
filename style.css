@@ -768,3 +768,12 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 :where(button[data-icon]:not([hidden])) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding-left: 8px; padding-right: 8px; }
 .campReqs .mark .glyph { width: 13px; height: 13px; stroke-width: 3; }
 .tutBtns button[data-icon] { min-width: 40px; }
+
+/* Plan step 2: undo, redo and Reset beside the tools in a level. */
+.campHistory { display: flex; gap: 1px; }
+.campHistory > button { border-radius: 0; }
+.campHistory > button:first-child { border-top-left-radius: var(--r-s); border-bottom-left-radius: var(--r-s); }
+.campHistory > button:last-child { border-top-right-radius: var(--r-s); border-bottom-right-radius: var(--r-s); }
+body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; min-height: 0; margin: 0; padding: 0; }
+.campHistory .glyph { width: 18px; height: 18px; }
+@media (max-width: 700px) { body.campaign .campHistory > button { width: 46px; height: 46px; } .campHistory .glyph { width: 24px; height: 24px; } }
