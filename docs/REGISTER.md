@@ -546,3 +546,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 538 | "reset can be an icon, if its undoable, it's ok" | **decided (2026-10-31).** Reset is already undoable (register 291), so it becomes the icon. |
 | 539 | "goal sentences: i didn't understand" | **clarified in chat (2026-10-31).** |
 | 540 | "resize arrows: the solution is not great by itself, propose simpler according to editor tools" | **proposing (2026-10-31).** |
+| 541 | (answer to 540) "dragging the edges had a problem on mobile when you tried to swipe on the screen sides and it went to other page. how do we don't do that?" | **answered (2026-10-31).** The phone takes a swipe as Back only when the finger STARTS in its edge zone. Keep every drag handle at least 40px in from the screen edge (the room already keeps 46px for the side grips, register 239), mark the handles `touch-action: none`, and gate the distance in a test. |
