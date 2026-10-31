@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Show Dont Tell</title>
+<style>
+:root{--paper:#eceef2;--panel:#f8f9fb;--ink:#2a2730;--soft:#6f6876;--accent:#7b6cff;--sticker:#c8ccd5;--gold:#ffc23d;--cell:#e3e6ec;--line:#d3d7df;--block:#a9adb8;--door:#ff6b7d;--ok:#3fae6e;--bad:#e0524f}
+*{box-sizing:border-box}
+body{margin:0;background:#dfe2e8;color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1240px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}
+h2{font-size:16px;margin:28px 0 6px}
+p.sub{color:var(--soft);margin:0 0 12px;font-size:14px;max-width:760px}
+table{border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;font-size:13px}
+td,th{padding:6px 10px;border-bottom:1px solid #eee;text-align:left}
+th{background:#f3f4f7}
+.pair{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+.frame h3{font-size:13px;margin:0 0 4px}
+.frame p{margin:4px 0 0;font-size:12.5px;color:var(--soft)}
+.phone{position:relative;background:var(--paper);border-radius:18px;padding:8px;height:500px;box-shadow:4px 4px 0 0 var(--sticker);overflow:hidden;display:flex;flex-direction:column;gap:6px}
+.bar{display:flex;gap:3px;align-items:center}
+.bar .logo{color:var(--accent);font-weight:700;margin-right:4px}
+.b{background:var(--panel);border-radius:8px;padding:4px 7px;font-weight:700;font-size:11px;box-shadow:2px 2px 0 0 var(--sticker);white-space:nowrap}
+.b.go{background:var(--accent);color:#fff}
+.b.i{width:30px;text-align:center;padding:4px 0;font-size:13px}
+.sp{flex:1}
+.card{background:#dcdfe5;border-radius:10px;padding:6px 8px;font-size:10.5px;line-height:1.35}
+.card b{font-size:11.5px}
+.card .h{font-size:8.5px;letter-spacing:.06em;color:var(--soft);margin-top:3px}
+.verdict{background:#24262e;color:#fff;border-radius:8px;padding:5px 8px;font-size:10.5px}
+.verdict:before{content:"\2715 ";color:#ff8a80}
+.grid{display:grid;gap:2px;background:var(--line);border-radius:8px;padding:2px;margin:0 auto;position:relative}
+.grid i{aspect-ratio:1;background:var(--cell);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:13px;position:relative}
+.grid i.k{background:var(--block)}
+.grid i.d{background:var(--door);box-shadow:inset 0 0 0 2px #c24a5a}
+.grid i.do{background:#ffe1e5;box-shadow:inset 0 0 0 2px #e59aa5}
+.grid i.flash{animation:fl 1s infinite}
+@keyframes fl{50%{box-shadow:inset 0 0 0 3px var(--bad),0 0 0 3px rgba(224,82,79,.4)}}
+.grid i .lock{position:absolute;right:1px;top:-1px;font-size:9px}
+.grid i.trail{background:#d8d2ff}
+.grid i.x:after{content:"\2715";color:var(--bad);font-weight:900;font-size:15px;position:absolute}
+.dim{opacity:.35;filter:grayscale(1)}
+.pips{display:flex;gap:4px;justify-content:center;align-items:center;font-size:10px;color:var(--soft)}
+.pips s{width:10px;height:10px;border-radius:50%;border:2px solid var(--soft);display:inline-block;text-decoration:none}
+.pips s.on{background:var(--accent);border-color:var(--accent)}
+.icons{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px}
+.chip{display:inline-flex;gap:2px;align-items:center;background:var(--panel);border-radius:8px;padding:2px 6px;font-size:12px;font-weight:700;box-shadow:2px 2px 0 0 var(--sticker)}
+.chip.ok{box-shadow:inset 0 0 0 2px var(--ok),2px 2px 0 0 var(--sticker)}
+.chip.no{box-shadow:inset 0 0 0 2px var(--bad),2px 2px 0 0 var(--sticker)}
+.stars{display:flex;gap:4px;justify-content:center}
+.st{width:42px;height:42px;position:relative;display:flex;align-items:center;justify-content:center}
+.st svg{position:absolute;inset:0;width:100%;height:100%}
+.st span{position:relative;font-size:9.5px;font-weight:800;padding-top:4px}
+.dock{margin-top:auto;background:var(--panel);border-radius:12px;padding:6px;display:flex;gap:4px;flex-wrap:wrap}
+.t{width:34px;height:34px;border-radius:8px;background:#fff;box-shadow:2px 2px 0 0 var(--sticker);display:flex;align-items:center;justify-content:center;font-size:15px}
+.t.on{box-shadow:inset 0 0 0 2px var(--accent),2px 2px 0 0 var(--sticker)}
+.t.k i{width:20px;height:20px;background:var(--block);border-radius:3px}
+.t.d i{width:20px;height:20px;background:var(--door);border-radius:3px}
+.t.s i{width:20px;height:12px;background:#ffb3bd;border-radius:6px}
+.gap{width:6px}
+.label{font-size:8.5px;letter-spacing:.06em;color:var(--soft);font-weight:700;width:100%}
+.ears{font-size:9px;color:var(--soft);text-align:center}
+.q{background:#fff;border-radius:12px;padding:10px 14px;font-size:14px}
+.q li{margin:4px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Show, don't tell: sketch (registers 532-534)</h1>
+<p class="sub">Level 3 on a phone, today and as proposed. Every proposal keeps the screen still: nothing folds open or shut, a mark appears on a piece already on screen. Words are drafts and a sketch is not a build.</p>
+
+<h2>How much text is on screen today</h2>
+<p class="sub">Every visible word counted on an emulated 393x735 phone.</p>
+<table>
+<tr><th>Screen</th><th>Words now</th><th>Where they are</th><th>Words in the sketch</th></tr>
+<tr><td>Level 3, building</td><td>39</td><td>goals card 25, header 4 (Levels, Run, Test, Reset), tool label 1</td><td>about 3 (Levels, a level number, a count)</td></tr>
+<tr><td>Level 3, after a failed Run</td><td>54</td><td>the above, plus a 12-word sentence and "no way through"</td><td>the same 3: the failure is marked on the grid</td></tr>
+<tr><td>Level 1, building</td><td>31</td><td>goals card 21</td><td>about 3</td></tr>
+<tr><td>Level list</td><td>35</td><td>numbers, Campaign, Menu</td><td>no change</td></tr>
+</table>
+
+<h2>1. Goals drawn on the grid, and 2. live side-goal stars</h2>
+<div class="pair">
+ <div class="frame"><h3>Today</h3><div class="phone">
+  <div class="bar"><span class="logo">wee</span><span class="b">Levels</span><span class="b">Run</span><span class="b">Test</span><span class="b i">&#8630;</span><span class="b i">&#8631;</span><span class="sp"></span><span class="b">Reset</span></div>
+  <div class="card"><b>Level 3</b><div class="h">GOALS</div>&#9675; at least 4 moves<br>&#9675; &#129302; through an open &#9646; &nbsp; &#9675; every &#9646; closed at the end<div class="h">OPTIONAL GOALS</div>&#9734; exactly 8 &nbsp;&#9734; 3&times;3 or smaller<br>&#9734; &#129302; collides with a closed &#9646; &nbsp;&#9734; at most 1 &#9646;<br>&#9734; any 2 optional goals at once</div>
+  <div class="ears">&#9650;&#9660;</div>
+  <div class="grid" style="grid-template-columns:repeat(6,1fr);width:200px" id="g0"></div>
+  <div class="ears">&#9660;&#9650;</div>
+  <div class="dock"><div class="label">LOOK</div><div class="t on">&#128269;</div><div class="t">&#10005;</div><div class="t">&#10021;</div><div style="width:100%"></div><div class="t k"><i></i></div><div class="t s"><i></i></div><div class="t d"><i></i></div></div>
+ </div><p>25 words of goals push the grid down to 200px.</p></div>
+
+ <div class="frame"><h3>Proposed: the goals are on the grid</h3><div class="phone">
+  <div class="bar"><span class="logo">wee</span><span class="b">Levels</span><span class="sp"></span><b style="font-size:13px">3</b><span class="sp"></span><span class="b i go">&#9654;</span><span class="b i">&#9995;</span></div>
+  <div class="stars" id="s1"></div>
+  <div class="pips"><s></s><s></s><s></s><s></s> <span>+</span></div>
+  <div class="grid" style="grid-template-columns:repeat(6,1fr);width:min(100%,250px)" id="g1"></div>
+  <div class="dock"><div class="t i">&#8630;</div><div class="t">&#8631;</div><div class="t">&#10227;</div><div class="gap"></div><div class="t on">&#128269;</div><div class="t">&#10005;</div><div class="t">&#10021;</div><div class="gap"></div><div class="t k"><i></i></div><div class="t s"><i></i></div><div class="t d"><i></i></div></div>
+ </div><p>"At least 4 moves" is four empty pips that fill as the robot moves. "Every door closed at the end" is a lock on each door. "Through an open door" is a small robot-through-door mark on the grid's edge. The five side goals are five star slots, each with its picture inside. On a real 393px phone the grid grows from about 200 to about 290px.</p></div>
+
+ <div class="frame"><h3>Proposed: during a Run</h3><div class="phone">
+  <div class="bar"><span class="logo">wee</span><span class="b">Levels</span><span class="sp"></span><b style="font-size:13px">3</b><span class="sp"></span><span class="b i go">&#9632;</span><span class="b i">&#9995;</span></div>
+  <div class="stars" id="s2"></div>
+  <div class="pips"><s class="on"></s><s class="on"></s><s class="on"></s><s></s> <span>+</span></div>
+  <div class="grid" style="grid-template-columns:repeat(6,1fr);width:min(100%,250px)" id="g2"></div>
+  <div class="dock"><div class="t">&#8630;</div><div class="t">&#8631;</div><div class="t">&#10227;</div><div class="gap"></div><div class="t on">&#128269;</div><div class="t">&#10005;</div><div class="t">&#10021;</div><div class="gap"></div><div class="t k"><i></i></div><div class="t s"><i></i></div><div class="t d"><i></i></div></div>
+ </div><p>Pips fill move by move. A side-goal star lights the moment it is met, so the player sees which goal a run is earning while it happens.</p></div>
+</div>
+
+<h2>3. Failures shown, not written</h2>
+<div class="pair">
+ <div class="frame"><h3>Today: a sentence</h3><div class="phone">
+  <div class="bar"><span class="logo">wee</span><span class="b">Levels</span><span class="b">Run</span><span class="b">Test</span><span class="sp"></span><span class="b">Reset</span></div>
+  <div class="verdict">The robot cannot reach the goal from anywhere it can get to.</div>
+  <div class="card" style="opacity:.6"><b>Level 3</b> ...</div>
+  <div class="grid" style="grid-template-columns:repeat(6,1fr);width:200px" id="g3"></div>
+ </div><p>The player reads why, then looks for where.</p></div>
+ <div class="frame"><h3>Proposed: no way through</h3><div class="phone">
+  <div class="bar"><span class="logo">wee</span><span class="b">Levels</span><span class="sp"></span><b style="font-size:13px">3</b><span class="sp"></span><span class="b i go">&#9654;</span><span class="b i">&#9995;</span></div>
+  <div class="stars" id="s3"></div>
+  <div class="pips"><s class="on"></s><s class="on"></s><s></s><s></s> <span>+</span></div>
+  <div class="grid" style="grid-template-columns:repeat(6,1fr);width:min(100%,250px)" id="g4"></div>
+ </div><p>The robot's reachable tiles are tinted, the star outside them is dimmed, and the robot shakes where it gets stuck. No sentence.</p></div>
+ <div class="frame"><h3>Proposed: a door left open</h3><div class="phone">
+  <div class="bar"><span class="logo">wee</span><span class="b">Levels</span><span class="sp"></span><b style="font-size:13px">3</b><span class="sp"></span><span class="b i go">&#9654;</span><span class="b i">&#9995;</span></div>
+  <div class="stars" id="s4"></div>
+  <div class="pips"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s> <span>+</span></div>
+  <div class="grid" style="grid-template-columns:repeat(6,1fr);width:min(100%,250px)" id="g5"></div>
+ </div><p>The robot reached the star, but a door ended open: that door pulses red with its broken lock. Too few moves: the empty pips pulse.</p></div>
+</div>
+
+<h2>4. A calmer header and one palette</h2>
+<p class="sub">Shown in every proposed frame above. The header keeps the logo, Levels, the level number, and play: &#9654; for Run (&#9632; to stop) and &#9995; for Test (play it yourself). Undo, redo and Reset move down beside the tools, and tools and pieces share one row, with small gaps between the three groups instead of a "LOOK" label.</p>
+
+<h2>Open questions</h2>
+<ol class="q">
+<li>Run and Test as two icons (&#9654; and &#9995;), or one play button? The benchmark leans to one, but Test (playing it yourself) is a real second action in wee.</li>
+<li>Where the full sentence of a goal lives once the card is gone: on the level list card, or as a long-press on its icon? (A long-press shows a label over the icon; nothing on the screen moves.)</li>
+<li>The resize arrows: keep the eight around the grid, or show them only while a Resize tool is picked? The second changes the screen with the tool, which may break the "nothing opens or closes" rule.</li>
+<li>"Reset" as an icon (&#10227;) is easy to mistake for redo. Keep it as a word, or move it to the level list?</li>
+</ol>
+</main>
+<script>
+var STAR='M12 1.8l3 6.4 7 .8-5.2 4.8 1.4 6.9L12 17.2 5.8 20.7l1.4-6.9L2 9l7-.8z';
+function stars(id,list){document.getElementById(id).innerHTML=list.map(function(s){return '<span class="st"><svg viewBox="0 0 24 24"><path d="'+STAR+'" fill="'+(s[1]?'var(--gold)':'#fff')+'" stroke="'+(s[1]?'var(--gold)':'#c3c7d0')+'" stroke-width="1.6" stroke-linejoin="round"/></svg><span>'+s[0]+'</span></span>';}).join('');}
+var S=[['=8'],['3×3'],['🤖▮'],['≤1▮'],['×2']];
+stars('s1',S);stars('s2',[['=8'],['3×3',1],['🤖▮',1],['≤1▮'],['×2',1]]);stars('s3',S);stars('s4',[['=8'],['3×3',1],['🤖▮'],['≤1▮',1],['×2']]);
+// P robot, G star, k block, d closed door with lock, o open door, t trail, x stuck, D flashing open door
+function grid(id,rows,opts){opts=opts||{};document.getElementById(id).innerHTML=rows.join('').split('').map(function(c){
+ var cls={k:'k',d:'d',o:'do',t:'trail',D:'do flash'}[c]||'',ink=c==='P'?'🤖':c==='G'?'⭐':'';
+ var lock=(c==='d'||c==='o')&&opts.locks?'<span class="lock">🔒</span>':c==='D'?'<span class="lock">🔓</span>':'';
+ if(c==='g')return '<i class="dim">⭐</i>';if(c==='r')return '<i class="trail"></i>';if(c==='x')return '<i class="trail x">🤖</i>';
+ return '<i class="'+cls+'">'+ink+lock+'</i>';}).join('');}
+var base=['......','.P..k.','......','..d...','.....G','......'];
+grid('g0',base);grid('g1',base,{locks:1});grid('g2',['......','.ttttk','....t.','..d.t.','....tG','......'],{locks:1});
+grid('g3',base);grid('g4',['......','rrrrxk','r.....','r.d...','r....g','rrrrrr'],{locks:1});grid('g5',['......','.ttttk','....t.','..D.t.','....tG','......']);
+</script>
+</body>
+</html>
