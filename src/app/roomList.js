@@ -28,7 +28,7 @@ export function row(level, title, sub, onOpen, version) {
   return li;
 }
 
-const when = iso => iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
+const when = iso => iso ? new Date(iso).toLocaleDateString('en', { day: 'numeric', month: 'short' }) : '';
 
 // A room's tags: what it holds, what its saved solution does, and whether it started generated.
 const GENERATED = 'from:generated';
