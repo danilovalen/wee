@@ -44,10 +44,16 @@ button {
   box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker);
   transition: transform .15s cubic-bezier(.4,0,.2,1), box-shadow .15s cubic-bezier(.4,0,.2,1), background .12s;
 }
-button:hover:not(:disabled) { transform: translate(-2px, -2px); box-shadow: var(--sticker-hover) var(--sticker-hover) 0 0 var(--sticker); }
+/* The lift is for a mouse only: on a phone a tapped button keeps :hover, so it pressed down and then
+   popped up higher than it started, on every tap (register 531). */
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled) { transform: translate(-2px, -2px); box-shadow: var(--sticker-hover) var(--sticker-hover) 0 0 var(--sticker); }
+}
 button:active:not(:disabled) { transform: none; box-shadow: var(--sticker-press) var(--sticker-press) 0 0 var(--sticker); }
 button.on { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
-button.on:hover:not(:disabled) { box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-hover) var(--sticker-hover) 0 0 var(--sticker); }
+@media (hover: hover) and (pointer: fine) {
+  button.on:hover:not(:disabled) { box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-hover) var(--sticker-hover) 0 0 var(--sticker); }
+}
 button:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
 /* A field is a recess: an inset shadow in a lighter rim. */
 input[type=number], input[type=text], textarea, select { background: var(--field) !important; border: 0 !important; border-radius: var(--r-s); box-shadow: inset 3px 3px 0 0 var(--inset-rim); color: var(--ink); }
