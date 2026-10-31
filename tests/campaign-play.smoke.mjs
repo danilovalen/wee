@@ -82,7 +82,7 @@ try {
   check('no palette button wears a count', await page.locator('.countDot').count() === 0);
   check('a level opens on a 7x7 room, start and goal one step in from their corners', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.start.x === 1 && l.start.y === 1 && l.cells[40] === 'goal' && l.cells.filter(c => c).length === 1; }));
   check('the card keeps no score', await page.locator('.campScore').count() === 0);
-  check('level 1 has five optional goals: the exact count, a room size, its two own goals and mix', (await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join())) === 'best==6 moves,small=≤3×2,touchBlockFourTimes=hits one  ×4,robotTwoDirections=moves 2 ways only,mix=2 side goals at once', await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join()));
+  check('level 1 has five optional goals: the exact count, a room size, its two own goals and mix', (await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join())) === 'best==6 moves,small=≤3×2,touchBlockFourTimes=hits one  ×4,robotTwoDirections=moves 2 ways only,mix=×2 at once', await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join()));
   check('every row is unmarked before a run', /^steps:-,best:-,small:-,touchBlockFourTimes:-,robotTwoDirections:-,mix:-$/.test(await marks()), await marks());
   // Move: press on the start, release two tiles down; then the goal, one tile left.
   await page.click('[data-tool="move"]');
@@ -147,7 +147,7 @@ try {
   await page.click('#campRun');
   await page.waitForTimeout(200);
   const won = await verdict();
-  check('a room in range wins and the card marks every row, with no sentence (plan step 5)', /Made it in 4 moves/.test(won) && (await marks()).startsWith('steps:met') && await page.locator('#campVerdict').isHidden() && (await page.locator('#campLast').textContent()) === `won in 4, ${await page.evaluate(() => { const l = window.wee.getLevel(); return l.cells.filter(c => c && c !== 'goal').length + l.entities.length; })} tiles`, won + ' ' + await marks() + ' ' + await page.locator('#campLast').textContent());
+  check('a room in range wins and the card marks every row, with no sentence (plan step 5)', /Made it in 4 moves/.test(won) && (await marks()).startsWith('steps:met') && await page.locator('#campVerdict').isHidden() && (await page.locator('#campLast').getAttribute('data-said')) === `won in 4, ${await page.evaluate(() => { const l = window.wee.getLevel(); return l.cells.filter(c => c && c !== 'goal').length + l.entities.length; })} tiles`, won + ' ' + await marks() + ' ' + await page.locator('#campLast').textContent());
   check('a 5x5 win misses the 3x2 size goal', /small:unmet,touchBlockFourTimes:unmet,robotTwoDirections:(un)?met,mix:unmet$/.test(await marks()), await marks());
   check('the verdict has no close button: nothing to dismiss', await page.locator('#campVerdict button').count() === 0);
   // The next touch elsewhere puts it away; a touch on it keeps it. Words stay only for what the card
@@ -245,7 +245,7 @@ try {
   const first = await page.evaluate(() => { const m = document.querySelector('.campMust'), s = m.querySelector('[data-req="steps"]'); return { first: m.firstElementChild === s, full: Math.abs(s.getBoundingClientRect().width - m.getBoundingClientRect().width) < 2, text: s.textContent.trim(), need: s.querySelector('.moveDots')?.dataset.need }; });
   const sizes = await page.$$eval('.campReqs li', ls => [...new Set(ls.map(l => getComputedStyle(l).fontSize))]);
   check('every goal row has the same type size', sizes.length === 1, sizes.join());
-  check('the 4-move minimum comes first, across the whole card', first.first && first.full && first.text.endsWith('moves') && first.need === '4', JSON.stringify(first));
+  check('the 4-move minimum comes first, across the whole card', first.first && first.full && first.text === '' && first.need === '4', JSON.stringify(first));
   check('the optional goal sits apart, below the required ones', lay.opt === 'best,small,hitsClosedDoor,atMostOneDoor,mix' && !lay.must.includes('best') && lay.below, JSON.stringify(lay));
   check('the goal card has no section headings: a star marks a side goal (plan step 4)', await page.locator('.campLabel').count() === 0 && !/^(optional )?goals$/im.test(await page.locator('#campBrief').innerText()));
   check('requirement rows draw objects as icons', reqRows.includes('throughOpenDoor=start+door') && reqRows.includes('doorClosedAtEnd=door'), reqRows.join());

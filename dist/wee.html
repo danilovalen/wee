@@ -799,12 +799,11 @@ body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; m
 .campMark { display: inline-flex; vertical-align: -3px; } .campMark .glyph { width: 17px; height: 17px; stroke-width: 2.2; }
 
 /* Plan step 4: the level number in the top bar, after Run and Test. */
-.campNum { order: 9; margin-left: auto; font: 800 18px var(--label-face, inherit); color: var(--soft); padding: 0 6px; }
+.campNum { font: 800 18px var(--label-face, inherit); color: var(--soft); padding: 0 4px 0 0; min-width: 1.4em; text-align: center; }
 body:not(.campaign) .campNum { display: none; }
 body.tutorial .campNum { display: none; }
 header .campLast { order: 9; margin-left: auto; font-size: 13px; white-space: nowrap; }
-header .campLast:empty + .campNum, header .campLast + .campNum { margin-left: 0; }
-body:not(.campaign) header .campLast, body.tutorial header .campLast { display: none; }
+body:not(.campaign) header .campLast, body.campaign.tutorial header .campLast { display: none; }
 
 /* The move minimum as dots (plan step 4) and the marks landing when Run's robot stops (plan step 3). */
 .moveDots { display: inline-flex; gap: 4px; align-items: center; vertical-align: -1px; }
@@ -817,19 +816,24 @@ body:not(.campaign) header .campLast, body.tutorial header .campLast { display: 
 /* A run too short: the dots it did not fill pulse (plan step 5). */
 @keyframes dotWant { 50% { box-shadow: inset 0 0 0 2px #e0524f, 0 0 0 3px rgba(224, 82, 79, .25); } }
 .moveDots.short i:not(.on) { animation: dotWant 1s ease-in-out 3; box-shadow: inset 0 0 0 2px #e0524f; }
+
+body.campaign header .campLast { flex: none; width: auto; display: inline-flex; align-items: center; gap: 2px; color: #b8860b; height: 20px; line-height: 20px; overflow: hidden; align-self: center; }
+header .campLast .glyph { width: 18px; height: 18px; fill: var(--gold, #ffc23d); stroke: #d4a017; }
+header .campLast b { font-size: 15px; }
 </style>
 </head>
 <body>
   <canvas id="snow" aria-hidden="true"></canvas>
   <header data-join>
     <button id="logo" class="logo" type="button" title="Menu" aria-label="Menu">wee</button>
+    <b id="campNum" class="campNum camp-only"></b>
     <button id="roomTitle" class="roomTitle" type="button" title="This room">Untitled</button>
     <button id="campBack" type="button" class="camp-only">Levels</button>
     <button id="puzzleBack" type="button" class="puzzle-only">Puzzles</button>
     <button id="mode" type="button" title="E" data-alone>Play</button>
     <button id="campRun" type="button" class="camp-only primary">Run</button>
     <button id="campTest" type="button" class="camp-only" title="Play your room yourself; only Run beats the level.">Test</button>
-    <span id="campLast" class="campLast camp-only"></span><b id="campNum" class="campNum camp-only"></b>
+    <span id="campLast" class="campLast camp-only"></span>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
     <button id="campReset" type="button" class="camp-only" data-edit data-alone>Reset</button>
@@ -4090,7 +4094,7 @@ function optionalGoals(def) {
     ...(def.small ? [{ id: 'small', parts: [`≤${def.small[0]}×${def.small[1]}`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] }] : []),
     ...(def.optional || []).map(id => ({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: v => !!(v.pathGoals && v.pathGoals[id]) })),
   ];
-  return own.length < 2 ? own : [...own, { id: 'mix', parts: ['2 side goals at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
+  return own.length < 2 ? own : [...own, { id: 'mix', parts: [{ mark: 'star' }, '×2 at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
 }
 // The fewest tiles a win took, then the fewest for each optional goal met: 'fewest tiles 3; exactly 7: 5'.
 function scoreText(def, best) {
@@ -5973,7 +5977,7 @@ function fill(d, moved) {
   [...d.children].forEach((s, i) => s.classList.toggle('on', i < moved));
 }
 function syncDots(moved) { if (dotsEl && dotsEl.isConnected) fill(dotsEl, moved); }
-const MARKS = { end: { glyph: 'flag', say: 'at the end' } };
+const MARKS = { end: { glyph: 'flag', say: 'at the end' }, star: { glyph: 'star', say: 'side goals' } };
 function words(parts) {
   const span = document.createElement('span'); span.className = 'words';
   span.append(...parts.flatMap((p, i) => [...(i ? [document.createTextNode(' ')] : []), word(p)]));
@@ -5999,7 +6003,7 @@ function syncBrief() {
   const ran = v && v.ok && v.length != null && !S.demoRunning;
   // The tutorial teaches one thing, so its card is one order (registers 511, 512).
   const rows = def.tutorial ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
-    : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }, 'moves'], text: stepsText(def.steps), met: ran ? v.inRange : null }];
+    : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
   const { by } = placed(def, S.level);
@@ -6014,7 +6018,10 @@ function syncBrief() {
   const last = $('campLast');
   const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);
   // A win names its tiles too, counted as the stats count them: the start and the goal are not (register 258).
-  last.textContent = !v ? '' : !v.ok ? 'not ready' : v.won ? `won in ${v.length}, ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` : v.length != null ? `last run: ${v.length} moves` : 'no way through';
+  // Only a win says anything up here, as the level list will: a star holding the tiles placed (label sweep, register 545).
+  const said = v && v.ok && v.won ? `won in ${v.length}, ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` : '';
+  last.dataset.said = said; last.title = said; last.setAttribute('aria-label', said);
+  last.innerHTML = said && !S.demoRunning ? `${glyph('star')}<b>${tiles}</b>` : '';
   // The level's number sits in the top bar (plan step 4); the card holds only its goals.
   $('campNum').textContent = shownName(def).replace(/^Level /, ''); $('campNum').title = shownName(def);
   // What a level requires, two to a line; what it only rewards, apart beneath.

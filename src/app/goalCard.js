@@ -31,7 +31,7 @@ function fill(d, moved) {
   [...d.children].forEach((s, i) => s.classList.toggle('on', i < moved));
 }
 export function syncDots(moved) { if (dotsEl && dotsEl.isConnected) fill(dotsEl, moved); }
-const MARKS = { end: { glyph: 'flag', say: 'at the end' } };
+const MARKS = { end: { glyph: 'flag', say: 'at the end' }, star: { glyph: 'star', say: 'side goals' } };
 export function words(parts) {
   const span = document.createElement('span'); span.className = 'words';
   span.append(...parts.flatMap((p, i) => [...(i ? [document.createTextNode(' ')] : []), word(p)]));
@@ -57,7 +57,7 @@ export function syncBrief() {
   const ran = v && v.ok && v.length != null && !S.demoRunning;
   // The tutorial teaches one thing, so its card is one order (registers 511, 512).
   const rows = def.tutorial ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
-    : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }, 'moves'], text: stepsText(def.steps), met: ran ? v.inRange : null }];
+    : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
   const { by } = placed(def, S.level);
@@ -72,7 +72,10 @@ export function syncBrief() {
   const last = $('campLast');
   const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);
   // A win names its tiles too, counted as the stats count them: the start and the goal are not (register 258).
-  last.textContent = !v ? '' : !v.ok ? 'not ready' : v.won ? `won in ${v.length}, ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` : v.length != null ? `last run: ${v.length} moves` : 'no way through';
+  // Only a win says anything up here, as the level list will: a star holding the tiles placed (label sweep, register 545).
+  const said = v && v.ok && v.won ? `won in ${v.length}, ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` : '';
+  last.dataset.said = said; last.title = said; last.setAttribute('aria-label', said);
+  last.innerHTML = said && !S.demoRunning ? `${glyph('star')}<b>${tiles}</b>` : '';
   // The level's number sits in the top bar (plan step 4); the card holds only its goals.
   $('campNum').textContent = shownName(def).replace(/^Level /, ''); $('campNum').title = shownName(def);
   // What a level requires, two to a line; what it only rewards, apart beneath.
