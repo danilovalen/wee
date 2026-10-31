@@ -67,7 +67,7 @@ try {
   const nums = await page.$$eval('.campRow b', bs => bs.map(b => +b.textContent));
   check('the list numbers run 1, 2, 3 with no gap (register 528)', nums.every((n, i) => n === i + 1), nums.join());
   await page.click('.campRow[data-level="12"]'); await page.waitForTimeout(400);
-  check('its goal card says the same number', (await page.locator('.campGoal b').first().textContent()) === 'Level 11');
+  check('the top bar says the same number', (await page.locator('#campNum').textContent()) === '11');
   await page.click('#campBack'); await page.waitForTimeout(300);
   const lines = await page.$$eval('.campParts', ps => ps.filter(p => { const ys = new Set([...p.querySelectorAll('canvas')].map(c => Math.round(c.getBoundingClientRect().top))); return ys.size > 1; }).length);
   check('every level\'s icons fit on one line', lines === 0, String(lines));
@@ -82,7 +82,7 @@ try {
   check('no palette button wears a count', await page.locator('.countDot').count() === 0);
   check('a level opens on a 7x7 room, start and goal one step in from their corners', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.start.x === 1 && l.start.y === 1 && l.cells[40] === 'goal' && l.cells.filter(c => c).length === 1; }));
   check('the card keeps no score', await page.locator('.campScore').count() === 0);
-  check('level 1 has five optional goals: the exact count, a room size, its two own goals and mix', (await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join())) === 'best=exactly 6,small=3×2 or smaller,touchBlockFourTimes=touch one  ×4,robotTwoDirections=moves only 2 ways,mix=any 2 optional goals at once', await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join()));
+  check('level 1 has five optional goals: the exact count, a room size, its two own goals and mix', (await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join())) === 'best==6 moves,small=≤3×2,touchBlockFourTimes=hits one  ×4,robotTwoDirections=moves 2 ways only,mix=2 side goals at once', await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join()));
   check('every row is unmarked before a run', /^steps:-,best:-,small:-,touchBlockFourTimes:-,robotTwoDirections:-,mix:-$/.test(await marks()), await marks());
   // Move: press on the start, release two tiles down; then the goal, one tile left.
   await page.click('[data-tool="move"]');
@@ -242,9 +242,9 @@ try {
   const first = await page.evaluate(() => { const m = document.querySelector('.campMust'), s = m.querySelector('[data-req="steps"]'); return { first: m.firstElementChild === s, full: Math.abs(s.getBoundingClientRect().width - m.getBoundingClientRect().width) < 2, text: s.textContent.trim() }; });
   const sizes = await page.$$eval('.campReqs li', ls => [...new Set(ls.map(l => getComputedStyle(l).fontSize))]);
   check('every goal row has the same type size', sizes.length === 1, sizes.join());
-  check('the 4-move minimum comes first, across the whole card', first.first && first.full && first.text.endsWith('at least 4 moves'), JSON.stringify(first));
+  check('the 4-move minimum comes first, across the whole card', first.first && first.full && first.text.endsWith('≥4 moves'), JSON.stringify(first));
   check('the optional goal sits apart, below the required ones', lay.opt === 'best,small,hitsClosedDoor,atMostOneDoor,mix' && !lay.must.includes('best') && lay.below, JSON.stringify(lay));
-  check('the goal card names its sections: goals, and optional goals', (await page.locator('.campLabel').textContent()) === 'Goals' && (await page.locator('.campOpt').getAttribute('data-label')) === 'Optional goals');
+  check('the goal card has no section headings: a star marks a side goal (plan step 4)', await page.locator('.campLabel').count() === 0 && !/^(optional )?goals$/im.test(await page.locator('#campBrief').innerText()));
   check('requirement rows draw objects as icons', reqRows.includes('throughOpenDoor=start+door') && reqRows.includes('doorClosedAtEnd=door'), reqRows.join());
   await page.click('#campBack');
   // Level 3: one switch, one door. With the switch walled off behind the door, Run says why
@@ -262,17 +262,17 @@ try {
   // Level 2's row says collides, with the door drawn.
   await page.click('#campBack'); await page.click('.campRow[data-level="2"]');
   const hit = await page.locator('.campReqs li[data-req="hitsClosedDoor"]').evaluate(l => l.textContent + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join());
-  check('level 2 says collides with, and draws the robot and the door', /collides with a closed/.test(hit) && hit.endsWith('start,door'), hit);
+  check('level 2 says hits closed, and draws the robot and the door', /hits closed/.test(hit) && hit.endsWith('start,door'), hit);
   await page.click('#campBack'); await page.click('.campRow[data-level="9"]');
   const min9 = await page.locator('.campReqs li[data-req="min-gate"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');
-  check('level 9 lists its 2-one-way minimum as a goal, drawn as the one-way', min9 === '2 or more|gate', min9);
+  check('level 9 lists its 2-one-way minimum as a goal, drawn as the one-way', min9 === '≥2|gate', min9);
   await page.click('#campRun'); await page.waitForTimeout(150);
   check('the minimum row is marked after a run on an empty room', await page.locator('.campReqs li[data-req="min-gate"].unmet').count() === 1);
   if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
   // A maximum shows as a goal while playing (register 299): level 16 allows exactly one box.
   await page.click('#campBack'); await page.evaluate(() => { location.hash = '#/level/16'; }); await page.waitForTimeout(500);  // off the list (register 525), still playable
   const max16 = await page.locator('.campReqs li[data-req="max-box"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');
-  check('level 16 lists its one-box limit as a goal, drawn as the box', max16 === 'exactly 1|box', max16);
+  check('level 16 lists its one-box limit as a goal, drawn as the box', max16 === '=1|box', max16);
   // Register 445: a goal names level 20's relays, which come only pushable, with the pushable frame.
   await page.click('#campBack'); await page.click('.campRow[data-level="20"]');
   const relay20 = await page.locator('.campReqs li[data-req="relayHitsRelay"] [data-part="relay"]').evaluateAll(cs => cs.map(c => 'crate' in c.dataset).join()).catch(() => 'none');

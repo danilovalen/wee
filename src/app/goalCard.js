@@ -16,6 +16,7 @@ export const bindGoalCard = actions => { A = actions; };
 
 // A row's words, each object drawn as its palette icon (framed when the level offers it only pushable); the robot and the goal have their own.
 const WORD_ICON = { start: ['robot', 'Robot'], goal: ['goal', 'Goal'] };
+const MARKS = { end: { glyph: 'flag', say: 'at the end' } };
 export function words(parts) {
   const span = document.createElement('span'); span.className = 'words';
   span.append(...parts.flatMap((p, i) => [...(i ? [document.createTextNode(' ')] : []), word(p)]));
@@ -23,6 +24,8 @@ export function words(parts) {
 }
 function word(p) {
   if (typeof p === 'string') return document.createTextNode(p);
+  // A drawn mark in place of words: the flag is "at the end" (register 537).
+  if (p.mark) { const m = document.createElement('span'); m.className = 'campMark'; m.dataset.mark = p.mark; m.innerHTML = glyph(MARKS[p.mark].glyph); m.title = MARKS[p.mark].say; m.setAttribute('aria-label', MARKS[p.mark].say); m.setAttribute('role', 'img'); return m; }
   const def = S.camp && S.camp.def, crate = !!def && !!def.palette[p.el] && pushingsOf(def, p.el).every(Boolean), [tool, name] = WORD_ICON[p.el] || [TOOL[p.el], (crate ? 'Pushable ' + ELEMENTS[p.el].label.toLowerCase() : ELEMENTS[p.el].label)], c = icon(tool, 'red', null, crate);
   c.className = 'campIcon'; c.dataset.part = p.el; if (crate) c.dataset.crate = ''; c.title = name; c.setAttribute('aria-label', name); c.setAttribute('role', 'img');
   return c;
@@ -42,19 +45,19 @@ export function syncBrief() {
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
   const { by } = placed(def, S.level);
   for (const [el, [min, max]] of Object.entries(def.palette)) {
-    if (max !== null && max !== undefined) rows.push({ id: 'max-' + el, parts: [min === max ? `exactly ${max}` : `at most ${max}`, { el }], text: min === max ? `Place exactly ${max} ${nameOf(el, max)}.` : `Place at most ${max} ${nameOf(el, max)}.`, met: v ? by[el].length >= min && by[el].length <= max : null });
-    else if (min >= 2) rows.push({ id: 'min-' + el, parts: [`${min} or more`, { el }], text: `Place at least ${min} ${nameOf(el, min)}.`, met: v ? by[el].length >= min : null });
+    if (max !== null && max !== undefined) rows.push({ id: 'max-' + el, parts: [min === max ? `=${max}` : `≤${max}`, { el }], text: min === max ? `Place exactly ${max} ${nameOf(el, max)}.` : `Place at most ${max} ${nameOf(el, max)}.`, met: v ? by[el].length >= min && by[el].length <= max : null });
+    else if (min >= 2) rows.push({ id: 'min-' + el, parts: [`≥${min}`, { el }], text: `Place at least ${min} ${nameOf(el, min)}.`, met: v ? by[el].length >= min : null });
   }
   for (const id of def.require || []) rows.push({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: ran && v.reqs ? v.reqs[id] : null });
   const results = ran ? optionalResults(def, v) : [];
   for (const o of optionalGoals(def)) rows.push({ id: o.id, parts: o.parts, text: `Optional: ${o.text}`, met: ran ? results.find(r => r.id === o.id).met : null, optional: true });
   const card = document.createElement('div'); card.className = 'campGoal';
-  const head = document.createElement('p'); head.className = 'campHead';
-  const last = document.createElement('span'); last.className = 'campLast'; last.id = 'campLast';
+  const last = $('campLast');
   const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);
   // A win names its tiles too, counted as the stats count them: the start and the goal are not (register 258).
   last.textContent = !v ? '' : !v.ok ? 'not ready' : v.won ? `won in ${v.length}, ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` : v.length != null ? `last run: ${v.length} moves` : 'no way through';
-  head.append(Object.assign(document.createElement('b'), { textContent: shownName(def) }), last);
+  // The level's number sits in the top bar (plan step 4); the card holds only its goals.
+  $('campNum').textContent = shownName(def).replace(/^Level /, ''); $('campNum').title = shownName(def);
   // What a level requires, two to a line; what it only rewards, apart beneath.
   const must = document.createElement('ul'); must.className = 'campReqs campMust';
   const opt = document.createElement('ul'); opt.className = 'campReqs campOpt';
@@ -71,8 +74,7 @@ export function syncBrief() {
     li.append(mark, words(r.parts));
     list.append(li);
   }
-  const label = Object.assign(document.createElement('p'), { className: 'campLabel', textContent: 'Goals' });
-  card.append(head, label, must, opt);
+  card.append(must, opt);
   $('campBrief').replaceChildren(card);
   // The verdict's words, over the room.
   const out = $('campVerdict');

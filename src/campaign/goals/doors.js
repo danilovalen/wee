@@ -6,7 +6,7 @@ import { STEP, stoppedPushes, cellOf, everyTile, countKind, cellsWhere, boxIds, 
 export const DOOR_GOALS = {
   throughOpenDoor: {
     text: 'Robot through an open door.',
-    short: [{ el: 'start' }, 'through an open', { el: 'door' }],
+    short: [{ el: 'start' }, 'through open', { el: 'door' }],
     // A closed door is solid, so standing on a door tile means it is open.
     judge: (room, moves) => {
       let ok = false;
@@ -17,7 +17,7 @@ export const DOOR_GOALS = {
   throughDoorsOfTwoColours: {
     needs: { door: 2 },
     text: 'Robot through doors of two colours.',
-    short: [{ el: 'start' }, 'through', { el: 'door' }, 'of two colours'],
+    short: [{ el: 'start' }, 'through', { el: 'door' }, 'of 2 colours'],
     // Standing on a door tile means it is open (register 243).
     judge: (room, moves) => {
       const seen = new Set();
@@ -27,7 +27,7 @@ export const DOOR_GOALS = {
   },
   hitsClosedDoor: {
     text: 'Robot collides with a closed door.',
-    short: [{ el: 'start' }, 'collides with a closed', { el: 'door' }],
+    short: [{ el: 'start' }, 'hits closed', { el: 'door' }],
     // A slide that ends with a closed door on the next tile ahead: the door is what stopped it.
     judge: (room, moves) => {
       let ok = false, dir = null;
@@ -45,7 +45,7 @@ export const DOOR_GOALS = {
   throughOpenDoorTwice: {
     // Two passes, not two doors (register 257): the row says so.
     text: 'Robot through an open door twice, the same door or another.',
-    short: [{ el: 'start' }, '2 passes through an open', { el: 'door' }],
+    short: [{ el: 'start' }, 'through open', { el: 'door' }, '×2'],
     // One pass is stepping onto a door tile from a tile that is not one: a slide across two
     // doors side by side passes once.
     judge: (room, moves) => {
@@ -60,7 +60,7 @@ export const DOOR_GOALS = {
   },
   doorClosedAtEnd: {
     text: 'Every door closed at the end.',
-    short: ['every', { el: 'door' }, 'closed at the end'],
+    short: ['all', { el: 'door' }, 'closed', { mark: 'end' }],
     judge: (room, moves) => {
       const end = replayPath(room, moves, () => {});
       return !Object.values(end.open).some(Boolean);
@@ -68,7 +68,7 @@ export const DOOR_GOALS = {
   },
   boxThroughOpenDoor: {
     text: 'Box into an open doorway.',
-    short: [{ el: 'box' }, 'into an open', { el: 'door' }],
+    short: [{ el: 'box' }, 'through open', { el: 'door' }],
     // A closed door is solid, so a box on a door tile means it is open.
     judge: (room, moves) => {
       let ok = false;
@@ -78,7 +78,7 @@ export const DOOR_GOALS = {
   },
   boxCrossesOpenDoor: {
     text: 'Box through an open door and out the other side.',
-    short: [{ el: 'box' }, 'crosses an open', { el: 'door' }],
+    short: [{ el: 'box' }, 'through open', { el: 'door' }],
     // Like a one-way: in through the door and off the far side; a box left on the door tile has not crossed.
     judge: (room, moves) => {
       const isDoor = (x, y) => /^door:/.test(room.cells[y * room.w + x] || '');
@@ -100,7 +100,7 @@ export const DOOR_GOALS = {
   },
   boxCrushedByDoor: {
     text: 'Box crushed by a closing door.',
-    short: [{ el: 'box' }, 'crushed by a', { el: 'door' }],
+    short: [{ el: 'box' }, 'crushed by', { el: 'door' }],
     // A plain box does not hold a door open: a door closing on its doorway destroys the box in it.
     judge: (room, moves) => {
       const boxes = new Set(room.entities.filter(e => e.kind === 'box').map((e, i) => e.id ?? i));
@@ -112,18 +112,18 @@ export const DOOR_GOALS = {
   // Inverted doors (registers 311, 312): open until their colour is held.
   robotThroughIdoor: {
     text: 'Robot through an inverted door.',
-    short: [{ el: 'start' }, 'through an open', { el: 'idoor' }],
+    short: [{ el: 'start' }, 'through open', { el: 'idoor' }],
     judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (/^idoor:/.test(s.cells[s.player.y * room.w + s.player.x] || '')) ok = true; }); return ok; },
   },
   boxHitsIdoor: {
     text: 'Box collides with a closed inverted door.',
-    short: [{ el: 'box' }, 'collides with a closed', { el: 'idoor' }],
+    short: [{ el: 'box' }, 'hits closed', { el: 'idoor' }],
     judge: (room, moves) => stoppedPushes(room, moves).out.some(h => { const c = cellOf(room, [h.x, h.y]); return c.startsWith('idoor:') && c.slice(6).split('|').some(col => h.open[col]); }),
   },
   boxHitsTwoDoors: {
     needs: { door: 2 },
     text: 'Box collides with two different closed doors.',
-    short: [{ el: 'box' }, 'collides with 2 closed', { el: 'door' }],
+    short: [{ el: 'box' }, 'hits 2 closed', { el: 'door' }],
     judge: (room, moves) => {
       const hit = new Set();
       for (const h of stoppedPushes(room, moves).out) {
@@ -135,36 +135,36 @@ export const DOOR_GOALS = {
   },
   everyDoorOverSpikes: {
     text: 'Every door goes over spikes.',
-    short: ['every', { el: 'door' }, 'over', { el: 'spikes' }],
+    short: ['all', { el: 'door' }, 'over', { el: 'spikes' }],
     judge: (room, moves) => everyTile(room, moves, 'door', t => t.spikes),
   },
   boxLeavesEveryDoor: {
     text: 'A box leaves every door.',
-    short: [{ el: 'box' }, 'leaves every', { el: 'door' }],
+    short: [{ el: 'box' }, 'leaves all', { el: 'door' }],
     judge: (room, moves) => everyTile(room, moves, 'door', t => t.boxLeft),
   },
   robotLeavesEveryDoor: {
     text: 'Robot leaves every door.',
-    short: [{ el: 'start' }, 'leaves every', { el: 'door' }],
+    short: [{ el: 'start' }, 'leaves all', { el: 'door' }],
     judge: (room, moves) => everyTile(room, moves, 'door', t => t.robotLeft),
   },
   twoDoors: {
     needs: { door: 2 },
     text: 'At least 2 doors in the room.',
-    short: ['at least 2', { el: 'door' }],
+    short: ['≥2', { el: 'door' }],
     judge: room => countKind(room, 'door') >= 2,
   },
   // Register 476.
   atMostOneDoor: {
     text: 'At most 1 door in the room.',
-    short: ['at most 1', { el: 'door' }],
+    short: ['≤1', { el: 'door' }],
     judge: room => countKind(room, 'door') <= 1,
   },
   // Register 477: four doors or more, and the robot stands in every one.
   robotThroughFourDoors: {
     needs: { door: 4 },
     text: 'At least 4 doors, and the robot through every one.',
-    short: [{ el: 'start' }, 'through all of 4+', { el: 'door' }],
+    short: [{ el: 'start' }, 'through 4+', { el: 'door' }],
     judge: (room, moves) => {
       const doors = cellsWhere(room, c => /^door:/.test(c)), seen = new Set();
       replayPath(room, moves, s => { const i = s.player.y * room.w + s.player.x; if (/^door:/.test(s.cells[i] || '')) seen.add(i); });
@@ -174,7 +174,7 @@ export const DOOR_GOALS = {
   // Register 485: like boxThroughOpenDoor, for every box.
   everyBoxThroughOpenDoor: {
     text: 'Every box into an open doorway.',
-    short: ['every', { el: 'box' }, 'into an open', { el: 'door' }],
+    short: ['all', { el: 'box' }, 'through open', { el: 'door' }],
     judge: (room, moves) => {
       const ids = boxIds(room), seen = new Set();
       replayPath(room, moves, s => { for (const e of s.entities) if (!e.dead && e.kind === 'box' && /^door:/.test(s.cells[e.y * room.w + e.x] || '')) seen.add(e.id); });
@@ -185,7 +185,7 @@ export const DOOR_GOALS = {
   robotHitsDoorsOfTwoColours: {
     needs: { door: 2 },
     text: 'Robot collides with closed doors of two colours.',
-    short: [{ el: 'start' }, 'collides with closed', { el: 'door' }, 'of 2 colours'],
+    short: [{ el: 'start' }, 'hits closed', { el: 'door' }, 'of 2 colours'],
     judge: (room, moves) => {
       const cols = new Set();
       robotStops(room, moves, (s, x, y) => { const c = x >= 0 && y >= 0 && x < room.w && y < room.h ? s.cells[y * room.w + x] || '' : ''; if (/^door:/.test(c) && !c.slice(5).split('|').some(k => s.open[k])) for (const k of c.slice(5).split('|')) cols.add(k); });
@@ -195,7 +195,7 @@ export const DOOR_GOALS = {
   // Register 497: one box both collides with a closed inverted door and goes into an open one.
   boxHitsAndThroughIdoor: {
     text: 'Box collides with a closed inverted door and goes through an open one.',
-    short: [{ el: 'box' }, 'collides with and goes through an', { el: 'idoor' }],
+    short: [{ el: 'box' }, 'hits and goes through', { el: 'idoor' }],
     judge: (room, moves) => {
       const hit = new Set(stoppedPushes(room, moves).out.filter(h => { const c = cellOf(room, [h.x, h.y]); return c.startsWith('idoor:') && c.slice(6).split('|').some(col => h.open[col]); }).map(h => h.box.id));
       let ok = false;

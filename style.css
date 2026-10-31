@@ -556,7 +556,7 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 .campMust li[data-req="steps"] { grid-column: 1 / -1; }
 .campOpt { margin-top: 6px; padding-top: 6px; box-shadow: inset 0 1px 0 var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .campLabel { margin: 0 0 4px; font-size: 0.75em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
-.campOpt::before { content: attr(data-label); font-size: 0.75em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.campOpt::before { content: none; font-size: 0.75em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
 .campReqs li { display: flex; align-items: flex-start; gap: 5px; min-height: 22px; font-weight: 700; line-height: 1.3; }
 .campReqs .words { padding-top: 1px; }
 .campReqs .mark { flex: none; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; box-sizing: border-box; box-shadow: inset 0 0 0 1.5px var(--dim); color: var(--dim); }
@@ -776,3 +776,13 @@ body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; m
 .growBar[data-bar=right] .grip i { box-shadow: 5px 0 0 #b8bdc8; }
 .grip.held { background: #cfd3ff; }
 .grip.held i { background: var(--accent); }
+
+.campMark { display: inline-flex; vertical-align: -3px; } .campMark .glyph { width: 17px; height: 17px; stroke-width: 2.2; }
+
+/* Plan step 4: the level number in the top bar, after Run and Test. */
+.campNum { order: 9; margin-left: auto; font: 800 18px var(--label-face, inherit); color: var(--soft); padding: 0 6px; }
+body:not(.campaign) .campNum { display: none; }
+body.tutorial .campNum { display: none; }
+header .campLast { order: 9; margin-left: auto; font-size: 13px; white-space: nowrap; }
+header .campLast:empty + .campNum, header .campLast + .campNum { margin-left: 0; }
+body:not(.campaign) header .campLast, body.tutorial header .campLast { display: none; }

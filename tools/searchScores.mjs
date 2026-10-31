@@ -116,7 +116,7 @@ export const SCORES = {
 const MOVERS = { start: you, laser: beamTiles, box: s => s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.x, e.y]) };
 const TARGETS = { door: 'door:', idoor: 'idoor:', gate: 'gate:', button: 'button:', toggle: 'toggle:', relay: 'sensor:', goal: 'goal' };
 export function derived(id) {
-  const els = (REQUIREMENTS[id]?.short || []).filter(p => typeof p === 'object').map(p => p.el);
+  const els = (REQUIREMENTS[id]?.short || []).filter(p => p && p.el).map(p => p.el);
   const mover = MOVERS[els[0]], target = els.length > 1 && TARGETS[els[els.length - 1]];
   return mover && target ? (room, moves) => nearest(room, moves, mover, target) * (els[0] === 'box' ? 0.5 : 1) : null;
 }

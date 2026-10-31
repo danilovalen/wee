@@ -5,23 +5,23 @@ import { boxesLeaving, everyBoxLeaves, cellsWhere, isSpike } from './helpers.js'
 export const SPIKE_GOALS = {
   everyBoxEntersSpikes: {
     text: 'Every box goes onto spikes.',
-    short: ['every', { el: 'box' }, 'onto', { el: 'spikes' }],
+    short: ['all', { el: 'box' }, 'on', { el: 'spikes' }],
     judge: (room, moves) => { const bs = boxesLeaving(room, moves, 'death'); return bs.length > 0 && bs.every(b => b.was); },
   },
   everyBoxLeavesSpikes: {
     text: 'Every box leaves spikes it was on.',
-    short: ['every', { el: 'box' }, 'leaves', { el: 'spikes' }],
+    short: ['all', { el: 'box' }, 'leaves', { el: 'spikes' }],
     judge: (room, moves) => everyBoxLeaves(room, moves, 'death'),
   },
   everyBoxLeavesGoal: {
     text: 'Every box leaves the goal it was on.',
-    short: ['every', { el: 'box' }, 'leaves the', { el: 'goal' }],
+    short: ['all', { el: 'box' }, 'leaves', { el: 'goal' }],
     judge: (room, moves) => everyBoxLeaves(room, moves, 'goal'),
   },
   threeSpikes: {
     needs: { spikes: 3 },
     text: 'At least 3 spikes in the room.',
-    short: ['at least 3', { el: 'spikes' }],
+    short: ['≥3', { el: 'spikes' }],
     judge: room => cellsWhere(room, isSpike).length >= 3,
   },
 };

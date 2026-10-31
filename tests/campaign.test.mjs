@@ -109,7 +109,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   // Too few is judged at Run, never a reason not to run (register 321).
   ok('too few of a required element does not stop a run', !placementErrors(d3, roomOf(d3)).some(e => /at least/.test(e.msg)));
   // The score is tiles (register 328): the fewest in any win, then per optional goal met.
-  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }) === ', fewest tiles 3; exactly 4: 5; 3×4 or smaller: 4; one box pushed in at least 2 moves, and hit once by the robot without moving: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }));
+  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }) === ', fewest tiles 3; =4 moves: 5; ≤3×4: 4; one box pushed in at least 2 moves, and hit once by the robot without moving: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }));
   ok('level 16 offers no pushable laser and its side goal is the box pushed twice and hit once (register 426)', !level('16').pushable && level('16').optional.join() === 'boxPushedTwiceHitOnce,throughOpenDoor');
   ok('no win, no score', scoreText(level('16'), {}) === '' && scoreText(level('16'), undefined) === '');
   ok('too few of a required element is missed at Run', underLimits(d3, roomOf(d3)).some(e => e.msg === 'Place at least 1 switch.'));
@@ -189,7 +189,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('on then off: met', req('everyToggleOnThenOff', ['######', '#Pt..#', '######'], ['right', 'left']));
   ok('through an open door twice: met going there and back', req('throughOpenDoorTwice', ['#######', '#Pt.D.#', '#######'], ['right', 'left']));
   ok('through an open door twice: not met with one pass', !req('throughOpenDoorTwice', ['#######', '#Pt.D.#', '#######'], ['right']));
-  ok('its row counts passes, not doors (register 257)', REQUIREMENTS.throughOpenDoorTwice.short.join(' ').includes('2 passes') && /same door or another/.test(REQUIREMENTS.throughOpenDoorTwice.text));
+  ok('its row counts passes, not doors (register 257)', REQUIREMENTS.throughOpenDoorTwice.short.includes('×2') && /same door or another/.test(REQUIREMENTS.throughOpenDoorTwice.text));
   ok('through an open door twice: one slide across two doors side by side is one pass', !req('throughOpenDoorTwice', ['#######', '#PtDD.#', '#######'], ['right']));
   ok('collides with a closed door: met when a slide stops against it', req('hitsClosedDoor', ['#######', '#P..D.#', '#######'], ['right']));
   ok('collides with a closed door: not met when the door is open', !req('hitsClosedDoor', ['#######', '#Pt.D.#', '#######'], ['right']));
@@ -282,7 +282,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('a trail has the robot after each move and each box that moved', JSON.stringify(tr.robot) === '[{"x":1,"y":1},{"x":4,"y":1}]' && tr.boxes.length === 1 && tr.boxes[0].at(-1).x === 5, JSON.stringify(tr));
   ok('the verdict marks each requirement for the goal card', v.reqs && v.reqs.throughOpenDoor === false && v.inRange === true, JSON.stringify(v.reqs));
   ok('every requirement has a short row, with at least one word', Object.values(REQUIREMENTS).every(r => Array.isArray(r.short) && r.short.some(p => typeof p === 'string')));
-  ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.el === 'start' || p.el === 'goal' || ELEMENTS[p.el])));
+  ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.mark === 'end' || p.el === 'start' || p.el === 'goal' || ELEMENTS[p.el])));
   // Doors of two colours (register 243): two switches open a red and a blue door the robot slides through.
   const doors = (cells) => { const r = room(['#P......#']); for (const k of Object.keys(r.powers)) r.powers[k] = false; cells.forEach(([x, c]) => { r.cells[x] = c; }); return r; };
   ok('through doors of two colours: met by a red door and a blue one', REQUIREMENTS.throughDoorsOfTwoColours.judge(doors([[2, 'toggle:red'], [3, 'toggle:blue'], [4, 'door:red'], [6, 'door:blue']]), ['right']));

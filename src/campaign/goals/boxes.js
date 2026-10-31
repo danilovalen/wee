@@ -8,7 +8,7 @@ import { STEP, live, stoppedPushes, boxCount, boxIds, blockHits } from './helper
 export const BOX_GOALS = {
   touchBlockFourTimes: {
     text: 'Robot touches the same block 4 times.',
-    short: ['touch one', { el: 'block' }, '×4'],
+    short: [{ el: 'start' }, 'hits one', { el: 'block' }, '×4'],
     // A touch is a slide that ends against a block, as a collision ends against a door.
     judge: (room, moves) => {
       const touches = {};
@@ -37,18 +37,18 @@ export const BOX_GOALS = {
   // Level 5 (register 263): each box must do both, so a second box cannot share the work.
   everyBoxPushedTwice: {
     text: 'Every box pushed in at least 2 moves.',
-    short: ['every', { el: 'box' }, 'pushed 2 times'],
+    short: ['all', { el: 'box' }, 'pushed ×2'],
     judge: (room, moves) => { const b = boxMoves(room, moves); return b.length > 0 && b.every(x => x.pushes >= 2); },
   },
   everyBoxHitOnce: {
     text: 'Robot collides with every box without moving it.',
-    short: [{ el: 'start' }, 'collides with every', { el: 'box' }],
+    short: [{ el: 'start' }, 'hits all', { el: 'box' }],
     judge: (room, moves) => { const b = boxMoves(room, moves); return b.length > 0 && b.every(x => x.hits >= 1); },
   },
   // Register 277: a box on a coloured one-way when it turns is thrown out the other way.
   boxLaunched: {
     text: 'One-way turns and throws out the box on it.',
-    short: [{ el: 'gate' }, 'throws a', { el: 'box' }, 'out'],
+    short: [{ el: 'gate' }, 'launches', { el: 'box' }],
     judge: (room, moves) => {
       let ok = false;
       replayPath(room, moves, s => { if (s.events.some(e => e.type === 'launch' && live(s, e.x, e.y))) ok = true; });
@@ -58,30 +58,30 @@ export const BOX_GOALS = {
   boxHitsBox: {
     needs: { box: 2 },
     text: 'Box collides with another box.',
-    short: [{ el: 'box' }, 'collides with a', { el: 'box' }],
+    short: [{ el: 'box' }, 'hits', { el: 'box' }],
     judge: (room, moves) => stoppedPushes(room, moves).out.some(h => live(h.s, h.x, h.y)),
   },
   noBoxAtEnd: {
     text: 'No box left at the end.',
-    short: ['no', { el: 'box' }, 'at the end'],
+    short: ['no', { el: 'box' }, { mark: 'end' }],
     judge: (room, moves) => boxCount(room) > 0 && !replayPath(room, moves, () => {}).entities.some(e => !e.dead && e.kind === 'box'),
   },
   // Register 472: every move of the path is one of at most two directions.
   robotTwoDirections: {
     text: 'Robot moves in only two directions.',
-    short: [{ el: 'start' }, 'moves only 2 ways'],
+    short: [{ el: 'start' }, 'moves 2 ways only'],
     judge: (room, moves) => new Set(moves.map(m => parseMove(m).k)).size <= 2,
   },
   // Register 480: each box stops against a block at least twice.
   everyBoxHitsBlockTwice: {
     text: 'Every box collides with a block 2 or more times.',
-    short: ['every', { el: 'box' }, 'collides with a', { el: 'block' }, '×2'],
+    short: ['all', { el: 'box' }, 'hits', { el: 'block' }, '×2'],
     judge: (room, moves) => { const ids = boxIds(room), h = blockHits(room, moves); return ids.length > 0 && ids.every(id => (h[id] || 0) >= 2); },
   },
   twoBoxes: {
     needs: { box: 2 },
     text: 'At least 2 boxes in the room.',
-    short: ['at least 2', { el: 'box' }],
+    short: ['≥2', { el: 'box' }],
     judge: room => boxCount(room) >= 2,
   },
   // Register 501: the room has no plain blocks.

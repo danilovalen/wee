@@ -120,8 +120,8 @@ export const bounds = st => ({ min: st.min ?? MIN_MOVES, max: st.max ?? Infinity
 export const stepsText = st => `The shortest path takes at least ${bounds(st).min} moves.`;
 export const bestText = st => `Exactly ${st.best} moves.`;
 // The same, as the goal card's rows say them.
-export const rangeShort = st => `at least ${bounds(st).min} moves`;
-export const bestShort = st => `exactly ${st.best}`;
+export const rangeShort = st => `≥${bounds(st).min} moves`;
+export const bestShort = st => `=${st.best} moves`;
 // A level's optional goals: the exact count and the room size (every level), the level's own
 // path goals (def.optional: requirement ids, met only when every shortest path meets them),
 // then mix, any two of the others in one run. Not every pair, let alone all, need fit one room.
@@ -130,10 +130,10 @@ export function optionalGoals(def) {
   const own = [
     ...(def.steps.best != null ? [{ id: 'best', parts: [bestShort(def.steps)], text: bestText(def.steps), met: v => v.length === def.steps.best }] : []),
     // The size goal is the room's area (register 327); tiles placed are the score instead (register 328).
-    ...(def.small ? [{ id: 'small', parts: [`${def.small[0]}×${def.small[1]} or smaller`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] }] : []),
+    ...(def.small ? [{ id: 'small', parts: [`≤${def.small[0]}×${def.small[1]}`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] }] : []),
     ...(def.optional || []).map(id => ({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: v => !!(v.pathGoals && v.pathGoals[id]) })),
   ];
-  return own.length < 2 ? own : [...own, { id: 'mix', parts: ['any 2 optional goals at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
+  return own.length < 2 ? own : [...own, { id: 'mix', parts: ['2 side goals at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
 }
 // The fewest tiles a win took, then the fewest for each optional goal met: 'fewest tiles 3; exactly 7: 5'.
 export function scoreText(def, best) {

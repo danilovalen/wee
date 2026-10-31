@@ -17,3 +17,7 @@ Still open, his to answer:
 1. Where a goal's full sentence lives once the card is gone: on the level list card, or a long-press label on its icon.
 2. The resize arrows: keep all eight, or show them only while a resize tool is picked (may break rule 524).
 3. ~~Reset~~: an icon, since it is undoable (538). Test is an arrow pad (543).
+
+## Progress
+
+- 2026-10-31: steps 1 and 2 built; drag grips replace the arrows (540, 541); goal rows in keywords, card headings gone, level number in the top bar (537). Next: side-goal stars light during a run, move dots, failures shown.
