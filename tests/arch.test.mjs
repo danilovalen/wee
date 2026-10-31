@@ -58,4 +58,7 @@ check('no middle dot in the source or the page', dotted.length === 0, dotted.joi
 const page = readFileSync('index.html', 'utf8'), sheet = readFileSync('style.css', 'utf8');
 check('the page declares itself light only', page.includes('<meta name="color-scheme" content="only light">') && /:root \{[^}]*color-scheme: only light;/.test(sheet));
 check('the bundle holds every source file', files.every(f => built.includes(`// ---- ${f}`)), files.filter(f => !built.includes(`// ---- ${f}`)).join(' '));
+// English only (register 529): the page asks the browser not to translate it (register 530).
+const page = readFileSync('index.html', 'utf8');
+check('the page tells the browser not to translate it', /<html[^>]*translate="no"/.test(page) && /<meta name="google" content="notranslate">/.test(page));
 done();
