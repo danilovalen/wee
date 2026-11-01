@@ -133,7 +133,7 @@ export function optionalGoals(def) {
     ...(def.small ? [{ id: 'small', parts: [`≤${def.small[0]}×${def.small[1]}`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] }] : []),
     ...(def.optional || []).map(id => ({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: v => !!(v.pathGoals && v.pathGoals[id]) })),
   ];
-  return own.length < 2 ? own : [...own, { id: 'mix', parts: [{ mark: 'star' }, '×2 at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
+  return own.length < 2 ? own : [...own, { id: 'mix', parts: ['×2 at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
 }
 // The fewest tiles a win took, then the fewest for each optional goal met: 'fewest tiles 3; exactly 7: 5'.
 export function scoreText(def, best) {

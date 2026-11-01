@@ -566,7 +566,6 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 .campReqs li.points { cursor: pointer; }
 .campReqs li.points .words { text-decoration: underline dotted; text-underline-offset: 3px; }
 .campReqs li.shown { border-radius: var(--r-s); box-shadow: 0 0 0 2px var(--accent, #6b5cff); }
-.campReqs .optional:not(.met):not(.unmet) .mark { box-shadow: none; outline: 1.5px dashed var(--dim); outline-offset: -1.5px; }
 .campIcon { width: 18px; height: 18px; vertical-align: -4px; }
 body.campaign .roomArea { position: relative; }
 /* The run's verdict: a band of its own under the goal card, two lines tall whether it shows or not, so
@@ -786,18 +785,32 @@ body.tutorial .campNum { display: none; }
 header .campLast { order: 9; margin-left: auto; font-size: 13px; white-space: nowrap; }
 body:not(.campaign) header .campLast, body.campaign.tutorial header .campLast { display: none; }
 
-/* The move minimum as dots (plan step 4) and the marks landing when Run's robot stops (plan step 3). */
-.moveDots { display: inline-flex; gap: 4px; align-items: center; vertical-align: -1px; }
-.moveDots i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--dim); transition: background .15s, box-shadow .15s; }
-.moveDots i.extra { width: 7px; height: 7px; }
-.moveDots i.on { background: var(--accent); box-shadow: none; }
+/* The move minimum as a path and 4+ (register 546), counting during Run. */
+.moveDots { display: inline-flex; align-items: center; gap: 3px; vertical-align: -3px; }
+.moveDots .glyph { width: 18px; height: 18px; }
+.moveDots b { font-weight: 800; }
+.moveDots.counting { color: var(--dim); }
+.moveDots.reached { color: #2e8b57; }
 @keyframes markLand { 0% { transform: scale(.4); } 70% { transform: scale(1.18); } 100% { transform: none; } }
-@media (prefers-reduced-motion: no-preference) { #campBrief.landed .met .mark, #campBrief.landed .unmet .mark { animation: markLand .32s ease-out backwards; } #campBrief.landed li:nth-child(2) .mark { animation-delay: .05s; } #campBrief.landed li:nth-child(3) .mark { animation-delay: .1s; } #campBrief.landed li:nth-child(4) .mark { animation-delay: .15s; } #campBrief.landed li:nth-child(n+5) .mark { animation-delay: .2s; } }
-
-/* A run too short: the dots it did not fill pulse (plan step 5). */
-@keyframes dotWant { 50% { box-shadow: inset 0 0 0 2px #e0524f, 0 0 0 3px rgba(224, 82, 79, .25); } }
-.moveDots.short i:not(.on) { animation: dotWant 1s ease-in-out 3; box-shadow: inset 0 0 0 2px #e0524f; }
+@media (prefers-reduced-motion: no-preference) { #campBrief.landed .met .mark, #campBrief.landed .unmet .mark, #campBrief.landed .campBigStar.on { animation: markLand .32s ease-out backwards; } #campBrief.landed li:nth-child(2) .mark { animation-delay: .05s; } #campBrief.landed li:nth-child(3) .mark { animation-delay: .1s; } #campBrief.landed li:nth-child(4) .mark { animation-delay: .15s; } #campBrief.landed li:nth-child(n+5) .mark { animation-delay: .2s; } }
+/* A run too short: the count pulses red (plan step 5). */
+@keyframes dotWant { 50% { opacity: .35; } }
+.moveDots.short { color: #c0392b; animation: dotWant 1s ease-in-out 3; }
 
 body.campaign header .campLast { flex: none; width: auto; display: inline-flex; align-items: center; gap: 2px; color: #b8860b; height: 20px; line-height: 20px; overflow: hidden; align-self: center; }
 header .campLast .glyph { width: 18px; height: 18px; fill: var(--gold, #ffc23d); stroke: #d4a017; }
 header .campLast b { font-size: 15px; }
+
+/* Register 547: the main star's box, and each side goal as a chip with its own star. */
+.campGoal { background: none; padding: 0; display: grid; gap: 6px; }
+.campMain { display: flex; gap: 8px; align-items: flex-start; background: #fff6dc; box-shadow: inset 0 0 0 2px #f2d27a; border-radius: var(--r-m); padding: 6px 8px; }
+.campBigStar { flex: none; width: 30px; height: 30px; }
+.campBigStar .glyph { width: 30px; height: 30px; fill: #fff; stroke: #c9a227; stroke-width: 1.6; }
+.campBigStar.on .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
+.campMain .campMust { flex: 1; min-width: 0; }
+.campOpt { margin: 0; padding: 6px 8px; box-shadow: none; background: var(--field); border-radius: var(--r-m); gap: 6px 8px; }
+.campOpt li { background: var(--panel); border-radius: var(--r-pill); padding: 2px 9px 2px 3px; box-shadow: 2px 2px 0 0 var(--sticker); align-items: center; }
+.campReqs .optional .mark, .campReqs .optional.met .mark, .campReqs .optional.unmet .mark { background: none; box-shadow: none; outline: none; color: #b9bcc6; }
+.campReqs .optional .mark .glyph { width: 18px; height: 18px; stroke-width: 1.8; fill: #fff; }
+.campReqs .optional.met .mark .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
+.campReqs .optional.unmet .mark .glyph { stroke: #c0392b; }

@@ -16,19 +16,20 @@ export const bindGoalCard = actions => { A = actions; };
 
 // A row's words, each object drawn as its palette icon (framed when the level offers it only pushable); the robot and the goal have their own.
 const WORD_ICON = { start: ['robot', 'Robot'], goal: ['goal', 'Goal'] };
-// The move minimum as dots, one per move, filled as the robot moves; moves past it add smaller dots.
+// The move minimum as a path and "4+" (register 546): while Run's robot plays it counts its moves, and
+// turns green once there are enough.
 let dotsEl = null;
 function dots(n) {
   const d = document.createElement('span'); d.className = 'moveDots'; d.dataset.need = n; d.setAttribute('role', 'img');
+  d.innerHTML = glyph('path') + '<b></b>';
   dotsEl = d; fill(d, S.demoRunning && S.game ? S.game.move : S.camp && S.camp.verdict && S.camp.verdict.ok && S.camp.verdict.length != null ? S.camp.verdict.length : 0);
   return d;
 }
 function fill(d, moved) {
-  const n = +d.dataset.need, all = Math.min(Math.max(n, moved), 12), have = d.children.length;
-  d.setAttribute('aria-label', `${moved} of at least ${n} moves`);
-  for (let i = have; i < all; i++) { const s = document.createElement('i'); if (i >= n) s.className = 'extra'; d.append(s); }
-  for (let i = all; i < have; i++) d.lastChild.remove();
-  [...d.children].forEach((s, i) => s.classList.toggle('on', i < moved));
+  const n = +d.dataset.need, counting = !!S.demoRunning && moved < n;
+  d.querySelector('b').textContent = counting ? String(moved) : `${n}+`;
+  d.classList.toggle('counting', counting); d.classList.toggle('reached', !!S.demoRunning && moved >= n);
+  d.setAttribute('aria-label', `at least ${n} moves`);
 }
 export function syncDots(moved) { if (dotsEl && dotsEl.isConnected) fill(dotsEl, moved); }
 const MARKS = { end: { glyph: 'flag', say: 'at the end' }, star: { glyph: 'star', say: 'side goals' } };
@@ -79,8 +80,12 @@ export function syncBrief() {
   // The level's number sits in the top bar (plan step 4); the card holds only its goals.
   $('campNum').textContent = shownName(def).replace(/^Level /, ''); $('campNum').title = shownName(def);
   // What a level requires, two to a line; what it only rewards, apart beneath.
+  // The main star and what it needs, in one gold box; each side goal its own chip with its own small star (register 547).
   const must = document.createElement('ul'); must.className = 'campReqs campMust';
   const opt = document.createElement('ul'); opt.className = 'campReqs campOpt';
+  const main = document.createElement('div'); main.className = 'campMain';
+  const big = document.createElement('span'); big.className = 'campBigStar' + (ran && v.won ? ' on' : ''); big.innerHTML = glyph('star'); big.setAttribute('role', 'img'); big.setAttribute('aria-label', 'Main star');
+  main.append(big, must);
   opt.dataset.label = 'Optional goals';
   for (const r of rows) {
     const list = r.optional ? opt : must;
@@ -90,11 +95,11 @@ export function syncBrief() {
     const missed = v && v.missed && v.missed[r.id];
     if (missed) { li.classList.add('points'); li.title = `${r.text} Tap to see a shortest path that misses it.`; li.onclick = () => showTrail(r, missed); }
     if (S.camp.trailOf === r.id) li.classList.add('shown');
-    const mark = document.createElement('span'); mark.className = 'mark'; const k = r.met === true ? 'check' : r.met === false ? 'cross' : r.optional ? 'star' : ''; if (k) mark.innerHTML = glyph(k);
+    const mark = document.createElement('span'); mark.className = 'mark'; const k = r.optional ? 'star' : r.met === true ? 'check' : r.met === false ? 'cross' : ''; if (k) mark.innerHTML = glyph(k);
     li.append(mark, words(r.parts));
     list.append(li);
   }
-  card.append(must, opt);
+  card.append(main, opt);
   $('campBrief').replaceChildren(card);
   // The verdict's words, over the room.
   const out = $('campVerdict');

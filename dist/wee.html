@@ -585,7 +585,6 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 .campReqs li.points { cursor: pointer; }
 .campReqs li.points .words { text-decoration: underline dotted; text-underline-offset: 3px; }
 .campReqs li.shown { border-radius: var(--r-s); box-shadow: 0 0 0 2px var(--accent, #6b5cff); }
-.campReqs .optional:not(.met):not(.unmet) .mark { box-shadow: none; outline: 1.5px dashed var(--dim); outline-offset: -1.5px; }
 .campIcon { width: 18px; height: 18px; vertical-align: -4px; }
 body.campaign .roomArea { position: relative; }
 /* The run's verdict: a band of its own under the goal card, two lines tall whether it shows or not, so
@@ -805,21 +804,35 @@ body.tutorial .campNum { display: none; }
 header .campLast { order: 9; margin-left: auto; font-size: 13px; white-space: nowrap; }
 body:not(.campaign) header .campLast, body.campaign.tutorial header .campLast { display: none; }
 
-/* The move minimum as dots (plan step 4) and the marks landing when Run's robot stops (plan step 3). */
-.moveDots { display: inline-flex; gap: 4px; align-items: center; vertical-align: -1px; }
-.moveDots i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--dim); transition: background .15s, box-shadow .15s; }
-.moveDots i.extra { width: 7px; height: 7px; }
-.moveDots i.on { background: var(--accent); box-shadow: none; }
+/* The move minimum as a path and 4+ (register 546), counting during Run. */
+.moveDots { display: inline-flex; align-items: center; gap: 3px; vertical-align: -3px; }
+.moveDots .glyph { width: 18px; height: 18px; }
+.moveDots b { font-weight: 800; }
+.moveDots.counting { color: var(--dim); }
+.moveDots.reached { color: #2e8b57; }
 @keyframes markLand { 0% { transform: scale(.4); } 70% { transform: scale(1.18); } 100% { transform: none; } }
-@media (prefers-reduced-motion: no-preference) { #campBrief.landed .met .mark, #campBrief.landed .unmet .mark { animation: markLand .32s ease-out backwards; } #campBrief.landed li:nth-child(2) .mark { animation-delay: .05s; } #campBrief.landed li:nth-child(3) .mark { animation-delay: .1s; } #campBrief.landed li:nth-child(4) .mark { animation-delay: .15s; } #campBrief.landed li:nth-child(n+5) .mark { animation-delay: .2s; } }
-
-/* A run too short: the dots it did not fill pulse (plan step 5). */
-@keyframes dotWant { 50% { box-shadow: inset 0 0 0 2px #e0524f, 0 0 0 3px rgba(224, 82, 79, .25); } }
-.moveDots.short i:not(.on) { animation: dotWant 1s ease-in-out 3; box-shadow: inset 0 0 0 2px #e0524f; }
+@media (prefers-reduced-motion: no-preference) { #campBrief.landed .met .mark, #campBrief.landed .unmet .mark, #campBrief.landed .campBigStar.on { animation: markLand .32s ease-out backwards; } #campBrief.landed li:nth-child(2) .mark { animation-delay: .05s; } #campBrief.landed li:nth-child(3) .mark { animation-delay: .1s; } #campBrief.landed li:nth-child(4) .mark { animation-delay: .15s; } #campBrief.landed li:nth-child(n+5) .mark { animation-delay: .2s; } }
+/* A run too short: the count pulses red (plan step 5). */
+@keyframes dotWant { 50% { opacity: .35; } }
+.moveDots.short { color: #c0392b; animation: dotWant 1s ease-in-out 3; }
 
 body.campaign header .campLast { flex: none; width: auto; display: inline-flex; align-items: center; gap: 2px; color: #b8860b; height: 20px; line-height: 20px; overflow: hidden; align-self: center; }
 header .campLast .glyph { width: 18px; height: 18px; fill: var(--gold, #ffc23d); stroke: #d4a017; }
 header .campLast b { font-size: 15px; }
+
+/* Register 547: the main star's box, and each side goal as a chip with its own star. */
+.campGoal { background: none; padding: 0; display: grid; gap: 6px; }
+.campMain { display: flex; gap: 8px; align-items: flex-start; background: #fff6dc; box-shadow: inset 0 0 0 2px #f2d27a; border-radius: var(--r-m); padding: 6px 8px; }
+.campBigStar { flex: none; width: 30px; height: 30px; }
+.campBigStar .glyph { width: 30px; height: 30px; fill: #fff; stroke: #c9a227; stroke-width: 1.6; }
+.campBigStar.on .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
+.campMain .campMust { flex: 1; min-width: 0; }
+.campOpt { margin: 0; padding: 6px 8px; box-shadow: none; background: var(--field); border-radius: var(--r-m); gap: 6px 8px; }
+.campOpt li { background: var(--panel); border-radius: var(--r-pill); padding: 2px 9px 2px 3px; box-shadow: 2px 2px 0 0 var(--sticker); align-items: center; }
+.campReqs .optional .mark, .campReqs .optional.met .mark, .campReqs .optional.unmet .mark { background: none; box-shadow: none; outline: none; color: #b9bcc6; }
+.campReqs .optional .mark .glyph { width: 18px; height: 18px; stroke-width: 1.8; fill: #fff; }
+.campReqs .optional.met .mark .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
+.campReqs .optional.unmet .mark .glyph { stroke: #c0392b; }
 </style>
 </head>
 <body>
@@ -4094,7 +4107,7 @@ function optionalGoals(def) {
     ...(def.small ? [{ id: 'small', parts: [`≤${def.small[0]}×${def.small[1]}`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] }] : []),
     ...(def.optional || []).map(id => ({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: v => !!(v.pathGoals && v.pathGoals[id]) })),
   ];
-  return own.length < 2 ? own : [...own, { id: 'mix', parts: [{ mark: 'star' }, '×2 at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
+  return own.length < 2 ? own : [...own, { id: 'mix', parts: ['×2 at once'], text: 'Two of the other optional goals in the same run.', mix: 2 }];
 }
 // The fewest tiles a win took, then the fewest for each optional goal met: 'fewest tiles 3; exactly 7: 5'.
 function scoreText(def, best) {
@@ -5691,6 +5704,7 @@ const G = {
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   cross: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
   flag: '<path d="M6 21V4"/><path d="M6 4.5h11l-2.5 4 2.5 4H6" fill="currentColor" fill-opacity=".25"/>',
+  path: '<path d="M4 19V9h9v6h6"/><path d="M16 12l3 3-3 3"/><circle cx="4" cy="19" r="1.6" fill="currentColor"/>',
   star: '<path d="M12 3.5l2.6 5.4 5.9.7-4.4 4 1.2 5.9L12 16.6l-5.3 2.9 1.2-5.9-4.4-4 5.9-.7z"/>',
 };
 const glyph = key => `<svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">${G[key]}</svg>`;
@@ -5962,19 +5976,20 @@ const bindGoalCard = actions => { A = actions; };
 
 // A row's words, each object drawn as its palette icon (framed when the level offers it only pushable); the robot and the goal have their own.
 const WORD_ICON = { start: ['robot', 'Robot'], goal: ['goal', 'Goal'] };
-// The move minimum as dots, one per move, filled as the robot moves; moves past it add smaller dots.
+// The move minimum as a path and "4+" (register 546): while Run's robot plays it counts its moves, and
+// turns green once there are enough.
 let dotsEl = null;
 function dots(n) {
   const d = document.createElement('span'); d.className = 'moveDots'; d.dataset.need = n; d.setAttribute('role', 'img');
+  d.innerHTML = glyph('path') + '<b></b>';
   dotsEl = d; fill(d, S.demoRunning && S.game ? S.game.move : S.camp && S.camp.verdict && S.camp.verdict.ok && S.camp.verdict.length != null ? S.camp.verdict.length : 0);
   return d;
 }
 function fill(d, moved) {
-  const n = +d.dataset.need, all = Math.min(Math.max(n, moved), 12), have = d.children.length;
-  d.setAttribute('aria-label', `${moved} of at least ${n} moves`);
-  for (let i = have; i < all; i++) { const s = document.createElement('i'); if (i >= n) s.className = 'extra'; d.append(s); }
-  for (let i = all; i < have; i++) d.lastChild.remove();
-  [...d.children].forEach((s, i) => s.classList.toggle('on', i < moved));
+  const n = +d.dataset.need, counting = !!S.demoRunning && moved < n;
+  d.querySelector('b').textContent = counting ? String(moved) : `${n}+`;
+  d.classList.toggle('counting', counting); d.classList.toggle('reached', !!S.demoRunning && moved >= n);
+  d.setAttribute('aria-label', `at least ${n} moves`);
 }
 function syncDots(moved) { if (dotsEl && dotsEl.isConnected) fill(dotsEl, moved); }
 const MARKS = { end: { glyph: 'flag', say: 'at the end' }, star: { glyph: 'star', say: 'side goals' } };
@@ -6025,8 +6040,12 @@ function syncBrief() {
   // The level's number sits in the top bar (plan step 4); the card holds only its goals.
   $('campNum').textContent = shownName(def).replace(/^Level /, ''); $('campNum').title = shownName(def);
   // What a level requires, two to a line; what it only rewards, apart beneath.
+  // The main star and what it needs, in one gold box; each side goal its own chip with its own small star (register 547).
   const must = document.createElement('ul'); must.className = 'campReqs campMust';
   const opt = document.createElement('ul'); opt.className = 'campReqs campOpt';
+  const main = document.createElement('div'); main.className = 'campMain';
+  const big = document.createElement('span'); big.className = 'campBigStar' + (ran && v.won ? ' on' : ''); big.innerHTML = glyph('star'); big.setAttribute('role', 'img'); big.setAttribute('aria-label', 'Main star');
+  main.append(big, must);
   opt.dataset.label = 'Optional goals';
   for (const r of rows) {
     const list = r.optional ? opt : must;
@@ -6036,11 +6055,11 @@ function syncBrief() {
     const missed = v && v.missed && v.missed[r.id];
     if (missed) { li.classList.add('points'); li.title = `${r.text} Tap to see a shortest path that misses it.`; li.onclick = () => showTrail(r, missed); }
     if (S.camp.trailOf === r.id) li.classList.add('shown');
-    const mark = document.createElement('span'); mark.className = 'mark'; const k = r.met === true ? 'check' : r.met === false ? 'cross' : r.optional ? 'star' : ''; if (k) mark.innerHTML = glyph(k);
+    const mark = document.createElement('span'); mark.className = 'mark'; const k = r.optional ? 'star' : r.met === true ? 'check' : r.met === false ? 'cross' : ''; if (k) mark.innerHTML = glyph(k);
     li.append(mark, words(r.parts));
     list.append(li);
   }
-  card.append(must, opt);
+  card.append(main, opt);
   $('campBrief').replaceChildren(card);
   // The verdict's words, over the room.
   const out = $('campVerdict');

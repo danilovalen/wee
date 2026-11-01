@@ -245,7 +245,11 @@ try {
   const first = await page.evaluate(() => { const m = document.querySelector('.campMust'), s = m.querySelector('[data-req="steps"]'); return { first: m.firstElementChild === s, full: Math.abs(s.getBoundingClientRect().width - m.getBoundingClientRect().width) < 2, text: s.textContent.trim(), need: s.querySelector('.moveDots')?.dataset.need }; });
   const sizes = await page.$$eval('.campReqs li', ls => [...new Set(ls.map(l => getComputedStyle(l).fontSize))]);
   check('every goal row has the same type size', sizes.length === 1, sizes.join());
-  check('the 4-move minimum comes first, across the whole card', first.first && first.full && first.text === '' && first.need === '4', JSON.stringify(first));
+  // Register 547: the main star's goals in one box with the big star; each side goal a chip with its own star.
+  const split = await page.evaluate(() => { const main = document.querySelector('.campMain'), side = document.querySelector('.campOpt');
+    return { big: !!main?.querySelector('.campBigStar'), must: [...document.querySelectorAll('.campMust li')].every(l => main.contains(l)), side: [...side.querySelectorAll('li')].every(l => l.classList.contains('optional') && l.querySelector('.mark [class=glyph], .mark svg')), apart: main.getBoundingClientRect().bottom <= side.getBoundingClientRect().top }; });
+  check('the main star\'s goals sit in one box with a big star; each side goal is a chip with its own star, below (register 547)', split.big && split.must && split.side && split.apart, JSON.stringify(split));
+  check('the 4-move minimum comes first, across the whole card', first.first && first.full && first.text === '4+' && first.need === '4', JSON.stringify(first));
   check('the optional goal sits apart, below the required ones', lay.opt === 'best,small,hitsClosedDoor,atMostOneDoor,mix' && !lay.must.includes('best') && lay.below, JSON.stringify(lay));
   check('the goal card has no section headings: a star marks a side goal (plan step 4)', await page.locator('.campLabel').count() === 0 && !/^(optional )?goals$/im.test(await page.locator('#campBrief').innerText()));
   check('requirement rows draw objects as icons', reqRows.includes('throughOpenDoor=start+door') && reqRows.includes('doorClosedAtEnd=door'), reqRows.join());
