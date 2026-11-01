@@ -27,6 +27,9 @@ const STEPS = [
     lost: { say: 'The robot can’t reach the star from there, so it goes back to its start.' } },
   { say: 'Playing it yourself doesn’t beat the level, so tap the pencil to go back.', ring: '#mode', done: () => S.mode === 'edit' },
   { say: 'By tapping play, the robot will find the shortest path to the star and walk through it.', ring: '#campRun', enter: () => { ran = false; }, done: () => ran && S.mode === 'edit' },
+  // Register 587: the side star, and that another room can earn it later (586).
+  { say: 'The small star is a side goal: you don’t need it to win, but it earns a star.', next: 'Next', ring: '#campBrief .campOpt li' },
+  { say: 'If one room can’t meet every goal, try another room later: stars you earn stay.', next: 'Next', ring: '#campBrief .campOpt li' },
   { say: 'You beat it, so tap the four squares to see the real levels.', ring: '#campBack', done: () => current() && current().name === 'levels' },
   { say: 'When you beat a level, its big star shows how many tiles you placed: fewer is better.', next: 'Next', ring: '.campRow[data-level="1"] .campStar.main', list: true },
   { say: 'Each side goal you meet fills one of its small stars.', wait: 'Tap Level 1 to start.', ring: '.campRow[data-level="1"]', list: true },

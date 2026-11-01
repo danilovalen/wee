@@ -1022,6 +1022,7 @@ const M = [
   ['src/app/goalCard.js', "const rows = def.challenge ? [] : def.tutorial ?", "const rows = def.tutorial || def.challenge ?", 'challenge'],
   ['src/app/winCard.js', "$('winLevels').hidden = !!p.def.made;", "$('winLevels').hidden = true;", 'win'],
   ['src/app/goalCard.js', "optional: true, kept: !!kept[o.id] });", "optional: true, kept: false });", 'win'],
+  ['src/app/tutorial.js', "it earns a star.', next: 'Next', ring: '#campBrief .campOpt li' },", "it earns a star.', next: 'Next', ring: '#campBack' },", 'tutorial'],
 ];
 
 // SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.

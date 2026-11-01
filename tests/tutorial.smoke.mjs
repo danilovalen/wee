@@ -51,6 +51,12 @@ try {
   await p.click('#mode'); await p.waitForTimeout(400);
   check('Run is ringed, with how Run plays', /By tapping play, the robot will find the shortest path/.test(await say(p)) && (await ringed(p)) === 'campRun');
   await p.click('#campRun'); await p.waitForTimeout(4500);
+  // Register 587: the side star, ringed on the card, and that another room can earn it later.
+  const sideRing = () => p.evaluate(() => { const r = document.querySelector('.tutRing'); return !!r && r.matches('#campBrief .campOpt li') && r.getBoundingClientRect().height > 0; });
+  check('after the win the bubble shows the side goal on the card', /small star is a side goal/.test(await say(p)) && await sideRing(), await say(p));
+  await p.click('#tutNext'); await p.waitForTimeout(300);
+  check('then says another room can earn it, and a star stays', /try another room later: stars you earn stay/.test(await say(p)) && await sideRing(), await say(p));
+  await p.click('#tutNext'); await p.waitForTimeout(300);
   check('after the win, with no win card and no verdict bar, Levels is ringed', /tap the four squares to see the real levels/.test(await say(p)) && (await ringed(p)) === 'campBack' && !(await p.evaluate(() => document.getElementById('winBox').open)) && await p.locator('#campVerdict').isHidden());
   const seen = await p.evaluate(() => ({ room: [...window.__seen.room], box: [...window.__seen.box] }));
   check('the room never moved or resized during the tutorial (register 517)', seen.room.length === 1, seen.room.join(' / '));

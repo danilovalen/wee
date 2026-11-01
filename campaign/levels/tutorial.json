@@ -20,7 +20,8 @@
   ]
  },
  "steps": {
-  "min": 1
+  "min": 1,
+  "best": 4
  },
  "rules": [],
  "require": [],
