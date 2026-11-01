@@ -21,6 +21,7 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
 
 ## Rules
 
+- **A piece and what it gives off are two icons in goal text** (owner, 2026-11-01, rows 550-552): a laser box and its beam, and later a bomb and its explosion. A goal about the effect draws the effect; `campaign.test` checks lasers against each goal's sentence, and bomb goals need the same check when they arrive.
 - **The game is English only, for now** (owner, 2026-10-31, row 529). No language switch, and nothing that follows the phone's language: dates and numbers are formatted in `'en'`.
 - **Nothing on the game screen folds open or shut to save space** (owner, 2026-10-30, row 524: *"Avoid dynamic things opening and closing. Not good practice for games."*). Find room by removing waste (gaps, oversized rows), not by hiding parts behind a tap.
 - **Push after every commit.** A cloud container can be reset at any moment and takes every
