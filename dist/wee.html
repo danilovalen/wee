@@ -839,6 +839,11 @@ header .campLast b { font-size: 15px; }
 .campReqs .optional .mark .glyph { width: 18px; height: 18px; stroke-width: 1.8; fill: #fff; }
 .campReqs .optional.met .mark .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
 .campReqs .optional.unmet .mark .glyph { stroke: #c0392b; }
+/* Register 586: a star kept from an earlier room is filled on a pale chip; this room's ring is gold. */
+.campOpt li.kept { background: #fff6dc; }
+.campReqs .optional.kept .mark .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
+.campReqs .optional.kept.unmet .mark .glyph { stroke: #d4a017; }
+.campOpt li.met { box-shadow: 0 0 0 2px var(--gold, #ffc23d), 2px 2px 0 0 var(--sticker); }
 
 .campPlus { font-weight: 800; color: var(--accent); padding: 0 2px; }
 
@@ -6035,8 +6040,10 @@ const { glyph } = m44;
 const { S } = m29;
 const { $, now } = m25;
 const { icon } = m42;
+const { progress } = m49;
 // The goal card over the room: one row per requirement, drawn as words and palette icons, marked
 // after a run; a missed row draws a shortest path that misses it; the verdict floats over the room.
+
 
 
 
@@ -6117,7 +6124,10 @@ function syncBrief() {
   }
   for (const id of def.require || []) rows.push({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: ran && v.reqs ? v.reqs[id] : null });
   const results = ran ? optionalResults(def, v) : [];
-  for (const o of optionalGoals(def)) rows.push({ id: o.id, parts: o.parts, text: `Optional: ${o.text}`, met: ran ? results.find(r => r.id === o.id).met : null, optional: true });
+  // A side star earned by any earlier room stays filled on a pale chip; the room on screen rings the
+  // ones it meets (register 586), so stars read as collected one room at a time.
+  const kept = ((progress().levels[def.id] || {}).goals) || {};
+  for (const o of optionalGoals(def)) rows.push({ id: o.id, parts: o.parts, text: `Optional: ${o.text}`, met: ran ? results.find(r => r.id === o.id).met : null, optional: true, kept: !!kept[o.id] });
   const card = document.createElement('div'); card.className = 'campGoal';
   const last = $('campLast');
   const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);
@@ -6140,7 +6150,7 @@ function syncBrief() {
   for (const r of rows) {
     const list = r.optional ? opt : must;
     const li = document.createElement('li'); li.dataset.req = r.id; li.title = r.text;
-    li.className = (r.optional ? 'optional ' : '') + (r.met === true ? 'met' : r.met === false ? 'unmet' : '');
+    li.className = (r.optional ? 'optional ' : '') + (r.kept ? 'kept ' : '') + (r.met === true ? 'met' : r.met === false ? 'unmet' : '');
     // A failed row with a path that missed it: a tap draws that path on the room.
     const missed = v && v.missed && v.missed[r.id];
     if (missed) { li.classList.add('points'); li.title = `${r.text} Tap to see a shortest path that misses it.`; li.onclick = () => showTrail(r, missed); }

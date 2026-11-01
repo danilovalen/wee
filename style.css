@@ -820,6 +820,11 @@ header .campLast b { font-size: 15px; }
 .campReqs .optional .mark .glyph { width: 18px; height: 18px; stroke-width: 1.8; fill: #fff; }
 .campReqs .optional.met .mark .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
 .campReqs .optional.unmet .mark .glyph { stroke: #c0392b; }
+/* Register 586: a star kept from an earlier room is filled on a pale chip; this room's ring is gold. */
+.campOpt li.kept { background: #fff6dc; }
+.campReqs .optional.kept .mark .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
+.campReqs .optional.kept.unmet .mark .glyph { stroke: #d4a017; }
+.campOpt li.met { box-shadow: 0 0 0 2px var(--gold, #ffc23d), 2px 2px 0 0 var(--sticker); }
 
 .campPlus { font-weight: 800; color: var(--accent); padding: 0 2px; }
 

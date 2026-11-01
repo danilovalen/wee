@@ -66,6 +66,15 @@ try {
   await runRoom(ROOM);
   check('after a progress reset the first card shows again', (await card()).open, JSON.stringify(await card()));
   if ((await card()).open) await page.click('#winStay');
+  // Register 586: a side star kept from an earlier room is filled on a pale chip before any run here.
+  const side = (await page.evaluate(async () => (await import('/src/campaign/rules.js')).optionalGoals((await import('/src/level/campaign.js')).LEVELS.find(l => l.id === '1')).map(o => o.id)));
+  if (side.length) {
+    await page.evaluate(id => { const p = JSON.parse(localStorage.getItem('wee.campaign')); (p.levels['1'] ||= {}).goals = { [id]: true }; localStorage.setItem('wee.campaign', JSON.stringify(p)); }, side[0]);
+    await page.goto(`http://localhost:${PORT}/#/levels`); await page.evaluate(() => { location.hash = '#/level/1'; }); await page.waitForTimeout(600);
+    const kept = await page.$$eval('.campOpt li', ls => ls.map(l => [l.dataset.req, l.classList.contains('kept'), getComputedStyle(l).backgroundColor, getComputedStyle(l.querySelector('.mark .glyph')).fill]));
+    const [mine, ...rest] = [kept.find(k => k[0] === side[0]), ...kept.filter(k => k[0] !== side[0])];
+    check('a side star kept from an earlier room is filled on a pale chip; the others are not', mine && mine[1] && mine[2] === 'rgb(255, 246, 220)' && mine[3] !== 'rgb(255, 255, 255)' && rest.every(k => !k[1] && k[2] !== 'rgb(255, 246, 220)'), JSON.stringify(kept));
+  }
   // Register 447: a page that cannot save (opened as a file on a phone) still shows the first card once.
   await page.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } }); });
   await page.goto(`http://localhost:${PORT}/#/level/1`); await page.reload(); await page.waitForTimeout(600);

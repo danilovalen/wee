@@ -7,6 +7,7 @@ import { glyph } from './glyphs.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
 import { icon } from './icons.js';
+import { progress } from './progress.js';
 
 // The editor tool that places each palette element.
 export const TOOL = { spikes: 'death', block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle', gate: 'gate', laser: 'turret', idoor: 'idoor', relay: 'sensor' };
@@ -81,7 +82,10 @@ export function syncBrief() {
   }
   for (const id of def.require || []) rows.push({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: ran && v.reqs ? v.reqs[id] : null });
   const results = ran ? optionalResults(def, v) : [];
-  for (const o of optionalGoals(def)) rows.push({ id: o.id, parts: o.parts, text: `Optional: ${o.text}`, met: ran ? results.find(r => r.id === o.id).met : null, optional: true });
+  // A side star earned by any earlier room stays filled on a pale chip; the room on screen rings the
+  // ones it meets (register 586), so stars read as collected one room at a time.
+  const kept = ((progress().levels[def.id] || {}).goals) || {};
+  for (const o of optionalGoals(def)) rows.push({ id: o.id, parts: o.parts, text: `Optional: ${o.text}`, met: ran ? results.find(r => r.id === o.id).met : null, optional: true, kept: !!kept[o.id] });
   const card = document.createElement('div'); card.className = 'campGoal';
   const last = $('campLast');
   const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);
@@ -104,7 +108,7 @@ export function syncBrief() {
   for (const r of rows) {
     const list = r.optional ? opt : must;
     const li = document.createElement('li'); li.dataset.req = r.id; li.title = r.text;
-    li.className = (r.optional ? 'optional ' : '') + (r.met === true ? 'met' : r.met === false ? 'unmet' : '');
+    li.className = (r.optional ? 'optional ' : '') + (r.kept ? 'kept ' : '') + (r.met === true ? 'met' : r.met === false ? 'unmet' : '');
     // A failed row with a path that missed it: a tap draws that path on the room.
     const missed = v && v.missed && v.missed[r.id];
     if (missed) { li.classList.add('points'); li.title = `${r.text} Tap to see a shortest path that misses it.`; li.onclick = () => showTrail(r, missed); }
