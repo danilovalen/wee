@@ -581,3 +581,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 573 | (screenshot `docs/feedback/2026-11-01-reset.jpg`) Reset confirm reads oddly: "Reset the room to the level's start, which Undo can bring back?" Wants: "Reset the room? (You can undo the reset)". | **registered.** |
 | 574 | "Icon still not centered" (same screenshot): the reset icon sits against its button's left edge, cut off. | **registered.** Same item as 568; reported twice. |
 | 575 | "I completed C1 and it didn't register the star." | **registered.** A won challenge does not record its star. Likely the progress store keys on numbered campaign levels and skips the `c` ids; to check when building. |
+| 576 | "Still not clear when a piece is default from the level, and when it was placed by the player." | **registered.** Second report of 565; raise its priority. |
