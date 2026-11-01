@@ -573,3 +573,5 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 565 | It should be clear which tiles the player placed and which were already there. | **registered.** |
 | 566 | The piece limit is not a goal: show it before the level starts, not as "=3 block" on the goal card. | **registered.** |
 | 567 | Prefer "drag these pieces and drop them" over a goal; "ok for now". | **registered, later.** A tray of the given pieces to drag from, instead of tool + tap. |
+| 568 | (screenshot `docs/feedback/2026-11-01-c2.jpg`) "Undo button is not centered." | **registered.** In the screenshot the clear-room (reset) icon also sits against its button's left edge rather than in the middle; check the whole undo/redo/reset group. |
+| 569 | Challenges: exact move count ("exactly 4") instead of a minimum ("4+"). | **registered.** Changes the checker: the solution must take exactly N moves; each challenge is re-found. |
