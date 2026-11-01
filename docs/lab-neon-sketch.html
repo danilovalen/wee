@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Lab Sketch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#fcfcfa;--soft:#939293;--line:#403e41}
+*{box-sizing:border-box}
+body{margin:0;background:#19181a;color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px} h2{font-size:17px;margin:30px 0 4px} h3{font-size:15px;margin:0 0 4px}
+p.sub{color:var(--soft);margin:0 0 12px;font-size:14px;max-width:880px}
+.card{background:#2d2a2e;border-radius:4px;padding:14px;margin-top:10px;box-shadow:0 0 0 2px #403e41}
+.two{display:grid;grid-template-columns:330px 1fr;gap:18px;align-items:start}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:6px;margin-top:8px}
+.sw div{background:#221f22;font-size:11.5px;box-shadow:0 0 0 1px #403e41}
+.sw i{display:block;height:30px}
+.sw span{display:block;padding:3px 6px;color:#c1c0c0} .sw b{color:#fcfcfa}
+svg{display:block;width:100%;height:auto}
+.phone{width:320px;max-width:100%;margin:0 auto;box-shadow:0 0 0 2px #403e41}
+ul{margin:4px 0 8px;padding-left:18px;font-size:13.5px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+th{color:var(--soft)}
+code{background:#221f22;padding:0 4px}
+.q{font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>wee in a lab: neon on grey (register 596)</h1>
+<p class="sub">After "a bit more neon on gray, think monokai; HUD should reflect it and pixel too". Monokai's rule, carried over: everything that only sits there is a neutral warm grey, and neon goes only on what acts or matters (the blob, the fruit, doors and switches, the beam, the stars, the one thing you can tap next). The HUD uses the same greys, hard pixel edges, notched corners and a pixel font. Words are drafts; "stars" stays the score (register 597).</p>
+
+<h2>The palette</h2>
+<div class="card two">
+ <div id="room"></div>
+ <div><h3>D. Neon lab</h3>
+ <p class="sub" style="margin:0">Greys from Monokai Pro's warm neutrals; neons from its six accents, each given one job so no two things on screen share a colour.</p>
+ <div class="sw" id="sw"></div></div>
+</div>
+
+<h2>The play screen with a pixel HUD</h2>
+<div class="card two">
+ <div class="phone" id="play"></div>
+ <div>
+ <ul>
+ <li><b>Top bar:</b> the pixel wordmark, the level number, then the three actions as notched pixel buttons: levels, Run (the one neon button: it is what you do next), Test.</li>
+ <li><b>Goal card:</b> a dark panel with a 2-pixel purple frame. The big star sits left with the main goals; side goals are chips, each with a lamp that is dark, lit, or ringed (kept, met now; register 586).</li>
+ <li><b>The room:</b> 8x8 tiles drawn 4 px per pixel; floor lines one grey step from the floor, so the grid reads without competing.</li>
+ <li><b>Bottom bar:</b> undo, redo, reset, then look, erase, move, then the pieces you may place; the chosen tool gets a cyan frame.</li>
+ <li><b>Type:</b> one pixel font (Silkscreen here) at whole-pixel sizes only, so letters stay sharp.</li>
+ <li><b>Icons:</b> 8x8 pixel drawings in the HUD grey, the same grid as the tiles; no emoji, no outlines at fractional sizes.</li>
+ </ul></div>
+</div>
+
+<h2>The campaign floor plan in neon (rules of 558, the same moment: chambers 1 and 2 beaten, 3 next, ★ 5)</h2>
+<div class="card two">
+ <div class="phone" id="map"></div>
+ <div><ul>
+ <li>Walls and rooms are greys; a room you can enter now has a neon frame, locked ones none.</li>
+ <li>Steer rooms (puzzles) are cyan, supply rooms (challenges) orange, build chambers purple: the three gameplays by colour, everywhere the same.</li>
+ <li>Side-goal lamps over each beaten chamber; dark ones stay grey.</li>
+ <li>Stockroom, annex, workbench and lab notes as before, in grey until something there is new, which lights its sign.</li>
+ </ul></div>
+</div>
+
+<h2>Colour jobs</h2>
+<div class="card"><table>
+<tr><th>Colour</th><th>Job</th><th>Never used for</th></tr>
+<tr><td>green #a9dc76</td><td>the blob</td><td>anything else</td></tr>
+<tr><td>orange #fc9867</td><td>the fruit; supply rooms (challenges)</td><td>walls, HUD</td></tr>
+<tr><td>cyan #78dce8</td><td>doors, switches, wires; steer rooms (puzzles); the chosen tool</td><td>the blob</td></tr>
+<tr><td>pink #ff6188</td><td>laser beam; refusals and misses</td><td>anything you can stand on</td></tr>
+<tr><td>yellow #ffd866</td><td>stars and lamps</td><td>the room</td></tr>
+<tr><td>purple #ab9df2</td><td>HUD accent: Run, the goal card frame, build chambers</td><td>the room</td></tr>
+<tr><td>greys #221f22 to #c1c0c0</td><td>floor, blocks, boxes, laser body, HUD panels and text</td><td></td></tr>
+</table></div>
+
+<h2>Open questions</h2>
+<ol class="q"><li>This palette, or nudge it (for example a darker or a lighter grey base)?</li><li>Floor plan or incubator rack?</li></ol>
+</main>
+<script>
+const P = { bg: '#19181a', base: '#221f22', floor: '#2d2a2e', grout: '#363337', panel: '#2d2a2e', line: '#403e41',
+  wallL: '#727072', wall: '#5b595c', wallD: '#403e41', boxL: '#a59f85', box: '#857f6a', boxD: '#5e5a4a',
+  blobH: '#d8f3b8', blob: '#a9dc76', blobS: '#6f9e45', eye: '#221f22',
+  fruitH: '#ffc7a6', fruit: '#fc9867', fruitS: '#c4643a', leaf: '#6f9e45',
+  door: '#78dce8', doorD: '#3f9aa6', beam: '#ff6188', star: '#ffd866', accent: '#ab9df2', text: '#fcfcfa', dim: '#939293' };
+const SPR = {
+  blob: ['..bbbb..', '.bhhbbb.', 'bhhbbbbb', 'bbbebeb.', 'bbbbbbbb', 'sbbbbbss', '.ssssss.', '........'],
+  fruit: ['....l...', '...ll...', '.rrrrr..', 'rRrrrrr.', 'rRrrrrr.', 'rrrrrdr.', '.rrrdd..', '..rr....'],
+  box: ['LLLLLLLL', 'LxxxxxxD', 'LxLxxDxD', 'LxxLDxxD', 'LxxDLxxD', 'LxDxxLxD', 'LxxxxxxD', 'DDDDDDDD'],
+  wall: ['TTTTTTTT', 'TwwwwwwW', 'wwwwwwwW', 'wwwwwwwW', 'wwwwwwwW', 'wwwwwwwW', 'wwwwwwwW', 'WWWWWWWW'],
+  door: ['OOOOOOOO', 'O.O..O.Q', 'OOOOOOOQ', 'O.O..O.Q', 'OOOOOOOQ', 'O.O..O.Q', 'OOOOOOOQ', 'QQQQQQQQ'],
+  sw: ['........', '..OOOO..', '.O....O.', '.O.OO.O.', '.O.OO.O.', '.O....O.', '..OOOO..', '........'],
+  laser: ['.WWWWWW.', 'WwwwwwwW', 'Www!!wwW', 'Www!!!!!', 'Www!!!!!', 'Www!!wwW', 'WwwwwwwW', '.WWWWWW.'],
+  star: ['...y....', '...y....', '..yyy...', 'yyyyyyy.', '.yyyyy..', '..yyy...', '.yy.yy..', '.y...y..'],
+  play: ['x.......', 'xx......', 'xxx.....', 'xxxx....', 'xxxx....', 'xxx.....', 'xx......', 'x.......'],
+  grid: ['xxx.xxx.', 'x.x.x.x.', 'xxx.xxx.', '........', 'xxx.xxx.', 'x.x.x.x.', 'xxx.xxx.', '........'],
+  pad: ['...x....', '..xxx...', '...x....', '.x...x..', 'xxx.xxx.', '.x...x..', '...x....', '..xxx...'],
+  undo: ['..x.....', '.xx.....', 'xxxxxx..', '.xx...x.', '..x...x.', '......x.', '..xxxx..', '........'],
+  redo: ['.....x..', '.....xx.', '..xxxxxx', '.x...xx.', '.x...x..', '.x......', '..xxxx..', '........'],
+  reset: ['..xxxx..', '.x....x.', 'x......x', 'x..xx...', 'x..xx..x', 'x......x', '.x....x.', '..xxxx..'],
+  look: ['.xxx....', 'x...x...', 'x...x...', 'x...x...', '.xxx....', '....x...', '.....x..', '......x.'],
+  erase: ['x.....x.', '.x...x..', '..x.x...', '...x....', '..x.x...', '.x...x..', 'x.....x.', '........'],
+  move: ['...x....', '..xxx...', '...x....', 'x..x..x.', 'xxxxxxx.', 'x..x..x.', '...x....', '..xxx...'],
+};
+const ROLE = { b: P.blob, h: P.blobH, s: P.blobS, e: P.eye, r: P.fruit, R: P.fruitH, d: P.fruitS, l: P.leaf, L: P.boxL, x: P.box, D: P.boxD,
+  T: P.wallL, w: P.wall, W: P.wallD, O: P.door, Q: P.doorD, '!': P.beam, y: P.star };
+function spr(name, X, Y, k, ink) {
+  let s = '';
+  SPR[name].forEach((row, y) => [...row].forEach((c, x) => { if (c !== '.') s += `<rect x="${X + x * k}" y="${Y + y * k}" width="${k}" height="${k}" fill="${ink && c === 'x' ? ink : ROLE[c]}"/>`; }));
+  return s;
+}
+// A notched pixel panel: a rectangle with one pixel cut from each corner, and a 2-pixel frame.
+function panel(x, y, w, h, fill, frame, k = 2) {
+  const n = k;
+  const path = `M${x + n} ${y}H${x + w - n}V${y + n}H${x + w}V${y + h - n}H${x + w - n}V${y + h}H${x + n}V${y + h - n}H${x}V${y + n}H${x + n}Z`;
+  return `<path d="${path}" fill="${frame}"/>` + `<rect x="${x + k}" y="${y + k}" width="${w - 2 * k}" height="${h - 2 * k}" fill="${fill}"/>`;
+}
+const T = (x, y, s, size, fill, anchor = 'start') => `<text x="${x}" y="${y}" font-family="Silkscreen, monospace" font-size="${size}" fill="${fill}" text-anchor="${anchor}">${s}</text>`;
+const ROOM = ['P..#...', '.#...B.', '..D.#..', 'o...#.L', '#.....F'];
+function room(X, Y, k) {
+  const t = 8 * k; let s = '';
+  for (let y = 0; y < ROOM.length; y++) for (let x = 0; x < 7; x++) s += `<rect x="${X + x * t}" y="${Y + y * t}" width="${t}" height="${t}" fill="${P.floor}"/><rect x="${X + x * t}" y="${Y + y * t}" width="${t}" height="${k}" fill="${P.grout}"/><rect x="${X + x * t}" y="${Y + y * t}" width="${k}" height="${t}" fill="${P.grout}"/>`;
+  s += `<rect x="${X + 5 * t}" y="${Y + 3 * t + 3 * k}" width="${t}" height="${2 * k}" fill="${P.beam}"/>`;
+  ROOM.forEach((row, y) => [...row].forEach((c, x) => {
+    const m = { '#': 'wall', B: 'box', D: 'door', o: 'sw', L: 'laser', P: 'blob', F: 'fruit' }[c];
+    if (m) s += spr(m, X + x * t, Y + y * t, k);
+  }));
+  return s;
+}
+const svg = (w, h, body, label) => `<svg viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" role="img" aria-label="${label}">${body}</svg>`;
+document.getElementById('room').innerHTML = svg(7 * 48 + 20, 5 * 48 + 20, `<rect width="356" height="260" fill="${P.base}"/>` + room(10, 10, 6), 'The test room in the neon lab palette');
+const SW = [['base', 'background'], ['floor', 'floor, panels'], ['grout', 'floor lines'], ['wall', 'block'], ['box', 'box'], ['blob', 'blob'], ['fruit', 'fruit'], ['door', 'door, switch'], ['beam', 'laser beam'], ['star', 'stars, lamps'], ['accent', 'HUD accent'], ['text', 'text'], ['dim', 'quiet text']];
+document.getElementById('sw').innerHTML = SW.map(([k, n]) => `<div><i style="background:${P[k]}"></i><span><b>${n}</b> ${P[k]}</span></div>`).join('');
+
+// The play screen.
+(function () {
+  const W = 320, H = 600; let s = `<rect width="${W}" height="${H}" fill="${P.base}"/>`;
+  s += T(10, 30, 'wee', 20, P.accent) + T(70, 30, '3', 18, P.text);
+  s += panel(120, 10, 60, 32, P.panel, P.line) + spr('grid', 138, 14, 3, P.wallL);
+  s += panel(184, 10, 64, 32, P.accent, P.accent) + spr('play', 204, 14, 3, P.base);
+  s += panel(252, 10, 60, 32, P.panel, P.line) + spr('pad', 270, 14, 3, P.wallL);
+  s += panel(8, 52, 304, 86, P.base, P.accent);
+  s += spr('star', 18, 64, 4) + T(58, 82, 'MAIN', 10, P.dim);
+  s += panel(56, 88, 90, 22, P.panel, P.line) + spr('play', 62, 93, 1.5, P.dim) + T(78, 104, '4+ moves', 9, P.text);
+  s += panel(150, 88, 70, 22, P.panel, P.line) + T(158, 104, 'thru door', 9, P.text);
+  [['hits door x2', true, false], ['1 door', false, true]].forEach(([t, kept, now], i) => {
+    const x = 18 + i * 146, y = 114;
+    s += panel(x, y, 138, 20, kept ? '#3a3528' : P.panel, now ? P.star : P.line);
+    s += `<rect x="${x + 6}" y="${y + 6}" width="8" height="8" fill="${kept || now ? P.star : P.line}"/>` + T(x + 20, y + 14, t, 9, P.text);
+  });
+  s += room(20, 160, 5);
+  s += panel(8, 440, 304, 150, P.panel, P.line);
+  s += T(16, 458, 'BLOCK', 9, P.dim);
+  ['undo', 'redo', 'reset'].forEach((n, i) => { s += panel(16 + i * 40, 466, 38, 38, P.base, P.line) + spr(n, 23 + i * 40, 473, 3, P.wallL); });
+  ['look', 'erase', 'move'].forEach((n, i) => { s += panel(146 + i * 40, 466, 38, 38, P.base, P.line) + spr(n, 153 + i * 40, 473, 3, P.wallL); });
+  [['wall', true], ['box', false], ['door', false], ['sw', false]].forEach(([n, on], i) => { s += panel(16 + i * 46, 516, 42, 42, P.base, on ? P.door : P.line) + spr(n, 21 + i * 46, 521, 4); });
+  document.getElementById('play').innerHTML = svg(W, H, s, 'The play screen in the neon lab palette with a pixel HUD');
+})();
+
+// The floor plan.
+(function () {
+  const W = 320, H = 520; let s = `<rect width="${W}" height="${H}" fill="${P.base}"/>`;
+  s += T(10, 28, 'wee', 18, P.accent);
+  s += spr('star', 252, 12, 2) + T(272, 28, '5', 16, P.star);
+  s += `<rect x="136" y="44" width="48" height="460" fill="${P.floor}"/>`;
+  for (let y = 44; y < 504; y += 16) s += `<rect x="136" y="${y}" width="48" height="2" fill="${P.grout}"/>`;
+  const chamber = (x, y, n, state) => panel(x, y, 78, 60, state === 'locked' ? P.base : P.panel, state === 'next' ? P.accent : state === 'locked' ? P.line : P.wall) + T(x + 39, y + 38, n, 16, state === 'locked' ? P.line : P.text, 'middle');
+  const lamps = (x, y, list) => list.map((v, i) => `<rect x="${x + i * 12}" y="${y}" width="8" height="8" fill="${v === null ? P.line : v ? P.star : P.wallD}"/>${v === false ? `<rect x="${x + i * 12 + 2}" y="${y + 2}" width="4" height="4" fill="${P.base}"/>` : ''}`).join('');
+  s += chamber(54, 420, '1', 'beaten') + lamps(76, 408, [true, false]);
+  s += chamber(188, 330, '2', 'beaten') + lamps(210, 318, [false, false]);
+  s += chamber(54, 240, '3', 'next') + lamps(76, 228, [null, null]);
+  s += chamber(188, 150, '4', 'locked') + chamber(54, 64, '5', 'locked');
+  s += `<rect x="132" y="440" width="8" height="18" fill="${P.floor}"/><rect x="184" y="350" width="8" height="18" fill="${P.floor}"/><rect x="132" y="260" width="8" height="18" fill="${P.floor}"/>`;
+  s += panel(4, 430, 46, 40, P.base, P.door) + T(27, 454, 'STEER', 8, P.door, 'middle') + spr('star', 20, 474, 2);
+  s += panel(270, 340, 46, 40, P.base, P.fruit) + T(293, 364, 'SUPPLY', 7, P.fruit, 'middle');
+  s += spr('blob', 148, 260, 3);
+  s += panel(196, 420, 120, 50, P.base, P.star) + T(256, 440, 'STOCKROOM', 9, P.star, 'middle') + T(256, 458, 'skin 5 / pal 10', 8, P.dim, 'middle');
+  s += panel(196, 240, 120, 46, P.base, P.line) + T(256, 260, 'WORKBENCH', 9, P.text, 'middle') + T(256, 276, 'box added', 8, P.door, 'middle');
+  s += panel(4, 150, 96, 60, P.base, P.line) + T(52, 176, 'ANNEX', 10, P.dim, 'middle') + T(52, 194, 'key 20', 8, P.star, 'middle');
+  s += panel(196, 64, 120, 46, P.base, P.line) + T(256, 84, 'LAB NOTES', 9, P.text, 'middle') + T(256, 100, 'first push', 8, P.dim, 'middle');
+  document.getElementById('map').innerHTML = svg(W, H, s, 'The campaign floor plan in the neon lab palette');
+})();
+</script>
+</body>
+</html>
