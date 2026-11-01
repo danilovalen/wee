@@ -69,7 +69,7 @@ export const BOX_GOALS = {
   // Register 472: every move of the path is one of at most two directions.
   robotTwoDirections: {
     text: 'Robot moves in only two directions.',
-    short: [{ el: 'start' }, 'moves 2 ways only'],
+    short: [{ el: 'start' }, '2 ways'],
     judge: (room, moves) => new Set(moves.map(m => parseMove(m).k)).size <= 2,
   },
   // Register 480: each box stops against a block at least twice.

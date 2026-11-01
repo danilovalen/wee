@@ -57,7 +57,7 @@ export const SWITCH_GOALS = {
   },
   robotOnButton: {
     text: 'Robot steps on a button.',
-    short: [{ el: 'start' }, 'steps on', { el: 'button' }],
+    short: [{ el: 'start' }, 'on', { el: 'button' }],
     judge: (room, moves) => {
       let ok = false;
       replayPath(room, moves, s => { if ((s.cells[s.player.y * room.w + s.player.x] || '').startsWith('button:')) ok = true; });

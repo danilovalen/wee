@@ -14,6 +14,13 @@ const visibleTools = () => page.$$eval('[data-tool]', bs => bs.filter(b => !b.hi
 const verdict = () => page.locator('#campVerdictText').textContent().catch(() => '');
 // A level card's stars (register 475): the main star, then each side goal's; a number where met, '-' where not.
 const stars = id => page.evaluate(id => { const el = document.querySelector(`.campRow[data-level="${id}"] .campStars`); if (!el) return 'no stars'; const s = [...el.querySelectorAll('.campStar')].map(x => x.classList.contains('on') ? x.textContent : '-'); return s[0] + ' | ' + s.slice(1).join(' '); }, id);
+// Back to building: a Run's robot returns there by itself once it stops; a Test needs the Edit button.
+// Waiting for the return instead of racing it: checking for Edit and then clicking lost the race under load.
+const backToEdit = async () => {
+  await page.waitForFunction(() => !window.wee.demoRunning(), null, { timeout: 20000 });
+  const back = await page.waitForFunction(() => document.getElementById('mode').dataset.label !== 'Edit', null, { timeout: 1500 }).then(() => true, () => false);
+  if (!back) await page.click('#mode');
+};
 const marks = async () => { await page.waitForFunction(() => !window.wee.demoRunning(), null, { timeout: 20000 }); return page.$$eval('.campReqs li', ls => ls.map(l => l.dataset.req + ':' + (l.classList.contains('met') ? 'met' : l.classList.contains('unmet') ? 'unmet' : '-')).join()); };
 const box = () => page.locator('#game').boundingBox().then(b => [b.x, b.y, b.width, b.height].map(Math.round).join());
 // Level 1's winning room from tests/campaign.test.mjs: # block, t switch, D door, P start, G goal.
@@ -82,7 +89,7 @@ try {
   check('no palette button wears a count', await page.locator('.countDot').count() === 0);
   check('a level opens on a 7x7 room, start and goal one step in from their corners', await page.evaluate(() => { const l = window.wee.getLevel(); return l.w === 7 && l.h === 7 && l.start.x === 1 && l.start.y === 1 && l.cells[40] === 'goal' && l.cells.filter(c => c).length === 1; }));
   check('the card keeps no score', await page.locator('.campScore').count() === 0);
-  check('level 1 has five optional goals: the exact count, a room size, its two own goals and mix', (await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join())) === 'best==6 moves,small=≤3×2,touchBlockFourTimes=hits one  ×4,robotTwoDirections=moves 2 ways only,mix=×2 at once', await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join()));
+  check('level 1 has five optional goals: the exact count, a room size, its two own goals and mix', (await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join())) === 'best==6,small=≤3×2,touchBlockFourTimes=hits one  ×4,robotTwoDirections=2 ways,mix=×2 at once', await page.$$eval('.campOpt li', ls => ls.map(l => l.dataset.req + '=' + l.textContent.trim()).join()));
   check('every row is unmarked before a run', /^steps:-,best:-,small:-,touchBlockFourTimes:-,robotTwoDirections:-,mix:-$/.test(await marks()), await marks());
   // Move: press on the start, release two tiles down; then the goal, one tile left.
   await page.click('[data-tool="move"]');
@@ -126,7 +133,7 @@ try {
   check('the robot plays the failing path', await page.evaluate(() => document.getElementById('mode').dataset.label === 'Edit'), await page.locator('#mode').textContent());
   // F1: a tap on the failed row draws a shortest path that missed it on the room.
   // Back in edit first, so the room is compared with itself and not with the robot playing.
-  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
+  await backToEdit();
   await page.waitForTimeout(100);
   // The pixel under the first move's number (the middle of the first move), before and after.
   const badge = at => page.evaluate(([mx, my]) => { const c = document.getElementById('game'), l = window.wee.getLevel(), t = c.width / l.w, d = c.getContext('2d').getImageData(Math.floor((mx + 0.5) * t), Math.floor((my + 0.5) * t), 1, 1).data; return [d[0], d[1], d[2]].join(); }, at);
@@ -142,7 +149,7 @@ try {
   await page.waitForTimeout(100);
   const plain = await badge(mid);
   check('the path is painted on the room: a numbered move where the floor was', drawn !== plain, plain + ' -> ' + drawn);
-  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
+  await backToEdit();
   await load(WIN);
   await page.click('#campRun');
   await page.waitForTimeout(200);
@@ -152,7 +159,7 @@ try {
   check('the verdict has no close button: nothing to dismiss', await page.locator('#campVerdict button').count() === 0);
   // The next touch elsewhere puts it away; a touch on it keeps it. Words stay only for what the card
   // cannot show, such as a room not ready to run: level 9 with no one-ways yet.
-  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
+  await backToEdit();
   await page.evaluate(() => { location.hash = '#/levels'; }); await page.waitForTimeout(300); await page.click('.campRow[data-level="9"]'); await page.waitForTimeout(300);
   await page.click('#campRun'); await page.waitForTimeout(200);
   await page.click('#campVerdictText');
@@ -160,12 +167,12 @@ try {
   await page.mouse.click(5, 5);
   check('the next touch anywhere else puts the verdict away', await page.locator('#campVerdict').isHidden());
   // And it stays away while the card redraws: a tool, the robot playing and back to edit.
-  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
+  await backToEdit();
   await page.click('[data-tool="wall"]'); await page.click('[data-tool="look"]');
   check('a dismissed verdict stays away while the card redraws', await page.locator('#campVerdict').isHidden());
   await page.click('#campRun'); await page.waitForTimeout(200);
   check('the next Run shows its verdict again', await page.locator('#campVerdict').isVisible());
-  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
+  await backToEdit();
   await page.mouse.click(5, 5);
   await page.click('#campBack');
   const row = await stars(1);
@@ -194,20 +201,20 @@ try {
   await load(['P#', 'G.', '..']);
   await page.click('#campRun'); await page.waitForTimeout(200);
   check('a 2x3 win meets the size goal (registers 327, 469)', (await marks()).endsWith('small:met,touchBlockFourTimes:unmet,robotTwoDirections:unmet,mix:unmet'), await marks());
-  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
+  await backToEdit();
   await page.click('#campBack');
   const row2 = await stars(1);
   await page.click('.campRow[data-level="1"]');
   await load(WIN);
   await page.click('#campRun'); await page.waitForTimeout(200);
-  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
+  await backToEdit();
   await page.click('#campBack');
   const row3 = await stars(1);
   check('the list keeps the fewest tiles, overall and per side goal met (registers 328, 475)', /^1 \| - 1 /.test(row3), row3);
   await page.click('.campRow[data-level="1"]');
   await page.evaluate(() => { const rows = ['..##P#.', '.#.G...', '....#..', '#.....#', '...#...', '.#...#.', '.......'], l = window.wee.blank(7, 7); l.start = null; for (const p of Object.keys(l.powers)) l.powers[p] = false; rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '#') l.cells[y * 7 + x] = 'wall'; if (c === 'G') l.cells[y * 7 + x] = 'goal'; if (c === 'P') l.start = { x, y }; })); window.wee.loadLevel(l); });
   await page.click('#campRun'); await page.waitForTimeout(200);
-  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
+  await backToEdit();
   await page.click('#campBack');
   const row4 = await stars(1);
   check('more tiles do not raise the score', /^1 \| /.test(row4), row4);
@@ -269,13 +276,13 @@ try {
   // Level 2's row says collides, with the door drawn.
   await page.click('#campBack'); await page.click('.campRow[data-level="2"]');
   const hit = await page.locator('.campReqs li[data-req="hitsClosedDoor"]').evaluate(l => l.textContent + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join());
-  check('level 2 says hits closed, and draws the robot and the door', /hits closed/.test(hit) && hit.endsWith('start,door'), hit);
+  check('level 2 says hits, and draws the robot and the door', /hits/.test(hit) && !/closed/.test(hit) && hit.endsWith('start,door'), hit);
   await page.click('#campBack'); await page.click('.campRow[data-level="9"]');
   const min9 = await page.locator('.campReqs li[data-req="min-gate"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');
   check('level 9 lists its 2-one-way minimum as a goal, drawn as the one-way', min9 === '≥2|gate', min9);
   await page.click('#campRun'); await page.waitForTimeout(150);
   check('the minimum row is marked after a run on an empty room', await page.locator('.campReqs li[data-req="min-gate"].unmet').count() === 1);
-  if (await page.locator('#mode').getAttribute('data-label') === 'Edit') await page.click('#mode');
+  await backToEdit();
   // A maximum shows as a goal while playing (register 299): level 16 allows exactly one box.
   await page.click('#campBack'); await page.evaluate(() => { location.hash = '#/level/16'; }); await page.waitForTimeout(500);  // off the list (register 525), still playable
   const max16 = await page.locator('.campReqs li[data-req="max-box"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');

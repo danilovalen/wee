@@ -3088,7 +3088,7 @@ const { STEP, stoppedPushes, cellOf, everyTile, countKind, cellsWhere, boxIds, r
 const DOOR_GOALS = {
   throughOpenDoor: {
     text: 'Robot through an open door.',
-    short: [{ el: 'start' }, 'through open', { el: 'door' }],
+    short: [{ el: 'start' }, 'through', { el: 'door' }],
     // A closed door is solid, so standing on a door tile means it is open.
     judge: (room, moves) => {
       let ok = false;
@@ -3109,7 +3109,7 @@ const DOOR_GOALS = {
   },
   hitsClosedDoor: {
     text: 'Robot collides with a closed door.',
-    short: [{ el: 'start' }, 'hits closed', { el: 'door' }],
+    short: [{ el: 'start' }, 'hits', { el: 'door' }],
     // A slide that ends with a closed door on the next tile ahead: the door is what stopped it.
     judge: (room, moves) => {
       let ok = false, dir = null;
@@ -3127,7 +3127,7 @@ const DOOR_GOALS = {
   throughOpenDoorTwice: {
     // Two passes, not two doors (register 257): the row says so.
     text: 'Robot through an open door twice, the same door or another.',
-    short: [{ el: 'start' }, 'through open', { el: 'door' }, '×2'],
+    short: [{ el: 'start' }, 'through', { el: 'door' }, '×2'],
     // One pass is stepping onto a door tile from a tile that is not one: a slide across two
     // doors side by side passes once.
     judge: (room, moves) => {
@@ -3150,7 +3150,7 @@ const DOOR_GOALS = {
   },
   boxThroughOpenDoor: {
     text: 'Box into an open doorway.',
-    short: [{ el: 'box' }, 'through open', { el: 'door' }],
+    short: [{ el: 'box' }, 'through', { el: 'door' }],
     // A closed door is solid, so a box on a door tile means it is open.
     judge: (room, moves) => {
       let ok = false;
@@ -3160,7 +3160,7 @@ const DOOR_GOALS = {
   },
   boxCrossesOpenDoor: {
     text: 'Box through an open door and out the other side.',
-    short: [{ el: 'box' }, 'through open', { el: 'door' }],
+    short: [{ el: 'box' }, 'through', { el: 'door' }],
     // Like a one-way: in through the door and off the far side; a box left on the door tile has not crossed.
     judge: (room, moves) => {
       const isDoor = (x, y) => /^door:/.test(room.cells[y * room.w + x] || '');
@@ -3194,18 +3194,18 @@ const DOOR_GOALS = {
   // Inverted doors (registers 311, 312): open until their colour is held.
   robotThroughIdoor: {
     text: 'Robot through an inverted door.',
-    short: [{ el: 'start' }, 'through open', { el: 'idoor' }],
+    short: [{ el: 'start' }, 'through', { el: 'idoor' }],
     judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (/^idoor:/.test(s.cells[s.player.y * room.w + s.player.x] || '')) ok = true; }); return ok; },
   },
   boxHitsIdoor: {
     text: 'Box collides with a closed inverted door.',
-    short: [{ el: 'box' }, 'hits closed', { el: 'idoor' }],
+    short: [{ el: 'box' }, 'hits', { el: 'idoor' }],
     judge: (room, moves) => stoppedPushes(room, moves).out.some(h => { const c = cellOf(room, [h.x, h.y]); return c.startsWith('idoor:') && c.slice(6).split('|').some(col => h.open[col]); }),
   },
   boxHitsTwoDoors: {
     needs: { door: 2 },
     text: 'Box collides with two different closed doors.',
-    short: [{ el: 'box' }, 'hits 2 closed', { el: 'door' }],
+    short: [{ el: 'box' }, 'hits 2', { el: 'door' }],
     judge: (room, moves) => {
       const hit = new Set();
       for (const h of stoppedPushes(room, moves).out) {
@@ -3217,7 +3217,7 @@ const DOOR_GOALS = {
   },
   everyDoorOverSpikes: {
     text: 'Every door goes over spikes.',
-    short: ['all', { el: 'door' }, 'over', { el: 'spikes' }],
+    short: ['all', { el: 'door' }, 'through', { el: 'spikes' }],
     judge: (room, moves) => everyTile(room, moves, 'door', t => t.spikes),
   },
   boxLeavesEveryDoor: {
@@ -3256,7 +3256,7 @@ const DOOR_GOALS = {
   // Register 485: like boxThroughOpenDoor, for every box.
   everyBoxThroughOpenDoor: {
     text: 'Every box into an open doorway.',
-    short: ['all', { el: 'box' }, 'through open', { el: 'door' }],
+    short: ['all', { el: 'box' }, 'through', { el: 'door' }],
     judge: (room, moves) => {
       const ids = boxIds(room), seen = new Set();
       replayPath(room, moves, s => { for (const e of s.entities) if (!e.dead && e.kind === 'box' && /^door:/.test(s.cells[e.y * room.w + e.x] || '')) seen.add(e.id); });
@@ -3267,7 +3267,7 @@ const DOOR_GOALS = {
   robotHitsDoorsOfTwoColours: {
     needs: { door: 2 },
     text: 'Robot collides with closed doors of two colours.',
-    short: [{ el: 'start' }, 'hits closed', { el: 'door' }, 'of 2 colours'],
+    short: [{ el: 'start' }, 'hits', { el: 'door' }, 'of 2 colours'],
     judge: (room, moves) => {
       const cols = new Set();
       robotStops(room, moves, (s, x, y) => { const c = x >= 0 && y >= 0 && x < room.w && y < room.h ? s.cells[y * room.w + x] || '' : ''; if (/^door:/.test(c) && !c.slice(5).split('|').some(k => s.open[k])) for (const k of c.slice(5).split('|')) cols.add(k); });
@@ -3277,7 +3277,7 @@ const DOOR_GOALS = {
   // Register 497: one box both collides with a closed inverted door and goes into an open one.
   boxHitsAndThroughIdoor: {
     text: 'Box collides with a closed inverted door and goes through an open one.',
-    short: [{ el: 'box' }, 'hits and goes through', { el: 'idoor' }],
+    short: [{ el: 'box' }, 'hits, through', { el: 'idoor' }],
     judge: (room, moves) => {
       const hit = new Set(stoppedPushes(room, moves).out.filter(h => { const c = cellOf(room, [h.x, h.y]); return c.startsWith('idoor:') && c.slice(6).split('|').some(col => h.open[col]); }).map(h => h.box.id));
       let ok = false;
@@ -3350,7 +3350,7 @@ const SWITCH_GOALS = {
   },
   robotOnButton: {
     text: 'Robot steps on a button.',
-    short: [{ el: 'start' }, 'steps on', { el: 'button' }],
+    short: [{ el: 'start' }, 'on', { el: 'button' }],
     judge: (room, moves) => {
       let ok = false;
       replayPath(room, moves, s => { if ((s.cells[s.player.y * room.w + s.player.x] || '').startsWith('button:')) ok = true; });
@@ -3502,7 +3502,7 @@ const BOX_GOALS = {
   // Register 472: every move of the path is one of at most two directions.
   robotTwoDirections: {
     text: 'Robot moves in only two directions.',
-    short: [{ el: 'start' }, 'moves 2 ways only'],
+    short: [{ el: 'start' }, '2 ways'],
     judge: (room, moves) => new Set(moves.map(m => parseMove(m).k)).size <= 2,
   },
   // Register 480: each box stops against a block at least twice.
@@ -3598,7 +3598,7 @@ const ONE_WAY_GOALS = {
   },
   everyOneWayOverSpikes: {
     text: 'Every one-way goes over spikes.',
-    short: ['all', { el: 'gate' }, 'over', { el: 'spikes' }],
+    short: ['all', { el: 'gate' }, 'through', { el: 'spikes' }],
     judge: (room, moves) => everyTile(room, moves, 'gate', t => t.spikes),
   },
   twoOneWays: {
@@ -3673,12 +3673,12 @@ const LASER_GOALS = {
   // Lasers (registers 255, 256).
   laserThroughOpenDoor: {
     text: 'Every laser through an open door.',
-    short: ['all', { el: 'laser' }, 'through open', { el: 'door' }],
+    short: ['all', { el: 'laser' }, 'through', { el: 'door' }],
     judge: (room, moves) => everyLaser(room, moves, b => b.path.slice(1).some(at => cellOf(room, at).startsWith('door:'))),
   },
   laserThroughADoor: {
     text: 'Laser through an open door.',
-    short: [{ el: 'laser' }, 'through open', { el: 'door' }],
+    short: [{ el: 'laser' }, 'through', { el: 'door' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at).startsWith('door:'))) ok = true; }); return ok; },
   },
   laserThroughGoal: {
@@ -3715,7 +3715,7 @@ const LASER_GOALS = {
   laserThroughTwoDoors: {
     needs: { door: 2 },
     text: 'Laser through two open doors at once.',
-    short: [{ el: 'laser' }, 'through 2 open', { el: 'door' }],
+    short: [{ el: 'laser' }, 'through 2', { el: 'door' }],
     judge: (room, moves) => {
       let ok = false;
       beams(room, moves, b => { if (new Set(b.path.slice(1).filter(at => cellOf(room, at).startsWith('door:')).map(String)).size >= 2) ok = true; });
@@ -3724,7 +3724,7 @@ const LASER_GOALS = {
   },
   laserBlockedByDoor: {
     text: 'Every laser stopped by a closed door.',
-    short: ['all', { el: 'laser' }, 'hits closed', { el: 'door' }],
+    short: ['all', { el: 'laser' }, 'hits', { el: 'door' }],
     judge: (room, moves) => everyLaser(room, moves, b => cellOf(room, b.stop).startsWith('door:')),
   },
   laserThroughOneWay: {
@@ -3767,7 +3767,7 @@ const LASER_GOALS = {
   },
   laserStoppedByIdoor: {
     text: 'Laser stopped by a closed inverted door.',
-    short: [{ el: 'laser' }, 'hits closed', { el: 'idoor' }],
+    short: [{ el: 'laser' }, 'hits', { el: 'idoor' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, b => { if (cellOf(room, b.stop).startsWith('idoor:')) ok = true; }); return ok; },
   },
   // Register 329: when the run ends, a beam lights every relay in the room.
@@ -3833,17 +3833,17 @@ const LASER_GOALS = {
   },
   laserOverEveryOneWay: {
     text: 'A laser goes over every one-way.',
-    short: [{ el: 'laser' }, 'over all', { el: 'gate' }],
+    short: [{ el: 'laser' }, 'through all', { el: 'gate' }],
     judge: (room, moves) => allDone(crossed(room, moves, isGate)),
   },
   laserOverEverySpike: {
     text: 'A laser goes over every spike.',
-    short: [{ el: 'laser' }, 'over all', { el: 'spikes' }],
+    short: [{ el: 'laser' }, 'through all', { el: 'spikes' }],
     judge: (room, moves) => allDone(crossed(room, moves, isSpike)),
   },
   laserCrossesEverySpike: {
     text: 'A pushable laser crosses every spike.',
-    short: [{ el: 'laser' }, 'over all', { el: 'spikes' }],
+    short: [{ el: 'laser' }, 'through all', { el: 'spikes' }],
     judge: (room, moves) => allDone(laserOverSpikes(room, moves)),
   },
   // Register 494 (level 14): the robot's slides end against each laser at least twice.
@@ -3884,7 +3884,7 @@ const LASER_GOALS = {
   // Register 499: in one run, a beam goes through an open door and a beam is stopped by a closed one.
   laserThroughAndStoppedByDoor: {
     text: 'Laser through an open door, and stopped by a closed one.',
-    short: [{ el: 'laser' }, 'through open, hits closed', { el: 'door' }],
+    short: [{ el: 'laser' }, 'through, hits', { el: 'door' }],
     judge: (room, moves) => {
       let through_ = false, stopped = false;
       beams(room, moves, (b, s) => { if (through(b, s).some(at => /^door:/.test(s.cells[at[1] * room.w + at[0]] || ''))) through_ = true; if (/^door:/.test(cellOf(room, b.stop))) stopped = true; });
@@ -4095,14 +4095,13 @@ const stepsText = st => `The shortest path takes at least ${bounds(st).min} move
 const bestText = st => `Exactly ${st.best} moves.`;
 // The same, as the goal card's rows say them.
 const rangeShort = st => `≥${bounds(st).min} moves`;
-const bestShort = st => `=${st.best} moves`;
 // A level's optional goals: the exact count and the room size (every level), the level's own
 // path goals (def.optional: requirement ids, met only when every shortest path meets them),
 // then mix, any two of the others in one run. Not every pair, let alone all, need fit one room.
 function optionalGoals(def) {
   // A level from the Level maker may leave out the exact count or the size goal (register 302).
   const own = [
-    ...(def.steps.best != null ? [{ id: 'best', parts: [bestShort(def.steps)], text: bestText(def.steps), met: v => v.length === def.steps.best }] : []),
+    ...(def.steps.best != null ? [{ id: 'best', parts: [{ mark: 'path' }, `=${def.steps.best}`], text: bestText(def.steps), met: v => v.length === def.steps.best }] : []),
     // The size goal is the room's area (register 327); tiles placed are the score instead (register 328).
     ...(def.small ? [{ id: 'small', parts: [`≤${def.small[0]}×${def.small[1]}`], text: `A room of ${def.small[0]}×${def.small[1]} or smaller.`, met: v => v.area <= def.small[0] * def.small[1] }] : []),
     ...(def.optional || []).map(id => ({ id, parts: REQUIREMENTS[id].short, text: REQUIREMENTS[id].text, met: v => !!(v.pathGoals && v.pathGoals[id]) })),
@@ -4187,7 +4186,7 @@ function check(def, room, opts) {
   const optional = optionalResults(def, base);
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, coloursOf, listed, colouringsOf, pushingsOf, roomOf, placed, nameOf, START_ON, overLimits, underLimits, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, bestShort, optionalGoals, scoreText, optionalResults, areaOf, tilesOf, stuckText, check };
+return { ELEMENTS, coloursOf, listed, colouringsOf, pushingsOf, roomOf, placed, nameOf, START_ON, overLimits, underLimits, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, optionalGoals, scoreText, optionalResults, areaOf, tilesOf, stuckText, check };
 })();
 // ---- src/app/made.js
 const m24 = (() => {
@@ -5992,7 +5991,7 @@ function fill(d, moved) {
   d.setAttribute('aria-label', `at least ${n} moves`);
 }
 function syncDots(moved) { if (dotsEl && dotsEl.isConnected) fill(dotsEl, moved); }
-const MARKS = { end: { glyph: 'flag', say: 'at the end' }, star: { glyph: 'star', say: 'side goals' } };
+const MARKS = { end: { glyph: 'flag', say: 'at the end' }, star: { glyph: 'star', say: 'side goals' }, path: { glyph: 'path', say: 'moves' } };
 function words(parts) {
   const span = document.createElement('span'); span.className = 'words';
   span.append(...parts.flatMap((p, i) => [...(i ? [document.createTextNode(' ')] : []), word(p)]));

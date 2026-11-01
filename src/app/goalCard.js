@@ -32,7 +32,7 @@ function fill(d, moved) {
   d.setAttribute('aria-label', `at least ${n} moves`);
 }
 export function syncDots(moved) { if (dotsEl && dotsEl.isConnected) fill(dotsEl, moved); }
-const MARKS = { end: { glyph: 'flag', say: 'at the end' }, star: { glyph: 'star', say: 'side goals' } };
+const MARKS = { end: { glyph: 'flag', say: 'at the end' }, star: { glyph: 'star', say: 'side goals' }, path: { glyph: 'path', say: 'moves' } };
 export function words(parts) {
   const span = document.createElement('span'); span.className = 'words';
   span.append(...parts.flatMap((p, i) => [...(i ? [document.createTextNode(' ')] : []), word(p)]));

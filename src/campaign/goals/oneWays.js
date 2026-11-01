@@ -67,7 +67,7 @@ export const ONE_WAY_GOALS = {
   },
   everyOneWayOverSpikes: {
     text: 'Every one-way goes over spikes.',
-    short: ['all', { el: 'gate' }, 'over', { el: 'spikes' }],
+    short: ['all', { el: 'gate' }, 'through', { el: 'spikes' }],
     judge: (room, moves) => everyTile(room, moves, 'gate', t => t.spikes),
   },
   twoOneWays: {
