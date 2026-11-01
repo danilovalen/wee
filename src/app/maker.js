@@ -8,7 +8,7 @@ import { $ } from './dom.js';
 
 const ELS = Object.keys(ELEMENTS);
 // A goal is offered when every element its short line draws is in the palette (the robot is always there).
-const needs = id => REQUIREMENTS[id].short.filter(p => p && p.el && p.el !== 'start').map(p => p.el);
+const needs = id => REQUIREMENTS[id].short.filter(p => p && p.el && p.el !== 'start').map(p => p.el === 'beam' ? 'laser' : p.el);
 let editing = null;
 
 function palRows(def) {

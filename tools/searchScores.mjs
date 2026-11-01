@@ -113,7 +113,7 @@ export const SCORES = {
 };
 // A goal with no score of its own is scored from its own row (register 364): the first object it names
 // (the robot, a laser's beam, a box) against the last (a door, a one-way, a button...), warmer the nearer.
-const MOVERS = { start: you, laser: beamTiles, box: s => s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.x, e.y]) };
+const MOVERS = { start: you, laser: beamTiles, beam: beamTiles, box: s => s.entities.filter(e => !e.dead && e.kind === 'box').map(e => [e.x, e.y]) };
 const TARGETS = { door: 'door:', idoor: 'idoor:', gate: 'gate:', button: 'button:', toggle: 'toggle:', relay: 'sensor:', goal: 'goal' };
 export function derived(id) {
   const els = (REQUIREMENTS[id]?.short || []).filter(p => p && p.el).map(p => p.el);

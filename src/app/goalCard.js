@@ -15,7 +15,7 @@ let A = null;
 export const bindGoalCard = actions => { A = actions; };
 
 // A row's words, each object drawn as its palette icon (framed when the level offers it only pushable); the robot and the goal have their own.
-const WORD_ICON = { start: ['robot', 'Robot'], goal: ['goal', 'Goal'] };
+const WORD_ICON = { start: ['robot', 'Robot'], goal: ['goal', 'Goal'], beam: ['beam', 'Laser beam'] };
 // The move minimum as a path and "4+" (register 546): while Run's robot plays it counts its moves, and
 // turns green once there are enough.
 let dotsEl = null;

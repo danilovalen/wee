@@ -283,8 +283,12 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('the verdict marks each requirement for the goal card', v.reqs && v.reqs.throughOpenDoor === false && v.inRange === true, JSON.stringify(v.reqs));
   ok('every requirement has a short row, with at least one word', Object.values(REQUIREMENTS).every(r => Array.isArray(r.short) && r.short.some(p => typeof p === 'string')));
   // Register 549: a goal of two conditions joins them with +, each side a whole condition starting with its piece.
+  // Register 550: a goal about a laser says which it means, the beam or the laser box: every laser goal whose
+  // sentence is about what the beam goes through or is stopped by draws the beam.
+  const beamy = r => /\b(through|stopped by|over|leaves a laser beam)\b/i.test(r.text) && !/\b(pushable laser|laser box)\b/i.test(r.text);
+  ok('every laser goal about the beam draws the beam; every one about the laser box draws the laser', Object.values(REQUIREMENTS).filter(r => r.short.some(p => p && (p.el === 'laser' || p.el === 'beam'))).every(r => beamy(r) === r.short.some(p => p && p.el === 'beam')), Object.entries(REQUIREMENTS).filter(([, r]) => r.short.some(p => p && (p.el === 'laser' || p.el === 'beam')) && beamy(r) !== r.short.some(p => p && p.el === 'beam')).map(([id]) => id).join(' '));
   ok('a + joins two whole conditions, each starting with its piece', Object.values(REQUIREMENTS).every(r => { const k = r.short.indexOf('+'); return k < 0 || (k > 0 && r.short[0].el && r.short[k + 1] && r.short[k + 1].el && r.short.slice(k + 1).some(p => typeof p === 'string')); }) && Object.values(REQUIREMENTS).filter(r => r.short.includes('+')).length >= 4);
-  ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.mark === 'end' || p.el === 'start' || p.el === 'goal' || ELEMENTS[p.el])));
+  ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.mark === 'end' || p.el === 'beam' || p.el === 'start' || p.el === 'goal' || ELEMENTS[p.el])));
   // Doors of two colours (register 243): two switches open a red and a blue door the robot slides through.
   const doors = (cells) => { const r = room(['#P......#']); for (const k of Object.keys(r.powers)) r.powers[k] = false; cells.forEach(([x, c]) => { r.cells[x] = c; }); return r; };
   ok('through doors of two colours: met by a red door and a blue one', REQUIREMENTS.throughDoorsOfTwoColours.judge(doors([[2, 'toggle:red'], [3, 'toggle:blue'], [4, 'door:red'], [6, 'door:blue']]), ['right']));

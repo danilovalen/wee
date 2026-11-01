@@ -8,17 +8,17 @@ export const LASER_GOALS = {
   // Lasers (registers 255, 256).
   laserThroughOpenDoor: {
     text: 'Every laser through an open door.',
-    short: ['all', { el: 'laser' }, 'through', { el: 'door' }],
+    short: ['all', { el: 'beam' }, 'through', { el: 'door' }],
     judge: (room, moves) => everyLaser(room, moves, b => b.path.slice(1).some(at => cellOf(room, at).startsWith('door:'))),
   },
   laserThroughADoor: {
     text: 'Laser through an open door.',
-    short: [{ el: 'laser' }, 'through', { el: 'door' }],
+    short: [{ el: 'beam' }, 'through', { el: 'door' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at).startsWith('door:'))) ok = true; }); return ok; },
   },
   laserThroughGoal: {
     text: 'Laser through the goal.',
-    short: [{ el: 'laser' }, 'through', { el: 'goal' }],
+    short: [{ el: 'beam' }, 'through', { el: 'goal' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at) === 'goal')) ok = true; }); return ok; },
   },
   // Register 373: a box, moving, has a laser right ahead of it: one it stops against, or one it shoves along.
@@ -44,13 +44,13 @@ export const LASER_GOALS = {
   },
   laserThroughButton: {
     text: 'Laser through a button.',
-    short: [{ el: 'laser' }, 'through', { el: 'button' }],
+    short: [{ el: 'beam' }, 'through', { el: 'button' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at).startsWith('button:'))) ok = true; }); return ok; },
   },
   laserThroughTwoDoors: {
     needs: { door: 2 },
     text: 'Laser through two open doors at once.',
-    short: [{ el: 'laser' }, 'through 2', { el: 'door' }],
+    short: [{ el: 'beam' }, 'through 2', { el: 'door' }],
     judge: (room, moves) => {
       let ok = false;
       beams(room, moves, b => { if (new Set(b.path.slice(1).filter(at => cellOf(room, at).startsWith('door:')).map(String)).size >= 2) ok = true; });
@@ -59,12 +59,12 @@ export const LASER_GOALS = {
   },
   laserBlockedByDoor: {
     text: 'Every laser stopped by a closed door.',
-    short: ['all', { el: 'laser' }, 'hits', { el: 'door' }],
+    short: ['all', { el: 'beam' }, 'hits', { el: 'door' }],
     judge: (room, moves) => everyLaser(room, moves, b => cellOf(room, b.stop).startsWith('door:')),
   },
   laserThroughOneWay: {
     text: 'Laser through a one-way.',
-    short: [{ el: 'laser' }, 'through', { el: 'gate' }],
+    short: [{ el: 'beam' }, 'through', { el: 'gate' }],
     judge: (room, moves) => {
       let ok = false;
       beams(room, moves, b => { if (b.path.slice(1).some(at => cellOf(room, at).startsWith('gate:'))) ok = true; });
@@ -73,7 +73,7 @@ export const LASER_GOALS = {
   },
   laserBlockedByOneWay: {
     text: 'Laser stopped by a one-way.',
-    short: [{ el: 'laser' }, 'hits', { el: 'gate' }],
+    short: [{ el: 'beam' }, 'hits', { el: 'gate' }],
     judge: (room, moves) => {
       let ok = false;
       beams(room, moves, b => { if (cellOf(room, b.stop).startsWith('gate:')) ok = true; });
@@ -102,7 +102,7 @@ export const LASER_GOALS = {
   },
   laserStoppedByIdoor: {
     text: 'Laser stopped by a closed inverted door.',
-    short: [{ el: 'laser' }, 'hits', { el: 'idoor' }],
+    short: [{ el: 'beam' }, 'hits', { el: 'idoor' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, b => { if (cellOf(room, b.stop).startsWith('idoor:')) ok = true; }); return ok; },
   },
   // Register 329: when the run ends, a beam lights every relay in the room.
@@ -115,12 +115,12 @@ export const LASER_GOALS = {
   // Relays can be pushed, so they are found again at every tick.
   laserThroughNoRelay: {
     text: 'At one moment, a laser goes through no relay.',
-    short: [{ el: 'laser' }, 'through no', { el: 'relay' }],
+    short: [{ el: 'beam' }, 'through no', { el: 'relay' }],
     judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { const r = relaysOf(s); if (r.length && r.every(i => !s.lit.has(i))) ok = true; }); return ok; },
   },
   laserThroughEveryRelay: {
     text: 'At one moment, a laser goes through every relay.',
-    short: [{ el: 'laser' }, 'through all', { el: 'relay' }],
+    short: [{ el: 'beam' }, 'through all', { el: 'relay' }],
     judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { const r = relaysOf(s); if (r.length && r.every(i => s.lit.has(i))) ok = true; }); return ok; },
   },
   // Register 376: a relay pushed one tile has another relay right ahead of it (they go on as a train).
@@ -156,7 +156,7 @@ export const LASER_GOALS = {
   // door it passes through (register 313). A relay before the door would open it for any beam.
   laserHoldsOwnDoor: {
     text: 'Laser through a door that its own relay holds open.',
-    short: [{ el: 'laser' }, 'holds its own', { el: 'door' }],
+    short: [{ el: 'beam' }, 'holds its own', { el: 'door' }],
     judge: (room, moves) => {
       let ok = false;
       beams(room, moves, (b, s) => {
@@ -168,12 +168,12 @@ export const LASER_GOALS = {
   },
   laserOverEveryOneWay: {
     text: 'A laser goes over every one-way.',
-    short: [{ el: 'laser' }, 'through all', { el: 'gate' }],
+    short: [{ el: 'beam' }, 'through all', { el: 'gate' }],
     judge: (room, moves) => allDone(crossed(room, moves, isGate)),
   },
   laserOverEverySpike: {
     text: 'A laser goes over every spike.',
-    short: [{ el: 'laser' }, 'through all', { el: 'spikes' }],
+    short: [{ el: 'beam' }, 'through all', { el: 'spikes' }],
     judge: (room, moves) => allDone(crossed(room, moves, isSpike)),
   },
   laserCrossesEverySpike: {
@@ -194,7 +194,7 @@ export const LASER_GOALS = {
   // Register 495: each box stands in a fixed laser's beam (it stops the beam) and later stands out of every one.
   everyBoxLeavesBeam: {
     text: 'Every box leaves a laser beam.',
-    short: ['all', { el: 'box' }, 'leaves', { el: 'laser' }, 'beam'],
+    short: ['all', { el: 'box' }, 'leaves', { el: 'beam' }],
     judge: (room, moves) => {
       const ids = boxIds(room), was = new Set(), left = new Set();
       replayPath(room, moves, s => {
@@ -219,7 +219,7 @@ export const LASER_GOALS = {
   // Register 499: in one run, a beam goes through an open door and a beam is stopped by a closed one.
   laserThroughAndStoppedByDoor: {
     text: 'Laser through an open door, and stopped by a closed one.',
-    short: [{ el: 'laser' }, 'through', { el: 'door' }, '+', { el: 'laser' }, 'hits', { el: 'door' }],
+    short: [{ el: 'beam' }, 'through', { el: 'door' }, '+', { el: 'beam' }, 'hits', { el: 'door' }],
     judge: (room, moves) => {
       let through_ = false, stopped = false;
       beams(room, moves, (b, s) => { if (through(b, s).some(at => /^door:/.test(s.cells[at[1] * room.w + at[0]] || ''))) through_ = true; if (/^door:/.test(cellOf(room, b.stop))) stopped = true; });
