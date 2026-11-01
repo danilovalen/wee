@@ -1,6 +1,8 @@
 :root {
-  color-scheme: only light;
-  --paper: #eceef2; --panel: #f8f9fb; --rule: #dde0e6; --ink: #2a2730; --soft: #6f6876; --accent: #7b6cff; --on-accent: #fff; --field: rgba(0,0,0,0.05); --field-rule: rgba(0,0,0,0.12); --sticker: #c8ccd5; --inset-rim: rgba(0,0,0,0.08); --btn-mix: 60%; --selectable: #7b6cff; --r-s: 8px; --r-m: 10px; --r-l: 16px; --r-pill: 999px; --sticker-rest: 4px; --sticker-hover: 6px; --sticker-press: 1px; --ice: #4cc9ff; --frost: 78%;
+  color-scheme: only dark;
+  --paper: #221f22; --panel: #2d2a2e; --rule: #403e41; --ink: #fcfcfa; --soft: #939293; --accent: #ab9df2; --on-accent: #221f22; --field: rgba(255,255,255,0.06); --field-rule: rgba(255,255,255,0.12); --sticker: #19181a; --inset-rim: rgba(0,0,0,0.3); --btn-mix: 60%; --selectable: #ab9df2; --r-s: 8px; --r-m: 10px; --r-l: 16px; --r-pill: 999px; --sticker-rest: 4px; --sticker-hover: 6px; --sticker-press: 1px; --ice: #78dce8;
+  /* The neon lab palette (register 602, docs/lab-neon-sketch.html): greys for what sits, one neon per job. */
+  --mid: #5b595c; --lite: #727072; --gold: #ffd866; --gold-ink: #c9a63a; --good: #a9dc76; --bad: #ff6188; --cyan: #78dce8; --orange: #fc9867; --kept: #3a3528; --shade: #19181a; --frost: 78%;
   --text-face: 'Bitter', Georgia, serif; --label-face: 'Asap', 'Helvetica Neue', Arial, sans-serif; --wee-face: 'Comfortaa', 'Asap', sans-serif;
   /* The names the older rules use, mapped onto the tokens. */
   --bg: var(--paper); --text: var(--ink); --dim: var(--soft); --line: var(--rule); --radius: var(--r-m);
@@ -12,7 +14,7 @@ html, body { overscroll-behavior: none; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 var(--body); }
 header { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0; }
 /* Drift: a thin, spaced wordmark with a sheen passing over it. */
-.logo { font: 700 22px var(--wee-face); letter-spacing: .04em; margin-right: 8px; background: linear-gradient(100deg, var(--accent) 40%, #c9c2ff 50%, var(--accent) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
+.logo { font: 700 22px var(--wee-face); letter-spacing: .04em; margin-right: 8px; background: linear-gradient(100deg, var(--accent) 40%, #ddd6ff 50%, var(--accent) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
 /* The header's logo is the way to the menu (register 359): a button that still looks like the logo. */
 header .logo { border: 0; box-shadow: none; padding: 0 4px; cursor: pointer; }
 header .logo:hover:not(:disabled), header .logo:active:not(:disabled) { transform: none; box-shadow: none; }
@@ -20,7 +22,7 @@ header .logo:hover:not(:disabled), header .logo:active:not(:disabled) { transfor
 .spacer { flex: 1; }
 /* The sticker shadow: hard, lifts on hover, sinks on press. "On" is a pink ring inside. */
 button {
-  font: inherit; color: var(--text); background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 0;
+  font: inherit; color: var(--text); background: color-mix(in srgb, var(--panel) var(--btn-mix), var(--rule)); border: 0;
   border-radius: var(--r-s); padding: 6px 12px; cursor: pointer;
   box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker);
   transition: transform .15s cubic-bezier(.4,0,.2,1), box-shadow .15s cubic-bezier(.4,0,.2,1), background .12s;
@@ -120,11 +122,11 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 
 .moves { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--dim); align-self: center; }
 .win { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 8px; align-items: center;
-  background: var(--panel); box-shadow: inset 0 0 0 2px #ffc23d, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-l); padding: 16px 20px; z-index: 5; }
+  background: var(--panel); box-shadow: inset 0 0 0 2px var(--gold), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-l); padding: 16px 20px; z-index: 5; }
 .win[hidden] { display: none; }
-.win b { color: #9a6a00; font-size: 1.15em; }
+.win b { color: var(--gold); font-size: 1.15em; }
 .stuck { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; white-space: nowrap;
-  background: var(--panel); box-shadow: inset 0 0 0 2px #e5484d, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-m); padding: 6px 10px; z-index: 5; }
+  background: var(--panel); box-shadow: inset 0 0 0 2px var(--bad), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-m); padding: 6px 10px; z-index: 5; }
 .stuck[hidden] { display: none; }
 .check { display: flex; gap: 8px; align-items: center; margin: 4px 0 0; font-size: 0.9em; }
 .check:has(#checkText:empty) { display: none; }
@@ -156,7 +158,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .explored summary { cursor: pointer; color: var(--dim); }
 .explored ul { columns: 2; margin: 4px 0; padding-left: 18px; font-size: 0.9em; }
 .lint { margin: 4px 0 0; font-size: 0.9em; max-width: 100%; }
-.lint summary { cursor: pointer; color: #9a6a00; }
+.lint summary { cursor: pointer; color: var(--gold); }
 .lint ul { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 4px; }
 .lint button { text-align: left; width: 100%; }
 .sides { display: grid; grid-template-columns: auto repeat(4, minmax(0, 1fr)); gap: 4px; align-items: center; margin-top: 6px; }
@@ -299,7 +301,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 /* The room's size: on each side an ear joined to the room, a green half that adds a line (arrow out)
    and a red half that cuts one (arrow in) (registers 318, 320). Tap only. Never over a tile (register
    298); they sit 14px from the screen's edge, his call over the back-swipe margin (register 239). */
-.roomWrap { position: relative; line-height: 0; --ear: 18px; --ear-long: 32px; --add-bg: #e1ece3; --add-ink: #5b8a69; --cut-bg: #f2e1df; --cut-ink: #ad6a64; }
+.roomWrap { position: relative; line-height: 0; --ear: 18px; --ear-long: 32px; --add-bg: rgba(169,220,118,.16); --add-ink: var(--good); --cut-bg: rgba(255,97,136,.16); --cut-ink: var(--bad); }
 .growBar { position: absolute; display: flex; z-index: 2; }
 .growBar[data-bar=top] { bottom: 100%; left: 50%; translate: -50% 0; }
 .growBar[data-bar=bottom] { top: 100%; left: 50%; translate: -50% 0; }
@@ -436,7 +438,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 #libTools[hidden], #codeRow[hidden] { display: none; }
 .rooms button.primary { background: var(--accent); color: var(--on-accent); }
 .rooms .danger { margin-top: 16px; padding-top: 10px; box-shadow: inset 0 1px 0 var(--rule); }
-.rooms .danger button { color: #c8283c; }
+.rooms .danger button { color: var(--bad); }
 #shareOut[hidden] { display: none; }
 @media (max-width: 700px) {
   header .logo { font-size: 17px; min-height: 44px; padding: 0 2px; }
@@ -450,7 +452,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 .tileMenu { position: fixed; z-index: 5; display: grid; gap: 8px; min-width: 150px; padding: 6px; background: var(--panel); border-radius: var(--r-m); box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
 .tileMenu[hidden] { display: none; }
 .tileMenu button { justify-content: flex-start; text-align: left; }
-.tileMenu .del { color: #c8283c; }
+.tileMenu .del { color: var(--bad); }
 .tileMenu input { min-width: 0; }
 
 /* Campaign: the main menu, the level list, and a level's brief over the room. */
@@ -467,9 +469,9 @@ body.campaign #hideBtn, body.campaign #respawnBtn, body.campaign #reportBtn, bod
 body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play #campTest { display: none; }
 /* The main menu is a screen of its own: a room the robot plays behind a fade, the wordmark on top,
    the choices at the bottom. */
-.menu { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; padding: 0; border-radius: 0; overflow: hidden; background: #dde1e8; color: var(--ink); text-align: center; }
+.menu { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; padding: 0; border-radius: 0; overflow: hidden; background: var(--paper); color: var(--ink); text-align: center; }
 .menu::backdrop { background: var(--paper); }
-.menu::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(238,240,244,.15) 0%, rgba(238,240,244,.1) 50%, rgba(238,240,244,.94) 76%); }
+.menu::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(34,31,34,.15) 0%, rgba(34,31,34,.1) 50%, rgba(34,31,34,.94) 76%); }
 .menu .menuLogo { display: block; position: absolute; z-index: 1; left: 0; right: 0; top: 24px; font-size: 64px; margin: 0; }
 .menuList { position: absolute; z-index: 1; left: 50%; bottom: max(40px, env(safe-area-inset-bottom)); width: min(300px, 100vw - 64px); transform: translateX(-50%); display: grid; gap: 12px; }
 .menuList button { font: 800 20px var(--label-face); height: 56px; border-radius: var(--r-l); }
@@ -483,17 +485,17 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .menuScene { position: absolute; inset: 0; }
 /* The floor runs past the room on every side, so a wide screen shows more floor, not an island. */
 .msRoom { position: absolute; left: 0; top: 0; width: 312px; height: 416px; transform-origin: 0 0; }
-.msRoom::before { content: ''; position: absolute; left: -1040px; top: -1040px; width: 2444px; height: 2496px; z-index: -1; background: #e9ecf1 linear-gradient(#dde1e8 2px, transparent 2px) 0 0 / 52px 52px; }
-.msRoom::after { content: ''; position: absolute; left: -1040px; top: -1040px; width: 2444px; height: 2496px; z-index: -1; background: linear-gradient(90deg, #dde1e8 2px, transparent 2px) 0 0 / 52px 52px; }
+.msRoom::before { content: ''; position: absolute; left: -1040px; top: -1040px; width: 2444px; height: 2496px; z-index: -1; background: #2d2a2e linear-gradient(#363337 2px, transparent 2px) 0 0 / 52px 52px; }
+.msRoom::after { content: ''; position: absolute; left: -1040px; top: -1040px; width: 2444px; height: 2496px; z-index: -1; background: linear-gradient(90deg, #363337 2px, transparent 2px) 0 0 / 52px 52px; }
 .msRoom > i { position: absolute; display: block; }
-.msWall { width: 48px; height: 48px; border-radius: var(--r-s); background: #a8afbe; }
+.msWall { width: 48px; height: 48px; border-radius: var(--r-s); background: var(--mid); }
 .msEmitter, .msSwitch, .msSwitch b, .msDoor, .msGoal { width: 52px; height: 52px; background: center / 100% no-repeat; }
 .msEmitter { z-index: 1; }
-.msBeam { height: 6px; border-radius: var(--r-pill); background: #ff4d6d; box-shadow: 0 0 8px 2px rgba(255,77,109,.6); animation: msBeam 12s linear infinite, msHum .4s linear infinite; }
+.msBeam { height: 6px; border-radius: var(--r-pill); background: var(--bad); box-shadow: 0 0 8px 2px rgba(255,97,136,.6); animation: msBeam 12s linear infinite, msHum .4s linear infinite; }
 .msSwitch b { position: absolute; left: 0; top: 0; }
 .msSwitch .on { animation: msSwOn 12s linear infinite; }
 .msDoor { animation: msDoor 12s linear infinite, msBonk 12s linear infinite; }
-.msSpark { width: 40px; color: #f0b429; font: 900 18px var(--label-face); font-style: normal; animation: msSpark 12s linear infinite; }
+.msSpark { width: 40px; color: var(--gold); font: 900 18px var(--label-face); font-style: normal; animation: msSpark 12s linear infinite; }
 .msGoal { animation: msGoal 12s linear infinite; }
 .msBox, .msRobot { left: 0; top: 0; width: 52px; height: 52px; animation: 12s linear infinite; }
 .msBox { animation-name: msBox; transform: translate(156px,52px); }
@@ -523,7 +525,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .campDots i { width: 10px; height: 10px; border-radius: 50%; }
 .campRow.sel { outline: 2px solid var(--accent, #6b5cff); }
 #campList .campRow { height: 76px; grid-template-rows: auto 1fr; align-content: start; overflow: hidden; }  /* number and pieces on one line (register 527) */
-.tutBox { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40; max-width: 520px; margin: 0 auto; background: var(--ink); color: #fff; border-radius: var(--r-l); padding: 10px 12px; display: grid; gap: 4px; box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
+.tutBox { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40; max-width: 520px; margin: 0 auto; background: var(--panel); color: var(--ink); box-shadow: inset 0 0 0 2px var(--accent); border-radius: var(--r-l); padding: 10px 12px; display: grid; gap: 4px; box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
 .tutBox[hidden], .tutTile[hidden] { display: none; }
 /* In the tutorial the bubble says what the verdict would, so the room never moves under it (register 517). */
 body.tutorial #campVerdict { display: none !important; }
@@ -546,7 +548,7 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 .campStar { position: relative; width: 20px; height: 20px; flex: none; }
 .campStar.main { width: 28px; height: 28px; }
 .campStar svg { display: block; width: 100%; height: 100%; fill: none; stroke: var(--rule); stroke-width: 2; stroke-linejoin: round; }
-.campStar.on svg { fill: #ffc23d; stroke: #ffc23d; }
+.campStar.on svg { fill: var(--gold); stroke: var(--gold); }
 .campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: #5a3f00; }
 .campStar.main i { font-size: 11px; }
 .campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
@@ -562,8 +564,8 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 .campReqs li { display: flex; align-items: flex-start; gap: 5px; min-height: 22px; font-weight: 700; line-height: 1.3; }
 .campReqs .words { padding-top: 1px; }
 .campReqs .mark { flex: none; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; box-sizing: border-box; box-shadow: inset 0 0 0 1.5px var(--dim); color: var(--dim); }
-.campReqs .met .mark { box-shadow: none; background: #dff3e7; color: #2e8b57; }
-.campReqs .unmet .mark { box-shadow: none; background: #fde3e0; color: #c0392b; }
+.campReqs .met .mark { box-shadow: none; background: rgba(169,220,118,.18); color: var(--good); }
+.campReqs .unmet .mark { box-shadow: none; background: rgba(255,97,136,.18); color: var(--bad); }
 .campReqs .optional { color: var(--dim); font-weight: 600; }
 .campReqs li.points { cursor: pointer; }
 .campReqs li.points .words { text-decoration: underline dotted; text-underline-offset: 3px; }
@@ -572,18 +574,18 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 body.campaign .roomArea { position: relative; }
 /* The run's verdict: a band of its own under the goal card, two lines tall whether it shows or not, so
    it never covers the room and nothing moves when it comes or goes. */
-.campVerdict { width: 100%; max-width: 640px; box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px; display: flex; align-items: center; padding: 6px 12px; border-radius: var(--r-s); background: #24262e; color: #fff; font-size: 0.9em; font-weight: 700; line-height: 1.35; overflow: hidden; }
+.campVerdict { width: 100%; max-width: 640px; box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px; display: flex; align-items: center; padding: 6px 12px; border-radius: var(--r-s); background: var(--shade); color: #fff; font-size: 0.9em; font-weight: 700; line-height: 1.35; overflow: hidden; }
 body.campaign #campVerdict { display: flex; }
 /* It floats over the top of the goals card rather than keeping a band of its own, which went to the room (register 523). */
 body.campaign #campVerdict { position: absolute; top: 0; left: 50%; translate: -50% 0; z-index: 6; margin: 0; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
 body.campaign #campVerdict[hidden] { visibility: hidden; }
 .campVerdict > span { flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.campVerdict.won { background: linear-gradient(90deg, #7ee2a8 0 5px, #24262e 5px); }
-.campVerdict.lost { background: linear-gradient(90deg, #ff8a80 0 5px, #24262e 5px); }
+.campVerdict.won { background: linear-gradient(90deg, var(--good) 0 5px, var(--shade) 5px); }
+.campVerdict.lost { background: linear-gradient(90deg, var(--bad) 0 5px, var(--shade) 5px); }
 .campVerdict.points > span { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
 .campTip[hidden] { display: none !important; }
 body:not(.campaign) #campVerdict { display: none !important; }
-.campTip { position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 4px)); padding: 5px 9px; border-radius: var(--r-s); background: #24262e; color: #fff; font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
+.campTip { position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 4px)); padding: 5px 9px; border-radius: var(--r-s); background: var(--shade); color: #fff; font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
 [data-tool] { position: relative; }
 body.campaign [data-tool][hidden], body.campaign #powers, body.campaign #placeHint, body.campaign #ctx { display: none !important; }
 body:not(.campaign):not(.simple) [data-camp] { display: none !important; }
@@ -606,7 +608,7 @@ body.campaign #campColours:not([hidden]), body.simple #campColours:not([hidden])
 #campColours button { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 0; position: relative; }
 #campColours button::after { content: ''; position: absolute; inset: -9px; }
 #campColours button:disabled { opacity: 0.25; }
-#campColours button.on { box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px #2a2440; }
+#campColours button.on { box-shadow: inset 0 0 0 2px var(--shade), 0 0 0 2px var(--ink); }
 
 /* A yes-or-no question over the room (register 291): small and centred, not a page. */
 .confirm { width: min(340px, 100vw - 32px); background: var(--panel); color: inherit; border: 0; border-radius: var(--r-l); padding: 16px; }
@@ -660,7 +662,7 @@ body.campaign #campReset { order: 6; margin-left: auto; }
 
 /* The Pushable chip (register 336): at the end of the tools row; on, what you place is pushable. */
 body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 10px; border-radius: var(--r-pill); font-size: 13px; }
-#campCrate.on { background: #ffe2c2; box-shadow: inset 0 0 0 2px #c97326, var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); color: #7a4512; }
+#campCrate.on { background: rgba(252,152,103,.18); box-shadow: inset 0 0 0 2px var(--orange), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); color: var(--orange); }
 #campCrate:disabled { opacity: .5; }
 
 /* The Sandbox's tool strip (registers 381-384): one slot per group, the group's tools in a flyout
@@ -731,20 +733,20 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 .winSay { margin: 4px 0 12px; color: var(--dim); }
 .winStars { display: flex; gap: 8px; margin: 0 0 10px; }
 .winStar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; color: var(--sticker); box-shadow: inset 0 0 0 2px var(--sticker); }
-.winStar.on { background: #f2b632; color: #fff; box-shadow: 0 0 0 3px rgba(242, 182, 50, .25); }
+.winStar.on { background: var(--gold); color: var(--shade); box-shadow: 0 0 0 3px rgba(255, 216, 102, .25); }
 .winStar.new { animation: winPop .5s .3s cubic-bezier(.3, 1.6, .5, 1) both; }
 @keyframes winPop { from { transform: scale(.4); } }
 .winGoals { list-style: none; margin: 0 0 14px; padding: 0; font-size: 14px; }
 .winGoals li { display: flex; gap: 8px; align-items: center; margin: 4px 0; color: var(--dim); }
 .winGoals li.on { color: inherit; }
 .winGoals i { font-style: normal; color: var(--sticker); }
-.winGoals li.on i { color: #d89a12; }
+.winGoals li.on i { color: var(--gold); }
 .winCard .primary { background: var(--accent); color: var(--on-accent); }
 .winCard .bar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
 .winCard .bar > [hidden] { display: none; }
-.winCard.gold { background: linear-gradient(180deg, #fff3d1, var(--panel) 65%); }
-.winCard.gold .winTitle { color: #a86f00; }
-.burst { position: absolute; left: 50%; top: 30%; color: #f2b632; font-size: 18px; pointer-events: none; animation: burst 1.1s ease-out forwards; }
+.winCard.gold { background: linear-gradient(180deg, rgba(255,216,102,.16), var(--panel) 65%); }
+.winCard.gold .winTitle { color: var(--gold); }
+.burst { position: absolute; left: 50%; top: 30%; color: var(--gold); font-size: 18px; pointer-events: none; animation: burst 1.1s ease-out forwards; }
 @keyframes burst { to { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .winCard[open], .winStar.new { animation: none; } }
 
@@ -765,18 +767,18 @@ body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; m
 @media (max-width: 700px) { body.campaign .campHistory > button { width: 46px; height: 46px; } .campHistory .glyph { width: 24px; height: 24px; } }
 
 /* The room's grips (registers 540, 541): one per side, flush with the room, dragged out to add lines and in to cut them. */
-.grip { position: relative; padding: 0; border-radius: 0; background: #dfe2e9; display: grid; place-items: center; touch-action: none; box-shadow: none; transform: none; min-width: 0; min-height: 0; }
+.grip { position: relative; padding: 0; border-radius: 0; background: var(--rule); display: grid; place-items: center; touch-action: none; box-shadow: none; transform: none; min-width: 0; min-height: 0; }
 .grip, .grip:hover:not(:disabled), .grip:active:not(:disabled) { transform: none; box-shadow: none; }
 .growBar[data-bar=top] .grip, .growBar[data-bar=bottom] .grip { width: 64px; height: 18px; cursor: ns-resize; }
 .growBar[data-bar=left] .grip, .growBar[data-bar=right] .grip { width: 18px; height: 64px; cursor: ew-resize; }
 .growBar[data-bar=top] .grip { border-radius: var(--r-m) var(--r-m) 0 0; } .growBar[data-bar=bottom] .grip { border-radius: 0 0 var(--r-m) var(--r-m); }
 .growBar[data-bar=left] .grip { border-radius: var(--r-m) 0 0 var(--r-m); } .growBar[data-bar=right] .grip { border-radius: 0 var(--r-m) var(--r-m) 0; }
-.grip i { display: block; background: #9aa0ad; border-radius: var(--r-pill); }
-.growBar[data-bar=top] .grip i, .growBar[data-bar=bottom] .grip i { width: 22px; height: 3px; box-shadow: 0 -5px 0 #b8bdc8; }
-.growBar[data-bar=bottom] .grip i { box-shadow: 0 5px 0 #b8bdc8; }
-.growBar[data-bar=left] .grip i, .growBar[data-bar=right] .grip i { width: 3px; height: 22px; box-shadow: -5px 0 0 #b8bdc8; }
-.growBar[data-bar=right] .grip i { box-shadow: 5px 0 0 #b8bdc8; }
-.grip.held { background: #cfd3ff; }
+.grip i { display: block; background: var(--lite); border-radius: var(--r-pill); }
+.growBar[data-bar=top] .grip i, .growBar[data-bar=bottom] .grip i { width: 22px; height: 3px; box-shadow: 0 -5px 0 var(--mid); }
+.growBar[data-bar=bottom] .grip i { box-shadow: 0 5px 0 var(--mid); }
+.growBar[data-bar=left] .grip i, .growBar[data-bar=right] .grip i { width: 3px; height: 22px; box-shadow: -5px 0 0 var(--mid); }
+.growBar[data-bar=right] .grip i { box-shadow: 5px 0 0 var(--mid); }
+.grip.held { background: rgba(171,157,242,.35); }
 .grip.held i { background: var(--accent); }
 
 .campMark { display: inline-flex; vertical-align: -3px; } .campMark .glyph { width: 17px; height: 17px; stroke-width: 2.2; }
@@ -793,38 +795,38 @@ body:not(.campaign) header .campLast, body.campaign.tutorial header .campLast { 
 .moveDots .glyph { width: 18px; height: 18px; }
 .moveDots b { font-weight: 800; }
 .moveDots.counting { color: var(--dim); }
-.moveDots.reached { color: #2e8b57; }
+.moveDots.reached { color: var(--good); }
 @keyframes markLand { 0% { transform: scale(.4); } 70% { transform: scale(1.18); } 100% { transform: none; } }
 @media (prefers-reduced-motion: no-preference) { #campBrief.landed .met .mark, #campBrief.landed .unmet .mark, #campBrief.landed .campBigStar.on { animation: markLand .32s ease-out backwards; } #campBrief.landed li:nth-child(2) .mark { animation-delay: .05s; } #campBrief.landed li:nth-child(3) .mark { animation-delay: .1s; } #campBrief.landed li:nth-child(4) .mark { animation-delay: .15s; } #campBrief.landed li:nth-child(n+5) .mark { animation-delay: .2s; } }
 /* A run too short: the count pulses red (plan step 5). */
 @keyframes dotWant { 50% { opacity: .35; } }
-.moveDots.short { color: #c0392b; animation: dotWant 1s ease-in-out 3; }
+.moveDots.short { color: var(--bad); animation: dotWant 1s ease-in-out 3; }
 
-body.campaign header .campLast { flex: none; width: auto; display: inline-flex; align-items: center; gap: 2px; color: #b8860b; height: 20px; line-height: 20px; overflow: hidden; align-self: center; }
-header .campLast .glyph { width: 18px; height: 18px; fill: var(--gold, #ffc23d); stroke: #d4a017; }
+body.campaign header .campLast { flex: none; width: auto; display: inline-flex; align-items: center; gap: 2px; color: var(--gold); height: 20px; line-height: 20px; overflow: hidden; align-self: center; }
+header .campLast .glyph { width: 18px; height: 18px; fill: var(--gold); stroke: var(--gold-ink); }
 header .campLast b { font-size: 15px; }
 
 /* Register 547: the main star's box, and each side goal as a chip with its own star. */
 .campGoal { background: none; padding: 0; display: grid; gap: 6px; }
-.campMain { display: flex; gap: 8px; align-items: flex-start; background: #fff6dc; box-shadow: inset 0 0 0 2px #f2d27a; border-radius: var(--r-m); padding: 6px 8px; }
+.campMain { display: flex; gap: 8px; align-items: flex-start; background: rgba(255,216,102,.07); box-shadow: inset 0 0 0 2px var(--gold-ink); border-radius: var(--r-m); padding: 6px 8px; }
 .campBigStar { flex: none; width: 30px; height: 30px; }
-.campBigStar .glyph { width: 30px; height: 30px; fill: #fff; stroke: #c9a227; stroke-width: 1.6; }
-.campBigStar.on .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
+.campBigStar .glyph { width: 30px; height: 30px; fill: var(--panel); stroke: var(--gold-ink); stroke-width: 1.6; }
+.campBigStar.on .glyph { fill: var(--gold); stroke: var(--gold-ink); }
 .campMain .campMust { flex: 1; min-width: 0; }
 .campMain .campMust:empty { display: none; }
 .campPieces { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; align-self: center; }
 .campPieces .campIcon.used { opacity: .3; }
 .campOpt { margin: 0; padding: 6px 8px; box-shadow: none; background: var(--field); border-radius: var(--r-m); gap: 6px 8px; }
 .campOpt li { background: var(--panel); border-radius: var(--r-pill); padding: 2px 9px 2px 3px; box-shadow: 2px 2px 0 0 var(--sticker); align-items: center; }
-.campReqs .optional .mark, .campReqs .optional.met .mark, .campReqs .optional.unmet .mark { background: none; box-shadow: none; outline: none; color: #b9bcc6; }
-.campReqs .optional .mark .glyph { width: 18px; height: 18px; stroke-width: 1.8; fill: #fff; }
-.campReqs .optional.met .mark .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
-.campReqs .optional.unmet .mark .glyph { stroke: #c0392b; }
+.campReqs .optional .mark, .campReqs .optional.met .mark, .campReqs .optional.unmet .mark { background: none; box-shadow: none; outline: none; color: var(--mid); }
+.campReqs .optional .mark .glyph { width: 18px; height: 18px; stroke-width: 1.8; fill: var(--panel); }
+.campReqs .optional.met .mark .glyph { fill: var(--gold); stroke: var(--gold-ink); }
+.campReqs .optional.unmet .mark .glyph { stroke: var(--bad); }
 /* Register 586: a star kept from an earlier room is filled on a pale chip; this room's ring is gold. */
-.campOpt li.kept { background: #fff6dc; }
-.campReqs .optional.kept .mark .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
-.campReqs .optional.kept.unmet .mark .glyph { stroke: #d4a017; }
-.campOpt li.met { box-shadow: 0 0 0 2px var(--gold, #ffc23d), 2px 2px 0 0 var(--sticker); }
+.campOpt li.kept { background: var(--kept); }
+.campReqs .optional.kept .mark .glyph { fill: var(--gold); stroke: var(--gold-ink); }
+.campReqs .optional.kept.unmet .mark .glyph { stroke: var(--gold-ink); }
+.campOpt li.met { box-shadow: 0 0 0 2px var(--gold), 2px 2px 0 0 var(--sticker); }
 
 .campPlus { font-weight: 800; color: var(--accent); padding: 0 2px; }
 

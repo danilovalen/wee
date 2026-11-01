@@ -4,6 +4,11 @@ Owner, 2026-10-10: *"include somewhere, applying manga design patterns"*, then M
 shell, *"but we need something more for the wee design. Something cutesy, fleeting, fast, airy,
 weeeee."*, then C1 Drift from `docs/wee-look.html`.
 
+**2026-11-01 (register 602): the palette moved to the neon lab** of `docs/lab-neon-sketch.html`: warm
+greys from Monokai Pro for everything that sits, one neon per job (green the blob, orange the fruit,
+cyan doors and switches, pink the beam, yellow stars, violet the accent). The page is dark only. The
+form below (stickers, radii, insets) stays until the pixel HUD slice replaces it.
+
 ## Where this comes from
 
 manga-engine's `public/core-ui.css` is the origin. bag-crawler's `docs/MANGA_THEME.md` absorbed it as
@@ -78,19 +83,19 @@ Read by `tests/manga.test.mjs`. `name | value`, one per row, values verbatim.
 
 | token | value |
 |---|---|
-| `--paper` | `#eceef2` |
-| `--panel` | `#f8f9fb` |
-| `--rule` | `#dde0e6` |
-| `--ink` | `#2a2730` |
-| `--soft` | `#6f6876` |
-| `--accent` | `#7b6cff` |
-| `--on-accent` | `#fff` |
-| `--field` | `rgba(0,0,0,0.05)` |
-| `--field-rule` | `rgba(0,0,0,0.12)` |
-| `--sticker` | `#c8ccd5` |
-| `--inset-rim` | `rgba(0,0,0,0.08)` |
+| `--paper` | `#221f22` |
+| `--panel` | `#2d2a2e` |
+| `--rule` | `#403e41` |
+| `--ink` | `#fcfcfa` |
+| `--soft` | `#939293` |
+| `--accent` | `#ab9df2` |
+| `--on-accent` | `#221f22` |
+| `--field` | `rgba(255,255,255,0.06)` |
+| `--field-rule` | `rgba(255,255,255,0.12)` |
+| `--sticker` | `#19181a` |
+| `--inset-rim` | `rgba(0,0,0,0.3)` |
 | `--btn-mix` | `60%` |
-| `--selectable` | `#7b6cff` |
+| `--selectable` | `#ab9df2` |
 | `--r-s` | `8px` |
 | `--r-m` | `10px` |
 | `--r-l` | `16px` |
@@ -98,8 +103,18 @@ Read by `tests/manga.test.mjs`. `name | value`, one per row, values verbatim.
 | `--sticker-rest` | `4px` |
 | `--sticker-hover` | `6px` |
 | `--sticker-press` | `1px` |
-| `--ice` | `#4cc9ff` |
+| `--ice` | `#78dce8` |
 | `--frost` | `78%` |
+| `--mid` | `#5b595c` |
+| `--lite` | `#727072` |
+| `--gold` | `#ffd866` |
+| `--gold-ink` | `#c9a63a` |
+| `--good` | `#a9dc76` |
+| `--bad` | `#ff6188` |
+| `--cyan` | `#78dce8` |
+| `--orange` | `#fc9867` |
+| `--kept` | `#3a3528` |
+| `--shade` | `#19181a` |
 | `--text-face` | `'Bitter', Georgia, serif` |
 | `--label-face` | `'Asap', 'Helvetica Neue', Arial, sans-serif` |
 | `--wee-face` | `'Comfortaa', 'Asap', sans-serif` |

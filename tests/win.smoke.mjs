@@ -73,7 +73,7 @@ try {
     await page.goto(`http://localhost:${PORT}/#/levels`); await page.evaluate(() => { location.hash = '#/level/1'; }); await page.waitForTimeout(600);
     const kept = await page.$$eval('.campOpt li', ls => ls.map(l => [l.dataset.req, l.classList.contains('kept'), getComputedStyle(l).backgroundColor, getComputedStyle(l.querySelector('.mark .glyph')).fill]));
     const [mine, ...rest] = [kept.find(k => k[0] === side[0]), ...kept.filter(k => k[0] !== side[0])];
-    check('a side star kept from an earlier room is filled on a pale chip; the others are not', mine && mine[1] && mine[2] === 'rgb(255, 246, 220)' && mine[3] !== 'rgb(255, 255, 255)' && rest.every(k => !k[1] && k[2] !== 'rgb(255, 246, 220)'), JSON.stringify(kept));
+    check('a side star kept from an earlier room is filled on a pale chip; the others are not', mine && mine[1] && mine[2] === 'rgb(58, 53, 40)' && mine[3] === 'rgb(255, 216, 102)' && rest.every(k => !k[1] && k[2] !== 'rgb(58, 53, 40)'), JSON.stringify(kept));
   }
   // Register 447: a page that cannot save (opened as a file on a phone) still shows the first card once.
   await page.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } }); });

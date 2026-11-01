@@ -54,9 +54,9 @@ check('no middle dot in the source or the page', dotted.length === 0, dotted.joi
   check('no on-screen string holds two sentences', two.length === 0, two.join(' || '));
 }
 
-// The page is light only, so a browser's forced dark mode leaves it alone (register 285).
+// The page is dark only (register 602), so a browser's forced dark mode leaves it alone (register 285).
 const page = readFileSync('index.html', 'utf8'), sheet = readFileSync('style.css', 'utf8');
-check('the page declares itself light only', page.includes('<meta name="color-scheme" content="only light">') && /:root \{[^}]*color-scheme: only light;/.test(sheet));
+check('the page declares itself dark only', page.includes('<meta name="color-scheme" content="only dark">') && /:root \{[^}]*color-scheme: only dark;/.test(sheet));
 check('the bundle holds every source file', files.every(f => built.includes(`// ---- ${f}`)), files.filter(f => !built.includes(`// ---- ${f}`)).join(' '));
 // English only (register 529): the page asks the browser not to translate it (register 530).
 const html = readFileSync('index.html', 'utf8');

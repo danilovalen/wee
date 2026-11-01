@@ -30,7 +30,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   drawHeat(g, level.w, lens.heat);
   drawWires(g, level.w, level.wires);
   // A challenge's open tiles, where its pieces go (register 562): a dashed outline on the floor.
-  if (open) { g.strokeStyle = 'rgba(123,108,255,.55)'; g.lineWidth = 1.5; g.setLineDash([4, 3]); for (const [x, y] of open) g.strokeRect(x * T + 3.5, y * T + 3.5, T - 7, T - 7); g.setLineDash([]); }
+  if (open) { g.strokeStyle = 'rgba(171,157,242,.55)'; g.lineWidth = 1.5; g.setLineDash([4, 3]); for (const [x, y] of open) g.strokeRect(x * T + 3.5, y * T + 3.5, T - 7, T - 7); g.setLineDash([]); }
   const pop = (x, y) => {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
     return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
@@ -50,7 +50,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   if (level.start) drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9, level.powers.armored);
   // A filled slot keeps its outline, now solid: the player put that piece there.
   if (open) {
-    g.strokeStyle = 'rgba(123,108,255,.95)'; g.lineWidth = 2.5;
+    g.strokeStyle = 'rgba(171,157,242,.95)'; g.lineWidth = 2.5;
     for (const [x, y] of open) if (level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y)) g.strokeRect(x * T + 2, y * T + 2, T - 4, T - 4);
   }
   for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {

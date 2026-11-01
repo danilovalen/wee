@@ -40,7 +40,7 @@ try {
     for (let u = 1; u <= 3; u += 0.25) px.push([...c.getContext('2d').getImageData(Math.floor(x * t + u * t / 32), Math.round((y + 0.5) * t), 1, 1).data]);
     return px.reduce((m, p) => (p[0] - p[1] > m[0] - m[1] ? p : m)); }, [x, y]);
   const [r, gr] = await edge(2, 8), [r2, g2, b2] = await pixel(1, 1), [r3] = await edge(1, 1);
-  check('a trap is framed red, a stop that can still win is the usual dot with no frame', r > 150 && gr < 80 && r2 < 150 && b2 > 200 && r3 - (await edge(1, 1))[1] < 40, JSON.stringify([await edge(2, 8), await pixel(1, 1), await edge(1, 1)]));
+  check('a trap is framed red, a stop that can still win is the usual dot with no frame', r > 150 && r - gr > 100 && b2 > 200 && b2 - g2 > 50 && r3 - (await edge(1, 1))[1] < 40, JSON.stringify([await edge(2, 8), await pixel(1, 1), await edge(1, 1)]));
   await page.click('#stopsBtn');
 
   // A box where nothing ever needs it: named in the notes, and framed on the map.

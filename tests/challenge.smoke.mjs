@@ -42,7 +42,7 @@ try {
   // A piece the player placed wears a solid purple frame (registers 565, 576), read off the painted canvas.
   const framed = await p.evaluate(([cells, cols]) => {
     const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / cols;
-    return cells.map(([x, y]) => { const d = g.getImageData(Math.round(x * t + t / 2), Math.round(y * t + t * 0.04), 1, 1).data; return d[2] > 200 && d[0] < 170 && d[1] < 160; });
+    return cells.map(([x, y]) => { const d = g.getImageData(Math.round(x * t + t / 2), Math.round(y * t + t * 0.04), 1, 1).data; return d[2] - d[1] > 60 && d[2] - d[0] > 40; });
   }, [ch.rows.flatMap((r, y) => [...r].map((c, x) => c === '+' && win[y][x] !== '.' ? [x, y] : null)).filter(Boolean), ch.rows[0].length]);
   check('each placed piece wears a purple frame', framed.length > 0 && framed.every(Boolean), JSON.stringify(framed));
   check('a placed piece fades on the card', (await shown()).every(x => x.endsWith('-used')), JSON.stringify(await shown()));

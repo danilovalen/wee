@@ -67,14 +67,15 @@ try {
   await settle();
   check('key 1 cycles Colour to Distance', await on('colour') === 'distance');
   const [near, past] = [await pixel(1.75, 0.75), await pixel(5.75, 0.75)];
-  check('near the goal is green, past the one-way is grey', near[1] > near[0] && Math.abs(past[0] - past[1]) < 30 && past[0] > 60, JSON.stringify([near, past]));
+  // Read against the floor measured above, so the check holds on any palette.
+  check('near the goal is not the hopeless grey, past the one-way is grey', Math.abs(past[0] - past[1]) < 30 && past[0] > floor[0] + 20 && Math.abs(near[0] - past[0]) + Math.abs(near[2] - past[2]) > 20, JSON.stringify([near, past, floor]));
   // Passes: a big dot where you stop, a small one where you only slide through.
   await page.click('[data-lens-group=lines][data-lens=off]');
   await page.click('[data-lens-group=colour][data-lens=off]');
   await page.click('[data-lens-group=dots][data-lens=passes]');
   await settle();
-  const big = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'); const at = (x, y, dx) => g.getImageData(Math.round((x + 0.5) * t + dx * t / 32), Math.round((y + 0.5) * t), 1, 1).data[0]; return { stopEdge: at(4, 1, 3), passEdge: at(3, 1, 3), passCentre: at(3, 1, 0) }; }); // red: low on a sky dot, high on the gray floor
-  check('Passes draws a big dot on a stop and a small one where you slide through', (await legend()).includes('small where you only pass') && big.stopEdge < 150 && big.passEdge > 180 && big.passCentre < 200, JSON.stringify(big) + await legend());
+  const big = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'); const at = (x, y, dx) => g.getImageData(Math.round((x + 0.5) * t + dx * t / 32), Math.round((y + 0.5) * t), 1, 1).data[2]; return { stopEdge: at(4, 1, 3), passEdge: at(3, 1, 3), passCentre: at(3, 1, 0) }; }); // blue: high on a sky dot, low on the dark floor
+  check('Passes draws a big dot on a stop and a small one where you slide through', (await legend()).includes('small where you only pass') && big.stopEdge > big.passEdge + 60 && big.passCentre > big.passEdge + 60, JSON.stringify(big) + await legend());
   // Moves: arrows between stops; Danger: where a move kills you, framed and crossed.
     await page.click('[data-lens-group=dots][data-lens=off]');
   await page.click('[data-lens-group=lines][data-lens=moves]');
