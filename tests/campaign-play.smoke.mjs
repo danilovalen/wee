@@ -56,6 +56,8 @@ try {
   const deskLay = await page.evaluate(() => [document.querySelector('.msGoal').getBoundingClientRect().bottom, document.getElementById('menuCampaign').getBoundingClientRect().top]);
   check('on a wide window the goal still ends above the buttons', deskLay[0] < deskLay[1], JSON.stringify(deskLay));
   check('the room behind the menu has its laser, door and switch', await page.$$eval('.msBeam, .msDoor, .msSwitch', es => es.filter(e => e.getBoundingClientRect().width > 0).length) === 3);
+  // Register 553: the menu's pieces are painted by the game's own drawing, so they cannot drift from the room.
+  check('the menu\'s laser, switch (off and on), door, goal and box are the game\'s drawings', await page.$$eval('.msEmitter, .msSwitch .off, .msSwitch .on, .msDoor, .msGoal, .msBox', es => es.length === 6 && es.every(e => getComputedStyle(e).backgroundImage.startsWith('url("data:image/png'))));
   await page.click('#menuCampaign');
   const rows = await page.$$eval('.campRow', rs => rs.map(r => r.dataset.level));
   check('the level list starts at Level 1: the tutorial is on the menu, not a card (register 521)', rows.length >= 5 && rows[0] === '1' && !rows.includes('tutorial'), rows.join());

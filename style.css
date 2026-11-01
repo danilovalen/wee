@@ -485,16 +485,17 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .msRoom::after { content: ''; position: absolute; left: -1040px; top: -1040px; width: 2444px; height: 2496px; z-index: -1; background: linear-gradient(90deg, #dde1e8 2px, transparent 2px) 0 0 / 52px 52px; }
 .msRoom > i { position: absolute; display: block; }
 .msWall { width: 48px; height: 48px; border-radius: var(--r-s); background: #a8afbe; }
-.msEmitter { width: 20px; height: 28px; border-radius: var(--r-s); background: #3a3f4d; box-shadow: inset -4px 0 0 #ff3b5c; }
-.msBeam { height: 6px; border-radius: var(--r-pill); background: #ff3b5c; box-shadow: 0 0 8px 2px rgba(255,59,92,.7); animation: msBeam 12s linear infinite, msHum .4s linear infinite; }
-.msSwitch { width: 36px; height: 20px; border-radius: var(--r-pill); animation: msSw 12s linear infinite; }
-.msSwitch b { position: absolute; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #ff6b81; animation: msKnob 12s linear infinite; }
-.msDoor { width: 42px; height: 42px; border-radius: var(--r-s); background: repeating-linear-gradient(90deg, #ff6b81 0 9px, #b23a50 9px 12px); animation: msDoor 12s linear infinite, msBonk 12s linear infinite; }
+.msEmitter, .msSwitch, .msSwitch b, .msDoor, .msGoal { width: 52px; height: 52px; background: center / 100% no-repeat; }
+.msEmitter { z-index: 1; }
+.msBeam { height: 6px; border-radius: var(--r-pill); background: #ff4d6d; box-shadow: 0 0 8px 2px rgba(255,77,109,.6); animation: msBeam 12s linear infinite, msHum .4s linear infinite; }
+.msSwitch b { position: absolute; left: 0; top: 0; }
+.msSwitch .on { animation: msSwOn 12s linear infinite; }
+.msDoor { animation: msDoor 12s linear infinite, msBonk 12s linear infinite; }
 .msSpark { width: 40px; color: #f0b429; font: 900 18px var(--label-face); font-style: normal; animation: msSpark 12s linear infinite; }
-.msGoal { width: 36px; height: 36px; border-radius: 50%; box-shadow: inset 0 0 0 4px #f0b429; color: #f0b429; font: 18px/36px sans-serif; font-style: normal; animation: msGoal 12s linear infinite; }
+.msGoal { animation: msGoal 12s linear infinite; }
 .msBox, .msRobot { left: 0; top: 0; width: 52px; height: 52px; animation: 12s linear infinite; }
 .msBox { animation-name: msBox; transform: translate(156px,52px); }
-.msBox b { display: block; margin: 8px; width: 36px; height: 36px; border-radius: var(--r-s); background: #f5a33c; box-shadow: inset 0 0 0 3px #c8701d; }
+.msBox { background: center / 100% no-repeat; }
 .msRobot { animation-name: msRobot, msFade; transform: translate(156px,0px); }
 .msRobot svg { display: block; transform-origin: 26px 47px; animation: msSquash 12s linear infinite; }
 .msEyes { transform-origin: 26px 25px; animation: msBlink 3s infinite; }
@@ -504,8 +505,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 @keyframes msBox { 0%, 8.33% { transform: translate(156px,52px); opacity: 1 } 11.17%, 85.83% { transform: translate(156px,156px); opacity: 1 } 90.00% { transform: translate(156px,156px); opacity: 0 } 93.33% { transform: translate(156px,52px); opacity: 0 } 96.67%, 100% { transform: translate(156px,52px); opacity: 1 } }
 @keyframes msBeam { 0%, 11.08% { width: 288px } 11.17%, 90.00% { width: 140px } 90.08%, 100% { width: 288px } }
 @keyframes msHum { 0%, 100% { opacity: 1 } 50% { opacity: .6 } }
-@keyframes msSw { 0%, 41.33% { background: #e9ecf1 } 41.42%, 90.00% { background: #ffd1d8 } 90.08%, 100% { background: #e9ecf1 } }
-@keyframes msKnob { 0%, 41.33% { left: 6px } 41.42%, 90.00% { left: 24px } 90.08%, 100% { left: 6px } }
+@keyframes msSwOn { 0%, 41.33% { opacity: 0 } 41.42%, 90.00% { opacity: 1 } 90.08%, 100% { opacity: 0 } }
 @keyframes msDoor { 0%, 41.42% { opacity: 1 } 44.17%, 87.50% { opacity: .18 } 90.00%, 100% { opacity: 1 } }
 @keyframes msBonk { 0%, 29.50% { transform: none; filter: none } 30.00% { transform: translateY(4px); filter: brightness(1.4) } 31.25% { transform: translateY(-2px) } 32.50%, 100% { transform: none; filter: none } }
 @keyframes msSpark { 0%, 29.17% { opacity: 0; transform: scale(.4) } 30.17% { opacity: 1; transform: scale(1) } 33.33%, 100% { opacity: 0; transform: scale(1.3) } }
