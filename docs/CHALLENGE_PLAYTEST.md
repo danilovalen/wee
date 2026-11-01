@@ -10,13 +10,19 @@ placed. The only goal is the star: there is no move count (registers 570-572). T
 the robot's reach, and exactly one placement of the pieces gets it there. The robot slides until
 something stops it, so a block works as a stopper.
 
-| | Name | Pieces | Placements | Solution |
-|---|---|---|---|---|
-| C1 | Two blocks | 2 blocks | 55 | 6 moves |
-| C2 | Three blocks | 3 blocks | 84 | 5 moves |
-| C3 | A box | box, block | 72 | 7 moves |
-| C4 | The door | switch, block | 72 | 7 moves |
-| C5 | One way | one-way, block | 224 | 6 moves |
+| | Name | Pieces | Placements | Solution | Ways to rest on the star | Also |
+|---|---|---|---|---|---|---|
+| C1 | Two blocks | 2 blocks | 55 | 5 moves | 3 | trap slot, two-job piece |
+| C2 | Three blocks | 3 blocks | 35 | 8 moves | 2 | trap slot, two-job piece |
+| C3 | A box | box, block | 72 | 7 moves | 2 | trap slot |
+| C4 | The door | switch, block | 72 | 7 moves | 2 | trap slot |
+| C5 | One way | one-way, block | 168 | 10 moves | 2 | trap slot, two-job piece |
+
+A challenge with one way to rest on the star solves backwards in forced steps (register 577), so the
+finder now asks for two or more, and per challenge for some of: a trap slot (the winning path slides
+across it), a two-job piece (the robot rests against it from two sides), a longer solution, and slots
+trimmed to the ones some nearly-right placement uses. `node tools/challenge.mjs` prints these for any
+challenge, hand-made ones included; nothing gates them, the content is the designer's.
 
 They are on the level list under "Challenges (playtest)", or open `#/level/c1` to `#/level/c5`.
 
@@ -40,8 +46,8 @@ A challenge that fails these is cut or redone; if most fail, challenges are not 
 
 ## Making more
 
-- `node tools/challengeFind.mjs [--seed S] [--theme Name]` searches random 5x5 arenas for ones with
-  the star out of reach, exactly one solution and 50+ placements.
+- `node tools/challengeFind.mjs [--seed S] [--theme Name]` searches random arenas per spec in its
+  `SPECS` list (size, pieces, which tricks to ask for).
 - Add one to `campaign/challenges.json`, then `node tools/challenge.mjs` checks it and
   `node tools/challenge.mjs --write` puts it in the game. `tests/challenges.test.mjs` holds every one to a
   single solution, and holds the game's Run to the checker's answer.

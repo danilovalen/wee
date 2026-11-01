@@ -80,10 +80,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     writeFileSync('src/level/challenges.js', '// Generated from campaign/challenges.json by tools/challenge.mjs --write. Do not edit by hand.\nexport const CHALLENGES = ' + JSON.stringify(LIST().map(toLevel)) + ';\n');
     console.log('src/level/challenges.js written');
   } else {
+    // Loaded after this module finishes: challengeShape imports it back.
+    import('./challengeShape.mjs').then(({ shape }) => {
     for (const ch of LIST().filter(c => !arg || arg.includes(String(c.id)))) {
       const m = measure(ch);
-      console.log(`${ch.id} ${ch.name}: ${m.wins.length === 1 ? 'ONE solution' : m.wins.length + ' solutions'}; ${m.placements} placements, ${m.reach} reach the star, ${m.close} close`);
+      const sh = m.wins.length === 1 ? shape(ch, placements(ch).find(pl => rowsWith(ch, pl).join() === m.wins[0].rows.join())) : null;
+      console.log(`${ch.id} ${ch.name}: ${m.wins.length === 1 ? 'ONE solution' : m.wins.length + ' solutions'}; ${m.placements} placements` + (sh ? `; ${sh.forks} ways to rest on the star${sh.trap ? ', a trap slot' : ''}${sh.twoJob ? ', a two-job piece' : ''}` : ''));
       for (const w of m.wins.slice(0, 3)) console.log('   ' + w.rows.join(' / ') + `  (${w.length} moves)`);
     }
+    });
   }
 }

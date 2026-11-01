@@ -33,6 +33,7 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
 - **A gate on whether something shows reads what is painted, never the `hidden` flag.** A class that sets `display` outranks the `hidden` attribute; `.sizeBand` did, so a resize band stayed on screen for good while its gate, reading the flag, stayed green (163, then 170). Any class with a `display` rule on an element the code hides needs its own `[hidden] { display: none; }`.
 - **A palette minimum a required goal already implies is redundant: set it to 1.** "A laser through two open doors" needs two doors, so "2 or more doors" only repeats it on the goal card. Built that way twice (levels 11 and 14, rows 248, 279) because minimums were set apart from the goals. When writing a level, read each minimum against the required goals.
 - A count in a goal he asks for means that many or more; "exactly" only when he says exactly (register 483).
+- **Do not gate content** (owner, 2026-11-01, row 579: *"Level C1 doesn't have to have a specific mechanism. I can change it anytime."*). Tests hold what the tooling owes a level (it is solvable as stated, the game agrees with the checker, the game holds what the source says), never which tricks or sizes a level has. Measure those in a tool he can run instead.
 - **Game design is the owner's.** Levels, mechanics, rules and requirements are his to decide.
   Ask one question at a time; draft a level only when asked, and build it only once approved.
 
