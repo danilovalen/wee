@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goals Layout Sketch</title>
+<style>
+:root{--paper:#eceef2;--panel:#f8f9fb;--ink:#2a2730;--soft:#6f6876;--accent:#7b6cff;--sticker:#c8ccd5;--gold:#ffc23d;--goldInk:#a77b00;--field:rgba(0,0,0,.05);--ok:#2e8b57;--bad:#c0392b}
+*{box-sizing:border-box}
+body{margin:0;background:#dfe2e8;color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px} h2{font-size:16px;margin:26px 0 6px}
+p.sub{color:var(--soft);margin:0 0 12px;font-size:14px;max-width:780px}
+.row{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.opt h3{font-size:14px;margin:0 0 6px} .opt p{font-size:13px;color:var(--soft);margin:6px 0 0}
+.phone{background:var(--paper);border-radius:16px;padding:10px;box-shadow:4px 4px 0 0 var(--sticker);width:330px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:13px;white-space:nowrap}
+.ic{display:inline-block;width:16px;height:16px;border-radius:3px;vertical-align:-3px}
+.robot{background:#7b6cff;border-radius:5px}
+.door{background:#ff6b7d}
+.mark{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1.5px #9a95a0;display:inline-block;flex:none}
+svg{display:inline-block;vertical-align:-3px}
+.box{border-radius:10px;padding:7px 9px}
+.main{background:#fff6dc;box-shadow:inset 0 0 0 2px #f2d27a}
+.side{background:var(--field)}
+.big{width:30px;height:30px;flex:none}
+.small{width:20px;height:20px;flex:none}
+.flex{display:flex;gap:8px;align-items:center}
+.wrap{display:flex;flex-wrap:wrap;gap:6px 12px}
+.sidechip{display:inline-flex;align-items:center;gap:4px;background:#fff;border-radius:999px;padding:3px 9px 3px 4px;font-size:13px;box-shadow:2px 2px 0 0 var(--sticker)}
+.line{width:2px;align-self:stretch;background:#d2d5dc;margin:0 2px}
+.cols{display:grid;grid-template-columns:auto 2px 1fr;gap:8px;align-items:start}
+.lbl{font-size:10px;font-weight:800;color:var(--goldInk);letter-spacing:.04em}
+.moves{display:flex;gap:16px;flex-wrap:wrap}
+.mv{background:#fff;border-radius:12px;padding:10px 12px;width:250px}
+.mv b{display:block;font-size:13px;margin-bottom:6px}
+.mv .big2{font-size:20px;font-weight:800;display:flex;align-items:center;gap:6px}
+.mv p{font-size:12.5px;color:var(--soft);margin:6px 0 0}
+.q{background:#fff;border-radius:12px;padding:10px 14px;font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>Main star and side stars: sketch (registers 546, 547)</h1>
+<p class="sub">Level 3's goals. The level list already says it the right way: one big star, a line, then one small star per side goal. Each option below repeats that shape on the goal card, so the card and the list read the same. Words are drafts.</p>
+
+<h2>The main star and the side stars</h2>
+<div class="row">
+ <div class="opt"><h3>A. Two boxes (recommended)</h3><div class="phone">
+  <div class="box main flex"><span id="a1"></span><div class="wrap">
+   <span class="chip"><span id="mvA"></span></span>
+   <span class="chip"><i class="ic robot"></i> through open <i class="ic door"></i></span>
+   <span class="chip">all <i class="ic door"></i> closed <span id="flagA"></span></span></div></div>
+  <div class="box side wrap" style="margin-top:8px">
+   <span class="sidechip"><span class="s1"></span>=8 moves</span>
+   <span class="sidechip"><span class="s1"></span>&le;3&times;3</span>
+   <span class="sidechip"><span class="s1"></span><i class="ic robot"></i> hits closed <i class="ic door"></i></span>
+   <span class="sidechip"><span class="s1"></span>&le;1 <i class="ic door"></i></span>
+   <span class="sidechip"><span class="s1"></span>&times;2 at once</span></div>
+ </div><p>The big star sits in a gold box with everything it needs, none of them marked one by one until a Run. Each side goal is its own chip that begins with its own small star, and that star fills when the goal is met. One big star, five small stars: the same count as on the level card.</p></div>
+
+ <div class="opt"><h3>B. Star | line | stars, like the level card</h3><div class="phone">
+  <div class="cols"><div style="text-align:center"><span id="b1"></span></div><span class="line"></span>
+   <div class="wrap" style="flex-direction:column;gap:4px">
+    <span class="chip"><span id="mvB"></span></span>
+    <span class="chip"><i class="ic robot"></i> through open <i class="ic door"></i></span>
+    <span class="chip">all <i class="ic door"></i> closed <span id="flagB"></span></span></div></div>
+  <div style="height:2px;background:#d2d5dc;margin:8px 0"></div>
+  <div class="wrap" style="flex-direction:column;gap:4px">
+   <span class="chip"><span class="s1"></span>=8 moves</span>
+   <span class="chip"><span class="s1"></span>&le;3&times;3</span>
+   <span class="chip"><span class="s1"></span><i class="ic robot"></i> hits closed <i class="ic door"></i></span>
+   <span class="chip"><span class="s1"></span>&le;1 <i class="ic door"></i></span>
+   <span class="chip"><span class="s1"></span>&times;2 at once</span></div>
+ </div><p>One goal per line: clearer, but taller (about 8 lines against 4).</p></div>
+
+ <div class="opt"><h3>C. Main goals as one sentence-row, side stars under it</h3><div class="phone">
+  <div class="flex" style="flex-wrap:wrap"><span id="c1"></span>
+   <span class="chip"><span id="mvC"></span> &middot; <i class="ic robot"></i> through open <i class="ic door"></i> &middot; all <i class="ic door"></i> closed <span id="flagC"></span></span></div>
+  <div class="wrap" style="margin-top:8px">
+   <span class="chip"><span class="s1"></span>=8 moves</span><span class="chip"><span class="s1"></span>&le;3&times;3</span>
+   <span class="chip"><span class="s1"></span><i class="ic robot"></i> hits closed <i class="ic door"></i></span><span class="chip"><span class="s1"></span>&le;1 <i class="ic door"></i></span><span class="chip"><span class="s1"></span>&times;2 at once</span></div>
+ </div><p>Smallest, but with no box around them the two groups lean on spacing alone.</p></div>
+</div>
+
+<h2>"At least 4 moves"</h2>
+<p class="sub">Four dots said "four of something", not "at least four moves". Three ways to say it:</p>
+<div class="moves">
+ <div class="mv"><b>1. A path mark and 4+ (recommended)</b><div class="big2"><span id="m1"></span>4+</div><p>A bent path with an arrow is "moves". During a Run it counts up: 1, 2, 3 in grey, then 4+ turns green.</p></div>
+ <div class="mv"><b>2. The robot and 4+</b><div class="big2"><span id="m2"></span>4+</div><p>Shortest, but "robot 4+" could read as four robots.</p></div>
+ <div class="mv"><b>3. Words: 4+ moves</b><div class="big2" style="font-size:17px">4+ moves</div><p>Plain and unmistakable; one word.</p></div>
+</div>
+
+<h2>Open questions</h2>
+<ol class="q">
+<li>Which layout: A, B or C?</li>
+<li>Which way to say "at least 4 moves": 1, 2 or 3?</li>
+</ol>
+</main>
+<script>
+var STAR='M12 1.8l3 6.4 7 .8-5.2 4.8 1.4 6.9L12 17.2 5.8 20.7l1.4-6.9L2 9l7-.8z';
+function star(cls,fill){return '<svg class="'+cls+'" viewBox="0 0 24 24"><path d="'+STAR+'" fill="'+(fill?'#ffc23d':'#fff')+'" stroke="'+(fill?'#e0a800':'#b9bcc6')+'" stroke-width="1.7" stroke-linejoin="round"/></svg>';}
+['a1','b1','c1'].forEach(function(id){document.getElementById(id).innerHTML=star('big',false);});
+[].forEach.call(document.querySelectorAll('.s1'),function(e){e.innerHTML=star('small',false);});
+var PATH='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9h9v6h6"/><path d="M16 12l3 3-3 3"/><circle cx="4" cy="19" r="1.6" fill="currentColor"/></svg>';
+['mvA','mvB','mvC'].forEach(function(id){document.getElementById(id).innerHTML=PATH+' <b>4+</b>';});
+document.getElementById('m1').innerHTML=PATH;
+document.getElementById('m2').innerHTML='<i class="ic robot" style="width:20px;height:20px"></i>';
+var FLAG='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 21V4"/><path d="M6 4.5h11l-2.5 4 2.5 4H6" fill="currentColor" fill-opacity=".25"/></svg>';
+['flagA','flagB','flagC'].forEach(function(id){document.getElementById(id).innerHTML=FLAG;});
+</script>
+</body>
+</html>
