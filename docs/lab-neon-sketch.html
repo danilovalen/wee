@@ -149,7 +149,12 @@ const SPRITES = {
 const ICONS = {
   grid(c) { const g = grid(); for (const [x, y] of [[1, 1], [9, 1], [1, 9], [9, 9]]) { box(g, x, y, x + 5, y + 5, c); box(g, x + 2, y + 2, x + 3, y + 3, null); } return g; },
   play(c) { const g = grid(); for (let y = 2; y <= 13; y++) { const w = Math.round((y <= 7.5 ? y - 2 : 13 - y) * 1.6); box(g, 4, y, 4 + w, y, c); } return g; },
-  pad(c) { const g = grid(); box(g, 6, 1, 9, 14, c); box(g, 1, 6, 14, 9, c); box(g, 7, 7, 8, 8, null); return g; },
+  pad(c) { // a game pad's cross: a solid plus with an arrow cut into each arm (Move is thin arrows, so the two never look alike)
+    const g = grid();
+    box(g, 5, 0, 10, 15, c); box(g, 0, 5, 15, 10, c);
+    box(g, 7, 2, 8, 2, null); box(g, 6, 3, 9, 3, null); box(g, 7, 13, 8, 13, null); box(g, 6, 12, 9, 12, null);
+    box(g, 2, 7, 2, 8, null); box(g, 3, 6, 3, 9, null); box(g, 13, 7, 13, 8, null); box(g, 12, 6, 12, 9, null);
+    return g; },
   undo(c) { const g = grid(); for (let i = 0; i < 4; i++) box(g, 2 + i, 5 - i, 2 + i, 6 + i, c); box(g, 3, 5, 10, 6, c); for (let y = 6; y <= 11; y++) box(g, 11 + (y > 7 && y < 10 ? 1 : 0), y, 12 + (y > 7 && y < 10 ? 1 : 0), y, c); box(g, 5, 12, 11, 13, c); return g; },
   redo(c) { const g = ICONS.undo(c); return g.map(r => r.slice().reverse()); },
   reset(c) { const g = grid(); ring(g, 8, 8.5, 6.5, c); ring(g, 8, 8.5, 5.5, c); box(g, 9, 0, 15, 5, null); box(g, 10, 1, 14, 2, c); box(g, 13, 1, 14, 5, c); box(g, 7, 7, 9, 9, c); return g; },
