@@ -2,6 +2,7 @@
 // last side goal (a side goal counts once met in any run). Each asks Next level or Stay, once the
 // robot has finished its run. A first win that meets every side goal shows only the second.
 import { LEVELS } from '../level/campaign.js';
+import { CHALLENGES } from '../level/challenges.js';
 import { optionalGoals, listed } from '../campaign/rules.js';
 import { shownName } from '../campaign/names.js';
 import { $ } from './dom.js';
@@ -27,10 +28,11 @@ export function noteWin(def, before, rec, v, words) {
   pending = { def, gold, moves: v.length, goals, met: rec.goals, fresh, words };
 }
 
+// The level after this one in its own list (a challenge's next is the next challenge), or none at the end.
 function next(def) {
   if (def.made) return { label: 'Maker', go: up };
-  const list = LEVELS.filter(listed), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
-  return n ? { label: 'Next level', go: () => go('level', n.id) } : { label: 'Levels', go: up };
+  const list = def.challenge ? CHALLENGES : LEVELS.filter(listed), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
+  return n ? { label: 'Next level', go: () => go('level', n.id) } : null;
 }
 
 // Stars out of the gold card for about a second; none when motion is turned down.
@@ -61,8 +63,11 @@ function show(p) {
     const m = document.createElement('i'); m.textContent = '★';
     li.append(m, p.words(o.parts)); return li;
   }));
-  $('winNext').textContent = n.label;
-  $('winNext').onclick = () => { box.close(); n.go(); };
+  // Next level, Levels and Stay side by side (register 583); the last level has no next.
+  $('winNext').hidden = !n;
+  if (n) { $('winNext').textContent = n.label; $('winNext').onclick = () => { box.close(); n.go(); }; }
+  $('winLevels').hidden = !!p.def.made;
+  $('winLevels').onclick = () => { box.close(); up(); };
   box.showModal();
   if (p.gold) burst(box);
 }

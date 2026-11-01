@@ -3,6 +3,10 @@
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite } from './lib.mjs';
+import { LEVELS } from '../src/level/campaign.js';
+import { listed } from '../src/campaign/rules.js';
+// Levels by place in the list, not by number (register 581).
+const LISTED = LEVELS.filter(listed), A = LISTED[0].id, B = (LISTED[1] || LISTED[0]).id, C = (LISTED[2] || LISTED[0]).id;
 
 const { check, done } = suite('tap');
 const PORT = 5265;
@@ -21,7 +25,7 @@ try {
   };
   const steady = t => t.most <= t.rest + 0.01 && !t.moved;
   let t = await tap('#menuCampaign'); check('the menu\'s Campaign button never pops up after a tap', steady(t), JSON.stringify(t));
-  await p.waitForTimeout(400); await p.tap('.campRow[data-level="3"]'); await p.waitForTimeout(800);
+  await p.waitForTimeout(400); await p.tap(`.campRow[data-level="${C}"]`); await p.waitForTimeout(800);
   t = await tap('#palette [data-tool="wall"]'); check('a piece button never pops up after it is picked', steady(t), JSON.stringify(t));
   t = await tap('#campTools [data-tool="erase"]'); check('a tool button never pops up after it is picked', steady(t), JSON.stringify(t));
   t = await tap('#campTest'); check('Test never pops up after a tap', steady(t), JSON.stringify(t));

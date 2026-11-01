@@ -4,6 +4,10 @@
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite, pickTool } from './lib.mjs';
+import { LEVELS } from '../src/level/campaign.js';
+import { listed } from '../src/campaign/rules.js';
+// Levels by place in the list, not by number (register 581).
+const LISTED = LEVELS.filter(listed), A = LISTED[0].id, B = (LISTED[1] || LISTED[0]).id, C = (LISTED[2] || LISTED[0]).id;
 
 const { check, done } = suite('spacing');
 const PORT = 5255;
@@ -55,7 +59,7 @@ try {
     await page.keyboard.press('Escape'); await page.waitForTimeout(200);
     await see('the editor');
     await page.click('#strip [data-slot="walls"]'); await page.waitForTimeout(200); await see('the editor with a group open');
-    await page.goto(`http://localhost:${PORT}/#/level/16`); await page.waitForTimeout(600); await see('a level');
+    await page.goto(`http://localhost:${PORT}/#/level/${A}`); await page.waitForTimeout(600); await see('a level');
     await page.close();
   }
 } catch (err) { check('the spacing smoke ran to the end', false, err.message); }

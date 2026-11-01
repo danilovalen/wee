@@ -3,6 +3,24 @@
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite, dragGrip } from './lib.mjs';
+import { LEVELS } from '../src/level/campaign.js';
+import { listed } from '../src/campaign/rules.js';
+const LISTED = LEVELS.filter(listed), pick = f => LISTED.find(f);
+const plain = l => !l.colours && !l.pushable && l.size[0] === 7 && l.size[1] === 7;
+const ANY = LISTED[1] || LISTED[0];
+const MIN_ONE = pick(l => Object.values(l.palette).some(([lo, hi]) => lo === 1 && hi == null));
+const SWITCH_DOOR = pick(l => plain(l) && l.palette.toggle && l.palette.door);
+const HITS_DOOR = pick(l => (l.require || []).includes('hitsClosedDoor'));
+const MIN_GATES = pick(l => l.palette.gate && l.palette.gate[0] >= 2);
+const RELAY_GOAL = pick(l => (l.optional || []).concat(l.require || []).includes('relayHitsRelay') && (l.pushable || {}).relay === 'only');
+const SPIKES_BOX = pick(l => plain(l) && l.palette.spikes && l.palette.box);
+const MOST = [...LISTED].sort((a, b) => Object.keys(b.palette).length - Object.keys(a.palette).length)[0];
+const PLAIN_GATE = pick(l => plain(l) && l.palette.gate);
+const LASER_7 = pick(l => l.palette.laser && l.palette.box && !(l.pushable || {}).laser && l.size[0] === 7);
+const ONE_COLOUR_GATE = pick(l => (l.colours || []).length === 1 && l.palette.gate && !(l.pushable || {}).gate && l.size[0] === 7);
+const PUSHABLE_LASER = pick(l => (l.pushable || {}).laser === 'only' && l.size[0] === 7);
+// Levels picked by what a check needs, not by number, so new or changed levels do not break it (register 581).
+const MAXED = LEVELS.find(l => l.palette.box && l.palette.box[1] != null), TWO_COLOURS = LEVELS.find(l => (l.colours || []).length >= 2);
 
 const { check, done } = suite('campaign-play');
 const server = await serve(5217);
@@ -68,32 +86,34 @@ try {
   check('the menu\'s laser, switch (off and on), door, goal and box are the game\'s drawings', await page.$$eval('.msEmitter, .msSwitch .off, .msSwitch .on, .msDoor, .msGoal, .msBox', es => es.length === 6 && es.every(e => getComputedStyle(e).backgroundImage.startsWith('url("data:image/png'))));
   await page.click('#menuCampaign');
   const rows = await page.$$eval('.campRow', rs => rs.map(r => r.dataset.level));
-  check('the level list starts at Level 1: the tutorial is on the menu, not a card (register 521)', rows.length >= 5 && rows[0] === '1' && !rows.includes('tutorial'), rows.join());
+  check('the level list starts at Level 1: the tutorial is on the menu, not a card (register 521)', rows.length >= 1 && rows[0] === LISTED[0].id && !rows.includes('tutorial'), rows.join());
   const parts = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part).join()])));
-  check('each level in the list shows the elements it uses', parts['1'] === 'block' && parts['5'] === 'block,box' && parts['6'] === 'block,box,toggle,door', JSON.stringify(parts));
-  const laser = await page.$eval('.campRow[data-level="14"] [data-part="laser"]', c => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let clear = 0; for (let i = 3; i < d.length; i += 4) if (d[i] < 10) clear++; return clear; });
-  check('the laser icon sits on a floor tile: no see-through pixels (register 526)', laser === 0, String(laser));
+  check('each level in the list shows the elements it uses', LISTED.every(l => parts[l.id] === Object.keys(l.palette).join()), JSON.stringify(parts));
+  const LASER = pick(l => l.palette.laser);
+  if (LASER) { const laser = await page.$eval(`.campRow[data-level="${LASER.id}"] [data-part="laser"]`, c => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let clear = 0; for (let i = 3; i < d.length; i += 4) if (d[i] < 10) clear++; return clear; });
+  check('the laser icon sits on a floor tile: no see-through pixels (register 526)', laser === 0, String(laser)); }
   // Register 402: a version per colour and per pushable kind, each one-line row of 16 px icons.
   // Registers 419, 420: one icon per element, the pushable frame only where it comes pushable only, and a
   // level with two colours shows them as dots on its title line, at the right.
   const versions = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part + ('crate' in c.dataset ? '+' : '')).join()])));
-  check('levels with two colours are put away: no 11 or 16 in the list (register 525)', !('11' in versions) && !('16' in versions) && '12' in versions, Object.keys(versions).join());
-  check('level 20 shows its relay pushable only', versions['20'].includes('relay+'), versions['20']);
-  const head = await page.$eval('.campRow[data-level="12"]', r => { const n = r.querySelector('.campRowHead b'), ps = r.querySelector('.campParts'), nb = n.getBoundingClientRect(), pb = ps.getBoundingClientRect(), b = r.getBoundingClientRect(); return { text: n.textContent, line: Math.abs(nb.top + nb.height / 2 - (pb.top + pb.height / 2)) < 4, right: b.right - pb.right < 24 }; });
-  check('the old level 12 reads "11", its pieces on the same line at the right (register 527)', head.text === '11' && head.line && head.right, JSON.stringify(head));
+  check('levels with two colours are put away (register 525)', LEVELS.filter(l => (l.colours || []).length >= 2).every(l => !(l.id in versions)) && LISTED.every(l => l.id in versions), Object.keys(versions).join());
+  check('a piece that comes pushable only shows the pushable frame on its card', LISTED.every(l => Object.keys(l.palette).every(el => versions[l.id].split(',').includes(el + ((l.pushable || {})[el] === 'only' ? '+' : '')))), JSON.stringify(versions));
+  // A card reads its place in the list, not its id (registers 527, 528): the last listed level.
+  const LAST = LISTED.length - 1, head = await page.$eval(`.campRow[data-level="${LISTED[LAST].id}"]`, r => { const n = r.querySelector('.campRowHead b'), ps = r.querySelector('.campParts'), nb = n.getBoundingClientRect(), pb = ps.getBoundingClientRect(), b = r.getBoundingClientRect(); return { text: n.textContent, line: Math.abs(nb.top + nb.height / 2 - (pb.top + pb.height / 2)) < 4, right: b.right - pb.right < 24 }; });
+  check('a card reads its place in the list, its pieces on the same line at the right (register 527)', head.text === String(LAST + 1) && head.line && head.right, JSON.stringify(head));
   const nums = await page.$$eval('.campRow:not([data-level^="c"]) b', bs => bs.map(b => +b.textContent));
   check('the list numbers run 1, 2, 3 with no gap (register 528)', nums.every((n, i) => n === i + 1), nums.join());
   // Register 562: the challenges sit apart, after the levels, under their own heading, and one opens with only its open tiles taking pieces.
-  check('the challenges follow the levels under their own heading', await page.evaluate(() => { const h = document.querySelector('#campList .campSection'), cs = [...document.querySelectorAll('.campRow[data-level^="c"]')]; return !!h && cs.length >= 5 && cs.every(c => h.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING); }));
-  await page.click('.campRow[data-level="12"]'); await page.waitForTimeout(400);
-  check('the top bar says the same number', (await page.locator('#campNum').textContent()) === '11');
+  check('the challenges follow the levels under their own heading', await page.evaluate(() => { const h = document.querySelector('#campList .campSection'), cs = [...document.querySelectorAll('.campRow[data-level^="c"]')]; return !!h && cs.length >= 1 && cs.every(c => h.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING); }));
+  await page.click(`.campRow[data-level="${LISTED[LAST].id}"]`); await page.waitForTimeout(400);
+  check('the top bar says the same number', (await page.locator('#campNum').textContent()) === String(LAST + 1));
   await page.click('#campBack'); await page.waitForTimeout(300);
   const lines = await page.$$eval('.campParts', ps => ps.filter(p => { const ys = new Set([...p.querySelectorAll('canvas')].map(c => Math.round(c.getBoundingClientRect().top))); return ys.size > 1; }).length);
   check('every level\'s icons fit on one line', lines === 0, String(lines));
   const listing = await page.evaluate(() => { const rows = [...document.querySelectorAll('.campRow')]; return { cols: new Set(rows.map(r => Math.round(r.getBoundingClientRect().left / 10))).size, said: rows.filter(r => /shortest path/i.test(r.textContent)).length }; });
   check('the level list lays its levels out two to a row', listing.cols === 2, JSON.stringify(listing));
   check('no level row repeats the 4-move rule', listing.said === 0, JSON.stringify(listing));
-  await page.click('.campRow[data-level="1"]');
+  await page.click(`.campRow[data-level="${LISTED[0].id}"]`);
   check('a level hides the sandbox and shows its brief', await page.evaluate(() => document.body.classList.contains('campaign')) && await page.locator('#campBrief').isVisible());
   const tools = await visibleTools();
   check('the palette is the level\'s own, with Move', tools.sort().join() === 'erase,look,move,wall', tools.join());
@@ -172,7 +192,7 @@ try {
   // The next touch elsewhere puts it away; a touch on it keeps it. Words stay only for what the card
   // cannot show, such as a room not ready to run: level 9 with no one-ways yet.
   await backToEdit();
-  await page.evaluate(() => { location.hash = '#/levels'; }); await page.waitForTimeout(300); await page.click('.campRow[data-level="9"]'); await page.waitForTimeout(300);
+  await page.evaluate(() => { location.hash = '#/levels'; }); await page.waitForTimeout(300); await page.click(`.campRow[data-level="${ANY.id}"]`); await page.waitForTimeout(300);
   await page.click('#campRun'); await page.waitForTimeout(200);
   await page.click('#campVerdictText');
   check('a touch on the verdict keeps it', await page.locator('#campVerdict').isVisible());
@@ -190,7 +210,7 @@ try {
   const row = await stars(1);
   check('the list keeps a beaten level: its main star holds the fewest tiles, one star per side goal (register 475)', /^7 \| /.test(row) && row.split(' | ')[1].split(' ').length === 5, row);
   check('every level card is the same size, with no text line (register 475)', await page.$$eval('#campList .campRow', bs => new Set(bs.map(b => b.offsetHeight)).size === 1 && !bs.some(b => b.querySelector('small'))));
-  check('the level you were on is selected', await page.locator('.campRow[data-level="9"]').evaluate(b => b.classList.contains('sel')));
+  check('the level you were on is selected', await page.locator(`.campRow[data-level="${ANY.id}"]`).evaluate(b => b.classList.contains('sel')));
   // Progress you carry yourself (register 254): copy a code, reset after a yes, load the code back.
   await page.click('#progCopy');
   const code = await page.inputValue('#progCode');
@@ -206,7 +226,7 @@ try {
   check('a code of something else is refused too', await page.locator('#progBox').isVisible());
   await page.fill('#progCode', code); await page.click('#progYes');
   check('loading the code brings the progress back', (await stars(1)) === row);
-  await page.click('.campRow[data-level="1"]');
+  await page.click(`.campRow[data-level="${LISTED[0].id}"]`);
   const kept = await page.evaluate(() => { const l = window.wee.getLevel(); return [l.w, l.h, l.cells.filter(c => c === 'wall').length].join(); });
   check('your room is kept for next time', kept === '5,5,7', kept);
   // A 2x3 win, the smallest there is (register 469), meets the room-size goal, and the list keeps it.
@@ -216,14 +236,14 @@ try {
   await backToEdit();
   await page.click('#campBack');
   const row2 = await stars(1);
-  await page.click('.campRow[data-level="1"]');
+  await page.click(`.campRow[data-level="${LISTED[0].id}"]`);
   await load(WIN);
   await page.click('#campRun'); await page.waitForTimeout(200);
   await backToEdit();
   await page.click('#campBack');
   const row3 = await stars(1);
   check('the list keeps the fewest tiles, overall and per side goal met (registers 328, 475)', /^1 \| - 1 /.test(row3), row3);
-  await page.click('.campRow[data-level="1"]');
+  await page.click(`.campRow[data-level="${LISTED[0].id}"]`);
   await page.evaluate(() => { const rows = ['..##P#.', '.#.G...', '....#..', '#.....#', '...#...', '.#...#.', '.......'], l = window.wee.blank(7, 7); l.start = null; for (const p of Object.keys(l.powers)) l.powers[p] = false; rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '#') l.cells[y * 7 + x] = 'wall'; if (c === 'G') l.cells[y * 7 + x] = 'goal'; if (c === 'P') l.start = { x, y }; })); window.wee.loadLevel(l); });
   await page.click('#campRun'); await page.waitForTimeout(200);
   await backToEdit();
@@ -231,7 +251,7 @@ try {
   const row4 = await stars(1);
   check('more tiles do not raise the score', /^1 \| /.test(row4), row4);
   check('a met side goal stays met after a later win misses it', / 1 /.test(row2) && row3.split(' | ')[1].split(' ')[1] === '1', row2 + ' / ' + row3);
-  await page.click('.campRow[data-level="1"]');
+  await page.click(`.campRow[data-level="${LISTED[0].id}"]`);
   // Test: the room played by hand; reaching the goal says so and nothing is judged or saved.
   await load(['P....', '.....', '.....', '.....', '....G']);
   const kept0 = await page.evaluate(() => localStorage.getItem('wee.campaign'));
@@ -252,11 +272,11 @@ try {
     l.cells[5 * 7 + 5] = 'goal'; l.cells[2 * 7 + 3] = 'wall'; l.start = { x: 1, y: 1 };
     p.levels['1'] = { ...p.levels['1'], room: l }; localStorage.setItem('wee.campaign', JSON.stringify(p));
   });
-  await page.click('.campRow[data-level="1"]');
+  await page.click(`.campRow[data-level="${LISTED[0].id}"]`);
   const old = await page.evaluate(() => { const l = window.wee.getLevel(); return [l.w, l.h, l.start.x, l.start.y, l.cells.filter(c => c === 'wall').length, l.cells.indexOf('goal')].join(); });
   check('an old framed room comes back without its frame', old === '5,5,0,0,1,24', old);
   await page.click('#campBack');
-  await page.click('.campRow[data-level="3"]');
+  await page.click(`.campRow[data-level="${SWITCH_DOOR.id}"]`);
   check('a minimum of 1 is no row of its own', await page.locator('.campReqs li[data-req^="min-"]').count() === 0);
   const reqRows = await page.$$eval('.campReqs li', ls => ls.map(l => [l.dataset.req, [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join('+')].join('=')));
   const lay = await page.evaluate(() => { const must = document.querySelector('.campMust'), opt = document.querySelector('.campOpt'), xs = new Set([...must.children].map(li => Math.round(li.getBoundingClientRect().left))); return { cols: xs.size, opt: [...opt.children].map(li => li.dataset.req).join(), must: [...must.children].map(li => li.dataset.req).join(), below: opt.getBoundingClientRect().top >= must.getBoundingClientRect().bottom }; });
@@ -268,14 +288,14 @@ try {
   const split = await page.evaluate(() => { const main = document.querySelector('.campMain'), side = document.querySelector('.campOpt');
     return { big: !!main?.querySelector('.campBigStar'), must: [...document.querySelectorAll('.campMust li')].every(l => main.contains(l)), side: [...side.querySelectorAll('li')].every(l => l.classList.contains('optional') && l.querySelector('.mark [class=glyph], .mark svg')), apart: main.getBoundingClientRect().bottom <= side.getBoundingClientRect().top }; });
   check('the main star\'s goals sit in one box with a big star; each side goal is a chip with its own star, below (register 547)', split.big && split.must && split.side && split.apart, JSON.stringify(split));
-  check('the 4-move minimum comes first, across the whole card', first.first && first.full && first.text === '4+' && first.need === '4', JSON.stringify(first));
-  check('the optional goal sits apart, below the required ones', lay.opt === 'best,small,hitsClosedDoor,atMostOneDoor,mix' && !lay.must.includes('best') && lay.below, JSON.stringify(lay));
+  check('the 4-move minimum comes first, across the whole card', first.first && first.full && first.text === `${SWITCH_DOOR.steps.min ?? 4}+` && first.need === String(SWITCH_DOOR.steps.min ?? 4), JSON.stringify(first));
+  check('the optional goal sits apart, below the required ones', SWITCH_DOOR.optional.every(id => lay.opt.split(',').includes(id)) && !lay.must.includes('best') && lay.below, JSON.stringify(lay));
   check('the goal card has no section headings: a star marks a side goal (plan step 4)', await page.locator('.campLabel').count() === 0 && !/^(optional )?goals$/im.test(await page.locator('#campBrief').innerText()));
-  check('requirement rows draw objects as icons', reqRows.includes('throughOpenDoor=start+door') && reqRows.includes('doorClosedAtEnd=door'), reqRows.join());
+  check('requirement rows draw objects as icons', SWITCH_DOOR.require.every(id => reqRows.some(r => r.startsWith(id + '=') && r.length > id.length + 1)), reqRows.join());
   await page.click('#campBack');
   // Level 3: one switch, one door. With the switch walled off behind the door, Run says why
   // the robot cannot finish and flashes the door and the switch.
-  await page.click('.campRow[data-level="3"]');
+  await page.click(`.campRow[data-level="${SWITCH_DOOR.id}"]`);
   await load(['P....', '.....', '##D##', '..t..', '....G']);
   await page.click('#campRun');
   await page.waitForTimeout(150);
@@ -286,38 +306,52 @@ try {
   await page.click('#campVerdictText');
   check('tapping the verdict flashes them again', (await page.evaluate(() => window.wee.fxTypes())).filter(t => t === 'flash').length === 2);
   // Level 2's row says collides, with the door drawn.
-  await page.click('#campBack'); await page.click('.campRow[data-level="2"]');
+  if (HITS_DOOR) {
+  await page.click('#campBack'); await page.click(`.campRow[data-level="${HITS_DOOR.id}"]`);
   const hit = await page.locator('.campReqs li[data-req="hitsClosedDoor"]').evaluate(l => l.textContent + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join());
-  check('level 2 says hits, and draws the robot and the door', /hits/.test(hit) && !/closed/.test(hit) && hit.endsWith('start,door'), hit);
-  await page.click('#campBack'); await page.click('.campRow[data-level="9"]');
+  check('the hits-a-door goal says hits, and draws the robot and the door', /hits/.test(hit) && !/closed/.test(hit) && hit.endsWith('start,door'), hit);
+  }
+  if (MIN_GATES) {
+  await page.click('#campBack'); await page.click(`.campRow[data-level="${MIN_GATES.id}"]`);
   const min9 = await page.locator('.campReqs li[data-req="min-gate"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');
-  check('level 9 lists its 2-one-way minimum as a goal, drawn as the one-way', min9 === '≥2|gate', min9);
+  check('a one-way minimum of 2 or more is a goal, drawn as the one-way', min9 === `≥${MIN_GATES.palette.gate[0]}|gate`, min9);
   await page.click('#campRun'); await page.waitForTimeout(150);
   check('the minimum row is marked after a run on an empty room', await page.locator('.campReqs li[data-req="min-gate"].unmet').count() === 1);
   await backToEdit();
+  }
   // A maximum shows as a goal while playing (register 299): level 16 allows exactly one box.
-  await page.click('#campBack'); await page.evaluate(() => { location.hash = '#/level/16'; }); await page.waitForTimeout(500);  // off the list (register 525), still playable
-  const max16 = await page.locator('.campReqs li[data-req="max-box"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');
-  check('level 16 lists its one-box limit as a goal, drawn as the box', max16 === '=1|box', max16);
+  if (MAXED) {
+    await page.click('#campBack'); await page.evaluate(id => { location.hash = '#/level/' + id; }, MAXED.id); await page.waitForTimeout(500);
+    const max = await page.locator('.campReqs li[data-req="max-box"]').evaluate(l => l.textContent.trim() + '|' + [...l.querySelectorAll('[data-part]')].map(c => c.dataset.part).join()).catch(() => 'none');
+    const [lo, hi] = MAXED.palette.box;
+    check('a level with a box limit lists it as a goal, drawn as the box', max === `${lo === hi ? '=' : '≤'}${hi}|box`, max);
+  }
   // Register 445: a goal names level 20's relays, which come only pushable, with the pushable frame.
-  await page.click('#campBack'); await page.click('.campRow[data-level="20"]');
+  if (RELAY_GOAL) {
+  await page.click('#campBack'); await page.click(`.campRow[data-level="${RELAY_GOAL.id}"]`);
   const relay20 = await page.locator('.campReqs li[data-req="relayHitsRelay"] [data-part="relay"]').evaluateAll(cs => cs.map(c => 'crate' in c.dataset).join()).catch(() => 'none');
-  check('level 20\'s relay goal draws its relays with the pushable frame', relay20 === 'true,true', relay20);
-  await page.click('#campBack'); await page.click('.campRow[data-level="2"]');
+  check('a relay goal draws pushable-only relays with the pushable frame', relay20 === 'true,true', relay20);
+  }
+  await page.click('#campBack'); await page.click(`.campRow[data-level="${SWITCH_DOOR.id}"]`);
+  await load(['.......', '.P.....', '.......', '.......', '.......', '.....G.', '.......']);
   // A refused tap: a block on the goal. The room stays, the tile says why.
-  const room = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));
+  let room = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));
   await page.click('[data-tool="wall"]');
   const g = await tile(5, 5); await page.mouse.click(...g);
   check('a refused tap changes nothing and says why on the tile', (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === room && await page.locator('#campTip').isVisible() && /move the goal, use Move/.test(await page.locator("#campTip").textContent()) && (await page.evaluate(() => window.wee.fxTypes())).includes('refuse'), await page.locator('#campTip').textContent());
   // Register 441: a box placed on spikes takes their place, and spikes placed on a box take its, with no refusal.
-  await page.click('#campBack'); await page.click('.campRow[data-level="21"]');
+  if (SPIKES_BOX) {
+  await page.click('#campBack'); await page.click(`.campRow[data-level="${SPIKES_BOX.id}"]`);
   const cell = () => page.evaluate(() => { const l = window.wee.getLevel(); return [l.cells[3 * l.w + 3] || '', l.entities.filter(e => e.x === 3 && e.y === 3).map(e => e.kind).join()].join('|'); });
   await page.click('[data-tool="death"]'); await page.mouse.click(...await tile(3, 3));
   await page.click('[data-tool="box"]'); await page.mouse.click(...await tile(3, 3)); await page.waitForTimeout(100);
   check('a box placed on spikes takes their place, with no error', (await cell()) === '|box' && !/Nothing can start/.test(await page.locator('#campTip').textContent().catch(() => '')), await cell());
   await page.click('[data-tool="death"]'); await page.mouse.click(...await tile(3, 3)); await page.waitForTimeout(100);
   check('spikes placed on a box take its place', (await cell()) === 'death|', await cell());
-  await page.click('#campBack'); await page.click('.campRow[data-level="2"]');
+  }
+  await page.click('#campBack'); await page.click(`.campRow[data-level="${SWITCH_DOOR.id}"]`);
+  await load(['.......', '.P.....', '.......', '.......', '.......', '.....G.', '.......']);
+  room = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));
   // Move's preview: the tile under a carried start changes while held; over the goal the two
   // swap, so the copy is not red; releasing swaps them, one undo step.
   await page.click('[data-tool="move"]');
@@ -358,7 +392,7 @@ try {
   const robotSwap = await page.evaluate(([x, y]) => { const l = window.wee.getLevel(); return [l.start.x, l.start.y, l.cells[y * 7 + x]].join(); }, [st.x, st.y]);
   check('the robot moved onto a switch swaps with it too', robotSwap === '2,5,toggle:red', robotSwap);
   // 213: after a Run the robot plays its path, then the level is back in editing by itself.
-  await page.click('#campBack'); await page.click('.campRow[data-level="1"]');
+  await page.click('#campBack'); await page.click(`.campRow[data-level="${LISTED[0].id}"]`);
   await load(WIN);
   await page.click('#campRun');
   const editing = await page.waitForFunction(() => !document.body.classList.contains('play'), null, { timeout: 15000 }).then(() => true).catch(() => false);
@@ -378,7 +412,7 @@ try {
   check('the button says Debug and nothing on screen mentions a chat (register 247)', dbg[0] === 'Debug' && !dbg[1], JSON.stringify(dbg));
   await page.click('#reportBox form button');
   check('closing the report leaves the menu open', await page.locator('#menuBox').isVisible());
-  await page.click('#menuCampaign'); await page.click('.campRow[data-level="1"]');
+  await page.click('#menuCampaign'); await page.click(`.campRow[data-level="${LISTED[0].id}"]`);
   await page.click('#campBack');
   await page.click('#campMenu');
   await page.click('#menuSandbox');
@@ -394,7 +428,7 @@ try {
   await phone.goto('http://localhost:5217/');
   const phoneLay = await phone.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(); return { goal: r('.msGoal').bottom, door: r('.msDoor').left, btn: r('#menuCampaign').top, logo: r('.menuLogo').height, w: innerWidth }; });
   check('on a phone the menu shows the wordmark, and the goal and door sit above the buttons', phoneLay.logo > 0 && phoneLay.goal < phoneLay.btn && phoneLay.door < phoneLay.w, JSON.stringify(phoneLay));
-  await phone.click('#menuCampaign'); await phone.click('.campRow[data-level="6"]');
+  await phone.click('#menuCampaign'); await phone.click(`.campRow[data-level="${MOST.id}"]`);
   const fit = await phone.evaluate(() => { const d = document.documentElement, g = document.getElementById('palette'); return { page: [d.scrollWidth, d.clientWidth, d.scrollHeight, d.clientHeight], grid: [g.scrollWidth, g.clientWidth, getComputedStyle(g).overflowX] }; });
   const toolSize = await phone.evaluate(() => ['look', 'wall'].map(id => { const r = document.querySelector(`[data-tool="${id}"]`).getBoundingClientRect(), c = document.querySelector(`[data-tool="${id}"] canvas`).getBoundingClientRect(); return [r.width, r.height, c.width].map(Math.round).join('x'); }));
   check('on a phone the tools are the objects\' size, icons too (register 251)', toolSize[0] === toolSize[1], toolSize.join(' vs '));
@@ -430,7 +464,7 @@ try {
   const nine = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await nine.addInitScript(() => { window.__noTutorial = true; }); await nine.addInitScript(() => { window.__noWinCard = true; });
   nine.on('pageerror', e => errors.push(e.message));
   await nine.goto('http://localhost:5217/');
-  await nine.click('#menuCampaign'); await nine.click('.campRow[data-level="9"]'); await nine.click('[data-tool="gate"]');
+  await nine.click('#menuCampaign'); await nine.click(`.campRow[data-level="${PLAIN_GATE.id}"]`); await nine.click('[data-tool="gate"]');
   const gb = await nine.locator('#game').boundingBox(), gt = gb.width / 7, gateAt = () => nine.evaluate(() => window.wee.getLevel().cells[3 * 7 + 3]);
   await nine.mouse.click(gb.x + 3.5 * gt, gb.y + 3.5 * gt); const g1 = await gateAt();
   const hint = await nine.evaluate(() => [document.getElementById('toolName').textContent, document.getElementById('campTip').hidden]);
@@ -445,7 +479,7 @@ try {
   const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 230 && d[i + 1] > 90 && d[i + 1] < 130 && d[i + 2] > 110 && d[i + 2] < 150) n++; return n; });
   check('the start is drawn as the robot (its antenna tip shows)', tip > 3, String(tip));
   // Level 15's laser (registers 255, 256): placed firing right, a tap turns it, a hold removes it.
-  await nine.click('#campBack'); await nine.click('.campRow[data-level="15"]'); await nine.click('[data-tool="turret"]');
+  await nine.click('#campBack'); await nine.click(`.campRow[data-level="${LASER_7.id}"]`); await nine.click('[data-tool="turret"]');
   const gl = await nine.locator('#game').boundingBox(), tl = gl.width / 7;
   const laserAt = () => nine.evaluate(() => { const e = window.wee.getLevel().entities.find(p => p.x === 3 && p.y === 3); return e ? e.kind + ':' + e.turret.dirs.join() : ''; });
   await nine.mouse.click(gl.x + 3.5 * tl, gl.y + 3.5 * tl); const l1 = await laserAt();
@@ -458,9 +492,9 @@ try {
   check('in a level a laser stands alone: placed on a box it takes the box\'s place, it does not ride it', onBox === 'turret+laser', onBox);
   // Colours (register 245): a level with two shows a row of dots; the pick colours what you place and the palette's pieces.
   await nine.goto('http://localhost:5217/');
-  await nine.click('#menuCampaign'); await nine.evaluate(() => { location.hash = '#/level/11'; }); await nine.waitForTimeout(500);
+  await nine.click('#menuCampaign'); await nine.evaluate(id => { location.hash = '#/level/' + id; }, TWO_COLOURS.id); await nine.waitForTimeout(500);
   const row7 = await nine.evaluate(() => { const r = document.getElementById('campColours'); return { shown: !r.hidden && r.getBoundingClientRect().height > 0, dots: [...r.querySelectorAll('button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '')).join() }; });
-  check('a two-colour level shows its colours as a row of dots, the first chosen', row7.shown && row7.dots === 'red*,blue', JSON.stringify(row7));
+  check('a two-colour level shows its colours as a row of dots, the first chosen', row7.shown && row7.dots === TWO_COLOURS.colours.map((c, i) => c + (i ? '' : '*')).join(), JSON.stringify(row7));
   const line = await nine.evaluate(() => { const top = s => document.querySelector(s).getBoundingClientRect(); const tools = ['look', 'erase', 'move'].map(id => document.querySelector(`[data-tool="${id}"]`)); return { inLine: tools.every(b => b.parentNode.id === 'campTools'), left: top('#campHistory').left <= top('#campTop').left + 1 && top('#campTools').left > top('#campHistory').right, right: top('#campColours').right >= top('#campTop').right - 1, same: Math.abs(top('#campColours').top + top('#campColours').height / 2 - (top('#campTools').top + top('#campTools').height / 2)) < 4, below: top('[data-tool="door"]').top > top('#campTools').bottom }; });
   check('Undo, redo and Reset then Look, Erase and Move start the colours line on the left, the colours on the right; the objects below (registers 251, 261)', line.inLine && line.left && line.right && line.same && line.below, JSON.stringify(line));
   await nine.click('[data-camp-colour="blue"]'); await nine.click('[data-tool="door"]');
@@ -468,11 +502,11 @@ try {
   await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);
   const blue = await nine.evaluate(() => ({ cell: window.wee.getLevel().cells[3 * 7 + 3], icons: ['door', 'button'].map(id => document.querySelector(`#palette [data-tool="${id}"] canvas`).dataset.colour).join() }));
   check('with blue chosen, a door goes down blue and the palette draws its door and button blue', blue.cell === 'door:blue' && blue.icons === 'blue,blue', JSON.stringify(blue));
-  await nine.click('#campBack'); await nine.click('.campRow[data-level="12"]'); await nine.click('[data-tool="gate"]');
+  await nine.click('#campBack'); await nine.click(`.campRow[data-level="${ONE_COLOUR_GATE.id}"]`); await nine.click('[data-tool="gate"]');
   await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);
   const oneCol = await nine.evaluate(() => ({ row: document.getElementById('campColours').hidden, cell: window.wee.getLevel().cells[3 * 7 + 3], icon: document.querySelector('#palette [data-tool="gate"] canvas').dataset.colour }));
   check('a one-colour level shows no colour row; its one-ways go down red and are drawn red', oneCol.row && oneCol.cell === 'gate:right@red' && oneCol.icon === 'red', JSON.stringify(oneCol));
-  await nine.click('#campBack'); await nine.click('.campRow[data-level="9"]');
+  await nine.click('#campBack'); await nine.click(`.campRow[data-level="${PLAIN_GATE.id}"]`);
   const plainGate = await nine.evaluate(() => document.querySelector(`#palette [data-tool="gate"] canvas`).dataset.colour);
   check('a level that names no colours draws its one-way plain', plainGate === '', plainGate);
   const robotIcon = await nine.evaluate(async () => { const { icon } = await import('/src/app/icons.js'), you = icon('start').toDataURL();
@@ -480,13 +514,13 @@ try {
   check('a goal row names the robot with the robot, not your circle (register 323)', /^robot(,robot)*$/.test(robotIcon), robotIcon);
   // Two colours per piece (register 316): level 19 offers red+blue as a third dot, only for its door.
   // Level 19: the laser is only pushable (register 341); the chip shows on and fixed, and a placed laser is pushable.
-  await nine.click('#campBack'); await nine.click('.campRow[data-level="19"]'); await nine.click('[data-tool="turret"]');
+  await nine.click('#campBack'); await nine.click(`.campRow[data-level="${PUSHABLE_LASER.id}"]`); await nine.click('[data-tool="turret"]');
   await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);
   const crate = await nine.evaluate(() => ({ chip: !document.getElementById('campCrate').hidden, on: document.getElementById('campCrate').classList.contains('on'), fixed: document.getElementById('campCrate').disabled, laser: window.wee.getLevel().entities.some(e => e.kind === 'turret' && e.crate) }));
   check('level 19 places only pushable lasers, the Pushable chip on and fixed (register 336)', crate.chip && crate.on && crate.fixed && crate.laser, JSON.stringify(crate));
   // The two-colour level is hidden from the list (register 334); it still opens by its id.
   await nine.click('#campBack');
-  check('the two-colour level is hidden from the list', await nine.locator('.campRow[data-level="twocolour"]').count() === 0 && await nine.locator('.campRow[data-level="18"]').count() === 1);
+  check('the two-colour level is hidden from the list', await nine.locator('.campRow[data-level="twocolour"]').count() === 0 && await nine.locator(`.campRow[data-level="${LISTED[0].id}"]`).count() === 1);
   await nine.evaluate(async () => (await import('/src/app/nav.js')).go('level', 'twocolour')); await nine.click('[data-tool="door"]');
   const dots = () => nine.evaluate(() => [...document.querySelectorAll('#campColours button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '') + (b.disabled ? '-' : '')).join());
   const doorDots = await dots();

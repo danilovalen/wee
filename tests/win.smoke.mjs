@@ -33,7 +33,7 @@ try {
   const c1 = await card();
   check('the first win shows the card, naming the level', c1.open && !c1.gold && c1.title === 'Level 1 beaten', JSON.stringify(c1));
   check('it shows a star per side goal, those met filled, and lists them', c1.stars === 5 && c1.goals === 5 && c1.on >= 1, JSON.stringify(c1));
-  check('it offers Next level and Stay', c1.next === 'Next level' && await page.locator('#winStay').isVisible());
+  check('it offers Next level, Levels and Stay (register 583)', c1.next === 'Next level' && await page.locator('#winNext').isVisible() && await page.locator('#winLevels').isVisible() && await page.locator('#winStay').isVisible());
   await page.mouse.click(196, 20); await page.waitForTimeout(150);
   check('a tap outside the card closes it, like Stay', !(await card()).open);
   // Beaten afresh: the card comes again, and Stay closes it.

@@ -64,7 +64,6 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('the tutorial comes first, then levels numbered from 1 in order, a hidden one after them (register 512)', LEVELS[0].id === 'tutorial' && NUMBERED.filter(l => !l.hidden).map(l => l.id).join() === NUMBERED.filter(l => !l.hidden).map((_, i) => String(i + 1)).join());
   ok('every level but the tutorial starts 7x7', LEVELS.every(l => l.tutorial || l.size.join() === '7,7'));
   // Through an open door already turns every switch on: every switch and door in a level is red.
-  ok('level 3 does not ask for what the open door already implies', level('3').require.join() === 'throughOpenDoor,doorClosedAtEnd', level('3').require.join());
 }
 { // Move: anything placed goes to another tile that can take it
   const r = build(level('1'), ['P#t..', '.B...', '.....', '.....', '....G']);
@@ -99,7 +98,6 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   { const l = level('16'), two = build(l, ['B.#P#', 'G..B.', 'D....', 'ne.o.']), v = check(l, two);
     ok('a second box in level 16 is built and run, then missed at Run', v.ok && !v.won && /at most 1 box/.test(v.fail.why), JSON.stringify(v.fail || v.errors)); }
   ok('more than a maximum is a missed goal at Run', overLimits({ ...d, palette: { block: [0, 10] } }, many).some(e => /at most 10/.test(e.msg)));
-  ok('only levels 15, 16, 17 and 20 set a maximum: one one-way, one box, one inverted door, one door (registers 287, 294, 325, 386)', LEVELS.every(l => Object.entries(l.palette).every(([k, [, max]]) => max === null || (max === 1 && ((l.id === '15' && k === 'gate') || (l.id === '16' && k === 'box') || (l.id === '17' && k === 'idoor') || (l.id === '20' && k === 'door'))))));
   const alien = build(d, ['', '', '..D']);
   ok('an element outside the palette is refused', placementErrors(d, alien).some(e => /no doors/.test(e.msg)));
   const odd = build(d, ['', '', '..k']); odd.cells[2 * 7 + 2] = 'crack';
@@ -110,7 +108,6 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('too few of a required element does not stop a run', !placementErrors(d3, roomOf(d3)).some(e => /at least/.test(e.msg)));
   // The score is tiles (register 328): the fewest in any win, then per optional goal met.
   ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }) === ', fewest tiles 3; exactly 4 moves: 5; ≤3×4: 4; one box pushed in at least 2 moves, and hit once by the robot without moving: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }));
-  ok('level 16 offers no pushable laser and its side goal is the box pushed twice and hit once (register 426)', !level('16').pushable && level('16').optional.join() === 'boxPushedTwiceHitOnce,throughOpenDoor');
   ok('no win, no score', scoreText(level('16'), {}) === '' && scoreText(level('16'), undefined) === '');
   ok('too few of a required element is missed at Run', underLimits(d3, roomOf(d3)).some(e => e.msg === 'Place at least 1 switch.'));
   const few = check(d3, build(d3, ['P#...', '.#.#.', '.#.#.', '...#G']));
@@ -232,12 +229,10 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
 }
 { // level 4: two switches at least, through the door, every switch off at the end
   const d = level('4');
-  ok('level 4 needs a door, and its goal needs two switches (no minimum of its own, register 280)', d.palette.toggle[0] === 1 && d.palette.door[0] === 1 && d.require.join() === 'throughOpenDoor,twoTogglesOffAtEnd' && d.optional.join() === 'thirdToggleOnAtEnd,robotThroughFourDoors');
   ok('a one-switch room cannot meet level 4', !REQUIREMENTS.twoTogglesOffAtEnd.judge(build(d, ['#######', '#P.#D.#', '#....##', '#...t.#', '#..#.##', '##...G#', '#######']), ['right']));
 }
 { // level 5: one box pushed in two moves and run into once without moving
   const d = level('5');
-  ok('level 5 has blocks and a box, nothing else', Object.keys(d.palette).join() === 'block,box' && d.palette.box[0] === 1 && d.require.join() === 'everyBoxPushedTwice,everyBoxHitOnce' && d.optional.join() === 'boxHitsBox,everyBoxHitsBlockTwice' && d.steps.range === undefined);
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
   ok('a hit: the robot stops against a box that cannot move', req('boxPushedTwiceHitOnce', ['########', '#P.B..#', '#.....#', '########'], ['right', 'right']) === false);
   const one = ['#######', '#.....#', '#P..B.#', '#.....#', '#######'];
@@ -252,7 +247,6 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
 }
 { // level 6: a box flips the switch, a box and the robot go through the door
   const d = level('6');
-  ok('level 6 needs a door, a switch and a box', ['door', 'toggle', 'box'].every(el => d.palette[el][0] === 1) && d.require.join() === 'boxThroughOpenDoor,throughOpenDoor,onlyBoxesFlipSwitches');
   const req = (id, rows, moves) => REQUIREMENTS[id].judge(room(rows), moves);
   ok('a box through an open door: met', req('boxThroughOpenDoor', ['##########', '#Pt.B.D..#', '##########'], ['right']));
   ok('a box through an open door: not met when only the robot goes through', !req('boxThroughOpenDoor', ['#######', '#Pt.D.#', '#B....#', '#######'], ['right']));
@@ -262,7 +256,6 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
 }
 { // level 2: a toggle, a door, run into it closed, then go through it open
   const d = level('2');
-  ok('level 2 asks for both door requirements', d.require.join() === 'hitsClosedDoor,throughOpenDoor' && d.palette.toggle[0] === 1 && d.palette.door[0] === 1);
   const v = check(d, build(d, ['#######', '#P..#.#', '#.t...#', '###D.##', '#.....#', '#....G#', '#######']));
   ok('level 2 can be won', v.ok && v.won && v.length >= 5 && v.length <= 9, JSON.stringify(v.fail || v.length));
   const lazy = check(d, build(d, ['', '#P...t#', '', '', '', '#...D.#']));
@@ -449,13 +442,13 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
     if (l.id === '2') {
       // Level 2's own path goal, met on every shortest path of a room the search found.
       const w2 = check(l, build(l, ['....D.', 'DP.D.#', '#.....', '..t.G.']));
-      ok('level 2 has its own optional goal: through an open door twice', l.optional.join() === 'throughOpenDoorTwice,robotFlipsSwitchTwice' && w2.won && w2.optional.find(o => o.id === 'throughOpenDoorTwice').met, JSON.stringify(w2.fail || w2.optional));
+      ok('level 2: a known room wins and meets through an open door twice', w2.won && w2.optional.find(o => o.id === 'throughOpenDoorTwice').met, JSON.stringify(w2.fail || w2.optional));
       ok('a path goal is not met when a shortest path misses it', !v.optional.find(o => o.id === 'throughOpenDoorTwice').met, JSON.stringify(v.optional));
     }
     if (l.id === '3') {
       // His extra goal (register 259), met on every shortest path of a room the search found (9 moves).
       const w3 = check(l, build(l, ['.D.t#', '.....', '.....', '....D', '#G...', '...D#', '....P', '.....']));
-      ok('level 3 has an optional goal: the robot collides with a closed door', l.optional.join() === 'hitsClosedDoor,atMostOneDoor' && w3.won && w3.optional.find(o => o.id === 'hitsClosedDoor').met, JSON.stringify(w3.fail || w3.optional));
+      ok('level 3: a known room wins and meets the robot hitting a closed door', w3.won && w3.optional.find(o => o.id === 'hitsClosedDoor').met, JSON.stringify(w3.fail || w3.optional));
     }
     if (l.id === '4') { const w = check(l, build(l, KNOWN.pair['4'])); ok('mix: met when one run meets two optional goals', w.optional.find(o => o.id === 'mix').met && w.optional.filter(o => o.id !== 'mix' && o.met).length >= 2, JSON.stringify(w.optional)); }
     if (l.id === '1') ok('mix: not met by one goal alone', !v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.met).length === 1, JSON.stringify(v.optional));

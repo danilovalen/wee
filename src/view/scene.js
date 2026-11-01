@@ -35,17 +35,24 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
     return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
   };
-  const crated = crateSet(level), massed = crated.size ? level.cells.map((c, i) => crated.has(i) ? '' : c) : level.cells;
+  // A block the player placed on a challenge never melts into the room's own blocks (registers 565, 576).
+  const mineAt = open ? new Set(open.map(([x, y]) => y * level.w + x)) : new Set();
+  const crated = crateSet(level), massed = crated.size || mineAt.size ? level.cells.map((c, i) => crated.has(i) || mineAt.has(i) ? '' : c) : level.cells;
   drawMasses(g, massed, level.w, level.h, (x, y) => pop(x, y) < 1);
   level.cells.forEach((c, i) => {
     const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
     if (crated.has(i)) drawCrated(g, c, x, y, null, k);
-    else if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);
+    else if (!inMass(c) || k < 1 || mineAt.has(i)) drawCell(g, c, x, y, null, k);
     if (isGrey(c)) drawTrim(g, x, y, wireColoursAt(level.wires, x, y));
     else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
   });
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
   if (level.start) drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9, level.powers.armored);
+  // A filled slot keeps its outline, now solid: the player put that piece there.
+  if (open) {
+    g.strokeStyle = 'rgba(123,108,255,.95)'; g.lineWidth = 2.5;
+    for (const [x, y] of open) if (level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y)) g.strokeRect(x * T + 2, y * T + 2, T - 4, T - 4);
+  }
   for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {
     const t = (now - f.at) / 160;
     if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);

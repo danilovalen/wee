@@ -4,6 +4,10 @@
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite } from './lib.mjs';
+import { LEVELS } from '../src/level/campaign.js';
+import { listed } from '../src/campaign/rules.js';
+// Levels by place in the list, not by number (register 581).
+const LISTED = LEVELS.filter(listed), A = LISTED[0].id, B = (LISTED[1] || LISTED[0]).id, C = (LISTED[2] || LISTED[0]).id;
 
 const { check, done } = suite('freeze');
 const PORT = 5261;
@@ -12,7 +16,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || 
 const url = path => `http://localhost:${PORT}/index.html${path}`;
 try {
   const page = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true }); await page.addInitScript(() => { window.__noTutorial = true; });
-  await page.goto(url('#/level/1')); await page.waitForTimeout(600);
+  await page.goto(url('#/level/' + A)); await page.waitForTimeout(600);
   await page.evaluate(() => window.wee.setMode('play')); await page.waitForTimeout(200);
   await page.evaluate(() => { const o = CanvasRenderingContext2D.prototype.fillRect; let once = true; CanvasRenderingContext2D.prototype.fillRect = function (...a) { if (once) { once = false; throw new Error('one bad frame'); } return o.apply(this, a); }; });
   await page.waitForTimeout(200);
@@ -23,14 +27,14 @@ try {
   check('the Debug copy carries the error', /one bad frame/.test(await page.inputValue('#reportText')));
 
   const nav = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true }); await nav.addInitScript(() => { window.__noTutorial = true; });
-  await nav.goto(url('#/level/3')); await nav.waitForTimeout(600);
+  await nav.goto(url('#/level/' + C)); await nav.waitForTimeout(600);
   // An entry that says the tab is deeper than it is: history.go(-n) then never answers.
   await nav.evaluate(() => history.replaceState({ ...history.state, n: 5 }, '', location.href));
   await nav.click('#logo'); await nav.waitForTimeout(1000);
   check('the logo still reaches the menu when history never answers', await nav.evaluate(() => document.getElementById('menuBox').open));
   await nav.evaluate(() => document.getElementById('menuCampaign').click()); await nav.waitForTimeout(500);
   check('and every move after it still answers', await nav.evaluate(() => document.getElementById('campBox').open));
-  await nav.click('.campRow[data-level="2"]'); await nav.waitForTimeout(600);
+  await nav.click(`.campRow[data-level="${B}"]`); await nav.waitForTimeout(600);
   check('a level opens from the list after it', await nav.evaluate(() => !document.getElementById('campBox').open && document.body.classList.contains('campaign')));
 } catch (err) { check('the freeze smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

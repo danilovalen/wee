@@ -3,6 +3,10 @@
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite, pickTool } from './lib.mjs';
+import { LEVELS } from '../src/level/campaign.js';
+import { listed } from '../src/campaign/rules.js';
+// Levels by place in the list, not by number (register 581).
+const LISTED = LEVELS.filter(listed), FIRST = LISTED[0].id, SECOND = (LISTED[1] || LISTED[0]).id;
 
 const { check, done } = suite('nav');
 const server = await serve(5243);
@@ -29,15 +33,15 @@ try {
   await page.click('#menuCampaign'); await settle();
   await page.keyboard.press('Escape'); await settle();
   check('Escape on the Levels list goes up to the menu, never into the screen behind', (await at()).open === 'menuBox');
-  await page.click('#menuCampaign'); await page.click('#campList button[data-level="2"]'); await settle();
+  await page.click('#menuCampaign'); await page.click(`#campList button[data-level="${SECOND}"]`); await settle();
   let a = await at();
-  check('a level has its own address', a.hash === '#/level/2' && a.camp && a.open === '');
+  check('a level has its own address', a.hash === '#/level/' + SECOND && a.camp && a.open === '');
   await page.goBack(); await settle(); a = await at();
   check('Back from a level goes to the Levels list', a.hash === '#/levels' && a.open === 'campBox' && !a.camp);
   await page.goBack(); await settle();
   check('Back again goes to the menu, not out of the game', (await at()).open === 'menuBox' && page.url().startsWith(B));
   await page.goForward(); await page.goForward(); await settle();
-  check('Forward comes back into the level', (await at()).hash === '#/level/2');
+  check('Forward comes back into the level', (await at()).hash === '#/level/' + SECOND);
   // A reload keeps the level and what was placed in it (ruling 3).
   await pickTool(page, 'wall').catch(() => {});
   const before = await page.evaluate(() => JSON.stringify(window.wee.getLevel().cells));
@@ -45,7 +49,7 @@ try {
   const placed = await page.evaluate(() => JSON.stringify(window.wee.getLevel().cells));
   await page.reload(); await page.waitForTimeout(600); a = await at();
   const after = await page.evaluate(() => JSON.stringify(window.wee.getLevel().cells));
-  check('a reload inside a level lands in that level', a.hash === '#/level/2' && a.camp && a.open === '');
+  check('a reload inside a level lands in that level', a.hash === '#/level/' + SECOND && a.camp && a.open === '');
   check('a reload keeps what was placed in the level', placed !== before && after === placed);
   await page.click('#campBack'); await settle();
   check('Levels after a reload (no history) still goes to the list', (await at()).open === 'campBox');
@@ -111,12 +115,12 @@ try {
     await fp.$eval('iframe', (f, h) => { f.srcdoc = h; }, html); await fp.waitForTimeout(1200);
     const f = fp.frames()[1], fat = () => f.evaluate(() => [...document.querySelectorAll('dialog[open]')].map(d => d.id).join());
     check('in a preview frame the game starts on the menu', await fat() === 'menuBox', ferr.join(' | '));
-    await f.click('#menuCampaign'); await f.click('#campList button[data-level="1"]'); await fp.waitForTimeout(300);
+    await f.click('#menuCampaign'); await f.click(`#campList button[data-level="${FIRST}"]`); await fp.waitForTimeout(300);
     await f.click('#campBack'); await fp.waitForTimeout(300);
     const list = await fat();
     await f.press('#campList button', 'Escape'); await fp.waitForTimeout(300);
     check('in a preview frame, Levels and Escape step back through the router\'s own entries', list === 'campBox' && await fat() === 'menuBox', list);
-    await f.click('#menuCampaign'); await f.click('#campList button[data-level="1"]'); await fp.waitForTimeout(300);
+    await f.click('#menuCampaign'); await f.click(`#campList button[data-level="${FIRST}"]`); await fp.waitForTimeout(300);
     await f.click('#logo'); await fp.waitForTimeout(300);
     check('in a preview frame the logo goes to the menu', await fat() === 'menuBox' && ferr.length === 0, ferr.join(' | '));
     await fp.close();
@@ -129,7 +133,7 @@ try {
   await page.goBack(); await settle();
   check('Back from the menu leaves the game, not into the editor', page.url() === 'about:blank', page.url());
   await page.goto(B); await settle();
-  await page.click('#menuCampaign'); await settle(); await page.click('#campList button[data-level="2"]'); await settle();
+  await page.click('#menuCampaign'); await settle(); await page.click(`#campList button[data-level="${SECOND}"]`); await settle();
   await page.click('#logo'); await settle(); await page.goBack(); await settle();
   check('from a level too, Back from the menu leaves the game', page.url() === 'about:blank', page.url());
   check('no page errors', errors.length === 0, errors.join(' | '));

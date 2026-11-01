@@ -50,6 +50,15 @@ function word(p) {
   return c;
 }
 
+// A challenge's given pieces, one icon each; a placed one fades (register 566).
+function piecesToPlace(def, by) {
+  const box = document.createElement('div'); box.className = 'campPieces'; box.setAttribute('aria-label', 'Pieces to place');
+  for (const [el, [n]] of Object.entries(def.palette)) for (let i = 0; i < n; i++) {
+    const c = word({ el }); if (i < by[el].length) c.classList.add('used'); box.append(c);
+  }
+  return box;
+}
+
 // The level over the room: a goal card with one row per requirement, marked after a run, and
 // the optional goals apart. Its height never changes with a verdict; the verdict's words
 // float over the room instead.
@@ -59,13 +68,14 @@ export function syncBrief() {
   // While Run's robot plays, the marks wait and the move dots fill; they land when it stops (plan step 3).
   const ran = v && v.ok && v.length != null && !S.demoRunning;
   // The tutorial teaches one thing, so its card is one order (registers 511, 512).
-  // A challenge's only goal is the star too (registers 570-572).
-  const rows = def.tutorial || def.challenge ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
+  // A challenge's only goal is the star, which the big star already says (register 582): its card holds
+  // just the pieces to place, which are not a goal (register 566).
+  const rows = def.challenge ? [] : def.tutorial ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
     : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
   const { by } = placed(def, S.level);
-  for (const [el, [min, max]] of Object.entries(def.palette)) {
+  for (const [el, [min, max]] of def.challenge ? [] : Object.entries(def.palette)) {
     if (max !== null && max !== undefined) rows.push({ id: 'max-' + el, parts: [min === max ? `=${max}` : `≤${max}`, { el }], text: min === max ? `Place exactly ${max} ${nameOf(el, max)}.` : `Place at most ${max} ${nameOf(el, max)}.`, met: v ? by[el].length >= min && by[el].length <= max : null });
     else if (min >= 2) rows.push({ id: 'min-' + el, parts: [`≥${min}`, { el }], text: `Place at least ${min} ${nameOf(el, min)}.`, met: v ? by[el].length >= min : null });
   }
@@ -89,6 +99,7 @@ export function syncBrief() {
   const main = document.createElement('div'); main.className = 'campMain';
   const big = document.createElement('span'); big.className = 'campBigStar' + (ran && v.won ? ' on' : ''); big.innerHTML = glyph('star'); big.setAttribute('role', 'img'); big.setAttribute('aria-label', 'Main star');
   main.append(big, must);
+  if (def.challenge) main.append(piecesToPlace(def, by));
   opt.dataset.label = 'Optional goals';
   for (const r of rows) {
     const list = r.optional ? opt : must;

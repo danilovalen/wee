@@ -475,6 +475,8 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 /* Campaign: the main menu, the level list, and a level's brief over the room. */
 .camp-only { display: none; }
 body.campaign .camp-only { display: revert; }
+/* revert gives a button back its block layout, which puts its icon at the left edge (rows 568, 574). */
+body.campaign button.camp-only { display: flex; align-items: center; justify-content: center; }
 body.campaign #campBrief { display: block; }
 body.campaign #roomTitle, body.campaign #checkBtn, body.campaign #stopsBtn, body.campaign #genBtn, body.campaign #roomsBtn,
 body.campaign #groups, body.campaign .ghead, body.campaign #options, body.campaign #lensChips,
@@ -758,6 +760,7 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 .winGoals li.on i { color: #d89a12; }
 .winCard .primary { background: var(--accent); color: var(--on-accent); }
 .winCard .bar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.winCard .bar > [hidden] { display: none; }
 .winCard.gold { background: linear-gradient(180deg, #fff3d1, var(--panel) 65%); }
 .winCard.gold .winTitle { color: #a86f00; }
 .burst { position: absolute; left: 50%; top: 30%; color: #f2b632; font-size: 18px; pointer-events: none; animation: burst 1.1s ease-out forwards; }
@@ -827,6 +830,9 @@ header .campLast b { font-size: 15px; }
 .campBigStar .glyph { width: 30px; height: 30px; fill: #fff; stroke: #c9a227; stroke-width: 1.6; }
 .campBigStar.on .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
 .campMain .campMust { flex: 1; min-width: 0; }
+.campMain .campMust:empty { display: none; }
+.campPieces { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; align-self: center; }
+.campPieces .campIcon.used { opacity: .3; }
 .campOpt { margin: 0; padding: 6px 8px; box-shadow: none; background: var(--field); border-radius: var(--r-m); gap: 6px 8px; }
 .campOpt li { background: var(--panel); border-radius: var(--r-pill); padding: 2px 9px 2px 3px; box-shadow: 2px 2px 0 0 var(--sticker); align-items: center; }
 .campReqs .optional .mark, .campReqs .optional.met .mark, .campReqs .optional.unmet .mark { background: none; box-shadow: none; outline: none; color: #b9bcc6; }
@@ -1080,10 +1086,10 @@ body.challenge .growBar { display: none !important; }
     <p id="winSay" class="winSay"></p>
     <div id="winStars" class="winStars"></div>
     <ul id="winGoals" class="winGoals"></ul>
-    <div class="row bar"><button id="winNext" type="button" class="primary">Next level</button><button id="winStay" type="button">Stay</button></div>
+    <div class="row bar"><button id="winNext" type="button" class="primary">Next level</button><button id="winLevels" type="button">Levels</button><button id="winStay" type="button">Stay</button></div>
   </dialog>
   <dialog id="resetBox" class="confirm">
-    <p>Reset the room to the level's start, which Undo can bring back?</p>
+    <p>Reset the room? (You can undo the reset.)</p>
     <div class="row bar"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="makerBox" class="rooms maker">
@@ -5374,17 +5380,24 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
     return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
   };
-  const crated = crateSet(level), massed = crated.size ? level.cells.map((c, i) => crated.has(i) ? '' : c) : level.cells;
+  // A block the player placed on a challenge never melts into the room's own blocks (registers 565, 576).
+  const mineAt = open ? new Set(open.map(([x, y]) => y * level.w + x)) : new Set();
+  const crated = crateSet(level), massed = crated.size || mineAt.size ? level.cells.map((c, i) => crated.has(i) || mineAt.has(i) ? '' : c) : level.cells;
   drawMasses(g, massed, level.w, level.h, (x, y) => pop(x, y) < 1);
   level.cells.forEach((c, i) => {
     const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
     if (crated.has(i)) drawCrated(g, c, x, y, null, k);
-    else if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);
+    else if (!inMass(c) || k < 1 || mineAt.has(i)) drawCell(g, c, x, y, null, k);
     if (isGrey(c)) drawTrim(g, x, y, wireColoursAt(level.wires, x, y));
     else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
   });
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
   if (level.start) drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9, level.powers.armored);
+  // A filled slot keeps its outline, now solid: the player put that piece there.
+  if (open) {
+    g.strokeStyle = 'rgba(123,108,255,.95)'; g.lineWidth = 2.5;
+    for (const [x, y] of open) if (level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y)) g.strokeRect(x * T + 2, y * T + 2, T - 4, T - 4);
+  }
   for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {
     const t = (now - f.at) / 160;
     if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);
@@ -5771,6 +5784,7 @@ return { shownName };
 // ---- src/app/winCard.js
 const m46 = (() => {
 const { LEVELS } = m33;
+const { CHALLENGES } = m34;
 const { optionalGoals, listed } = m23;
 const { shownName } = m45;
 const { $ } = m25;
@@ -5778,6 +5792,7 @@ const { go, up } = m26;
 // The two win moments of a level (registers 415, 416): the first win, and the run that meets the
 // last side goal (a side goal counts once met in any run). Each asks Next level or Stay, once the
 // robot has finished its run. A first win that meets every side goal shows only the second.
+
 
 
 
@@ -5803,10 +5818,11 @@ function noteWin(def, before, rec, v, words) {
   pending = { def, gold, moves: v.length, goals, met: rec.goals, fresh, words };
 }
 
+// The level after this one in its own list (a challenge's next is the next challenge), or none at the end.
 function next(def) {
   if (def.made) return { label: 'Maker', go: up };
-  const list = LEVELS.filter(listed), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
-  return n ? { label: 'Next level', go: () => go('level', n.id) } : { label: 'Levels', go: up };
+  const list = def.challenge ? CHALLENGES : LEVELS.filter(listed), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
+  return n ? { label: 'Next level', go: () => go('level', n.id) } : null;
 }
 
 // Stars out of the gold card for about a second; none when motion is turned down.
@@ -5837,8 +5853,11 @@ function show(p) {
     const m = document.createElement('i'); m.textContent = '★';
     li.append(m, p.words(o.parts)); return li;
   }));
-  $('winNext').textContent = n.label;
-  $('winNext').onclick = () => { box.close(); n.go(); };
+  // Next level, Levels and Stay side by side (register 583); the last level has no next.
+  $('winNext').hidden = !n;
+  if (n) { $('winNext').textContent = n.label; $('winNext').onclick = () => { box.close(); n.go(); }; }
+  $('winLevels').hidden = !!p.def.made;
+  $('winLevels').onclick = () => { box.close(); up(); };
   box.showModal();
   if (p.gold) burst(box);
 }
@@ -6059,6 +6078,15 @@ function word(p) {
   return c;
 }
 
+// A challenge's given pieces, one icon each; a placed one fades (register 566).
+function piecesToPlace(def, by) {
+  const box = document.createElement('div'); box.className = 'campPieces'; box.setAttribute('aria-label', 'Pieces to place');
+  for (const [el, [n]] of Object.entries(def.palette)) for (let i = 0; i < n; i++) {
+    const c = word({ el }); if (i < by[el].length) c.classList.add('used'); box.append(c);
+  }
+  return box;
+}
+
 // The level over the room: a goal card with one row per requirement, marked after a run, and
 // the optional goals apart. Its height never changes with a verdict; the verdict's words
 // float over the room instead.
@@ -6068,13 +6096,14 @@ function syncBrief() {
   // While Run's robot plays, the marks wait and the move dots fill; they land when it stops (plan step 3).
   const ran = v && v.ok && v.length != null && !S.demoRunning;
   // The tutorial teaches one thing, so its card is one order (registers 511, 512).
-  // A challenge's only goal is the star too (registers 570-572).
-  const rows = def.tutorial || def.challenge ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
+  // A challenge's only goal is the star, which the big star already says (register 582): its card holds
+  // just the pieces to place, which are not a goal (register 566).
+  const rows = def.challenge ? [] : def.tutorial ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
     : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
   const { by } = placed(def, S.level);
-  for (const [el, [min, max]] of Object.entries(def.palette)) {
+  for (const [el, [min, max]] of def.challenge ? [] : Object.entries(def.palette)) {
     if (max !== null && max !== undefined) rows.push({ id: 'max-' + el, parts: [min === max ? `=${max}` : `≤${max}`, { el }], text: min === max ? `Place exactly ${max} ${nameOf(el, max)}.` : `Place at most ${max} ${nameOf(el, max)}.`, met: v ? by[el].length >= min && by[el].length <= max : null });
     else if (min >= 2) rows.push({ id: 'min-' + el, parts: [`≥${min}`, { el }], text: `Place at least ${min} ${nameOf(el, min)}.`, met: v ? by[el].length >= min : null });
   }
@@ -6098,6 +6127,7 @@ function syncBrief() {
   const main = document.createElement('div'); main.className = 'campMain';
   const big = document.createElement('span'); big.className = 'campBigStar' + (ran && v.won ? ' on' : ''); big.innerHTML = glyph('star'); big.setAttribute('role', 'img'); big.setAttribute('aria-label', 'Main star');
   main.append(big, must);
+  if (def.challenge) main.append(piecesToPlace(def, by));
   opt.dataset.label = 'Optional goals';
   for (const r of rows) {
     const list = r.optional ? opt : must;
