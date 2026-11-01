@@ -13,7 +13,7 @@ export const INK = {
   armor: '#b9c7e6',
   floor: '#2d2a2e', grid: '#363337', wall: '#5b595c', wallTop: '#727072', crack: '#403e41',
   player: '#ab9df2', start: '#ab9df2', robotDark: '#4b3fd6', robotTip: '#ff6b81', robotVisor: '#2a2440', robotEye: '#7ef0ff', shadow: 'rgba(0,0,0,0.35)',
-  mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff6188', zap: '#ff5722', zapCore: '#ffd8c4', barrel: '#8f86d9', box: '#857f6a', boxEdge: '#5e5a4a',
+  mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff6188', zap: '#fc9867', zapCore: '#ffe3d0', barrel: '#8f86d9', box: '#857f6a', boxEdge: '#5e5a4a',
   heavy: '#9b8cff', heavyEdge: '#5b4fc8', bomb: '#3d4256', bombHi: '#7d8399', fuse: '#b08a5c', spark: '#ff9a3d', blast: '#ff8a3d', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
   red: '#ff6188', blue: '#78dce8', yellow: '#ffd866', green: '#a9dc76',
   // Grey pieces read wires (register 347); the wires' own three colours are none of the doors'.

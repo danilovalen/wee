@@ -491,7 +491,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .msWall { width: 48px; height: 48px; border-radius: var(--r-s); background: var(--mid); }
 .msEmitter, .msSwitch, .msSwitch b, .msDoor, .msGoal { width: 52px; height: 52px; background: center / 100% no-repeat; }
 .msEmitter { z-index: 1; }
-.msBeam { height: 6px; border-radius: var(--r-pill); background: var(--bad); box-shadow: 0 0 8px 2px rgba(255,97,136,.6); animation: msBeam 12s linear infinite, msHum .4s linear infinite; }
+.msBeam { height: 6px; border-radius: var(--r-pill); background: var(--orange); box-shadow: 0 0 8px 2px rgba(252,152,103,.6); animation: msBeam 12s linear infinite, msHum .4s linear infinite; }
 .msSwitch b { position: absolute; left: 0; top: 0; }
 .msSwitch .on { animation: msSwOn 12s linear infinite; }
 .msDoor { animation: msDoor 12s linear infinite, msBonk 12s linear infinite; }

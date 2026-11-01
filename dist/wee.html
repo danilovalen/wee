@@ -510,7 +510,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .msWall { width: 48px; height: 48px; border-radius: var(--r-s); background: var(--mid); }
 .msEmitter, .msSwitch, .msSwitch b, .msDoor, .msGoal { width: 52px; height: 52px; background: center / 100% no-repeat; }
 .msEmitter { z-index: 1; }
-.msBeam { height: 6px; border-radius: var(--r-pill); background: var(--bad); box-shadow: 0 0 8px 2px rgba(255,97,136,.6); animation: msBeam 12s linear infinite, msHum .4s linear infinite; }
+.msBeam { height: 6px; border-radius: var(--r-pill); background: var(--orange); box-shadow: 0 0 8px 2px rgba(252,152,103,.6); animation: msBeam 12s linear infinite, msHum .4s linear infinite; }
 .msSwitch b { position: absolute; left: 0; top: 0; }
 .msSwitch .on { animation: msSwOn 12s linear infinite; }
 .msDoor { animation: msDoor 12s linear infinite, msBonk 12s linear infinite; }
@@ -4698,7 +4698,7 @@ const INK = {
   armor: '#b9c7e6',
   floor: '#2d2a2e', grid: '#363337', wall: '#5b595c', wallTop: '#727072', crack: '#403e41',
   player: '#ab9df2', start: '#ab9df2', robotDark: '#4b3fd6', robotTip: '#ff6b81', robotVisor: '#2a2440', robotEye: '#7ef0ff', shadow: 'rgba(0,0,0,0.35)',
-  mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff6188', zap: '#ff5722', zapCore: '#ffd8c4', barrel: '#8f86d9', box: '#857f6a', boxEdge: '#5e5a4a',
+  mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff6188', zap: '#fc9867', zapCore: '#ffe3d0', barrel: '#8f86d9', box: '#857f6a', boxEdge: '#5e5a4a',
   heavy: '#9b8cff', heavyEdge: '#5b4fc8', bomb: '#3d4256', bombHi: '#7d8399', fuse: '#b08a5c', spark: '#ff9a3d', blast: '#ff8a3d', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
   red: '#ff6188', blue: '#78dce8', yellow: '#ffd866', green: '#a9dc76',
   // Grey pieces read wires (register 347); the wires' own three colours are none of the doors'.
@@ -5706,7 +5706,7 @@ function icon(tool, colour = 'red', gateColour = null, crate = false) {
     // A laser's beam, apart from the laser box (register 550): a small emitter and its ray across the tile.
     const l = emptyLevel(1, 1); l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
     x.fillStyle = INK.zap; x.fillRect(3, 12, 7, 8);
-    x.strokeStyle = INK.beam; x.lineWidth = 3.5; x.lineCap = 'round'; x.beginPath(); x.moveTo(11, 16); x.lineTo(29, 16); x.stroke();
+    x.strokeStyle = INK.zap; x.lineWidth = 3.5; x.lineCap = 'round'; x.beginPath(); x.moveTo(11, 16); x.lineTo(29, 16); x.stroke();
   } else if (tool === 'turret') {
     // On a floor tile like every other piece, one barrel, so it does not read as a white blob (register 526).
     const l = emptyLevel(1, 1); l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);

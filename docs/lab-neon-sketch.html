@@ -71,9 +71,9 @@ code{background:#221f22;padding:0 4px}
 <div class="card"><table>
 <tr><th>Colour</th><th>Job</th></tr>
 <tr><td>green #a9dc76</td><td>the blob, nothing else</td></tr>
-<tr><td>orange #fc9867</td><td>the fruit; supply rooms (challenges)</td></tr>
-<tr><td>cyan #78dce8</td><td>doors, switches; steer rooms (puzzles); the chosen tool</td></tr>
-<tr><td>pink #ff6188</td><td>laser beam; refusals and misses</td></tr>
+<tr><td>orange #fc9867</td><td>the laser beam (register 603); supply rooms (challenges)</td></tr>
+<tr><td>cyan #78dce8</td><td>steer rooms (puzzles); the chosen tool; free for the fruit (S2)</td></tr>
+<tr><td>pink #ff6188</td><td>doors, switches, buttons (register 603); refusals and misses</td></tr>
 <tr><td>yellow #ffd866</td><td>stars and lamps</td></tr>
 <tr><td>purple #ab9df2</td><td>Run, the goal card frame, build chambers</td></tr>
 <tr><td>greys #221f22 to #c1c0c0</td><td>everything else</td></tr>
@@ -84,7 +84,7 @@ code{background:#221f22;padding:0 4px}
 const U = 2;
 const P = { base: '#221f22', floor: '#2d2a2e', grout: '#363337', line: '#403e41', mid: '#5b595c', lite: '#727072', text: '#c1c0c0', white: '#fcfcfa',
   boxL: '#a59f85', box: '#857f6a', boxD: '#5e5a4a', blobH: '#e6f8d0', blobM: '#c3eb9a', blob: '#a9dc76', blobS: '#6f9e45', blobD: '#4f7432', eye: '#221f22',
-  fruitH: '#ffd9c2', fruit: '#fc9867', fruitS: '#c4643a', leaf: '#6f9e45', leafL: '#a9dc76', door: '#78dce8', doorD: '#3f9aa6', beam: '#ff6188', beamL: '#ffb3c4',
+  fruitH: '#ffd9c2', fruit: '#fc9867', fruitS: '#c4643a', leaf: '#6f9e45', leafL: '#a9dc76', door: '#ff6188', doorD: '#b8405f', beam: '#fc9867', beamL: '#ffe3d0',
   star: '#ffd866', starD: '#c9a63a', accent: '#ab9df2', kept: '#3a3528' };
 let shapes = 0;
 function R(x, y, w, h, c) {
@@ -131,9 +131,9 @@ const SPRITES = {
     for (const [x, y] of [[3, 3], [12, 3], [3, 8], [12, 8], [3, 13], [12, 13]]) g[y][x] = P.boxD;
     return g; },
   door() { // a gate: 1-pixel frame, thin slats, a lit top edge
-    const g = grid(); box(g, 0, 0, 15, 15, P.doorD); box(g, 1, 1, 14, 14, P.door); box(g, 1, 1, 14, 1, '#b5eef5');
+    const g = grid(); box(g, 0, 0, 15, 15, P.doorD); box(g, 1, 1, 14, 14, P.door); box(g, 1, 1, 14, 1, '#ffb3c4');
     for (const x of [4, 7, 10, 13]) box(g, x, 2, x, 14, P.doorD);
-    box(g, 1, 8, 14, 8, P.doorD); box(g, 2, 9, 14, 9, '#b5eef5');
+    box(g, 1, 8, 14, 8, P.doorD); box(g, 2, 9, 14, 9, '#ffb3c4');
     return g; },
   sw() { const g = grid(); ring(g, 8, 8, 6.5, P.door); ring(g, 8, 8, 6.5, P.door); ellipse(g, 8, 8, 2.6, 2.6, P.door); ellipse(g, 7.4, 7.4, 1, 1, P.white); return g; },
   laser() { // a housing with 1-pixel bevels, a lens ring, the beam leaving left, the way it fires in the room
