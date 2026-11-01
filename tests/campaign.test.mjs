@@ -446,9 +446,9 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
       ok('a path goal is not met when a shortest path misses it', !v.optional.find(o => o.id === 'throughOpenDoorTwice').met, JSON.stringify(v.optional));
     }
     if (l.id === '3') {
-      // His extra goal (register 259), met on every shortest path of a room the search found (9 moves).
-      const w3 = check(l, build(l, ['.D.t#', '.....', '.....', '....D', '#G...', '...D#', '....P', '.....']));
-      ok('level 3: a known room wins and meets the robot hitting a closed door', w3.won && w3.optional.find(o => o.id === 'hitsClosedDoor').met, JSON.stringify(w3.fail || w3.optional));
+      // A room tools/sideGoals.mjs found that meets every side goal at once (register 556: hits a door twice).
+      const w3 = check(l, build(l, ['.tD', '..P', '.G.']));
+      ok('level 3: a known room wins and meets every side goal', w3.won && w3.optional.every(o => o.met), JSON.stringify(w3.fail || w3.optional));
     }
     if (l.id === '4') { const w = check(l, build(l, KNOWN.pair['4'])); ok('mix: met when one run meets two optional goals', w.optional.find(o => o.id === 'mix').met && w.optional.filter(o => o.id !== 'mix' && o.met).length >= 2, JSON.stringify(w.optional)); }
     if (l.id === '1') ok('mix: not met by one goal alone', !v.optional.find(o => o.id === 'mix').met && v.optional.filter(o => o.met).length === 1, JSON.stringify(v.optional));

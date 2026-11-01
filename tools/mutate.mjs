@@ -1016,6 +1016,11 @@ const M = [
   ['src/app/levelParts.js', "  if (cols.length < 2) return dots;", "  return dots;", 'campaign-play'],
   ['src/app/levelParts.js', "    const crate = pushingsOf(def, el).every(Boolean);", "    const crate = false;", 'campaign-play'],
   ['src/campaign/rules.js', "/^(button|toggle):|^death$/", "/^(button|toggle):/", 'campaign'],
+  // Rows 565-583: challenge view and win card.
+  ['src/view/scene.js', "g.strokeStyle = 'rgba(123,108,255,.95)'; g.lineWidth = 2.5;", "g.strokeStyle = 'rgba(0,0,0,0)'; g.lineWidth = 2.5;", 'challenge'],
+  ['src/app/goalCard.js', "if (i < by[el].length) c.classList.add('used');", "", 'challenge'],
+  ['src/app/goalCard.js', "const rows = def.challenge ? [] : def.tutorial ?", "const rows = def.tutorial || def.challenge ?", 'challenge'],
+  ['src/app/winCard.js', "$('winLevels').hidden = !!p.def.made;", "$('winLevels').hidden = true;", 'win'],
 ];
 
 // SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.

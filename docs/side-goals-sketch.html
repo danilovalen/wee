@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Side Stars Sketch</title>
+<style>
+:root{--paper:#eceef2;--panel:#f8f9fb;--ink:#2a2730;--soft:#6f6876;--accent:#7b6cff;--sticker:#c8ccd5;--gold:#ffc23d;--goldInk:#a77b00}
+*{box-sizing:border-box}
+body{margin:0;background:#dfe2e8;color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px} h2{font-size:16px;margin:26px 0 6px}
+p.sub{color:var(--soft);margin:0 0 12px;font-size:14px;max-width:780px}
+.row{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.opt h3{font-size:14px;margin:0 0 6px} .opt p{font-size:13px;color:var(--soft);margin:6px 0 0}
+.phone{background:var(--paper);border-radius:16px;padding:10px;box-shadow:4px 4px 0 0 var(--sticker);width:330px}
+.main{background:#fff6dc;box-shadow:inset 0 0 0 2px #f2d27a;border-radius:10px;padding:7px 9px;display:flex;gap:8px;align-items:center;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:4px;background:#fff;border-radius:999px;padding:3px 9px 3px 4px;font-size:13px;box-shadow:2px 2px 0 0 var(--sticker)}
+.chip.kept{background:#fff6dc}
+.chip.now{box-shadow:0 0 0 2px var(--gold)}
+.rooms{display:flex;gap:6px;margin-top:8px}
+.room{width:46px;height:46px;border-radius:8px;background:#fff;box-shadow:2px 2px 0 0 var(--sticker);display:grid;place-items:center;font-size:11px;color:var(--soft);position:relative}
+.room svg{position:absolute;top:-6px;right:-6px}
+.tag{font-size:11px;color:var(--soft)}
+svg{display:inline-block;vertical-align:-3px}
+.q{background:#fff;border-radius:12px;padding:10px 14px;font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>One room will not meet every side goal: sketch (register 557)</h1>
+<p class="sub">Level 3 after two runs. Run 1 met "hits door ×2". Run 2, a different room, met "at most 1 door" but lost the first. Side stars already count once met in any run (register 415); the sketch is about showing that, so a player stops trying to fit every star into one room.</p>
+
+<div class="row">
+ <div class="opt"><h3>A. Kept stars look kept (recommended)</h3><div class="phone">
+  <div class="main"><span class="s big"></span> main goals…</div>
+  <div class="chips">
+   <span class="chip kept"><span class="s on"></span>hits door ×2 <span class="tag">kept</span></span>
+   <span class="chip now"><span class="s on"></span>≤1 door</span>
+  </div>
+ </div><p>A star earned in an earlier room stays filled on a pale gold chip; the one this room meets gets the gold ring. The difference between "this room" and "already yours" is visible on every run, so the player learns that stars are collected one room at a time without any words.</p></div>
+
+ <div class="opt"><h3>B. A room per star</h3><div class="phone">
+  <div class="main"><span class="s big"></span> main goals…</div>
+  <div class="chips">
+   <span class="chip kept"><span class="s on"></span>hits door ×2</span>
+   <span class="chip kept"><span class="s on"></span>≤1 door</span>
+  </div>
+  <div class="rooms"><span class="room">room 1<span class="s mini on"></span></span><span class="room">room 2<span class="s mini on"></span></span><span class="room">+</span></div>
+ </div><p>Each star keeps the room that earned it; tapping the star (or its room) loads that room. Shows by structure that rooms and stars pair up. More to build: saved rooms per level.</p></div>
+
+ <div class="opt"><h3>C. One line, once</h3><div class="phone">
+  <div class="main"><span class="s big"></span> main goals…</div>
+  <div class="chips">
+   <span class="chip"><span class="s"></span>hits door ×2</span>
+   <span class="chip"><span class="s"></span>≤1 door</span>
+  </div>
+  <p class="tag" style="margin:8px 2px 0">Each side star can take its own room.</p>
+ </div><p>A sentence the first time a level has two side goals. Cheapest, but it is telling, not showing, and it is more text on the card.</p></div>
+</div>
+
+<h2>Open question</h2>
+<div class="q">Which one: A, B or C?</div>
+</main>
+<script>
+var STAR='M12 1.8l3 6.4 7 .8-5.2 4.8 1.4 6.9L12 17.2 5.8 20.7l1.4-6.9L2 9l7-.8z';
+[].forEach.call(document.querySelectorAll('.s'),function(e){var on=e.classList.contains('on')||e.classList.contains('big'),sz=e.classList.contains('big')?28:e.classList.contains('mini')?14:18,fill=e.classList.contains('big')?'#fff':on?'#ffc23d':'#fff',stroke=on&&!e.classList.contains('big')?'#e0a800':'#b9bcc6';if(e.classList.contains('big')){fill='#fff';stroke='#e0a800';}e.outerHTML='<svg width="'+sz+'" height="'+sz+'" viewBox="0 0 24 24"><path d="'+STAR+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.7" stroke-linejoin="round"/></svg>';});
+</script>
+</body>
+</html>

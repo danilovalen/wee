@@ -13,10 +13,13 @@ something stops it, so a block works as a stopper.
 | | Name | Pieces | Placements | Solution | Ways to rest on the star | Also |
 |---|---|---|---|---|---|---|
 | C1 | Two blocks | 2 blocks | 55 | 5 moves | 3 | trap slot, two-job piece |
-| C2 | Three blocks | 3 blocks | 35 | 8 moves | 2 | trap slot, two-job piece |
-| C3 | A box | box, block | 72 | 7 moves | 2 | trap slot |
-| C4 | The door | switch, block | 72 | 7 moves | 2 | trap slot |
-| C5 | One way | one-way, block | 168 | 10 moves | 2 | trap slot, two-job piece |
+| C2 | Three blocks | 3 blocks | 120 | 10 moves | 2 | trap slot, two-job piece |
+| C3 | A box | box, block | 56 | 15 moves | 2 | trap slot, two-job piece |
+| C4 | The door | switch, block | 72 | 11 moves | 2 | trap slot |
+| C5 | One way | one-way, block | 224 | 9 moves | 3 | trap slot, two-job piece |
+
+Every challenge's slots are trimmed to the ones some nearly-right placement uses (register 580). "Ways
+to rest on the star" counts fixed stoppers and slots only; a box can make a stopper anywhere.
 
 A challenge with one way to rest on the star solves backwards in forced steps (register 577), so the
 finder now asks for two or more, and per challenge for some of: a trap slot (the winning path slides

@@ -3,6 +3,20 @@
 import { replayPath } from '../robot.js';
 import { STEP, stoppedPushes, cellOf, everyTile, countKind, cellsWhere, boxIds, robotStops } from './helpers.js';
 
+// Slides that end with a closed door on the next tile ahead: the door is what stopped the robot.
+function closedDoorHits(room, moves) {
+  let n = 0, dir = null;
+  replayPath(room, moves, s => {
+    const p = s.player;
+    if (dir && !p.dir) {
+      const [dx, dy] = STEP[dir], c = s.cells[(p.y + dy) * room.w + p.x + dx] || '';
+      if (/^door:/.test(c) && !c.slice(5).split('|').some(col => s.open[col])) n++;
+    }
+    dir = p.dir;
+  });
+  return n;
+}
+
 export const DOOR_GOALS = {
   throughOpenDoor: {
     text: 'Robot through an open door.',
@@ -28,19 +42,13 @@ export const DOOR_GOALS = {
   hitsClosedDoor: {
     text: 'Robot collides with a closed door.',
     short: [{ el: 'start' }, 'hits', { el: 'door' }],
-    // A slide that ends with a closed door on the next tile ahead: the door is what stopped it.
-    judge: (room, moves) => {
-      let ok = false, dir = null;
-      replayPath(room, moves, s => {
-        const p = s.player;
-        if (dir && !p.dir) {
-          const [dx, dy] = STEP[dir], c = s.cells[(p.y + dy) * room.w + p.x + dx] || '';
-          if (/^door:/.test(c) && !c.slice(5).split('|').some(col => s.open[col])) ok = true;
-        }
-        dir = p.dir;
-      });
-      return ok;
-    },
+    judge: (room, moves) => closedDoorHits(room, moves) >= 1,
+  },
+  // Register 556: level 3's side goal, two hits or more.
+  hitsClosedDoorTwice: {
+    text: 'Robot collides with a closed door twice or more.',
+    short: [{ el: 'start' }, 'hits', { el: 'door' }, '×2'],
+    judge: (room, moves) => closedDoorHits(room, moves) >= 2,
   },
   throughOpenDoorTwice: {
     // Two passes, not two doors (register 257): the row says so.

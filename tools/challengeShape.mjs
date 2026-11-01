@@ -1,5 +1,5 @@
 // What makes a challenge more than a forced chain (registers 577, 578), measured on its solution:
-//   forks   ways the robot could come to rest on the star (a stopper beyond it: slot, block or edge);
+//   forks   ways the robot could come to rest on the star (waysToRest);
 //           1 means the first step back from the star is forced
 //   trap    a slot the winning path slides straight across, so filling it there blocks the way
 //   twoJob  a placed piece the robot comes to rest against from two different sides
@@ -30,9 +30,20 @@ export function restCells(level) {
   return cells;
 }
 
+// Ways the robot could come to rest on the star: a stopper beyond it (a block, a piece, the edge or a
+// slot that could take one) with room to slide in from the other side. The robot's own start is floor
+// once it leaves (register 584), so it is neither a stopper nor in the way.
+export function waysToRest(rows) {
+  const [star] = cellsOf({ rows }, 'G'), floor = c => c === '.' || c === 'P' || c === '+';
+  return D.filter(([dx, dy]) => {
+    const beyond = at(rows, star[0] + dx, star[1] + dy), before = at(rows, star[0] - dx, star[1] - dy);
+    return !(beyond === '.' || beyond === 'P') && floor(before);
+  }).length;
+}
+
 export function shape(ch, win) {
   const rows = rowsWith(ch, win), level = build(ch, rows), [star] = cellsOf(ch, 'G');
-  const forks = D.filter(([dx, dy]) => at(ch.rows, star[0] + dx, star[1] + dy) !== '.').length;
+  const forks = waysToRest(ch.rows);
   const path = allShortest(level).paths[0];
   const rests = [], passed = new Set();
   let s = createGame(level); rests.push([s.player.x, s.player.y]);
@@ -63,3 +74,4 @@ export function trim(ch, win) {
   }
   return ch.rows.map((r, y) => [...r].map((c, x) => (c === '+' && !keep.has(`${x},${y}`) ? '.' : c)).join(''));
 }
+

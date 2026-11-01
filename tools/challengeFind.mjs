@@ -7,18 +7,22 @@ import { shape, trim } from './challengeShape.mjs';
 
 const arg = k => process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : null;
 let seed = +arg('--seed') || 7;
-const rand = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+// mulberry32: the old float LCG lost precision and fell into one sequence whatever the seed.
+const rand = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 
-// want: forks (2+ ways to rest on the star), trap, twoJob, stops (at least), trim.
+// want: forks (2+ ways to rest on the star), trap, twoJob, stops (at least). Every challenge is trimmed.
 export const SPECS = [
-  { id: 'c1', name: 'Two blocks', size: 5, fixed: ['#', '#'], pieces: ['#', '#'], open: 11, want: { forks: 2, trim: true } },
-  { id: 'c2', name: 'Three blocks', size: 6, fixed: ['#', '#', '#'], pieces: ['#', '#', '#'], open: 9, want: { forks: 2, trap: true, stops: 6, trim: true } },
-  { id: 'c3', name: 'A box', size: 6, fixed: ['#', '#', '#'], pieces: ['B', '#'], open: 10, want: { forks: 2, stops: 7 } },
-  { id: 'c4', name: 'The door', size: 6, fixed: ['#', '#', 'D'], pieces: ['t', '#'], open: 10, want: { twoJob: true, stops: 6 } },
-  { id: 'c5', name: 'One way', size: 6, fixed: ['#', '#', '#'], pieces: ['>', '#'], open: 9, want: { forks: 2, trap: true, twoJob: true, stops: 7, trim: true } },
+  { id: 'c1', name: 'Two blocks', size: 5, fixed: ['#', '#'], pieces: ['#', '#'], open: 11, want: { forks: 2, trap: true } },
+  { id: 'c2', name: 'Three blocks', size: 6, fixed: ['#', '#', '#'], pieces: ['#', '#', '#'], open: 10, want: { forks: 2, stops: 6 } },
+  { id: 'c3', name: 'A box', size: 6, fixed: ['#', '#', '#'], pieces: ['B', '#'], open: 9, want: { stops: 7, trap: true } },
+  { id: 'c4', name: 'The door', size: 6, fixed: ['#', '#', 'D'], pieces: ['t', '#'], open: 10, want: { stops: 6 } },
+  { id: 'c5', name: 'One way', size: 6, fixed: ['#', '#', '#'], pieces: ['>', '#'], open: 10, want: { forks: 2, trap: true, stops: 7 } },
 ];
 const MIN_PLACEMENTS = 30;
 
+// A random room with random slots; trim() then keeps only the slots some nearly-right placement uses
+// (register 580). Choosing only such slots up front was tried: with every slot meaningful, almost no
+// room keeps a single solution (c2: 0 of 1847 rooms in 30 s).
 function arena(spec) {
   const n = spec.size, g = Array.from({ length: n }, () => Array(n).fill('.'));
   const put = c => { for (;;) { const x = Math.floor(rand() * n), y = Math.floor(rand() * n); if (g[y][x] === '.') { g[y][x] = c; return; } } };
@@ -40,8 +44,9 @@ export function find(spec, seconds) {
     const sol = placementOf(ch, m.wins[0].rows);
     const sh = shape(ch, sol);
     if (!fits(spec.want, sh)) continue;
-    if (spec.want.trim) { ch = { ...ch, rows: trim(ch, sol) }; m = measure(ch); }
-    if (m.wins.length !== 1 || m.placements < MIN_PLACEMENTS) continue;
+    ch = { ...ch, rows: trim(ch, sol) }; m = measure(ch);
+    const slots = ch.rows.join('').split('+').length - 1;
+    if (m.wins.length !== 1 || m.placements < MIN_PLACEMENTS || slots < spec.pieces.length + 3) continue;
     const score = sh.stops * 10 + sh.forks * 5 + m.placements / 10;
     if (!best || score > best.score) best = { ch, m, sh, score };
   }
