@@ -115,11 +115,32 @@ const SPRITES = {
     ellipse(g, 5, 8, 1.7, 1.4, P.fruitH); box(g, 8, 2, 8, 4, P.leaf); ellipse(g, 11, 3, 2.5, 1.3, P.leaf); g[3][11] = P.leafL;
     return g;
   },
-  wall() { const g = grid(); box(g, 0, 0, 15, 15, P.mid); box(g, 0, 0, 15, 1, P.lite); box(g, 0, 0, 1, 15, P.lite); box(g, 0, 14, 15, 15, P.line); box(g, 14, 0, 15, 15, P.line); box(g, 4, 4, 11, 11, P.mid); line(g, 4, 4, 11, 4, '#666466'); return g; },
-  box() { const g = grid(); box(g, 0, 0, 15, 15, P.box); box(g, 0, 0, 15, 1, P.boxL); box(g, 0, 0, 1, 15, P.boxL); box(g, 0, 14, 15, 15, P.boxD); box(g, 14, 0, 15, 15, P.boxD); line(g, 3, 3, 12, 12, P.boxD); line(g, 12, 3, 3, 12, P.boxD); line(g, 3, 4, 11, 12, P.boxL); return g; },
-  door() { const g = grid(); box(g, 0, 0, 15, 15, P.doorD); box(g, 1, 1, 14, 14, P.door); for (const x of [4, 8, 12]) box(g, x - 1, 2, x, 13, P.doorD); box(g, 1, 7, 14, 8, P.doorD); return g; },
+  wall() { // 1-pixel bevels in two steps, a recessed plate, four rivets
+    const g = grid(); box(g, 0, 0, 15, 15, P.mid);
+    box(g, 0, 0, 15, 0, P.lite); box(g, 0, 0, 0, 15, P.lite); box(g, 1, 1, 14, 1, '#666466'); box(g, 1, 1, 1, 14, '#666466');
+    box(g, 0, 15, 15, 15, P.line); box(g, 15, 0, 15, 15, P.line); box(g, 1, 14, 14, 14, '#4d4b4e'); box(g, 14, 1, 14, 14, '#4d4b4e');
+    box(g, 4, 4, 11, 4, '#4d4b4e'); box(g, 4, 4, 4, 11, '#4d4b4e'); box(g, 4, 11, 11, 11, '#666466'); box(g, 11, 4, 11, 11, '#666466');
+    for (const [x, y] of [[3, 3], [12, 3], [3, 12], [12, 12]]) { g[y][x] = P.lite; g[y + 1][x + 1] = P.line; }
+    return g; },
+  box() { // a crate: 1-pixel outline, light top-left edge, plank seams, a brace, nails
+    const g = grid(); box(g, 0, 0, 15, 15, P.box);
+    box(g, 0, 0, 15, 0, P.boxD); box(g, 0, 15, 15, 15, P.boxD); box(g, 0, 0, 0, 15, P.boxD); box(g, 15, 0, 15, 15, P.boxD);
+    box(g, 1, 1, 14, 1, P.boxL); box(g, 1, 1, 1, 14, P.boxL);
+    box(g, 1, 5, 14, 5, P.boxD); box(g, 1, 10, 14, 10, P.boxD); box(g, 2, 6, 14, 6, P.boxL); box(g, 2, 11, 14, 11, P.boxL);
+    line(g, 2, 13, 13, 2, P.boxD); line(g, 2, 12, 12, 2, P.boxL);
+    for (const [x, y] of [[3, 3], [12, 3], [3, 8], [12, 8], [3, 13], [12, 13]]) g[y][x] = P.boxD;
+    return g; },
+  door() { // a gate: 1-pixel frame, thin slats, a lit top edge
+    const g = grid(); box(g, 0, 0, 15, 15, P.doorD); box(g, 1, 1, 14, 14, P.door); box(g, 1, 1, 14, 1, '#b5eef5');
+    for (const x of [4, 7, 10, 13]) box(g, x, 2, x, 14, P.doorD);
+    box(g, 1, 8, 14, 8, P.doorD); box(g, 2, 9, 14, 9, '#b5eef5');
+    return g; },
   sw() { const g = grid(); ring(g, 8, 8, 6.5, P.door); ring(g, 8, 8, 6.5, P.door); ellipse(g, 8, 8, 2.6, 2.6, P.door); ellipse(g, 7.4, 7.4, 1, 1, P.white); return g; },
-  laser() { const g = grid(); box(g, 1, 2, 14, 13, P.line); box(g, 2, 3, 13, 12, P.mid); box(g, 2, 3, 13, 3, P.lite); box(g, 9, 6, 15, 9, P.beam); box(g, 10, 7, 15, 8, P.beamL); ellipse(g, 7, 7.5, 2.5, 2.5, P.beam); g[7][6] = P.beamL; return g; },
+  laser() { // a housing with 1-pixel bevels, a lens ring, the beam leaving left, the way it fires in the room
+    const g = grid(); box(g, 1, 2, 14, 13, P.line); box(g, 2, 3, 13, 12, P.mid); box(g, 2, 3, 13, 3, P.lite); box(g, 2, 3, 2, 12, P.lite); box(g, 3, 12, 13, 12, '#4d4b4e');
+    ring(g, 8.5, 7.5, 3.6, P.line); ellipse(g, 8.5, 7.5, 2.2, 2.2, P.beam); g[6][9] = P.beamL;
+    box(g, 0, 6, 5, 9, P.beam); box(g, 0, 7, 5, 8, P.beamL);
+    return g; },
   star(c = P.star, d = P.starD) { const g = grid(); const pts = []; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 3 : 7.4; pts.push([8 + r * Math.cos(a), 8.5 + r * Math.sin(a)]); }
     for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { let inS = false; for (let i = 0, j = 9; i < 10; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y + .5) !== (yj > y + .5) && x + .5 < (xj - xi) * (y + .5 - yi) / (yj - yi) + xi) inS = !inS; } if (inS) g[y][x] = c; }
     for (let y = 9; y < 16; y++) for (let x = 0; x < 16; x++) if (g[y][x] && y > 10) g[y][x] = d; return g; },
