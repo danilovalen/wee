@@ -81,8 +81,10 @@ try {
   check('level 20 shows its relay pushable only', versions['20'].includes('relay+'), versions['20']);
   const head = await page.$eval('.campRow[data-level="12"]', r => { const n = r.querySelector('.campRowHead b'), ps = r.querySelector('.campParts'), nb = n.getBoundingClientRect(), pb = ps.getBoundingClientRect(), b = r.getBoundingClientRect(); return { text: n.textContent, line: Math.abs(nb.top + nb.height / 2 - (pb.top + pb.height / 2)) < 4, right: b.right - pb.right < 24 }; });
   check('the old level 12 reads "11", its pieces on the same line at the right (register 527)', head.text === '11' && head.line && head.right, JSON.stringify(head));
-  const nums = await page.$$eval('.campRow b', bs => bs.map(b => +b.textContent));
+  const nums = await page.$$eval('.campRow:not([data-level^="c"]) b', bs => bs.map(b => +b.textContent));
   check('the list numbers run 1, 2, 3 with no gap (register 528)', nums.every((n, i) => n === i + 1), nums.join());
+  // Register 562: the challenges sit apart, after the levels, under their own heading, and one opens with only its open tiles taking pieces.
+  check('the challenges follow the levels under their own heading', await page.evaluate(() => { const h = document.querySelector('#campList .campSection'), cs = [...document.querySelectorAll('.campRow[data-level^="c"]')]; return !!h && cs.length >= 5 && cs.every(c => h.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING); }));
   await page.click('.campRow[data-level="12"]'); await page.waitForTimeout(400);
   check('the top bar says the same number', (await page.locator('#campNum').textContent()) === '11');
   await page.click('#campBack'); await page.waitForTimeout(300);

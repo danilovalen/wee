@@ -3,6 +3,7 @@
 // the failing one when it fails. Progress and each level's room stay in this browser.
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS } from '../level/campaign.js';
+import { CHALLENGES } from '../level/challenges.js';
 import { roomOf, coloursOf, placementErrors, check, optionalGoals, listed } from '../campaign/rules.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -22,7 +23,7 @@ import { place, go, back, up } from './nav.js';
 const ALWAYS = ['move'];
 let A = null, fitScene = null;
 
-const levelOf = id => LEVELS.find(l => l.id === id) || madeLevel(id);
+const levelOf = id => LEVELS.find(l => l.id === id) || CHALLENGES.find(l => l.id === id) || madeLevel(id);
 
 // A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
 // level's, so it is cut off, and the start and goal it had stay where they were.
@@ -58,6 +59,7 @@ export function enterLevel(id) {
   S.ui.tool = 'look'; S.ui.colour = coloursOf(def)[0];
   p.last = id; write(p);
   document.body.classList.add('campaign'); document.body.classList.remove('simple'); S.simple = false;
+  document.body.classList.toggle('challenge', !!def.challenge);
   // In a level, undo, redo and Reset sit with the tools, so the top bar keeps only Levels, Run and Test (plan step 2).
   $('campTop').prepend(Object.assign($('campHistory') || document.createElement('span'), { id: 'campHistory', className: 'campHistory' }));
   $('campHistory').dataset.join = '';
@@ -70,7 +72,7 @@ export function enterLevel(id) {
 function leaveLevel() {
   save();
   S.camp = null; S.trail = null;
-  document.body.classList.remove('campaign');
+  document.body.classList.remove('campaign', 'challenge');
   $('campTest').after($('undo'), $('redo'), $('campReset'));
   // The sandbox never inherits a campaign room.
   S.level = starterLevel(portrait()); S.history = newHistory();
@@ -132,11 +134,13 @@ function stars(def, rec) {
 
 function renderList() {
   const p = progress(), list = $('campList');
-  list.replaceChildren(...LEVELS.filter(listed).map(def => {
+  // The challenges follow under their own heading while they are being playtested (register 562).
+  const head = Object.assign(document.createElement('li'), { className: 'campSection', textContent: 'Challenges (playtest)' });
+  list.replaceChildren(...[...LEVELS.filter(listed), head, ...CHALLENGES].map(def => def === head ? head : (() => {
     const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button');
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b');
-    name.textContent = shownName(def).replace(/^Level /, ''); name.setAttribute('aria-label', shownName(def));
+    name.textContent = def.challenge ? def.id.toUpperCase() : shownName(def).replace(/^Level /, ''); name.setAttribute('aria-label', shownName(def));
     // The number and its pieces share one line (register 527).
     const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name, levelParts(def, TOOL));
     b.append(top, stars(def, rec));
@@ -144,7 +148,7 @@ function renderList() {
     b.onclick = () => go('level', def.id);
     li.append(b);
     return li;
-  }));
+  })()));
 }
 
 // The level list, drawn fresh, with the last level played in view.

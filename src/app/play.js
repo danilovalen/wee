@@ -146,7 +146,7 @@ function carryOverlay() {
 // found change nothing.
 function marks() {
   const stamp = JSON.stringify(S.level);
-  return { lens: lensMarks(), unused: S.design && S.design.stamp === stamp ? S.design.unused : [], reach: S.hover || (S.ui.tool === 'look' ? S.lookTile : null) };
+  return { open: S.camp && S.camp.def.challenge ? S.camp.def.challenge.open : null, lens: lensMarks(), unused: S.design && S.design.stamp === stamp ? S.design.unused : [], reach: S.hover || (S.ui.tool === 'look' ? S.lookTile : null) };
 }
 
 // A report is the room as it was when play began, every key with its tick, and the

@@ -816,3 +816,8 @@ header .campLast b { font-size: 15px; }
 .campReqs .optional.unmet .mark .glyph { stroke: #c0392b; }
 
 .campPlus { font-weight: 800; color: var(--accent); padding: 0 2px; }
+
+/* A challenge's room size is fixed (register 562). */
+body.challenge .growBar { display: none !important; }
+
+#campList .campSection { grid-column: 1 / -1; margin: 10px 2px 0; font: 800 13px var(--label-face, inherit); color: var(--soft); }

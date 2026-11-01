@@ -24,11 +24,13 @@ const crateSet = level => new Set((level.crates || []).map(c => c.y * level.w + 
 // answer does not depend on, framed red).
 // over: { sel: box } or { paste: clip, x, y } from the Select tool, or null.
 export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
-  const { lens = {}, unused = [], reach = null } = marks;
+  const { lens = {}, unused = [], reach = null, open = null } = marks;
   frame.clock = now;
   drawFloor(g, level.w, level.h);
   drawHeat(g, level.w, lens.heat);
   drawWires(g, level.w, level.wires);
+  // A challenge's open tiles, where its pieces go (register 562): a dashed outline on the floor.
+  if (open) { g.strokeStyle = 'rgba(123,108,255,.55)'; g.lineWidth = 1.5; g.setLineDash([4, 3]); for (const [x, y] of open) g.strokeRect(x * T + 3.5, y * T + 3.5, T - 7, T - 7); g.setLineDash([]); }
   const pop = (x, y) => {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
     return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;

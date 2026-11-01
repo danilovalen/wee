@@ -51,6 +51,7 @@ function colourFits(def, c) {
 // robot like a wall), the start one diagonal step in from the top left corner and the goal one
 // in from the bottom right. Both move freely.
 export function roomOf(def) {
+  if (def.room) return structuredClone(def.room);  // a challenge's built room (register 562)
   const [w, h] = def.size, l = emptyLevel(w, h);
   for (const p of Object.keys(l.powers)) l.powers[p] = !!(def.powers || []).includes(p);
   // A level may place its start and goal (the tutorial, register 512); otherwise one tile in from opposite corners.
@@ -63,14 +64,17 @@ export function roomOf(def) {
 // What you placed, by element; stray is anything the level's palette cannot have made.
 export function placed(def, room) {
   const out = Object.fromEntries(Object.keys(ELEMENTS).map(k => [k, []])), stray = [];
+  // A challenge counts only what is on its open tiles: the rest of its room is fixed (register 562).
+  const open = def.challenge ? new Set(def.challenge.open.map(([x, y]) => y * room.w + x)) : null, mine = i => !open || open.has(i);
   room.cells.forEach((c, i) => {
-    if (!c || c === 'goal') return;
+    if (!c || c === 'goal' || !mine(i)) return;
     const el = Object.keys(ELEMENTS).find(k => isEl(k, c));
     const crate = !!room.crates?.some(k => k.y * room.w + k.x === i);
     if (el && colourFits(def, c) && pushingsOf(def, el).includes(crate)) out[el].push(i); else stray.push(i);
   });
   for (const e of room.entities) {
     const el = Object.keys(ELEMENTS).find(k => ELEMENTS[k].piece === e.kind), i = e.y * room.w + e.x;
+    if (!mine(i)) continue;
     if (el && pushingsOf(def, el).includes(!!e.crate)) out[el].push(i); else stray.push(i);
   }
   return { by: out, stray };

@@ -23,8 +23,11 @@ function newError(level, next) {
 // Why a tap may not change the room, or null when it may: placing must not break a rule the
 // level enforces as you build (a maximum, a second goal, a box on a button). Too few of
 // something is fine while building; Run says so.
+// A challenge takes pieces only on its open tiles; everything else in it is fixed (register 562).
+const fixedAt = (x, y) => S.camp && S.camp.def.challenge && !S.camp.def.challenge.open.some(([ox, oy]) => ox === x && oy === y);
 export function refusal(level, ui, x, y, how) {
   if (!S.camp) return null;
+  if (fixedAt(x, y)) return 'Only the marked tiles take pieces.';
   const e = newPlacementError(level, placed(level, ui, x, y, how));
   // The robot's start is never removed, so a tile placed under it cannot take its place.
   if (e && e.msg === START_ON && level.start && level.start.x === x && level.start.y === y) return tipOf('Place the start.');
@@ -56,6 +59,7 @@ const tipOf = msg => msg === 'Place the goal.' ? 'To move the goal, use Move.' :
 
 // Why Move cannot carry a thing from one tile to another, or null when it can.
 export function moveRefusal(level, from, to) {
+  if (fixedAt(from.x, from.y) || fixedAt(to.x, to.y)) return 'Only the marked tiles take pieces.';
   const all = tries(level, from, to);
   if (!all.length) return 'Cannot go there.';
   if (all.some(next => !newError(level, next))) return null;

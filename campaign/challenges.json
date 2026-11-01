@@ -1,0 +1,7 @@
+[
+  { "id": "c1", "name": "Three blocks", "rows": ["..+++", ".#+.+", "+#.P.", ".++++", "G..+."], "pieces": ["#", "#", "#"], "require": [], "min": 4 },
+  { "id": "c2", "name": "A box and two blocks", "rows": ["#..P+", "+.+..", "...#.", "+.G.+", "+..++"], "pieces": ["B", "#", "#"], "require": [], "min": 4 },
+  { "id": "c3", "name": "Through the door", "rows": ["..+.+", "...+.", ".++G.", "P.D.+", ".#++."], "pieces": ["t", "#", "#"], "require": ["throughOpenDoor"], "min": 4 },
+  { "id": "c4", "name": "One way", "rows": [".....", "++.P.", "...+.", "+++..", ".#.G."], "pieces": [">", "#", "#"], "require": [], "min": 4 },
+  { "id": "c5", "name": "Two boxes", "rows": ["G+..+", "+...+", "....+", ".+..+", "P.+#."], "pieces": ["B", "B", "#"], "require": [], "min": 4 }
+]
