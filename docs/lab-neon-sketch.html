@@ -30,20 +30,20 @@ code{background:#221f22;padding:0 4px}
 </head>
 <body>
 <main>
-<h1>wee in a lab: neon on grey, one pixel size (registers 596, 598)</h1>
-<p class="sub">Redrawn after "still inconsistent: apply gestalt and guarantee pixel size consistency". Everything on both screens below, room, HUD, icons and letters, is drawn on one grid: <b>1 art pixel = 4 screen pixels</b>, through one drawing function that throws on any position or size that is not a whole art pixel. Text uses a 3x5 pixel font drawn on the same grid, so letters are made of the same pixels as the blob.</p>
+<h1>wee in a lab: neon on grey, one pixel size (registers 596, 598, 599)</h1>
+<p class="sub">Redrawn after "still inconsistent: apply gestalt and guarantee pixel size consistency". Everything on both screens below, room, HUD, icons and letters, is drawn on one grid: <b>1 art pixel = 2 screen pixels</b> (doubled in register 599: tiles and icons are 16x16, redrawn with more detail rather than scaled up), through one drawing function that throws on any position or size that is not a whole art pixel. Text uses a 5x7 pixel font drawn on the same grid, so letters are made of the same pixels as the blob.</p>
 <p id="check" class="sub"></p>
 
 <h2>The rules this sketch follows</h2>
 <div class="card"><table>
 <tr><th>Rule</th><th>How it shows</th></tr>
-<tr><td><b>One pixel size</b></td><td>All art at 4 px per pixel. Tiles and icons are both 8x8; letters are 3x5 with a 1-pixel gap. No scaled sprites, no smooth fonts, no half pixels.</td></tr>
+<tr><td><b>One pixel size</b></td><td>All art at 2 px per pixel. Tiles and icons are both 16x16; letters are 5x7 with a 1-pixel gap; icons share one 2-pixel stroke. No scaled sprites, no smooth fonts, no half pixels.</td></tr>
 <tr><td><b>Common region</b> (gestalt)</td><td>Things that belong together share one framed panel: the top bar, the goal card, the tool bar. Nothing floats outside a panel except the room.</td></tr>
-<tr><td><b>Proximity</b></td><td>Two gaps only: 1 pixel between items of one group (undo, redo, reset touch almost), 3 pixels between groups. The eye reads the groups without labels.</td></tr>
-<tr><td><b>Similarity</b></td><td>Same job, same shape: every button is a 10x10 notched square with an 8x8 icon; every chip is 7 pixels tall; every room on the map is the same size for its kind.</td></tr>
-<tr><td><b>Alignment</b></td><td>A 2-pixel outer margin and one left edge for every panel; the room is centred on the same axis as the panels.</td></tr>
+<tr><td><b>Proximity</b></td><td>Two gaps only: 2 pixels between items of one group (undo, redo, reset), 6 between groups. The eye reads the groups without labels.</td></tr>
+<tr><td><b>Similarity</b></td><td>Same job, same shape: every button is a 20x20 panel with a 16x16 icon; every chip is 13 pixels tall; every room on the map is the same size for its kind.</td></tr>
+<tr><td><b>Alignment</b></td><td>A 4-pixel outer margin and one left edge for every panel; the room is centred on the same axis as the panels.</td></tr>
 <tr><td><b>Figure and ground</b></td><td>Greys are ground; neon is figure, and only what acts is neon. One neon button on screen at a time: the thing to do next.</td></tr>
-<tr><td><b>One frame weight</b></td><td>Every frame is 1 pixel; every corner notch is 1 pixel. A thicker frame never stands for importance: colour does.</td></tr>
+<tr><td><b>One frame weight</b></td><td>Every frame is 1 pixel; every corner is the same 2-step stair. A thicker frame never stands for importance: colour does.</td></tr>
 </table></div>
 
 <h2>The palette</h2>
@@ -52,18 +52,18 @@ code{background:#221f22;padding:0 4px}
 <h2>The play screen</h2>
 <div class="card two"><div class="px" id="play"></div>
  <div><ul>
- <li><b>Top bar</b> (one panel): wordmark and level number left; levels, Run, Test right as three 10x10 buttons. Run is the only neon button.</li>
+ <li><b>Top bar</b> (one panel): wordmark and level number left; levels, Run, Test right as three 20x20 buttons. Run is the only neon button.</li>
  <li><b>Goal card</b> (one panel, purple frame): the big star, the main goals as chips beside it; under a 1-pixel rule, the side goals as chips, each led by its lamp (dark, lit, or lit and ringed: kept, met by this room).</li>
- <li><b>Room</b>: 7x5 tiles of 8 pixels, centred.</li>
+ <li><b>Room</b>: 7x5 tiles of 16 pixels, centred.</li>
  <li><b>Tool bar</b> (one panel): the chosen tool's name; then two groups side by side, history (undo, redo, reset) and tools (look, erase, move); under them the pieces. Chosen piece: cyan frame.</li>
  </ul></div></div>
 
 <h2>The campaign floor plan (rules of 558; chambers 1 and 2 beaten, 3 next, ★ 5)</h2>
 <div class="card two"><div class="px" id="map"></div>
  <div><ul>
- <li>Three sizes only: build chambers 18x14, side rooms 14x10, facilities 24x14. Side rooms carry the HUD's own icons: the arrow pad (steer, puzzle) and a crate (supply, challenge). Same kind, same size, everywhere.</li>
+ <li>Three sizes only: build chambers 36x28, side rooms 28x20, facilities 48x28. Side rooms carry the HUD's own icons: the arrow pad (steer, puzzle) and a crate (supply, challenge). Same kind, same size, everywhere.</li>
  <li>Build chambers alternate sides of one corridor; each one's side room (cyan steer, orange supply) sits on its outer wall, touching it, so the pair reads as one place (proximity).</li>
- <li>Side-goal lamps are 2x2 pixels in a row over the chamber, dark grey until beaten.</li>
+ <li>Side-goal lamps are 5x5 pixels in a row over the chamber, dark grey until beaten.</li>
  <li>Locked rooms: frame and number in the darkest grey; open: light grey frame; next: purple.</li>
  </ul></div></div>
 
@@ -80,120 +80,144 @@ code{background:#221f22;padding:0 4px}
 </table></div>
 </main>
 <script>
-const U = 4;
+// 1 art pixel = 2 screen pixels (register 599). Every shape goes through R(), which refuses anything off that grid.
+const U = 2;
 const P = { base: '#221f22', floor: '#2d2a2e', grout: '#363337', line: '#403e41', mid: '#5b595c', lite: '#727072', text: '#c1c0c0', white: '#fcfcfa',
-  boxL: '#a59f85', box: '#857f6a', boxD: '#5e5a4a', blobH: '#d8f3b8', blob: '#a9dc76', blobS: '#6f9e45', eye: '#221f22',
-  fruitH: '#ffc7a6', fruit: '#fc9867', fruitS: '#c4643a', leaf: '#6f9e45', door: '#78dce8', doorD: '#3f9aa6', beam: '#ff6188', star: '#ffd866', accent: '#ab9df2' };
+  boxL: '#a59f85', box: '#857f6a', boxD: '#5e5a4a', blobH: '#e6f8d0', blobM: '#c3eb9a', blob: '#a9dc76', blobS: '#6f9e45', blobD: '#4f7432', eye: '#221f22',
+  fruitH: '#ffd9c2', fruit: '#fc9867', fruitS: '#c4643a', leaf: '#6f9e45', leafL: '#a9dc76', door: '#78dce8', doorD: '#3f9aa6', beam: '#ff6188', beamL: '#ffb3c4',
+  star: '#ffd866', starD: '#c9a63a', accent: '#ab9df2', kept: '#3a3528' };
 let shapes = 0;
-// The one drawing function: whole art pixels only.
 function R(x, y, w, h, c) {
   if (![x, y, w, h].every(Number.isInteger) || w <= 0 || h <= 0) throw new Error(`off the pixel grid: ${x},${y},${w},${h}`);
   shapes++;
   return `<rect x="${x * U}" y="${y * U}" width="${w * U}" height="${h * U}" fill="${c}"/>`;
 }
-const SPR = {
-  blob: ['..bbbb..', '.bhhbbb.', 'bhhbbbbb', 'bbbebeb.', 'bbbbbbbb', 'sbbbbbss', '.ssssss.', '........'],
-  fruit: ['....l...', '...ll...', '.rrrrr..', 'rRrrrrr.', 'rRrrrrr.', 'rrrrrdr.', '.rrrdd..', '..rr....'],
-  box: ['LLLLLLLL', 'LxxxxxxD', 'LxLxxDxD', 'LxxLDxxD', 'LxxDLxxD', 'LxDxxLxD', 'LxxxxxxD', 'DDDDDDDD'],
-  wall: ['TTTTTTTT', 'TwwwwwwW', 'wwwwwwwW', 'wwwwwwwW', 'wwwwwwwW', 'wwwwwwwW', 'wwwwwwwW', 'WWWWWWWW'],
-  door: ['OOOOOOOO', 'O.O..O.Q', 'OOOOOOOQ', 'O.O..O.Q', 'OOOOOOOQ', 'O.O..O.Q', 'OOOOOOOQ', 'QQQQQQQQ'],
-  sw: ['........', '..OOOO..', '.O....O.', '.O.OO.O.', '.O.OO.O.', '.O....O.', '..OOOO..', '........'],
-  laser: ['.WWWWWW.', 'WwwwwwwW', 'Www!!wwW', 'Www!!!!!', 'Www!!!!!', 'Www!!wwW', 'WwwwwwwW', '.WWWWWW.'],
-  star: ['...y....', '...y....', '..yyy...', 'yyyyyyy.', '.yyyyy..', '..yyy...', '.yy.yy..', '.y...y..'],
-  play: ['.x......', '.xx.....', '.xxx....', '.xxxx...', '.xxxx...', '.xxx....', '.xx.....', '.x......'],
-  grid: ['xxx.xxx.', 'x.x.x.x.', 'xxx.xxx.', '........', 'xxx.xxx.', 'x.x.x.x.', 'xxx.xxx.', '........'],
-  pad: ['...x....', '..xxx...', '...x....', '.x...x..', 'xxx.xxx.', '.x...x..', '...x....', '..xxx...'],
-  undo: ['..x.....', '.xx.....', 'xxxxxx..', '.xx...x.', '..x...x.', '......x.', '..xxxx..', '........'],
-  redo: ['.....x..', '.....xx.', '..xxxxxx', '.x...xx.', '.x...x..', '.x......', '..xxxx..', '........'],
-  reset: ['..xxxx..', '.x....x.', 'x......x', 'x..xx...', 'x..xx..x', 'x......x', '.x....x.', '..xxxx..'],
-  look: ['.xxx....', 'x...x...', 'x...x...', 'x...x...', '.xxx....', '....x...', '.....x..', '......x.'],
-  erase: ['x.....x.', '.x...x..', '..x.x...', '...x....', '..x.x...', '.x...x..', 'x.....x.', '........'],
-  move: ['...x....', '..xxx...', '...x....', 'x..x..x.', 'xxxxxxx.', 'x..x..x.', '...x....', '..xxx...'],
-  crate: ['xxxxxxxx', 'x.x..x.x', 'xxxxxxxx', 'x......x', 'x.xxxx.x', 'x......x', 'xxxxxxxx', '........'],
+// Sprites are 16x16 grids of colours, built from simple shapes so every one shares the same pixel rules.
+function grid() { return Array.from({ length: 16 }, () => Array(16).fill(null)); }
+const inside = (x, y, cx, cy, rx, ry) => ((x + .5 - cx) / rx) ** 2 + ((y + .5 - cy) / ry) ** 2 <= 1;
+function ellipse(g, cx, cy, rx, ry, c) { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (inside(x, y, cx, cy, rx, ry)) g[y][x] = c; }
+function box(g, x0, y0, x1, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) g[y][x] = c; }
+function line(g, x0, y0, x1, y1, c) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / (n || 1)), y = Math.round(y0 + (y1 - y0) * i / (n || 1)); if (x >= 0 && y >= 0 && x < 16 && y < 16) g[y][x] = c; } }
+function ring(g, cx, cy, r, c) { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const d = Math.hypot(x + .5 - cx, y + .5 - cy); if (d <= r && d > r - 1.5) g[y][x] = c; } }
+function draw(g, X, Y) { let s = ''; g.forEach((row, y) => row.forEach((c, x) => { if (c) s += R(X + x, Y + y, 1, 1, c); })); return s; }
+
+const SPRITES = {
+  blob() { // a gel drop: dark rim, body, lighter belly, a shine, two eyes
+    const g = grid();
+    ellipse(g, 8, 9.5, 7.5, 6.5, P.blobD); ellipse(g, 8, 9.2, 6.6, 5.7, P.blob); ellipse(g, 8, 10.4, 4.5, 3.4, P.blobM);
+    ellipse(g, 5, 6.5, 1.8, 1.3, P.blobH); g[5][4] = P.white; box(g, 2, 14, 13, 14, P.blobS); box(g, 4, 15, 11, 15, P.blobD);
+    box(g, 6, 9, 6, 10, P.eye); box(g, 10, 9, 10, 10, P.eye); g[9][6] = P.white;
+    return g;
+  },
+  fruit() { // a peach: round, a cleft, shine, stem and leaf
+    const g = grid();
+    ellipse(g, 8, 10, 6.5, 5.6, P.fruitS); ellipse(g, 7.6, 9.6, 5.8, 5, P.fruit); line(g, 8, 6, 8, 11, P.fruitS);
+    ellipse(g, 5, 8, 1.7, 1.4, P.fruitH); box(g, 8, 2, 8, 4, P.leaf); ellipse(g, 11, 3, 2.5, 1.3, P.leaf); g[3][11] = P.leafL;
+    return g;
+  },
+  wall() { const g = grid(); box(g, 0, 0, 15, 15, P.mid); box(g, 0, 0, 15, 1, P.lite); box(g, 0, 0, 1, 15, P.lite); box(g, 0, 14, 15, 15, P.line); box(g, 14, 0, 15, 15, P.line); box(g, 4, 4, 11, 11, P.mid); line(g, 4, 4, 11, 4, '#666466'); return g; },
+  box() { const g = grid(); box(g, 0, 0, 15, 15, P.box); box(g, 0, 0, 15, 1, P.boxL); box(g, 0, 0, 1, 15, P.boxL); box(g, 0, 14, 15, 15, P.boxD); box(g, 14, 0, 15, 15, P.boxD); line(g, 3, 3, 12, 12, P.boxD); line(g, 12, 3, 3, 12, P.boxD); line(g, 3, 4, 11, 12, P.boxL); return g; },
+  door() { const g = grid(); box(g, 0, 0, 15, 15, P.doorD); box(g, 1, 1, 14, 14, P.door); for (const x of [4, 8, 12]) box(g, x - 1, 2, x, 13, P.doorD); box(g, 1, 7, 14, 8, P.doorD); return g; },
+  sw() { const g = grid(); ring(g, 8, 8, 6.5, P.door); ring(g, 8, 8, 6.5, P.door); ellipse(g, 8, 8, 2.6, 2.6, P.door); ellipse(g, 7.4, 7.4, 1, 1, P.white); return g; },
+  laser() { const g = grid(); box(g, 1, 2, 14, 13, P.line); box(g, 2, 3, 13, 12, P.mid); box(g, 2, 3, 13, 3, P.lite); box(g, 9, 6, 15, 9, P.beam); box(g, 10, 7, 15, 8, P.beamL); ellipse(g, 7, 7.5, 2.5, 2.5, P.beam); g[7][6] = P.beamL; return g; },
+  star(c = P.star, d = P.starD) { const g = grid(); const pts = []; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 3 : 7.4; pts.push([8 + r * Math.cos(a), 8.5 + r * Math.sin(a)]); }
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { let inS = false; for (let i = 0, j = 9; i < 10; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y + .5) !== (yj > y + .5) && x + .5 < (xj - xi) * (y + .5 - yi) / (yj - yi) + xi) inS = !inS; } if (inS) g[y][x] = c; }
+    for (let y = 9; y < 16; y++) for (let x = 0; x < 16; x++) if (g[y][x] && y > 10) g[y][x] = d; return g; },
 };
-const ROLE = { b: P.blob, h: P.blobH, s: P.blobS, e: P.eye, r: P.fruit, R: P.fruitH, d: P.fruitS, l: P.leaf, L: P.boxL, x: P.box, D: P.boxD,
-  T: P.lite, w: P.mid, W: P.line, O: P.door, Q: P.doorD, '!': P.beam, y: P.star };
-const spr = (name, X, Y, ink) => SPR[name].flatMap((row, y) => [...row].map((c, x) => c === '.' ? '' : R(X + x, Y + y, 1, 1, ink && c === 'x' ? ink : ROLE[c]))).join('');
-// A 3x5 pixel font on the same grid.
-// 3x5 glyphs, one string of 5 rows each.
-const F = {'A': '.#.#.#####.##.#', 'B': '##.#.###.#.###.', 'C': '.###..#..#...##', 'D': '##.#.##.##.###.', 'E': '####..##.#..###', 'H': '#.##.#####.##.#', 'I': '###.#..#..#.###', 'K': '#.##.###.#.##.#', 'L': '#..#..#..#..###', 'M': '#.########.##.#', 'N': '##.#.##.##.##.#', 'O': '.#.#.##.##.#.#.', 'P': '##.#.###.#..#..', 'R': '##.#.###.#.##.#', 'S': '.###...#...###.', 'T': '###.#..#..#..#.', 'U': '#.##.##.##.####', 'W': '#.##.########.#', 'X': '#.##.#.#.#.##.#', 'Y': '#.##.#.#..#..#.', '0': '####.##.##.####', '1': '.#.##..#..#.###', '2': '##...#.#.#..###', '3': '##...#.#...###.', '4': '#.##.####..#..#', '5': '####..##...###.', '+': '....#.###.#....', 'x': '...#.#.#.#.#...', '/': '..#..#.#.#..#..'};
+// HUD icons: one stroke weight (2 art pixels), 16x16, drawn in one ink.
+const ICONS = {
+  grid(c) { const g = grid(); for (const [x, y] of [[1, 1], [9, 1], [1, 9], [9, 9]]) { box(g, x, y, x + 5, y + 5, c); box(g, x + 2, y + 2, x + 3, y + 3, null); } return g; },
+  play(c) { const g = grid(); for (let y = 2; y <= 13; y++) { const w = Math.round((y <= 7.5 ? y - 2 : 13 - y) * 1.6); box(g, 4, y, 4 + w, y, c); } return g; },
+  pad(c) { const g = grid(); box(g, 6, 1, 9, 14, c); box(g, 1, 6, 14, 9, c); box(g, 7, 7, 8, 8, null); return g; },
+  undo(c) { const g = grid(); for (let i = 0; i < 4; i++) box(g, 2 + i, 5 - i, 2 + i, 6 + i, c); box(g, 3, 5, 10, 6, c); for (let y = 6; y <= 11; y++) box(g, 11 + (y > 7 && y < 10 ? 1 : 0), y, 12 + (y > 7 && y < 10 ? 1 : 0), y, c); box(g, 5, 12, 11, 13, c); return g; },
+  redo(c) { const g = ICONS.undo(c); return g.map(r => r.slice().reverse()); },
+  reset(c) { const g = grid(); ring(g, 8, 8.5, 6.5, c); ring(g, 8, 8.5, 5.5, c); box(g, 9, 0, 15, 5, null); box(g, 10, 1, 14, 2, c); box(g, 13, 1, 14, 5, c); box(g, 7, 7, 9, 9, c); return g; },
+  look(c) { const g = grid(); ring(g, 6.5, 6.5, 5.5, c); ring(g, 6.5, 6.5, 4.6, c); line(g, 10, 10, 14, 14, c); line(g, 11, 10, 15, 14, c); line(g, 10, 11, 14, 15, c); return g; },
+  erase(c) { const g = grid(); line(g, 2, 2, 13, 13, c); line(g, 3, 2, 14, 13, c); line(g, 13, 2, 2, 13, c); line(g, 14, 2, 3, 13, c); return g; },
+  move(c) { const g = grid(); box(g, 7, 1, 8, 14, c); box(g, 1, 7, 14, 8, c); for (let i = 1; i <= 3; i++) { box(g, 7 - i, 1 + i, 8 + i, 1 + i, c); box(g, 7 - i, 14 - i, 8 + i, 14 - i, c); box(g, 1 + i, 7 - i, 1 + i, 8 + i, c); box(g, 14 - i, 7 - i, 14 - i, 8 + i, c); } return g; },
+  crate(c) { const g = grid(); box(g, 1, 3, 14, 13, c); box(g, 3, 5, 12, 11, null); box(g, 1, 6, 14, 7, c); box(g, 6, 9, 9, 10, c); return g; },
+};
+const sprite = (name, X, Y) => draw(SPRITES[name](), X, Y);
+const icon = (name, X, Y, c) => draw(ICONS[name](c), X, Y);
+
+// A 5x7 font on the same grid.
+const F5 = {
+  A: '.###.#...##...#######...##...##...#', B: '####.#...#####.#...##...##...#####.', C: '.####.....#....#....#....#.....####', D: '####.#...##...##...##...##...#####.', E: '######....####.#....#....#....#####',
+  H: '#...##...##...#######...##...##...#', I: '#####..#....#....#....#....#..#####', K: '#...##..#.#.#..##...#.#..#..#.#...#', L: '#....#....#....#....#....#....#####', M: '#...###.###.#.##...##...##...##...#',
+  N: '#...###..##.#.##..###...##...##...#', O: '.###.#...##...##...##...##...#.###.', R: '####.#...##...#####.#.#..#..#.#...#', S: '.#####....#.....###.....#....#####.', T: '#####..#....#....#....#....#....#..',
+  W: '#...##...##...##.#.##.#.##.#.#.#.#.', X: '#...##...#.#.#...#...#.#.#...##...#', 0: '.###.#...##..###.#.###..##...#.###.', 1: '..#...##....#....#....#....#...###.', 2: '.###.#...#....#...#...#...#...#####',
+  3: '####.....#....#.###.....#....#####.', 4: '#...##...##...######....#....#....#', 5: '######....####.....#....#....#####.', '+': '.......#....#..#####..#....#.......', 'x': '.....#...#.#.#...#...#.#.#...#.....', '/': '....#....#...#...#...#...#....#....' };
 function text(s, X, Y, c) {
   let out = '';
-  [...s].forEach((ch, i) => { if (ch === ' ') return; const g = F[ch]; for (let n = 0; n < 15; n++) if (g[n] === '#') out += R(X + i * 4 + (n % 3), Y + Math.floor(n / 3), 1, 1, c); });
+  [...s].forEach((ch, i) => { if (ch === ' ') return; const g = F5[ch]; for (let n = 0; n < 35; n++) if (g[n] === '#') out += R(X + i * 6 + (n % 5), Y + Math.floor(n / 5), 1, 1, c); });
   return out;
 }
-const tw = s => s.length * 4 - 1;
-// A notched panel with a 1-pixel frame.
+// A panel: 1-pixel frame, corners cut by a 2-step stair.
 function panel(x, y, w, h, frame, fill) {
-  return R(x + 1, y, w - 2, 1, frame) + R(x + 1, y + h - 1, w - 2, 1, frame) + R(x, y + 1, 1, h - 2, frame) + R(x + w - 1, y + 1, 1, h - 2, frame) + R(x + 1, y + 1, w - 2, h - 2, fill);
+  return R(x + 2, y, w - 4, 1, frame) + R(x + 2, y + h - 1, w - 4, 1, frame) + R(x, y + 2, 1, h - 4, frame) + R(x + w - 1, y + 2, 1, h - 4, frame)
+    + R(x + 1, y + 1, 1, 1, frame) + R(x + w - 2, y + 1, 1, 1, frame) + R(x + 1, y + h - 2, 1, 1, frame) + R(x + w - 2, y + h - 2, 1, 1, frame)
+    + R(x + 2, y + 1, w - 4, h - 2, fill) + R(x + 1, y + 2, 1, h - 4, fill) + R(x + w - 2, y + 2, 1, h - 4, fill);
 }
-const button = (x, y, icon, frame, fill, ink) => panel(x, y, 10, 10, frame, fill) + spr(icon, x + 1, y + 1, ink);
+const button = (x, y, name, frame, fill, ink) => panel(x, y, 20, 20, frame, fill) + icon(name, x + 2, y + 2, ink);
 const svg = (w, h, body, label) => `<svg viewBox="0 0 ${w * U} ${h * U}" width="${w * U}" height="${h * U}" shape-rendering="crispEdges" role="img" aria-label="${label}">${body}</svg>`;
 
 const SW = [['base', 'background'], ['floor', 'floor, panels'], ['grout', 'floor lines'], ['line', 'frames, locked'], ['mid', 'block'], ['lite', 'open frames, icons'], ['text', 'text'], ['box', 'box'], ['blob', 'blob'], ['fruit', 'fruit'], ['door', 'door, switch'], ['beam', 'laser beam'], ['star', 'stars, lamps'], ['accent', 'HUD accent']];
 document.getElementById('sw').innerHTML = SW.map(([k, n]) => `<div><i style="background:${P[k]}"></i><span><b>${n}</b> ${P[k]}</span></div>`).join('');
 
-// The play screen: 80 x 150 art pixels.
+// The play screen: 160 x 268 art pixels.
 (function () {
-  const W = 80; let s = R(0, 0, W, 150, P.base);
-  // Top bar: one panel.
-  s += panel(2, 2, 76, 14, P.line, P.floor);
-  s += text('WEE', 5, 7, P.accent) + text('3', 19, 7, P.white);
-  s += button(43, 4, 'grid', P.line, P.base, P.lite) + button(54, 4, 'play', P.accent, P.accent, P.base) + button(65, 4, 'pad', P.line, P.base, P.lite);
-  // Goal card: one panel; main row, a rule, side row.
-  s += panel(2, 18, 76, 25, P.accent, P.base);
-  s += spr('star', 4, 20);
-  const chip = (x, y, w, frame, fill, parts) => panel(x, y, w, 7, frame, fill) + parts;
-  // The move-count chip: a 3x3 bent path mark, then 4+.
-  s += chip(14, 21, 18, P.line, P.floor, R(16, 23, 1, 3, P.text) + R(17, 25, 2, 1, P.text) + text('4+', 21, 22, P.white));
-  s += chip(34, 21, 22, P.line, P.floor, text('DOOR', 36, 22, P.white));
-  s += R(4, 31, 72, 1, P.line);
-  const lamp = (x, y, on) => R(x, y, 3, 3, on ? P.star : P.line);
-  s += chip(4, 34, 30, P.line, '#3a3528', lamp(6, 36, true) + text('HITx2', 11, 35, P.white));
-  s += chip(36, 34, 24, P.star, P.floor, lamp(38, 36, true) + text('MAX1', 43, 35, P.white));
-  // Room: 7 x 5 tiles of 8, centred.
-  const RM = ['P..#...', '.#...B.', '..D.#..', 'o...#.L', '#.....F'], X0 = 12, Y0 = 47;
-  for (let y = 0; y < 5; y++) for (let x = 0; x < 7; x++) s += R(X0 + x * 8, Y0 + y * 8, 8, 8, P.floor) + R(X0 + x * 8, Y0 + y * 8, 8, 1, P.grout) + R(X0 + x * 8, Y0 + y * 8, 1, 8, P.grout);
-  s += R(X0 + 5 * 8, Y0 + 3 * 8 + 3, 8, 2, P.beam);
-  RM.forEach((row, y) => [...row].forEach((c, x) => { const m = { '#': 'wall', B: 'box', D: 'door', o: 'sw', L: 'laser', P: 'blob', F: 'fruit' }[c]; if (m) s += spr(m, X0 + x * 8, Y0 + y * 8); }));
-  // Tool bar: one panel; name, two groups, then pieces.
-  s += panel(2, 92, 76, 40, P.line, P.floor);
-  s += text('BLOCK', 5, 95, P.text);
-  ['undo', 'redo', 'reset'].forEach((n, i) => { s += button(4 + i * 11, 102, n, P.line, P.base, P.lite); });
-  ['look', 'erase', 'move'].forEach((n, i) => { s += button(40 + i * 11, 102, n, P.line, P.base, P.lite); });
-  [['wall', true], ['box', false], ['door', false], ['sw', false]].forEach(([n, on], i) => { s += panel(4 + i * 11, 117, 10, 10, on ? P.door : P.line, P.base) + spr(n, 5 + i * 11, 118); });
-  document.getElementById('play').innerHTML = svg(W, 134, s, 'The play screen on one pixel grid');
+  const W = 160; let s = R(0, 0, W, 268, P.base);
+  s += panel(4, 4, 152, 28, P.line, P.floor);
+  s += text('WEE', 10, 15, P.accent) + text('3', 34, 15, P.white);
+  s += button(86, 8, 'grid', P.line, P.base, P.lite) + button(108, 8, 'play', P.accent, P.accent, P.base) + button(130, 8, 'pad', P.line, P.base, P.lite);
+  s += panel(4, 36, 152, 50, P.accent, P.base);
+  s += sprite('star', 8, 40);
+  const chip = (x, y, w, frame, fill, parts) => panel(x, y, w, 13, frame, fill) + parts;
+  const pathMark = (x, y, c) => R(x, y, 1, 5, c) + R(x, y + 4, 4, 1, c) + R(x + 3, y + 4, 1, 3, c) + R(x + 4, y + 6, 2, 1, c);
+  s += chip(28, 42, 30, P.line, P.floor, pathMark(32, 44, P.text) + text('4+', 40, 45, P.white));
+  s += chip(62, 42, 32, P.line, P.floor, text('DOOR', 66, 45, P.white));
+  s += R(8, 62, 144, 1, P.line);
+  const lamp = (x, y, on) => R(x, y, 5, 5, on ? P.star : P.line) + (on ? R(x + 1, y + 1, 1, 1, P.white) : '');
+  s += chip(8, 68, 52, P.line, P.kept, lamp(12, 72, true) + text('HITx2', 20, 71, P.white));
+  s += chip(64, 68, 42, P.star, P.floor, lamp(68, 72, true) + text('MAX1', 76, 71, P.white));
+  // Room: 7 x 5 tiles of 16, centred.
+  const RM = ['P..#...', '.#...B.', '..D.#..', 'o...#.L', '#.....F'], X0 = 24, Y0 = 94;
+  for (let y = 0; y < 5; y++) for (let x = 0; x < 7; x++) s += R(X0 + x * 16, Y0 + y * 16, 16, 16, P.floor) + R(X0 + x * 16, Y0 + y * 16, 16, 1, P.grout) + R(X0 + x * 16, Y0 + y * 16, 1, 16, P.grout);
+  s += R(X0 + 5 * 16, Y0 + 3 * 16 + 6, 16, 4, P.beam) + R(X0 + 5 * 16, Y0 + 3 * 16 + 7, 16, 2, P.beamL);
+  RM.forEach((row, y) => [...row].forEach((c, x) => { const m = { '#': 'wall', B: 'box', D: 'door', o: 'sw', L: 'laser', P: 'blob', F: 'fruit' }[c]; if (m) s += sprite(m, X0 + x * 16, Y0 + y * 16); }));
+  // Tool bar.
+  s += panel(4, 182, 152, 80, P.line, P.floor);
+  s += text('BLOCK', 10, 188, P.text);
+  ['undo', 'redo', 'reset'].forEach((n, i) => { s += button(8 + i * 22, 202, n, P.line, P.base, P.lite); });
+  ['look', 'erase', 'move'].forEach((n, i) => { s += button(80 + i * 22, 202, n, P.line, P.base, P.lite); });
+  ['wall', 'box', 'door', 'sw'].forEach((n, i) => { s += panel(8 + i * 22, 234, 20, 20, i === 0 ? P.door : P.line, P.base) + sprite(n, 10 + i * 22, 236); });
+  document.getElementById('play').innerHTML = svg(W, 268, s, 'The play screen on one pixel grid');
 })();
 
-// The floor plan: 80 x 130 art pixels.
+// The floor plan: 160 x 260 art pixels.
 (function () {
-  const W = 80; let s = R(0, 0, W, 130, P.base);
-  s += panel(2, 2, 76, 11, P.line, P.floor) + text('WEE', 5, 5, P.accent) + spr('star', 60, 3) + text('5', 70, 5, P.star);
-  // Corridor.
-  s += R(35, 15, 10, 113, P.floor);
-  for (let y = 15; y < 128; y += 4) s += R(35, y, 10, 1, P.grout);
-  const chamber = (x, y, n, state) => panel(x, y, 18, 14, state === 'next' ? P.accent : state === 'locked' ? P.line : P.lite, state === 'locked' ? P.base : P.floor) + text(n, x + 8, y + 5, state === 'locked' ? P.line : P.white);
-  const lamps = (x, y, list) => list.map((v, i) => R(x + i * 3, y, 2, 2, v === null ? P.line : v ? P.star : P.mid)).join('');
-  const side = (x, y, icon, c) => panel(x, y, 14, 10, c, P.base) + spr(icon, x + 3, y + 1, c);
-  // Chamber 1 (left, beaten) with its steer room on the outer wall.
-  s += chamber(16, 108, '1', 'beaten') + lamps(22, 105, [true, false]) + R(34, 114, 1, 3, P.floor);
-  s += side(2, 110, 'pad', P.door) + spr('star', 5, 100);
-  // Chamber 2 (right, beaten) with its supply room.
-  s += chamber(46, 86, '2', 'beaten') + lamps(52, 83, [false, false]) + R(45, 92, 1, 3, P.floor);
-  s += side(64, 88, 'crate', P.fruit);
-  // Chamber 3 next, 4 and 5 locked.
-  s += chamber(16, 64, '3', 'next') + lamps(22, 61, [null, null]) + R(34, 70, 1, 3, P.floor);
-  s += spr('blob', 36, 67);
-  s += chamber(46, 42, '4', 'locked') + chamber(16, 20, '5', 'locked');
-  // Facilities, one size.
-  const fac = (x, y, label, frame, note, noteC) => panel(x, y, 24, 14, frame, P.base) + text(label, x + 3, y + 2, frame === P.line ? P.text : frame) + (note ? text(note, x + 3, y + 8, noteC) : '');
-  s += fac(54, 110, 'STOCK', P.star, '5/10', P.text);
-  s += fac(54, 64, 'BENCH', P.lite, 'BOX', P.door);
-  s += fac(2, 42, 'ANNEX', P.line, '20', P.star);
-  s += fac(54, 20, 'NOTES', P.lite, '1', P.text);
-  document.getElementById('map').innerHTML = svg(W, 130, s, 'The campaign floor plan on one pixel grid');
+  const W = 160; let s = R(0, 0, W, 260, P.base);
+  s += panel(4, 4, 152, 22, P.line, P.floor) + text('WEE', 10, 12, P.accent) + sprite('star', 122, 7) + text('5', 142, 12, P.star);
+  s += R(70, 30, 20, 226, P.floor);
+  for (let y = 30; y < 256; y += 8) s += R(70, y, 20, 1, P.grout);
+  const chamber = (x, y, n, state) => panel(x, y, 36, 28, state === 'next' ? P.accent : state === 'locked' ? P.line : P.lite, state === 'locked' ? P.base : P.floor) + text(n, x + 16, y + 11, state === 'locked' ? P.line : P.white);
+  const lamps = (x, y, list) => list.map((v, i) => R(x + i * 7, y, 5, 5, v === null ? P.line : v ? P.star : P.mid) + (v ? R(x + i * 7 + 1, y + 1, 1, 1, P.white) : '')).join('');
+  const side = (x, y, name, c) => panel(x, y, 28, 20, c, P.base) + icon(name, x + 6, y + 2, c);
+  s += chamber(32, 216, '1', 'beaten') + lamps(43, 208, [true, false]) + R(68, 228, 2, 6, P.floor);
+  s += side(4, 220, 'pad', P.door) + sprite('star', 10, 200);
+  s += chamber(92, 172, '2', 'beaten') + lamps(103, 164, [false, false]) + R(90, 184, 2, 6, P.floor);
+  s += side(128, 176, 'crate', P.fruit);
+  s += chamber(32, 128, '3', 'next') + lamps(43, 120, [null, null]) + R(68, 140, 2, 6, P.floor);
+  s += sprite('blob', 72, 134);
+  s += chamber(92, 84, '4', 'locked') + chamber(32, 40, '5', 'locked');
+  const fac = (x, y, label, frame, note, noteC) => panel(x, y, 48, 28, frame, P.base) + text(label, x + 5, y + 5, frame === P.line ? P.text : frame) + (note ? text(note, x + 5, y + 16, noteC) : '');
+  s += fac(108, 222, 'STOCK', P.star, '5/10', P.text);
+  s += fac(108, 128, 'BENCH', P.lite, 'BOX', P.door);
+  s += fac(4, 84, 'ANNEX', P.line, '20', P.star);
+  s += fac(108, 40, 'NOTES', P.lite, '1', P.text);
+  document.getElementById('map').innerHTML = svg(W, 260, s, 'The campaign floor plan on one pixel grid');
 })();
-document.getElementById('check').innerHTML = `<span class="ok">Check: ${shapes} shapes drawn, every one on the 4 px grid.</span> The drawing function throws on anything else, so this page cannot show an off-grid pixel.`;
+document.getElementById('check').innerHTML = `<span class="ok">Check: ${shapes} shapes drawn, every one on the 2 px grid.</span> The drawing function throws on anything else, so this page cannot show an off-grid pixel.`;
 </script>
 </body>
 </html>
