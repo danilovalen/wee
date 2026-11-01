@@ -69,7 +69,7 @@ export function toLevel(ch) {
   const palette = {};
   for (const p of ch.pieces) { const el = EL[p]; palette[el] = [(palette[el]?.[0] || 0) + 1, (palette[el]?.[1] || 0) + 1]; }
   const room = build(ch, rowsWith(ch, []));
-  return { id: ch.id, name: ch.name, challenge: { open }, room, size: [room.w, room.h], palette, steps: { min: ch.min ?? 4 }, rules: [], require: ch.require || [], optional: [] };
+  return { id: ch.id, name: ch.name, challenge: { open }, room, size: [room.w, room.h], palette, steps: { min: ch.min ?? 1 }, rules: [], require: ch.require || [], optional: [] };
 }
 
 const LIST = () => JSON.parse(readFileSync(new URL('../campaign/challenges.json', import.meta.url)));

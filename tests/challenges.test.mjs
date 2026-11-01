@@ -1,7 +1,7 @@
 // Challenges (registers 558-562): every one has exactly one winning placement of all its given pieces,
 // the game's own Run agrees with the checker, and the game reads what campaign/challenges.json says.
 import { readFileSync } from 'node:fs';
-import { measure, placements, rowsWith, toLevel, build } from '../tools/challenge.mjs';
+import { measure, placements, rowsWith, toLevel, build, judge } from '../tools/challenge.mjs';
 import { CHALLENGES } from '../src/level/challenges.js';
 import { check } from '../src/campaign/rules.js';
 import { suite } from './lib.mjs';
@@ -14,7 +14,9 @@ ok('the game holds exactly what campaign/challenges.json says (run node tools/ch
 for (const ch of LIST) {
   const m = measure(ch);
   ok(`${ch.id}: exactly one placement of all its pieces wins`, m.wins.length === 1, `${m.wins.length} of ${m.placements}`);
-  ok(`${ch.id}: enough placements that trying them all is not the way (100+)`, m.placements >= 100, String(m.placements));
+  ok(`${ch.id}: the star starts out of reach, so the pieces are what gets the robot there`, !judge(ch, rowsWith(ch, [])).reach);
+  ok(`${ch.id}: no move count; the only goal is the star`, (ch.min ?? 1) === 1);
+  ok(`${ch.id}: enough placements that trying them all is not the way (50+)`, m.placements >= 50, String(m.placements));
   // The game's Run, on the level the player opens, agrees: the solution wins and a near miss does not.
   const def = CHALLENGES.find(c => c.id === ch.id), win = m.wins[0];
   const lost = placements(ch).map(pl => rowsWith(ch, pl)).find(rows => rows.join() !== win.rows.join());

@@ -10,19 +10,22 @@ const { check, done } = suite('challenge');
 const PORT = 5267;
 const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const ch = JSON.parse(readFileSync('campaign/challenges.json', 'utf8')).find(c => c.id === 'c4');
+const ch = JSON.parse(readFileSync('campaign/challenges.json', 'utf8')).find(c => c.pieces.includes('>'));
 const win = measure(ch).wins[0].rows;
 const TOOL = { '#': 'wall', '>': 'gate', '<': 'gate', '^': 'gate', v: 'gate' };
 try {
   const p = await browser.newPage({ viewport: { width: 393, height: 735 }, hasTouch: true, isMobile: true });
   const errors = []; p.on('pageerror', e => errors.push(e.message));
   await p.addInitScript(() => { window.__noTutorial = true; window.__noWinCard = true; });
-  await p.goto(`http://localhost:${PORT}/index.html#/level/c4`); await p.waitForTimeout(1200);
+  await p.goto(`http://localhost:${PORT}/index.html#/level/${ch.id}`); await p.waitForTimeout(1200);
   check('the tools row offers only the given pieces', JSON.stringify(await p.$$eval('#palette [data-tool]', bs => bs.filter(b => b.offsetParent).map(b => b.dataset.tool))) === '["wall","gate"]');
   check('the room cannot be resized', await p.locator('[data-grip]').first().isHidden());
   const g = await p.locator('#game').boundingBox(), t = g.width / ch.rows[0].length, tap = (x, y) => p.mouse.click(g.x + t * (x + .5), g.y + t * (y + .5));
-  await p.click('[data-tool="wall"]'); await tap(0, 0); await p.waitForTimeout(150);
-  check('a fixed tile refuses a piece', await p.evaluate(() => window.wee.getLevel().cells[0] === ''));
+  const fy = ch.rows.findIndex(r => r.includes('.')), fx = ch.rows[fy].indexOf('.'), fi = fy * ch.rows[0].length + fx;
+  await p.click('[data-tool="wall"]'); await tap(fx, fy); await p.waitForTimeout(150);
+  check('a fixed tile refuses a piece', await p.evaluate(i => window.wee.getLevel().cells[i] === '', fi));
+  const reqs = await p.$$eval('#campBrief .campMust [data-req]', rs => rs.map(r => r.dataset.req));
+  check('the card asks for the star and no move count', reqs[0] === 'star' && !reqs.includes('steps'), JSON.stringify(reqs));
   // The solution, placed tile by tile; a one-way goes down pointing right and turns a quarter per tap.
   const turns = { '>': 0, v: 1, '<': 2, '^': 3 };
   for (let y = 0; y < win.length; y++) for (let x = 0; x < win[y].length; x++) {

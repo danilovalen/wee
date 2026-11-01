@@ -59,7 +59,8 @@ export function syncBrief() {
   // While Run's robot plays, the marks wait and the move dots fill; they land when it stops (plan step 3).
   const ran = v && v.ok && v.length != null && !S.demoRunning;
   // The tutorial teaches one thing, so its card is one order (registers 511, 512).
-  const rows = def.tutorial ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
+  // A challenge's only goal is the star too (registers 570-572).
+  const rows = def.tutorial || def.challenge ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
     : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
