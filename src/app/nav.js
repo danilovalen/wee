@@ -110,7 +110,13 @@ export function bindNav() {
   for (const id of PAGES) $(id).addEventListener('cancel', ev => { ev.preventDefault(); if (here && here.name !== 'menu') up(); });
   // A page closed by its own Close button (the Rooms page) goes to its parent, the room; the event comes
   // late, so a page open again by then (reopened in the meantime) stays.
-  for (const id of PAGES) $(id).addEventListener('close', () => { if (shut.delete(id) || $(id).open) return; if (here && places[here.name].page === id) up(); });
+  // A phone's back gesture can close a page itself, with no cancel to stop (the browser's close watcher). The
+  // menu has nowhere to go up to, so it opens again rather than leaving the editor showing (registers 424, 555).
+  for (const id of PAGES) $(id).addEventListener('close', () => {
+    if (shut.delete(id) || $(id).open) return;
+    if (!here || places[here.name].page !== id) return;
+    if (places[here.name].parent(here.arg) == null) $(id).showModal(); else up();
+  });
   // The logo is the way to the menu from anywhere.
   $('logo').onclick = () => go('menu');
 }

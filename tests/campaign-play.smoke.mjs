@@ -56,6 +56,14 @@ try {
   const deskLay = await page.evaluate(() => [document.querySelector('.msGoal').getBoundingClientRect().bottom, document.getElementById('menuCampaign').getBoundingClientRect().top]);
   check('on a wide window the goal still ends above the buttons', deskLay[0] < deskLay[1], JSON.stringify(deskLay));
   check('the room behind the menu has its laser, door and switch', await page.$$eval('.msBeam, .msDoor, .msSwitch', es => es.filter(e => e.getBoundingClientRect().width > 0).length) === 3);
+  // Register 554: a pushable laser's barrel stays inside its box frame, every way it points.
+  const spill = await page.evaluate(async () => { const { drawPiece } = await import('/src/view/pieces.js'); let out = 0;
+    for (const d of ['up', 'down', 'left', 'right']) { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
+      drawPiece(g, { kind: 'turret', crate: true, turret: { dirs: [d], mode: 'input' } }, 0, 0);
+      const px = g.getImageData(0, 0, 32, 32).data;
+      for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const k = (y * 32 + x) * 4; if (px[k] > 230 && px[k + 1] > 60 && px[k + 1] < 110 && px[k + 2] < 60 && (x < 4 || x > 27 || y < 4 || y > 27)) out++; } }
+    return out; });
+  check('a pushable laser\'s barrel stays inside its box frame (register 554)', spill === 0, String(spill));
   // Register 553: the menu's pieces are painted by the game's own drawing, so they cannot drift from the room.
   check('the menu\'s laser, switch (off and on), door, goal and box are the game\'s drawings', await page.$$eval('.msEmitter, .msSwitch .off, .msSwitch .on, .msDoor, .msGoal, .msBox', es => es.length === 6 && es.every(e => getComputedStyle(e).backgroundImage.startsWith('url("data:image/png'))));
   await page.click('#menuCampaign');

@@ -40,7 +40,7 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
   } else if (tool === 'beam') {
     // A laser's beam, apart from the laser box (register 550): a small emitter and its ray across the tile.
     const l = emptyLevel(1, 1); l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
-    x.fillStyle = INK.barrel; x.fillRect(3, 12, 7, 8);
+    x.fillStyle = INK.zap; x.fillRect(3, 12, 7, 8);
     x.strokeStyle = INK.beam; x.lineWidth = 3.5; x.lineCap = 'round'; x.beginPath(); x.moveTo(11, 16); x.lineTo(29, 16); x.stroke();
   } else if (tool === 'turret') {
     // On a floor tile like every other piece, one barrel, so it does not read as a white blob (register 526).

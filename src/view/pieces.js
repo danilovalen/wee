@@ -18,10 +18,12 @@ export function modeBadge(g, mode, bx = 24, by = 8) {
 }
 
 // A turret head: one barrel per direction it fires; the next to fire is lit.
-export function drawTurret(g, t, badge, mounted) {
+export function drawTurret(g, t, badge, mounted, framed = false) {
   const next = t.aim === undefined ? (t.start || t.dirs[0]) : t.dirs[t.aim % t.dirs.length];
   g.save();
   if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
+  // A pushable laser's barrels stay inside its box frame (register 554).
+  else if (framed) { g.translate(16, 16); g.scale(0.78, 0.78); g.translate(-16, -16); }
   for (const d of t.dirs) {
     g.save(); g.translate(16, 16); g.rotate(AIM[d]);
     g.fillStyle = d === next ? INK.zap : INK.barrel;
@@ -90,7 +92,7 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     g.fillStyle = INK.rivet;
     for (const [rx, ry] of [[7, 7], [25, 7], [7, 25], [25, 25]]) { g.beginPath(); g.arc(rx, ry, 2, 0, Math.PI * 2); g.fill(); }
   }
-  if (e.turret) drawTurret(g, e.turret, e.kind === 'turret' ? [24, 8] : [8, 24], e.kind !== 'turret');
+  if (e.turret) drawTurret(g, e.turret, e.kind === 'turret' ? [24, 8] : [8, 24], e.kind !== 'turret', e.kind === 'turret' && !!e.crate);
   g.restore();
 }
 

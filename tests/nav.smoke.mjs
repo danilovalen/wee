@@ -16,6 +16,13 @@ const at = () => page.evaluate(() => ({ open: [...document.querySelectorAll('dia
 const settle = () => page.waitForTimeout(300);
 try {
   await page.goto(B); await settle();
+  // Register 555: a phone's back gesture can close the page itself (the browser's close watcher, no cancel).
+  // On the menu that must not leave the editor showing; on a page with somewhere to go, it goes up.
+  await page.evaluate(() => document.getElementById('menuBox').close()); await settle();
+  check('the browser closing the menu page opens it again, never the editor (register 555)', await page.evaluate(() => document.getElementById('menuBox').open && (location.hash === '#/' || location.hash === '')));
+  await page.click('#menuCampaign'); await settle();
+  await page.evaluate(() => document.getElementById('campBox').close()); await settle();
+  check('the browser closing the level list goes up to the menu (register 555)', await page.evaluate(() => document.getElementById('menuBox').open && !document.getElementById('campBox').open));
   check('the game opens on the menu, at #/', (await at()).open === 'menuBox' && (await at()).hash === '#/');
   await page.keyboard.press('Escape'); await settle();
   check('Escape on the menu leaves the menu open', (await at()).open === 'menuBox');
