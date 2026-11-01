@@ -31,7 +31,7 @@ export const BOX_GOALS = {
   },
   boxPushedTwiceHitOnce: {
     text: 'One box pushed in at least 2 moves, and hit once by the robot without moving.',
-    short: [{ el: 'box' }, 'pushed ×2, collided ×1'],
+    short: [{ el: 'box' }, 'pushed ×2', '+', { el: 'box' }, 'hits ×1'],
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2 && b.hits >= 1),
   },
   // Level 5 (register 263): each box must do both, so a second box cannot share the work.

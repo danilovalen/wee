@@ -89,7 +89,7 @@ export const LASER_GOALS = {
   // Register 371: the robot's slide ends against a relay, and so does a pushed box: the relay is solid.
   robotAndBoxHitRelay: {
     text: 'Robot and a box both collide with a relay.',
-    short: [{ el: 'start' }, 'and', { el: 'box' }, 'hit', { el: 'relay' }],
+    short: [{ el: 'start' }, 'hits', { el: 'relay' }, '+', { el: 'box' }, 'hits', { el: 'relay' }],
     judge: (room, moves) => {
       let robot = false, dir = null;
       replayPath(room, moves, s => {
@@ -219,7 +219,7 @@ export const LASER_GOALS = {
   // Register 499: in one run, a beam goes through an open door and a beam is stopped by a closed one.
   laserThroughAndStoppedByDoor: {
     text: 'Laser through an open door, and stopped by a closed one.',
-    short: [{ el: 'laser' }, 'through, hits', { el: 'door' }],
+    short: [{ el: 'laser' }, 'through', { el: 'door' }, '+', { el: 'laser' }, 'hits', { el: 'door' }],
     judge: (room, moves) => {
       let through_ = false, stopped = false;
       beams(room, moves, (b, s) => { if (through(b, s).some(at => /^door:/.test(s.cells[at[1] * room.w + at[0]] || ''))) through_ = true; if (/^door:/.test(cellOf(room, b.stop))) stopped = true; });

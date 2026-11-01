@@ -833,6 +833,8 @@ header .campLast b { font-size: 15px; }
 .campReqs .optional .mark .glyph { width: 18px; height: 18px; stroke-width: 1.8; fill: #fff; }
 .campReqs .optional.met .mark .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
 .campReqs .optional.unmet .mark .glyph { stroke: #c0392b; }
+
+.campPlus { font-weight: 800; color: var(--accent); padding: 0 2px; }
 </style>
 </head>
 <body>
@@ -3277,7 +3279,7 @@ const DOOR_GOALS = {
   // Register 497: one box both collides with a closed inverted door and goes into an open one.
   boxHitsAndThroughIdoor: {
     text: 'Box collides with a closed inverted door and goes through an open one.',
-    short: [{ el: 'box' }, 'hits, through', { el: 'idoor' }],
+    short: [{ el: 'box' }, 'hits', { el: 'idoor' }, '+', { el: 'box' }, 'through', { el: 'idoor' }],
     judge: (room, moves) => {
       const hit = new Set(stoppedPushes(room, moves).out.filter(h => { const c = cellOf(room, [h.x, h.y]); return c.startsWith('idoor:') && c.slice(6).split('|').some(col => h.open[col]); }).map(h => h.box.id));
       let ok = false;
@@ -3464,7 +3466,7 @@ const BOX_GOALS = {
   },
   boxPushedTwiceHitOnce: {
     text: 'One box pushed in at least 2 moves, and hit once by the robot without moving.',
-    short: [{ el: 'box' }, 'pushed ×2, collided ×1'],
+    short: [{ el: 'box' }, 'pushed ×2', '+', { el: 'box' }, 'hits ×1'],
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2 && b.hits >= 1),
   },
   // Level 5 (register 263): each box must do both, so a second box cannot share the work.
@@ -3754,7 +3756,7 @@ const LASER_GOALS = {
   // Register 371: the robot's slide ends against a relay, and so does a pushed box: the relay is solid.
   robotAndBoxHitRelay: {
     text: 'Robot and a box both collide with a relay.',
-    short: [{ el: 'start' }, 'and', { el: 'box' }, 'hit', { el: 'relay' }],
+    short: [{ el: 'start' }, 'hits', { el: 'relay' }, '+', { el: 'box' }, 'hits', { el: 'relay' }],
     judge: (room, moves) => {
       let robot = false, dir = null;
       replayPath(room, moves, s => {
@@ -3884,7 +3886,7 @@ const LASER_GOALS = {
   // Register 499: in one run, a beam goes through an open door and a beam is stopped by a closed one.
   laserThroughAndStoppedByDoor: {
     text: 'Laser through an open door, and stopped by a closed one.',
-    short: [{ el: 'laser' }, 'through, hits', { el: 'door' }],
+    short: [{ el: 'laser' }, 'through', { el: 'door' }, '+', { el: 'laser' }, 'hits', { el: 'door' }],
     judge: (room, moves) => {
       let through_ = false, stopped = false;
       beams(room, moves, (b, s) => { if (through(b, s).some(at => /^door:/.test(s.cells[at[1] * room.w + at[0]] || ''))) through_ = true; if (/^door:/.test(cellOf(room, b.stop))) stopped = true; });
@@ -5998,6 +6000,8 @@ function words(parts) {
   return span;
 }
 function word(p) {
+  // A side goal of two conditions joins them with + (register 549).
+  if (p === '+') return Object.assign(document.createElement('span'), { className: 'campPlus', textContent: '+' });
   if (typeof p === 'string') return document.createTextNode(p);
   // A drawn mark in place of words: the flag is "at the end" (register 537).
   if (p.dots) return dots(p.dots);

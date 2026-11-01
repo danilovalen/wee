@@ -282,6 +282,8 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('a trail has the robot after each move and each box that moved', JSON.stringify(tr.robot) === '[{"x":1,"y":1},{"x":4,"y":1}]' && tr.boxes.length === 1 && tr.boxes[0].at(-1).x === 5, JSON.stringify(tr));
   ok('the verdict marks each requirement for the goal card', v.reqs && v.reqs.throughOpenDoor === false && v.inRange === true, JSON.stringify(v.reqs));
   ok('every requirement has a short row, with at least one word', Object.values(REQUIREMENTS).every(r => Array.isArray(r.short) && r.short.some(p => typeof p === 'string')));
+  // Register 549: a goal of two conditions joins them with +, each side a whole condition starting with its piece.
+  ok('a + joins two whole conditions, each starting with its piece', Object.values(REQUIREMENTS).every(r => { const k = r.short.indexOf('+'); return k < 0 || (k > 0 && r.short[0].el && r.short[k + 1] && r.short[k + 1].el && r.short.slice(k + 1).some(p => typeof p === 'string')); }) && Object.values(REQUIREMENTS).filter(r => r.short.includes('+')).length >= 4);
   ok('a short row names objects only as elements the card can draw', Object.values(REQUIREMENTS).every(r => r.short.every(p => typeof p === 'string' || p.mark === 'end' || p.el === 'start' || p.el === 'goal' || ELEMENTS[p.el])));
   // Doors of two colours (register 243): two switches open a red and a blue door the robot slides through.
   const doors = (cells) => { const r = room(['#P......#']); for (const k of Object.keys(r.powers)) r.powers[k] = false; cells.forEach(([x, c]) => { r.cells[x] = c; }); return r; };

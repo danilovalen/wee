@@ -39,6 +39,8 @@ export function words(parts) {
   return span;
 }
 function word(p) {
+  // A side goal of two conditions joins them with + (register 549).
+  if (p === '+') return Object.assign(document.createElement('span'), { className: 'campPlus', textContent: '+' });
   if (typeof p === 'string') return document.createTextNode(p);
   // A drawn mark in place of words: the flag is "at the end" (register 537).
   if (p.dots) return dots(p.dots);

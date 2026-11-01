@@ -814,3 +814,5 @@ header .campLast b { font-size: 15px; }
 .campReqs .optional .mark .glyph { width: 18px; height: 18px; stroke-width: 1.8; fill: #fff; }
 .campReqs .optional.met .mark .glyph { fill: var(--gold, #ffc23d); stroke: #d4a017; }
 .campReqs .optional.unmet .mark .glyph { stroke: #c0392b; }
+
+.campPlus { font-weight: 800; color: var(--accent); padding: 0 2px; }
