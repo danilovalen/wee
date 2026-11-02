@@ -58,10 +58,10 @@ try {
     await document.fonts.ready;
     const fam = sel => getComputedStyle(document.querySelector(sel)).fontFamily.split(',')[0].replace(/["']/g, '');
     return { body: fam('body'), button: fam('#mode'), head: fam('.ghead'), logo: fam('.logo'),
-      loaded: ['400 14px Bitter', '600 13px Asap', '800 11px Asap', '700 22px Comfortaa'].filter(f => !document.fonts.check(f)) };
+      loaded: ['400 14px Pixelify', '700 13px Pixelify'].filter(f => !document.fonts.check(f)) };
   });
-  check('text is Bitter, controls and heads Asap, the wordmark Comfortaa', type.body === 'Bitter' && type.button === 'Asap' && type.head === 'Asap' && type.logo === 'Comfortaa', JSON.stringify(type));
-  check('and all four faces actually loaded', !type.loaded.length, type.loaded.join(' | '));
+  check('text, controls, heads and the wordmark are the pixel face (register 617)', [type.body, type.button, type.head, type.logo].every(f => f === 'Pixelify'), JSON.stringify(type));
+  check('and both its weights actually loaded', !type.loaded.length, type.loaded.join(' | '));
   const cut = await page.evaluate(() => {
     const out = [];
     for (const panel of document.querySelectorAll('aside, header')) {

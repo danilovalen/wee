@@ -3,7 +3,7 @@
   --paper: #221f22; --panel: #2d2a2e; --rule: #403e41; --ink: #fcfcfa; --soft: #939293; --accent: #ab9df2; --on-accent: #221f22; --field: rgba(255,255,255,0.06); --field-rule: rgba(255,255,255,0.12); --sticker: #19181a; --inset-rim: rgba(0,0,0,0.3); --btn-mix: 60%; --selectable: #ab9df2; --r-s: 0px; --r-m: 0px; --r-l: 0px; --r-pill: 0px; --sticker-rest: 0px; --sticker-hover: 0px; --sticker-press: 0px; --ice: #78dce8;
   /* The neon lab palette (register 602, docs/lab-neon-sketch.html): greys for what sits, one neon per job. */
   --mid: #5b595c; --lite: #727072; --gold: #ffd866; --gold-ink: #c9a63a; --good: #a9dc76; --bad: #ff6188; --cyan: #78dce8; --orange: #fc9867; --kept: #3a3528; --shade: #19181a; --frost: 78%;
-  --text-face: 'Bitter', Georgia, serif; --label-face: 'Asap', 'Helvetica Neue', Arial, sans-serif; --wee-face: 'Comfortaa', 'Asap', sans-serif;
+  --text-face: 'Pixelify', monospace; --label-face: 'Pixelify', monospace; --wee-face: 'Pixelify', monospace;
   /* The names the older rules use, mapped onto the tokens. */
   --bg: var(--paper); --text: var(--ink); --dim: var(--soft); --line: var(--rule); --radius: var(--r-m);
   --body: var(--text-face); --head: var(--label-face);
@@ -352,7 +352,7 @@ aside, .ctx, .statusBar, .well, header { background: color-mix(in srgb, var(--pa
 aside, .well { border-radius: var(--r-m); }
 .chip.auto { outline: 1.5px dashed currentColor; outline-offset: -4px; }
 .chip.on { box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
-/* Type roles (docs/MANGA_THEME.md): Bitter reads, Asap labels and acts, Comfortaa is wee's name. */
+/* Type roles (docs/MANGA_THEME.md): one pixel face for reading, labels and wee's name (register 617). */
 button, .chip, .wellTabs, .statusBar { font-family: var(--label-face); font-weight: 600; }
 h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); font-weight: 800; }
 .roomsHead b { font-family: var(--wee-face); font-weight: 700; }
@@ -632,7 +632,7 @@ dialog[id].rooms.gen { --page: 912px; }
 /* A level's colours (register 245): a row of dots over its tools; the chosen one is ringed. */
 /* Registers 251, 261: the tools (Look, Erase, Move) on the left and the colours on the right of one line; the objects below. */
 body.campaign #campTop, body.simple #campTop { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
-body.campaign #campColours:not([hidden]), body.simple #campColours:not([hidden]) { display: flex; gap: 10px; margin-left: auto; }
+body.campaign #campColours:not([hidden]), body.simple #campColours:not([hidden]) { display: flex; gap: 8px; margin-left: auto; }
 #campTools { display: flex; gap: 6px; }
 /* The tools are the objects' size: 46px square on a phone, a short icon button beside the desktop's text rows. */
 #campTools button { width: 32px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; }
@@ -747,7 +747,7 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 /* One menu box (register 433): Campaign takes its own row, Puzzles and Sandbox share the next (registers 400, 418). */
 /* Campaign has the top row; How to play, Puzzles and Sandbox share the one below (register 521). */
 .menuSec { grid-template-columns: repeat(6, 1fr); }
-.menuSec > button { grid-column: span 2; padding-left: 4px; padding-right: 4px; white-space: nowrap; font-size: 15px; }
+.menuSec > button { grid-column: span 2; padding-left: 4px; padding-right: 4px; white-space: nowrap; font-size: 13px; }
 #menuCampaign { grid-column: 1 / -1; }
 
 /* The camera (register 408): Fit while zoomed in; the resize bars wait until the whole room shows. */

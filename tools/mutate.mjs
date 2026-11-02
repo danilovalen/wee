@@ -29,7 +29,6 @@ export const M = [
   ['src', "v.won ? `won in ${v.length}, ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` :", "v.won ? `won in ${v.length}` :", 'campaign-play'],
   ['src', "v.won ? `won in ${v.length}, ${tiles}", "v.won ? `won in ${v.length} \\u00b7 ${tiles}", 'arch'],
   ['src/level/campaign.js', "\"optional\":[\"hitsClosedDoorTwice\",\"atMostOneDoor\"]", "\"optional\":[\"atMostOneDoor\"]", 'campaign'],
-  ['style.css', 'body.simple #campColours:not([hidden]) { display: flex; gap: 10px; margin-left: auto; }', 'body.simple #campColours:not([hidden]) { display: flex; gap: 10px; }', 'campaign-play'],
   // lasers (registers 255, 256)
   ['src', ".map(String)).size >= 2) ok = true; });", ".map(String)).size >= 1) ok = true; });", 'campaign'],
   ['src', "everyLaser(room, moves, b => cellOf(room, b.stop).startsWith('door:'))", "everyLaser(room, moves, b => b.stop)", 'campaign'],
@@ -546,10 +545,10 @@ export const M = [
   ['style.css', "  .ctx #options { gap: 4px 10px; flex-wrap: wrap; }", "  .ctx #options { gap: 4px 10px; }", 'fit'],
   // the Manga theme and Drift (U5)
   ['style.css', "--accent: #ab9df2;", "--accent: #ffc93d;", 'manga'],
-  ['style.css', "--text-face: 'Bitter', Georgia, serif;", "--text-face: 'Asap', Georgia, serif;", 'manga'],
+  ['style.css', "--text-face: 'Pixelify', monospace;", "--text-face: monospace;", 'manga'],
   ['style.css', "button, .chip, .wellTabs, .statusBar { font-family: var(--label-face);", "button, .chip, .wellTabs, .statusBar { font-family: var(--text-face);", 'manga'],
   ['style.css', ".logo { font: 700 22px var(--wee-face);", ".logo { font: 700 22px var(--head);", 'manga'],
-  ['fonts.css', "comfortaa-latin-700-normal.woff2", "comfortaa-latin-700-normal.woff", 'browser'],
+  ['fonts.css', "pixelify-sans-latin-700-normal.woff2", "pixelify-sans-latin-700-normal.woff", 'browser'],
   ['index.html', '<link rel="stylesheet" href="fonts.css">', '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Asap">', 'manga'],
   ['src/view/masses.js', "self.startsWith('tri:') ? 'tri' : !A && !B ? 'round' : 'full';", "self.startsWith('tri:') ? 'tri' : 'full';", 'masses'],
   ['src/view/masses.js', "return A && B && D ? 'fillet' : null;", "return A && B ? 'fillet' : null;", 'masses'],
