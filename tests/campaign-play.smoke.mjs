@@ -543,6 +543,8 @@ try {
   await nine.click('[data-tool="button"]');
   const buttonDots = await dots(), doorIcon = await nine.evaluate(() => document.querySelector('#palette [data-tool="door"] canvas').dataset.colour);
   check('with a button chosen, red is picked back and red+blue is greyed; the door stays drawn in both', buttonDots === 'red*,blue,red|blue-' && doorIcon === 'red|blue', buttonDots + ' ' + doorIcon);
+  // A piece placed in a level is now known to the Sandbox's editor (register 558).
+  check('a door placed in a level is remembered for the Sandbox', (await nine.evaluate(() => JSON.parse(localStorage.getItem('wee.pieces') || '[]'))).includes('door'));
   await nine.close();
   check('no page errors', errors.length === 0, errors.join(' | '));
 } finally {

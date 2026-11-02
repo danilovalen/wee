@@ -9,9 +9,14 @@ import { unlocked } from './unlock.js';
 import { PALETTES, SKINS, look, paint, setPalette, setSkin } from '../view/look.js';
 import { drawSprite } from '../view/sprites.js';
 import { INK, T } from '../view/ink.js';
+import { TOOL } from './goalCard.js';
+import { usedPieces } from './known.js';
+import { achievements } from '../campaign/achievements.js';
 
-// Every star the campaign has given: one per beaten level and one per side goal met.
-export const totalStars = (p = progress()) => Object.values(p.levels || {}).reduce((n, r) => n + (r && r.beaten ? 1 : 0) + Object.values((r && r.goals) || {}).filter(Boolean).length, 0);
+// Every star the campaign has given: one per beaten level, one per side goal met, and each achievement's.
+const TAUGHT = Object.values(TOOL);
+const earned = (p = progress()) => achievements(p.levels || {}, usedPieces(), TAUGHT);
+export const totalStars = (p = progress()) => Object.values(p.levels || {}).reduce((n, r) => n + (r && r.beaten ? 1 : 0) + Object.values((r && r.goals) || {}).filter(Boolean).length, 0) + earned(p).reduce((n, a) => n + (a.done ? a.stars : 0), 0);
 const open = cost => unlocked() || totalStars() >= cost;
 
 // A sprite drawn exactly as named onto a small canvas, in the palette p.
@@ -26,6 +31,13 @@ const lock = cost => { const s = document.createElement('small'); s.className = 
 
 function render() {
   $('lookStars').innerHTML = glyph('star') + totalStars();
+  // Achievements (register 558): each one's star filled once done, and how many stars it gives.
+  $('lookAchieve').replaceChildren(...earned().map(a => {
+    const li = document.createElement('li'); li.dataset.achievement = a.id; li.classList.toggle('done', a.done);
+    const mark = document.createElement('i'); mark.innerHTML = glyph('star');
+    li.append(mark, Object.assign(document.createElement('b'), { textContent: a.name }), Object.assign(document.createElement('span'), { textContent: a.text }), Object.assign(document.createElement('small'), { textContent: `+${a.stars}` }));
+    return li;
+  }));
   $('lookPalettes').replaceChildren(...PALETTES.map(p => {
     const b = document.createElement('button'), ok = open(p.cost);
     b.type = 'button'; b.dataset.palette = p.id; b.disabled = !ok; b.classList.toggle('on', look.palette === p.id);

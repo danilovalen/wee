@@ -774,7 +774,7 @@ export const M = [
   ['src/app/reset.js', "box.close(); change(() => { S.level = roomOf(S.camp.def); }); after();", "box.close(); change(() => {}); S.level = roomOf(S.camp.def); after();", 'campaign-play'],
   ['src/app/progressCode.js', "await load(p); box.close(); showList();", "box.close(); showList();", 'campaign-play'],
   ['src/app/progressCode.js', "write({ ...progress(), last: null, levels: {} });", "", 'campaign-play'],
-  ['src/app/panels.js', "toolsFor(S.camp.def) : S.simple ? SIMPLE :", "toolsFor(S.camp.def) : false ? SIMPLE :", 'modes'],
+  ['src/app/panels.js', "toolsFor(S.camp.def) : S.simple ? SIMPLE.filter(", "toolsFor(S.camp.def) : false ? SIMPLE.filter(", 'modes'],
   ['style.css', "body.simple #ctxNote, body.simple [data-sheet=powers] { display: none !important; }", "", 'modes'],
   ['src/app/puzzles.js', ".filter(r => r.puzzle)", "", 'modes'],
   ['src/app/puzzles.js', "if (!b[id] || n < b[id]) { b[id] = n; keep(b); }", "", 'modes'],
@@ -1020,6 +1020,11 @@ export const M = [
   ['src/view/look.js', "  if (!p.hues && sat > 0.22) return p.greys[p.greys.length - (lum(c) >= 0.45 ? 1 : 2)];", "", 'palettes'],
   ['style.css', ".campReqs .mark::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--dim); clip-path: var(--ring-20); }", ".campReqs .mark::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--dim); border-radius: 50%; }", 'pixelart'],
   ['src/view/pieces.js', "    drawSprite(g, 'wallFace', 0, 0);\n    if (e.crate)", "    if (e.crate)", 'sim'],
+  // Row 623: pieces open on first use; achievements give stars.
+  ['src/app/known.js', "export const known = (tool, taught) => allOpen() || !taught.includes(tool) || read().has(tool);", "export const known = (tool, taught) => true;", 'looks'],
+  ['src/app/campaign.js', "    markUsed(Object.entries(", "    void (Object.entries(", 'campaign-play'],
+  ['src/app/looks.js', "+ earned(p).reduce((n, a) => n + (a.done ? a.stars : 0), 0);", ";", 'looks'],
+  ['src/campaign/achievements.js', "stars: 1, done: b.length > 0 && beaten(levels, b[0].id) }", "stars: 1, done: false }", 'looks'],
   // Rows 612, 613: Looks.
   ['src/view/look.js', "set(v) { d.set.call(this, paint(v)); }", "set(v) { d.set.call(this, v); }", 'looks'],
   ['src/app/looks.js', "const open = cost => unlocked() || totalStars() >= cost;", "const open = cost => unlocked() || cost === 0;", 'looks'],

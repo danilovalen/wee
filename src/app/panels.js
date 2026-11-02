@@ -4,6 +4,7 @@ import { CLOCKWISE, COLOURS, POWERS, NEEDS } from '../rules/base.js';
 import { resizeLevel, moveSide, wallBorder } from '../level/format.js';
 import { INK } from '../view/ink.js';
 import { paint, look } from '../view/look.js';
+import { known } from './known.js';
 import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
 import { toolsFor } from './campaign.js';
 import { syncBrief, TOOL } from './goalCard.js';
@@ -201,7 +202,8 @@ export function syncPanel() {
   syncStrip();
 }
 // The tools this room offers: a level's own, the simple Sandbox's, or every Sandbox tool.
-const offeredTools = () => S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE : TOOLS.filter(t => !t.campaign).map(t => t.id);
+// The simple Sandbox offers a campaign piece once it has been used in the campaign (register 558).
+const offeredTools = () => S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE.filter(t => known(t, Object.values(TOOL))) : TOOLS.filter(t => !t.campaign).map(t => t.id);
 
 // A level with more than one colour shows them as a row of dots over its tools (register 245):
 // what you place takes the chosen one, and a one-way takes a colour only in a level that names

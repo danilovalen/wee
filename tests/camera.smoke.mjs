@@ -9,7 +9,7 @@ const { check, done } = suite('camera');
 const PORT = 5251;
 const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const page = await browser.newPage({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, hasTouch: true });
+const page = await browser.newPage({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, hasTouch: true }); await page.addInitScript(() => { window.__openAll = true; });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 const cdp = await page.context().newCDPSession(page);
@@ -73,7 +73,7 @@ try {
   const back = await cam();
   check('leaving play returns to the editing view', Math.abs(back.x - editView.x) < 1 && Math.abs(back.z - editView.z) < 0.01, JSON.stringify(back));
   // On a computer, Ctrl and the wheel zoom.
-  const desk = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const desk = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await desk.addInitScript(() => { window.__openAll = true; });
   await desk.goto(`http://localhost:${PORT}/`); await desk.waitForTimeout(400);
   await desk.click('#menuSandbox'); await desk.waitForTimeout(400); await desk.click('#roomNew'); await desk.waitForTimeout(300);
   await desk.evaluate(() => { const l = window.wee.blank(60, 46); l.start = { x: 0, y: 0 }; window.wee.loadLevel(l); });

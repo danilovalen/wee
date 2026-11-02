@@ -20,17 +20,24 @@ try {
   check('the menu\'s corner opens Looks', await p.$eval('#lookBox', d => d.open));
   const shut = await p.$$eval('#lookPalettes [data-palette]', bs => bs.map(b => [b.dataset.palette, b.disabled]));
   check('with no stars only the first palette is open', shut.length === PALETTES.length && shut.every(([id, off]) => off === (id !== 'neon')), JSON.stringify(shut));
+  check('on a fresh save no achievement is done', await p.$$eval('#lookAchieve li', ls => ls.length >= 5 && ls.every(l => !l.classList.contains('done'))));
+  // A piece the campaign teaches opens in the Sandbox once placed in a level; one it never teaches is open (register 558).
+  const kit = await p.evaluate(async () => { const k = await import('/src/app/known.js'); const before = k.known('box', ['box']); k.markUsed(['box']); const after = k.known('box', ['box']); return { before, after, other: k.known('wire', ['box']) }; });
+  check('a campaign piece opens in the Sandbox only once used', !kit.before && kit.after && kit.other, JSON.stringify(kit));
+  await p.evaluate(() => localStorage.removeItem('wee.pieces'));
   check('with no stars every other skin is shut', await p.$$eval('#lookSkins [data-alt=true]', bs => bs.length > 0 && bs.every(b => b.disabled)));
 
   // Stars open what they reach: one beaten level with two side goals is three stars.
   await p.evaluate(() => localStorage.setItem('wee.campaign', JSON.stringify({ v: 4, last: null, levels: { 1: { beaten: true, goals: { a: true, b: true } } } })));
   await p.reload(); await p.waitForTimeout(600);
   check('Looks has its own address, so a reload stays on it', await p.$eval('#lookBox', d => d.open));
-  check('the page counts the stars earned', (await p.textContent('#lookStars')).trim() === '3');
+  // Three stars from the level (beaten, two side goals) and one from the First berry achievement.
+  check('the page counts the stars earned, achievements included', (await p.textContent('#lookStars')).trim() === '4', await p.textContent('#lookStars'));
+  check('beating Level 1 does the First berry achievement', await p.$eval('#lookAchieve [data-achievement=first]', l => l.classList.contains('done')));
   const opened = await p.$$eval('#lookPalettes [data-palette]', bs => bs.filter(b => !b.disabled).map(b => b.dataset.palette));
-  check('a palette opens once the stars reach its cost', opened.join() === PALETTES.filter(x => x.cost <= 3).map(x => x.id).join(), opened.join());
+  check('a palette opens once the stars reach its cost', opened.join() === PALETTES.filter(x => x.cost <= 4).map(x => x.id).join(), opened.join());
   const skinsOpen = await p.$$eval('#lookSkins [data-skin]', rs => rs.filter(r => !r.querySelector('[data-alt=true]').disabled).map(r => r.dataset.skin));
-  check('a skin opens once the stars reach its cost', skinsOpen.join() === SKINS.filter(x => x.cost <= 3).map(x => x.id).join(), skinsOpen.join());
+  check('a skin opens once the stars reach its cost', skinsOpen.join() === SKINS.filter(x => x.cost <= 4).map(x => x.id).join(), skinsOpen.join());
 
   // A palette recolours the page and the canvases.
   await p.click('[data-palette=gameboy]'); await p.waitForTimeout(200);

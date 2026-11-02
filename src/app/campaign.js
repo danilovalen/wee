@@ -6,7 +6,8 @@ import { LEVELS } from '../level/campaign.js';
 import { CHALLENGES } from '../level/challenges.js';
 import { unlocked, allOpen } from './unlock.js';
 import { plan, builders, isOpen, sideGoalsOpen } from '../campaign/progression.js';
-import { roomOf, coloursOf, placementErrors, check, optionalGoals, listed } from '../campaign/rules.js';
+import { roomOf, coloursOf, placementErrors, check, optionalGoals, listed, placed } from '../campaign/rules.js';
+import { markUsed } from './known.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
 import { $, portrait } from './dom.js';
@@ -211,6 +212,8 @@ export function buildCampaign(actions) {
     stamp = s;
     if (S.camp.ranOn !== s) { S.camp.verdict = null; S.trail = null; S.camp.trailOf = null; }
     save(); syncBrief();
+    // A piece placed for the first time opens in the Sandbox's editor (register 558).
+    markUsed(Object.entries(placed(S.camp.def, S.level).by).filter(([, l]) => l.length).map(([el]) => TOOL[el]).filter(Boolean));
   };
   for (const t of ['pointerup', 'keyup', 'click']) addEventListener(t, () => setTimeout(watch, 0));
   addEventListener('wee:mode', () => { if (S.camp) { if (S.mode !== 'play') S.camp.testing = false; syncBrief(); } });
