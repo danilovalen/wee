@@ -21,7 +21,6 @@ import { buildKeys } from './keys.js';
 import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
 import { icon } from './icons.js';
-import { joinEnds } from './join.js';
 import { buildStrip, syncStrip } from './strip.js';
 
 const DEFAULT_HINT = touch ? 'Tap to place, tap one again to remove it, and Look changes nothing.' : 'Click to place, click one again or right click to remove it, and Look changes nothing.';
@@ -198,7 +197,6 @@ export function syncPanel() {
   document.querySelectorAll('[data-start]').forEach(b => { b.classList.toggle('on', b.dataset.start === first); b.disabled = !ui.aim.includes(b.dataset.start); });
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
-  joinEnds();
   syncStrip();
 }
 // The tools this room offers: a level's own, the simple Sandbox's, or every Sandbox tool.

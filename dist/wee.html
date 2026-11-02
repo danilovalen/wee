@@ -19,7 +19,7 @@
   <style>
 :root {
   color-scheme: only dark;
-  --paper: #221f22; --panel: #2d2a2e; --rule: #403e41; --ink: #fcfcfa; --soft: #939293; --accent: #ab9df2; --on-accent: #221f22; --field: rgba(255,255,255,0.06); --field-rule: rgba(255,255,255,0.12); --sticker: #19181a; --inset-rim: rgba(0,0,0,0.3); --btn-mix: 60%; --selectable: #ab9df2; --r-s: 8px; --r-m: 10px; --r-l: 16px; --r-pill: 999px; --sticker-rest: 4px; --sticker-hover: 6px; --sticker-press: 1px; --ice: #78dce8;
+  --paper: #221f22; --panel: #2d2a2e; --rule: #403e41; --ink: #fcfcfa; --soft: #939293; --accent: #ab9df2; --on-accent: #221f22; --field: rgba(255,255,255,0.06); --field-rule: rgba(255,255,255,0.12); --sticker: #19181a; --inset-rim: rgba(0,0,0,0.3); --btn-mix: 60%; --selectable: #ab9df2; --r-s: 0px; --r-m: 0px; --r-l: 0px; --r-pill: 0px; --sticker-rest: 0px; --sticker-hover: 0px; --sticker-press: 0px; --ice: #78dce8;
   /* The neon lab palette (register 602, docs/lab-neon-sketch.html): greys for what sits, one neon per job. */
   --mid: #5b595c; --lite: #727072; --gold: #ffd866; --gold-ink: #c9a63a; --good: #a9dc76; --bad: #ff6188; --cyan: #78dce8; --orange: #fc9867; --kept: #3a3528; --shade: #19181a; --frost: 78%;
   --text-face: 'Bitter', Georgia, serif; --label-face: 'Asap', 'Helvetica Neue', Arial, sans-serif; --wee-face: 'Comfortaa', 'Asap', sans-serif;
@@ -574,12 +574,12 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 @keyframes tutPulse { 50% { outline-color: transparent; } }
 @media (prefers-reduced-motion: reduce) { .tutRing, .tutTile { animation: none; } }
 .campOpt:empty { display: none; }
-.campStars { display: flex; align-items: center; gap: 1px; align-self: end; min-width: 0; }
+.campStars { display: flex; align-items: center; gap: 2px; align-self: end; min-width: 0; }
 .campStarLine { width: 2px; height: 20px; margin: 0 4px; background: var(--rule); flex: none; }
-.campStar { position: relative; width: 20px; height: 20px; flex: none; }
-.campStar.main { width: 28px; height: 28px; }
-.campStar svg { display: block; width: 100%; height: 100%; fill: none; stroke: var(--rule); stroke-width: 2; stroke-linejoin: round; }
-.campStar.on svg { fill: var(--gold); stroke: var(--gold); }
+.campStar { position: relative; width: 16px; height: 16px; flex: none; }
+.campStar.main { width: 32px; height: 32px; }
+.campStar svg { display: block; width: 100%; height: 100%; --glyph-o: var(--rule); --glyph-i: transparent; }
+.campStar.on svg { --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 .campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: #5a3f00; }
 .campStar.main i { font-size: 11px; }
 .campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
@@ -673,12 +673,9 @@ body.campaign.play :is(#undo, #redo, #campReset) { display: none; }
 body.campaign #campReset { order: 6; margin-left: auto; }
 
 /* Register 322: in a level and the simple Sandbox the room takes the screen and every strip of
-   buttons is joined: square seams, round only at the strip's ends (src/app/join.js), less margin. */
+   buttons is joined: 1 px seams between pixel panels, less margin. */
 @media (max-width: 700px) {
   body:is(.campaign, .simple) header { gap: 1px; padding: 6px; }
-  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button:not([data-alone]) { border-radius: 0; }
-  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button.joinFirst:not([data-alone]) { border-top-left-radius: var(--r-s); border-bottom-left-radius: var(--r-s); }
-  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button.joinLast:not([data-alone]) { border-top-right-radius: var(--r-s); border-bottom-right-radius: var(--r-s); }
   body:is(.campaign, .simple) :is(#campTools, #palette) { gap: 1px; }
   body:is(.campaign, .simple) main { padding: 0 4px; gap: 2px; }
   body:is(.campaign, .simple) #tools { padding: 4px 4px 6px; }
@@ -797,9 +794,7 @@ button > .glyph.px { margin: -1px; }
 
 /* Plan step 2: undo, redo and Reset beside the tools in a level. */
 .campHistory { display: flex; gap: 1px; }
-.campHistory > button { border-radius: 0; display: inline-flex; align-items: center; justify-content: center; }
-.campHistory > button:first-child { border-top-left-radius: var(--r-s); border-bottom-left-radius: var(--r-s); }
-.campHistory > button:last-child { border-top-right-radius: var(--r-s); border-bottom-right-radius: var(--r-s); }
+.campHistory > button { display: inline-flex; align-items: center; justify-content: center; }
 body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; min-height: 0; margin: 0; padding: 0; }
 .campHistory .glyph { width: 16px; height: 16px; }
 @media (max-width: 700px) { body.campaign .campHistory > button { width: 46px; height: 46px; } .campHistory .glyph { width: 24px; height: 24px; } }
@@ -855,7 +850,7 @@ header .campLast b { font-size: 15px; }
 .campPieces { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; align-self: center; }
 .campPieces .campIcon.used { opacity: .3; }
 .campOpt { margin: 0; padding: 6px 8px; box-shadow: none; background: var(--field); border-radius: var(--r-m); gap: 6px 8px; }
-.campOpt li { background: var(--panel); border-radius: var(--r-pill); padding: 2px 9px 2px 3px; box-shadow: 2px 2px 0 0 var(--sticker); align-items: center; }
+.campOpt li { background: var(--panel); border-radius: var(--r-pill); padding: 2px 9px 2px 3px; box-shadow: inset 0 0 0 2px var(--rule); align-items: center; }
 .campReqs .optional .mark, .campReqs .optional.met .mark, .campReqs .optional.unmet .mark { background: none; box-shadow: none; outline: none; color: var(--mid); }
 .campReqs .optional .mark .glyph { width: 16px; height: 16px; stroke-width: 1.8; fill: var(--panel); --glyph-i: var(--panel); --glyph-o: var(--mid); }
 .campReqs .optional.met .mark .glyph { fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
@@ -864,7 +859,7 @@ header .campLast b { font-size: 15px; }
 .campOpt li.kept { background: var(--kept); }
 .campReqs .optional.kept .mark .glyph { fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
 .campReqs .optional.kept.unmet .mark .glyph { stroke: var(--gold-ink); --glyph-o: var(--gold-ink); }
-.campOpt li.met { box-shadow: 0 0 0 2px var(--gold), 2px 2px 0 0 var(--sticker); }
+.campOpt li.met { box-shadow: inset 0 0 0 2px var(--gold); }
 
 .campPlus { font-weight: 800; color: var(--accent); padding: 0 2px; }
 
@@ -6591,11 +6586,10 @@ function run() {
 
 // A level's stars (register 475): the main goal, a line, one per side goal. A met goal's star is
 // filled and holds the fewest tiles placed in a win that met it.
-const STAR = 'M12 1.8l3 6.4 7 .8-5.2 4.8 1.4 6.9L12 17.2 5.8 20.7l1.4-6.9L2 9l7-.8z';
 function star(n, main, label) {
   const el = document.createElement('span'), on = n != null;
   el.className = 'campStar' + (main ? ' main' : '') + (on ? ' on' : '');
-  el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR}"/></svg>` + (on ? `<i>${n}</i>` : '');
+  el.innerHTML = glyph('star') + (on ? `<i>${n}</i>` : '');
   el.title = label;
   return el;
 }
@@ -9170,25 +9164,8 @@ function selectOverlay() {
 }
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
-// ---- src/app/join.js
-const m86 = (() => {
-
-// A strip of buttons reads as one object (register 322): square seams inside, round only at its two
-// ends. Which buttons are the ends depends on what shows, so they are marked again on every sync.
-function joinEnds() {
-  const on = document.body.classList.contains('campaign') || document.body.classList.contains('simple');
-  for (const strip of document.querySelectorAll('[data-join]')) {
-    const kids = [...strip.children].filter(b => b.tagName === 'BUTTON' && !b.classList.contains('logo'));
-    for (const b of kids) b.classList.remove('joinFirst', 'joinLast');
-    const shown = on ? kids.filter(b => !b.hasAttribute('data-alone') && getComputedStyle(b).display !== 'none') : [];
-    if (!shown.length) continue;
-    shown[0].classList.add('joinFirst'); shown[shown.length - 1].classList.add('joinLast');
-  }
-}
-return { joinEnds };
-})();
 // ---- src/app/strip.js
-const m87 = (() => {
+const m86 = (() => {
 const { STRIP, stripOf, TOOLS } = m76;
 const { S } = m32;
 const { $ } = m0;
@@ -9302,7 +9279,7 @@ function syncStrip() {
 return { inSandbox, buildStrip, syncStrip };
 })();
 // ---- src/app/panels.js
-const m88 = (() => {
+const m87 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m4;
 const { resizeLevel, moveSide, wallBorder } = m6;
 const { INK } = m38;
@@ -9324,11 +9301,9 @@ const { buildKeys } = m83;
 const { syncRoomsButton } = m71;
 const { buildSelect, syncSelect } = m85;
 const { icon } = m46;
-const { joinEnds } = m86;
-const { buildStrip, syncStrip } = m87;
+const { buildStrip, syncStrip } = m86;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
-
 
 
 
@@ -9525,7 +9500,6 @@ function syncPanel() {
   document.querySelectorAll('[data-start]').forEach(b => { b.classList.toggle('on', b.dataset.start === first); b.disabled = !ui.aim.includes(b.dataset.start); });
   document.querySelectorAll('[data-power]').forEach(b => { b.checked = !!level.powers[b.dataset.power] && !NEEDS[b.dataset.power]; });
   document.querySelectorAll('input[name=clock]').forEach(r => { r.checked = r.value === level.clock; });
-  joinEnds();
   syncStrip();
 }
 // The tools this room offers: a level's own, the simple Sandbox's, or every Sandbox tool.
@@ -9624,7 +9598,7 @@ function syncColours() {
 return { keysText, buildPanels, syncPanel, SIMPLE, pairInk };
 })();
 // ---- src/app/campaignMove.js
-const m89 = (() => {
+const m88 = (() => {
 const { placementErrors, START_ON } = m27;
 const { place, moveAt, swapAt } = m79;
 const { S } = m32;
@@ -9716,7 +9690,7 @@ function say(x, y, why, ms = 1500) {
 return { moveIn, refusal, replacing, allows, moveRefusal, refuse, say };
 })();
 // ---- src/app/stuck.js
-const m90 = (() => {
+const m89 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m16;
 const { S } = m32;
 const { $ } = m0;
@@ -9751,7 +9725,7 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m91 = (() => {
+const m90 = (() => {
 const { syncDots } = m53;
 const { iconOn } = m2;
 const { frame: look } = m38;
@@ -9762,12 +9736,12 @@ const { drawEdit, drawPlay } = m45;
 const { S } = m32;
 const { $, g, now } = m0;
 const { openSheet } = m82;
-const { syncPanel, keysText } = m88;
+const { syncPanel, keysText } = m87;
 const { feedDemo } = m62;
 const { noteError } = m50;
 const { selectOverlay } = m85;
-const { moveRefusal } = m89;
-const { watchStuck, resetStuck } = m90;
+const { moveRefusal } = m88;
+const { watchStuck, resetStuck } = m89;
 const { lensMarks, lensBusy } = m78;
 const { syncWell } = m59;
 const { syncChips } = m80;
@@ -9940,20 +9914,20 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m92 = (() => {
+const m91 = (() => {
 const { describe, holds, place, turnGate, turnLaser } = m79;
 const { S } = m32;
 const { $, canvas, touch, now } = m0;
-const { setMode, aim } = m91;
+const { setMode, aim } = m90;
 const { begin, end, change, step: undoStep } = m72;
 const { save } = m71;
 const { selectDown, selectMove, selectUp, selectKey } = m85;
 const { LENS_GROUPS, cycleLens, lensesOff } = m78;
-const { syncPanel } = m88;
+const { syncPanel } = m87;
 const { fit } = m75;
 const { toolForKey, bareKey, showKeys } = m83;
 const { TOOLS } = m76;
-const { refusal, moveRefusal, moveIn, refuse, replacing } = m89;
+const { refusal, moveRefusal, moveIn, refuse, replacing } = m88;
 const { toRoom } = m74;
 const { T } = m38;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
@@ -10097,7 +10071,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m93 = (() => {
+const m92 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m4;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -10208,12 +10182,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m94 = (() => {
+const m93 = (() => {
 const { search, move, stateKey } = m16;
 const { createGame } = m15;
 const { elementCheck, idleElements, NOTES_MAX } = m58;
 const { contains } = m65;
-const { ING, variants } = m93;
+const { ING, variants } = m92;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -10299,7 +10273,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m95 = (() => {
+const m94 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -10316,13 +10290,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m96 = (() => {
+const m95 = (() => {
 const { CLOCKWISE, CORNERS } = m4;
 const { emptyLevel, wallBorder } = m6;
-const { INGREDIENTS, ING, spot } = m93;
-const { judge, lockedIn } = m94;
+const { INGREDIENTS, ING, spot } = m92;
+const { judge, lockedIn } = m93;
 const { contains } = m65;
-const { rng } = m95;
+const { rng } = m94;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -10477,9 +10451,9 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m97 = (() => {
-const { INGREDIENTS } = m93;
-const { generate, normalize, recipeLabel, LIMITS } = m96;
+const m96 = (() => {
+const { INGREDIENTS } = m92;
+const { generate, normalize, recipeLabel, LIMITS } = m95;
 const { stampOf } = m34;
 const { S } = m32;
 const { thumbURL } = m69;
@@ -10489,7 +10463,7 @@ const { dirty, remember, syncRoomsButton } = m71;
 const { icon } = m46;
 const { current, back } = m29;
 const { TOOLS, GROUPS } = m76;
-const { SIMPLE } = m88;
+const { SIMPLE } = m87;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
@@ -10687,11 +10661,11 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/tutorial.js
-const m98 = (() => {
+const m97 = (() => {
 const { S } = m32;
 const { $ } = m0;
-const { setMode } = m91;
-const { syncPanel } = m88;
+const { setMode } = m90;
+const { syncPanel } = m87;
 const { toRoom, toScreen } = m74;
 const { T } = m38;
 const { go, current } = m29;
@@ -10817,7 +10791,7 @@ function bindTutorial() {
 return { stop, bindTutorial };
 })();
 // ---- src/app/main.js
-const m99 = (() => {
+const m98 = (() => {
 const { bindUnlock } = m3;
 const { buildMaker } = m30;
 const { buildPuzzles } = m35;
@@ -10830,16 +10804,16 @@ const { S, starterLevel } = m32;
 const { portrait, $ } = m0;
 const { startSnow, windNow } = m56;
 const { fit, watchStage } = m75;
-const { buildPanels, syncPanel } = m88;
-const { bindInput } = m92;
-const { setMode, frame, render, tick, report, copyReport } = m91;
+const { buildPanels, syncPanel } = m87;
+const { bindInput } = m91;
+const { setMode, frame, render, tick, report, copyReport } = m90;
 const { bindCamera } = m74;
 const { buildRooms } = m71;
-const { buildGenerator } = m97;
+const { buildGenerator } = m96;
 const { buildCampaign } = m54;
 const { bindNav, start } = m29;
 const { bindDebug } = m50;
-const { bindTutorial } = m98;
+const { bindTutorial } = m97;
 const { bindGlyphs } = m2;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.

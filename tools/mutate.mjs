@@ -865,7 +865,6 @@ const M = [
   ['style.css', "body.campaign #campReset { order: 6; margin-left: auto; }", "", 'campaign-play'],
   ['src/app/join.js', "    shown[0].classList.add('joinFirst'); shown[shown.length - 1].classList.add('joinLast');", "    shown[0].classList.add('joinFirst');", 'campaign-play'],
   ['src/app/panels.js', "  joinEnds();\n}", "}", 'campaign-play'],
-  ['style.css', "  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button:not([data-alone]) { border-radius: 0; }", "", 'campaign-play'],
   // Registers 329, 334: every relay lit at the end; level 19 hidden from the list.
   ['src/campaign/goals/lasers.js', "return relays.length > 0 && relays.every(i => end.lit.has(i));", "return relays.length > 0 && relays.some(i => end.lit.has(i));", 'campaign'],
   ['src/campaign/goals/lasers.js', "const end = replayPath(room, moves, () => {}), relays", "const end = replayPath(room, moves.slice(0, 1), () => {}), relays", 'campaign'],

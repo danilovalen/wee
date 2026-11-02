@@ -115,11 +115,10 @@ export function run() {
 
 // A level's stars (register 475): the main goal, a line, one per side goal. A met goal's star is
 // filled and holds the fewest tiles placed in a win that met it.
-const STAR = 'M12 1.8l3 6.4 7 .8-5.2 4.8 1.4 6.9L12 17.2 5.8 20.7l1.4-6.9L2 9l7-.8z';
 function star(n, main, label) {
   const el = document.createElement('span'), on = n != null;
   el.className = 'campStar' + (main ? ' main' : '') + (on ? ' on' : '');
-  el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR}"/></svg>` + (on ? `<i>${n}</i>` : '');
+  el.innerHTML = glyph('star') + (on ? `<i>${n}</i>` : '');
   el.title = label;
   return el;
 }

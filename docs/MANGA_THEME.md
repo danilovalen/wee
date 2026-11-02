@@ -7,7 +7,7 @@ weeeee."*, then C1 Drift from `docs/wee-look.html`.
 **2026-11-01 (register 602): the palette moved to the neon lab** of `docs/lab-neon-sketch.html`: warm
 greys from Monokai Pro for everything that sits, one neon per job (green the blob, orange the fruit,
 cyan doors and switches, pink the beam, yellow stars, violet the accent). The page is dark only. The
-form below (stickers, radii, insets) stays until the pixel HUD slice replaces it.
+pixel HUD slice (2026-11-02) replaced the sticker and the radii: see rules 2 and 5.
 
 ## Where this comes from
 
@@ -20,10 +20,10 @@ exactly it. When the platform moves, edit this table and the gate makes the styl
 ## The form (the half that gets missed)
 
 1. **No strokes.** Surfaces separate by tone. No `border` on a panel, a bar, a field or a button.
-2. **The sticker shadow** is hard, never blurred: 4px at rest, 6px on hover lifted 2px, 1px on press.
+2. **Pixel panels, no sticker** (2026-11-02): a button is a 2 px frame with each corner cut by a 2-step stair; hover lightens the frame, a press darkens the button and nothing moves. The sticker tokens are 0.
 3. **A recess** (a field) is an inset shadow in a lighter rim, not the outer shadow's ink.
 4. **State is an inset ring**, never a border: "on" is `inset 0 0 0 2px` in the accent.
-5. **Four radii:** 16 modal, 10 panel, 8 field and button, 999 pill.
+5. **Square corners** (2026-11-02): the four radius tokens are 0; only dots and marks stay round (50%).
 6. **One accent**, for attention and "on" only. In wee it is violet (see the palette below).
 
 **The room is not the shell.** Tiles, pieces, the player and lens marks keep wee's own colours: a
@@ -96,13 +96,13 @@ Read by `tests/manga.test.mjs`. `name | value`, one per row, values verbatim.
 | `--inset-rim` | `rgba(0,0,0,0.3)` |
 | `--btn-mix` | `60%` |
 | `--selectable` | `#ab9df2` |
-| `--r-s` | `8px` |
-| `--r-m` | `10px` |
-| `--r-l` | `16px` |
-| `--r-pill` | `999px` |
-| `--sticker-rest` | `4px` |
-| `--sticker-hover` | `6px` |
-| `--sticker-press` | `1px` |
+| `--r-s` | `0px` |
+| `--r-m` | `0px` |
+| `--r-l` | `0px` |
+| `--r-pill` | `0px` |
+| `--sticker-rest` | `0px` |
+| `--sticker-hover` | `0px` |
+| `--sticker-press` | `0px` |
 | `--ice` | `#78dce8` |
 | `--frost` | `78%` |
 | `--mid` | `#5b595c` |

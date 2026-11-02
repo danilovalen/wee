@@ -1,6 +1,6 @@
 :root {
   color-scheme: only dark;
-  --paper: #221f22; --panel: #2d2a2e; --rule: #403e41; --ink: #fcfcfa; --soft: #939293; --accent: #ab9df2; --on-accent: #221f22; --field: rgba(255,255,255,0.06); --field-rule: rgba(255,255,255,0.12); --sticker: #19181a; --inset-rim: rgba(0,0,0,0.3); --btn-mix: 60%; --selectable: #ab9df2; --r-s: 8px; --r-m: 10px; --r-l: 16px; --r-pill: 999px; --sticker-rest: 4px; --sticker-hover: 6px; --sticker-press: 1px; --ice: #78dce8;
+  --paper: #221f22; --panel: #2d2a2e; --rule: #403e41; --ink: #fcfcfa; --soft: #939293; --accent: #ab9df2; --on-accent: #221f22; --field: rgba(255,255,255,0.06); --field-rule: rgba(255,255,255,0.12); --sticker: #19181a; --inset-rim: rgba(0,0,0,0.3); --btn-mix: 60%; --selectable: #ab9df2; --r-s: 0px; --r-m: 0px; --r-l: 0px; --r-pill: 0px; --sticker-rest: 0px; --sticker-hover: 0px; --sticker-press: 0px; --ice: #78dce8;
   /* The neon lab palette (register 602, docs/lab-neon-sketch.html): greys for what sits, one neon per job. */
   --mid: #5b595c; --lite: #727072; --gold: #ffd866; --gold-ink: #c9a63a; --good: #a9dc76; --bad: #ff6188; --cyan: #78dce8; --orange: #fc9867; --kept: #3a3528; --shade: #19181a; --frost: 78%;
   --text-face: 'Bitter', Georgia, serif; --label-face: 'Asap', 'Helvetica Neue', Arial, sans-serif; --wee-face: 'Comfortaa', 'Asap', sans-serif;
@@ -555,12 +555,12 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 @keyframes tutPulse { 50% { outline-color: transparent; } }
 @media (prefers-reduced-motion: reduce) { .tutRing, .tutTile { animation: none; } }
 .campOpt:empty { display: none; }
-.campStars { display: flex; align-items: center; gap: 1px; align-self: end; min-width: 0; }
+.campStars { display: flex; align-items: center; gap: 2px; align-self: end; min-width: 0; }
 .campStarLine { width: 2px; height: 20px; margin: 0 4px; background: var(--rule); flex: none; }
-.campStar { position: relative; width: 20px; height: 20px; flex: none; }
-.campStar.main { width: 28px; height: 28px; }
-.campStar svg { display: block; width: 100%; height: 100%; fill: none; stroke: var(--rule); stroke-width: 2; stroke-linejoin: round; }
-.campStar.on svg { fill: var(--gold); stroke: var(--gold); }
+.campStar { position: relative; width: 16px; height: 16px; flex: none; }
+.campStar.main { width: 32px; height: 32px; }
+.campStar svg { display: block; width: 100%; height: 100%; --glyph-o: var(--rule); --glyph-i: transparent; }
+.campStar.on svg { --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 .campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: #5a3f00; }
 .campStar.main i { font-size: 11px; }
 .campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
@@ -654,12 +654,9 @@ body.campaign.play :is(#undo, #redo, #campReset) { display: none; }
 body.campaign #campReset { order: 6; margin-left: auto; }
 
 /* Register 322: in a level and the simple Sandbox the room takes the screen and every strip of
-   buttons is joined: square seams, round only at the strip's ends (src/app/join.js), less margin. */
+   buttons is joined: 1 px seams between pixel panels, less margin. */
 @media (max-width: 700px) {
   body:is(.campaign, .simple) header { gap: 1px; padding: 6px; }
-  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button:not([data-alone]) { border-radius: 0; }
-  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button.joinFirst:not([data-alone]) { border-top-left-radius: var(--r-s); border-bottom-left-radius: var(--r-s); }
-  body:is(.campaign, .simple) :is(header, #campTools, #palette) > button.joinLast:not([data-alone]) { border-top-right-radius: var(--r-s); border-bottom-right-radius: var(--r-s); }
   body:is(.campaign, .simple) :is(#campTools, #palette) { gap: 1px; }
   body:is(.campaign, .simple) main { padding: 0 4px; gap: 2px; }
   body:is(.campaign, .simple) #tools { padding: 4px 4px 6px; }
@@ -778,9 +775,7 @@ button > .glyph.px { margin: -1px; }
 
 /* Plan step 2: undo, redo and Reset beside the tools in a level. */
 .campHistory { display: flex; gap: 1px; }
-.campHistory > button { border-radius: 0; display: inline-flex; align-items: center; justify-content: center; }
-.campHistory > button:first-child { border-top-left-radius: var(--r-s); border-bottom-left-radius: var(--r-s); }
-.campHistory > button:last-child { border-top-right-radius: var(--r-s); border-bottom-right-radius: var(--r-s); }
+.campHistory > button { display: inline-flex; align-items: center; justify-content: center; }
 body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; min-height: 0; margin: 0; padding: 0; }
 .campHistory .glyph { width: 16px; height: 16px; }
 @media (max-width: 700px) { body.campaign .campHistory > button { width: 46px; height: 46px; } .campHistory .glyph { width: 24px; height: 24px; } }
@@ -836,7 +831,7 @@ header .campLast b { font-size: 15px; }
 .campPieces { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; align-self: center; }
 .campPieces .campIcon.used { opacity: .3; }
 .campOpt { margin: 0; padding: 6px 8px; box-shadow: none; background: var(--field); border-radius: var(--r-m); gap: 6px 8px; }
-.campOpt li { background: var(--panel); border-radius: var(--r-pill); padding: 2px 9px 2px 3px; box-shadow: 2px 2px 0 0 var(--sticker); align-items: center; }
+.campOpt li { background: var(--panel); border-radius: var(--r-pill); padding: 2px 9px 2px 3px; box-shadow: inset 0 0 0 2px var(--rule); align-items: center; }
 .campReqs .optional .mark, .campReqs .optional.met .mark, .campReqs .optional.unmet .mark { background: none; box-shadow: none; outline: none; color: var(--mid); }
 .campReqs .optional .mark .glyph { width: 16px; height: 16px; stroke-width: 1.8; fill: var(--panel); --glyph-i: var(--panel); --glyph-o: var(--mid); }
 .campReqs .optional.met .mark .glyph { fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
@@ -845,7 +840,7 @@ header .campLast b { font-size: 15px; }
 .campOpt li.kept { background: var(--kept); }
 .campReqs .optional.kept .mark .glyph { fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
 .campReqs .optional.kept.unmet .mark .glyph { stroke: var(--gold-ink); --glyph-o: var(--gold-ink); }
-.campOpt li.met { box-shadow: 0 0 0 2px var(--gold), 2px 2px 0 0 var(--sticker); }
+.campOpt li.met { box-shadow: inset 0 0 0 2px var(--gold); }
 
 .campPlus { font-weight: 800; color: var(--accent); padding: 0 2px; }
 
