@@ -9,10 +9,11 @@ import { plan, builders, isOpen, sideGoalsOpen } from '../campaign/progression.j
 import { roomOf, coloursOf, placementErrors, check, optionalGoals, listed, placed } from '../campaign/rules.js';
 import { markUsed } from './known.js';
 import { featsOf, record } from '../campaign/feats.js';
+import { nearMiss } from '../solve/nearMiss.js';
 import { doneIds, noteEarned } from './achieve.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
-import { $, portrait } from './dom.js';
+import { $, portrait, now } from './dom.js';
 import { levelParts } from './levelParts.js';
 import { iconOn, glyph } from './glyphs.js';
 import { shownName } from '../campaign/names.js';
@@ -118,7 +119,12 @@ export function run() {
   }
   noteEarned(was);
   S.camp.ranOn = JSON.stringify(S.level);
-  const show = v.ok ? (v.won ? v.path : v.fail.path) : null;
+  let show = v.ok ? (v.won ? v.path : v.fail.path) : null;
+  // A room the blob cannot win: it still tries, playing the attempt that ends nearest the berry, and fails
+  // there (register 642); the tiles that stop it flash once it has.
+  const near = !show && v.ok && !v.won ? nearMiss(S.level) : null;
+  S.camp.near = near && near.path.length ? near : null;
+  if (S.camp.near) show = near.path;
   if (show) { A.setMode('play'); S.demo = [...show]; S.demoRunning = true; }
   else flashStuck(v);
   syncBrief();
@@ -200,6 +206,15 @@ export function buildCampaign(actions) {
   $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.verdictGone = true; S.camp.testing = true; A.setMode('play'); };
   // After a Run the robot has shown its path: back to editing, so a tap on the room places again.
   bindWin();
+  // The attempt has failed: a stop bumps toward the berry it could not reach, then the cause flashes.
+  addEventListener('wee:demoDone', () => {
+    const n = S.camp && S.camp.near;
+    if (!n) return;
+    S.camp.near = null;
+    const g = S.level.cells.indexOf('goal'), gx = g % S.level.w - n.at.x, gy = Math.floor(g / S.level.w) - n.at.y;
+    if (n.end === 'stop' && g >= 0) S.fx.push({ type: 'bump', dx: Math.abs(gx) >= Math.abs(gy) ? Math.sign(gx) : 0, dy: Math.abs(gx) >= Math.abs(gy) ? 0 : Math.sign(gy), at: now() });
+    flashStuck(S.camp.verdict);
+  });
   addEventListener('wee:demoDone', () => { if (S.camp) { syncBrief(); $('campBrief').classList.remove('landed'); void $('campBrief').offsetWidth; $('campBrief').classList.add('landed'); } });
   addEventListener('wee:demoDone', () => setTimeout(() => { if (S.camp && !S.camp.testing && S.mode === 'play') A.setMode('edit'); }, 900));
   addEventListener('wee:win', ev => {

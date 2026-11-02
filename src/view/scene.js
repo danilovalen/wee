@@ -9,7 +9,7 @@ import { drawHeat, drawLensMarks } from './lenses.js';
 import { drawReach, drawTrim, drawWires, isGrey, wireColoursAt } from './wires.js';
 import { netsOf } from '../rules/wires.js';
 
-const GHOST_MS = 360;
+const BUMP_MS = 420, GHOST_MS = 360;
 
 // A pushable tile (register 336): the tile cut to fit inside the box's brown border.
 function drawCrated(g, c, x, y, s, k = 1, ox = 0, oy = 0) {
@@ -291,6 +291,9 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     const ux = Math.sign(ex - px), uy = Math.sign(ey - py);
     g.beginPath(); g.moveTo(px + T / 2 + ux * 9, py + T / 2 + uy * 9); g.lineTo(ex + T / 2 - ux * 13, ey + T / 2 - uy * 13); g.stroke(); g.lineCap = 'butt';
   }
+  // A failed attempt (register 642): two nudges toward the berry it could not reach, a whole art pixel each.
+  const bump = fx.find(f => f.type === 'bump' && now - f.at < BUMP_MS);
+  if (bump) { const n = 2 * Math.round(2 * Math.abs(Math.sin((now - bump.at) / BUMP_MS * Math.PI * 2))); px += bump.dx * n; py += bump.dy * n; }
   drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);
   g.restore();
 }
