@@ -1,7 +1,9 @@
 // Achievements earned by a Run (registers 631-636): the safety search that judges Guardrails and Deadly,
 // and the counts a win carries toward the others.
 import { safety } from '../src/solve/safety.js';
-import { featsOf } from '../src/campaign/feats.js';
+import { featsOf, record } from '../src/campaign/feats.js';
+import { builders } from '../src/campaign/progression.js';
+import { CHALLENGES } from '../src/level/challenges.js';
 import { solve } from '../src/solve/solve.js';
 import { room, suite } from './lib.mjs';
 
@@ -32,7 +34,13 @@ check('11 moves is not, and the count is kept', !featsOf(def, small, win(11), ju
 check('a 6x5 room never counts for Move it move it', !featsOf(def, { ...small, w: 6, cells: Array(30).fill(null) }, win(12), judged).ids.includes('moveit'));
 check('5 doors is Gateway', featsOf(def, doors5, win(4)).ids.includes('gateway'));
 check('4 side goals met in one win is Silver bullet', featsOf(def, small, win(4, { optional: [1, 2, 3, 4].map(i => ({ id: 'g' + i, met: true })) })).ids.includes('silver'));
-check('1 move with every main goal met is One shot, even when the move count is not', featsOf(def, small, { ok: true, won: false, length: 1, reqs: { a: true } }).ids.includes('oneshot'));
-check('1 move with a main goal missed is not', !featsOf(def, small, { ok: true, won: false, length: 1, reqs: { a: false } }).ids.includes('oneshot'));
+const one = ok => ({ ok: true, won: false, length: 1, reqs: { a: ok } }), lvl = n => ({ ...def, id: builders()[n - 1].id });
+check('1 move on Level 11 with every main goal met is One shot, even when the move count is not', featsOf(lvl(11), small, one(true)).ids.includes('oneshot'));
+check('1 move on Level 11 with a main goal missed is not', !featsOf(lvl(11), small, one(false)).ids.includes('oneshot'));
+check('Level 10 is too early for One shot (register 641)', !featsOf(lvl(10), small, one(true)).ids.includes('oneshot'));
+check('a challenge never counts for One shot', CHALLENGES.length === 0 || !featsOf({ ...def, id: CHALLENGES[0].id }, small, one(true)).ids.includes('oneshot'));
+// What a Run earned is kept: the first level each was done on, and the best of each count.
+const kept = record(record({}, { id: 'a' }, { ids: ['gateway'], peak: { moveit: 9 } }), { id: 'b' }, { ids: ['gateway', 'silver'], peak: { moveit: 7 } });
+check('the save keeps the level each was first done on, and the best count', kept.feats.gateway === 'a' && kept.feats.silver === 'b' && kept.peak.moveit === 9, JSON.stringify(kept));
 check('a run that does not win earns nothing else', featsOf(def, doors5, { ok: true, won: false, length: 4, reqs: {} }).ids.length === 0);
 done();

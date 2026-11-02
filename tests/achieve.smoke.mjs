@@ -69,14 +69,15 @@ try {
   await p.click('#toast'); await p.waitForTimeout(400);
   check('a tap on the popup opens Achievements', (await p.evaluate(() => location.hash)) === '#/achievements' && !(await p.$eval('#toast', t => !t.hidden)));
 
-  // A Run records what it earned (register 632): the berry one move away on Level 1 is One shot.
+  // A Run records what it did (registers 632, 641): the berry one move away on Level 1 is kept as a count, not One shot.
   await p.evaluate(async () => { const { builders } = await import('/src/campaign/progression.js'); (await import('/src/app/nav.js')).go('level', builders()[0].id); });
   await p.waitForTimeout(600);
   await p.evaluate(() => { const l = window.wee.blank(5, 5); l.start = { x: 0, y: 0 }; for (const k of Object.keys(l.powers)) l.powers[k] = false; l.cells[4] = 'goal'; window.wee.loadLevel(l); });
   await p.click('#campRun');
   await p.waitForFunction(() => !window.wee.demoRunning(), null, { timeout: 20000 });
-  const feats = await p.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')).feats || {});
-  check('a Run reaching the berry in 1 move is kept as One shot, with its level', feats.oneshot != null, JSON.stringify(feats));
+  const saved = await p.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')));
+  check('a Run on Level 1 reaching the berry in 1 move is not One shot', !('oneshot' in (saved.feats || {})), JSON.stringify(saved.feats));
+  check('the win before it kept its count toward Move it move it', saved.peak && saved.peak.moveit > 1, JSON.stringify(saved.peak));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the achievements smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

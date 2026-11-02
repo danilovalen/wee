@@ -8,7 +8,7 @@ import { unlocked, allOpen } from './unlock.js';
 import { plan, builders, isOpen, sideGoalsOpen } from '../campaign/progression.js';
 import { roomOf, coloursOf, placementErrors, check, optionalGoals, listed, placed } from '../campaign/rules.js';
 import { markUsed } from './known.js';
-import { featsOf } from '../campaign/feats.js';
+import { featsOf, record } from '../campaign/feats.js';
 import { doneIds, noteEarned } from './achieve.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -113,11 +113,8 @@ export function run() {
   }
   // What this Run did toward the achievements (registers 629-639): a level's own Run only, never the tutorial.
   if (!def.tutorial && v.ok) {
-    const p = progress(), f = featsOf(def, S.level, v, p.feats || {});
-    p.feats ||= {}; p.peak ||= {};
-    for (const id of f.ids) if (!(id in p.feats)) p.feats[id] = def.id;
-    for (const [k, n] of Object.entries(f.peak)) p.peak[k] = Math.max(p.peak[k] || 0, n);
-    write(p);
+    const p = progress();
+    write(record(p, def, featsOf(def, S.level, v, p.feats || {})));
   }
   noteEarned(was);
   S.camp.ranOn = JSON.stringify(S.level);

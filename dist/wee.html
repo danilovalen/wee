@@ -6484,6 +6484,7 @@ const SMALL = 5;
 const DOORS = 5;
 const SAFE = 8;
 const SIDE = 4;
+const ONE_SHOT_FROM = 11;
 function achievements(levels, used, taught, extra = {}) {
   const b = builders(), won = b.filter(d => beaten(levels, d.id)).length, half = Math.ceil(b.length / 2);
   const feats = extra.feats || {}, peak = extra.peak || {}, spent = extra.spent || 0;
@@ -6498,7 +6499,7 @@ function achievements(levels, used, taught, extra = {}) {
     { id: 'pieces', icon: 'ach-pieces', name: 'Full kit', text: 'Beat a level with every kind of piece.', stars: 2, done: taught.every(t => used.has(t)), of: taught.length, at: taught.filter(t => used.has(t)).length },
     { id: 'cashback', icon: 'ach-cashback', name: 'Cashback', text: `Spend ${SPEND} stars on Looks.`, stars: 1, done: spent >= SPEND, of: SPEND, at: spent },
     feat('moveit', 'ach-moveit', 'Move it move it', `Win in ${LONG} moves or more in a room ${SMALL}x${SMALL} or smaller.`, LONG, peak.moveit),
-    feat('oneshot', 'ach-oneshot', 'One shot', 'Reach the berry in 1 move with every other main goal met.'),
+    feat('oneshot', 'ach-oneshot', 'One shot', `Reach the berry in 1 move on Level ${ONE_SHOT_FROM} or later, every other main goal met.`),
     feat('gateway', 'ach-gateway', 'Gateway', `Win with ${DOORS} doors or more.`, DOORS, peak.gateway),
     feat('guardrails', 'ach-guardrails', 'Guardrails', `Win in ${SAFE} moves or more in a room where no move can lose.`),
     feat('deadly', 'ach-deadly', 'Deadly', `Win in ${SAFE} moves or more in a room where every other move loses.`),
@@ -6506,7 +6507,7 @@ function achievements(levels, used, taught, extra = {}) {
   ];
 }
 const achievementStars = (levels, used, taught, extra) => achievements(levels, used, taught, extra).reduce((n, a) => n + (a.done ? a.stars : 0), 0);
-return { SPEND, LONG, SMALL, DOORS, SAFE, SIDE, achievements, achievementStars };
+return { SPEND, LONG, SMALL, DOORS, SAFE, SIDE, ONE_SHOT_FROM, achievements, achievementStars };
 })();
 // ---- src/app/wallet.js
 const m52 = (() => {
@@ -7061,11 +7062,13 @@ return { safety };
 })();
 // ---- src/campaign/feats.js
 const m61 = (() => {
-const { SMALL, LONG, DOORS, SAFE, SIDE } = m51;
+const { SMALL, LONG, DOORS, SAFE, SIDE, ONE_SHOT_FROM } = m51;
+const { builders } = m49;
 const { safety } = m60;
 const { overLimits, underLimits } = m36;
 // What one Run on a campaign level earns toward the achievements (registers 631-636): the ids it does, and
 // counts toward the ones that count. Only a level's own Run counts (register 639), never the Sandbox.
+
 
 
 
@@ -7076,9 +7079,9 @@ const small = room => room.w <= SMALL && room.h <= SMALL;
 function featsOf(def, room, v, done = {}) {
   const ids = [], peak = {};
   if (!v || !v.ok || v.length == null) return { ids, peak };
-  // One shot (632): the berry in 1 move with every main goal met but the move count.
-  const reqs = Object.values(v.reqs || {}).every(Boolean);
-  if (v.length === 1 && reqs && !overLimits(def, room).length && !underLimits(def, room).length) ids.push('oneshot');
+  // One shot (632, 641): the berry in 1 move with every main goal met but the move count, on Level 11 or later.
+  const reqs = Object.values(v.reqs || {}).every(Boolean), late = builders().findIndex(d => d.id === def.id) >= ONE_SHOT_FROM - 1;
+  if (v.length === 1 && late && reqs && !overLimits(def, room).length && !underLimits(def, room).length) ids.push('oneshot');
   if (!v.won) return { ids, peak };
   if (small(room)) { peak.moveit = v.length; if (v.length >= LONG) ids.push('moveit'); }
   peak.gateway = doors(room); if (peak.gateway >= DOORS) ids.push('gateway');
@@ -7090,7 +7093,15 @@ function featsOf(def, room, v, done = {}) {
   }
   return { ids, peak };
 }
-return { featsOf };
+
+// Keeps what a Run earned in the save: each id with the level it was first earned on, and the best counts.
+function record(p, def, f) {
+  p.feats ||= {}; p.peak ||= {};
+  for (const id of f.ids) if (!(id in p.feats)) p.feats[id] = def.id;
+  for (const [k, n] of Object.entries(f.peak)) p.peak[k] = Math.max(p.peak[k] || 0, n);
+  return p;
+}
+return { featsOf, record };
 })();
 // ---- src/app/levelParts.js
 const m62 = (() => {
@@ -7324,7 +7335,7 @@ const { unlocked, allOpen } = m3;
 const { plan, builders, isOpen, sideGoalsOpen } = m49;
 const { roomOf, coloursOf, placementErrors, check, optionalGoals, listed, placed } = m36;
 const { markUsed } = m13;
-const { featsOf } = m61;
+const { featsOf, record } = m61;
 const { doneIds, noteEarned } = m53;
 const { newHistory } = m39;
 const { S, starterLevel } = m40;
@@ -7453,11 +7464,8 @@ function run() {
   }
   // What this Run did toward the achievements (registers 629-639): a level's own Run only, never the tutorial.
   if (!def.tutorial && v.ok) {
-    const p = progress(), f = featsOf(def, S.level, v, p.feats || {});
-    p.feats ||= {}; p.peak ||= {};
-    for (const id of f.ids) if (!(id in p.feats)) p.feats[id] = def.id;
-    for (const [k, n] of Object.entries(f.peak)) p.peak[k] = Math.max(p.peak[k] || 0, n);
-    write(p);
+    const p = progress();
+    write(record(p, def, featsOf(def, S.level, v, p.feats || {})));
   }
   noteEarned(was);
   S.camp.ranOn = JSON.stringify(S.level);

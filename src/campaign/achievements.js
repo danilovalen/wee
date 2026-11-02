@@ -14,6 +14,7 @@ export const SMALL = 5;
 export const DOORS = 5;
 export const SAFE = 8;
 export const SIDE = 4;
+export const ONE_SHOT_FROM = 11;
 export function achievements(levels, used, taught, extra = {}) {
   const b = builders(), won = b.filter(d => beaten(levels, d.id)).length, half = Math.ceil(b.length / 2);
   const feats = extra.feats || {}, peak = extra.peak || {}, spent = extra.spent || 0;
@@ -28,7 +29,7 @@ export function achievements(levels, used, taught, extra = {}) {
     { id: 'pieces', icon: 'ach-pieces', name: 'Full kit', text: 'Beat a level with every kind of piece.', stars: 2, done: taught.every(t => used.has(t)), of: taught.length, at: taught.filter(t => used.has(t)).length },
     { id: 'cashback', icon: 'ach-cashback', name: 'Cashback', text: `Spend ${SPEND} stars on Looks.`, stars: 1, done: spent >= SPEND, of: SPEND, at: spent },
     feat('moveit', 'ach-moveit', 'Move it move it', `Win in ${LONG} moves or more in a room ${SMALL}x${SMALL} or smaller.`, LONG, peak.moveit),
-    feat('oneshot', 'ach-oneshot', 'One shot', 'Reach the berry in 1 move with every other main goal met.'),
+    feat('oneshot', 'ach-oneshot', 'One shot', `Reach the berry in 1 move on Level ${ONE_SHOT_FROM} or later, every other main goal met.`),
     feat('gateway', 'ach-gateway', 'Gateway', `Win with ${DOORS} doors or more.`, DOORS, peak.gateway),
     feat('guardrails', 'ach-guardrails', 'Guardrails', `Win in ${SAFE} moves or more in a room where no move can lose.`),
     feat('deadly', 'ach-deadly', 'Deadly', `Win in ${SAFE} moves or more in a room where every other move loses.`),
