@@ -8,7 +8,7 @@ import { counterRoom, countOf } from '../tools/counterRoom.mjs';
 import { displayRoom, digitOf } from '../tools/displayRoom.mjs';
 import { hexRoom, hexOf } from '../tools/hexRoom.mjs';
 import { place, describe, turnGate, moveAt } from '../src/editor/edit.js';
-import { drawTurret, drawPiece, BADGE } from '../src/view/pieces.js';
+import { drawTurret, drawPiece } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
 import { newHistory, record, undo, redo, LIMIT } from '../src/editor/history.js';
 import { RT_PERIOD } from '../src/rules/base.js';
@@ -1199,10 +1199,11 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a laser mounted on a box adds no block', faces({ kind: 'box', x: 0, y: 0, turret: { dirs: ['right'], mode: 'input' } }) === 0);
 }
 
-{ // the mode badge (its dark disc) only on a turret that turns (register 300)
-  const dots = t => { let n = 0, fill = null; const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? () => { if (fill === BADGE) n++; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } }); drawTurret(g, t, [24, 8]); return n ? 1 : 0; };
-  check('a one-way laser wears no mode badge', dots({ dirs: ['right'], mode: 'input' }) === 0);
-  check('a turning turret still wears its mode badge', dots({ dirs: ['up', 'down'], mode: 'realtime' }) === 1);
+{ // a piece's clock is named by Look, not drawn on the piece (registers 615, 624)
+  const dark = e => { let n = 0, fill = null; const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? () => { if (fill === '#0b0d12') n++; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } }); drawPiece(g, e, 0, 0); return n; };
+  check('no piece wears a mode badge', [{ kind: 'mover', x: 0, y: 0, axis: 'h', mode: 'realtime' }, { kind: 'enemy', x: 0, y: 0, axis: 'h', dir: 1, mode: 'follow' }, { kind: 'turret', x: 0, y: 0, turret: { dirs: ['up', 'down'], mode: 'realtime' } }].every(e => dark(e) === 0));
+  const l = emptyLevel(3, 1); l.entities = [{ kind: 'mover', x: 1, y: 0, axis: 'h', dir: 1, mode: 'realtime' }, { kind: 'turret', x: 2, y: 0, turret: { dirs: ['up', 'down'], mode: 'input' } }];
+  check('Look names a piece\'s clock', /real time/.test(describe(l, 1, 0)) && /on your move/.test(describe(l, 2, 0)), describe(l, 1, 0) + ' | ' + describe(l, 2, 0));
 }
 
 { // a relay is a block a beam goes through (register 312); a two-colour door opens on either colour (313)

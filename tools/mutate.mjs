@@ -767,7 +767,7 @@ export const M = [
   ['src/campaign/rules.js', "  if (over) return { ...base, won: false,", "  if (false) return { ...base, won: false,", 'campaign'],
   ['src/campaign/goals/switches.js', "replayPath(room, moves, s => { if ((s.cells[s.player.y * room.w + s.player.x] || '').startsWith('button:')) ok = true; });", "replayPath(room, moves, () => { ok = true; });", 'campaign'],
   ['src/app/goalCard.js', "    if (max !== null && max !== undefined) rows.push(", "    if (false) rows.push(", 'campaign-play'],
-  ['src/view/pieces.js', "if (badge && t.dirs.length > 1) modeBadge", "if (badge) modeBadge", 'sim'],
+  ['src/editor/edit.js', "parts.push(`fires ${pc.turret.dirs.map(d => ARROW[d]).join(' ')}, ${CLOCK_NAME[pc.turret.mode]}`);", "parts.push(`fires ${pc.turret.dirs.map(d => ARROW[d]).join(' ')}`);", 'sim'],
   ['src/campaign/robot.js', "if (by.size < 2) for (const k of keys) move(", "if (false) for (const k of keys) move(", 'campaign'],
   ['src/level/campaign.js', '"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null]', '"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null]', 'campaign'],
   ['src/app/reset.js', "$('resetNo').onclick = () => box.close();", "$('resetNo').onclick = () => { box.close(); S.level = roomOf(S.camp.def); };", 'campaign-play'],

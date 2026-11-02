@@ -39,7 +39,12 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
   }
   // Two ingredients that are a tool with a twist: a turret riding a box, a block that copies you.
   else if (tool === 'mounted') drawPiece(x, { kind: 'box', turret: { dirs: ['up'], mode: 'input' } }, 0, 0);
-  else if (tool === 'follow') drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);
+  else if (tool === 'follow') {
+    // A mover that copies you: the mover, and in this icon only two chevrons for "the same way" (registers 615, 624).
+    drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);
+    x.fillStyle = '#221f22'; x.fillRect(18, 2, 12, 10); x.fillStyle = '#fcfcfa';
+    for (const [cx, cy] of [[20, 4], [22, 6], [20, 8], [24, 4], [26, 6], [24, 8]]) x.fillRect(cx, cy, 2, 2);
+  }
   else drawPiece(x, { kind: tool, axis: 'h', dir: 1, mode: 'input' }, 0, 0);
   return c;
 }

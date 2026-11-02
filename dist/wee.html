@@ -5321,24 +5321,9 @@ const { drawSprite } = m12;
 // Pieces and the player.
 
 
-// The mode badge, in 2-unit pixels: a dark disc holding a clock for real time, a step mark for on input,
-// a double chevron for follow.
-const BADGE = '#0b0d12';
-const BADGE_ART = {
-  realtime: ['.##.', '#..#', '#.##', '.##.'],
-  follow: ['#.#.', '.#.#', '.#.#', '#.#.'],
-  input: ['....', '.##.', '####', '....'],
-};
-function modeBadge(g, mode, bx = 24, by = 8) {
-  const x0 = bx - 6, y0 = by - 6;
-  g.fillStyle = BADGE;
-  ['.####.', '######', '######', '######', '######', '.####.'].forEach((r, y) => { const a = r.indexOf('#'), b = r.lastIndexOf('#'); g.fillRect(x0 + a * 2, y0 + y * 2, (b - a + 1) * 2, 2); });
-  g.fillStyle = '#e9edf5';
-  (BADGE_ART[mode] || BADGE_ART.input).forEach((r, y) => [...r].forEach((ch, x) => { if (ch === '#') g.fillRect(x0 + 2 + x * 2, y0 + 2 + y * 2, 2, 2); }));
-}
-
 // A turret head: one barrel per direction it fires; the next to fire is lit.
-function drawTurret(g, t, badge, mounted, framed = false) {
+// A piece's clock (when it acts) is named by Look, not drawn on it (registers 615, 624).
+function drawTurret(g, t, mounted, framed = false) {
   const next = t.aim === undefined ? (t.start || t.dirs[0]) : t.dirs[t.aim % t.dirs.length];
   g.save();
   if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
@@ -5347,8 +5332,6 @@ function drawTurret(g, t, badge, mounted, framed = false) {
   // Only the barrels (register 493), as a pixel sprite.
   drawSprite(g, 'laser', 0, 0, { colour: t.dirs.join(',') + '|' + next });
   g.restore();
-  // One direction always fires the same way, so how it turns says nothing (register 300).
-  if (badge && t.dirs.length > 1) modeBadge(g, t.mode, badge[0], badge[1]);
 }
 
 function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
@@ -5357,10 +5340,8 @@ function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
   if (e.kind === 'mover') {
     drawSprite(g, 'mover', 0, 0, { colour: e.axis === 'v' ? 'v' : 'h' });
-    modeBadge(g, e.mode);
   } else if (e.kind === 'enemy' || e.kind === 'strong') {
     drawSprite(g, e.kind, 0, 0, { colour: (e.axis === 'v' ? 'v' : 'h') + '|' + (e.dir < 0 ? -1 : 1) });
-    modeBadge(g, e.mode);
   } else if (e.kind === 'turret') {
     // A laser stands on a wall-like block (register 622, as before 493); a pushable one wears the box's
     // brown border round it (registers 336-338).
@@ -5381,7 +5362,7 @@ function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
   } else if (e.kind === 'heavy') {
     drawSprite(g, 'heavy', 0, 0);
   }
-  if (e.turret) drawTurret(g, e.turret, e.kind === 'turret' ? [24, 8] : [8, 24], e.kind !== 'turret', e.kind === 'turret' && !!e.crate);
+  if (e.turret) drawTurret(g, e.turret, e.kind !== 'turret', e.kind === 'turret' && !!e.crate);
   g.restore();
 }
 
@@ -5432,7 +5413,7 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
   }
   g.restore();
 }
-return { BADGE, modeBadge, drawTurret, drawPiece, drawRobot, drawYou, drawPlayer };
+return { drawTurret, drawPiece, drawRobot, drawYou, drawPlayer };
 })();
 // ---- src/view/tiles.js
 const m41 = (() => {
@@ -6176,7 +6157,12 @@ function icon(tool, colour = 'red', gateColour = null, crate = false) {
   }
   // Two ingredients that are a tool with a twist: a turret riding a box, a block that copies you.
   else if (tool === 'mounted') drawPiece(x, { kind: 'box', turret: { dirs: ['up'], mode: 'input' } }, 0, 0);
-  else if (tool === 'follow') drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);
+  else if (tool === 'follow') {
+    // A mover that copies you: the mover, and in this icon only two chevrons for "the same way" (registers 615, 624).
+    drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);
+    x.fillStyle = '#221f22'; x.fillRect(18, 2, 12, 10); x.fillStyle = '#fcfcfa';
+    for (const [cx, cy] of [[20, 4], [22, 6], [20, 8], [24, 4], [26, 6], [24, 8]]) x.fillRect(cx, cy, 2, 2);
+  }
   else drawPiece(x, { kind: tool, axis: 'h', dir: 1, mode: 'input' }, 0, 0);
   return c;
 }
