@@ -644,3 +644,6 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 635 | "Deadly - monte uma solução de 8+ passos cujo qualquer passo além do caminho primário seja morte ou softlock" (an 8+ move solution where every move off the main path dies or soft-locks) | **registered (2026-11-02).** |
 | 636 | "Silver Bullet - monte uma solução que atenda a quatro objetivos secundários" (one solution meeting four side goals) | **registered (2026-11-02).** |
 | 637 | "Sketch an achievement screen. And how it's popup should work..propose" | **sketching (2026-11-02).** `docs/achievements-sketch.html`. |
+| 638 | (answer on 630) "1., but also halve star costs for now" | **registered (2026-11-02).** Looks cost stars: opening one is a tap that spends them, the total goes down; Cashback counts stars spent. Every look's cost is halved. |
+| 639 | (answer on 631-636) "1." (campaign wins only) "And also have unique icons per achievement (but keep symbolized that it has a slot star and when you complete you gain tis star)" | **registered (2026-11-02).** Only a Run that beats a campaign level or challenge counts. Each achievement gets its own pixel icon, with a star slot that fills once it is done. |
+| 640 | (answer on 628) "Opening Looks" | **registered (2026-11-02).** Visiting Looks clears the button's dot; each new item keeps its own small dot until tapped. |
