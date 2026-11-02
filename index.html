@@ -232,6 +232,7 @@
     <b class="logo menuLogo">wee</b>
     <button id="menuUnlock" type="button" class="menuCorner" aria-pressed="false"></button>
     <button id="menuLooks" type="button" class="menuCorner left" aria-label="Looks" title="Looks"></button>
+    <button id="menuAchieve" type="button" class="menuCorner left2" aria-label="Achievements" title="Achievements"></button>
     <div class="menuList">
       <section class="menuSec">
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
@@ -272,12 +273,17 @@
     <div class="row bar"><button id="makerBuild" type="button" class="primary">Build it</button><button id="makerNew" type="button">New</button><button id="makerDelete" type="button" hidden>Delete</button></div>
   </dialog>
   <dialog id="lookBox" class="rooms looks">
-    <div class="roomsHead"><b>Looks</b><span id="lookStars" class="lookStars"></span><button id="lookMenu" type="button">Menu</button></div>
-    <p class="hint">Stars from levels, side goals and achievements open palettes and skins.</p>
+    <div class="roomsHead"><b>Looks</b><button id="lookStars" type="button" class="lookStars" aria-label="Stars to spend; tap for Achievements"></button><button id="lookMenu" type="button">Menu</button></div>
+    <p class="hint">Spend stars from levels, side goals and achievements on palettes and skins.</p>
     <h3>Palette</h3><div id="lookPalettes" class="lookGrid"></div>
     <h3>Skins</h3><div id="lookSkins" class="lookSkins"></div>
-    <h3>Achievements</h3><ul id="lookAchieve" class="lookAchieve"></ul>
   </dialog>
+  <dialog id="achBox" class="rooms achieve">
+    <div class="roomsHead"><b>Achievements</b><span id="achCount" class="lookStars"></span><button id="achMenu" type="button">Menu</button></div>
+    <p class="achDone"><span id="achDone"></span><i id="achBar" class="achBar"></i></p>
+    <ul id="achList" class="achList"></ul>
+  </dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
   <dialog id="puzzleBox" class="rooms">
     <div class="roomsHead"><b>Puzzles</b><button id="puzzleMenu" type="button">Menu</button></div>
     <p id="puzzleNone" class="hint">To add a puzzle, open Rooms in the Sandbox, hold a room and choose Add to Puzzles.</p>

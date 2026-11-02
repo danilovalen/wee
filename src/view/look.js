@@ -1,4 +1,4 @@
-// Looks (registers 612, 613): palettes and alternate skins, bought with stars. A palette recolours
+// Looks (registers 612, 613, 638): palettes and alternate skins, bought with stars (costs halved, 638). A palette recolours
 // everything at once: each colour the game paints is mapped onto the palette as it is set on a canvas,
 // and the page's CSS tokens are mapped the same way. The neon lab look (602) is the identity.
 
@@ -11,23 +11,23 @@ const NEON_GREYS = ['#19181a', '#221f22', '#2d2a2e', '#363337', '#403e41', '#4d4
 export const PALETTES = [
   { id: 'neon', name: 'Neon lab', cost: 0 },
   // Four greens far enough apart to read (register 620); the handheld's own two lightest were nearly one colour.
-  { id: 'gameboy', name: 'Pocket', cost: 3, greys: ['#081820', '#346856', '#88c070', '#e0f8d0'] },
-  { id: 'pico8', name: 'Fantasy', cost: 8, greys: ['#000000', '#1d2b53', '#5f574f', '#c2c3c7', '#fff1e8'], hues: ['#7e2553', '#008751', '#ab5236', '#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8', '#ffccaa'] },
-  { id: 'cga', name: 'CGA', cost: 14, greys: ['#000000', '#555555', '#aaaaaa', '#ffffff'], hues: ['#0000aa', '#00aa00', '#00aaaa', '#aa0000', '#aa00aa', '#aa5500', '#5555ff', '#55ff55', '#55ffff', '#ff5555', '#ff55ff', '#ffff55'] },
-  { id: 'c64', name: 'Breadbin', cost: 20, greys: ['#000000', '#352879', '#626262', '#898989', '#ffffff'], hues: ['#9f4e44', '#cb7e75', '#6d5412', '#a1683c', '#c9d487', '#9ae29b', '#5cab5e', '#6abfc6', '#887ecb', '#50459b', '#a057a3'] },
-  { id: 'paper', name: 'Paper', cost: 28, greys: ['#f3efe6', '#e9e3d6', '#b9b0a0', '#5d574f', '#77706a', '#3d3c45'], hues: ['#ef6f5e', '#3bb3a6', '#f2b843', '#5a8bd6', '#8cbf63', '#9a7fd1', '#e7709d'] },
+  { id: 'gameboy', name: 'Pocket', cost: 2, greys: ['#081820', '#346856', '#88c070', '#e0f8d0'] },
+  { id: 'pico8', name: 'Fantasy', cost: 4, greys: ['#000000', '#1d2b53', '#5f574f', '#c2c3c7', '#fff1e8'], hues: ['#7e2553', '#008751', '#ab5236', '#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8', '#ffccaa'] },
+  { id: 'cga', name: 'CGA', cost: 7, greys: ['#000000', '#555555', '#aaaaaa', '#ffffff'], hues: ['#0000aa', '#00aa00', '#00aaaa', '#aa0000', '#aa00aa', '#aa5500', '#5555ff', '#55ff55', '#55ffff', '#ff5555', '#ff55ff', '#ffff55'] },
+  { id: 'c64', name: 'Breadbin', cost: 10, greys: ['#000000', '#352879', '#626262', '#898989', '#ffffff'], hues: ['#9f4e44', '#cb7e75', '#6d5412', '#a1683c', '#c9d487', '#9ae29b', '#5cab5e', '#6abfc6', '#887ecb', '#50459b', '#a057a3'] },
+  { id: 'paper', name: 'Paper', cost: 14, greys: ['#f3efe6', '#e9e3d6', '#b9b0a0', '#5d574f', '#77706a', '#3d3c45'], hues: ['#ef6f5e', '#3bb3a6', '#f2b843', '#5a8bd6', '#8cbf63', '#9a7fd1', '#e7709d'] },
 ];
 
 // The objects that have an alternate skin, each with the sprites it swaps and its cost.
 export const SKINS = [
-  { id: 'hero', name: 'Hero', cost: 2, sprites: ['blob'] },
-  { id: 'berry', name: 'Berry', cost: 4, sprites: ['berry'] },
-  { id: 'block', name: 'Block', cost: 6, sprites: ['wallFace'] },
-  { id: 'box', name: 'Box', cost: 9, sprites: ['box'] },
-  { id: 'door', name: 'Door', cost: 12, sprites: ['doorShut', 'doorOpen'] },
-  { id: 'switch', name: 'Switch', cost: 16, sprites: ['switchOff', 'switchOn'] },
-  { id: 'button', name: 'Button', cost: 18, sprites: ['buttonUp', 'buttonDown'] },
-  { id: 'laser', name: 'Laser', cost: 24, sprites: ['laser'] },
+  { id: 'hero', name: 'Hero', cost: 1, sprites: ['blob'] },
+  { id: 'berry', name: 'Berry', cost: 2, sprites: ['berry'] },
+  { id: 'block', name: 'Block', cost: 3, sprites: ['wallFace'] },
+  { id: 'box', name: 'Box', cost: 5, sprites: ['box'] },
+  { id: 'door', name: 'Door', cost: 6, sprites: ['doorShut', 'doorOpen'] },
+  { id: 'switch', name: 'Switch', cost: 8, sprites: ['switchOff', 'switchOn'] },
+  { id: 'button', name: 'Button', cost: 9, sprites: ['buttonUp', 'buttonDown'] },
+  { id: 'laser', name: 'Laser', cost: 12, sprites: ['laser'] },
 ];
 
 const KEY = 'wee.look';

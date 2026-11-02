@@ -52,6 +52,23 @@ const ICON = {
   },
   look() { const g = grid(); ring(g, 6.5, 6.5, 5.5, 2); for (let i = 0; i < 5; i++) box(g, 10 + i, 10 + i, 11 + i, 11 + i); return g; },
   erase() { const g = grid(); thick(g, 2, 2, 12, 12); thick(g, 12, 2, 2, 12); return g; },
+  // The menu's door to Achievements: a cup on a stand.
+  trophy() { const g = grid(); box(g, 3, 1, 12, 7); for (let y = 8; y <= 9; y++) box(g, 4 + (y - 8), y, 11 - (y - 8), y); box(g, 7, 10, 8, 12); box(g, 4, 13, 11, 14); box(g, 0, 2, 2, 3); box(g, 0, 4, 1, 5); box(g, 13, 2, 15, 3); box(g, 14, 4, 15, 5); box(g, 1, 6, 3, 6); box(g, 12, 6, 14, 6); return g; },
+  // Achievements (register 639): one picture each; the badge adds the star slot it fills.
+  'ach-first'() { const g = grid(); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (Math.hypot(x + 0.5 - 8, y + 0.5 - 9.5) <= 5.6) g[y][x] = 1; box(g, 8, 1, 9, 4); box(g, 10, 2, 12, 3); return g; },
+  'ach-half'() { const g = grid(); box(g, 1, 1, 14, 14); box(g, 8, 3, 12, 12, 0); return g; },
+  'ach-all'() { return ICON.levels(); },
+  'ach-shelf'() { const g = grid(); box(g, 0, 12, 15, 13); box(g, 1, 14, 2, 15); box(g, 13, 14, 14, 15); for (const x of [1, 6, 11]) { box(g, x + 1, 6, x + 2, 11); box(g, x, 8, x + 3, 9); } return g; },
+  'ach-lab'() { const g = grid(); box(g, 5, 0, 10, 1); box(g, 6, 2, 9, 6); for (let y = 7; y <= 15; y++) { const w = Math.min(7, y - 5); box(g, 8 - w, y, 7 + w, y); } box(g, 7, 2, 8, 6, 0); box(g, 4, 10, 6, 11, 0); return g; },
+  'ach-challenge'() { return ICON.flag(); },
+  'ach-pieces'() { const g = grid(); box(g, 0, 6, 15, 15); box(g, 2, 8, 13, 13, 0); box(g, 5, 2, 10, 3); box(g, 5, 4, 6, 5); box(g, 9, 4, 10, 5); box(g, 6, 9, 9, 12); return g; },
+  'ach-cashback'() { const g = grid(); ring(g, 8, 8, 7.5, 2); box(g, 7, 3, 8, 12); box(g, 5, 5, 10, 6); box(g, 5, 9, 10, 10); return g; },
+  'ach-moveit'() { return ICON.path(); },
+  'ach-oneshot'() { const g = grid(); ring(g, 8, 8, 7.8, 2); ring(g, 8, 8, 4.2, 2); box(g, 7, 7, 8, 8); return g; },
+  'ach-gateway'() { const g = grid(); box(g, 2, 1, 13, 15); box(g, 4, 3, 11, 15, 0); box(g, 2, 1, 3, 2, 0); box(g, 12, 1, 13, 2, 0); box(g, 9, 9, 10, 10); return g; },
+  'ach-guardrails'() { const g = grid(); box(g, 0, 3, 15, 5); box(g, 0, 9, 15, 11); for (const x of [1, 7, 13]) box(g, x, 1, x + 1, 15); return g; },
+  'ach-deadly'() { const g = grid(); for (let y = 0; y < 11; y++) for (let x = 0; x < N; x++) if (Math.hypot((x + 0.5 - 8) / 7, (y + 0.5 - 6.5) / 6) <= 1) g[y][x] = 1; box(g, 4, 11, 11, 14); box(g, 4, 5, 6, 8, 0); box(g, 9, 5, 11, 8, 0); box(g, 7, 9, 8, 10, 0); box(g, 6, 13, 6, 14, 0); box(g, 9, 13, 9, 14, 0); return g; },
+  'ach-silver'() { const g = grid(); box(g, 5, 7, 10, 15); box(g, 6, 4, 9, 6); box(g, 7, 1, 8, 3); box(g, 4, 13, 11, 15); box(g, 7, 8, 8, 12, 0); return g; },
   move() { const g = grid(); box(g, 7, 1, 8, 14); box(g, 1, 7, 14, 8); for (let i = 1; i <= 3; i++) { box(g, 7 - i, 1 + i, 8 + i, 1 + i); box(g, 7 - i, 14 - i, 8 + i, 14 - i); box(g, 1 + i, 7 - i, 1 + i, 8 + i); box(g, 14 - i, 7 - i, 14 - i, 8 + i); } return g; },
 };
 

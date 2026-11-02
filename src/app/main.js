@@ -2,6 +2,7 @@
 // text state and a fixed clock for tests and agents.
 import { bindUnlock } from './unlock.js';
 import { buildLooks } from './looks.js';
+import { buildAchieve } from './achieve.js';
 import { repaintIcons } from './icons.js';
 import { applyPalette } from '../view/look.js';
 import { buildMaker } from './maker.js';
@@ -43,7 +44,7 @@ buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
-bindGlyphs(); bindTutorial(); bindUnlock(); buildLooks();
+bindGlyphs(); bindTutorial(); bindUnlock(); buildLooks(); buildAchieve();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });
 buildMaker();

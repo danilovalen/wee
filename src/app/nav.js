@@ -4,7 +4,7 @@
 import { $ } from './dom.js';
 
 // The pages that are places. Nothing outside this file opens or closes them (tests/arch.test.mjs).
-export const PAGES = ['menuBox', 'campBox', 'makerBox', 'puzzleBox', 'roomsBox', 'lookBox'];
+export const PAGES = ['menuBox', 'campBox', 'makerBox', 'puzzleBox', 'roomsBox', 'lookBox', 'achBox'];
 const places = {}; // name -> { page, parent(arg), enter(arg), shown(), exit(nextName) }
 // shut: pages this module closed; a dialog's close event comes later, so the flag must outlive the call.
 let here = null, ours = false, turn = 0;

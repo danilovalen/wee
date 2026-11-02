@@ -43,5 +43,5 @@ export function buildProgress() {
   $('progNo').onclick = () => box.close();
   $('progReset').onclick = () => $('progResetBox').showModal();
   $('progResetNo').onclick = () => $('progResetBox').close();
-  $('progResetYes').onclick = () => { write({ ...progress(), last: null, levels: {} }); forgetWins(); $('progResetBox').close(); showList(); };
+  $('progResetYes').onclick = () => { write({ ...progress(), last: null, levels: {}, owned: [], spent: 0, feats: {}, peak: {} }); forgetWins(); $('progResetBox').close(); showList(); };
 }

@@ -1,6 +1,6 @@
-// Looks (registers 612, 613): palettes and one alternate skin per object, opened by stars. A palette
+// Looks (registers 612, 613, 638): palettes and one alternate skin per object, bought with stars. A palette
 // recolours the page's tokens and everything drawn on a canvas; a skin swaps an object's sprite; the
-// choice is kept; a look stays shut until the campaign's stars reach its cost (or unlock-all is on).
+// choice is kept; a look stays shut until the stars cover it, and buying it spends them.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite } from './lib.mjs';
@@ -20,7 +20,6 @@ try {
   check('the menu\'s corner opens Looks', await p.$eval('#lookBox', d => d.open));
   const shut = await p.$$eval('#lookPalettes [data-palette]', bs => bs.map(b => [b.dataset.palette, b.disabled]));
   check('with no stars only the first palette is open', shut.length === PALETTES.length && shut.every(([id, off]) => off === (id !== 'neon')), JSON.stringify(shut));
-  check('on a fresh save no achievement is done', await p.$$eval('#lookAchieve li', ls => ls.length >= 5 && ls.every(l => !l.classList.contains('done'))));
   // A piece the campaign teaches opens in the Sandbox once placed in a level; one it never teaches is open (register 558).
   const kit = await p.evaluate(async () => { const k = await import('/src/app/known.js'); const before = k.known('box', ['box']); k.markUsed(['box']); const after = k.known('box', ['box']); return { before, after, other: k.known('wire', ['box']) }; });
   check('a campaign piece opens in the Sandbox only once used', !kit.before && kit.after && kit.other, JSON.stringify(kit));
@@ -32,15 +31,22 @@ try {
   await p.reload(); await p.waitForTimeout(600);
   check('Looks has its own address, so a reload stays on it', await p.$eval('#lookBox', d => d.open));
   // Three stars from the level (beaten, two side goals) and one from the First berry achievement.
-  check('the page counts the stars earned, achievements included', (await p.textContent('#lookStars')).trim() === '4', await p.textContent('#lookStars'));
-  check('beating Level 1 does the First berry achievement', await p.$eval('#lookAchieve [data-achievement=first]', l => l.classList.contains('done')));
+  check('the page counts the stars to spend, achievements included', (await p.textContent('#lookStars')).trim() === '4', await p.textContent('#lookStars'));
   const opened = await p.$$eval('#lookPalettes [data-palette]', bs => bs.filter(b => !b.disabled).map(b => b.dataset.palette));
-  check('a palette opens once the stars reach its cost', opened.join() === PALETTES.filter(x => x.cost <= 4).map(x => x.id).join(), opened.join());
+  check('a palette can be bought once the stars cover its cost', opened.join() === PALETTES.filter(x => x.cost <= 4).map(x => x.id).join(), opened.join());
   const skinsOpen = await p.$$eval('#lookSkins [data-skin]', rs => rs.filter(r => !r.querySelector('[data-alt=true]').disabled).map(r => r.dataset.skin));
-  check('a skin opens once the stars reach its cost', skinsOpen.join() === SKINS.filter(x => x.cost <= 4).map(x => x.id).join(), skinsOpen.join());
+  check('a skin can be bought once the stars cover its cost', skinsOpen.join() === SKINS.filter(x => x.cost <= 4).map(x => x.id).join(), skinsOpen.join());
+  check('each look you can buy wears a dot, one you own or cannot afford does not (register 640)', await p.$$eval('#lookPalettes [data-palette]', bs => bs.every(b => b.classList.contains('dot') === (!b.disabled && b.dataset.owned === 'false'))));
 
-  // A palette recolours the page and the canvases.
+  // Buying spends (register 638): the Pocket palette costs its price, once, and is worn.
+  const cost = PALETTES.find(x => x.id === 'gameboy').cost;
   await p.click('[data-palette=gameboy]'); await p.waitForTimeout(200);
+  check('buying a palette spends its stars and wears it', (await p.textContent('#lookStars')).trim() === String(4 - cost) && await p.evaluate(() => document.documentElement.dataset.palette) === 'gameboy', await p.textContent('#lookStars'));
+  await p.click('[data-palette=neon]'); await p.click('[data-palette=gameboy]'); await p.waitForTimeout(200);
+  check('wearing it again costs nothing', (await p.textContent('#lookStars')).trim() === String(4 - cost));
+  const dear = PALETTES.filter(x => x.cost > 4 - cost && x.cost <= 4).map(x => x.id);
+  check('a look the stars covered before buying is shut once they no longer do', await p.$$eval('#lookPalettes [data-palette]', (bs, ids) => ids.every(id => bs.find(b => b.dataset.palette === id).disabled), dear), dear.join());
+
   const gb = PALETTES.find(x => x.id === 'gameboy').greys;
   const paper = hex(await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--paper')));
   check('the Pocket palette recolours the page\'s tokens', gb.includes(paper), paper);
@@ -58,6 +64,7 @@ try {
   });
   check('the hero\'s other skin is what the room draws for the blob', same.asSkin && same.differs, JSON.stringify(same));
 
+  check('the skin was bought with stars', (await p.textContent('#lookStars')).trim() === String(4 - cost - SKINS.find(x => x.id === 'hero').cost));
   // Kept across a reload.
   await p.reload(); await p.waitForTimeout(600);
   check('the palette is kept', await p.evaluate(() => document.documentElement.dataset.palette) === 'gameboy');
