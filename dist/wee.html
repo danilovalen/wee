@@ -5232,6 +5232,36 @@ function path(kindAt, kind, w, h) {
   return p;
 }
 
+// A wall cell in pixels (2 units each): the face, a two-step bevel on each side that does not join
+// another wall (light above and left, dark below and right), and a two-step stair cut from each outer
+// corner. Sides that join draw nothing, so a mass has no seams.
+const PX = 2, SHADE = { lite2: '#666466', dark2: '#4d4b4e' };
+function drawPixelWalls(g, at, w, h) {
+  const open = (x, y, dx, dy, side) => !joins(at(x + dx, y + dy), 'wall', side);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const c = at(x, y);
+    if (!member(c, 'wall') || c.startsWith('tri:')) continue;
+    const X = x * T, Y = y * T, n = open(x, y, 0, -1, 's'), s = open(x, y, 0, 1, 'n'), wv = open(x, y, -1, 0, 'e'), e = open(x, y, 1, 0, 'w');
+    g.fillStyle = INK.wall; g.fillRect(X, Y, T, T);
+    const band = (c1, c2, horiz, near) => {
+      g.fillStyle = c1;
+      if (horiz) g.fillRect(X, near ? Y : Y + T - PX, T, PX); else g.fillRect(near ? X : X + T - PX, Y, PX, T);
+      g.fillStyle = c2;
+      if (horiz) g.fillRect(X, near ? Y + PX : Y + T - 2 * PX, T, PX); else g.fillRect(near ? X + PX : X + T - 2 * PX, Y, PX, T);
+    };
+    if (n) band(INK.wallTop, SHADE.lite2, true, true);
+    if (wv) band(INK.wallTop, SHADE.lite2, false, true);
+    if (s) band(INK.crack, SHADE.dark2, true, false);
+    if (e) band(INK.crack, SHADE.dark2, false, false);
+    // Outer corners: cut a two-step stair so the floor shows through.
+    const floor = (cx, cy, sx, sy) => { g.fillStyle = INK.floor; g.fillRect(cx, cy, PX, PX); g.fillRect(cx + sx * PX, cy, PX, PX); g.fillRect(cx, cy + sy * PX, PX, PX); };
+    if (n && wv) floor(X, Y, 1, 1);
+    if (n && e) floor(X + T - PX, Y, -1, 1);
+    if (s && wv) floor(X, Y + T - PX, 1, -1);
+    if (s && e) floor(X + T - PX, Y + T - PX, -1, -1);
+  }
+}
+
 // cells: the room's cells; skip(x, y): a cell drawn on its own this frame (one popping in).
 // The kind at (x, y), with everything outside the room counting as wall, so the border
 // joins the room's own walls.
@@ -5246,8 +5276,10 @@ function drawMasses(g, cells, w, h, skip = () => false) {
     const p = path(at, kind, w, h);
     g.save();
     if (kind === 'wall') {
-      // A light lip on every edge that faces up, then the face.
-      g.fillStyle = INK.wallTop; g.fill(p); g.clip(p); g.translate(0, LIP); g.fillStyle = INK.wall; g.fill(p);
+      // Blocks are pixel masses (registers 602, 605); a triangle keeps its smooth shape.
+      g.restore(); drawPixelWalls(g, at, w, h); g.save();
+      const tris = path((x, y) => { const c = at(x, y); return c && c.startsWith('tri:') ? c : ''; }, kind, w, h);
+      g.fillStyle = INK.wallTop; g.fill(tris); g.clip(tris); g.translate(0, LIP); g.fillStyle = INK.wall; g.fill(tris);
     } else if (kind === 'gravel') {
       g.fillStyle = INK.gravel; g.fill(p);
       for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'gravel') grit(g, (i % w) * T, Math.floor(i / w) * T);
