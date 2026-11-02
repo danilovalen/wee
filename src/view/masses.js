@@ -3,7 +3,6 @@
 // the diagonal between them, so outer corners round, inner corners get a fillet and a
 // solid block has no seams. Doors, switches and the rest stay one tile each (tiles.js).
 import { INK, T, frame } from './ink.js';
-import { grit } from './tiles.js';
 
 export const MASSES = ['wall', 'water', 'sticky', 'gravel', 'death'];
 // Corner radius per kind, in pixels of a 32 px tile.
@@ -67,6 +66,43 @@ function path(kindAt, kind, w, h) {
 // another wall (light above and left, dark below and right), and a two-step stair cut from each outer
 // corner. Sides that join draw nothing, so a mass has no seams.
 const PX = 2, SHADE = { lite2: '#666466', dark2: '#4d4b4e' };
+// Each other mass's face and its bevels (null: no bevel on that side).
+const LOOK = {
+  gravel: { face: INK.gravel, lite: [INK.gravelHi, null], dark: [INK.gravelDot, null] },
+  water: { face: INK.water, lite: [INK.waterHi, null], dark: null },
+  sticky: { face: INK.goo, lite: [null, null], dark: [INK.gooDark, INK.gooDark] },
+  death: { face: INK.deathBg, lite: ['#7a3a4f', null], dark: ['#3f1c28', null] },
+};
+function drawPixelMass(g, at, w, h, kind) {
+  const L = LOOK[kind], open = (x, y) => at(x, y) !== kind;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (at(x, y) !== kind) continue;
+    const X = x * T, Y = y * T, n = open(x, y - 1), s = open(x, y + 1), wv = open(x - 1, y), e = open(x + 1, y);
+    g.fillStyle = L.face; g.fillRect(X, Y, T, T);
+    const band = (cs, horiz, near) => { if (!cs) return; cs.forEach((c, i) => { if (!c) return; g.fillStyle = c; const o = near ? i * PX : T - (i + 1) * PX; if (horiz) g.fillRect(X, Y + o, T, PX); else g.fillRect(X + o, Y, PX, T); }); };
+    if (n) band(L.lite, true, true); if (wv) band(L.lite, false, true);
+    if (s) band(L.dark, true, false); if (e) band(L.dark, false, false);
+    const floor = (cx, cy, sx, sy) => { g.fillStyle = INK.floor; g.fillRect(cx, cy, PX, PX); g.fillRect(cx + sx * PX, cy, PX, PX); g.fillRect(cx, cy + sy * PX, PX, PX); };
+    if (n && wv) floor(X, Y, 1, 1);
+    if (n && e) floor(X + T - PX, Y, -1, 1);
+    if (s && wv) floor(X, Y + T - PX, 1, -1);
+    if (s && e) floor(X + T - PX, Y + T - PX, -1, -1);
+  }
+}
+// What sits on each mass cell, in whole pixels: grit, waves across the pool, bubbles, spikes.
+function decorate(g, at, w, h, kind) {
+  const cellsOf = f => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (at(x, y) === kind) f(x * T, y * T, x, y); };
+  const px = (X, Y, x, y, c) => { g.fillStyle = c; g.fillRect(X + x * PX, Y + y * PX, PX, PX); };
+  if (kind === 'gravel') cellsOf((X, Y) => { for (const [x, y] of [[3, 3], [9, 2], [12, 6], [5, 8], [10, 10], [3, 12], [8, 13]]) { px(X, Y, x, y, INK.gravelDot); px(X, Y, x + 1, y, INK.gravelHi); } });
+  else if (kind === 'sticky') cellsOf((X, Y) => { px(X, Y, 5, 6, '#e6f8d0'); px(X, Y, 10, 8, '#e6f8d0'); });
+  else if (kind === 'death') cellsOf((X, Y) => { for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { px(X, Y, cx, cy - 2, INK.deathSpike); for (const dx of [-1, 0]) { px(X, Y, cx + dx, cy - 1, INK.deathSpike); px(X, Y, cx + dx, cy, INK.deathSpike); } for (const dx of [-2, -1, 0, 1]) px(X, Y, cx + dx, cy + 1, INK.deathSpike); px(X, Y, cx, cy - 1, '#fcfcfa'); } });
+  else if (kind === 'water') {
+    // Waves run across the whole pool, not tile by tile.
+    const k = (frame.clock / 900) % 1; g.globalAlpha = 0.55;
+    cellsOf((X, Y, x, y) => { for (const wy of [10, 22]) for (let wx = 0; wx < T; wx += PX) { g.fillStyle = INK.waterHi; g.fillRect(X + wx, Y + wy + PX * Math.round(Math.sin(((X + wx) / T + k + y * 0.53) * Math.PI * 2)), PX, PX); } });
+    g.globalAlpha = 1;
+  }
+}
 function drawPixelWalls(g, at, w, h) {
   const open = (x, y, dx, dy, side) => !joins(at(x + dx, y + dy), 'wall', side);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
@@ -104,42 +140,16 @@ export function drawMasses(g, cells, w, h, skip = () => false) {
   const at = (x, y) => held(x, y) ? '' : kindAt(x, y);
   for (const kind of ['gravel', 'water', 'sticky', 'death', 'wall']) {
     if (kind !== 'wall' && !cells.includes(kind)) continue;
-    const p = path(at, kind, w, h);
     g.save();
     if (kind === 'wall') {
       // Blocks are pixel masses (registers 602, 605); a triangle keeps its smooth shape.
       g.restore(); drawPixelWalls(g, at, w, h); g.save();
       const tris = path((x, y) => { const c = at(x, y); return c && c.startsWith('tri:') ? c : ''; }, kind, w, h);
       g.fillStyle = INK.wallTop; g.fill(tris); g.clip(tris); g.translate(0, LIP); g.fillStyle = INK.wall; g.fill(tris);
-    } else if (kind === 'gravel') {
-      g.fillStyle = INK.gravel; g.fill(p);
-      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'gravel') grit(g, (i % w) * T, Math.floor(i / w) * T);
-    } else if (kind === 'water') {
-      g.fillStyle = INK.water; g.fill(p); g.clip(p);
-      // Waves run across the whole pool, not tile by tile.
-      g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
-      const k = (frame.clock / 900) % 1;
-      for (let y = 0; y < h; y++) for (const wy of [10, 22]) {
-        g.beginPath();
-        for (let wx = 0; wx <= w * T; wx += 4) g.lineTo(wx, y * T + wy + Math.sin((wx / T + k + y * 0.53) * Math.PI * 2) * 2);
-        g.stroke();
-      }
-    } else if (kind === 'sticky') {
-      g.fillStyle = INK.gooDark; g.fill(p); g.clip(p); g.translate(0, -3); g.fillStyle = INK.goo; g.fill(p); g.translate(0, 3);
-      g.fillStyle = 'rgba(255,255,255,0.55)'; g.beginPath();
-      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'sticky') {
-        const X = (i % w) * T, Y = Math.floor(i / w) * T;
-        g.moveTo(X + 13.8, Y + 13); g.arc(X + 12, Y + 13, 1.8, 0, Math.PI * 2); g.moveTo(X + 21.2, Y + 17); g.arc(X + 20, Y + 17, 1.2, 0, Math.PI * 2);
-      }
-      g.fill();
     } else {
-      g.fillStyle = INK.deathBg; g.fill(p);
-      g.fillStyle = INK.deathSpike; g.beginPath();
-      for (let i = 0; i < cells.length; i++) if (at(i % w, Math.floor(i / w)) === 'death') {
-        const X = (i % w) * T, Y = Math.floor(i / w) * T;
-        for (const [cx, cy] of [[9, 9], [23, 9], [16, 16], [9, 23], [23, 23]]) { g.moveTo(X + cx, Y + cy - 5); g.lineTo(X + cx + 4, Y + cy + 4); g.lineTo(X + cx - 4, Y + cy + 4); g.closePath(); }
-      }
-      g.fill();
+      // Gravel, water, goo and spikes are pixel masses too (register 607), with their marks on top.
+      g.restore(); drawPixelMass(g, at, w, h, kind); g.save();
+      decorate(g, at, w, h, kind);
     }
     g.restore();
   }

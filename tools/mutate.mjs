@@ -1,6 +1,6 @@
 // Breaks one rule at a time and requires the suite to notice. A mutant counts as
 // caught only when a check prints FAIL; a crash with no FAIL line is reported apart.
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 const M = [
@@ -670,7 +670,6 @@ const M = [
   ['src/editor/edit.js', "    else if (kind === 'crack') parts.push('Breakable block');\n", "", 'sim'],
   ['src/editor/edit.js', "  } else if (t === 'wall' || t === 'crack') {", "  } else if (t === 'wall') {", 'sim'],
   ['src/view/scene.js', "const cells = s.broken.length ? s.cells.map((c, i) => s.broken.includes(i) ? '' : c) : s.cells;", "const cells = s.cells;", 'browser'],
-  ['src/view/tiles.js', "    g.strokeStyle = INK.crack; g.lineWidth = 2;", "    g.strokeStyle = INK.wall; g.lineWidth = 2;", 'browser'],
   ['src/view/masses.js', "const BLOCK = /^(spring:|crack$)/;", "const BLOCK = /^(spring:)/;", 'masses'],
   ['src/solve/tags.js', "checkpoint: 'use:checkpoint', break: 'use:break', blast: 'use:blast' };", "checkpoint: 'use:checkpoint', blast: 'use:blast' };", 'tags'],
   ['src/gen/ingredients.js', "tags: ['tile:crack'], with: ['dive'],", "tags: ['tile:crack'], with: ['heavy'],", 'gen'],
@@ -695,7 +694,6 @@ const M = [
   ['src/rules/beams.js', "  if (o.kind === 'bomb') { explode(s, o); return false; }\n", "", 'sim'],
   ['src/rules/base.js', "export const WADES = ['strong', 'heavy', 'mover', 'bomb'];", "export const WADES = ['strong', 'heavy', 'mover'];", 'sim'],
   ['src/solve/solve.js', ",${e.fuse ?? ''};`;", ";`;", 'clone'],
-  ['src/view/pieces.js', "    const tip = [[17, 6], [21, 2], [26, 3]].slice(0, k + 1);", "    const tip = [[17, 6], [21, 2], [26, 3]];", 'browser'],
   ['src/solve/tags.js', "break: 'use:break', blast: 'use:blast' };", "break: 'use:break' };", 'tags'],
   ['src/gen/ingredients.js', "standIn: l => ({ ...l, entities: l.entities.map(e => e.kind === 'bomb' ? { ...e, kind: 'box' } : e) }), place", "place", 'gen'],
   ['style.css', "  .grid { gap: 3px 4px; }", "  .grid { gap: 4px; }", 'fit'],
@@ -811,7 +809,6 @@ const M = [
   ['src/campaign/pushes.js', "s.entities.filter(e => !e.dead && e.kind === kind)", "s.entities.filter(e => !e.dead && e.kind === 'box')", 'campaign'],
   ['src/editor/edit.js', "...(ui.crate ? { crate: true } : {}), turret", "turret", 'campaign-play'],
   ['src/app/panels.js', "  if (!crateFits.includes(!!ui.crate)) ui.crate = crateFits[0];\n", "", 'campaign-play'],
-  ['src/view/pieces.js', "if (e.crate) { g.restore(); g.strokeStyle = INK.boxEdge;", "if (e.crate) { g.restore(); g.strokeStyle = INK.wall;", 'campaign-play'],
   // Register 336: pushable relays, one-ways, doors and inverted doors.
   ['src/rules/crates.js', "  if (c.startsWith('sensor:')) return true;\n", "", 'sim'],
   ['src/rules/crates.js', "return solidCell(s, x, y);", "return true;", 'sim'],
@@ -858,13 +855,10 @@ const M = [
   ['tools/hexRoom.mjs', "    T.forEach((t, k) => { if (t.segs.includes(s)) cell(X0 + k, y, 'idoor:wire'); });", "    T.forEach((t, k) => { if (t.segs.includes(s)) cell(X0 + k, y, 'door:wire'); });", 'sim'],
   ['tools/hexRoom.mjs', "  need('C2', relayAt[0], relayAt[1]); need('C3', relayAt[0], relayAt[1], relayAt[2]);", "  need('C2', relayAt[0], relayAt[1]); need('C3', relayAt[0], relayAt[2]);", 'sim'],
   // Registers 330, 339, 340: a gold laser; the relay a soft eight-point star.
-  ['src/view/pieces.js', "g.fillStyle = d === next ? INK.zap : INK.barrel;", "g.fillStyle = d === next ? INK.beam : INK.barrel;", 'sim'],
   ['src/app/lenses.js', "colour: INK.zap }", "colour: INK.beam }", 'lensui'],
   // Registers 322, 331, 332: joined strips, Reset at the right, editing buttons hidden in play.
   ['style.css', "body.campaign.play :is(#undo, #redo, #campReset) { display: none; }", "", 'campaign-play'],
   ['style.css', "body.campaign #campReset { order: 6; margin-left: auto; }", "", 'campaign-play'],
-  ['src/app/join.js', "    shown[0].classList.add('joinFirst'); shown[shown.length - 1].classList.add('joinLast');", "    shown[0].classList.add('joinFirst');", 'campaign-play'],
-  ['src/app/panels.js', "  joinEnds();\n}", "}", 'campaign-play'],
   // Registers 329, 334: every relay lit at the end; level 19 hidden from the list.
   ['src/campaign/goals/lasers.js', "return relays.length > 0 && relays.every(i => end.lit.has(i));", "return relays.length > 0 && relays.some(i => end.lit.has(i));", 'campaign'],
   ['src/campaign/goals/lasers.js', "const end = replayPath(room, moves, () => {}), relays", "const end = replayPath(room, moves.slice(0, 1), () => {}), relays", 'campaign'],
@@ -946,7 +940,6 @@ const M = [
   ['tools/searchScores.mjs', "const f = SCORES[id] || derived(id);", "const f = SCORES[id];", 'search'],
   ['tools/minMoves.mjs', "steps: { ...base.steps, max: K }", "steps: { ...base.steps, min: 1, max: K }", 'search'],
   ['tools/roomSearch.mjs', "crateOf = c => pushes.length > 1 ? c === 'crate' : pushes[0];", "crateOf = c => pushes[0];", 'search'],
-  ['src/view/tiles.js', "star(g, 0.6); if (lit) { g.fillStyle = INK[col]; g.fill(); }", "star(g, 0.6); if (true) { g.fillStyle = INK[col]; g.fill(); }", 'browser'],
   ['src/app/nav.js', "  addEventListener('popstate', ", "  addEventListener('popstate-off', ", 'nav'],
   ['src/app/nav.js', "  if (!fixed) try { history[replace ? 'replaceState' : 'pushState'](entry, '', location.pathname + location.search + entry.path); return; } catch { fixed = true; }", "  fixed = true;", 'nav'],
   ['src/app/rooms.js', "S.simple = false; document.body.classList.remove('simple'); };", "};", 'nav'],
@@ -1015,6 +1008,12 @@ const M = [
   ['src/app/levelParts.js', "  if (cols.length < 2) return dots;", "  return dots;", 'campaign-play'],
   ['src/app/levelParts.js', "    const crate = pushingsOf(def, el).every(Boolean);", "    const crate = false;", 'campaign-play'],
   ['src/campaign/rules.js', "/^(button|toggle):|^death$/", "/^(button|toggle):/", 'campaign'],
+  // Row 607: the Sandbox pieces as pixel sprites.
+  ['src/view/sprites.js', "const W = { face: '#5b595c', light: '#727072', dark: '#4d4b4e', crack: '#403e41' };", "const W = { face: '#5b595c', light: '#727072', dark: '#4d4b4e', crack: '#5b595c' };", 'browser'],
+  ['src/view/tiles.js', "drawSprite(g, 'sensor', 0, 0, { colour: INK[col] + '|' + (lit ? 1 : 0) });", "drawSprite(g, 'sensor', 0, 0, { colour: INK[col] + '|1' });", 'browser'],
+  ['src/view/sprites.js', "    const n = +k; if (n >= 1)", "    const n = 2; if (n >= 1)", 'browser'],
+  ['src/view/pieces.js', "    if (e.crate) drawSprite(g, 'crateFrame', 0, 0);", "", 'campaign-play'],
+  ['src/view/sprites.js', "body = lit ? INK.zap : '#727072'", "body = lit ? INK.beam : '#727072'", 'sim'],
   // Rows 565-583: challenge view and win card.
   ['src/view/scene.js', "g.strokeStyle = 'rgba(171,157,242,.95)'; g.lineWidth = 2.5;", "g.strokeStyle = 'rgba(0,0,0,0)'; g.lineWidth = 2.5;", 'challenge'],
   ['src/app/goalCard.js', "if (i < by[el].length) c.classList.add('used');", "", 'challenge'],
@@ -1036,7 +1035,7 @@ let caught = 0, crashed = 0;
 // 'src' as the file means: whichever source file holds the text, which must be exactly one.
 const walk = d => readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(d + '/' + e.name) : /\.js$/.test(e.name) ? [d + '/' + e.name] : []);
 const locate = (file, from) => {
-  if (file !== 'src') return readFileSync(file, 'utf8').includes(from) ? file : null;
+  if (file !== 'src') return existsSync(file) && readFileSync(file, 'utf8').includes(from) ? file : null;
   const hits = walk('src').filter(f => readFileSync(f, 'utf8').includes(from));
   return hits.length === 1 ? hits[0] : null;
 };

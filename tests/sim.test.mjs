@@ -8,7 +8,7 @@ import { counterRoom, countOf } from '../tools/counterRoom.mjs';
 import { displayRoom, digitOf } from '../tools/displayRoom.mjs';
 import { hexRoom, hexOf } from '../tools/hexRoom.mjs';
 import { place, describe, turnGate, moveAt } from '../src/editor/edit.js';
-import { drawTurret } from '../src/view/pieces.js';
+import { drawTurret, BADGE } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
 import { newHistory, record, undo, redo, LIMIT } from '../src/editor/history.js';
 import { RT_PERIOD } from '../src/rules/base.js';
@@ -1193,8 +1193,8 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('the editor lights the barrel a turret fires first', lit.length > 0 && lit.every(([x, y]) => y >= 10) && lit.reduce((a, [, y]) => a + y, 0) / lit.length > 16, JSON.stringify(lit.slice(0, 4)));
 }
 
-{ // the mode badge (a 5.5 dot) only on a turret that turns (register 300)
-  const dots = t => { let n = 0; const g = new Proxy({}, { get: (o, k) => k === 'arc' ? (x, y, r) => { if (r === 5.5) n++; } : k in o ? o[k] : () => {}, set: (o, k, v) => { o[k] = v; return true; } }); drawTurret(g, t, [24, 8]); return n; };
+{ // the mode badge (its dark disc) only on a turret that turns (register 300)
+  const dots = t => { let n = 0, fill = null; const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? () => { if (fill === BADGE) n++; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } }); drawTurret(g, t, [24, 8]); return n ? 1 : 0; };
   check('a one-way laser wears no mode badge', dots({ dirs: ['right'], mode: 'input' }) === 0);
   check('a turning turret still wears its mode badge', dots({ dirs: ['up', 'down'], mode: 'realtime' }) === 1);
 }

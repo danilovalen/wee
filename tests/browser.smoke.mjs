@@ -734,7 +734,8 @@ try {
   const kr = room(['#######', '#P.k..#', '#######']); kr.powers.dive = true;
   await page.evaluate(l => window.wee.loadLevel(l), kr);
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-  const crackInk = await red(3 + 13 / 32, 1 + 19 / 32), crackFace = await red(3 + 26 / 32, 1 + 16 / 32);
+  // (15, 19) is a pixel of the crack sprite's lower line; (26, 16) is bare face.
+  const crackInk = await red(3 + 15 / 32, 1 + 19 / 32), crackFace = await red(3 + 26 / 32, 1 + 16 / 32);
   check('a breakable block wears dark cracks on the wall face', crackInk < crackFace - 15 && crackFace > 70, JSON.stringify({ crackInk, crackFace }));
   await page.evaluate(() => { window.__manualClock = true; });
   await page.keyboard.press('e');
@@ -755,7 +756,7 @@ try {
   const sparkFull = await rgb(5 + 26 / 32, 2 + 3 / 32);
   await page.evaluate(() => { window.wee.press('up'); window.advanceTime(1500); });
   const sparkHalf = await rgb(5 + 21 / 32, 2 + 2 / 32), burnt = await rgb(5 + 26 / 32, 2 + 3 / 32);
-  check('a lit fuse sparks at its end, and burns one length shorter each move', orange(sparkFull) && orange(sparkHalf) && !orange(burnt), JSON.stringify({ sparkFull, sparkHalf, burnt }));
+  check('a lit fuse sparks at its end, and burns one length shorter each move', orange(sparkFull) && orange(sparkHalf) && !orange(burnt) && !(Math.abs(burnt[0] - 176) < 14 && Math.abs(burnt[1] - 138) < 14 && Math.abs(burnt[2] - 92) < 14), JSON.stringify({ sparkFull, sparkHalf, burnt }));
   await page.evaluate(() => { window.wee.press('left'); window.advanceTime(60); });
   await page.evaluate(() => window.advanceTime(1500));
   const after = JSON.parse(await page.evaluate(() => window.renderGameToText()));

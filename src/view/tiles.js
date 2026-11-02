@@ -1,5 +1,5 @@
 // Tiles: floor, walls and every cell type, drawn in place.
-import { INK, T, frame, roundRect } from './ink.js';
+import { INK, T, frame } from './ink.js';
 import { drawSprite } from './sprites.js';
 import { drawnColour } from '../rules/wires.js';
 import { gateOf, gateDirs } from '../rules/grid.js';
@@ -49,27 +49,15 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   const px = x * T, py = y * T;
   g.save();
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
-  if (c === 'sticky') {
-    // A lumpy green puddle with a couple of bubbles.
-    g.fillStyle = INK.gooDark;
-    g.beginPath(); g.ellipse(16, 17, 12, 9, 0, 0, Math.PI * 2); g.ellipse(9, 13, 5, 4, 0, 0, Math.PI * 2); g.ellipse(23, 21, 5, 4, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = INK.goo;
-    g.beginPath(); g.ellipse(16, 16, 10, 7, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = 'rgba(255,255,255,0.55)';
-    g.beginPath(); g.arc(12, 14, 1.8, 0, Math.PI * 2); g.arc(20, 18, 1.2, 0, Math.PI * 2); g.fill();
-  } else if (c === 'gravel') {
-    g.fillStyle = INK.gravel; roundRect(g, 1, 1, T - 2, T - 2, 6); g.fill();
-    grit(g, 0, 0);
+  if (c === 'sticky' || c === 'gravel') {
+    drawSprite(g, c, 0, 0);
   } else if (c === 'water') {
     // A full tile, so a pool reads as one body; two waves drift across it.
     g.fillStyle = INK.water; g.fillRect(0, 0, T, T);
-    g.strokeStyle = INK.waterHi; g.globalAlpha = 0.55; g.lineWidth = 1.5;
+    // Waves drawn in whole 2-unit pixels.
+    g.fillStyle = INK.waterHi; g.globalAlpha = 0.55;
     const k = (frame.clock / 900 + x * 0.37 + y * 0.53) % 1;
-    for (const wy of [10, 22]) {
-      g.beginPath();
-      for (let wx = 0; wx <= T; wx += 4) g.lineTo(wx, wy + Math.sin((wx / T + k) * Math.PI * 2) * 2);
-      g.stroke();
-    }
+    for (const wy of [10, 22]) for (let wx = 0; wx < T; wx += 2) g.fillRect(wx, wy + 2 * Math.round(Math.sin((wx / T + k) * Math.PI * 2)), 2, 2);
     g.globalAlpha = 1;
   } else if (c.startsWith('tri:')) {
     // The solid half sits in the named corner; the slope is the bright edge.
@@ -82,69 +70,31 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     g.stroke();
   } else if (c === 'crack') {
     // A block that will not last: cracks across its face.
-    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
-    g.strokeStyle = INK.crack; g.lineWidth = 2; g.lineJoin = 'round'; g.beginPath();
-    g.moveTo(5, 12); g.lineTo(12, 15); g.lineTo(15, 9); g.lineTo(22, 13); g.lineTo(27, 10);
-    g.moveTo(12, 15); g.lineTo(14, 23); g.lineTo(9, 28); g.moveTo(14, 23); g.lineTo(21, 21); g.lineTo(26, 27);
-    g.stroke();
+    drawSprite(g, 'crack', 0, 0, { colour: bare ? 'bare' : null });
   } else if (c === 'wall') {
-    g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill();
-    g.fillStyle = INK.wallTop; roundRect(g, 1, 1, T - 2, 7, 4); g.fill();
+    drawSprite(g, 'wallFace', 0, 0);
   } else if (c === 'death') {
-    // Spikes on a dark red slab.
-    g.fillStyle = INK.deathBg; roundRect(g, 1, 1, T - 2, T - 2, 4); g.fill();
-    g.fillStyle = INK.deathSpike;
-    for (const [cx, cy] of [[9, 9], [23, 9], [16, 16], [9, 23], [23, 23]]) {
-      g.beginPath(); g.moveTo(cx, cy - 5); g.lineTo(cx + 4, cy + 4); g.lineTo(cx - 4, cy + 4); g.closePath(); g.fill();
-    }
+    drawSprite(g, 'death', 0, 0);
   } else if (c.startsWith('spring:')) {
-    // A block with a coil and a plate on the side it faces.
-    const d = c.slice(7);
-    if (!bare) { g.fillStyle = INK.wall; roundRect(g, 1, 1, T - 2, T - 2, 5); g.fill(); }
-    g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
-    g.strokeStyle = INK.spring; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(-8, 0);
-    for (let i = 0; i < 4; i++) { g.lineTo(-6 + i * 4, -6); g.lineTo(-4 + i * 4, 6); }
-    g.lineTo(9, 0); g.stroke();
-    g.fillStyle = INK.spring; g.fillRect(10, -10, 4, 20);
-    g.restore();
+    // A coil and a plate on the side it faces.
+    drawSprite(g, 'spring', 0, 0, { colour: c.slice(7) + (bare ? '|bare' : '') });
   } else if (c.startsWith('gate:')) {
     // Rails along the sides it blocks, and a chevron for each way it lets through. A coloured one
     // draws its chevrons in its colour, and while that colour is pressed it lights up: tinted, ringed
     // and pointing the other way.
     const { col } = gateOf(c), on = !!(s && col && s.open[col]), ds = s ? gateDirs(s, c) : gateOf(c).dirs;
-    const across = ds.includes('left') || ds.includes('right'), upDown = ds.includes('up') || ds.includes('down');
-    g.fillStyle = INK.gateBg; g.fillRect(1, 1, T - 2, T - 2);
-    if (on) { g.fillStyle = INK[col]; g.globalAlpha = 0.3; g.fillRect(1, 1, T - 2, T - 2); g.globalAlpha = 1; }
-    g.fillStyle = INK.wall;
-    if (!upDown) { g.fillRect(1, 1, T - 2, 5); g.fillRect(1, T - 6, T - 2, 5); }
-    if (!across) { g.fillRect(1, 1, 5, T - 2); g.fillRect(T - 6, 1, 5, T - 2); }
-    if (on) { g.strokeStyle = INK[col]; g.lineWidth = 2; roundRect(g, 2, 2, T - 4, T - 4, 4); g.stroke(); }
-    g.strokeStyle = col ? INK[col] : INK.gateArrow; g.lineWidth = on ? 3.2 : 2.6; g.lineJoin = 'round';
-    for (const d of ds) {
-      g.save(); g.translate(16, 16); g.rotate({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[d]);
-      g.beginPath(); g.moveTo(2, -6); g.lineTo(8, 0); g.lineTo(2, 6); g.stroke();
-      g.restore();
-    }
+    drawSprite(g, 'gate', 0, 0, { colour: ds.join(',') + '|' + (col ? INK[col] : '') + '|' + (on ? 1 : 0) });
   } else if (c.startsWith('sensor:')) {
     // A glass block a beam goes through (register 374, his G3): solid, framed in its colour, the star at its
     // centre filled only while a beam crosses it.
     const col = c.slice(7), lit = s && s.lit.has(y * s.w + x);
-    if (lit) { g.fillStyle = INK[col]; g.globalAlpha = 0.25; roundRect(g, -2, -2, T + 4, T + 4, 9); g.fill(); g.globalAlpha = 1; }
-    g.fillStyle = mixInk('#ffffff', INK[col], 0.3); roundRect(g, 2, 2, T - 4, T - 4, 6); g.fill();
-    g.strokeStyle = INK[col]; g.lineWidth = 3; roundRect(g, 3, 3, T - 6, T - 6, 5); g.stroke();
-    g.translate(16, 16); g.lineJoin = 'round'; g.strokeStyle = INK[col]; g.lineWidth = 1.5;
-    star(g, 0.6); if (lit) { g.fillStyle = INK[col]; g.fill(); } else { g.globalAlpha = 0.5; g.stroke(); }
-    g.globalAlpha = 1;
+    drawSprite(g, 'sensor', 0, 0, { colour: INK[col] + '|' + (lit ? 1 : 0) });
   } else if (c === 'goal') {
     // The goal is a cyan berry (registers 593, 604).
     drawSprite(g, 'berry', 0, 0);
   } else if (c === 'checkpoint') {
     const active = s && s.checkpoint.x === x && s.checkpoint.y === y;
-    g.strokeStyle = INK.moverEdge; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(11, 26); g.lineTo(11, 6); g.stroke();
-    g.fillStyle = active ? INK.flag : '#6b6150';
-    g.beginPath(); g.moveTo(12, 6); g.lineTo(25, 10.5); g.lineTo(12, 15); g.fill();
+    drawSprite(g, 'checkpoint', 0, 0, { colour: active ? '1' : '0' });
   } else {
     const [kind, col] = c.split(':');
     g.fillStyle = INK[col]; g.strokeStyle = INK[col]; g.lineWidth = 2.5;
@@ -159,15 +109,7 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     } else if (kind === 'idoor') {
       // The negative of a door: dark inside, the colour on the rim and the bars. Open,
       // a dashed rim around a minus sign.
-      const open = s && !s.open[col];
-      if (open) {
-        g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]);
-        roundRect(g, 11, 14, 10, 4, 1.5); g.fill();
-      } else {
-        g.fillStyle = INK.idoor; roundRect(g, 2, 2, T - 4, T - 4, 4); g.fill(); g.stroke();
-        g.fillStyle = INK[col];
-        for (const bx of [9, 15, 21]) g.fillRect(bx, 5, 2, T - 10);
-      }
+      drawSprite(g, 'idoor', 0, 0, { colour: INK[col] + '|' + (s && !s.open[col] ? 1 : 0) });
     } else {
       const open = s && s.open[col];
       drawSprite(g, open ? 'doorOpen' : 'doorShut', 0, 0, { colour: INK[col] });

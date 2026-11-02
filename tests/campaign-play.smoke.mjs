@@ -82,6 +82,12 @@ try {
       for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const k = (y * 32 + x) * 4; if (px[k] > 230 && px[k + 1] > 60 && px[k + 1] < 110 && px[k + 2] < 60 && (x < 4 || x > 27 || y < 4 || y > 27)) out++; } }
     return out; });
   check('a pushable laser\'s barrel stays inside its box frame (register 554)', spill === 0, String(spill));
+  const frame = await page.evaluate(async () => { const { drawPiece } = await import('/src/view/pieces.js'); const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
+    drawPiece(g, { kind: 'turret', crate: true, turret: { dirs: ['right'], mode: 'input' } }, 0, 0);
+    const px = g.getImageData(0, 0, 32, 32).data; let n = 0;
+    for (let i = 0; i < px.length; i += 4) if (Math.abs(px[i] - 0x85) < 8 && Math.abs(px[i + 1] - 0x7f) < 8 && Math.abs(px[i + 2] - 0x6a) < 8) n++;
+    return n; });
+  check('a pushable laser wears the box\'s frame (registers 336, 607)', frame > 60, String(frame));
   // Register 553: the menu's pieces are painted by the game's own drawing, so they cannot drift from the room.
   check('the menu\'s laser, switch (off and on), door, goal, box and blob are the game\'s drawings', await page.$$eval('.msEmitter, .msSwitch .off, .msSwitch .on, .msDoor, .msGoal, .msBox, .msBody', es => es.length === 7 && es.every(e => getComputedStyle(e).backgroundImage.startsWith('url("data:image/png'))));
   await page.click('#menuCampaign');

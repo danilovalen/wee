@@ -1,21 +1,21 @@
 // Pieces and the player.
-import { AIM, INK, T, frame, roundRect } from './ink.js';
+import { AIM, INK, T, frame } from './ink.js';
 import { drawSprite } from './sprites.js';
 
-// The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
+// The mode badge, in 2-unit pixels: a dark disc holding a clock for real time, a step mark for on input,
+// a double chevron for follow.
+export const BADGE = '#0b0d12';
+const BADGE_ART = {
+  realtime: ['.##.', '#..#', '#.##', '.##.'],
+  follow: ['#.#.', '.#.#', '.#.#', '#.#.'],
+  input: ['....', '.##.', '####', '....'],
+};
 export function modeBadge(g, mode, bx = 24, by = 8) {
-  g.save(); g.translate(bx, by);
-  g.fillStyle = '#0b0d12'; g.beginPath(); g.arc(0, 0, 5.5, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = '#e9edf5'; g.fillStyle = '#e9edf5'; g.lineWidth = 1.4;
-  if (mode === 'realtime') {
-    g.beginPath(); g.arc(0, 0, 3.6, 0, Math.PI * 2); g.stroke();
-    g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -2.4); g.moveTo(0, 0); g.lineTo(1.8, 0.8); g.stroke();
-  } else if (mode === 'follow') {
-    g.beginPath(); g.moveTo(-3, -2.5); g.lineTo(-0.5, 0); g.lineTo(-3, 2.5); g.moveTo(0.5, -2.5); g.lineTo(3, 0); g.lineTo(0.5, 2.5); g.stroke();
-  } else {
-    g.beginPath(); g.moveTo(-2.5, 2); g.lineTo(0, -2.5); g.lineTo(2.5, 2); g.closePath(); g.fill();
-  }
-  g.restore();
+  const x0 = bx - 6, y0 = by - 6;
+  g.fillStyle = BADGE;
+  ['.####.', '######', '######', '######', '######', '.####.'].forEach((r, y) => { const a = r.indexOf('#'), b = r.lastIndexOf('#'); g.fillRect(x0 + a * 2, y0 + y * 2, (b - a + 1) * 2, 2); });
+  g.fillStyle = '#e9edf5';
+  (BADGE_ART[mode] || BADGE_ART.input).forEach((r, y) => [...r].forEach((ch, x) => { if (ch === '#') g.fillRect(x0 + 2 + x * 2, y0 + 2 + y * 2, 2, 2); }));
 }
 
 // A turret head: one barrel per direction it fires; the next to fire is lit.
@@ -37,54 +37,28 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
   g.globalAlpha = alpha;
   g.translate(px + T / 2, py + T / 2); g.scale(scale, scale); g.translate(-T / 2, -T / 2);
   if (e.kind === 'mover') {
-    g.fillStyle = INK.mover; roundRect(g, 2, 2, T - 4, T - 4, 6); g.fill();
-    g.strokeStyle = INK.moverEdge; g.lineWidth = 2; g.stroke();
-    g.strokeStyle = '#3b4252'; g.lineWidth = 2.5;
-    g.beginPath();
-    if (e.axis === 'h') { g.moveTo(10, 12); g.lineTo(6, 16); g.lineTo(10, 20); g.moveTo(22, 12); g.lineTo(26, 16); g.lineTo(22, 20); }
-    else { g.moveTo(12, 10); g.lineTo(16, 6); g.lineTo(20, 10); g.moveTo(12, 22); g.lineTo(16, 26); g.lineTo(20, 22); }
-    g.stroke();
+    drawSprite(g, 'mover', 0, 0, { colour: e.axis === 'v' ? 'v' : 'h' });
     modeBadge(g, e.mode);
-  } else if (e.kind === 'enemy') {
-    g.fillStyle = INK.enemy;
-    g.beginPath(); g.moveTo(16, 3); g.lineTo(29, 16); g.lineTo(16, 29); g.lineTo(3, 16); g.closePath(); g.fill();
-    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
-    g.fillStyle = '#fff';
-    g.beginPath(); g.arc(12 + lx, 15 + ly, 3, 0, Math.PI * 2); g.arc(20 + lx, 15 + ly, 3, 0, Math.PI * 2); g.fill();
-    modeBadge(g, e.mode);
-  } else if (e.kind === 'strong') {
-    g.fillStyle = INK.strong; roundRect(g, 2, 3, T - 4, T - 5, 7); g.fill();
-    g.strokeStyle = INK.strongEdge; g.lineWidth = 2; g.stroke();
-    g.fillStyle = INK.strongEdge;
-    g.beginPath(); g.moveTo(6, 6); g.lineTo(9, 0); g.lineTo(12, 5); g.moveTo(20, 5); g.lineTo(23, 0); g.lineTo(26, 6); g.fill();
-    const [lx, ly] = e.axis === 'h' ? [e.dir * 2.5, 0] : [0, e.dir * 2.5];
-    g.fillStyle = '#ffd34d';
-    g.fillRect(9 + lx, 13 + ly, 5, 3); g.fillRect(18 + lx, 13 + ly, 5, 3);
+  } else if (e.kind === 'enemy' || e.kind === 'strong') {
+    drawSprite(g, e.kind, 0, 0, { colour: (e.axis === 'v' ? 'v' : 'h') + '|' + (e.dir < 0 ? -1 : 1) });
     modeBadge(g, e.mode);
   } else if (e.kind === 'turret') {
     // A pushable laser wears the box's brown border (registers 336-338); a fixed one has no base (register 493).
-    if (e.crate) { g.strokeStyle = INK.boxEdge; g.lineWidth = 2; roundRect(g, 3, 3, T - 6, T - 6, 3.5); g.stroke(); }
+    if (e.crate) drawSprite(g, 'crateFrame', 0, 0);
   } else if (e.kind === 'box') {
     drawSprite(g, 'box', 0, 0);
   } else if (e.kind === 'bomb') {
     // The fuse is the timer: a full cord before it is lit, a spark that burns it down one
     // length per move, and with no cord left the body glows: it goes off when this move ends.
     const k = e.fuse == null ? 2 : e.fuse, hot = e.fuse === 0 ? 0.5 + 0.5 * Math.sin(frame.clock / 70) : 0;
-    g.fillStyle = INK.bomb; g.beginPath(); g.arc(16, 18, 10, 0, Math.PI * 2); g.fill();
-    if (hot) { g.fillStyle = `rgba(255,90,40,${0.35 + 0.45 * hot})`; g.beginPath(); g.arc(16, 18, 10, 0, Math.PI * 2); g.fill(); }
-    g.fillStyle = INK.bombHi; g.beginPath(); g.arc(12, 14, 2.5, 0, Math.PI * 2); g.fill();
-    g.fillStyle = INK.bomb; g.fillRect(14, 6, 5, 4);
-    const tip = [[17, 6], [21, 2], [26, 3]].slice(0, k + 1);
-    if (k) { g.strokeStyle = INK.fuse; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath(); tip.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke(); g.lineCap = 'butt'; }
+    drawSprite(g, 'bomb', 0, 0, { colour: String(k) });
+    if (hot) { g.globalAlpha = alpha * (0.35 + 0.45 * hot); drawSprite(g, 'bomb', 0, 0, { colour: 'hot' }); g.globalAlpha = alpha; }
     if (e.fuse != null) {
-      const [sx, sy] = tip[tip.length - 1], f = 2 + Math.sin(frame.clock / 45);
-      g.fillStyle = INK.spark; g.beginPath(); g.arc(sx, sy, 1.8 + f * 0.6, 0, Math.PI * 2); g.fill();
+      const [sx, sy] = [[16, 6], [22, 2], [26, 2]][k];
+      g.fillStyle = INK.spark; const f = 2 * Math.round(0.5 + 0.5 * Math.sin(frame.clock / 45)); g.fillRect(sx - 2 - f / 2, sy - 2 - f / 2, 4 + f, 4 + f);
     }
   } else if (e.kind === 'heavy') {
-    g.fillStyle = INK.heavy; roundRect(g, 2, 2, T - 4, T - 4, 3); g.fill();
-    g.strokeStyle = INK.heavyEdge; g.lineWidth = 3; g.stroke();
-    g.fillStyle = INK.rivet;
-    for (const [rx, ry] of [[7, 7], [25, 7], [7, 25], [25, 25]]) { g.beginPath(); g.arc(rx, ry, 2, 0, Math.PI * 2); g.fill(); }
+    drawSprite(g, 'heavy', 0, 0);
   }
   if (e.turret) drawTurret(g, e.turret, e.kind === 'turret' ? [24, 8] : [8, 24], e.kind !== 'turret', e.kind === 'turret' && !!e.crate);
   g.restore();
@@ -96,10 +70,7 @@ export function drawRobot(g, hidden = false) {
 }
 // You, when a person plays (register 302): a round body with two eyes, about 20 across.
 export function drawYou(g, hidden = false) {
-  g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2);
-  if (hidden) { g.strokeStyle = INK.player; g.lineWidth = 1.5; g.setLineDash([2.5, 2.5]); g.stroke(); g.setLineDash([]); }
-  else { g.fillStyle = INK.player; g.fill(); g.strokeStyle = INK.robotDark; g.lineWidth = 1.5; g.stroke(); }
-  g.fillStyle = INK.robotEye; g.beginPath(); g.arc(-3.5, -1.5, 1.6, 0, Math.PI * 2); g.arc(3.5, -1.5, 1.6, 0, Math.PI * 2); g.fill();
+  drawSprite(g, 'you', -T / 2, -T / 2, { outline: hidden });
 }
 
 // Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
