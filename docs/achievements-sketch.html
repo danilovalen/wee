@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Achievements Sketch</title>
+<style>
+@font-face { font-family: Pixelify; src: url(../fonts/pixelify-sans-latin-400-normal.woff2); font-weight: 400; }
+@font-face { font-family: Pixelify; src: url(../fonts/pixelify-sans-latin-700-normal.woff2); font-weight: 700; }
+:root { --paper:#221f22; --panel:#2d2a2e; --rule:#403e41; --ink:#fcfcfa; --soft:#939293; --accent:#ab9df2; --sticker:#19181a; --gold:#ffd866; --gold-ink:#5a3f00; --good:#a9dc76; --bad:#ff6188; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #19181a; color: var(--ink); font: 15px/1.4 Pixelify, monospace; }
+main { max-width: 900px; margin: 0 auto; padding: 16px; }
+h1 { font-size: 22px; margin: 0 0 6px; }
+.note { color: var(--soft); font-size: 13px; margin: 0 0 16px; max-width: 70ch; }
+.frames { display: flex; flex-wrap: wrap; gap: 24px; }
+.phone { width: 360px; max-width: 100%; height: 720px; background: var(--paper); position: relative; overflow: hidden; box-shadow: 0 0 0 2px var(--rule); }
+.cap { font-size: 13px; color: var(--soft); margin: 8px 0 0; width: 360px; max-width: 100%; }
+.head { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; }
+.head b { font-size: 20px; }
+.btn { background: var(--panel); color: var(--ink); border: 0; height: 36px; padding: 0 14px; font: 700 15px Pixelify, monospace; box-shadow: 4px 4px 0 var(--sticker); }
+.total { display: flex; align-items: center; gap: 8px; padding: 0 14px 10px; color: var(--soft); }
+.total .big { color: var(--gold); font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+.bar { height: 8px; background: var(--rule); margin: 0 14px 12px; }
+.bar i { display: block; height: 100%; width: 43%; background: var(--gold); }
+h3 { font-size: 13px; color: var(--soft); text-transform: uppercase; letter-spacing: 1px; margin: 10px 14px 6px; }
+ul { list-style: none; margin: 0; padding: 0 14px; display: grid; gap: 6px; }
+li { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; background: var(--panel); padding: 8px 10px; box-shadow: 3px 3px 0 var(--sticker); }
+li.off { opacity: .55; }
+li.new { box-shadow: inset 0 0 0 2px var(--gold), 3px 3px 0 var(--sticker); }
+li b { display: block; font-size: 15px; }
+li span { display: block; font-size: 12px; color: var(--soft); }
+li small { font-size: 12px; color: var(--gold); }
+.badge { width: 36px; height: 36px; background: var(--rule); display: grid; place-items: center; }
+li:not(.off) .badge { background: var(--gold); }
+.meter { height: 4px; background: var(--rule); margin-top: 4px; }
+.meter i { display: block; height: 100%; background: var(--accent); }
+svg.s { width: 16px; height: 16px; display: block; shape-rendering: crispEdges; }
+.room { position: absolute; left: 40px; top: 210px; width: 280px; height: 280px; background: #2d2a2e; box-shadow: 0 0 0 2px var(--rule); }
+.room::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(var(--rule) 2px, transparent 2px), linear-gradient(90deg, var(--rule) 2px, transparent 2px); background-size: 56px 56px; opacity: .5; }
+.win { position: absolute; left: 14px; right: 14px; bottom: 14px; background: var(--panel); padding: 12px; box-shadow: 4px 4px 0 var(--sticker), inset 0 0 0 2px var(--accent); }
+.win b { font-size: 18px; }
+.win .row { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+.toast { position: absolute; left: 14px; right: 14px; top: 58px; background: var(--panel); padding: 10px 12px; display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; box-shadow: inset 0 0 0 2px var(--gold), 4px 4px 0 var(--sticker); }
+.toast b { display: block; }
+.toast span { font-size: 12px; color: var(--soft); }
+.toast small { color: var(--gold); font-weight: 700; }
+.toast.two { top: 120px; opacity: .45; }
+.menuBtn { position: relative; }
+.dot { position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; background: var(--bad); }
+.steps { margin: 18px 0 0; padding-left: 18px; color: var(--soft); font-size: 13px; max-width: 72ch; }
+.steps li { display: list-item; background: none; box-shadow: none; padding: 2px 0; grid-template-columns: none; }
+</style>
+</head>
+<body>
+<main>
+<h1>Achievements: screen and popup</h1>
+<p class="note">Sketch for registers 629-637. Left: the Achievements page. Right: what a win looks like when it earns one. Copy is a draft. Every achievement shown here gives +1 star except the campaign ones, which keep their counts.</p>
+<div class="frames">
+  <div>
+    <div class="phone" id="page"></div>
+    <p class="cap">Its own page, opened from the menu (and from the star count on Looks). Done ones are gold and say where they were earned; the rest are dimmed, with a bar where there is something to count. A gold rim marks one earned since your last visit.</p>
+  </div>
+  <div>
+    <div class="phone" id="pop"></div>
+    <p class="cap">The robot reaches the berry, the win card comes up, then the popup drops in at the top for 3 seconds. Tap it to open Achievements. Two earned at once queue, one after the other.</p>
+  </div>
+</div>
+<ol class="steps">
+  <li>A Run that wins is checked against every achievement not yet done, the same moment the stars are saved.</li>
+  <li>Each new one: a popup at the top, under the header, so it covers neither the room nor the win card's buttons. It slides in, stays 3 s, slides out. Tap opens Achievements; a swipe up or any tap elsewhere puts it away.</li>
+  <li>Several at once: one after another, never stacked. The star count on the win card goes up as each lands.</li>
+  <li>It also lights the red dot on the menu's Achievements button until that page is opened (the same rule as register 628's dot on Looks).</li>
+  <li>Never during the tutorial, the Sandbox's Test, or a replay.</li>
+</ol>
+</main>
+<script>
+const STAR = n => `<svg class="s" viewBox="0 0 16 16"><path fill="${n ? 'var(--gold)' : 'none'}" stroke="${n ? 'var(--gold-ink)' : 'var(--soft)'}" d="M8 1h0l2 4 5 1-4 3 1 5-4-2-4 2 1-5-4-3 5-1z"/></svg>`;
+const B = c => `<svg class="s" viewBox="0 0 16 16" style="width:20px;height:20px"><rect x="3" y="3" width="10" height="10" fill="${c}"/></svg>`;
+const row = a => `<li class="${a.done ? '' : 'off'}${a.new ? ' new' : ''}"><div class="badge">${a.done ? STAR(1) : B('#5b595c')}</div><div><b>${a.name}</b><span>${a.text}</span>${a.of ? `<div class="meter"><i style="width:${Math.round(a.at / a.of * 100)}%"></i></div>` : ''}</div><small>${a.done ? (a.where || 'Done') : '+' + a.stars}</small></li>`;
+const CAMP = [
+  { name: 'First berry', text: 'Beat Level 1.', stars: 1, done: 1, where: 'Level 1' },
+  { name: 'Halfway', text: 'Beat 10 levels.', stars: 2, at: 6, of: 10 },
+  { name: 'Full shelf', text: 'Earn every side star on one level.', stars: 1, done: 1, where: 'Level 3' },
+];
+const BUILD = [
+  { name: 'Gateway', text: 'Win with 5 doors or more.', stars: 1, done: 1, new: 1, where: 'Level 6' },
+  { name: 'Move it move it', text: 'Win in 12 moves or more in a 5x5 room or smaller.', stars: 1, at: 9, of: 12 },
+  { name: 'One shot', text: 'Win in 1 move, every main goal met.', stars: 1 },
+  { name: 'Guardrails', text: 'Win in 8 moves or more where no move can lose.', stars: 1 },
+  { name: 'Deadly', text: 'Win in 8 moves or more where every other move loses.', stars: 1 },
+  { name: 'Silver bullet', text: 'Meet 4 side goals in one win.', stars: 1, at: 2, of: 4 },
+  { name: 'Cashback', text: 'Spend 10 stars.', stars: 1, at: 4, of: 10 },
+];
+document.getElementById('page').innerHTML = `<div class="head"><b>Achievements</b><button class="btn">Menu</button></div>
+<div class="total"><span class="big">${STAR(1)}3</span> of 7 done</div><div class="bar"><i></i></div>
+<h3>Building</h3><ul>${BUILD.map(row).join('')}</ul><h3>Campaign</h3><ul>${CAMP.map(row).join('')}</ul>`;
+document.getElementById('pop').innerHTML = `<div class="head"><b style="font-size:15px;color:var(--soft)">Level 6</b><span class="menuBtn"><button class="btn">Menu</button><i class="dot"></i></span></div>
+<div class="toast"><div class="badge" style="background:var(--gold)">${STAR(1)}</div><div><b>Gateway</b><span>Win with 5 doors or more.</span></div><small>+1</small></div>
+<div class="toast two"><div class="badge" style="background:var(--gold)">${STAR(1)}</div><div><b>Silver bullet</b><span>next in the queue</span></div><small>+1</small></div>
+<div class="room"></div>
+<div class="win"><b>Made it in 9 moves</b><div style="color:var(--soft);font-size:13px;margin-top:4px">7 tiles · 2 side stars</div><div class="row"><button class="btn">Levels</button><button class="btn" style="background:var(--accent);color:#19181a">Next level</button></div></div>`;
+</script>
+</body>
+</html>

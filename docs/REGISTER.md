@@ -635,3 +635,12 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 626 | "Also, did you include unlocking things for the editor when you actually complete the level that uses that element for the first time?" | **done (2026-11-02).** No: 623 opened a piece on placing it. Now beating a level opens its pieces (the ones it offers and the ones in its room) in the Sandbox; placing opens nothing. The Full kit achievement reads "Beat a level with every kind of piece." Gated in `campaign-play.smoke`. |
 | 627 | "Need a reminder first time player has enough stars to buy something" | **registered (2026-11-02).** Plan to follow. |
 | 628 | "and a red dot on the theme button each time something got unlocked there and it wasn't clicked yet" | **registered (2026-11-02).** Plan to follow. |
+| 629 | "Sketched some achievements too. They all unlock a star." (simple achievements, each +1 star) | **registered (2026-11-02).** Rows 630-636. |
+| 630 | "Cashback - Ter gasto 10+ estrelas" (have spent 10+ stars) | **registered (2026-11-02).** Question: stars are never spent today (a look opens once your total reaches its cost). |
+| 631 | "Move it move it - solução de 12+ passos numa área 5x5 ou menor" (a 12+ move solution in a 5x5 room or smaller) | **registered (2026-11-02).** |
+| 632 | "One shot - solução de 1 passo que atende a todos os objetivos primários (menos o de 4 passos, óbvio)" (a 1-move solution meeting every main goal except the move-count one) | **registered (2026-11-02).** |
+| 633 | "Gateway - use 5+ portas numa solução" (5+ doors in one solution) | **registered (2026-11-02).** |
+| 634 | "Guardrails - monte uma solução de 8+ passos impossível de morrer ou soft lockar" (an 8+ move solution where no move can die or soft-lock) | **registered (2026-11-02).** |
+| 635 | "Deadly - monte uma solução de 8+ passos cujo qualquer passo além do caminho primário seja morte ou softlock" (an 8+ move solution where every move off the main path dies or soft-locks) | **registered (2026-11-02).** |
+| 636 | "Silver Bullet - monte uma solução que atenda a quatro objetivos secundários" (one solution meeting four side goals) | **registered (2026-11-02).** |
+| 637 | "Sketch an achievement screen. And how it's popup should work..propose" | **sketching (2026-11-02).** `docs/achievements-sketch.html`. |
