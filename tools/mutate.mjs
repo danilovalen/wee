@@ -1,18 +1,21 @@
 // Breaks one rule at a time and requires the suite to notice. A mutant counts as
 // caught only when a check prints FAIL; a crash with no FAIL line is reported apart.
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
+import { locate, testFile } from './mutantLocate.mjs';
 
-const M = [
+// Each mutant: [file, from, to, test]. tests/mutants.test.mjs fails when one's text is gone (register 608).
+export const M = [
   // tiles as pieces, the robot on a stuck one-way, win cards after a reset (registers 460, 461, 459)
   ['src/rules/crates.js', "cells[from] = s.ground[from];", "cells[from] = '';", 'campaign'],
   ['src/rules/life.js', "        crushTile(s, d);\n", "", 'sim'],
   ['src/rules/crates.js', "|| (/^i?door:/.test(cellAt(s, cx, cy)) && !solidCell(s, cx, cy))", "", 'sim'],
   ['src/campaign/goals/helpers.js', "export const boxIds = room => idsOf(room, e => e.kind === 'box');", "export const boxIds = room => room.entities.filter(e => e.kind === 'box').map(e => e.id);", 'campaign'],
-  ['src/app/campaign.js', "    b.append(top, parts, stars(def, rec));", "    b.append(top, parts);", 'campaign-play'],
+  ['src/app/campaign.js', "    b.append(top, stars(def, rec));", "    b.append(top);", 'campaign-play'],
   ['src/app/play.js', "  requestAnimationFrame(frame);\n  try { frameBody(t); } catch (e) { noteError(e); }", "  frameBody(t);\n  requestAnimationFrame(frame);", 'freeze'],
   ['src/app/tutorial.js', "    if (!active() || allowed(ev)) return;", "    return;", 'tutorial'],
-  ['src/app/campaign.js', "firstTime(progress()) ? go('level', 'tutorial') : go('levels')", "go('levels')", 'tutorial'],
+  ['src/app/campaign.js', "firstTime(progress()) && !window.__noTutorial ? go('level', 'tutorial') : go('levels')", "go('levels')", 'tutorial'],
   ['src/app/nav.js', "      unanswered(pops, () => { toMenu = false;", "      (() => {}) && (() => { toMenu = false;", 'freeze'],
   ['src/campaign/goals/helpers.js', "if (s.ground[t.y * s.w + t.x] === 'death') l.spikes = true;", "", 'campaign'],
   ['src/rules/player.js', "if (!pushChain(s, ax, ay, pd) && !cellAt(s, ax, ay).startsWith('gate:')) return 'blocked';", "if (!pushChain(s, ax, ay, pd)) return 'blocked';", 'campaign'],
@@ -20,12 +23,12 @@ const M = [
   // resize blockers, tools line (registers 252, 251)
   ['src/app/size.js', "if (k < 0) { for (const x of blockers(S.level, side))", "if (false) { for (const x of blockers(S.level, side))", 'steady'],
   ['src/app/size.js', "    if (!drag.changed) { begin(); drag.changed = true; }", "    begin(); drag.changed = true;", 'browser'],
-  ['src', "    if (lined() && b.parentNode !== box) {", "    if (false) {", 'campaign-play'],
+  ['src/app/panels.js', "    if (S.camp && b.parentNode !== box) {", "    if (false) {", 'campaign-play'],
   ['style.css', '@media (max-width: 700px) { #campTools button { width: 46px; height: 46px; }', '@media (max-width: 700px) { #campTools button { width: 52px; height: 52px; }', 'campaign-play'],
-  ['src', "short: [{ el: 'start' }, '2 passes through an open', { el: 'door' }],", "short: [{ el: 'start' }, 'through an open', { el: 'door' }, '×2'],", 'campaign'],
+  ['src/campaign/goals/doors.js', "short: [{ el: 'start' }, 'through', { el: 'door' }, '×2'],", "short: [{ el: 'start' }, 'through', { el: 'door' }],", 'campaign'],
   ['src', "v.won ? `won in ${v.length}, ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` :", "v.won ? `won in ${v.length}` :", 'campaign-play'],
   ['src', "v.won ? `won in ${v.length}, ${tiles}", "v.won ? `won in ${v.length} \\u00b7 ${tiles}", 'arch'],
-  ['src', '"optional":["hitsClosedDoor"]', '"optional":[]', 'campaign'],
+  ['src/level/campaign.js', "\"optional\":[\"hitsClosedDoorTwice\",\"atMostOneDoor\"]", "\"optional\":[\"atMostOneDoor\"]", 'campaign'],
   ['style.css', 'body.simple #campColours:not([hidden]) { display: flex; gap: 10px; margin-left: auto; }', 'body.simple #campColours:not([hidden]) { display: flex; gap: 10px; }', 'campaign-play'],
   // lasers (registers 255, 256)
   ['src', ".map(String)).size >= 2) ok = true; });", ".map(String)).size >= 1) ok = true; });", 'campaign'],
@@ -45,7 +48,7 @@ const M = [
   ['tools/searchScores.mjs', "export const miss = (id, room, moves) => { const f = SCORES[id] || derived(id); return 1 - Math.min(0.95, f ? f(room, moves) : 0); };", "export const miss = () => 1;", 'search'],
   ['tools/searchScores.mjs', "best = Math.max(best, 1 / (1 + Math.abs(e.x - h.x) + Math.abs(e.y - h.y)));", "best = 1;", 'search'],
   ['tools/roomSearch.mjs', "    g.items = [...g.items.filter(i => !on(i, t)), ...copies.filter(i => free(i[1], i[2]))];", "    g.items = g.items.filter(i => !on(i, t));", 'search'],
-  ['tools/roomSearch.mjs', "o: ['button', 'red'], q: ['button', 'blue'], B: ['box'],", "o: ['button', 'red'], q: ['button', 'red'], B: ['box'],", 'search'],
+  ['tools/legend.mjs', "o: 'button:red', q: 'button:blue',", "o: 'button:red', q: 'button:red',", 'search'],
   // the extra goals (registers 262-269)
   ['src', "if (s.events.some(e => e.type === 'launch' && live(s, e.x, e.y))) ok = true;", "if (s.events.some(e => e.type === 'launch')) ok = true;", 'campaign'],
   ['src', "judge: (room, moves) => switches(room).length > replayPath(room, moves, () => {}).toggled.length,", "judge: (room, moves) => switches(room).length > 0,", 'campaign'],
@@ -53,9 +56,9 @@ const M = [
   ['src', "switches(room).length >= 3 && replayPath(room, moves, () => {}).toggled.length >= 1,", "replayPath(room, moves, () => {}).toggled.length >= 1,", 'campaign'],
   ['src', "stoppedPushes(room, moves).out.some(h => live(h.s, h.x, h.y)),", "stoppedPushes(room, moves).out.length > 0,", 'campaign'],
   ['src', "/^button:/.test(end.cells[e.y * room.w + e.x] || ''))", "true)", 'campaign'],
-  ['src', "boxes(room) > 0 && !replayPath(room, moves, () => {}).entities.some(e => !e.dead && e.kind === 'box'),", "boxes(room) > 0,", 'campaign'],
+  ['src/campaign/goals/boxes.js', "boxCount(room) > 0 && !replayPath(room, moves, () => {}).entities.some(e => !e.dead && e.kind === 'box'),", "boxCount(room) > 0,", 'campaign'],
   ['src', ".split('@')[0].split(','))).size >= 3,", ".split('@')[0].split(','))).size >= 2,", 'campaign'],
-  ['src', "      return hit.size >= 2;\n    },\n  },\n};", "      return hit.size >= 1;\n    },\n  },\n};", 'campaign'],
+  ['src/campaign/goals/doors.js', "      return hit.size >= 2;", "      return hit.size >= 1;", 'campaign'],
   ['src', "return b.length > 0 && b.every(x => x.pushes >= 2); },", "return b.some(x => x.pushes >= 2); },", 'campaign'],
   ['src', "return b.length > 0 && b.every(x => x.hits >= 1); },", "return b.some(x => x.hits >= 1); },", 'campaign'],
   // Debug (register 247)
@@ -123,7 +126,7 @@ const M = [
   ['src', "    turnTurrets(s, 'realtime');\n", "", 'sim'],
   ['src', "e.turret.mode === 'follow' && e.turret.dirs.includes(d)) e.turret.aim = e.turret.dirs.indexOf(d);", "e.turret.mode === 'follow') e.turret.aim = Math.max(0, e.turret.dirs.indexOf(d));", 'sim'],
   ['src', "  computeBeams(s, true);\n", "", 'sim'],
-  ['src', "if (harm && hitYou) die(s);", "", 'sim'],
+  ['src/rules/beams.js', "if (harm && hitYou) die(s, 'laser');", "", 'sim'],
   ['src', "      $('placeHint').textContent = describe(S.level, c.x, c.y);\n", "", 'browser'],
   ['src', "  if (m === 'edit') { S.ui.tool = 'look'; S.ui.group = 'basic'; }\n", "", 'phone'],
   ['src', "if ((from && !from.includes(d)) || (to && !to.includes(d))) return null;", "if (to && !to.includes(d)) return null;", 'sim'],
@@ -132,9 +135,9 @@ const M = [
   ['src', "removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(',') + (ui.gateColour", "removePiece(); setCell('gate:right' + (ui.gateColour", 'browser'],
   ['src', "b.disabled = on && ui.pass.length === 1;", "b.disabled = false;", 'browser'],
   ['src', "if (cellAt(s, nx, ny) === 'death') return { x: nx, y: ny, d, death: true };", "", 'sim'],
-  ['src', "  if (t.death) { die(s); return 'died'; }\n", "", 'sim'],
-  ['src', "  if (t.death) { kill(s, e, 'death'); return false; }\n", "", 'sim'],
-  ['src', "if (!t || t.death) { cd = facing", "if (!t) { cd = facing", 'sim'],
+  ['src/rules/player.js', "  if (t.death && !entAt(s, t.x, t.y)) { die(s, 'spikes'); return 'died'; }\n", "", 'lenses'],
+  ['src/rules/life.js', "  if (t.death && !covers(e)) { kill(s, e, 'death'); return false; }\n", "", 'sim'],
+  ['src/rules/beams.js', "if (!t) { cd = facing", "if (!t || t.death) { cd = facing", 'sim'],
   ['src', "  fireSprings(s);\n", "", 'sim'],
   ['src', "if (playerAt(s, x, y) && p.dir !== d && stepTo(s, x, y, d, p.swimming)) {", "if (playerAt(s, x, y) && p.dir !== d) {", 'sim'],
   ['src', "if (e && e.kind !== 'turret' && e.slide !== d && stepTo(s, x, y, d, wades(e), breaks(e))) {", "if (false) {", 'sim'],
@@ -151,7 +154,6 @@ const M = [
   ['src', "if (d !== sw.last) S.pending.push(aim(d));", "", 'phone'],
   ['src', "if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);", "if (S.painting && S.hover && S.ui.tool !== 'start') paint(S.hover.x, S.hover.y, S.painting);", 'phone'],
   ['src', "$('hideBtn').onclick = () => S.pending.push('hide');", "", 'phone'],
-  ['src', "const l = tall ? emptyLevel(12, 14) : emptyLevel(20, 12);", "const l = emptyLevel(20, 12);", 'phone'],
   ['src', "const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));", "const zoom = Math.max(1, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));", 'phone'],
   ['src', "  for (const k of S.pending) S.keylog.push({ t: game.tick, k });\n", "", 'phone'],
   ['src', "S.played = JSON.parse(JSON.stringify(from)); S.keylog = [];", "S.played = from; S.keylog = [];", 'phone'],
@@ -193,7 +195,7 @@ const M = [
   ['src', "return pools.has(s.player.y * s.w + s.player.x) && !s.player.hidden;", "return pools.has(s.player.y * s.w + s.player.x);", 'sim'],
   ['src', "for (const e of s.entities) if (!e.dead && pools.has(e.y * s.w + e.x)) laserHit(s, e, how);", "", 'sim'],
   ['src', "  if (harm && shockHarms(s, s.shocked, 'turret')) hitYou = true;\n", "", 'sim'],
-  ['src', "  if (shockHarms(s, pools, 'laser')) die(s);\n", "", 'sim'],
+  ['src/rules/beams.js', "  if (shockHarms(s, pools, 'laser')) die(s, 'laser');\n", "", 'sim'],
   ['src', "if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;", "if (c === 'death' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;", 'sim'],
   ['src', "} else if (t === 'water' || t === 'sticky' || t === 'gravel' || t === 'goal') {\n    if (isStart) return out;\n    setCell(t);", "} else if (false) {", 'browser'],
   ['src', "b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp;", "b.hidden = only ? !only.includes(b.dataset.tool) : !!b.dataset.camp;", 'phone'],
@@ -363,7 +365,7 @@ const M = [
   ['src', "  if (!s.won) for (const k of inputs) input(s, k);", "  for (const k of inputs) input(s, k);", "sim"],
   ['src', "  checkWin(s);\n", "", "sim"],
   ['src', "if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;", "if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel') return true;", "sim"],
-  ['src', "    else if (kind === 'goal') parts.push('Goal');\n", "", "sim"],
+  ['src/editor/edit.js', "parts.push('Berry');", "parts.push('Goal');", 'sim'],
   ['src', "} else if (t === 'water' || t === 'sticky' || t === 'gravel' || t === 'goal') {", "} else if (t === 'water' || t === 'sticky' || t === 'gravel') {", "sim"],
   ['src', "    if (e.type === 'win') { $('winText')", "    if (false) { $('winText')", "browser"],
   ['src', "  $('again').onclick = () => setMode('play');\n", "", "browser"],
@@ -430,7 +432,7 @@ const M = [
   ['src', "ing[id] = ING[id].allowedOnly ? 'allowed' : v;", "ing[id] = v;", 'gen'],
   ['src', "tags: ['tile:door'], with: ['box'],", "tags: ['tile:door'],", 'gen'],
   ['src', "sel.append(...CHOICES.filter(([v]) => !(g.allowedOnly && v === 'must'))", "sel.append(...CHOICES.filter(() => true)", 'genui'],
-  ['src', "    if (inBeam(s)) { die(s); break; }\n", "", 'sim'],
+  ['src/rules/player.js', "    if (inBeam(s)) { die(s, 'laser'); break; }\n", "", 'sim'],
   ['src', "  place(wide);\n", "", 'fit'],
   ['style.css', "  main > * { min-height: 0; overflow-y: auto; scrollbar-width: thin; }", "  main > * { min-height: 0; overflow-y: visible; }", 'fit'],
   ['src', "if (n.dist + 1 === par) count += w; }", "if (n.dist + 1 === par) count = 1; }", 'design'],
@@ -528,7 +530,6 @@ const M = [
   ['src', "const EDGE = 14;", "const EDGE = 0;", 'fit'],
   ['style.css', "  .grid button .lbl { display: none; }\n", "", 'fit'],
   ['src', "    b.title = t.label;\n", "", 'fit'],
-  ['style.css', ".roomWrap:hover .plus, .roomWrap:hover .minus, .plus:focus-visible, .minus:focus-visible { opacity: 1; }", "", 'fit'],
   // keys (U4)
   ['src', "BY_KEY[ev.key.toUpperCase()] || null);", "null);", 'browser'],
   ['src', "if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName) && !['checkbox', 'radio', 'button'].includes(ev.target.type)) return;", "if (ev.target.tagName === 'INPUT' && ev.target.type === 'number') return;", 'browser'],
@@ -544,7 +545,7 @@ const M = [
   ['src', "  $('placeHint').classList.toggle('quiet', !message && !!note);", "", 'fit'],
   ['style.css', "  .ctx #options { gap: 4px 10px; flex-wrap: wrap; }", "  .ctx #options { gap: 4px 10px; }", 'fit'],
   // the Manga theme and Drift (U5)
-  ['style.css', "--accent: #7b6cff;", "--accent: #ffc93d;", 'manga'],
+  ['style.css', "--accent: #ab9df2;", "--accent: #ffc93d;", 'manga'],
   ['style.css', "--text-face: 'Bitter', Georgia, serif;", "--text-face: 'Asap', Georgia, serif;", 'manga'],
   ['style.css', "button, .chip, .wellTabs, .statusBar { font-family: var(--label-face);", "button, .chip, .wellTabs, .statusBar { font-family: var(--text-face);", 'manga'],
   ['style.css', ".logo { font: 700 22px var(--wee-face);", ".logo { font: 700 22px var(--head);", 'manga'],
@@ -553,7 +554,7 @@ const M = [
   ['src/view/masses.js', "self.startsWith('tri:') ? 'tri' : !A && !B ? 'round' : 'full';", "self.startsWith('tri:') ? 'tri' : 'full';", 'masses'],
   ['src/view/masses.js', "return A && B && D ? 'fillet' : null;", "return A && B ? 'fillet' : null;", 'masses'],
   ['src/view/masses.js', "x < 0 || y < 0 || x >= w || y >= h ? 'wall' :", "x < 0 || y < 0 || x >= w || y >= h ? '' :", 'masses'],
-  ['src/view/scene.js', "if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);", "drawCell(g, c, x, y, null, k);", 'browser'],
+  ['src/view/scene.js', "else if (!inMass(c) || k < 1 || mineAt.has(i)) drawCell(g, c, x, y, null, k);", "else drawCell(g, c, x, y, null, k);", 'browser'],
   ['src/view/masses.js', "return side.length === 1 ? k.includes(side) : side !== OPPOSITE[k];", "return true;", 'masses'],
   ['src/view/masses.js', "if (how === 'full') { p.rect(qx, qy, q, q); continue; }", "if (how === 'full') { p.rect(qx + 1, qy + 1, q - 2, q - 2); continue; }", 'browser'],
   ['src/level/format.js', "Object.entries(l.powers || {}).filter(([p]) => POWERS.includes(p))", "Object.entries(l.powers || {})", 'code'],
@@ -568,24 +569,24 @@ const M = [
   ['src/app/fit.js', "    if (!wide) inside(el, sheet);\n", "", 'phone'],
   ['src/app/sheets.js', "  sheet.hidden = !name || name === 'build';", "  sheet.hidden = false;", 'phone'],
   ['src/app/well.js', "  $('sheet').hidden = true; document", "  document", 'phone'],
-  ['src/view/ink.js', "player: '#7b6cff'", "player: '#e4e7ec'", 'browser'],
-  ['style.css', "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 0;", "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 1px solid var(--line);", 'manga'],
+  ['src/view/ink.js', "player: '#ab9df2'", "player: '#e4e7ec'", 'browser'],
+  ['style.css', "font: inherit; color: var(--text); border: 0; border-radius: 0;", "font: inherit; color: var(--text); border: 1px solid var(--line); border-radius: 0;", 'manga'],
   ['style.css', "button.on { color: var(--accent); --frame: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }", "button.on { color: var(--accent); }", 'browser'],
   ['src', "  if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);\n", "", 'browser'],
   ['src', "  if (d) wind = { x: d[0] * GUST, y: d[1] * GUST };", "  if (d) wind = { x: -d[0] * GUST, y: -d[1] * GUST };", 'browser'],
   ['src', "=== 1) S.fx.push({ type: 'ghost', x: before.x, y: before.y, at: t });", "=== 1) {}", 'browser'],
   // Rooms as pages (register 107)
-  ['src/app/rooms.js', "    $('libTools').hidden = !saved.length;", "    $('libTools').hidden = false;", 'browser'],
+  ['src/app/roomList.js', "    $('libTools').hidden = !saved.length;", "    $('libTools').hidden = false;", 'browser'],
   ['src/app/rooms.js', "((S.room && S.room.name) || 'Untitled')", "'Untitled'", 'browser'],
   ['src/app/rooms.js', "openRoom(starterLevel(innerHeight > innerWidth), {}); closeAll();", "openRoom(starterLevel(innerHeight > innerWidth), {});", 'browser'],
-  ['src/app/rooms.js', "S.room.saved = null; syncRoomsButton(); closeAll(); } });\n  });", "S.room.saved = null; syncRoomsButton(); } });\n  });", 'nav'],
+  ['src/app/rooms.js', "S.room.saved = null; syncRoomsButton(); closeAll(); } }); });", "S.room.saved = null; syncRoomsButton(); } }); });", 'nav'],
   ['src/app/rooms.js', "  say(''); sayWhere();\n", "  say('');\n", 'single'],
   ['index.html', '<div id="codeRow" class="row" hidden>', '<div id="codeRow" class="row">', 'browser'],
-  ['index.html', '<div class="danger"><button id="roomDelete"', '<div><button id="roomDelete"', 'browser'],
+  ['index.html', "<div class=\"danger row bar\"><button id=\"roomDelete\"", "<div class=\"row bar\"><button id=\"roomDelete\"", 'browser'],
   // wee starts on the library (register 108)
   ['src/app/rooms.js', "$('roomsBtn').onclick = () => go('rooms');", "$('roomsBtn').onclick = () => {};", 'browser'],
-  ['src/app/nav.js', "if (shut.delete(id) || $(id).open) return; ", "", 'nav'],
-  ['src/app/nav.js', "if (shut.delete(id) || $(id).open) return; ", "if (shut.delete(id)) return; ", 'nav'],
+  ['src/app/nav.js', "    if (shut.delete(id) || $(id).open) return;\n", "", 'nav'],
+  ['src/app/nav.js', "    if (shut.delete(id) || $(id).open) return;", "    if (shut.delete(id)) return;", 'nav'],
   ['src/app/rooms.js', "'Unsaved changes', closeAll)", "'Unsaved changes', () => {})", 'browser'],
   ['src/app/nav.js', "ev.preventDefault(); if (here", "if (here", 'nav'],
   // A cut can take the start; the room stays 2x2 inside; no control refuses a click (register 109)
@@ -601,7 +602,7 @@ const M = [
   // Lenses tab: hover text, two columns, no More (register 110)
   ['src/app/lenses.js', "textContent: label, title: LENS_TIPS[id] });", "textContent: label });", 'lensui'],
   ['style.css', "  .wellBody .lensBox:not([hidden]) { display: grid;", "  .wellBody .lensBox:not([hidden]) { display: block;", 'lensui'],
-  ['src/view/ink.js', "player: '#7b6cff', start:", "player: '#4cc9ff', start:", 'manga'],
+  ['src/view/ink.js', "player: '#ab9df2', start:", "player: '#4cc9ff', start:", 'manga'],
   // The generator never keeps what the design notes would call idle (register 112)
   ['src/gen/score.js', "  return { fit: !idle.length, score:", "  return { fit: true, score:", 'gen'],
   ['src/gen/generate.js', "      level = tidy(level, v); v = yield* judge(level, recipe);", "      v = yield* judge(level, recipe);", 'gen'],
@@ -646,7 +647,7 @@ const M = [
   // Solver and generator speed (register 120)
   ['src/solve/solve.js', "  for (const c of Object.keys(s.open).sort()) if (s.open[c]) k += c + ',';", "", 'clone'],
   ['src/solve/solve.js', "${e.glue || 0},", "", 'clone'],
-  ['index.html', '<button id="roomNew" type="button" autofocus>', '<button id="roomNew" type="button">', 'browser'],
+  ['index.html', "<button id=\"roomNew\" type=\"button\" class=\"primary\" autofocus>", "<button id=\"roomNew\" type=\"button\" class=\"primary\">", 'browser'],
   // A room's own menu in the Library (register 122)
   ['src/app/tilemenu.js', "if (b.dataset.held) { delete b.dataset.held; ev.stopImmediatePropagation(); ev.preventDefault(); }", "if (b.dataset.held) { delete b.dataset.held; }", 'phone'],
   ['src/app/tilemenu.js', "b.addEventListener('contextmenu', ev => { ev.preventDefault(); openMenu(b, r); });", "", 'browser'],
@@ -740,8 +741,8 @@ const M = [
   ['src', "for (const path of r.paths) for (const id of def.require || [])", "for (const path of r.paths.slice(0, 1)) for (const id of def.require || [])", 'campaign'],
   ['src', "  base.inRange = r.length >= min && r.length <= max;", "  base.inRange = r.length <= max;", 'campaign'],
   ['src', "export const MIN_MOVES = 4;", "export const MIN_MOVES = 1;", 'campaign'],
-  ['src', "if (/^door:/.test(c) && !c.slice(5).split('|').some(col => s.open[col])) ok = true;", "if (/^door:/.test(c)) ok = true;", 'campaign'],
-  ['src', "        dir = p.dir;\n", "", 'campaign'],
+  ['src/campaign/goals/doors.js', "if (/^door:/.test(c) && !c.slice(5).split('|').some(col => s.open[col])) n++;", "if (/^door:/.test(c)) n++;", 'campaign'],
+  ['src/campaign/goals/doors.js', "    dir = p.dir;\n  });\n  return n;", "  });\n  return n;", 'campaign'],
   ['src', "if (c.startsWith('toggle:') ? s.toggled.includes(i) :", "if (c.startsWith('toggle:') ? true :", 'campaign'],
   ['src', "const stuck = own.filter(i => !held.has(i));", "const stuck = own;", 'campaign'],
   ['src', ": n === all ? `none of its ${all} ${many} ${none}` :", ": false ? '' :", 'campaign'],
@@ -756,37 +757,37 @@ const M = [
   ['src', "  if (!room.start) errs.push({ msg: 'Place the start.' });\n", "", 'campaign'],
   ['src', "  if (goals > 1) errs.push({ msg: 'Place only one goal.' });\n", "", 'campaign'],
   ['src', "export const areaOf = room => room.w * room.h;", "export const areaOf = room => room.w * room.h - 1;", 'campaign'],
-  ['src', "    if (!c || c === 'goal') return;", "    if (!c) return;", 'campaign'],
+  ['src/campaign/rules.js', "if (!c || c === 'goal' || !mine(i)) return;", "if (!c || !mine(i)) return;", 'campaign'],
   ['src', "  const kept = rec && rec.room && unframe(rec.room);", "  const kept = rec && rec.room;", 'campaign-play'],
   ['src', "const ALWAYS = ['move'];", "const ALWAYS = [];", 'campaign-play'],
-  ['src', " && before[box.id] !== box.x + ',' + box.y) log.boxHits", ") log.boxHits", 'campaign'],
+  ['src/campaign/goals/helpers.js', "if (box && bg >= 0 && before[box.id] !== box.x + ',' + box.y) hit(box.id, bg, dir);", "if (box && bg >= 0) hit(box.id, bg, dir);", 'campaign'],
   ['src', "if (was && (was.x !== p.x || was.y !== p.y) && isGate(was.x, was.y))", "if (was && isGate(was.x, was.y))", 'campaign'],
   ['src/campaign/goals/helpers.js', "    if (p.dir && !dir) before = last;\n", "", 'campaign'],
   ['src/campaign/goals/helpers.js', "    if (p.dir && !dir) before = last;\n", "", 'campaign'],
-  ['style.css', "  color-scheme: only light;\n", "", 'arch'],
+  ['style.css', "  color-scheme: only dark;\n", "", 'arch'],
   ['src/campaign/goals/lasers.js', "through(b, s).some(at => cellOf(room, at).startsWith('button:'))", "b.path.slice(1).some(at => cellOf(room, at).startsWith('button:'))", 'campaign'],
   ['src/campaign/rules.js', "  if (over) return { ...base, won: false,", "  if (false) return { ...base, won: false,", 'campaign'],
   ['src/campaign/goals/switches.js', "replayPath(room, moves, s => { if ((s.cells[s.player.y * room.w + s.player.x] || '').startsWith('button:')) ok = true; });", "replayPath(room, moves, () => { ok = true; });", 'campaign'],
-  ['src/app/campaign.js', "    if (max !== null && max !== undefined) rows.push(", "    if (false) rows.push(", 'campaign-play'],
+  ['src/app/goalCard.js', "    if (max !== null && max !== undefined) rows.push(", "    if (false) rows.push(", 'campaign-play'],
   ['src/view/pieces.js', "if (badge && t.dirs.length > 1) modeBadge", "if (badge) modeBadge", 'sim'],
-  ['src/campaign/robot.js', "if (!hit) for (const k of keys) move(", "if (false) for (const k of keys) move(", 'campaign'],
+  ['src/campaign/robot.js', "if (by.size < 2) for (const k of keys) move(", "if (false) for (const k of keys) move(", 'campaign'],
   ['src/level/campaign.js', '"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null]', '"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[2,null]', 'campaign'],
   ['src/app/reset.js', "$('resetNo').onclick = () => box.close();", "$('resetNo').onclick = () => { box.close(); S.level = roomOf(S.camp.def); };", 'campaign-play'],
   ['src/app/reset.js', "box.close(); change(() => { S.level = roomOf(S.camp.def); }); after();", "box.close(); change(() => {}); S.level = roomOf(S.camp.def); after();", 'campaign-play'],
   ['src/app/progressCode.js', "await load(p); box.close(); showList();", "box.close(); showList();", 'campaign-play'],
   ['src/app/progressCode.js', "write({ ...progress(), last: null, levels: {} });", "", 'campaign-play'],
-  ['src/app/panels.js', "  const only = S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE : null;", "  const only = S.camp ? toolsFor(S.camp.def) : null;", 'modes'],
+  ['src/app/panels.js', "toolsFor(S.camp.def) : S.simple ? SIMPLE :", "toolsFor(S.camp.def) : false ? SIMPLE :", 'modes'],
   ['style.css', "body.simple #ctxNote, body.simple [data-sheet=powers] { display: none !important; }", "", 'modes'],
   ['src/app/puzzles.js', ".filter(r => r.puzzle)", "", 'modes'],
   ['src/app/puzzles.js', "if (!b[id] || n < b[id]) { b[id] = n; keep(b); }", "", 'modes'],
   ['src/app/puzzles.js', "n === few ? `Solved in ${n} moves, the fewest there are.`", "false ? ''", 'modes'],
   ['src/app/maker.js', ".filter(id => needs(id).every(el => have.has(el)))", "", 'modes'],
   ['src/app/campaign.js', "$('campBack').onclick = up;", "$('campBack').onclick = () => go('levels');", 'nav'],
-  ['src/app/campaign.js', "LEVELS.find(l => l.id === id) || madeLevel(id);", "LEVELS.find(l => l.id === id);", 'modes'],
+  ['src/app/campaign.js', "LEVELS.find(l => l.id === id) || CHALLENGES.find(l => l.id === id) || madeLevel(id);", "LEVELS.find(l => l.id === id) || CHALLENGES.find(l => l.id === id);", 'modes'],
   ['src/level/room.js', "  ...(meta.puzzle ? { puzzle: true } : {}),\n", "", 'design'],
   ['src/app/progressCode.js', "  if (all.made) saveMade(all.made);\n", "", 'modes'],
-  ['src/app/campaign.js', "$('campBack').textContent = def.made ? 'Maker' : 'Levels';", "", 'modes'],
-  ['index.html', "<p>Play as the little circle</p>", "<p>You are the little circle. It moves.</p>", 'arch'],
+  ['src/app/campaign.js', "iconOn($('campBack'), 'levels', def.made ? 'Maker' : 'Levels');", "iconOn($('campBack'), 'levels', 'Levels');", 'modes'],
+  ['index.html', "<small id=\"tutWait\">Tap the ringed spot.</small>", "<small id=\"tutWait\">Tap the ringed spot. It glows.</small>", 'arch'],
   ['src/campaign/goals/lasers.js', "if (cellOf(room, b.stop).startsWith('idoor:')) ok = true;", "ok = true;", 'campaign'],
   ['src/campaign/goals/lasers.js', "at.slice(i + 1).some(r =>", "at.some(r =>", 'campaign'],
   ['src/campaign/goals/doors.js', "if (/^idoor:/.test(s.cells[s.player.y * room.w + s.player.x] || '')) ok = true;", "ok = true;", 'campaign'],
@@ -799,7 +800,7 @@ const M = [
   ['src', "export function colouringsOf(def, el) {\n", "export function colouringsOf(def, el) {\n  return coloursOf(def);\n", 'campaign'],
   ['src', "return !pair || !two ? one : two === 'only' ? [pair] : [...one, pair];", "return !pair || !two ? one : [...one, pair];", 'campaign'],
   // Register 318: the side pairs sit beside the room, which leaves them the width.
-  ['src/app/campaign.js', "start: ['robot', 'Robot']", "start: ['start', 'Robot']", 'campaign-play'],
+  ['src/app/goalCard.js', "start: ['robot', 'Blob']", "start: ['start', 'Blob']", 'campaign-play'],
   ['src/app/icons.js', "(tool === 'robot' ? drawRobot : drawYou)(x)", "drawYou(x)", 'campaign-play'],
   // Registers 336-338, 341: the pushable laser, its offer per level, its look, and level 19's goal.
   ['src/rules/base.js', "export const PUSHED = o => LIGHT.includes(o.kind) || !!o.crate;", "export const PUSHED = o => LIGHT.includes(o.kind);", 'sim'],
@@ -813,12 +814,11 @@ const M = [
   ['src/rules/crates.js', "  if (c.startsWith('sensor:')) return true;\n", "", 'sim'],
   ['src/rules/crates.js', "return solidCell(s, x, y);", "return true;", 'sim'],
   ['src/rules/crates.js', "return gateDirs(s, c).includes(d);", "return true;", 'sim'],
-  ['src/rules/crates.js', "else if (cellAt(s, cx, cy) !== '') return false;", "", 'sim'],
-  ['src/rules/crates.js', "if (crateAt(s, cx, cy) && pushesTile(s, cx, cy, d)) { if (e) return false; list.push({ x: cx, y: cy }); continue; }", "if (crateAt(s, cx, cy) && pushesTile(s, cx, cy, d) && !list.length) { if (e) return false; list.push({ x: cx, y: cy }); continue; }", 'sim'],
-  ['src/rules/player.js', "if (!(b = train(s, e, dx, dy, t.d))) { if (!pushChain(s, nx, ny, t.d)) return 'blocked'; chained = true; }", "if (!(b = train(s, e, dx, dy, t.d))) return 'blocked';", 'sim'],
-  ['src/rules/life.js', "  s.cells = s.originCells; s.crates = s.originCrates;\n", "", 'sim'],
+  ['src/rules/crates.js', "else if (crateAt(s, cx, cy) || !(cellAt(s, cx, cy) === ''", "else if (crateAt(s, cx, cy) || !(true", 'sim'],
+  ['src/rules/crates.js', "if (!e && crateAt(s, cx, cy) && pushesTile(s, cx, cy, d)) { list.push", "if (!e && crateAt(s, cx, cy) && pushesTile(s, cx, cy, d) && !list.length) { list.push", 'sim'],
+  ['src/rules/life.js', "  s.cells = s.originCells; s.crates = s.originCrates; s.tiles = s.originTiles;\n", "", 'sim'],
   ['src/solve/solve.js', "  if (s.crates.size) for (const i of [...s.crates].sort((a, b) => a - b)) k += '|c' + i + s.cells[i];\n", "", 'sim'],
-  ['src/rules/crates.js', "  const cells = [...s.cells], crates = new Set(s.crates);", "  const cells = s.cells, crates = s.crates;", 'sim'],
+  ['src/rules/crates.js', "  const cells = [...s.cells], crates = new Set(s.crates), tiles = s.tiles.map(t => ({ ...t }));", "  const cells = s.cells, crates = s.crates, tiles = s.tiles;", 'sim'],
   ['src/level/format.js', "|| !CRATED(l.cells[c.y * l.w + c.x])) throw", ") throw", 'sim'],
   ['src/editor/edit.js', "  setCrate(level, x, y, CRATE_TOOLS.includes(t) ? !!ui.crate && CRATED(c) : crateAt(level, x, y) && CRATED(c));\n", "", 'sim'],
   ['src/editor/edit.js', "    if (crateAt(l, from.x, from.y)) { setCrate(l, from.x, from.y, false); setCrate(l, to.x, to.y, true); }\n", "", 'sim'],
@@ -862,7 +862,7 @@ const M = [
   // Registers 329, 334: every relay lit at the end; level 19 hidden from the list.
   ['src/campaign/goals/lasers.js', "return relays.length > 0 && relays.every(i => end.lit.has(i));", "return relays.length > 0 && relays.some(i => end.lit.has(i));", 'campaign'],
   ['src/campaign/goals/lasers.js', "const end = replayPath(room, moves, () => {}), relays", "const end = replayPath(room, moves.slice(0, 1), () => {}), relays", 'campaign'],
-  ['src/app/campaign.js', "LEVELS.filter(def => !def.hidden).map(", "LEVELS.map(", 'campaign-play'],
+  ['src/campaign/rules.js', "!def.hidden && !def.tutorial && coloursOf(def).length < 2;", "!def.hidden && !def.tutorial;", 'campaign-play'],
   // Register 316: two colours on any piece, offered per level, picked with a third dot.
   ['src/rules/life.js', "doorsOf(s, kind + col), ...pairsOf(s, kind, col)]", "doorsOf(s, kind + col)]", 'sim'],
   ['src/rules/life.js', "return cols.includes(col) && !cols.some(k => k !== col && s.open[k]) ? at : [];", "return cols.includes(col) ? at : [];", 'sim'],
@@ -881,9 +881,9 @@ const M = [
   ['style.css', ".menu .menuLogo { display: block;", ".menu .menuLogo {", 'campaign-play'],
   ['src', "    if (there || isStart(to) || !UNDER(l.cells[ti])) return null;", "    if (there || !UNDER(l.cells[ti])) return null;", 'campaign'],
   ['src', "    if (l.cells[ti] || there || isStart(to)) return null;", "    if (there || isStart(to)) return null;", 'campaign'],
-  ['src', "  l.cells[(h - 2) * w + w - 2] = 'goal';", "", 'campaign'],
-  ['src', "  l.cells[(h - 2) * w + w - 2] = 'goal';", "  l.cells[w * h - 1] = 'goal';", 'campaign'],
-  ['src', "  l.start = { x: 1, y: 1 };", "  l.start = { x: 0, y: 0 };", 'campaign'],
+  ['src/campaign/rules.js', "  l.cells[gy * w + gx] = 'goal';\n", "", 'campaign'],
+  ['src/campaign/rules.js', "[gx, gy] = def.goal || [w - 2, h - 2];", "[gx, gy] = def.goal || [w - 1, h - 1];", 'campaign'],
+  ['src/campaign/rules.js', "def.start || [1, 1]", "def.start || [0, 0]", 'campaign'],
   ['src', "      if (next) change(() => { S.level = next; });", "", 'campaign-play'],
   ['style.css', "  .grid { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto;", "  .grid { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: visible;", 'campaign-play'],
   ['src', "judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 3),", "judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2),", 'campaign'],
@@ -905,7 +905,7 @@ const M = [
   // Register 321: too few is judged at Run; 328: the score is tiles per goal set.
   ['src/campaign/rules.js', "const over = overLimits(def, room)[0] || underLimits(def, room)[0];", "const over = overLimits(def, room)[0];", 'campaign'],
   ['src/campaign/rules.js', "return list.length < min ? [{ el,", "return list.length < min - 1 ? [{ el,", 'campaign'],
-  ['src/app/campaign.js', "    for (const o of v.optional) if (o.met && o.id !== 'mix') low(o.id, v.tiles);\n", "", 'campaign-play'],
+  ['src/app/campaign.js', "    for (const o of v.optional) if (o.met) low(o.id, v.tiles);\n", "", 'campaign-play'],
   ['src/app/campaign.js', "best[k] == null ? n : Math.min(best[k], n)", "best[k] == null ? n : Math.max(best[k], n)", 'campaign-play'],
   ['src', "rec.goals = Object.fromEntries(v.optional.map(o => [o.id, !!goals[o.id] || o.met]));", "rec.goals = Object.fromEntries(v.optional.map(o => [o.id, o.met]));", 'campaign-play'],
   ['src', "met: n >= o.mix }", "met: n >= 1 }", 'campaign'],
@@ -928,10 +928,10 @@ const M = [
   ['src', "dispatchEvent(new CustomEvent('wee:win', { detail: { moves: e.moves } }));", "", 'campaign-play'],
   ['src', "  out.hidden = !v || S.camp.verdictGone;", "  out.hidden = !v;", 'campaign-play'],
   ['src', "  if (room.start && under(room.start.x, room.start.y)) errs.push", "  if (false) errs.push", 'campaign'],
-  ['src', "const under = (x, y) => /^(button|toggle):/.test(", "const under = (x, y) => /^(button):/.test(", 'campaign'],
+  ['src/campaign/rules.js', "/^(button|toggle):|^death$/.test(room.cells", "/^(button):|^death$/.test(room.cells", 'campaign'],
   ['src', ".every(e => !(end.cells[e.y * room.w + e.x] || '').startsWith('button:'));", ".length >= 0;", 'campaign'],
   ['style.css', "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }", "display: grid; gap: 8px; }", 'campaign-play'],
-  ['src', "${scoreText(def, rec.best)}` : '';", "${scoreText(def, rec.best)}` : `${stepsText(def.steps)}`;", 'campaign-play'],
+  ['src/app/campaign.js', "star(rec.beaten ? best.win ?? '' : null, true, 'Win')", "star(best.win ?? '', true, 'Win')", 'campaign-play'],
   ['src', "    dispatchEvent(new Event('wee:demoDone'));", "", 'campaign-play'],
   ['src', "exit: () => { noteLeaving(); leaveLevel(); }", "exit: () => { leaveLevel(); }", 'campaign-play'],
   ['src/app/nav.js', "  $('logo').onclick = () => go('menu');", "", 'nav'],
@@ -949,28 +949,26 @@ const M = [
   ['style.css', "box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px;", "box-sizing: border-box; margin: 0 0 6px;", 'steady'],
   ['style.css', "body.campaign #campVerdict[hidden] { visibility: hidden; }", "", 'campaign-play'],
   ['src', "    : S.mode === 'play' && !S.camp ? innerHeight", "    : S.mode === 'play' ? innerHeight", 'steady'],
-  ['style.css', "body.campaign .pad[hidden] { display: flex; visibility: hidden; }", "", 'steady'],
+  ['style.css', "body.campaign .pad, body.campaign .pad[hidden] { display: none !important; }", "", 'steady'],
   ['src', "$('moves').textContent = m === 'play' ? 'Moves 0' : '\\u00a0';", "$('moves').textContent = m === 'play' ? 'Moves 0' : '';", 'steady'],
   ['style.css', "body.campaign.play #statusBar { display: revert; visibility: hidden; }", "body.campaign.play #statusBar { display: none; }", 'steady'],
-  ['style.css', ".plus, .plus:hover:not(:disabled), .plus:active:not(:disabled), .minus, .minus:hover:not(:disabled), .minus:active:not(:disabled) { transform: none; box-shadow: none; }", "", 'steady'],
-  ['style.css', ".growBar[data-bar=right] :is(.plus, .minus)::after { right: -26px; }", "", 'steady'],
   ['src', "judge: (room, moves) => Object.values(oneWayLog(room, moves).boxHits).some(n => n >= 1),", "judge: (room, moves) => Object.values(oneWayLog(room, moves).boxHits).some(n => n >= 2),", 'campaign'],
-  ['src/level/campaign.js', '"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd"]', '"require":["boxCrossesOpenDoor"],"optional":["noBoxAtEnd"]', 'campaign'],
+  ['src/level/campaign.js', "\"require\":[\"boxThroughOpenDoor\"],\"optional\":[\"noBoxAtEnd\"", "\"require\":[\"boxCrossesOpenDoor\"],\"optional\":[\"noBoxAtEnd\"", 'campaign'],
   ['src', "now[e.id] = { x: e.x, y: e.y, din: here ? (moved ? (b.din || d) : b.din) : null };", "now[e.id] = { x: e.x, y: e.y, din: moved ? d : b.din };", 'campaign'],
   ['src', "replayPath(room, moves, s => { if (s.events.some(ev => ev.type === 'kill' && ev.how === 'door'", "replayPath(room, moves, s => { if (s.events.some(ev => ev.type === 'kill' && ev.how === 'nothing'", 'campaign'],
   ['src', "  if (old8) p.levels['7'] = old8;\n", "", 'campaign-play'],
   ['src', "  delete p.levels['7']; delete p.levels['8'];\n", "  delete p.levels['8'];\n", 'campaign-play'],
   ['src', "((S.camp || S.simple) && (ui.tool === 'gate' || ui.tool === 'turret') ? ' (tap one to turn it, hold to remove it)' : '')", "''", 'campaign-play'],
   ['src', "change(() => place(S.level, { ...S.ui, tool }, at.x, at.y, 'remove'));", "change(() => {});", 'campaign-play'],
-  ['src', "    if (S.gateHold) { clearTimeout(S.gateHold.timer);", "    if (S.gateHold) { ", 'campaign-play'],
+  ['src/app/input.js', "if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool }", "if (S.gateHold) { const { at, tool }", 'campaign-play'],
   ['src', "      const at = c, tool = S.ui.tool;\n", "      const at = c, tool = S.ui.tool; if (at) return;\n", 'campaign-play'],
   ['src', "  return tries(level, from, to).find(next => !newError(level, next)) || null;", "  return tries(level, from, to).slice(0, 1).find(next => !newError(level, next)) || null;", 'campaign-play'],
   ['src', "  if (all.some(next => !newError(level, next))) return null;", "  if (!newError(level, all[0])) return null;", 'campaign-play'],
   ['index.html', '<button id="menuSandbox" type="button" class="primary">', '<button id="menuSandbox" type="button">', 'campaign-play'],
   ['style.css', "#reportBox, dialog[id].rooms { --page: 720px; width: 100vw;", "#reportBox, dialog[id].rooms { --page: 720px;", 'steady'],
-  ['src/editor/state.js', "  return tall ? emptyLevel(12, 14) : emptyLevel(20, 12);", "  const l = tall ? emptyLevel(12, 14) : emptyLevel(20, 12); l.cells.fill('wall', 0, l.w); return l;", 'campaign'],
+  ['src/editor/state.js', "  return emptyLevel(7, 7);", "  const l = emptyLevel(7, 7); l.cells.fill('wall', 0, l.w); return l;", 'campaign'],
   ['src/app/strip.js', "  if (open && before !== null && before !== tool) open = null;", "", 'browser'],
-  ['src/app/strip.js', "      if (mine && members(g).length > 1) setOpen(open === g ? null : g);", "      if (false) setOpen(g);", 'browser'],
+  ['src/app/strip.js', "      if (open === g) { setOpen(null); return; }\n", "", 'browser'],
   ['src/app/strip.js', "    b.querySelector('.more').hidden = m.length < 2;", "    b.querySelector('.more').hidden = false;", 'modes'],
   ['src/app/strip.js', "  if (on && pal.parentNode !== document.body) document.body.append(pal);", "", 'phone'],
   ['src/app/generator.js', "sel.closest('li').hidden = !on;", "sel.closest('li').hidden = false;", 'modes'],  ['src/app/rooms.js', "parent: arg => arg === 'start' ? 'menu' : 'room',", "parent: () => 'room',", 'nav'],
@@ -978,7 +976,7 @@ const M = [
   ['src/app/rooms.js', "if (current()?.name === 'rooms') back('room'); };", "if (current()?.name === 'rooms') up(); };", 'nav'],
   ['index.html', 'class="primary" hidden>Level maker', 'class="primary">Level maker', 'modes'],  ['src/app/more.js', "if (ev.key === 'Escape' && !$('moreMenu').hidden) {", "if (false) {", 'browser'],
   ['src/app/more.js', "if (ev.target.closest('button')) more(false);", "", 'browser'],
-  ['src/app/rooms.js', "    if (!filter) ul.append(...exampleRows());", "", 'nav'],
+  ['src/app/roomList.js', "    if (!filter) ul.append(...examples());", "", 'nav'],
   ['src/app/rooms.js', "$('roomsMenu').hidden = arg !== 'start';", "", 'nav'],
   ['index.html', '<button id="roomNew" type="button" class="primary" autofocus>', '<button id="roomNew" type="button" autofocus>', 'browser'],  ['style.css', ".slot[hidden] { display: none; }", "", 'modes'],
   ['src/app/panels.js', "if (S.simple) return { all: ['red', 'blue', 'wire']", "if (S.simple) return { all: ['red', 'blue', 'red|blue', 'wire']", 'modes'],
@@ -988,11 +986,10 @@ const M = [
   ['style.css', "#menuCampaign { grid-column: 1 / -1; }", "", 'campaign-play'],
   ['src/app/rooms.js', "{ name: kind === 'Example' ? t.name : '' }", "{ name: '' }", 'nav'],
   ['src/app/strip.js', "open = members(g).length > 1 ? g : null; before = lastOf(g);", "open = null; before = lastOf(g);", 'browser'],
-  ['src/app/levelParts.js', "for (const crate of pushingsOf(def, el))", "for (const crate of [false])", 'campaign-play'],
-  ['src/app/levelParts.js', "? colouringsOf(def, el) : [null];", "? colouringsOf(def, el).slice(0, 1) : [null];", 'campaign-play'],
+  ['src/app/levelParts.js', "icon('gate', 'red', def.colours ? 'red' : null, crate)", "icon('gate', 'red', null, crate)", 'campaign-play'],
   ['src/app/camera.js', "export const zoomable = () => cam.fit * T < MIN_TILE;", "export const zoomable = () => true;", 'camera'],
   ['src/app/camera.js', "    if (S.before !== null && S.before !== undefined) { S.level = JSON.parse(S.before); S.before = null; }\n", "", 'camera'],
-  ['src/app/camera.js', "  return { x: cam.x + (cx - r.left) / r.width * W / cam.z,", "  return { x: (cx - r.left) / r.width * W / cam.z,", 'camera'],
+  ['src/app/camera.js', "return { x: cam.x + (cx - r.left) / k,", "return { x: (cx - r.left) / k,", 'camera'],
   ['src/app/camera.js', "  if (cam.held) return;", "  return;", 'camera'],
   ['src/app/camera.js', "export function leavePlay() { if (editView)", "export function leavePlay() { if (false)", 'camera'],  ['src/app/camera.js', "return isZoomed() ? { w: Math.max(avail.w, W * cam.fit), h: Math.max(avail.h, H * cam.fit) } :", "return false ? 0 :", 'camera'],
   ['src/app/play.js', "  clearView();\n", "", 'camera'],  ['src/app/winCard.js', "  if (before.beaten && (!gold || all(before))) return;", "", 'win'],
@@ -1001,11 +998,10 @@ const M = [
   ['src/app/winCard.js', "  if (p.gold) burst(box);", "", 'win'],
   ['src/app/winCard.js', "return n ? { label: 'Next level', go: () => go('level', n.id) }", "return n ? { label: 'Next level', go: () => go('level', def.id) }", 'win'],  ['style.css', "#openNow:not(:empty) { margin-bottom: 8px; }", "", 'spacing'],
   ['style.css', ".moreMenu { position: absolute; right: 0; top: calc(100% + 8px); gap: 8px; }", ".moreMenu { position: absolute; right: 0; top: calc(100% - 2px); }", 'spacing'],  ['src/rules/life.js', "  if (t.death && !covers(e)) { kill(s, e, 'death'); return false; }", "  if (t.death) { kill(s, e, 'death'); return false; }", 'sim'],
-  ['src/rules/player.js', "  if (t.death && !entAt(s, t.x, t.y)) { die(s); return 'died'; }", "  if (t.death) { die(s); return 'died'; }", 'sim'],
-  ['src/rules/player.js', "  if (cellAt(s, nx, ny) === 'death') { die(s); return 'died'; }", "", 'sim'],
+  ['src/rules/player.js', "  if (t.death && !entAt(s, t.x, t.y)) { die(s, 'spikes'); return 'died'; }", "  if (t.death) { die(s, 'spikes'); return 'died'; }", 'sim'],
+  ['src/rules/player.js', "  if (cellAt(s, nx, ny) === 'death') { die(s, 'spikes'); return 'died'; }", "", 'sim'],
   ['src/editor/state.js', "  return emptyLevel(7, 7);", "  return tall ? emptyLevel(12, 14) : emptyLevel(20, 12);", 'campaign'],
-  ['src/app/nav.js', "    if (n > 0 && !fixed) { toMenu = true; ours = true; history.go(-n); return; }", "", 'nav'],
-  ['src/app/levelParts.js', "  if (cols.length < 2) return dots;", "  return dots;", 'campaign-play'],
+  ['src/app/nav.js', "    if (n > 0 && !fixed) {", "    if (false) {", 'nav'],
   ['src/app/levelParts.js', "    const crate = pushingsOf(def, el).every(Boolean);", "    const crate = false;", 'campaign-play'],
   ['src/campaign/rules.js', "/^(button|toggle):|^death$/", "/^(button|toggle):/", 'campaign'],
   // Row 607: the Sandbox pieces as pixel sprites.
@@ -1023,37 +1019,36 @@ const M = [
   ['src/app/tutorial.js', "it earns a star.', next: 'Next', ring: '#campBrief .campOpt li' },", "it earns a star.', next: 'Next', ring: '#campBack' },", 'tutorial'],
   ['src/view/pieces.js', "drawSprite(g, 'blob', -T / 2, -T / 2, { outline: hidden });", "", 'campaign-play'],
   ['src/app/unlock.js', "export const unlocked = () => on;", "export const unlocked = () => false;", 'unlock'],
+  // Row 608: no mutant goes stale.
+  ['tools/mutantLocate.mjs', "existsSync(file) && readFileSync(file, 'utf8').includes(from) ? file : null", "existsSync(file) ? file : null", 'mutants'],
+  ['tools/mutantLocate.mjs', "return hits.length === 1 ? hits[0] : null;", "return hits[0] || null;", 'mutants'],
 ];
 
-// SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.
-if (process.env.SINCE) {
-  const added = spawnSync('git', ['diff', process.env.SINCE, '--', 'tools/mutate.mjs'], { encoding: 'utf8' }).stdout.split('\n').filter(l => l.startsWith('+  [')).map(l => l.slice(1));
-  const keep = new Function('return [' + added.join('\n') + ']')();
-  M.splice(0, M.length, ...keep);
+// Run only as a script: the gate imports M.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  // SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.
+  if (process.env.SINCE) {
+    const added = spawnSync('git', ['diff', process.env.SINCE, '--', 'tools/mutate.mjs'], { encoding: 'utf8' }).stdout.split('\n').filter(l => l.startsWith('+  [')).map(l => l.slice(1));
+    const keep = new Function('return [' + added.join('\n') + ']')();
+    M.splice(0, M.length, ...keep);
+  }
+  let caught = 0, crashed = 0;
+  for (const [where, from, to, test] of M) {
+    if (process.env.ONLY && !from.includes(process.env.ONLY)) { caught++; continue; }
+    const file = locate(where, from);
+    if (!file) { console.log(`STALE mutant in ${where}: ${from.slice(0, 50)}`); process.exitCode = 1; continue; }
+    if (process.env.STALE_ONLY) { caught++; continue; }
+    const orig = readFileSync(file, 'utf8');
+    writeFileSync(file, orig.replace(from, to));
+    try {
+      const r = spawnSync('node', [testFile(test)], { encoding: 'utf8' });
+      const out = r.stdout + r.stderr;
+      const fail = out.split('\n').find(l => l.startsWith('FAIL'));
+      if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }
+      else if (r.status !== 0) { crashed++; console.log(`CRASHED ${file}: ${from.slice(0, 50)}`); }
+      else console.log(`SURVIVED ${file}: ${from.slice(0, 60)}`);
+    } finally { writeFileSync(file, orig); }
+  }
+  console.log(`mutants: ${caught}/${M.length} caught${crashed ? `, ${crashed} crashed` : ''}`);
+  process.exit(caught === M.length ? 0 : 1);
 }
-let caught = 0, crashed = 0;
-// 'src' as the file means: whichever source file holds the text, which must be exactly one.
-const walk = d => readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(d + '/' + e.name) : /\.js$/.test(e.name) ? [d + '/' + e.name] : []);
-const locate = (file, from) => {
-  if (file !== 'src') return existsSync(file) && readFileSync(file, 'utf8').includes(from) ? file : null;
-  const hits = walk('src').filter(f => readFileSync(f, 'utf8').includes(from));
-  return hits.length === 1 ? hits[0] : null;
-};
-for (const [where, from, to, test] of M) {
-  if (process.env.ONLY && !from.includes(process.env.ONLY)) { caught++; continue; }
-  const file = locate(where, from);
-  if (!file) { console.log(`STALE mutant in ${where}: ${from.slice(0, 50)}`); process.exitCode = 1; continue; }
-  if (process.env.STALE_ONLY) { caught++; continue; }
-  const orig = readFileSync(file, 'utf8');
-  writeFileSync(file, orig.replace(from, to));
-  try {
-    const r = spawnSync('node', [`tests/${test}.${['sim', 'arch', 'solve', 'server', 'tags', 'lint', 'code', 'region', 'gen', 'design', 'lenses', 'manga', 'masses', 'size', 'clone', 'roster', 'toggle', 'campaign', 'search'].includes(test) ? 'test' : 'smoke'}.mjs`], { encoding: 'utf8' });
-    const out = r.stdout + r.stderr;
-    const fail = out.split('\n').find(l => l.startsWith('FAIL'));
-    if (fail) { caught++; console.log(`caught  ${fail.slice(0, 90)}`); }
-    else if (r.status !== 0) { crashed++; console.log(`CRASHED ${file}: ${from.slice(0, 50)}`); }
-    else console.log(`SURVIVED ${file}: ${from.slice(0, 60)}`);
-  } finally { writeFileSync(file, orig); }
-}
-console.log(`mutants: ${caught}/${M.length} caught${crashed ? `, ${crashed} crashed` : ''}`);
-process.exit(caught === M.length ? 0 : 1);

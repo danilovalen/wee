@@ -215,6 +215,13 @@ try {
   await page.click('#campBack');
   const row = await stars(1);
   check('the list keeps a beaten level: its main star holds the fewest tiles, one star per side goal (register 475)', /^7 \| /.test(row) && row.split(' | ')[1].split(' ').length === 5, row);
+  // The score per side goal is its own fewest tiles, kept apart from the win's (register 328).
+  const rec1 = await page.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')).levels['1']);
+  const metIds = Object.keys(rec1.goals || {}).filter(id => rec1.goals[id]);
+  check('the save keeps a fewest-tiles count for each side goal a win met', metIds.length > 0 && metIds.every(id => Number.isInteger(rec1.best[id])), JSON.stringify(rec1));
+  // A one-way in the list wears a colour only in a level that names its colours (register 241).
+  const gateIcons = await page.evaluate(ids => ids.map(id => document.querySelector(`.campRow[data-level="${id}"] [data-part="gate"]`)?.toDataURL()), [ONE_COLOUR_GATE.id, PLAIN_GATE.id]);
+  check('the list draws a one-colour level\'s one-way in its colour, a plain level\'s without one', gateIcons.every(Boolean) && gateIcons[0] !== gateIcons[1], ONE_COLOUR_GATE.id + ' vs ' + PLAIN_GATE.id);
   check('every level card is the same size, with no text line (register 475)', await page.$$eval('#campList .campRow', bs => new Set(bs.map(b => b.offsetHeight)).size === 1 && !bs.some(b => b.querySelector('small'))));
   check('the level you were on is selected', await page.locator(`.campRow[data-level="${ANY.id}"]`).evaluate(b => b.classList.contains('sel')));
   // Progress you carry yourself (register 254): copy a code, reset after a yes, load the code back.

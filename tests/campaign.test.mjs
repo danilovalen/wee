@@ -12,9 +12,13 @@ import { moveAt } from '../src/editor/edit.js';
 import { room, suite } from './lib.mjs';
 import { CELL, PIECE, LASER, pushableLaser } from '../tools/legend.mjs';
 import { KNOWN } from './knownRooms.mjs';
+import { readFileSync } from 'node:fs';
+import { campaignSource } from '../tools/templates.mjs';
 
 const { check: ok, done } = suite('campaign');
 const level = id => LEVELS.find(l => l.id === id);
+// The game holds what campaign/ says: the generated levels file is never edited by hand.
+ok('src/level/campaign.js is in step with campaign/', readFileSync('src/level/campaign.js', 'utf8') === campaignSource());
 // His three-push room (2026-10-17): the robot starts boxed in on three sides.
 // Level 5's known win, found by tools/levelSearch.mjs: two pushes and a hit on one box.
 const WIN5 = ['....', '....', '....', '....', '.BB.', 'PB..', '..G.', '....'];
