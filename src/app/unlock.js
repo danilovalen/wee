@@ -6,6 +6,8 @@ import { glyph } from './glyphs.js';
 
 let on = false;
 export const unlocked = () => on;
+// Everything open for a test that jumps straight to a later level (window.__openAll), or while unlocked.
+export const allOpen = () => on || !!globalThis.__openAll;
 
 function sync() {
   const b = $('menuUnlock');

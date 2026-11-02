@@ -16,7 +16,7 @@ const TOOL = { '#': 'wall', B: 'box', t: 'toggle', '>': 'gate', '<': 'gate', '^'
 try {
   const p = await browser.newPage({ viewport: { width: 393, height: 735 }, hasTouch: true, isMobile: true });
   const errors = []; p.on('pageerror', e => errors.push(e.message));
-  await p.addInitScript(() => { window.__noTutorial = true; window.__noWinCard = true; });
+  await p.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; window.__noWinCard = true; });
   await p.goto(`http://localhost:${PORT}/index.html#/level/${ch.id}`); await p.waitForTimeout(1200);
   check('the tools row offers only the given pieces', JSON.stringify(await p.$$eval('#palette [data-tool]', bs => bs.filter(b => b.offsetParent).map(b => b.dataset.tool).sort())) === JSON.stringify([...new Set(ch.pieces.map(c => TOOL[c]))].sort()), 'tools');
   // Every icon sits in the middle of its button (rows 568, 574: reset's sat on its left edge).

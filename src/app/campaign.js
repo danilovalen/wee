@@ -4,7 +4,8 @@
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS } from '../level/campaign.js';
 import { CHALLENGES } from '../level/challenges.js';
-import { unlocked } from './unlock.js';
+import { unlocked, allOpen } from './unlock.js';
+import { plan, builders, isOpen, sideGoalsOpen } from '../campaign/progression.js';
 import { roomOf, coloursOf, placementErrors, check, optionalGoals, listed } from '../campaign/rules.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -122,33 +123,39 @@ function star(n, main, label) {
   el.title = label;
   return el;
 }
-function stars(def, rec) {
+// sideOpen: the level's side goals are open, so their stars show (register 558).
+function stars(def, rec, sideOpen = true) {
   const row = document.createElement('span'), best = rec.best || {}, line = document.createElement('span');
   row.className = 'campStars'; line.className = 'campStarLine';
   const met = id => rec.goals && rec.goals[id] ? best[id] ?? best.win ?? '' : null;
-  const side = optionalGoals(def);
+  const side = sideOpen ? optionalGoals(def) : [];
   row.append(star(rec.beaten ? best.win ?? '' : null, true, 'Win'), ...(side.length ? [line] : []), ...side.map(o => star(met(o.id), false, o.text)));
   row.setAttribute('aria-label', rec.beaten ? `Beaten, ${Object.values(rec.goals || {}).filter(Boolean).length} of ${optionalGoals(def).length} side goals` : 'Not beaten');
   return row;
 }
 
+// The floor plan (registers 558, 609-611): the builder levels down a corridor, each with the side
+// room it opens beside it; a room shuts until the level that opens it is beaten.
+function room(def, p, kind) {
+  const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button'), open = allOpen() || isOpen(def.id, p);
+  li.className = kind; b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id; b.disabled = !open; b.classList.toggle('locked', !open);
+  const name = document.createElement('b');
+  name.textContent = def.challenge ? def.id.toUpperCase() : shownName(def).replace(/^Level /, ''); name.setAttribute('aria-label', shownName(def));
+  // The number and its pieces share one line (register 527).
+  const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name, levelParts(def, TOOL));
+  const shut = document.createElement('span'); shut.className = 'campShut'; shut.innerHTML = glyph('lock');
+  b.append(top, open ? stars(def, rec, allOpen() || !builders().includes(def) || sideGoalsOpen(def.id, p)) : shut);
+  if (def.id === p.last) b.classList.add('sel');
+  b.onclick = () => go('level', def.id);
+  li.append(b);
+  return li;
+}
 function renderList() {
-  const p = progress(), list = $('campList');
-  // The challenges follow under their own heading while they are being playtested (register 562).
-  const head = Object.assign(document.createElement('li'), { className: 'campSection', textContent: 'Challenges (playtest)' });
-  list.replaceChildren(...[...LEVELS.filter(d => listed(d) || (unlocked() && !d.tutorial)), head, ...CHALLENGES].map(def => def === head ? head : (() => {
-    const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button');
-    b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
-    const name = document.createElement('b');
-    name.textContent = def.challenge ? def.id.toUpperCase() : shownName(def).replace(/^Level /, ''); name.setAttribute('aria-label', shownName(def));
-    // The number and its pieces share one line (register 527).
-    const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name, levelParts(def, TOOL));
-    b.append(top, stars(def, rec));
-    if (def.id === p.last) b.classList.add('sel');
-    b.onclick = () => go('level', def.id);
-    li.append(b);
-    return li;
-  })()));
+  const p = progress(), rows = [];
+  for (const { def, side } of plan()) rows.push(room(def, p, 'main'), side ? room(side, p, 'side') : Object.assign(document.createElement('li'), { className: 'side none' }));
+  // Unlocked for the session, the levels off the plan show at its end.
+  if (unlocked()) for (const def of LEVELS.filter(d => !d.tutorial && !listed(d))) rows.push(room(def, p, 'main'), Object.assign(document.createElement('li'), { className: 'side none' }));
+  $('campList').replaceChildren(...rows);
 }
 
 // The level list, drawn fresh, with the last level played in view.

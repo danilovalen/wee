@@ -8,6 +8,8 @@ import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
 import { icon } from './icons.js';
 import { progress } from './progress.js';
+import { allOpen } from './unlock.js';
+import { builders, sideGoalsOpen } from '../campaign/progression.js';
 
 // The editor tool that places each palette element.
 export const TOOL = { spikes: 'death', block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle', gate: 'gate', laser: 'turret', idoor: 'idoor', relay: 'sensor' };
@@ -85,7 +87,9 @@ export function syncBrief() {
   // A side star earned by any earlier room stays filled on a pale chip; the room on screen rings the
   // ones it meets (register 586), so stars read as collected one room at a time.
   const kept = ((progress().levels[def.id] || {}).goals) || {};
-  for (const o of optionalGoals(def)) rows.push({ id: o.id, parts: o.parts, text: `Optional: ${o.text}`, met: ran ? results.find(r => r.id === o.id).met : null, optional: true, kept: !!kept[o.id] });
+  // A builder level's side goals show once it is beaten (register 558).
+  const sideShown = allOpen() || !builders().includes(def) || sideGoalsOpen(def.id, progress());
+  for (const o of sideShown ? optionalGoals(def) : []) rows.push({ id: o.id, parts: o.parts, text: `Optional: ${o.text}`, met: ran ? results.find(r => r.id === o.id).met : null, optional: true, kept: !!kept[o.id] });
   const card = document.createElement('div'); card.className = 'campGoal';
   const last = $('campLast');
   const tiles = Object.values(placed(def, S.level).by).reduce((n, l) => n + l.length, 0);

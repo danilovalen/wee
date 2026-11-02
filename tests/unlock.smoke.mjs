@@ -21,11 +21,18 @@ try {
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
   check('there are hidden levels to unlock', hidden.length > 0, hidden.join());
   check('locked, the list leaves them out', (await rows()).every(id => !hidden.includes(id)));
+  // The floor plan's locks (registers 558, 616): a fresh player has only the first builder level open.
+  const shut = await p.$$eval('#campList .campRow', bs => bs.map(b => [b.dataset.level, b.disabled]));
+  check('a fresh player can open only the first level; the rest are shut', shut.length > 2 && !shut[0][1] && shut.slice(1).every(([, off]) => off), JSON.stringify(shut.slice(0, 4)));
+  await p.click(`#campList [data-level="${shut[0][0]}"]`); await p.waitForTimeout(500);
+  check('an unbeaten level shows no side goals yet', await p.$$eval('.campReqs .optional', o => o.length === 0));
+  await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
   await p.evaluate(() => { location.hash = '#/'; }); await p.waitForTimeout(500);
   await p.click('#menuUnlock'); await p.waitForTimeout(150);
   check('the corner button says it is on', (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'true');
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
   check('unlocked, the list shows every hidden level', (await rows()).filter(id => hidden.includes(id)).length === hidden.length, JSON.stringify(await rows()));
+  check('unlocked, no room is shut', await p.$$eval('#campList .campRow', bs => bs.every(b => !b.disabled)));
   await p.click(`#campList [data-level="${(await rows())[0]}"]`); await p.waitForTimeout(500);
   check('a padlock badge shows in the top bar while it is on', await p.locator('#unlockBadge').isVisible());
   check('nothing about it is saved', (await p.evaluate(() => localStorage.getItem('wee.campaign'))) === saved || !/unlock/i.test(await p.evaluate(() => localStorage.getItem('wee.campaign') || '')));

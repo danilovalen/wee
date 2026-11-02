@@ -14,7 +14,7 @@ const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
 try {
   const p = await browser.newPage({ viewport: { width: 393, height: 735 }, hasTouch: true, isMobile: true });
-  await p.addInitScript(() => { window.__noTutorial = true; window.__noWinCard = true; });
+  await p.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; window.__noWinCard = true; });
   await p.goto(`http://localhost:${PORT}/index.html`); await p.waitForTimeout(800);
   // Every frame for ~0.7s after the tap: the largest shadow offset and whether the button ever moved.
   const tap = async sel => {
