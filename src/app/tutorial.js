@@ -1,4 +1,4 @@
-// The tutorial (registers 507, 512, 514, 515, 519, 521): "How to play", one room, a coach bubble that walks the
+// The tutorial (registers 507, 512, 514, 515, 519, 521, 618): "Tutorial", one room, a coach bubble that walks the
 // player through moving the robot, building, Test, Run and the stars on the level list. Strict: each
 // step waits for one thing, and only the ringed thing answers a tap. Copy is a draft.
 import { S } from '../editor/state.js';

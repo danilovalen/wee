@@ -29,7 +29,8 @@ export function startSnow(cv) {
         f.y = (f.y + 2 * f.fall + wind.y * f.r * 0.0016 + 1) % 1;
         f.x = (f.x + Math.sin(t / 1400 + f.sway) * 0.0006 + wind.x * f.r * 0.0016 + 1) % 1;
       }
-      g.beginPath(); g.arc(f.x * w, f.y * h, f.r, 0, Math.PI * 2); g.fill();
+      // Square flakes on whole pixels, as everything else is pixel art (register 621).
+      const d = 2 * Math.max(1, Math.round(f.r)); g.fillRect(Math.round(f.x * w), Math.round(f.y * h), d, d);
     }
     wind = { x: wind.x * SETTLE, y: wind.y * SETTLE };
     if (!reduce) requestAnimationFrame(draw);

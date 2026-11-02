@@ -2,13 +2,10 @@
 // one mass each. Every cell is four quarters; a quarter reads its two side neighbours and
 // the diagonal between them, so outer corners round, inner corners get a fillet and a
 // solid block has no seams. Doors, switches and the rest stay one tile each (tiles.js).
-import { INK, T, frame } from './ink.js';
+import { INK, T, frame, pxTri } from './ink.js';
 import { altSkin } from './look.js';
 
 export const MASSES = ['wall', 'water', 'sticky', 'gravel', 'death'];
-// Corner radius per kind, in pixels of a 32 px tile.
-export const RADIUS = { wall: 6, water: 8, sticky: 10, gravel: 6, death: 6 };
-const LIP = 6;
 
 // Blocks with something on them (a spring, a laser catcher, cracks) are still walls, and a
 // triangle is a wall along its two straight sides.
@@ -36,32 +33,6 @@ export function quarter(kindAt, kind, x, y, dx, dy) {
   return A && B && D ? 'fillet' : null;
 }
 
-function path(kindAt, kind, w, h) {
-  const p = new Path2D(), r = RADIUS[kind], q = T / 2, f = r;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-      const how = quarter(kindAt, kind, x, y, dx, dy);
-      if (!how) continue;
-      const qx = x * T + (dx > 0 ? q : 0), qy = y * T + (dy > 0 ? q : 0);
-      if (how === 'full') { p.rect(qx, qy, q, q); continue; }
-      if (how === 'tri') {
-        if (dx > 0 || dy > 0) continue;
-        const X = x * T, Y = y * T, pts = { nw: [[0, 0], [T, 0], [0, T]], ne: [[0, 0], [T, 0], [T, T]], sw: [[0, 0], [0, T], [T, T]], se: [[T, 0], [T, T], [0, T]] }[kindAt(x, y).slice(4)];
-        p.moveTo(X + pts[0][0], Y + pts[0][1]); p.lineTo(X + pts[1][0], Y + pts[1][1]); p.lineTo(X + pts[2][0], Y + pts[2][1]); p.closePath(); continue;
-      }
-      if (how === 'round') {
-        const radii = [0, 0, 0, 0]; radii[dy < 0 ? (dx < 0 ? 0 : 1) : (dx < 0 ? 3 : 2)] = r;
-        p.roundRect(qx, qy, q, q, radii); continue;
-      }
-      // The fillet sits in this empty cell's corner, curving between the two walls beside it.
-      const cx = dx > 0 ? qx + q : qx, cy = dy > 0 ? qy + q : qy;
-      p.moveTo(cx, cy); p.lineTo(cx - dx * f, cy);
-      p.arcTo(cx, cy, cx, cy - dy * f, f);
-      p.closePath();
-    }
-  }
-  return p;
-}
 
 // A wall cell in pixels (2 units each): the face, a two-step bevel on each side that does not join
 // another wall (light above and left, dark below and right), and a two-step stair cut from each outer
@@ -150,8 +121,12 @@ export function drawMasses(g, cells, w, h, skip = () => false) {
     if (kind === 'wall') {
       // Blocks are pixel masses (registers 602, 605); a triangle keeps its smooth shape.
       g.restore(); drawPixelWalls(g, at, w, h); g.save();
-      const tris = path((x, y) => { const c = at(x, y); return c && c.startsWith('tri:') ? c : ''; }, kind, w, h);
-      g.fillStyle = INK.wallTop; g.fill(tris); g.clip(tris); g.translate(0, LIP); g.fillStyle = INK.wall; g.fill(tris);
+      // A triangle is pixel stairs too (register 621): a light slope, the face set in from it.
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const c = at(x, y); if (!c || !c.startsWith('tri:')) continue;
+        const k = c.slice(4), X = x * T, Y = y * T, i = 4, ox = k.endsWith('w') ? 0 : i, oy = k.startsWith('n') ? 0 : i;
+        g.fillStyle = INK.wallTop; pxTri(g, X, Y, T, k); g.fillStyle = INK.wall; pxTri(g, X + ox, Y + oy, T - i, k);
+      }
     } else {
       // Gravel, water, goo and spikes are pixel masses too (register 607), with their marks on top.
       g.restore(); drawPixelMass(g, at, w, h, kind); g.save();

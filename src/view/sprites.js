@@ -131,5 +131,14 @@ export function drawSprite(g, name, x, y, { outline = false, colour = null, exac
     }));
     return;
   }
+  // Every run is rounded to whole pixels of whatever it is drawn on, so a sprite stays crisp at any position
+  // or scale and its runs meet with no seams (registers 607, 621).
+  const m = g.getTransform ? g.getTransform() : null;
+  if (m && !m.b && !m.c) {
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+    const X = u => Math.round(m.a * u + m.e), Y = u => Math.round(m.d * u + m.f);
+    for (const [rx, ry, n, c] of runsOf(name, colour, exact)) { const x0 = X(x + rx * PX), y0 = Y(y + ry * PX); g.fillStyle = c; g.fillRect(x0, y0, X(x + (rx + n) * PX) - x0, Y(y + (ry + 1) * PX) - y0); }
+    g.restore(); return;
+  }
   for (const [rx, ry, n, c, r, d] of runsOf(name, colour, exact)) { g.fillStyle = c; g.fillRect(x + rx * PX, y + ry * PX, n * PX + (r ? 0.5 : 0), PX + (d ? 0.5 : 0)); }
 }

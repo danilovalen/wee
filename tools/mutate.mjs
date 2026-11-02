@@ -475,7 +475,7 @@ export const M = [
   ['src', "    for (const i of heat.hopeless) fill(i, 'rgba(120, 128, 145, 0.55)');\n", "", 'lensui'],
   ['src', "  for (const i of heat.tiles) fill(i, heat.colour);", "", 'lensui'],
   ['src', "if (lines && lines.length > 1) {", "if (false) {", 'lensui'],
-  ['src', "    for (const i of frames) g.strokeRect(", "    for (const i of []) g.strokeRect(", 'designui'],
+  ['src', "    for (const i of frames) pxStroke(g, ", "    for (const i of []) pxStroke(g, ", 'designui'],
   ['src', "if (r.done) { $('stuck').hidden = r.value !== false; return; }", "if (r.done) return;", 'stuck'],
   ['src', "  watchStuck(game);\n", "", 'stuck'],
   ['src', "  $('win').hidden = true;\n  resetStuck();\n", "  $('win').hidden = true;\n", 'stuck'],
@@ -555,7 +555,6 @@ export const M = [
   ['src/view/masses.js', "x < 0 || y < 0 || x >= w || y >= h ? 'wall' :", "x < 0 || y < 0 || x >= w || y >= h ? '' :", 'masses'],
   ['src/view/scene.js', "else if (!inMass(c) || k < 1 || mineAt.has(i)) drawCell(g, c, x, y, null, k);", "else drawCell(g, c, x, y, null, k);", 'browser'],
   ['src/view/masses.js', "return side.length === 1 ? k.includes(side) : side !== OPPOSITE[k];", "return true;", 'masses'],
-  ['src/view/masses.js', "if (how === 'full') { p.rect(qx, qy, q, q); continue; }", "if (how === 'full') { p.rect(qx + 1, qy + 1, q - 2, q - 2); continue; }", 'browser'],
   ['src/level/format.js', "Object.entries(l.powers || {}).filter(([p]) => POWERS.includes(p))", "Object.entries(l.powers || {})", 'code'],
   ['src/rules/player.js', "if (s.player.dir && onGravel(s, s.player))", "if (false)", 'sim'],
   ['src/rules/pieces.js', "if ((e.x === x && e.y === y) || onGravel(s, e))", "if (e.x === x && e.y === y)", 'sim'],
@@ -1015,6 +1014,11 @@ export const M = [
   ['src/campaign/progression.js', "  return k < 0 || beaten(p, b[k]);", "  return true;", 'progression'],
   ['src/app/goalCard.js', "allOpen() || !builders().includes(def) || sideGoalsOpen(def.id, progress());", "true;", 'unlock'],
   ['src/app/campaign.js', "b.disabled = !open;", "b.disabled = false;", 'unlock'],
+  // Rows 618-621: pixel discs, the room's pixel buffer, palette contrast.
+  ['src/app/play.js', "  present();\n}", "}", 'browser'],
+  ['src/view/look.js', "greys: ['#081820', '#346856', '#88c070', '#e0f8d0']", "greys: ['#0f380f', '#306230', '#8bac0f', '#9bbc0f']", 'palettes'],
+  ['src/view/look.js', "  if (!p.hues && sat > 0.22) return p.greys[p.greys.length - (lum(c) >= 0.45 ? 1 : 2)];", "", 'palettes'],
+  ['style.css', ".campReqs .mark::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--dim); clip-path: var(--ring-20); }", ".campReqs .mark::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--dim); border-radius: 50%; }", 'pixelart'],
   // Rows 612, 613: Looks.
   ['src/view/look.js', "set(v) { d.set.call(this, paint(v)); }", "set(v) { d.set.call(this, v); }", 'looks'],
   ['src/app/looks.js', "const open = cost => unlocked() || totalStars() >= cost;", "const open = cost => unlocked() || cost === 0;", 'looks'],

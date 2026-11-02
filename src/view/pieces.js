@@ -1,5 +1,5 @@
 // Pieces and the player.
-import { AIM, INK, T, frame } from './ink.js';
+import { AIM, INK, T, frame, pxDisc, pxEllipse, pxRing } from './ink.js';
 import { drawSprite } from './sprites.js';
 
 // The mode badge, in 2-unit pixels: a dark disc holding a clock for real time, a step mark for on input,
@@ -84,31 +84,30 @@ export function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false,
     const w = Math.sin(frame.clock / 170);
     g.strokeStyle = INK.waterHi; g.lineWidth = 1.5;
     const rp = (frame.clock % 1100) / 1100;
-    g.globalAlpha = alpha * 0.6 * (1 - rp); g.beginPath(); g.arc(0, 0, 11 + 6 * rp, 0, Math.PI * 2); g.stroke();
+    g.globalAlpha = alpha * 0.6 * (1 - rp); pxRing(g, 0, 0, 11 + 6 * rp);
     g.globalAlpha = alpha * 0.8;
     g.translate(w * 1.5, 0); g.scale(1 + 0.07 * w, 1 - 0.07 * w);
   }
   (frame.avatar === 'you' ? drawYou : drawRobot)(g, hidden);
   if (armored) {
     // A steel rim with four rivets.
-    g.strokeStyle = INK.armor; g.lineWidth = 3.5;
-    g.beginPath(); g.arc(0, 0, 11.5, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = INK.armor; pxRing(g, 0, 0, 11.5, 4);
     g.fillStyle = '#e8eef6';
-    for (const a of [0.25, 0.75, 1.25, 1.75]) { g.beginPath(); g.arc(Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6, 0, Math.PI * 2); g.fill(); }
+    for (const a of [0.25, 0.75, 1.25, 1.75]) pxDisc(g, Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6);
   }
   if (sticky) {
     // Goo on top, dripping from the bottom.
     g.fillStyle = INK.goo;
-    g.beginPath(); g.ellipse(0, -8, 7, 3, 0, 0, Math.PI * 2); g.fill();
+    pxEllipse(g, 0, -8, 7, 3);
     const k = (frame.clock % 900) / 900;
-    g.beginPath(); g.ellipse(-4, 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.ellipse(5, 9, 1.6, 2.4, 0, 0, Math.PI * 2); g.fill();
+    pxEllipse(g, -4, 9 + 3 * k, 2, 2 + 2 * k); pxEllipse(g, 5, 9, 1.6, 2.4);
   }
   if (under) {
     g.globalAlpha = alpha * 0.45; g.fillStyle = INK.waterHi;
-    g.beginPath(); g.arc(0, 0, 10.5, 0, Math.PI * 2); g.fill();
+    pxDisc(g, 0, 0, 10.5);
   } else if (swim === 'on') {
     g.fillStyle = INK.waterHi;
-    g.beginPath(); g.moveTo(9, -16); g.quadraticCurveTo(14, -9, 9, -7); g.quadraticCurveTo(4, -9, 9, -16); g.fill();
+    pxEllipse(g, 9, -10, 3, 4); pxDisc(g, 9, -15, 1);
   }
   g.restore();
 }

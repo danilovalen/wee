@@ -6,6 +6,7 @@ import { CHALLENGES } from '../level/challenges.js';
 import { optionalGoals, listed } from '../campaign/rules.js';
 import { shownName } from '../campaign/names.js';
 import { $ } from './dom.js';
+import { glyph } from './glyphs.js';
 import { go, up } from './nav.js';
 
 let pending = null;
@@ -40,7 +41,7 @@ function burst(box) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   for (let i = 0; i < 14; i++) {
     const s = document.createElement('span'), a = i / 14 * Math.PI * 2;
-    s.className = 'burst'; s.textContent = '★';
+    s.className = 'burst'; s.innerHTML = glyph('star');
     s.style.setProperty('--dx', `${Math.cos(a) * 140}px`); s.style.setProperty('--dy', `${Math.sin(a) * 110 - 40}px`);
     box.append(s); setTimeout(() => s.remove(), 1200);
   }
@@ -55,12 +56,12 @@ function show(p) {
   $('winSay').textContent = p.gold ? `${shownName(p.def)} is done, all ${p.goals.length} stars.` : `The blob made it in ${p.moves} ${p.moves === 1 ? 'move' : 'moves'}.`;
   $('winStars').replaceChildren(...p.goals.map(o => {
     const s = document.createElement('span');
-    s.className = 'winStar' + (p.met[o.id] ? ' on' : '') + (p.fresh.includes(o.id) ? ' new' : ''); s.textContent = '★';
+    s.className = 'winStar' + (p.met[o.id] ? ' on' : '') + (p.fresh.includes(o.id) ? ' new' : ''); s.innerHTML = glyph('star');
     return s;
   }));
   $('winGoals').replaceChildren(...p.goals.map(o => {
     const li = document.createElement('li'); li.className = p.met[o.id] ? 'on' : ''; li.dataset.goal = o.id;
-    const m = document.createElement('i'); m.textContent = '★';
+    const m = document.createElement('i'); m.innerHTML = glyph('star');
     li.append(m, p.words(o.parts)); return li;
   }));
   // Next level, Levels and Stay side by side (register 583); the last level has no next.

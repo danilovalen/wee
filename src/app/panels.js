@@ -3,6 +3,7 @@
 import { CLOCKWISE, COLOURS, POWERS, NEEDS } from '../rules/base.js';
 import { resizeLevel, moveSide, wallBorder } from '../level/format.js';
 import { INK } from '../view/ink.js';
+import { paint, look } from '../view/look.js';
 import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
 import { toolsFor } from './campaign.js';
 import { syncBrief, TOOL } from './goalCard.js';
@@ -72,7 +73,7 @@ export function buildPanels(actions) {
   for (const col of [...COLOURS, 'wire']) {
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.colour = col; b.title = col === 'wire' ? 'grey: reads only the wires under it' : col;
-    b.style.background = INK[col];
+    b.style.setProperty('--dot', paint(INK[col]));
     b.onclick = () => { S.ui.colour = col; syncPanel(); };
     $('colours').append(b);
   }
@@ -81,7 +82,7 @@ export function buildPanels(actions) {
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { S.ui.mode = b.dataset.mode; syncPanel(); });
   document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { S.ui.corner = b.dataset.corner; syncPanel(); });
   document.querySelectorAll('[data-face]').forEach(b => b.onclick = () => { S.ui.face = b.dataset.face; syncPanel(); });
-  document.querySelectorAll('[data-wire]').forEach(b => { b.style.background = INK[b.dataset.wire]; b.onclick = () => { S.ui.wire = b.dataset.wire; syncPanel(); }; });
+  document.querySelectorAll('[data-wire]').forEach(b => { b.style.setProperty('--dot', paint(INK[b.dataset.wire])); b.onclick = () => { S.ui.wire = b.dataset.wire; syncPanel(); }; });
   document.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => {
     const d = b.dataset.pass, ui = S.ui;
     if (ui.pass.includes(d)) { if (ui.pass.length > 1) ui.pass = ui.pass.filter(p => p !== d); }
@@ -234,7 +235,7 @@ function colourChoices() {
   const all = [...coloursOf(def), ...new Set(each.filter(c => c.includes('|')))];
   return { all, fits: el && TINTED.includes(S.ui.tool) ? colouringsOf(def, el) : all };
 }
-export const pairInk = col => col.includes('|') ? `linear-gradient(90deg, ${col.split('|').map((c, i) => `${INK[c]} ${i * 50}% ${i * 50 + 50}%`).join(', ')})` : INK[col];
+export const pairInk = col => col.includes('|') ? `linear-gradient(90deg, ${col.split('|').map((c, i) => `${paint(INK[c])} ${i * 50}% ${i * 50 + 50}%`).join(', ')})` : paint(INK[col]);
 function syncColours() {
   placeTools();
   const ui = S.ui, { all: cols, fits } = colourChoices(), row = $('campColours');
@@ -250,19 +251,20 @@ function syncColours() {
       row.replaceChildren(...['teal', 'violet', 'charcoal'].map(w => {
         const b = document.createElement('button');
         b.type = 'button'; b.dataset.campWire = w; b.title = w; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', w + ' wire');
-        b.style.background = INK[w]; b.onclick = () => { S.ui.wire = w; syncPanel(); };
+        b.style.setProperty('--dot', paint(INK[w])); b.onclick = () => { S.ui.wire = w; syncPanel(); };
         return b;
       }));
     }
     row.querySelectorAll('[data-camp-wire]').forEach(b => { const on = b.dataset.campWire === ui.wire; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
   } else {
   row.hidden = !cols || cols.length < 2;
-  if (cols && row.dataset.cols !== cols.join()) {
-    row.dataset.cols = cols.join();
+  // The palette is part of the key, so a new palette draws the dots again (register 613).
+  if (cols && row.dataset.cols !== cols.join() + look.palette) {
+    row.dataset.cols = cols.join() + look.palette;
     row.replaceChildren(...cols.map(col => {
       const b = document.createElement('button');
       b.type = 'button'; b.dataset.campColour = col; const name = col.replace('|', ' and '); b.title = name; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', name);
-      b.style.background = pairInk(col);
+      b.style.setProperty('--dot', pairInk(col));
       b.onclick = () => { S.ui.colour = col; syncPanel(); };
       return b;
     }));

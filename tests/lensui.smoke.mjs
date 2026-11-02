@@ -86,7 +86,7 @@ try {
   await page.evaluate(l => window.wee.loadLevel(l), deadly);
   await page.click('[data-lens-group=frames][data-lens=danger]');
   await settle();
-  const dz = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round(3 * t + 2.5 * t / 32), Math.round(1.5 * t), 1, 1).data]; });
+  const dz = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round(3 * t + 1 * t / 32), Math.round(1.5 * t), 1, 1).data]; });
   check('Danger frames the tile where a move kills you', (await legend()).includes('1 tile where a move kills you') && dz[0] > 200 && dz[1] > 100 && dz[2] < 120, JSON.stringify(dz) + await legend());
   await page.keyboard.press('0');
   check('key 0 turns every lens off', !(await legend()).trim() && await on('dots') === 'off');

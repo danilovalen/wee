@@ -10,11 +10,12 @@ const NEON_GREYS = ['#19181a', '#221f22', '#2d2a2e', '#363337', '#403e41', '#4d4
 // first). hues: where a saturated colour goes, the nearest one; without hues it is mapped by its lightness.
 export const PALETTES = [
   { id: 'neon', name: 'Neon lab', cost: 0 },
-  { id: 'gameboy', name: 'Pocket', cost: 3, greys: ['#0f380f', '#306230', '#8bac0f', '#9bbc0f'] },
+  // Four greens far enough apart to read (register 620); the handheld's own two lightest were nearly one colour.
+  { id: 'gameboy', name: 'Pocket', cost: 3, greys: ['#081820', '#346856', '#88c070', '#e0f8d0'] },
   { id: 'pico8', name: 'Fantasy', cost: 8, greys: ['#000000', '#1d2b53', '#5f574f', '#c2c3c7', '#fff1e8'], hues: ['#7e2553', '#008751', '#ab5236', '#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8', '#ffccaa'] },
   { id: 'cga', name: 'CGA', cost: 14, greys: ['#000000', '#555555', '#aaaaaa', '#ffffff'], hues: ['#0000aa', '#00aa00', '#00aaaa', '#aa0000', '#aa00aa', '#aa5500', '#5555ff', '#55ff55', '#55ffff', '#ff5555', '#ff55ff', '#ffff55'] },
-  { id: 'c64', name: 'Breadbin', cost: 20, greys: ['#000000', '#626262', '#898989', '#adadad', '#ffffff'], hues: ['#9f4e44', '#cb7e75', '#6d5412', '#a1683c', '#c9d487', '#9ae29b', '#5cab5e', '#6abfc6', '#887ecb', '#50459b', '#a057a3'] },
-  { id: 'paper', name: 'Paper', cost: 28, greys: ['#f3efe6', '#e9e3d6', '#ddd5c4', '#c9c0ac', '#a59e8f', '#3d3c45'], hues: ['#ef6f5e', '#3bb3a6', '#f2b843', '#5a8bd6', '#8cbf63', '#9a7fd1', '#e7709d'] },
+  { id: 'c64', name: 'Breadbin', cost: 20, greys: ['#000000', '#352879', '#626262', '#898989', '#ffffff'], hues: ['#9f4e44', '#cb7e75', '#6d5412', '#a1683c', '#c9d487', '#9ae29b', '#5cab5e', '#6abfc6', '#887ecb', '#50459b', '#a057a3'] },
+  { id: 'paper', name: 'Paper', cost: 28, greys: ['#f3efe6', '#e9e3d6', '#b9b0a0', '#5d574f', '#77706a', '#3d3c45'], hues: ['#ef6f5e', '#3bb3a6', '#f2b843', '#5a8bd6', '#8cbf63', '#9a7fd1', '#e7709d'] },
 ];
 
 // The objects that have an alternate skin, each with the sprites it swaps and its cost.
@@ -47,6 +48,9 @@ const NEON_LUM = NEON_GREYS.map(h => lum(rgb(h)));
 function mapHex(hex, p) {
   const c = rgb(hex), sat = (Math.max(...c) - Math.min(...c)) / 255;
   if (p.hues && sat > 0.22) return p.hues.reduce((best, h) => dist(rgb(h), c) < dist(rgb(best), c) ? h : best);
+  // Without hues, a coloured thing is a figure: the lightest shade, or the next for its darker half, so it
+  // never melts into the walls (register 620).
+  if (!p.hues && sat > 0.22) return p.greys[p.greys.length - (lum(c) >= 0.45 ? 1 : 2)];
   // A grey (or any colour on a palette without hues) takes the rank of the neon grey nearest in lightness.
   const l = lum(c), rank = NEON_LUM.reduce((bi, v, i) => Math.abs(v - l) < Math.abs(NEON_LUM[bi] - l) ? i : bi, 0);
   return p.greys[Math.round(rank * (p.greys.length - 1) / (NEON_GREYS.length - 1))];

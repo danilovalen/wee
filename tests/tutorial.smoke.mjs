@@ -22,7 +22,7 @@ const ringed = p => p.evaluate(() => { const r = document.querySelector('.tutRin
 try {
   const { p, errors } = await fresh();
   await p.click('#menuCampaign'); await p.waitForTimeout(1000);
-  check('a first-time player opening Campaign lands in How to play', (await p.evaluate(() => location.hash)) === '#/level/tutorial' && await p.locator('#tutBox').isVisible());
+  check('a first-time player opening Campaign lands in the tutorial', (await p.evaluate(() => location.hash)) === '#/level/tutorial' && await p.locator('#tutBox').isVisible());
   check('only the bubble, the room and Levels/Edit show: no goals card, undo, Reset or tool row (register 519)', await p.evaluate(() => ['campBrief', 'undo', 'redo', 'campReset', 'campTools'].every(id => { const e = document.getElementById(id), s = getComputedStyle(e); return s.visibility === 'hidden' || s.display === 'none' || e.getBoundingClientRect().height === 0; })));
   check('the bubble sits above the room, not over it', await p.evaluate(() => document.getElementById('tutBox').getBoundingClientRect().bottom <= document.getElementById('game').getBoundingClientRect().top));
   check('step 1 opens ready to slide, the tools never flashing first', /Swipe across the room/.test(await say(p)) && await p.evaluate(() => document.body.classList.contains('play') && !window.__seen.tools));
@@ -72,7 +72,7 @@ try {
   await p.click('#campMenu'); await p.waitForTimeout(400); await p.click('#menuCampaign'); await p.waitForTimeout(600);
   check('once it is beaten, Campaign opens the list', (await p.evaluate(() => location.hash)) === '#/levels');
   await p.click('#campMenu'); await p.waitForTimeout(400); await p.click('#menuTutorial'); await p.waitForTimeout(800);
-  check('How to play on the menu opens the tutorial again, from its first step (register 521)', (await p.evaluate(() => location.hash)) === '#/level/tutorial' && /Swipe across the room/.test(await say(p)));
+  check('Tutorial on the menu opens the tutorial again, from its first step (register 521)', (await p.evaluate(() => location.hash)) === '#/level/tutorial' && /Swipe across the room/.test(await say(p)));
   check('no page errors', errors.length === 0, errors.join(' | '));
   await p.close();
   const s = await fresh();

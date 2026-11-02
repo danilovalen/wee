@@ -1,7 +1,7 @@
 // A whole frame: the level in edit mode, or a running game in play mode, with motion
 // drawn between the previous tick and this one. Nothing here changes state.
 import { DIRS, TICK_MS } from '../rules/base.js';
-import { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp, roundRect } from './ink.js';
+import { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp, pxDisc, pxEllipse, pxRing, pxFrame, pxStroke } from './ink.js';
 import { drawPiece, drawPlayer } from './pieces.js';
 import { drawCell, drawFloor } from './tiles.js';
 import { drawMasses, inMass, overlay } from './masses.js';
@@ -14,8 +14,8 @@ const GHOST_MS = 360;
 // A pushable tile (register 336): the tile cut to fit inside the box's brown border.
 function drawCrated(g, c, x, y, s, k = 1, ox = 0, oy = 0) {
   const X = x * T + ox, Y = y * T + oy;
-  g.save(); g.translate(ox, oy); roundRect(g, x * T + 4, y * T + 4, T - 8, T - 8, 3); g.clip(); drawCell(g, c, x, y, s, k); g.restore();
-  g.strokeStyle = INK.boxEdge; g.lineWidth = 2; roundRect(g, X + 3, Y + 3, T - 6, T - 6, 3.5); g.stroke();
+  g.save(); g.translate(ox, oy); g.beginPath(); g.rect(x * T + 4, y * T + 4, T - 8, T - 8); g.clip(); drawCell(g, c, x, y, s, k); g.restore();
+  g.strokeStyle = INK.boxEdge; pxFrame(g, X + 2, Y + 2, T - 4, T - 4);
 }
 const crateSet = level => new Set((level.crates || []).map(c => c.y * level.w + c.x));
 
@@ -30,7 +30,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   drawHeat(g, level.w, lens.heat);
   drawWires(g, level.w, level.wires);
   // A challenge's open tiles, where its pieces go (register 562): a dashed outline on the floor.
-  if (open) { g.strokeStyle = 'rgba(171,157,242,.55)'; g.lineWidth = 1.5; g.setLineDash([4, 3]); for (const [x, y] of open) g.strokeRect(x * T + 3.5, y * T + 3.5, T - 7, T - 7); g.setLineDash([]); }
+  if (open) { g.strokeStyle = 'rgba(171,157,242,.55)'; g.lineWidth = 1.5; g.setLineDash([4, 3]); for (const [x, y] of open) pxStroke(g, x * T + 3.5, y * T + 3.5, T - 7, T - 7, 2); g.setLineDash([]); }
   const pop = (x, y) => {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
     return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
@@ -51,7 +51,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   // A filled slot keeps its outline, now solid: the player put that piece there.
   if (open) {
     g.strokeStyle = 'rgba(171,157,242,.95)'; g.lineWidth = 2.5;
-    for (const [x, y] of open) if (level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y)) g.strokeRect(x * T + 2, y * T + 2, T - 4, T - 4);
+    for (const [x, y] of open) if (level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y)) pxStroke(g, x * T + 2, y * T + 2, T - 4, T - 4);
   }
   for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {
     const t = (now - f.at) / 160;
@@ -63,27 +63,27 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   // A piece or tile the room's answer does not depend on gets a dashed red frame.
   if (unused.length) {
     g.strokeStyle = INK.beam; g.lineWidth = 2; g.setLineDash([5, 4]);
-    for (const u of unused) g.strokeRect(u.x * T + 3, u.y * T + 3, T - 6, T - 6);
+    for (const u of unused) pxStroke(g, u.x * T + 3, u.y * T + 3, T - 6, T - 6, 2);
     g.setLineDash([]);
   }
   // A tile a warning points at gets a gold ring that fades.
   for (const f of fx) if (f.type === 'flash' && now - f.at < 900) {
     const t = (now - f.at) / 900;
     g.strokeStyle = INK.goal; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
-    g.strokeRect(f.x * T + 2, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
+    pxStroke(g, f.x * T + 2, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
   }
   // A refused tap: the tile shakes with a red frame.
   for (const f of fx) if (f.type === 'refuse' && now - f.at < 400) {
     const t = (now - f.at) / 400, dx = Math.sin(t * Math.PI * 6) * 3 * (1 - t);
     g.strokeStyle = INK.beam; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
-    g.strokeRect(f.x * T + 2 + dx, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
+    pxStroke(g, f.x * T + 2 + dx, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
   }
   if (over && over.carry) {
     // Move: a dashed frame where the thing was, a see-through copy where it lands (and, for a
     // swap, of what it trades places with), red and crossed where it cannot.
     const { from, to, ok } = over.carry;
     g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([4, 3]);
-    g.strokeRect(from.x * T + 3, from.y * T + 3, T - 6, T - 6); g.setLineDash([]);
+    pxStroke(g, from.x * T + 3, from.y * T + 3, T - 6, T - 6, 2); g.setLineDash([]);
     g.globalAlpha = 0.5;
     // What stands on a tile, as Move takes it: the start, else a piece, else the tile.
     const ghost = (p, at) => {
@@ -101,12 +101,12 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
       g.strokeStyle = INK.beam; g.lineWidth = 3; g.beginPath();
       g.moveTo(to.x * T + T * 0.3, to.y * T + T * 0.3); g.lineTo(to.x * T + T * 0.7, to.y * T + T * 0.7);
       g.moveTo(to.x * T + T * 0.7, to.y * T + T * 0.3); g.lineTo(to.x * T + T * 0.3, to.y * T + T * 0.7); g.stroke();
-    } else { g.strokeStyle = INK.mark; g.lineWidth = 2; g.strokeRect(to.x * T + 1, to.y * T + 1, T - 2, T - 2); }
+    } else { g.strokeStyle = INK.mark; g.lineWidth = 2; pxStroke(g, to.x * T + 1, to.y * T + 1, T - 2, T - 2); }
   }
   if (over && over.trail) {
     // A path that missed a goal: each box's places dashed, then the robot's moves numbered.
     const mid = p => [p.x * T + T / 2, p.y * T + T / 2];
-    g.lineCap = 'round'; g.lineJoin = 'round';
+    g.lineCap = 'square'; g.lineJoin = 'miter';
     for (const spots of over.trail.boxes) {
       g.strokeStyle = '#c8701d'; g.lineWidth = 3; g.setLineDash([6, 5]); g.beginPath();
       spots.forEach((p, i) => (i ? g.lineTo : g.moveTo).call(g, ...mid(p))); g.stroke(); g.setLineDash([]);
@@ -114,17 +114,17 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const r = over.trail.robot;
     g.strokeStyle = INK.mark; g.lineWidth = 4; g.beginPath();
     r.forEach((p, i) => (i ? g.lineTo : g.moveTo).call(g, ...mid(p))); g.stroke();
-    g.font = `800 ${Math.round(T * 0.26)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `700 ${Math.round(T * 0.26)}px Pixelify, monospace`; g.textAlign = 'center'; g.textBaseline = 'middle';
     for (let i = 1; i < r.length; i++) {
       const [ax, ay] = mid(r[i - 1]), [bx, by] = mid(r[i]), x = (ax + bx) / 2, y = (ay + by) / 2;
-      g.fillStyle = INK.mark; g.beginPath(); g.arc(x, y, T * 0.2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = INK.mark; pxDisc(g, x, y, T * 0.2);
       g.fillStyle = '#fff'; g.fillText(String(i), x, y + 1);
     }
   }
   if (over && over.sel) {
     const r = over.sel;
     g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([6, 4]);
-    g.strokeRect(r.x0 * T + 1, r.y0 * T + 1, (r.x1 - r.x0 + 1) * T - 2, (r.y1 - r.y0 + 1) * T - 2); g.setLineDash([]);
+    pxStroke(g, r.x0 * T + 1, r.y0 * T + 1, (r.x1 - r.x0 + 1) * T - 2, (r.y1 - r.y0 + 1) * T - 2, 3); g.setLineDash([]);
   }
   if (over && over.paste) {
     // The ghost: the copy at half strength, red where it would cover something.
@@ -143,7 +143,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   }
   if (hover) {
     g.strokeStyle = INK.mark; g.globalAlpha = 0.5; g.lineWidth = 2;
-    g.strokeRect(hover.x * T + 1, hover.y * T + 1, T - 2, T - 2); g.globalAlpha = 1;
+    pxStroke(g, hover.x * T + 1, hover.y * T + 1, T - 2, T - 2); g.globalAlpha = 1;
   }
 }
 
@@ -191,7 +191,7 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
   for (const f of fx) if (f.type === 'blast' && now - f.at < BLAST_MS) {
     const t = (now - f.at) / BLAST_MS;
     g.fillStyle = INK.blast; g.globalAlpha = 0.6 * (1 - t);
-    g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, T * (0.6 + 1.1 * t), 0, Math.PI * 2); g.fill();
+    pxDisc(g, f.x * T + T / 2, f.y * T + T / 2, T * (0.6 + 1.1 * t));
     g.globalAlpha = 1;
   }
   crackle(s.shocked, 1);
@@ -211,13 +211,13 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     }
   }
   // A sticky piece wears goo on top; a glued pair is joined by a goo bridge.
-  g.fillStyle = INK.goo; g.strokeStyle = INK.goo; g.lineCap = 'round';
+  g.fillStyle = INK.goo; g.strokeStyle = INK.goo; g.lineCap = 'square';
   for (const e of s.entities) {
     if (e.dead) continue;
     const [px, py] = pos(e.id, e.x, e.y), k = (now % 900) / 900;
     if (e.sticky) {
-      g.beginPath(); g.ellipse(px + 16, py + 7, 8, 3, 0, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.ellipse(px + 11, py + 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.fill();
+      pxEllipse(g, px + 16, py + 7, 8, 3);
+      pxEllipse(g, px + 11, py + 9 + 3 * k, 2, 2 + 2 * k);
     }
     const o = e.glue > e.id && s.entities.find(q => q.id === e.glue && !q.dead);
     if (o) {
@@ -230,7 +230,7 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
   for (const f of fx) if (f.type === 'laser' && now - f.at < LASER_MS) {
     const t = (now - f.at) / LASER_MS, c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
     g.strokeStyle = INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
-    g.lineJoin = 'round';
+    g.lineJoin = 'miter';
     g.beginPath();
     f.path.forEach((p, i) => { const [x, y] = c(p); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
     if (f.wall) { const [x, y] = c(f.path[f.path.length - 1]), [dx, dy] = DIRS[f.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
@@ -246,7 +246,7 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
       if (b.wall || b.stop) { const [x, y] = c(b.path[b.path.length - 1]), [dx, dy] = DIRS[b.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
       g.stroke();
     };
-    g.lineJoin = 'round'; g.lineCap = 'round';
+    g.lineJoin = 'miter'; g.lineCap = 'square';
     g.strokeStyle = INK.zap; g.globalAlpha = 0.3 + 0.08 * Math.sin(now / 90); g.lineWidth = 9; line();
     g.globalAlpha = 1; g.lineWidth = 3; line();
     g.lineWidth = 1.2; g.strokeStyle = INK.zapCore; line();
@@ -258,17 +258,15 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     // One path for the whole cloud, so overlapping puffs read as one soft shape.
     const k = ease(t);
     g.fillStyle = INK.puff; g.globalAlpha = 0.65 * (1 - t);
-    g.beginPath();
     for (const [along, side, r0] of PUFFS) {
       const x = cx + (fx0 * along + -fy0 * side) * (6 + 10 * k), y = cy + (fy0 * along + fx0 * side) * (6 + 10 * k), r = r0 * (0.7 + 0.6 * k);
-      g.moveTo(x + r, y); g.arc(x, y, r, 0, Math.PI * 2);
+      pxDisc(g, x, y, r);
     }
-    g.fill('nonzero');
     g.globalAlpha = 1;
   }
   for (const f of fx) if (f.type === 'dive' && now - f.at < 200) {
     const t = (now - f.at) / 200;
-    g.strokeStyle = INK.player; g.globalAlpha = 0.6 * (1 - t); g.lineWidth = 14 * (1 - t) + 2; g.lineCap = 'round';
+    g.strokeStyle = INK.player; g.globalAlpha = 0.6 * (1 - t); g.lineWidth = 14 * (1 - t) + 2; g.lineCap = 'square';
     g.beginPath(); g.moveTo(f.fromX * T + T / 2, f.fromY * T + T / 2); g.lineTo(f.toX * T + T / 2, f.toY * T + T / 2); g.stroke();
     g.globalAlpha = 1; g.lineCap = 'butt';
   }
@@ -282,14 +280,14 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
   for (const f of fx) if (f.type === 'die' && now - f.at < 300) {
     const t = (now - f.at) / 300;
     g.strokeStyle = INK.player; g.globalAlpha = 1 - t; g.lineWidth = 2;
-    g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
+    pxRing(g, f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t); g.globalAlpha = 1;
   }
   const swim = !p.swimming ? null : s.cells[p.y * s.w + p.x] === 'water' ? 'under' : 'on';
   // Stuck, a goo strand ties you to what you ride or drag.
   const st = p.stuck && s.entities.find(e => e.id === p.stuck.id && !e.dead);
   if (st) {
     const [ex, ey] = pos(st.id, st.x, st.y);
-    g.strokeStyle = INK.goo; g.lineWidth = 5; g.lineCap = 'round';
+    g.strokeStyle = INK.goo; g.lineWidth = 5; g.lineCap = 'square';
     const ux = Math.sign(ex - px), uy = Math.sign(ey - py);
     g.beginPath(); g.moveTo(px + T / 2 + ux * 9, py + T / 2 + uy * 9); g.lineTo(ex + T / 2 - ux * 13, ey + T / 2 - uy * 13); g.stroke(); g.lineCap = 'butt';
   }

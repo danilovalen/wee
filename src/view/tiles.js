@@ -1,27 +1,10 @@
 // Tiles: floor, walls and every cell type, drawn in place.
-import { INK, T, frame } from './ink.js';
+import { INK, T, frame, pxTri } from './ink.js';
 import { drawSprite } from './sprites.js';
 import { drawnColour } from '../rules/wires.js';
 import { gateOf, gateDirs } from '../rules/grid.js';
 
 // bare: a block in the wall mass, so only what sits on it is drawn.
-// Gravel's grit: the same scatter of dark and light stones on every tile, at (X, Y).
-export function grit(g, X, Y) {
-  for (const [x, y, r, hi] of [[7, 8, 1.6, 0], [18, 6, 1.3, 1], [25, 12, 1.7, 0], [11, 17, 1.2, 1], [21, 21, 1.6, 0], [6, 25, 1.4, 0], [15, 27, 1.2, 1], [27, 26, 1.3, 0]]) {
-    g.fillStyle = hi ? INK.gravelHi : INK.gravelDot; g.beginPath(); g.arc(X + x, Y + y, r, 0, Math.PI * 2); g.fill();
-  }
-}
-
-// The relay's star: eight points, outer radius 12, inner 10.5, each corner rounded, scaled by k.
-const STAR = Array.from({ length: 16 }, (_, i) => { const r = i % 2 ? 10.5 : 12, t = -Math.PI / 2 + i * Math.PI / 8; return [Math.cos(t) * r, Math.sin(t) * r]; });
-// a and b mixed, t of the way to b: two hex colours.
-const mixInk = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('');
-function star(g, k) {
-  const P = STAR.map(([x, y]) => [x * k, y * k]), mid = i => { const a = P[i], b = P[(i + 1) % 16]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; };
-  g.beginPath(); g.moveTo(...mid(15));
-  for (let i = 0; i < 16; i++) g.arcTo(P[i][0], P[i][1], ...mid(i), 1.8 * k);
-  g.closePath();
-}
 
 export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   if (!c) return;
@@ -60,14 +43,8 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     for (const wy of [10, 22]) for (let wx = 0; wx < T; wx += 2) g.fillRect(wx, wy + 2 * Math.round(Math.sin((wx / T + k) * Math.PI * 2)), 2, 2);
     g.globalAlpha = 1;
   } else if (c.startsWith('tri:')) {
-    // The solid half sits in the named corner; the slope is the bright edge.
-    const k = c.slice(4), pts = { nw: [[1, 1], [T - 1, 1], [1, T - 1]], ne: [[1, 1], [T - 1, 1], [T - 1, T - 1]], sw: [[1, 1], [1, T - 1], [T - 1, T - 1]], se: [[T - 1, 1], [T - 1, T - 1], [1, T - 1]] }[k];
-    g.fillStyle = INK.wall; g.beginPath(); g.moveTo(...pts[0]); g.lineTo(...pts[1]); g.lineTo(...pts[2]); g.closePath(); g.fill();
-    g.strokeStyle = INK.wallTop; g.lineWidth = 3; g.beginPath();
-    if (k === 'nw') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
-    else if (k === 'se') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
-    else { g.moveTo(1, 1); g.lineTo(T - 1, T - 1); }
-    g.stroke();
+    // The solid half sits in the named corner, as stairs of whole pixels (register 621).
+    g.fillStyle = INK.wall; pxTri(g, 0, 0, T, c.slice(4));
   } else if (c === 'crack') {
     // A block that will not last: cracks across its face.
     drawSprite(g, 'crack', 0, 0, { colour: bare ? 'bare' : null });

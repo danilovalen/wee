@@ -17,8 +17,7 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'wire') {
     // Three wires in their lanes, one bending, as the Wire tool (register 347).
-    x.lineCap = 'round'; x.lineWidth = 3;
-    for (const [col, o] of [['teal', -6], ['violet', 0], ['charcoal', 6]]) { x.strokeStyle = INK[col]; x.beginPath(); x.moveTo(4, 16 + o); x.lineTo(16 + o, 16 + o); x.lineTo(16 + o, 28); x.stroke(); }
+    for (const [col, o] of [['teal', -6], ['violet', 0], ['charcoal', 6]]) { x.fillStyle = INK[col]; x.fillRect(4, 14 + o, 14 + o, 4); x.fillRect(14 + o, 14 + o, 4, 14 - o); }
   } else if (tool === 'select') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
   } else if (tool === 'look' || tool === 'move' || tool === 'erase') {
@@ -32,7 +31,7 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
     // A laser's beam, apart from the laser box (register 550): a small emitter and its ray across the tile.
     const l = emptyLevel(1, 1); l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
     x.fillStyle = INK.zap; x.fillRect(3, 12, 7, 8);
-    x.strokeStyle = INK.zap; x.lineWidth = 3.5; x.lineCap = 'round'; x.beginPath(); x.moveTo(11, 16); x.lineTo(29, 16); x.stroke();
+    x.fillRect(11, 14, 18, 4);
   } else if (tool === 'turret') {
     // On a floor tile like every other piece, one barrel, so it does not read as a white blob (register 526).
     const l = emptyLevel(1, 1); l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);

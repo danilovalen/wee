@@ -5,7 +5,7 @@
 // Zoomed in, the view fills the room's whole area, not the fitted room's shape (register 414).
 import { T } from '../view/ink.js';
 import { S } from '../editor/state.js';
-import { $, canvas, g } from './dom.js';
+import { $, canvas, g, buffer, shown } from './dom.js';
 
 const MIN_TILE = 28, MAX_TILE = 56;
 // The middle of the view the mover may cross without the view moving, as a share of each side.
@@ -45,8 +45,13 @@ export function apply(anchor) {
     cam.x = anchor.at.x - (anchor.cx - r.left) / k; cam.y = anchor.at.y - (anchor.cy - r.top) / k;
   }
   clampXY();
-  const kd = canvas.width / b.w * scale();
-  g.setTransform(kd, 0, 0, kd, -cam.x * kd, -cam.y * kd);
+  // The buffer holds the view at one pixel per 2 room units, its origin on a whole buffer pixel so art
+  // pixels never straddle two; the part left over shifts it on the screen (register 621).
+  const kd = canvas.width / b.w * scale(), PX = 2, ox = Math.floor(cam.x / PX), oy = Math.floor(cam.y / PX);
+  const bw = Math.ceil(b.w / scale() / PX) + 2, bh = Math.ceil(b.h / scale() / PX) + 2;
+  if (buffer.width !== bw || buffer.height !== bh) { buffer.width = bw; buffer.height = bh; }
+  g.setTransform(1 / PX, 0, 0, 1 / PX, -ox, -oy);
+  Object.assign(shown, { scale: kd * PX, dx: (ox - cam.x / PX) * kd * PX, dy: (oy - cam.y / PX) * kd * PX });
   const zoomed = isZoomed();
   $('fitBtn').hidden = !zoomed;
   // The room's resize bars act on its edges, which a zoomed view may not show: Fit first.
@@ -58,7 +63,7 @@ export function apply(anchor) {
 export function setFit(z, w, h) { cam.fit = z; avail = { w, h }; }
 
 // A zoomed view can show past the room's edges, which the scene does not paint: clear first.
-export function clearView() { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, canvas.width, canvas.height); g.restore(); }
+export function clearView() { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, buffer.width, buffer.height); g.restore(); }
 
 // A point on the screen as room px, and back.
 const perRoom = () => canvas.getBoundingClientRect().width / box().w * scale();  // screen px per room px

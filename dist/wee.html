@@ -23,6 +23,19 @@
   --bg: var(--paper); --text: var(--ink); --dim: var(--soft); --line: var(--rule); --radius: var(--r-m);
   --body: var(--text-face); --head: var(--label-face);
 }
+/* Pixel discs and rings on the 2 px grid, one per size (register 621): nothing on the page is drawn round. */
+html {
+  --disc-6: polygon(6px 0px, 6px 2px, 6px 4px, 6px 6px, 0px 6px, 0px 4px, 0px 2px, 0px 0px);
+  --disc-10: polygon(8px 0px, 8px 2px, 10px 2px, 10px 4px, 10px 6px, 10px 8px, 8px 8px, 8px 10px, 2px 10px, 2px 8px, 0px 8px, 0px 6px, 0px 4px, 0px 2px, 2px 2px, 2px 0px);
+  --disc-20: polygon(14px 0px, 14px 2px, 18px 2px, 18px 4px, 18px 6px, 20px 6px, 20px 8px, 20px 10px, 20px 12px, 20px 14px, 18px 14px, 18px 16px, 18px 18px, 14px 18px, 14px 20px, 6px 20px, 6px 18px, 2px 18px, 2px 16px, 2px 14px, 0px 14px, 0px 12px, 0px 10px, 0px 8px, 0px 6px, 2px 6px, 2px 4px, 2px 2px, 6px 2px, 6px 0px);
+  --disc-26: polygon(18px 0px, 18px 2px, 22px 2px, 22px 4px, 24px 4px, 24px 6px, 24px 8px, 26px 8px, 26px 10px, 26px 12px, 26px 14px, 26px 16px, 26px 18px, 24px 18px, 24px 20px, 24px 22px, 22px 22px, 22px 24px, 18px 24px, 18px 26px, 8px 26px, 8px 24px, 4px 24px, 4px 22px, 2px 22px, 2px 20px, 2px 18px, 0px 18px, 0px 16px, 0px 14px, 0px 12px, 0px 10px, 0px 8px, 2px 8px, 2px 6px, 2px 4px, 4px 4px, 4px 2px, 8px 2px, 8px 0px);
+  --disc-30: polygon(20px 0px, 20px 2px, 24px 2px, 24px 4px, 26px 4px, 26px 6px, 28px 6px, 28px 8px, 28px 10px, 30px 10px, 30px 12px, 30px 14px, 30px 16px, 30px 18px, 30px 20px, 28px 20px, 28px 22px, 28px 24px, 26px 24px, 26px 26px, 24px 26px, 24px 28px, 20px 28px, 20px 30px, 10px 30px, 10px 28px, 6px 28px, 6px 26px, 4px 26px, 4px 24px, 2px 24px, 2px 22px, 2px 20px, 0px 20px, 0px 18px, 0px 16px, 0px 14px, 0px 12px, 0px 10px, 2px 10px, 2px 8px, 2px 6px, 4px 6px, 4px 4px, 6px 4px, 6px 2px, 10px 2px, 10px 0px);
+  --disc-34: polygon(22px 0px, 22px 2px, 26px 2px, 26px 4px, 30px 4px, 30px 6px, 30px 8px, 32px 8px, 32px 10px, 32px 12px, 34px 12px, 34px 14px, 34px 16px, 34px 18px, 34px 20px, 34px 22px, 32px 22px, 32px 24px, 32px 26px, 30px 26px, 30px 28px, 30px 30px, 26px 30px, 26px 32px, 22px 32px, 22px 34px, 12px 34px, 12px 32px, 8px 32px, 8px 30px, 4px 30px, 4px 28px, 4px 26px, 2px 26px, 2px 24px, 2px 22px, 0px 22px, 0px 20px, 0px 18px, 0px 16px, 0px 14px, 0px 12px, 2px 12px, 2px 10px, 2px 8px, 4px 8px, 4px 6px, 4px 4px, 8px 4px, 8px 2px, 12px 2px, 12px 0px);
+  --disc-36: polygon(24px 0px, 24px 2px, 28px 2px, 28px 4px, 30px 4px, 30px 6px, 32px 6px, 32px 8px, 34px 8px, 34px 10px, 34px 12px, 36px 12px, 36px 14px, 36px 16px, 36px 18px, 36px 20px, 36px 22px, 36px 24px, 34px 24px, 34px 26px, 34px 28px, 32px 28px, 32px 30px, 30px 30px, 30px 32px, 28px 32px, 28px 34px, 24px 34px, 24px 36px, 12px 36px, 12px 34px, 8px 34px, 8px 32px, 6px 32px, 6px 30px, 4px 30px, 4px 28px, 2px 28px, 2px 26px, 2px 24px, 0px 24px, 0px 22px, 0px 20px, 0px 18px, 0px 16px, 0px 14px, 0px 12px, 2px 12px, 2px 10px, 2px 8px, 4px 8px, 4px 6px, 6px 6px, 6px 4px, 8px 4px, 8px 2px, 12px 2px, 12px 0px);
+  --ring-20: polygon(evenodd, 14px 0px, 14px 2px, 18px 2px, 18px 4px, 18px 6px, 20px 6px, 20px 8px, 20px 10px, 20px 12px, 20px 14px, 18px 14px, 18px 16px, 18px 18px, 14px 18px, 14px 20px, 6px 20px, 6px 18px, 2px 18px, 2px 16px, 2px 14px, 0px 14px, 0px 12px, 0px 10px, 0px 8px, 0px 6px, 2px 6px, 2px 4px, 2px 2px, 6px 2px, 6px 0px, 14px 0px, 14px 2px, 14px 4px, 16px 4px, 16px 6px, 18px 6px, 18px 8px, 18px 10px, 18px 12px, 18px 14px, 16px 14px, 16px 16px, 14px 16px, 14px 18px, 6px 18px, 6px 16px, 4px 16px, 4px 14px, 2px 14px, 2px 12px, 2px 10px, 2px 8px, 2px 6px, 4px 6px, 4px 4px, 6px 4px, 6px 2px, 14px 2px, 14px 0px);
+  --ring-30: polygon(evenodd, 20px 0px, 20px 2px, 24px 2px, 24px 4px, 26px 4px, 26px 6px, 28px 6px, 28px 8px, 28px 10px, 30px 10px, 30px 12px, 30px 14px, 30px 16px, 30px 18px, 30px 20px, 28px 20px, 28px 22px, 28px 24px, 26px 24px, 26px 26px, 24px 26px, 24px 28px, 20px 28px, 20px 30px, 10px 30px, 10px 28px, 6px 28px, 6px 26px, 4px 26px, 4px 24px, 2px 24px, 2px 22px, 2px 20px, 0px 20px, 0px 18px, 0px 16px, 0px 14px, 0px 12px, 0px 10px, 2px 10px, 2px 8px, 2px 6px, 4px 6px, 4px 4px, 6px 4px, 6px 2px, 10px 2px, 10px 0px, 20px 0px, 20px 2px, 20px 4px, 24px 4px, 24px 6px, 26px 6px, 26px 8px, 26px 10px, 28px 10px, 28px 12px, 28px 14px, 28px 16px, 28px 18px, 28px 20px, 26px 20px, 26px 22px, 26px 24px, 24px 24px, 24px 26px, 20px 26px, 20px 28px, 10px 28px, 10px 26px, 6px 26px, 6px 24px, 4px 24px, 4px 22px, 4px 20px, 2px 20px, 2px 18px, 2px 16px, 2px 14px, 2px 12px, 2px 10px, 4px 10px, 4px 8px, 4px 6px, 6px 6px, 6px 4px, 10px 4px, 10px 2px, 20px 2px, 20px 0px);
+  --ring-34: polygon(evenodd, 22px 0px, 22px 2px, 26px 2px, 26px 4px, 30px 4px, 30px 6px, 30px 8px, 32px 8px, 32px 10px, 32px 12px, 34px 12px, 34px 14px, 34px 16px, 34px 18px, 34px 20px, 34px 22px, 32px 22px, 32px 24px, 32px 26px, 30px 26px, 30px 28px, 30px 30px, 26px 30px, 26px 32px, 22px 32px, 22px 34px, 12px 34px, 12px 32px, 8px 32px, 8px 30px, 4px 30px, 4px 28px, 4px 26px, 2px 26px, 2px 24px, 2px 22px, 0px 22px, 0px 20px, 0px 18px, 0px 16px, 0px 14px, 0px 12px, 2px 12px, 2px 10px, 2px 8px, 4px 8px, 4px 6px, 4px 4px, 8px 4px, 8px 2px, 12px 2px, 12px 0px, 22px 0px, 22px 2px, 22px 4px, 26px 4px, 26px 6px, 28px 6px, 28px 8px, 30px 8px, 30px 10px, 30px 12px, 32px 12px, 32px 14px, 32px 16px, 32px 18px, 32px 20px, 32px 22px, 30px 22px, 30px 24px, 30px 26px, 28px 26px, 28px 28px, 26px 28px, 26px 30px, 22px 30px, 22px 32px, 12px 32px, 12px 30px, 8px 30px, 8px 28px, 6px 28px, 6px 26px, 4px 26px, 4px 24px, 4px 22px, 2px 22px, 2px 20px, 2px 18px, 2px 16px, 2px 14px, 2px 12px, 4px 12px, 4px 10px, 4px 8px, 6px 8px, 6px 6px, 8px 6px, 8px 4px, 12px 4px, 12px 2px, 22px 2px, 22px 0px);
+}
 * { box-sizing: border-box; }
 input { accent-color: var(--accent); }
 html, body { overscroll-behavior: none; }
@@ -66,7 +79,7 @@ h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var
 h2:not(:first-child) { margin-top: 16px; }
 .tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-bottom: 8px; }
 .tabs button { padding: 5px 0; min-width: 0; font-size: 12px; position: relative; }
-.tabs button.holds::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.tabs button.holds::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; background: var(--accent); clip-path: var(--disc-6); }
 .grid button[hidden] { display: none; }
 .ghead { display: none; grid-column: 1 / -1; margin: 8px 0 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
 .ghead:first-child { margin-top: 0; }
@@ -89,7 +102,7 @@ h2:not(:first-child) { margin-top: 16px; }
 .opt [data-aim], .opt [data-corner], .opt [data-pass], .opt [data-face] { width: 32px; padding: 4px 0; font-size: 15px; }
 .opt .note { width: 100%; color: var(--dim); font-size: 12px; }
 #colours { display: flex; gap: 6px; }
-#colours button { width: 26px; height: 26px; padding: 0; border-radius: 50%; clip-path: none; border-width: 2px; }
+#colours button { width: 26px; height: 26px; padding: 0; clip-path: var(--disc-26); border-width: 2px; background: var(--dot); box-shadow: none; }
 .size { display: flex; gap: 8px; }
 .size label { display: flex; flex-direction: column; gap: 2px; color: var(--dim); font-size: 12px; }
 .size input { width: 64px; font: inherit; color: var(--text); background: var(--bg); border: 0; border-radius: var(--r-s); padding: 4px 6px; }
@@ -129,7 +142,7 @@ body.campaign .pad, body.campaign .pad[hidden] { display: none !important; }  /*
   .opt { margin-top: 6px; }
   .opt > span:first-child { font-size: 11.5px; }
   .tabs { margin-bottom: 6px; }
-  #colours button { width: 36px; height: 36px; }
+  #colours button { width: 36px; height: 36px; clip-path: var(--disc-36); }
   .power { padding: 10px 0; }
   .radio { padding: 8px 0; }
 }
@@ -571,7 +584,7 @@ button:disabled .lookPic { opacity: .35; }
 .campParts canvas { width: 16px; height: 16px; }
 .campRowHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .campDots { display: inline-flex; gap: 3px; }
-.campDots i { width: 10px; height: 10px; border-radius: 50%; }
+.campDots i { width: 10px; height: 10px; clip-path: var(--disc-10); }
 .campRow.sel { outline: 2px solid var(--accent, #6b5cff); }
 #campList .campRow { height: 76px; grid-template-rows: auto 1fr; align-content: start; overflow: hidden; }  /* number and pieces on one line (register 527) */
 .tutBox { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40; max-width: 520px; margin: 0 auto; background: var(--panel); color: var(--ink); box-shadow: inset 0 0 0 2px var(--accent); border-radius: var(--r-l); padding: 10px 12px; display: grid; gap: 4px; box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
@@ -612,9 +625,11 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 .campOpt::before { content: none; font-size: 0.75em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
 .campReqs li { display: flex; align-items: flex-start; gap: 5px; min-height: 22px; font-weight: 700; line-height: 1.3; }
 .campReqs .words { padding-top: 1px; }
-.campReqs .mark { flex: none; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; box-sizing: border-box; box-shadow: inset 0 0 0 1.5px var(--dim); color: var(--dim); }
-.campReqs .met .mark { box-shadow: none; background: rgba(169,220,118,.18); color: var(--good); }
-.campReqs .unmet .mark { box-shadow: none; background: rgba(255,97,136,.18); color: var(--bad); }
+/* A goal's mark is a pixel ring, filled once the run is judged (register 621). */
+.campReqs .mark { flex: none; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; box-sizing: border-box; color: var(--dim); position: relative; isolation: isolate; }
+.campReqs .mark::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--dim); clip-path: var(--ring-20); }
+.campReqs .met .mark { color: var(--good); } .campReqs .met .mark::before { background: rgba(169,220,118,.18); clip-path: var(--disc-20); }
+.campReqs .unmet .mark { color: var(--bad); } .campReqs .unmet .mark::before { background: rgba(255,97,136,.18); clip-path: var(--disc-20); }
 .campReqs .optional { color: var(--dim); font-weight: 600; }
 .campReqs li.points { cursor: pointer; }
 .campReqs li.points .words { text-decoration: underline dotted; text-underline-offset: 3px; }
@@ -654,10 +669,12 @@ body.campaign #campColours:not([hidden]), body.simple #campColours:not([hidden])
 #campTools canvas { width: 20px; height: 20px; }
 @media (max-width: 700px) { #campTools button { width: 46px; height: 46px; } #campTools canvas { width: 28px; height: 28px; } }
 #campTools .lbl, #campTools .key { display: none; }
-#campColours button { width: 30px; height: 30px; padding: 0; border-radius: 50%; clip-path: none; border: 0; position: relative; }
+#campColours button { width: 30px; height: 30px; padding: 0; clip-path: none; border: 0; position: relative; background: none; box-shadow: none; }
+/* The dot is a pixel disc inside the button, so the wider touch area around it stays (register 621). */
+#campColours button::before { content: ''; position: absolute; inset: 0; background: var(--dot); clip-path: var(--disc-30); }
 #campColours button::after { content: ''; position: absolute; inset: -9px; }
 #campColours button:disabled { opacity: 0.25; }
-#campColours button.on { box-shadow: inset 0 0 0 2px var(--shade), 0 0 0 2px var(--ink); }
+#campColours button.on { box-shadow: none; filter: drop-shadow(2px 0 0 var(--ink)) drop-shadow(-2px 0 0 var(--ink)) drop-shadow(0 2px 0 var(--ink)) drop-shadow(0 -2px 0 var(--ink)); }
 
 /* A yes-or-no question over the room (register 291): small and centred, not a page. */
 .confirm { width: min(340px, 100vw - 32px); background: var(--panel); color: inherit; border: 0; border-radius: var(--r-l); padding: 16px; }
@@ -760,9 +777,9 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
 /* Until the first place is up the page shows nothing but its ground (register 401). */
 html.booting body > :not(dialog[open]) { visibility: hidden; }
 /* One menu box (register 433): Campaign takes its own row, Puzzles and Sandbox share the next (registers 400, 418). */
-/* Campaign has the top row; How to play, Puzzles and Sandbox share the one below (register 521). */
+/* Campaign has the top row; Tutorial, Puzzles and Sandbox share the one below (register 521). */
 .menuSec { grid-template-columns: repeat(6, 1fr); }
-.menuSec > button { grid-column: span 2; padding-left: 4px; padding-right: 4px; white-space: nowrap; font-size: 13px; }
+.menuSec > button { grid-column: span 2; padding-left: 4px; padding-right: 4px; white-space: nowrap; font-size: 15px; }
 #menuCampaign { grid-column: 1 / -1; }
 
 /* The camera (register 408): Fit while zoomed in; the resize bars wait until the whole room shows. */
@@ -778,21 +795,25 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 .winTitle { margin: 0; font: 800 22px var(--label-face); }
 .winSay { margin: 4px 0 12px; color: var(--dim); }
 .winStars { display: flex; gap: 8px; margin: 0 0 10px; }
-.winStar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; color: var(--sticker); box-shadow: inset 0 0 0 2px var(--sticker); }
-.winStar.on { background: var(--gold); color: var(--shade); box-shadow: 0 0 0 3px rgba(255, 216, 102, .25); }
+.winStar { width: 34px; height: 34px; display: grid; place-items: center; position: relative; isolation: isolate; --glyph-o: var(--sticker); --glyph-i: transparent; }
+.winStar::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--sticker); clip-path: var(--ring-34); }
+.winStar .glyph { width: 16px; height: 16px; }
+.winStar.on { --glyph-o: var(--shade); --glyph-i: var(--shade); } .winStar.on::before { background: var(--gold); clip-path: var(--disc-34); }
 .winStar.new { animation: winPop .5s .3s cubic-bezier(.3, 1.6, .5, 1) both; }
 @keyframes winPop { from { transform: scale(.4); } }
 .winGoals { list-style: none; margin: 0 0 14px; padding: 0; font-size: 14px; }
 .winGoals li { display: flex; gap: 8px; align-items: center; margin: 4px 0; color: var(--dim); }
 .winGoals li.on { color: inherit; }
-.winGoals i { font-style: normal; color: var(--sticker); }
-.winGoals li.on i { color: var(--gold); }
+.winGoals i { font-style: normal; color: var(--sticker); display: inline-flex; --glyph-o: var(--sticker); --glyph-i: transparent; }
+.winGoals i .glyph { width: 16px; height: 16px; }
+.winGoals li.on i { color: var(--gold); --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 .winCard .primary { --fill: var(--accent); --frame: #ddd6ff; color: var(--on-accent); }
 .winCard .bar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
 .winCard .bar > [hidden] { display: none; }
 .winCard.gold { background: linear-gradient(180deg, rgba(255,216,102,.16), var(--panel) 65%); }
 .winCard.gold .winTitle { color: var(--gold); }
-.burst { position: absolute; left: 50%; top: 30%; color: var(--gold); font-size: 18px; pointer-events: none; animation: burst 1.1s ease-out forwards; }
+.burst { position: absolute; left: 50%; top: 30%; color: var(--gold); --glyph-o: var(--gold-ink); --glyph-i: var(--gold); pointer-events: none; animation: burst 1.1s ease-out forwards; }
+.burst .glyph { width: 16px; height: 16px; }
 @keyframes burst { to { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .winCard[open], .winStar.new { animation: none; } }
 
@@ -870,6 +891,7 @@ header .campLast b { font-size: 15px; }
 .campOpt { margin: 0; padding: 6px 8px; box-shadow: none; background: var(--field); border-radius: var(--r-m); gap: 6px 8px; }
 .campOpt li { background: var(--panel); border-radius: var(--r-pill); padding: 2px 9px 2px 3px; box-shadow: inset 0 0 0 2px var(--rule); align-items: center; }
 .campReqs .optional .mark, .campReqs .optional.met .mark, .campReqs .optional.unmet .mark { background: none; box-shadow: none; outline: none; color: var(--mid); }
+.campReqs .optional .mark::before { display: none; }
 .campReqs .optional .mark .glyph { width: 16px; height: 16px; stroke-width: 1.8; fill: var(--panel); --glyph-i: var(--panel); --glyph-o: var(--mid); }
 .campReqs .optional.met .mark .glyph { fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
 .campReqs .optional.unmet .mark .glyph { stroke: var(--bad); --glyph-o: var(--bad); }
@@ -885,6 +907,7 @@ header .campLast b { font-size: 15px; }
 body.challenge .growBar { display: none !important; }
 
 #campList .campSection { grid-column: 1 / -1; margin: 10px 2px 0; font: 800 13px var(--label-face, inherit); color: var(--soft); }
+.wires button { background: var(--dot); }
 </style>
 </head>
 <body>
@@ -1113,7 +1136,7 @@ body.challenge .growBar { display: none !important; }
     <div class="menuList">
       <section class="menuSec">
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
-        <button id="menuTutorial" type="button" class="primary">How to play</button>
+        <button id="menuTutorial" type="button" class="primary">Tutorial</button>
         <button id="menuMaker" type="button" class="primary" hidden>Level maker</button>
         <button id="menuPuzzles" type="button" class="primary">Puzzles</button>
         <button id="menuSandbox" type="button" class="primary">Sandbox</button></section>
@@ -1264,11 +1287,22 @@ const m0 = (() => {
 // The page: the elements the app talks to, and what kind of screen it is on.
 const $ = id => document.getElementById(id);
 const canvas = $('game');
-const g = canvas.getContext('2d');
+// The room is drawn on a buffer of one pixel per art pixel (2 room units), then copied up with no
+// smoothing, so everything in it sits on one pixel grid, round shapes included (register 621).
+const screen = canvas.getContext('2d');
+const buffer = document.createElement('canvas');
+const g = buffer.getContext('2d');
+// Where the buffer lands on the screen: its scale and the part of a buffer pixel the view starts inside.
+const shown = { scale: 1, dx: 0, dy: 0 };
+function present() {
+  screen.setTransform(1, 0, 0, 1, 0, 0); screen.imageSmoothingEnabled = false;
+  screen.clearRect(0, 0, canvas.width, canvas.height);
+  screen.drawImage(buffer, shown.dx, shown.dy, buffer.width * shown.scale, buffer.height * shown.scale);
+}
 const touch = matchMedia('(pointer: coarse)').matches;
 const portrait = () => innerHeight > innerWidth;
 const now = () => performance.now();
-return { $, canvas, g, touch, portrait, now };
+return { $, canvas, buffer, g, shown, present, touch, portrait, now };
 })();
 // ---- src/app/pixelIcons.js
 const m1 = (() => {
@@ -1607,11 +1641,12 @@ const NEON_GREYS = ['#19181a', '#221f22', '#2d2a2e', '#363337', '#403e41', '#4d4
 // first). hues: where a saturated colour goes, the nearest one; without hues it is mapped by its lightness.
 const PALETTES = [
   { id: 'neon', name: 'Neon lab', cost: 0 },
-  { id: 'gameboy', name: 'Pocket', cost: 3, greys: ['#0f380f', '#306230', '#8bac0f', '#9bbc0f'] },
+  // Four greens far enough apart to read (register 620); the handheld's own two lightest were nearly one colour.
+  { id: 'gameboy', name: 'Pocket', cost: 3, greys: ['#081820', '#346856', '#88c070', '#e0f8d0'] },
   { id: 'pico8', name: 'Fantasy', cost: 8, greys: ['#000000', '#1d2b53', '#5f574f', '#c2c3c7', '#fff1e8'], hues: ['#7e2553', '#008751', '#ab5236', '#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8', '#ffccaa'] },
   { id: 'cga', name: 'CGA', cost: 14, greys: ['#000000', '#555555', '#aaaaaa', '#ffffff'], hues: ['#0000aa', '#00aa00', '#00aaaa', '#aa0000', '#aa00aa', '#aa5500', '#5555ff', '#55ff55', '#55ffff', '#ff5555', '#ff55ff', '#ffff55'] },
-  { id: 'c64', name: 'Breadbin', cost: 20, greys: ['#000000', '#626262', '#898989', '#adadad', '#ffffff'], hues: ['#9f4e44', '#cb7e75', '#6d5412', '#a1683c', '#c9d487', '#9ae29b', '#5cab5e', '#6abfc6', '#887ecb', '#50459b', '#a057a3'] },
-  { id: 'paper', name: 'Paper', cost: 28, greys: ['#f3efe6', '#e9e3d6', '#ddd5c4', '#c9c0ac', '#a59e8f', '#3d3c45'], hues: ['#ef6f5e', '#3bb3a6', '#f2b843', '#5a8bd6', '#8cbf63', '#9a7fd1', '#e7709d'] },
+  { id: 'c64', name: 'Breadbin', cost: 20, greys: ['#000000', '#352879', '#626262', '#898989', '#ffffff'], hues: ['#9f4e44', '#cb7e75', '#6d5412', '#a1683c', '#c9d487', '#9ae29b', '#5cab5e', '#6abfc6', '#887ecb', '#50459b', '#a057a3'] },
+  { id: 'paper', name: 'Paper', cost: 28, greys: ['#f3efe6', '#e9e3d6', '#b9b0a0', '#5d574f', '#77706a', '#3d3c45'], hues: ['#ef6f5e', '#3bb3a6', '#f2b843', '#5a8bd6', '#8cbf63', '#9a7fd1', '#e7709d'] },
 ];
 
 // The objects that have an alternate skin, each with the sprites it swaps and its cost.
@@ -1644,6 +1679,9 @@ const NEON_LUM = NEON_GREYS.map(h => lum(rgb(h)));
 function mapHex(hex, p) {
   const c = rgb(hex), sat = (Math.max(...c) - Math.min(...c)) / 255;
   if (p.hues && sat > 0.22) return p.hues.reduce((best, h) => dist(rgb(h), c) < dist(rgb(best), c) ? h : best);
+  // Without hues, a coloured thing is a figure: the lightest shade, or the next for its darker half, so it
+  // never melts into the walls (register 620).
+  if (!p.hues && sat > 0.22) return p.greys[p.greys.length - (lum(c) >= 0.45 ? 1 : 2)];
   // A grey (or any colour on a palette without hues) takes the rank of the neon grey nearest in lightness.
   const l = lum(c), rank = NEON_LUM.reduce((bi, v, i) => Math.abs(v - l) < Math.abs(NEON_LUM[bi] - l) ? i : bi, 0);
   return p.greys[Math.round(rank * (p.greys.length - 1) / (NEON_GREYS.length - 1))];
@@ -1784,17 +1822,66 @@ const lerp = (a, b, t) => a + (b - a) * t;
 // avatar: who plays, the robot (campaign) or you, a circle (register 302).
 const frame = { clock: 0, avatar: 'robot' };
 
-function roundRect(g, x, y, w, h, r) {
-  g.beginPath();
-  g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
-  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
-}
 
 const LASER_MS = 5 * TICK_MS;
 const PUFF_MS = 380;
 // [along the old way, to the side, radius] for each little cloud of a puff.
 const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9, 5], [0.1, -0.9, 5], [1.3, 0.35, 4.5], [1.3, -0.35, 4.5]];
-return { AIM, T, INK, ease, lerp, frame, roundRect, LASER_MS, PUFF_MS, PUFFS };
+
+// Pixel shapes (register 621): discs, rings and ellipses filled as whole 2-unit cells, each rounded to
+// the whole pixels of whatever it is drawn on, so nothing round is drawn smooth.
+const CELL = 2;
+function cells(g, list) {
+  const m = g.getTransform ? g.getTransform() : null;
+  if (!m || m.b || m.c) { for (const [x, y, w, h] of list) g.fillRect(x, y, w, h); return; }
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+  const X = u => Math.round(m.a * u + m.e), Y = u => Math.round(m.d * u + m.f);
+  for (const [x, y, w, h] of list) { const x0 = X(x), y0 = Y(y); g.fillRect(x0, y0, Math.max(1, X(x + w) - x0), Math.max(1, Y(y + h) - y0)); }
+  g.restore();
+}
+// Cells whose centres fall inside an ellipse at (cx, cy) with radii rx, ry, less those inside the inner one.
+function ellipseCells(cx, cy, rx, ry, inner = 0) {
+  const out = [], n = Math.ceil(Math.max(rx, ry) / CELL) + 1, x0 = Math.round(cx / CELL) * CELL, y0 = Math.round(cy / CELL) * CELL;
+  for (let j = -n; j <= n; j++) {
+    let run = null;
+    for (let i = -n; i <= n + 1; i++) {
+      const x = x0 + i * CELL + CELL / 2 - cx, y = y0 + j * CELL + CELL / 2 - cy, d = (x / rx) ** 2 + (y / ry) ** 2;
+      const hit = i <= n && d <= 1 && !(inner && (x / (rx - inner)) ** 2 + (y / (ry - inner)) ** 2 < 1);
+      if (hit && run === null) run = i;
+      if (!hit && run !== null) { out.push([x0 + run * CELL, y0 + j * CELL, (i - run) * CELL, CELL]); run = null; }
+    }
+  }
+  return out;
+}
+const pxDisc = (g, cx, cy, r) => cells(g, ellipseCells(cx, cy, Math.max(r, CELL / 2), Math.max(r, CELL / 2)));
+const pxEllipse = (g, cx, cy, rx, ry) => cells(g, ellipseCells(cx, cy, Math.max(rx, CELL / 2), Math.max(ry, CELL / 2)));
+// A ring of the given width, in the stroke colour.
+function pxRing(g, cx, cy, r, w = CELL) { const f = g.fillStyle; g.fillStyle = g.strokeStyle; cells(g, ellipseCells(cx, cy, r + w / 2, r + w / 2, w)); g.fillStyle = f; }
+// A square frame of the given width, in the stroke colour.
+function pxFrame(g, x, y, w, h, t = CELL) { const f = g.fillStyle; g.fillStyle = g.strokeStyle; cells(g, [[x, y, w, t], [x, y + h - t, w, t], [x, y + t, t, h - 2 * t], [x + w - t, y + t, t, h - 2 * t]]); g.fillStyle = f; }
+// A filled right triangle with its square corner at the named corner, as stairs of whole cells.
+function pxTri(g, x, y, s, corner) {
+  const out = [], n = Math.round(s / CELL);
+  for (let j = 0; j < n; j++) {
+    const k = corner === 'nw' || corner === 'ne' ? n - j : j + 1, left = corner === 'nw' || corner === 'sw';
+    out.push([left ? x : x + s - k * CELL, y + j * CELL, k * CELL, CELL]);
+  }
+  cells(g, out);
+}
+// A rectangle's outline as whole cells (register 621), for what used to be strokeRect(x, y, w, h): the cell
+// ring that holds the stroke's outer half, in the stroke colour; dash: cells on, then off, around it.
+function pxStroke(g, x, y, w, h, dash = 0) {
+  const x0 = Math.floor((x - 1) / CELL) * CELL, y0 = Math.floor((y - 1) / CELL) * CELL, x1 = Math.ceil((x + w + 1) / CELL) * CELL, y1 = Math.ceil((y + h + 1) / CELL) * CELL;
+  if (!dash) return pxFrame(g, x0, y0, x1 - x0, y1 - y0);
+  const f = g.fillStyle, list = []; g.fillStyle = g.strokeStyle;
+  const keep = i => Math.floor(i / dash) % 2 === 0;
+  let i = 0;
+  for (let u = x0; u < x1; u += CELL) { if (keep(i++)) list.push([u, y0, CELL, CELL], [u, y1 - CELL, CELL, CELL]); }
+  i = 0;
+  for (let v = y0 + CELL; v < y1 - CELL; v += CELL) { if (keep(i++)) list.push([x0, v, CELL, CELL], [x1 - CELL, v, CELL, CELL]); }
+  cells(g, list); g.fillStyle = f;
+}
+return { AIM, T, INK, ease, lerp, frame, LASER_MS, PUFF_MS, PUFFS, pxDisc, pxEllipse, pxRing, pxFrame, pxTri, pxStroke };
 })();
 // ---- src/view/pixel.js
 const m9 = (() => {
@@ -2194,6 +2281,15 @@ function drawSprite(g, name, x, y, { outline = false, colour = null, exact = fal
     }));
     return;
   }
+  // Every run is rounded to whole pixels of whatever it is drawn on, so a sprite stays crisp at any position
+  // or scale and its runs meet with no seams (registers 607, 621).
+  const m = g.getTransform ? g.getTransform() : null;
+  if (m && !m.b && !m.c) {
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+    const X = u => Math.round(m.a * u + m.e), Y = u => Math.round(m.d * u + m.f);
+    for (const [rx, ry, n, c] of runsOf(name, colour, exact)) { const x0 = X(x + rx * PX), y0 = Y(y + ry * PX); g.fillStyle = c; g.fillRect(x0, y0, X(x + (rx + n) * PX) - x0, Y(y + (ry + 1) * PX) - y0); }
+    g.restore(); return;
+  }
   for (const [rx, ry, n, c, r, d] of runsOf(name, colour, exact)) { g.fillStyle = c; g.fillRect(x + rx * PX, y + ry * PX, n * PX + (r ? 0.5 : 0), PX + (d ? 0.5 : 0)); }
 }
 return { SPRITES, drawSprite };
@@ -2501,7 +2597,7 @@ return { checkTurret, emptyLevel, resizeLevel, parseLevel, CRATED, isCell, resiz
 })();
 // ---- src/view/pieces.js
 const m16 = (() => {
-const { AIM, INK, T, frame } = m8;
+const { AIM, INK, T, frame, pxDisc, pxEllipse, pxRing } = m8;
 const { drawSprite } = m12;
 // Pieces and the player.
 
@@ -2588,31 +2684,30 @@ function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false, swim =
     const w = Math.sin(frame.clock / 170);
     g.strokeStyle = INK.waterHi; g.lineWidth = 1.5;
     const rp = (frame.clock % 1100) / 1100;
-    g.globalAlpha = alpha * 0.6 * (1 - rp); g.beginPath(); g.arc(0, 0, 11 + 6 * rp, 0, Math.PI * 2); g.stroke();
+    g.globalAlpha = alpha * 0.6 * (1 - rp); pxRing(g, 0, 0, 11 + 6 * rp);
     g.globalAlpha = alpha * 0.8;
     g.translate(w * 1.5, 0); g.scale(1 + 0.07 * w, 1 - 0.07 * w);
   }
   (frame.avatar === 'you' ? drawYou : drawRobot)(g, hidden);
   if (armored) {
     // A steel rim with four rivets.
-    g.strokeStyle = INK.armor; g.lineWidth = 3.5;
-    g.beginPath(); g.arc(0, 0, 11.5, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = INK.armor; pxRing(g, 0, 0, 11.5, 4);
     g.fillStyle = '#e8eef6';
-    for (const a of [0.25, 0.75, 1.25, 1.75]) { g.beginPath(); g.arc(Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6, 0, Math.PI * 2); g.fill(); }
+    for (const a of [0.25, 0.75, 1.25, 1.75]) pxDisc(g, Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6);
   }
   if (sticky) {
     // Goo on top, dripping from the bottom.
     g.fillStyle = INK.goo;
-    g.beginPath(); g.ellipse(0, -8, 7, 3, 0, 0, Math.PI * 2); g.fill();
+    pxEllipse(g, 0, -8, 7, 3);
     const k = (frame.clock % 900) / 900;
-    g.beginPath(); g.ellipse(-4, 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.ellipse(5, 9, 1.6, 2.4, 0, 0, Math.PI * 2); g.fill();
+    pxEllipse(g, -4, 9 + 3 * k, 2, 2 + 2 * k); pxEllipse(g, 5, 9, 1.6, 2.4);
   }
   if (under) {
     g.globalAlpha = alpha * 0.45; g.fillStyle = INK.waterHi;
-    g.beginPath(); g.arc(0, 0, 10.5, 0, Math.PI * 2); g.fill();
+    pxDisc(g, 0, 0, 10.5);
   } else if (swim === 'on') {
     g.fillStyle = INK.waterHi;
-    g.beginPath(); g.moveTo(9, -16); g.quadraticCurveTo(14, -9, 9, -7); g.quadraticCurveTo(4, -9, 9, -16); g.fill();
+    pxEllipse(g, 9, -10, 3, 4); pxDisc(g, 9, -15, 1);
   }
   g.restore();
 }
@@ -2723,7 +2818,7 @@ return { inb, cellAt, onGravel, solidCell, triAt, facing, gateOf, gateDirs, gate
 })();
 // ---- src/view/tiles.js
 const m18 = (() => {
-const { INK, T, frame } = m8;
+const { INK, T, frame, pxTri } = m8;
 const { drawSprite } = m12;
 const { drawnColour } = m14;
 const { gateOf, gateDirs } = m17;
@@ -2733,23 +2828,6 @@ const { gateOf, gateDirs } = m17;
 
 
 // bare: a block in the wall mass, so only what sits on it is drawn.
-// Gravel's grit: the same scatter of dark and light stones on every tile, at (X, Y).
-function grit(g, X, Y) {
-  for (const [x, y, r, hi] of [[7, 8, 1.6, 0], [18, 6, 1.3, 1], [25, 12, 1.7, 0], [11, 17, 1.2, 1], [21, 21, 1.6, 0], [6, 25, 1.4, 0], [15, 27, 1.2, 1], [27, 26, 1.3, 0]]) {
-    g.fillStyle = hi ? INK.gravelHi : INK.gravelDot; g.beginPath(); g.arc(X + x, Y + y, r, 0, Math.PI * 2); g.fill();
-  }
-}
-
-// The relay's star: eight points, outer radius 12, inner 10.5, each corner rounded, scaled by k.
-const STAR = Array.from({ length: 16 }, (_, i) => { const r = i % 2 ? 10.5 : 12, t = -Math.PI / 2 + i * Math.PI / 8; return [Math.cos(t) * r, Math.sin(t) * r]; });
-// a and b mixed, t of the way to b: two hex colours.
-const mixInk = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('');
-function star(g, k) {
-  const P = STAR.map(([x, y]) => [x * k, y * k]), mid = i => { const a = P[i], b = P[(i + 1) % 16]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; };
-  g.beginPath(); g.moveTo(...mid(15));
-  for (let i = 0; i < 16; i++) g.arcTo(P[i][0], P[i][1], ...mid(i), 1.8 * k);
-  g.closePath();
-}
 
 function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   if (!c) return;
@@ -2788,14 +2866,8 @@ function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     for (const wy of [10, 22]) for (let wx = 0; wx < T; wx += 2) g.fillRect(wx, wy + 2 * Math.round(Math.sin((wx / T + k) * Math.PI * 2)), 2, 2);
     g.globalAlpha = 1;
   } else if (c.startsWith('tri:')) {
-    // The solid half sits in the named corner; the slope is the bright edge.
-    const k = c.slice(4), pts = { nw: [[1, 1], [T - 1, 1], [1, T - 1]], ne: [[1, 1], [T - 1, 1], [T - 1, T - 1]], sw: [[1, 1], [1, T - 1], [T - 1, T - 1]], se: [[T - 1, 1], [T - 1, T - 1], [1, T - 1]] }[k];
-    g.fillStyle = INK.wall; g.beginPath(); g.moveTo(...pts[0]); g.lineTo(...pts[1]); g.lineTo(...pts[2]); g.closePath(); g.fill();
-    g.strokeStyle = INK.wallTop; g.lineWidth = 3; g.beginPath();
-    if (k === 'nw') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
-    else if (k === 'se') { g.moveTo(T - 1, 1); g.lineTo(1, T - 1); }
-    else { g.moveTo(1, 1); g.lineTo(T - 1, T - 1); }
-    g.stroke();
+    // The solid half sits in the named corner, as stairs of whole pixels (register 621).
+    g.fillStyle = INK.wall; pxTri(g, 0, 0, T, c.slice(4));
   } else if (c === 'crack') {
     // A block that will not last: cracks across its face.
     drawSprite(g, 'crack', 0, 0, { colour: bare ? 'bare' : null });
@@ -2859,11 +2931,11 @@ function drawFloor(g, w, h) {
   for (let y = 1; y < h; y++) { g.moveTo(0, y * T + 0.5); g.lineTo(w * T, y * T + 0.5); }
   g.stroke();
 }
-return { grit, drawCell, pressedAt, drawFloor };
+return { drawCell, pressedAt, drawFloor };
 })();
 // ---- src/view/masses.js
 const m19 = (() => {
-const { INK, T, frame } = m8;
+const { INK, T, frame, pxTri } = m8;
 const { altSkin } = m6;
 // Joined-up tiles: neighbouring walls, water, sticky puddles and death blocks are drawn as
 // one mass each. Every cell is four quarters; a quarter reads its two side neighbours and
@@ -2872,9 +2944,6 @@ const { altSkin } = m6;
 
 
 const MASSES = ['wall', 'water', 'sticky', 'gravel', 'death'];
-// Corner radius per kind, in pixels of a 32 px tile.
-const RADIUS = { wall: 6, water: 8, sticky: 10, gravel: 6, death: 6 };
-const LIP = 6;
 
 // Blocks with something on them (a spring, a laser catcher, cracks) are still walls, and a
 // triangle is a wall along its two straight sides.
@@ -2902,32 +2971,6 @@ function quarter(kindAt, kind, x, y, dx, dy) {
   return A && B && D ? 'fillet' : null;
 }
 
-function path(kindAt, kind, w, h) {
-  const p = new Path2D(), r = RADIUS[kind], q = T / 2, f = r;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-      const how = quarter(kindAt, kind, x, y, dx, dy);
-      if (!how) continue;
-      const qx = x * T + (dx > 0 ? q : 0), qy = y * T + (dy > 0 ? q : 0);
-      if (how === 'full') { p.rect(qx, qy, q, q); continue; }
-      if (how === 'tri') {
-        if (dx > 0 || dy > 0) continue;
-        const X = x * T, Y = y * T, pts = { nw: [[0, 0], [T, 0], [0, T]], ne: [[0, 0], [T, 0], [T, T]], sw: [[0, 0], [0, T], [T, T]], se: [[T, 0], [T, T], [0, T]] }[kindAt(x, y).slice(4)];
-        p.moveTo(X + pts[0][0], Y + pts[0][1]); p.lineTo(X + pts[1][0], Y + pts[1][1]); p.lineTo(X + pts[2][0], Y + pts[2][1]); p.closePath(); continue;
-      }
-      if (how === 'round') {
-        const radii = [0, 0, 0, 0]; radii[dy < 0 ? (dx < 0 ? 0 : 1) : (dx < 0 ? 3 : 2)] = r;
-        p.roundRect(qx, qy, q, q, radii); continue;
-      }
-      // The fillet sits in this empty cell's corner, curving between the two walls beside it.
-      const cx = dx > 0 ? qx + q : qx, cy = dy > 0 ? qy + q : qy;
-      p.moveTo(cx, cy); p.lineTo(cx - dx * f, cy);
-      p.arcTo(cx, cy, cx, cy - dy * f, f);
-      p.closePath();
-    }
-  }
-  return p;
-}
 
 // A wall cell in pixels (2 units each): the face, a two-step bevel on each side that does not join
 // another wall (light above and left, dark below and right), and a two-step stair cut from each outer
@@ -3016,8 +3059,12 @@ function drawMasses(g, cells, w, h, skip = () => false) {
     if (kind === 'wall') {
       // Blocks are pixel masses (registers 602, 605); a triangle keeps its smooth shape.
       g.restore(); drawPixelWalls(g, at, w, h); g.save();
-      const tris = path((x, y) => { const c = at(x, y); return c && c.startsWith('tri:') ? c : ''; }, kind, w, h);
-      g.fillStyle = INK.wallTop; g.fill(tris); g.clip(tris); g.translate(0, LIP); g.fillStyle = INK.wall; g.fill(tris);
+      // A triangle is pixel stairs too (register 621): a light slope, the face set in from it.
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const c = at(x, y); if (!c || !c.startsWith('tri:')) continue;
+        const k = c.slice(4), X = x * T, Y = y * T, i = 4, ox = k.endsWith('w') ? 0 : i, oy = k.startsWith('n') ? 0 : i;
+        g.fillStyle = INK.wallTop; pxTri(g, X, Y, T, k); g.fillStyle = INK.wall; pxTri(g, X + ox, Y + oy, T - i, k);
+      }
     } else {
       // Gravel, water, goo and spikes are pixel masses too (register 607), with their marks on top.
       g.restore(); drawPixelMass(g, at, w, h, kind); g.save();
@@ -3026,11 +3073,11 @@ function drawMasses(g, cells, w, h, skip = () => false) {
     g.restore();
   }
 }
-return { MASSES, RADIUS, joins, inMass, overlay, quarter, kindIn, drawMasses };
+return { MASSES, joins, inMass, overlay, quarter, kindIn, drawMasses };
 })();
 // ---- src/view/lenses.js
 const m20 = (() => {
-const { INK, T } = m8;
+const { INK, T, pxDisc, pxStroke } = m8;
 // The editor's lenses, drawn over the room. A heat lens recolours tiles under the pieces; dots,
 // lines and frames are marks on top. One lens per group, so nothing here paints over its own kind.
 
@@ -3057,17 +3104,17 @@ function drawHeat(g, w, heat) {
 function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses } = {}) {
   if (dots) {
     g.fillStyle = INK.player;
-    for (const i of dots) { const [x, y] = centre(i, w); g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill(); }
+    for (const i of dots) { const [x, y] = centre(i, w); pxDisc(g, x, y, 4); }
   }
   if (small) {
     g.fillStyle = INK.player; g.globalAlpha = 0.6;
-    for (const i of small) { const [x, y] = centre(i, w); g.beginPath(); g.arc(x, y, 1.8, 0, Math.PI * 2); g.fill(); }
+    for (const i of small) { const [x, y] = centre(i, w); pxDisc(g, x, y, 2); }
     g.globalAlpha = 1;
   }
   if (moves && moves.length) {
     // One arrow per move between two stops, wider the more positions make it.
     const max = Math.max(...moves.map(m => m.n));
-    g.strokeStyle = INK.player; g.fillStyle = INK.player; g.globalAlpha = 0.55; g.lineCap = 'round';
+    g.strokeStyle = INK.player; g.fillStyle = INK.player; g.globalAlpha = 0.55; g.lineCap = 'square';
     for (const { a, b, n } of moves) {
       const [ax, ay] = centre(a, w), [bx, by] = centre(b, w), t = Math.atan2(by - ay, bx - ax);
       // Each direction sits a little to its own side, so a move and its way back do not overlap.
@@ -3079,36 +3126,36 @@ function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses } = {}
     g.globalAlpha = 1;
   }
   if (lines && lines.length > 1) {
-    g.strokeStyle = INK.goal; g.fillStyle = INK.goal; g.lineWidth = 2.5; g.lineCap = 'round';
+    g.strokeStyle = INK.goal; g.fillStyle = INK.goal; g.lineWidth = 2.5; g.lineCap = 'square';
     for (let n = 1; n < lines.length; n++) {
       const [ax, ay] = centre(lines[n - 1], w), [bx, by] = centre(lines[n], w), a = Math.atan2(by - ay, bx - ax);
       g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx - Math.cos(a) * 7, by - Math.sin(a) * 7); g.stroke();
       g.beginPath(); g.moveTo(bx, by); g.lineTo(bx - Math.cos(a - 0.5) * 9, by - Math.sin(a - 0.5) * 9); g.lineTo(bx - Math.cos(a + 0.5) * 9, by - Math.sin(a + 0.5) * 9); g.closePath(); g.fill();
       // Each move's number sits at the middle of its arrow.
       const mx = (ax + bx) / 2, my = (ay + by) / 2;
-      g.fillStyle = INK.mark; g.beginPath(); g.arc(mx, my, 6, 0, Math.PI * 2); g.fill();
-      g.fillStyle = INK.goal; g.font = 'bold 8px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = INK.mark; pxDisc(g, mx, my, 6);
+      g.fillStyle = INK.goal; g.font = '700 8px Pixelify, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText(String(n), mx, my + 0.5);
     }
   }
   if (crosses) {
-    g.strokeStyle = '#ff9f43'; g.lineWidth = 2.5; g.lineCap = 'round';
+    g.strokeStyle = '#ff9f43'; g.lineWidth = 2.5; g.lineCap = 'square';
     for (const i of crosses) {
       const x = (i % w) * T, y = Math.floor(i / w) * T;
-      g.strokeRect(x + 2, y + 2, T - 4, T - 4);
+      pxStroke(g, x + 2, y + 2, T - 4, T - 4);
       g.beginPath(); g.moveTo(x + 9, y + 9); g.lineTo(x + T - 9, y + T - 9); g.moveTo(x + T - 9, y + 9); g.lineTo(x + 9, y + T - 9); g.stroke();
     }
   }
   if (frames) {
     g.strokeStyle = INK.beam; g.lineWidth = 2;
-    for (const i of frames) g.strokeRect((i % w) * T + 2, Math.floor(i / w) * T + 2, T - 4, T - 4);
+    for (const i of frames) pxStroke(g, (i % w) * T + 2, Math.floor(i / w) * T + 2, T - 4, T - 4);
   }
 }
 return { drawHeat, drawLensMarks };
 })();
 // ---- src/view/wires.js
 const m21 = (() => {
-const { INK, T } = m8;
+const { INK, T, pxDisc, pxFrame } = m8;
 // Drawing wires (register 347).
 
 // Wires (register 347): each colour in its own lane of the tile, joining the same colour next door.
@@ -3117,11 +3164,11 @@ const LANE = { teal: -7, violet: 0, charcoal: 7 };
 function drawWires(g, w, wires, live = null) {
   if (!wires || !wires.length) return;
   const has = new Set(wires.map(r => `${r.w}:${r.x},${r.y}`));
-  g.save(); g.lineCap = 'round';
+  g.save(); g.lineCap = 'square';
   for (const r of wires) {
     const o = LANE[r.w], cx = r.x * T + T / 2 + o, cy = r.y * T + T / 2 + o, on = live && live(r);
     g.strokeStyle = g.fillStyle = INK[r.w]; g.lineWidth = live ? (on ? 3 : 1.5) : 3; g.globalAlpha = live ? (on ? 0.95 : 0.45) : 0.9;
-    g.beginPath(); g.arc(cx, cy, g.lineWidth * 0.9, 0, Math.PI * 2); g.fill();
+    pxDisc(g, cx, cy, g.lineWidth * 0.9);
     g.beginPath();
     if (has.has(`${r.w}:${r.x + 1},${r.y}`)) { g.moveTo(cx, cy); g.lineTo(cx + T, cy); }
     if (has.has(`${r.w}:${r.x},${r.y + 1}`)) { g.moveTo(cx, cy); g.lineTo(cx, cy + T); }
@@ -3138,7 +3185,8 @@ const wireColoursAt = (wires, x, y) => (wires || []).filter(r => r.x === x && r.
 function drawTrim(g, x, y, cols) {
   g.save(); g.lineWidth = cols.length ? 2.5 : 2; g.strokeStyle = cols.length ? INK[cols[0]] : '#6b7280';
   if (!cols.length) g.setLineDash([4, 3]);
-  g.beginPath(); g.roundRect(x * T + 2, y * T + 2, T - 4, T - 4, 5); g.stroke(); g.restore();
+  if (cols.length) pxFrame(g, x * T + 2, y * T + 2, T - 4, T - 4); else g.strokeRect(x * T + 3, y * T + 3, T - 6, T - 6);
+  g.restore();
 }
 
 // In the editor, a focused grey piece (hovered, or tapped with Look) lights its wires and every piece on
@@ -3151,7 +3199,7 @@ function drawReach(g, level, at, nets) {
   g.save(); g.fillStyle = INK.floor; g.globalAlpha = 0.6;
   for (let k = 0; k < level.cells.length; k++) if (!lit.has(k)) g.fillRect((k % level.w) * T, Math.floor(k / level.w) * T, T, T);
   g.globalAlpha = 1; g.strokeStyle = INK.goal; g.lineWidth = 3;
-  for (const k of lit) if (level.cells[k] || k === i) { g.beginPath(); g.roundRect((k % level.w) * T + 1, Math.floor(k / level.w) * T + 1, T - 2, T - 2, 6); g.stroke(); }
+  for (const k of lit) if (level.cells[k] || k === i) pxFrame(g, (k % level.w) * T, Math.floor(k / level.w) * T, T, T, 4);
   g.restore();
 }
 return { drawWires, isGrey, wireColoursAt, drawTrim, drawReach };
@@ -3159,7 +3207,7 @@ return { drawWires, isGrey, wireColoursAt, drawTrim, drawReach };
 // ---- src/view/scene.js
 const m22 = (() => {
 const { DIRS, TICK_MS } = m7;
-const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp, roundRect } = m8;
+const { INK, LASER_MS, PUFFS, PUFF_MS, T, frame, ease, lerp, pxDisc, pxEllipse, pxRing, pxFrame, pxStroke } = m8;
 const { drawPiece, drawPlayer } = m16;
 const { drawCell, drawFloor } = m18;
 const { drawMasses, inMass, overlay } = m19;
@@ -3181,8 +3229,8 @@ const GHOST_MS = 360;
 // A pushable tile (register 336): the tile cut to fit inside the box's brown border.
 function drawCrated(g, c, x, y, s, k = 1, ox = 0, oy = 0) {
   const X = x * T + ox, Y = y * T + oy;
-  g.save(); g.translate(ox, oy); roundRect(g, x * T + 4, y * T + 4, T - 8, T - 8, 3); g.clip(); drawCell(g, c, x, y, s, k); g.restore();
-  g.strokeStyle = INK.boxEdge; g.lineWidth = 2; roundRect(g, X + 3, Y + 3, T - 6, T - 6, 3.5); g.stroke();
+  g.save(); g.translate(ox, oy); g.beginPath(); g.rect(x * T + 4, y * T + 4, T - 8, T - 8); g.clip(); drawCell(g, c, x, y, s, k); g.restore();
+  g.strokeStyle = INK.boxEdge; pxFrame(g, X + 2, Y + 2, T - 4, T - 4);
 }
 const crateSet = level => new Set((level.crates || []).map(c => c.y * level.w + c.x));
 
@@ -3197,7 +3245,7 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   drawHeat(g, level.w, lens.heat);
   drawWires(g, level.w, level.wires);
   // A challenge's open tiles, where its pieces go (register 562): a dashed outline on the floor.
-  if (open) { g.strokeStyle = 'rgba(171,157,242,.55)'; g.lineWidth = 1.5; g.setLineDash([4, 3]); for (const [x, y] of open) g.strokeRect(x * T + 3.5, y * T + 3.5, T - 7, T - 7); g.setLineDash([]); }
+  if (open) { g.strokeStyle = 'rgba(171,157,242,.55)'; g.lineWidth = 1.5; g.setLineDash([4, 3]); for (const [x, y] of open) pxStroke(g, x * T + 3.5, y * T + 3.5, T - 7, T - 7, 2); g.setLineDash([]); }
   const pop = (x, y) => {
     const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
     return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
@@ -3218,7 +3266,7 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   // A filled slot keeps its outline, now solid: the player put that piece there.
   if (open) {
     g.strokeStyle = 'rgba(171,157,242,.95)'; g.lineWidth = 2.5;
-    for (const [x, y] of open) if (level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y)) g.strokeRect(x * T + 2, y * T + 2, T - 4, T - 4);
+    for (const [x, y] of open) if (level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y)) pxStroke(g, x * T + 2, y * T + 2, T - 4, T - 4);
   }
   for (const f of fx) if (f.type === 'erase' && now - f.at < 160) {
     const t = (now - f.at) / 160;
@@ -3230,27 +3278,27 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   // A piece or tile the room's answer does not depend on gets a dashed red frame.
   if (unused.length) {
     g.strokeStyle = INK.beam; g.lineWidth = 2; g.setLineDash([5, 4]);
-    for (const u of unused) g.strokeRect(u.x * T + 3, u.y * T + 3, T - 6, T - 6);
+    for (const u of unused) pxStroke(g, u.x * T + 3, u.y * T + 3, T - 6, T - 6, 2);
     g.setLineDash([]);
   }
   // A tile a warning points at gets a gold ring that fades.
   for (const f of fx) if (f.type === 'flash' && now - f.at < 900) {
     const t = (now - f.at) / 900;
     g.strokeStyle = INK.goal; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
-    g.strokeRect(f.x * T + 2, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
+    pxStroke(g, f.x * T + 2, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
   }
   // A refused tap: the tile shakes with a red frame.
   for (const f of fx) if (f.type === 'refuse' && now - f.at < 400) {
     const t = (now - f.at) / 400, dx = Math.sin(t * Math.PI * 6) * 3 * (1 - t);
     g.strokeStyle = INK.beam; g.lineWidth = 3; g.globalAlpha = 1 - t * t;
-    g.strokeRect(f.x * T + 2 + dx, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
+    pxStroke(g, f.x * T + 2 + dx, f.y * T + 2, T - 4, T - 4); g.globalAlpha = 1;
   }
   if (over && over.carry) {
     // Move: a dashed frame where the thing was, a see-through copy where it lands (and, for a
     // swap, of what it trades places with), red and crossed where it cannot.
     const { from, to, ok } = over.carry;
     g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([4, 3]);
-    g.strokeRect(from.x * T + 3, from.y * T + 3, T - 6, T - 6); g.setLineDash([]);
+    pxStroke(g, from.x * T + 3, from.y * T + 3, T - 6, T - 6, 2); g.setLineDash([]);
     g.globalAlpha = 0.5;
     // What stands on a tile, as Move takes it: the start, else a piece, else the tile.
     const ghost = (p, at) => {
@@ -3268,12 +3316,12 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
       g.strokeStyle = INK.beam; g.lineWidth = 3; g.beginPath();
       g.moveTo(to.x * T + T * 0.3, to.y * T + T * 0.3); g.lineTo(to.x * T + T * 0.7, to.y * T + T * 0.7);
       g.moveTo(to.x * T + T * 0.7, to.y * T + T * 0.3); g.lineTo(to.x * T + T * 0.3, to.y * T + T * 0.7); g.stroke();
-    } else { g.strokeStyle = INK.mark; g.lineWidth = 2; g.strokeRect(to.x * T + 1, to.y * T + 1, T - 2, T - 2); }
+    } else { g.strokeStyle = INK.mark; g.lineWidth = 2; pxStroke(g, to.x * T + 1, to.y * T + 1, T - 2, T - 2); }
   }
   if (over && over.trail) {
     // A path that missed a goal: each box's places dashed, then the robot's moves numbered.
     const mid = p => [p.x * T + T / 2, p.y * T + T / 2];
-    g.lineCap = 'round'; g.lineJoin = 'round';
+    g.lineCap = 'square'; g.lineJoin = 'miter';
     for (const spots of over.trail.boxes) {
       g.strokeStyle = '#c8701d'; g.lineWidth = 3; g.setLineDash([6, 5]); g.beginPath();
       spots.forEach((p, i) => (i ? g.lineTo : g.moveTo).call(g, ...mid(p))); g.stroke(); g.setLineDash([]);
@@ -3281,17 +3329,17 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const r = over.trail.robot;
     g.strokeStyle = INK.mark; g.lineWidth = 4; g.beginPath();
     r.forEach((p, i) => (i ? g.lineTo : g.moveTo).call(g, ...mid(p))); g.stroke();
-    g.font = `800 ${Math.round(T * 0.26)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `700 ${Math.round(T * 0.26)}px Pixelify, monospace`; g.textAlign = 'center'; g.textBaseline = 'middle';
     for (let i = 1; i < r.length; i++) {
       const [ax, ay] = mid(r[i - 1]), [bx, by] = mid(r[i]), x = (ax + bx) / 2, y = (ay + by) / 2;
-      g.fillStyle = INK.mark; g.beginPath(); g.arc(x, y, T * 0.2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = INK.mark; pxDisc(g, x, y, T * 0.2);
       g.fillStyle = '#fff'; g.fillText(String(i), x, y + 1);
     }
   }
   if (over && over.sel) {
     const r = over.sel;
     g.strokeStyle = INK.mark; g.lineWidth = 2; g.setLineDash([6, 4]);
-    g.strokeRect(r.x0 * T + 1, r.y0 * T + 1, (r.x1 - r.x0 + 1) * T - 2, (r.y1 - r.y0 + 1) * T - 2); g.setLineDash([]);
+    pxStroke(g, r.x0 * T + 1, r.y0 * T + 1, (r.x1 - r.x0 + 1) * T - 2, (r.y1 - r.y0 + 1) * T - 2, 3); g.setLineDash([]);
   }
   if (over && over.paste) {
     // The ghost: the copy at half strength, red where it would cover something.
@@ -3310,7 +3358,7 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   }
   if (hover) {
     g.strokeStyle = INK.mark; g.globalAlpha = 0.5; g.lineWidth = 2;
-    g.strokeRect(hover.x * T + 1, hover.y * T + 1, T - 2, T - 2); g.globalAlpha = 1;
+    pxStroke(g, hover.x * T + 1, hover.y * T + 1, T - 2, T - 2); g.globalAlpha = 1;
   }
 }
 
@@ -3358,7 +3406,7 @@ function drawPlay(g, s, prev, alpha, fx, now) {
   for (const f of fx) if (f.type === 'blast' && now - f.at < BLAST_MS) {
     const t = (now - f.at) / BLAST_MS;
     g.fillStyle = INK.blast; g.globalAlpha = 0.6 * (1 - t);
-    g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, T * (0.6 + 1.1 * t), 0, Math.PI * 2); g.fill();
+    pxDisc(g, f.x * T + T / 2, f.y * T + T / 2, T * (0.6 + 1.1 * t));
     g.globalAlpha = 1;
   }
   crackle(s.shocked, 1);
@@ -3378,13 +3426,13 @@ function drawPlay(g, s, prev, alpha, fx, now) {
     }
   }
   // A sticky piece wears goo on top; a glued pair is joined by a goo bridge.
-  g.fillStyle = INK.goo; g.strokeStyle = INK.goo; g.lineCap = 'round';
+  g.fillStyle = INK.goo; g.strokeStyle = INK.goo; g.lineCap = 'square';
   for (const e of s.entities) {
     if (e.dead) continue;
     const [px, py] = pos(e.id, e.x, e.y), k = (now % 900) / 900;
     if (e.sticky) {
-      g.beginPath(); g.ellipse(px + 16, py + 7, 8, 3, 0, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.ellipse(px + 11, py + 9 + 3 * k, 2, 2 + 2 * k, 0, 0, Math.PI * 2); g.fill();
+      pxEllipse(g, px + 16, py + 7, 8, 3);
+      pxEllipse(g, px + 11, py + 9 + 3 * k, 2, 2 + 2 * k);
     }
     const o = e.glue > e.id && s.entities.find(q => q.id === e.glue && !q.dead);
     if (o) {
@@ -3397,7 +3445,7 @@ function drawPlay(g, s, prev, alpha, fx, now) {
   for (const f of fx) if (f.type === 'laser' && now - f.at < LASER_MS) {
     const t = (now - f.at) / LASER_MS, c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
     g.strokeStyle = INK.laser; g.globalAlpha = 1 - t; g.lineWidth = 5 * (1 - t) + 1;
-    g.lineJoin = 'round';
+    g.lineJoin = 'miter';
     g.beginPath();
     f.path.forEach((p, i) => { const [x, y] = c(p); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
     if (f.wall) { const [x, y] = c(f.path[f.path.length - 1]), [dx, dy] = DIRS[f.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
@@ -3413,7 +3461,7 @@ function drawPlay(g, s, prev, alpha, fx, now) {
       if (b.wall || b.stop) { const [x, y] = c(b.path[b.path.length - 1]), [dx, dy] = DIRS[b.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
       g.stroke();
     };
-    g.lineJoin = 'round'; g.lineCap = 'round';
+    g.lineJoin = 'miter'; g.lineCap = 'square';
     g.strokeStyle = INK.zap; g.globalAlpha = 0.3 + 0.08 * Math.sin(now / 90); g.lineWidth = 9; line();
     g.globalAlpha = 1; g.lineWidth = 3; line();
     g.lineWidth = 1.2; g.strokeStyle = INK.zapCore; line();
@@ -3425,17 +3473,15 @@ function drawPlay(g, s, prev, alpha, fx, now) {
     // One path for the whole cloud, so overlapping puffs read as one soft shape.
     const k = ease(t);
     g.fillStyle = INK.puff; g.globalAlpha = 0.65 * (1 - t);
-    g.beginPath();
     for (const [along, side, r0] of PUFFS) {
       const x = cx + (fx0 * along + -fy0 * side) * (6 + 10 * k), y = cy + (fy0 * along + fx0 * side) * (6 + 10 * k), r = r0 * (0.7 + 0.6 * k);
-      g.moveTo(x + r, y); g.arc(x, y, r, 0, Math.PI * 2);
+      pxDisc(g, x, y, r);
     }
-    g.fill('nonzero');
     g.globalAlpha = 1;
   }
   for (const f of fx) if (f.type === 'dive' && now - f.at < 200) {
     const t = (now - f.at) / 200;
-    g.strokeStyle = INK.player; g.globalAlpha = 0.6 * (1 - t); g.lineWidth = 14 * (1 - t) + 2; g.lineCap = 'round';
+    g.strokeStyle = INK.player; g.globalAlpha = 0.6 * (1 - t); g.lineWidth = 14 * (1 - t) + 2; g.lineCap = 'square';
     g.beginPath(); g.moveTo(f.fromX * T + T / 2, f.fromY * T + T / 2); g.lineTo(f.toX * T + T / 2, f.toY * T + T / 2); g.stroke();
     g.globalAlpha = 1; g.lineCap = 'butt';
   }
@@ -3449,14 +3495,14 @@ function drawPlay(g, s, prev, alpha, fx, now) {
   for (const f of fx) if (f.type === 'die' && now - f.at < 300) {
     const t = (now - f.at) / 300;
     g.strokeStyle = INK.player; g.globalAlpha = 1 - t; g.lineWidth = 2;
-    g.beginPath(); g.arc(f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
+    pxRing(g, f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t); g.globalAlpha = 1;
   }
   const swim = !p.swimming ? null : s.cells[p.y * s.w + p.x] === 'water' ? 'under' : 'on';
   // Stuck, a goo strand ties you to what you ride or drag.
   const st = p.stuck && s.entities.find(e => e.id === p.stuck.id && !e.dead);
   if (st) {
     const [ex, ey] = pos(st.id, st.x, st.y);
-    g.strokeStyle = INK.goo; g.lineWidth = 5; g.lineCap = 'round';
+    g.strokeStyle = INK.goo; g.lineWidth = 5; g.lineCap = 'square';
     const ux = Math.sign(ex - px), uy = Math.sign(ey - py);
     g.beginPath(); g.moveTo(px + T / 2 + ux * 9, py + T / 2 + uy * 9); g.lineTo(ex + T / 2 - ux * 13, ey + T / 2 - uy * 13); g.stroke(); g.lineCap = 'butt';
   }
@@ -3490,8 +3536,7 @@ function icon(tool, colour = 'red', gateColour = null, crate = false) {
     l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
   } else if (tool === 'wire') {
     // Three wires in their lanes, one bending, as the Wire tool (register 347).
-    x.lineCap = 'round'; x.lineWidth = 3;
-    for (const [col, o] of [['teal', -6], ['violet', 0], ['charcoal', 6]]) { x.strokeStyle = INK[col]; x.beginPath(); x.moveTo(4, 16 + o); x.lineTo(16 + o, 16 + o); x.lineTo(16 + o, 28); x.stroke(); }
+    for (const [col, o] of [['teal', -6], ['violet', 0], ['charcoal', 6]]) { x.fillStyle = INK[col]; x.fillRect(4, 14 + o, 14 + o, 4); x.fillRect(14 + o, 14 + o, 4, 14 - o); }
   } else if (tool === 'select') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
   } else if (tool === 'look' || tool === 'move' || tool === 'erase') {
@@ -3505,7 +3550,7 @@ function icon(tool, colour = 'red', gateColour = null, crate = false) {
     // A laser's beam, apart from the laser box (register 550): a small emitter and its ray across the tile.
     const l = emptyLevel(1, 1); l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
     x.fillStyle = INK.zap; x.fillRect(3, 12, 7, 8);
-    x.strokeStyle = INK.zap; x.lineWidth = 3.5; x.lineCap = 'round'; x.beginPath(); x.moveTo(11, 16); x.lineTo(29, 16); x.stroke();
+    x.fillRect(11, 14, 18, 4);
   } else if (tool === 'turret') {
     // On a floor tile like every other piece, one barrel, so it does not read as a white blob (register 526).
     const l = emptyLevel(1, 1); l.start = { x: 9, y: 9 }; drawEdit(x, l, null, [], 0);
@@ -6449,7 +6494,7 @@ return { bests, keep, buildPuzzles };
 const m51 = (() => {
 
 // Generated from campaign/ by tools/templates.mjs. Do not edit by hand.
-const LEVELS = [{"id":"tutorial","name":"How to play","tutorial":true,"size":[5,5],"start":[1,1],"goal":[3,4],"palette":{"block":[0,null]},"steps":{"min":1,"best":4},"rules":[],"require":[],"optional":[]},{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"small":[3,2],"rules":[],"require":[],"optional":["touchBlockFourTimes","robotTwoDirections"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,3],"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice","robotFlipsSwitchTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoorTwice","atMostOneDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,4],"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd","robotThroughFourDoors"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":10},"small":[4,3],"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce"],"optional":["boxHitsBox","everyBoxHitsBlockTwice"]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,4],"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd","twoSwitches"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"small":[4,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd","twoButtons"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,4],"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd","everyBoxThroughOpenDoor"]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"small":[4,3],"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays","threeOneWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"small":[6,3],"rules":[],"require":["everyBoxThroughOneWay","everyBoxHitsOneWay"],"optional":["everyBoxStuckOnOneWay","twoBoxes"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"small":[4,3],"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors","robotHitsDoorsOfTwoColours"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"small":[6,2],"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched","boxHitsOneWayThreeWays"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"small":[7,3],"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"optional":["everyToggleOffAtEnd","threeSwitches"]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays","robotHitsEveryLaserTwice"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"small":[7,4],"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay","everyBoxLeavesBeam"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["boxPushedTwiceHitOnce","throughOpenDoor"],"colours":["red","blue"]},{"id":"17","name":"Level 17","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"idoor":[1,1],"laser":[1,null]},"steps":{"best":7},"small":[5,3],"rules":[],"require":["laserStoppedByIdoor","robotThroughIdoor"],"optional":["boxHitsAndThroughIdoor"]},{"id":"18","name":"Level 18","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"idoor":[1,null],"relay":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["boxHitsIdoor","allRelaysLitAtEnd"],"optional":["robotAndBoxHitRelay","boxBetweenTwoRelays"]},{"id":"19","name":"Level 19","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[1,null],"door":[1,null]},"pushable":{"laser":"only"},"steps":{"best":7},"small":[4,4],"rules":[],"require":["laserPushedThrice","throughOpenDoor"],"optional":["laserThroughGoal","laserThroughAndStoppedByDoor"]},{"id":"20","name":"Level 20","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[0,null],"door":[1,1],"box":[0,null]},"pushable":{"relay":"only"},"steps":{"best":8},"small":[8,3],"rules":[],"require":["laserThroughNoRelay","laserThroughADoor","throughOpenDoor"],"optional":["relayHitsRelay","noRelayAtEnd"]},{"id":"21","name":"Level 21","size":[7,7],"palette":{"block":[0,null],"box":[2,null],"spikes":[1,null]},"steps":{"best":12},"small":[3,5],"rules":[],"require":["everyBoxEntersSpikes","everyBoxLeavesGoal"],"optional":["everyBoxLeavesSpikes","noBlocks"]},{"id":"22","name":"Level 22","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null],"spikes":[1,null]},"pushable":{"gate":"only"},"steps":{"best":7},"small":[6,3],"rules":[],"require":["boxPushesEveryOneWay","robotThroughEveryPushedOneWay","everyOneWayOverSpikes"],"optional":["oneWaysTwoWays","oneWaysThreeWays"]},{"id":"23","name":"Level 23","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null],"spikes":[1,null]},"pushable":{"door":"only"},"steps":{"best":12},"small":[4,5],"rules":[],"require":["everyDoorOverSpikes","boxLeavesEveryDoor","robotLeavesEveryDoor"],"optional":["twoDoors","twoButtons"]},{"id":"24","name":"Level 24","size":[7,7],"palette":{"block":[0,null],"spikes":[1,null],"laser":[1,null],"gate":[1,null],"relay":[1,null]},"pushable":{"laser":"only"},"colours":["red"],"steps":{"best":11},"small":[4,6],"rules":[],"require":["laserOverEveryOneWay","robotThroughEveryOneWayBothWays","laserOverEverySpike","laserCrossesEverySpike"],"optional":["threeSpikes","laserBoxHitsEveryOneWayTwice"]},{"id":"twocolour","name":"Two colours","size":[7,7],"palette":{"block":[0,null],"button":[1,null],"door":[1,null],"relay":[1,null],"laser":[1,null]},"colours":["red","blue"],"twoColour":{"door":"only"},"steps":{"best":9},"small":[3,3],"rules":[],"require":[],"hidden":true}];
+const LEVELS = [{"id":"tutorial","name":"Tutorial","tutorial":true,"size":[5,5],"start":[1,1],"goal":[3,4],"palette":{"block":[0,null]},"steps":{"min":1,"best":4},"rules":[],"require":[],"optional":[]},{"id":"1","name":"Level 1","size":[7,7],"palette":{"block":[0,null]},"steps":{"best":6},"small":[3,2],"rules":[],"require":[],"optional":["touchBlockFourTimes","robotTwoDirections"]},{"id":"2","name":"Level 2","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,3],"rules":[],"require":["hitsClosedDoor","throughOpenDoor"],"optional":["throughOpenDoorTwice","robotFlipsSwitchTwice"]},{"id":"3","name":"Level 3","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["hitsClosedDoorTwice","atMostOneDoor"]},{"id":"4","name":"Level 4","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":8},"small":[3,4],"rules":[],"require":["throughOpenDoor","twoTogglesOffAtEnd"],"optional":["thirdToggleOnAtEnd","robotThroughFourDoors"]},{"id":"5","name":"Level 5","size":[7,7],"palette":{"block":[0,null],"box":[1,null]},"steps":{"best":10},"small":[4,3],"rules":[],"require":["everyBoxPushedTwice","everyBoxHitOnce"],"optional":["boxHitsBox","everyBoxHitsBlockTwice"]},{"id":"6","name":"Level 6","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,4],"rules":[],"require":["boxThroughOpenDoor","throughOpenDoor","onlyBoxesFlipSwitches"],"optional":["aToggleOffAtEnd","twoSwitches"]},{"id":"7","name":"Level 7","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":6},"small":[4,3],"rules":[],"require":["throughOpenDoor","doorClosedAtEnd"],"optional":["boxOnButtonAtEnd","twoButtons"]},{"id":"8","name":"Level 8","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"steps":{"best":7},"small":[3,4],"rules":[],"require":["boxThroughOpenDoor"],"optional":["noBoxAtEnd","everyBoxThroughOpenDoor"]},{"id":"9","name":"Level 9","size":[7,7],"palette":{"block":[0,null],"gate":[2,null]},"steps":{"best":8},"small":[4,3],"rules":[],"require":["robotThroughEveryOneWay","robotHitsEveryOneWay"],"optional":["oneWaysThreeWays","threeOneWays"]},{"id":"10","name":"Level 10","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null]},"steps":{"best":10},"small":[6,3],"rules":[],"require":["everyBoxThroughOneWay","everyBoxHitsOneWay"],"optional":["everyBoxStuckOnOneWay","twoBoxes"]},{"id":"11","name":"Level 11","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null]},"colours":["red","blue"],"steps":{"best":7},"small":[4,3],"rules":[],"require":["throughDoorsOfTwoColours","boxThroughOpenDoor"],"optional":["boxHitsTwoDoors","robotHitsDoorsOfTwoColours"]},{"id":"12","name":"Level 12","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"gate":[1,null]},"colours":["red"],"steps":{"best":7},"small":[6,2],"rules":[],"require":["robotThroughOneWayBothWays"],"optional":["boxLaunched","boxHitsOneWayThreeWays"]},{"id":"13","name":"Level 13","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"toggle":[1,null],"gate":[1,null],"door":[1,null]},"colours":["red"],"steps":{"best":9},"small":[7,3],"rules":[],"require":["boxThroughOneWayBothWays","throughOpenDoor"],"optional":["everyToggleOffAtEnd","threeSwitches"]},{"id":"14","name":"Level 14","size":[7,7],"palette":{"block":[0,null],"toggle":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":8},"small":[3,3],"rules":[],"require":["laserThroughOpenDoor","laserBlockedByDoor","throughOpenDoor"],"optional":["lasersTwoWays","robotHitsEveryLaserTwice"]},{"id":"15","name":"Level 15","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,1],"laser":[1,null]},"steps":{"best":14},"small":[7,4],"rules":[],"require":["laserThroughOneWay","robotThroughOneWay","boxHitsOneWay"],"optional":["boxThroughOneWay","everyBoxLeavesBeam"]},{"id":"16","name":"Level 16","size":[7,7],"palette":{"block":[0,null],"box":[1,1],"button":[1,null],"door":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["laserThroughADoor","boxOffButtonAtEnd","laserThroughButton"],"optional":["boxPushedTwiceHitOnce","throughOpenDoor"],"colours":["red","blue"]},{"id":"17","name":"Level 17","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"idoor":[1,1],"laser":[1,null]},"steps":{"best":7},"small":[5,3],"rules":[],"require":["laserStoppedByIdoor","robotThroughIdoor"],"optional":["boxHitsAndThroughIdoor"]},{"id":"18","name":"Level 18","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"idoor":[1,null],"relay":[1,null],"laser":[1,null]},"steps":{"best":4},"small":[3,4],"rules":[],"require":["boxHitsIdoor","allRelaysLitAtEnd"],"optional":["robotAndBoxHitRelay","boxBetweenTwoRelays"]},{"id":"19","name":"Level 19","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[1,null],"door":[1,null]},"pushable":{"laser":"only"},"steps":{"best":7},"small":[4,4],"rules":[],"require":["laserPushedThrice","throughOpenDoor"],"optional":["laserThroughGoal","laserThroughAndStoppedByDoor"]},{"id":"20","name":"Level 20","size":[7,7],"palette":{"block":[0,null],"laser":[1,null],"relay":[0,null],"door":[1,1],"box":[0,null]},"pushable":{"relay":"only"},"steps":{"best":8},"small":[8,3],"rules":[],"require":["laserThroughNoRelay","laserThroughADoor","throughOpenDoor"],"optional":["relayHitsRelay","noRelayAtEnd"]},{"id":"21","name":"Level 21","size":[7,7],"palette":{"block":[0,null],"box":[2,null],"spikes":[1,null]},"steps":{"best":12},"small":[3,5],"rules":[],"require":["everyBoxEntersSpikes","everyBoxLeavesGoal"],"optional":["everyBoxLeavesSpikes","noBlocks"]},{"id":"22","name":"Level 22","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"gate":[1,null],"spikes":[1,null]},"pushable":{"gate":"only"},"steps":{"best":7},"small":[6,3],"rules":[],"require":["boxPushesEveryOneWay","robotThroughEveryPushedOneWay","everyOneWayOverSpikes"],"optional":["oneWaysTwoWays","oneWaysThreeWays"]},{"id":"23","name":"Level 23","size":[7,7],"palette":{"block":[0,null],"box":[1,null],"button":[1,null],"door":[1,null],"spikes":[1,null]},"pushable":{"door":"only"},"steps":{"best":12},"small":[4,5],"rules":[],"require":["everyDoorOverSpikes","boxLeavesEveryDoor","robotLeavesEveryDoor"],"optional":["twoDoors","twoButtons"]},{"id":"24","name":"Level 24","size":[7,7],"palette":{"block":[0,null],"spikes":[1,null],"laser":[1,null],"gate":[1,null],"relay":[1,null]},"pushable":{"laser":"only"},"colours":["red"],"steps":{"best":11},"small":[4,6],"rules":[],"require":["laserOverEveryOneWay","robotThroughEveryOneWayBothWays","laserOverEverySpike","laserCrossesEverySpike"],"optional":["threeSpikes","laserBoxHitsEveryOneWayTwice"]},{"id":"twocolour","name":"Two colours","size":[7,7],"palette":{"block":[0,null],"button":[1,null],"door":[1,null],"relay":[1,null],"laser":[1,null]},"colours":["red","blue"],"twoColour":{"door":"only"},"steps":{"best":9},"small":[3,3],"rules":[],"require":[],"hidden":true}];
 return { LEVELS };
 })();
 // ---- src/level/challenges.js
@@ -6534,10 +6579,12 @@ const { CHALLENGES } = m52;
 const { optionalGoals, listed } = m43;
 const { shownName } = m55;
 const { $ } = m0;
+const { glyph } = m2;
 const { go, up } = m4;
 // The two win moments of a level (registers 415, 416): the first win, and the run that meets the
 // last side goal (a side goal counts once met in any run). Each asks Next level or Stay, once the
 // robot has finished its run. A first win that meets every side goal shows only the second.
+
 
 
 
@@ -6576,7 +6623,7 @@ function burst(box) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   for (let i = 0; i < 14; i++) {
     const s = document.createElement('span'), a = i / 14 * Math.PI * 2;
-    s.className = 'burst'; s.textContent = '★';
+    s.className = 'burst'; s.innerHTML = glyph('star');
     s.style.setProperty('--dx', `${Math.cos(a) * 140}px`); s.style.setProperty('--dy', `${Math.sin(a) * 110 - 40}px`);
     box.append(s); setTimeout(() => s.remove(), 1200);
   }
@@ -6591,12 +6638,12 @@ function show(p) {
   $('winSay').textContent = p.gold ? `${shownName(p.def)} is done, all ${p.goals.length} stars.` : `The blob made it in ${p.moves} ${p.moves === 1 ? 'move' : 'moves'}.`;
   $('winStars').replaceChildren(...p.goals.map(o => {
     const s = document.createElement('span');
-    s.className = 'winStar' + (p.met[o.id] ? ' on' : '') + (p.fresh.includes(o.id) ? ' new' : ''); s.textContent = '★';
+    s.className = 'winStar' + (p.met[o.id] ? ' on' : '') + (p.fresh.includes(o.id) ? ' new' : ''); s.innerHTML = glyph('star');
     return s;
   }));
   $('winGoals').replaceChildren(...p.goals.map(o => {
     const li = document.createElement('li'); li.className = p.met[o.id] ? 'on' : ''; li.dataset.goal = o.id;
-    const m = document.createElement('i'); m.textContent = '★';
+    const m = document.createElement('i'); m.innerHTML = glyph('star');
     li.append(m, p.words(o.parts)); return li;
   }));
   // Next level, Levels and Stay side by side (register 583); the last level has no next.
@@ -7229,7 +7276,8 @@ function startSnow(cv) {
         f.y = (f.y + 2 * f.fall + wind.y * f.r * 0.0016 + 1) % 1;
         f.x = (f.x + Math.sin(t / 1400 + f.sway) * 0.0006 + wind.x * f.r * 0.0016 + 1) % 1;
       }
-      g.beginPath(); g.arc(f.x * w, f.y * h, f.r, 0, Math.PI * 2); g.fill();
+      // Square flakes on whole pixels, as everything else is pixel art (register 621).
+      const d = 2 * Math.max(1, Math.round(f.r)); g.fillRect(Math.round(f.x * w), Math.round(f.y * h), d, d);
     }
     wind = { x: wind.x * SETTLE, y: wind.y * SETTLE };
     if (!reduce) requestAnimationFrame(draw);
@@ -8474,7 +8522,7 @@ return { syncSize, closeSize, buildSize };
 const m80 = (() => {
 const { T } = m8;
 const { S } = m47;
-const { $, canvas, g } = m0;
+const { $, canvas, g, buffer, shown } = m0;
 // The camera (register 408). A room whose tiles, fitted to the screen, are too small to tap zooms:
 // a pinch or Ctrl and the wheel zooms around the fingers or the pointer, two fingers or the wheel pan,
 // and Fit shows the whole room again. One finger keeps editing and playing. While playing zoomed in,
@@ -8521,8 +8569,13 @@ function apply(anchor) {
     cam.x = anchor.at.x - (anchor.cx - r.left) / k; cam.y = anchor.at.y - (anchor.cy - r.top) / k;
   }
   clampXY();
-  const kd = canvas.width / b.w * scale();
-  g.setTransform(kd, 0, 0, kd, -cam.x * kd, -cam.y * kd);
+  // The buffer holds the view at one pixel per 2 room units, its origin on a whole buffer pixel so art
+  // pixels never straddle two; the part left over shifts it on the screen (register 621).
+  const kd = canvas.width / b.w * scale(), PX = 2, ox = Math.floor(cam.x / PX), oy = Math.floor(cam.y / PX);
+  const bw = Math.ceil(b.w / scale() / PX) + 2, bh = Math.ceil(b.h / scale() / PX) + 2;
+  if (buffer.width !== bw || buffer.height !== bh) { buffer.width = bw; buffer.height = bh; }
+  g.setTransform(1 / PX, 0, 0, 1 / PX, -ox, -oy);
+  Object.assign(shown, { scale: kd * PX, dx: (ox - cam.x / PX) * kd * PX, dy: (oy - cam.y / PX) * kd * PX });
   const zoomed = isZoomed();
   $('fitBtn').hidden = !zoomed;
   // The room's resize bars act on its edges, which a zoomed view may not show: Fit first.
@@ -8534,7 +8587,7 @@ function apply(anchor) {
 function setFit(z, w, h) { cam.fit = z; avail = { w, h }; }
 
 // A zoomed view can show past the room's edges, which the scene does not paint: clear first.
-function clearView() { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, canvas.width, canvas.height); g.restore(); }
+function clearView() { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, buffer.width, buffer.height); g.restore(); }
 
 // A point on the screen as room px, and back.
 const perRoom = () => canvas.getBoundingClientRect().width / box().w * scale();  // screen px per room px
@@ -9739,6 +9792,7 @@ const m93 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m7;
 const { resizeLevel, moveSide, wallBorder } = m15;
 const { INK } = m8;
+const { paint, look } = m6;
 const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m82;
 const { toolsFor } = m60;
 const { syncBrief, TOOL } = m59;
@@ -9760,6 +9814,7 @@ const { icon } = m23;
 const { buildStrip, syncStrip } = m92;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
+
 
 
 
@@ -9831,7 +9886,7 @@ function buildPanels(actions) {
   for (const col of [...COLOURS, 'wire']) {
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.colour = col; b.title = col === 'wire' ? 'grey: reads only the wires under it' : col;
-    b.style.background = INK[col];
+    b.style.setProperty('--dot', paint(INK[col]));
     b.onclick = () => { S.ui.colour = col; syncPanel(); };
     $('colours').append(b);
   }
@@ -9840,7 +9895,7 @@ function buildPanels(actions) {
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { S.ui.mode = b.dataset.mode; syncPanel(); });
   document.querySelectorAll('[data-corner]').forEach(b => b.onclick = () => { S.ui.corner = b.dataset.corner; syncPanel(); });
   document.querySelectorAll('[data-face]').forEach(b => b.onclick = () => { S.ui.face = b.dataset.face; syncPanel(); });
-  document.querySelectorAll('[data-wire]').forEach(b => { b.style.background = INK[b.dataset.wire]; b.onclick = () => { S.ui.wire = b.dataset.wire; syncPanel(); }; });
+  document.querySelectorAll('[data-wire]').forEach(b => { b.style.setProperty('--dot', paint(INK[b.dataset.wire])); b.onclick = () => { S.ui.wire = b.dataset.wire; syncPanel(); }; });
   document.querySelectorAll('[data-pass]').forEach(b => b.onclick = () => {
     const d = b.dataset.pass, ui = S.ui;
     if (ui.pass.includes(d)) { if (ui.pass.length > 1) ui.pass = ui.pass.filter(p => p !== d); }
@@ -9993,7 +10048,7 @@ function colourChoices() {
   const all = [...coloursOf(def), ...new Set(each.filter(c => c.includes('|')))];
   return { all, fits: el && TINTED.includes(S.ui.tool) ? colouringsOf(def, el) : all };
 }
-const pairInk = col => col.includes('|') ? `linear-gradient(90deg, ${col.split('|').map((c, i) => `${INK[c]} ${i * 50}% ${i * 50 + 50}%`).join(', ')})` : INK[col];
+const pairInk = col => col.includes('|') ? `linear-gradient(90deg, ${col.split('|').map((c, i) => `${paint(INK[c])} ${i * 50}% ${i * 50 + 50}%`).join(', ')})` : paint(INK[col]);
 function syncColours() {
   placeTools();
   const ui = S.ui, { all: cols, fits } = colourChoices(), row = $('campColours');
@@ -10009,19 +10064,20 @@ function syncColours() {
       row.replaceChildren(...['teal', 'violet', 'charcoal'].map(w => {
         const b = document.createElement('button');
         b.type = 'button'; b.dataset.campWire = w; b.title = w; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', w + ' wire');
-        b.style.background = INK[w]; b.onclick = () => { S.ui.wire = w; syncPanel(); };
+        b.style.setProperty('--dot', paint(INK[w])); b.onclick = () => { S.ui.wire = w; syncPanel(); };
         return b;
       }));
     }
     row.querySelectorAll('[data-camp-wire]').forEach(b => { const on = b.dataset.campWire === ui.wire; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
   } else {
   row.hidden = !cols || cols.length < 2;
-  if (cols && row.dataset.cols !== cols.join()) {
-    row.dataset.cols = cols.join();
+  // The palette is part of the key, so a new palette draws the dots again (register 613).
+  if (cols && row.dataset.cols !== cols.join() + look.palette) {
+    row.dataset.cols = cols.join() + look.palette;
     row.replaceChildren(...cols.map(col => {
       const b = document.createElement('button');
       b.type = 'button'; b.dataset.campColour = col; const name = col.replace('|', ' and '); b.title = name; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', name);
-      b.style.background = pairInk(col);
+      b.style.setProperty('--dot', pairInk(col));
       b.onclick = () => { S.ui.colour = col; syncPanel(); };
       return b;
     }));
@@ -10190,7 +10246,7 @@ const { createGame, step, gameText } = m31;
 const { aimKey } = m30;
 const { drawEdit, drawPlay } = m22;
 const { S } = m47;
-const { $, g, now } = m0;
+const { $, g, now, present } = m0;
 const { openSheet } = m88;
 const { syncPanel, keysText } = m93;
 const { feedDemo } = m68;
@@ -10337,6 +10393,7 @@ function render() {
   clearView();
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
   else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
+  present();
 }
 
 // Move's preview: where the carried thing would land, and whether it can.
@@ -11126,7 +11183,7 @@ const { toRoom, toScreen } = m80;
 const { T } = m8;
 const { go, current } = m4;
 const { progress, write } = m5;
-// The tutorial (registers 507, 512, 514, 515, 519, 521): "How to play", one room, a coach bubble that walks the
+// The tutorial (registers 507, 512, 514, 515, 519, 521, 618): "Tutorial", one room, a coach bubble that walks the
 // player through moving the robot, building, Test, Run and the stars on the level list. Strict: each
 // step waits for one thing, and only the ringed thing answers a tap. Copy is a draft.
 

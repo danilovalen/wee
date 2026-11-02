@@ -58,8 +58,8 @@ try {
   check('Sandbox looks exactly like Campaign (register 218)', await look('#menuCampaign') === await look('#menuSandbox'), await look('#menuSandbox'));
   // Register 400: a box with one button gives it the whole row.
   const spans = await page.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(); return Math.abs(r('menuCampaign').width - (r('menuSandbox').right - r('menuTutorial').left)) < 1 && r('menuTutorial').top === r('menuSandbox').top; });
-  check('Campaign has the top row, as wide as How to play, Puzzles and Sandbox together below it (register 521)', spans);
-  check('How to play fits its button', await page.$eval('#menuTutorial', b => b.scrollWidth <= b.clientWidth));
+  check('Campaign has the top row, as wide as Tutorial, Puzzles and Sandbox together below it (register 521)', spans);
+  check('Tutorial fits its button', await page.$eval('#menuTutorial', b => b.scrollWidth <= b.clientWidth));
   check('the menu is one box with no heading line (registers 418, 433, 468)', await page.evaluate(() => document.querySelectorAll('.menuSec').length === 1 && !document.querySelector('.menuSec p') && !document.querySelector('.menuSec').textContent.includes('Play as the robot') && !document.querySelector('.menuList').textContent.includes('little circle')));
   // Register 401: the page paints nothing but its ground until the first place is up.
   check('once loaded the page is no longer booting', await page.evaluate(() => !document.documentElement.classList.contains('booting')));

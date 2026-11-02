@@ -7,7 +7,7 @@ import { createGame, step, gameText } from '../rules/game.js';
 import { aimKey } from '../rules/player.js';
 import { drawEdit, drawPlay } from '../view/scene.js';
 import { S } from '../editor/state.js';
-import { $, g, now } from './dom.js';
+import { $, g, now, present } from './dom.js';
 import { openSheet } from './sheets.js';
 import { syncPanel, keysText } from './panels.js';
 import { feedDemo } from './check.js';
@@ -130,6 +130,7 @@ export function render() {
   clearView();
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
   else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
+  present();
 }
 
 // Move's preview: where the carried thing would land, and whether it can.

@@ -49,7 +49,7 @@ try {
   await page.click('#checkBtn');
   await page.waitForFunction(() => !document.getElementById('designBox').classList.contains('stale') && /changes the answer|nothing changes|same job/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
   check('a piece the answer does not depend on is named', (await notes()).includes('Without these, nothing changes: box at 4, 6.'), await notes());
-  const red = await page.waitForFunction(() => { const c = document.getElementById('game'), g = c.getContext('2d'), k = c.width / window.wee.getLevel().w; const d = g.getImageData(Math.round(4 * k + 3 * k / 32), Math.round(6 * k + k / 2), 2, 2).data; return d[0] > 200 && d[1] < 120; }, null, { timeout: 3000 }).then(() => true, () => false);
+  const red = await page.waitForFunction(() => { const c = document.getElementById('game'), g = c.getContext('2d'), k = c.width / window.wee.getLevel().w; for (let v = 2; v < 30; v += 2) { const d = g.getImageData(Math.round(4 * k + 3 * k / 32), Math.round(6 * k + v * k / 32), 1, 1).data; if (d[0] > 200 && d[1] < 120) return true; } return false; }, null, { timeout: 3000 }).then(() => true, () => false);
   check('and framed in red on the map', red);
   // Any edit makes the notes stale: they stay, dimmed, and their marks leave the room.
   await pickTool(page, 'wall').catch(() => {});

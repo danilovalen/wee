@@ -655,7 +655,7 @@ try {
   await page.waitForTimeout(60);
   const gold = await page.evaluate(() => {
     const c = document.getElementById('game'), tile = c.width / window.wee.getLevel().w;
-    const d = c.getContext('2d').getImageData(Math.round(3 * tile + tile * 0.065), Math.round(1.5 * tile), 1, 1).data;
+    const d = c.getContext('2d').getImageData(Math.round(3 * tile + tile * 0.03), Math.round(1.5 * tile), 1, 1).data;
     return [d[0], d[1], d[2]];
   });
   check('tapping a warning flashes its tile', gold[0] > 180 && gold[1] > 130 && gold[2] < 140, gold.join());
