@@ -49,19 +49,66 @@ const BUILD = {
   },
 };
 
+// Colour-keyed pieces take their colour (an INK colour name's hex) and derive a dark and a light step.
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mixHex = (a, b, t) => '#' + hex(a).map((v, i) => Math.round(v + (hex(b)[i] - v) * t).toString(16).padStart(2, '0')).join('');
+const steps = col => ({ c: col, d: mixHex(col, '#221f22', 0.45), l: mixHex(col, '#fcfcfa', 0.45) });
+Object.assign(BUILD, {
+  // A shut door: a frame, slats and a lit top edge in its colour.
+  doorShut(col) {
+    const { c, d, l } = steps(col), g = grid();
+    box(g, 0, 0, 15, 15, d); box(g, 1, 1, 14, 14, c); box(g, 1, 1, 14, 1, l);
+    for (const x of [4, 7, 10, 13]) box(g, x, 2, x, 14, d);
+    box(g, 1, 8, 14, 8, d); box(g, 2, 9, 14, 9, l);
+    return g;
+  },
+  // An open door: only its dashed frame.
+  doorOpen(col) {
+    const g = grid();
+    for (let i = 1; i < 15; i++) if (i % 4 < 2) { g[1][i] = col; g[14][i] = col; g[i][1] = col; g[i][14] = col; }
+    return g;
+  },
+  // A switch plate: a pill with a knob, left and hollow while off, right and filled while on.
+  switchOff(col) {
+    const { c, d } = steps(col), g = grid();
+    box(g, 3, 5, 12, 10, c); box(g, 4, 6, 11, 9, d); g[5][3] = null; g[5][12] = null; g[10][3] = null; g[10][12] = null;
+    box(g, 4, 6, 6, 9, c); box(g, 5, 6, 5, 6, mixHex(col, '#fcfcfa', 0.45));
+    return g;
+  },
+  switchOn(col) {
+    const { c, d } = steps(col), g = grid();
+    box(g, 3, 5, 12, 10, c); g[5][3] = null; g[5][12] = null; g[10][3] = null; g[10][12] = null;
+    box(g, 9, 6, 11, 9, '#fcfcfa'); g[9][11] = d;
+    return g;
+  },
+  // A floor button: a faint ring and a cap, sunk lower while pressed.
+  buttonUp(col) {
+    const { c, d, l } = steps(col), g = grid();
+    ellipse(g, 8, 8.5, 6, 6, d); ellipse(g, 8, 7.8, 4, 4, c); g[6][6] = l; g[6][7] = l;
+    return g;
+  },
+  buttonDown(col) {
+    const { c, d } = steps(col), g = grid();
+    ellipse(g, 8, 8.5, 6, 6, d); ellipse(g, 8, 8.8, 3, 3, c);
+    return g;
+  },
+});
+
 // Each sprite as rows of [x, length, colour] runs, built on first use.
 const runs = new Map();
-function runsOf(name) {
-  if (runs.has(name)) return runs.get(name);
-  const g = BUILD[name](), out = [];
+function runsOf(name, param) {
+  const key = param ? name + ':' + param : name;
+  if (runs.has(key)) return runs.get(key);
+  const g = BUILD[name](param), out = [];
   g.forEach((row, y) => { for (let x = 0; x < N;) { const c = row[x]; let n = 1; while (x + n < N && row[x + n] === c) n++; if (c) out.push([x, y, n, c]); x += n; } });
-  runs.set(name, out);
+  runs.set(key, out);
   return out;
 }
 export const SPRITES = Object.keys(BUILD);
 
 // Draws a sprite with its top-left at (x, y) in room units; outline draws only its edge pixels (a hidden blob).
-export function drawSprite(g, name, x, y, { outline = false } = {}) {
+// colour: a hex for the colour-keyed pieces (doors, switches, buttons).
+export function drawSprite(g, name, x, y, { outline = false, colour = null } = {}) {
   if (outline) {
     const grid = BUILD[name]();
     g.fillStyle = INK.player;
@@ -72,5 +119,5 @@ export function drawSprite(g, name, x, y, { outline = false } = {}) {
     }));
     return;
   }
-  for (const [rx, ry, n, c] of runsOf(name)) { g.fillStyle = c; g.fillRect(x + rx * PX, y + ry * PX, n * PX, PX); }
+  for (const [rx, ry, n, c] of runsOf(name, colour)) { g.fillStyle = c; g.fillRect(x + rx * PX, y + ry * PX, n * PX, PX); }
 }

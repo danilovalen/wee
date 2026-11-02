@@ -152,14 +152,10 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
       // A switch plate: a pill in its colour with a knob, left and hollow while off, right
       // and filled while on.
       const on = s && s.toggled.includes(y * s.w + x);
-      g.globalAlpha = on ? 1 : 0.35; roundRect(g, 5, 10, 22, 12, 6); g.fill(); g.globalAlpha = 1;
-      roundRect(g, 5, 10, 22, 12, 6); g.stroke();
-      g.fillStyle = on ? '#fff' : INK[col];
-      g.beginPath(); g.arc(on ? 21 : 11, 16, 4, 0, Math.PI * 2); g.fill();
+      drawSprite(g, on ? 'switchOn' : 'switchOff', 0, 0, { colour: INK[col] });
     } else if (kind === 'button') {
       const down = s && pressedAt(s, x, y);
-      g.globalAlpha = 0.35; g.beginPath(); g.arc(16, 16, 11, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
-      g.beginPath(); g.arc(16, down ? 17 : 15, down ? 6 : 8, 0, Math.PI * 2); g.fill();
+      drawSprite(g, down ? 'buttonDown' : 'buttonUp', 0, 0, { colour: INK[col] });
     } else if (kind === 'idoor') {
       // The negative of a door: dark inside, the colour on the rim and the bars. Open,
       // a dashed rim around a minus sign.
@@ -174,12 +170,7 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
       }
     } else {
       const open = s && s.open[col];
-      if (open) { g.setLineDash([4, 4]); roundRect(g, 3, 3, T - 6, T - 6, 4); g.stroke(); g.setLineDash([]); }
-      else {
-        roundRect(g, 2, 2, T - 4, T - 4, 4); g.fill();
-        g.fillStyle = 'rgba(0,0,0,0.3)';
-        for (const bx of [9, 15, 21]) g.fillRect(bx, 4, 2, T - 8);
-      }
+      drawSprite(g, open ? 'doorOpen' : 'doorShut', 0, 0, { colour: INK[col] });
     }
   }
   g.restore();
