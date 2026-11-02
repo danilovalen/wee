@@ -570,7 +570,7 @@ const M = [
   ['src/app/well.js', "  $('sheet').hidden = true; document", "  document", 'phone'],
   ['src/view/ink.js', "player: '#7b6cff'", "player: '#e4e7ec'", 'browser'],
   ['style.css', "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 0;", "background: color-mix(in srgb, var(--panel) var(--btn-mix), #e6e8ee); border: 1px solid var(--line);", 'manga'],
-  ['style.css', "button.on { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent), var(--sticker-rest)", "button.on { color: var(--accent); box-shadow: var(--sticker-rest)", 'browser'],
+  ['style.css', "button.on { color: var(--accent); --frame: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }", "button.on { color: var(--accent); }", 'browser'],
   ['src', "  if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);\n", "", 'browser'],
   ['src', "  if (d) wind = { x: d[0] * GUST, y: d[1] * GUST };", "  if (d) wind = { x: -d[0] * GUST, y: -d[1] * GUST };", 'browser'],
   ['src', "=== 1) S.fx.push({ type: 'ghost', x: before.x, y: before.y, at: t });", "=== 1) {}", 'browser'],

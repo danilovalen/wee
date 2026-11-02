@@ -1,5 +1,7 @@
 // The game's own line icons (register 535): no emoji, drawn in the button's ink. A button keeps its word as
 // its accessible name and tooltip, and in data-label for code that asks what it says.
+import { pixelGlyph } from './pixelIcons.js';
+
 const G = {
   levels: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
   run: '<path d="M8 5.5v13l10-6.5z" fill="currentColor"/>',
@@ -20,7 +22,8 @@ const G = {
   lock: '<rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   unlock: '<rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 7.7-1.5"/>',
 };
-export const glyph = key => `<svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">${G[key]}</svg>`;
+// Every icon has a pixel drawing now (register 602 S3); the line drawings above stay for any key it lacks.
+export const glyph = key => pixelGlyph(key) || `<svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">${G[key]}</svg>`;
 
 // Puts an icon on a button, its word kept as its name.
 export function iconOn(el, key, label) {

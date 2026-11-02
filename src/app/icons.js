@@ -3,6 +3,7 @@
 import { emptyLevel } from '../level/format.js';
 import { T, INK } from '../view/ink.js';
 import { drawPiece, drawRobot, drawYou } from '../view/pieces.js';
+import { pixelBitmap } from './pixelIcons.js';
 import { drawEdit } from '../view/scene.js';
 
 // gateColour: a one-way drawn in that colour; none, a plain one.
@@ -20,20 +21,10 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
     for (const [col, o] of [['teal', -6], ['violet', 0], ['charcoal', 6]]) { x.strokeStyle = INK[col]; x.beginPath(); x.moveTo(4, 16 + o); x.lineTo(16 + o, 16 + o); x.lineTo(16 + o, 28); x.stroke(); }
   } else if (tool === 'select') {
     x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
-  } else if (tool === 'look') {
-    x.strokeStyle = '#6f6876'; x.lineWidth = 2.5;
-    x.beginPath(); x.arc(14, 14, 7, 0, Math.PI * 2); x.moveTo(19, 19); x.lineTo(26, 26); x.stroke();
-  } else if (tool === 'move') {
-    // Four arrows out from the middle.
-    x.strokeStyle = '#6f6876'; x.lineWidth = 2.5; x.lineCap = 'round'; x.lineJoin = 'round';
-    x.beginPath(); x.moveTo(16, 5); x.lineTo(16, 27); x.moveTo(5, 16); x.lineTo(27, 16);
-    for (const [ax, ay, dx, dy] of [[16, 5, 1, 1], [16, 27, 1, -1], [5, 16, 1, 1], [27, 16, -1, 1]]) {
-      if (ax === 16) { x.moveTo(ax - 4, ay + 4 * dy); x.lineTo(ax, ay); x.lineTo(ax + 4, ay + 4 * dy); }
-      else { x.moveTo(ax + 4 * dx, ay - 4); x.lineTo(ax, ay); x.lineTo(ax + 4 * dx, ay + 4); }
-    }
-    x.stroke();
-  } else if (tool === 'erase') {
-    x.strokeStyle = '#6f6876'; x.lineWidth = 3; x.beginPath(); x.moveTo(8, 8); x.lineTo(24, 24); x.moveTo(24, 8); x.lineTo(8, 24); x.stroke();
+  } else if (tool === 'look' || tool === 'move' || tool === 'erase') {
+    // The tool row's own icons are the HUD's pixel icons (register 602 S3), 2 units per pixel.
+    x.fillStyle = '#c1c0c0';
+    pixelBitmap(tool).forEach((row, py) => row.forEach((v, px) => { if (v) x.fillRect(px * 2, py * 2, 2, 2); }));
   } else if (tool === 'start' || tool === 'robot') {
     // The campaign's goal rows name the robot, which plays them (register 323); a room's start is you.
     x.save(); x.translate(16, 16); x.scale(1.3, 1.3); (tool === 'robot' ? drawRobot : drawYou)(x); x.restore();
