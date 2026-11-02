@@ -1,0 +1,76 @@
+// Pixel sprites of the neon lab look (register 602, docs/lab-neon-sketch.html): 16x16 art pixels on a
+// 32-unit tile, so one art pixel is 2 units. Each sprite is built once from simple shapes, kept as runs
+// of one colour per row, and drawn with whole-unit rectangles so it stays sharp at any zoom.
+import { INK } from './ink.js';
+
+const N = 16, PX = 2;
+const grid = () => Array.from({ length: N }, () => Array(N).fill(null));
+const inside = (x, y, cx, cy, rx, ry) => ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1;
+function ellipse(g, cx, cy, rx, ry, c) { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (inside(x, y, cx, cy, rx, ry)) g[y][x] = c; }
+function box(g, x0, y0, x1, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) g[y][x] = c; }
+function line(g, x0, y0, x1, y1, c) {
+  const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+  for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / (n || 1)), y = Math.round(y0 + (y1 - y0) * i / (n || 1)); if (x >= 0 && y >= 0 && x < N && y < N) g[y][x] = c; }
+}
+
+const C = {
+  blobH: '#e6f8d0', blobM: '#c3eb9a', blob: '#a9dc76', blobS: '#6f9e45', blobD: '#4f7432', eye: '#221f22', white: '#fcfcfa',
+  berryH: '#c9f4fa', berry: '#78dce8', berryS: '#3f9aa6', berryD: '#2b6f78', leaf: '#6f9e45',
+  boxL: '#a59f85', box: '#857f6a', boxD: '#5e5a4a',
+};
+
+const BUILD = {
+  // A gel drop: dark rim, body, lighter belly, a shine, two eyes, a squashed base.
+  blob() {
+    const g = grid();
+    ellipse(g, 8, 9.5, 7.5, 6.5, C.blobD); ellipse(g, 8, 9.2, 6.6, 5.7, C.blob); ellipse(g, 8, 10.4, 4.5, 3.4, C.blobM);
+    ellipse(g, 5, 6.5, 1.8, 1.3, C.blobH); g[5][4] = C.white; box(g, 2, 14, 13, 14, C.blobS); box(g, 4, 15, 11, 15, C.blobD);
+    box(g, 6, 9, 6, 10, C.eye); box(g, 10, 9, 10, 10, C.eye); g[9][6] = C.white;
+    return g;
+  },
+  // A cyan berry (register 604): round, a crown on top, a shine, a small leaf.
+  berry() {
+    const g = grid();
+    ellipse(g, 8, 9.5, 6.6, 6, C.berryS); ellipse(g, 7.7, 9.2, 5.8, 5.2, C.berry);
+    ellipse(g, 5.4, 7.6, 1.7, 1.3, C.berryH); g[7][5] = C.white;
+    box(g, 7, 4, 9, 4, C.berryD); g[3][7] = C.berryD; g[3][9] = C.berryD; g[5][8] = C.berryD;
+    line(g, 9, 3, 11, 1, C.leaf); box(g, 11, 1, 13, 2, C.leaf);
+    return g;
+  },
+  // A crate: 1-pixel outline, light top-left edge, plank seams, a brace, nails.
+  box() {
+    const g = grid(); box(g, 0, 0, 15, 15, C.box);
+    box(g, 0, 0, 15, 0, C.boxD); box(g, 0, 15, 15, 15, C.boxD); box(g, 0, 0, 0, 15, C.boxD); box(g, 15, 0, 15, 15, C.boxD);
+    box(g, 1, 1, 14, 1, C.boxL); box(g, 1, 1, 1, 14, C.boxL);
+    box(g, 1, 5, 14, 5, C.boxD); box(g, 1, 10, 14, 10, C.boxD); box(g, 2, 6, 14, 6, C.boxL); box(g, 2, 11, 14, 11, C.boxL);
+    line(g, 2, 13, 13, 2, C.boxD); line(g, 2, 12, 12, 2, C.boxL);
+    for (const [x, y] of [[3, 3], [12, 3], [3, 8], [12, 8], [3, 13], [12, 13]]) g[y][x] = C.boxD;
+    return g;
+  },
+};
+
+// Each sprite as rows of [x, length, colour] runs, built on first use.
+const runs = new Map();
+function runsOf(name) {
+  if (runs.has(name)) return runs.get(name);
+  const g = BUILD[name](), out = [];
+  g.forEach((row, y) => { for (let x = 0; x < N;) { const c = row[x]; let n = 1; while (x + n < N && row[x + n] === c) n++; if (c) out.push([x, y, n, c]); x += n; } });
+  runs.set(name, out);
+  return out;
+}
+export const SPRITES = Object.keys(BUILD);
+
+// Draws a sprite with its top-left at (x, y) in room units; outline draws only its edge pixels (a hidden blob).
+export function drawSprite(g, name, x, y, { outline = false } = {}) {
+  if (outline) {
+    const grid = BUILD[name]();
+    g.fillStyle = INK.player;
+    grid.forEach((row, yy) => row.forEach((c, xx) => {
+      if (!c) return;
+      const edge = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !(grid[yy + dy] || [])[xx + dx]);
+      if (edge && (xx + yy) % 2 === 0) g.fillRect(x + xx * PX, y + yy * PX, PX, PX);
+    }));
+    return;
+  }
+  for (const [rx, ry, n, c] of runsOf(name)) { g.fillStyle = c; g.fillRect(x + rx * PX, y + ry * PX, n * PX, PX); }
+}

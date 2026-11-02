@@ -1,5 +1,6 @@
 // Pieces and the player.
 import { AIM, INK, T, frame, roundRect } from './ink.js';
+import { drawSprite } from './sprites.js';
 
 // The mode badge: a clock for real time, a step mark for on input, a double chevron for follow.
 export function modeBadge(g, mode, bx = 24, by = 8) {
@@ -69,9 +70,7 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     // A pushable laser wears the box's brown border (registers 336-338); a fixed one has no base (register 493).
     if (e.crate) { g.strokeStyle = INK.boxEdge; g.lineWidth = 2; roundRect(g, 3, 3, T - 6, T - 6, 3.5); g.stroke(); }
   } else if (e.kind === 'box') {
-    g.fillStyle = INK.box; roundRect(g, 4, 4, T - 8, T - 8, 3); g.fill();
-    g.strokeStyle = INK.boxEdge; g.lineWidth = 2; g.stroke();
-    g.beginPath(); g.moveTo(7, 7); g.lineTo(25, 25); g.moveTo(25, 7); g.lineTo(7, 25); g.stroke();
+    drawSprite(g, 'box', 0, 0);
   } else if (e.kind === 'bomb') {
     // The fuse is the timer: a full cord before it is lit, a spark that burns it down one
     // length per move, and with no cord left the body glows: it goes off when this move ends.
@@ -96,25 +95,10 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
   g.restore();
 }
 
-// The robot, centred on 0,0 and about 20 across: antenna, body, visor with two eyes, feet.
-// Hidden, only its outline (dashed) and its eyes show.
+// The campaign's player is the blob (register 593): a gel drop, drawn as a pixel sprite centred on its tile.
 export function drawRobot(g, hidden = false) {
-  g.save(); g.scale(0.5, 0.5); g.translate(-26, -27);
-  const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); };
-  if (!hidden) {
-    g.strokeStyle = INK.robotDark; g.lineWidth = 3; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(26, 6); g.lineTo(26, 13); g.stroke();
-    g.fillStyle = INK.robotTip; g.beginPath(); g.arc(26, 5, 3.5, 0, Math.PI * 2); g.fill();
-    g.fillStyle = INK.robotDark; rr(15, 41, 7, 6, 2); g.fill(); rr(30, 41, 7, 6, 2); g.fill();
-    g.fillStyle = INK.player; rr(9, 13, 34, 28, 9); g.fill();
-    g.fillStyle = INK.robotVisor; rr(14, 19, 24, 12, 6); g.fill();
-  } else {
-    g.strokeStyle = INK.player; g.lineWidth = 3; g.setLineDash([5, 5]); rr(9, 13, 34, 28, 9); g.stroke(); g.setLineDash([]);
-  }
-  g.fillStyle = INK.robotEye; g.beginPath(); g.arc(21, 25, 3, 0, Math.PI * 2); g.arc(31, 25, 3, 0, Math.PI * 2); g.fill();
-  g.restore();
+  drawSprite(g, 'blob', -T / 2, -T / 2, { outline: hidden });
 }
-
 // You, when a person plays (register 302): a round body with two eyes, about 20 across.
 export function drawYou(g, hidden = false) {
   g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2);

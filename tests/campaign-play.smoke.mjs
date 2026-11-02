@@ -83,7 +83,7 @@ try {
     return out; });
   check('a pushable laser\'s barrel stays inside its box frame (register 554)', spill === 0, String(spill));
   // Register 553: the menu's pieces are painted by the game's own drawing, so they cannot drift from the room.
-  check('the menu\'s laser, switch (off and on), door, goal and box are the game\'s drawings', await page.$$eval('.msEmitter, .msSwitch .off, .msSwitch .on, .msDoor, .msGoal, .msBox', es => es.length === 6 && es.every(e => getComputedStyle(e).backgroundImage.startsWith('url("data:image/png'))));
+  check('the menu\'s laser, switch (off and on), door, goal, box and blob are the game\'s drawings', await page.$$eval('.msEmitter, .msSwitch .off, .msSwitch .on, .msDoor, .msGoal, .msBox, .msBody', es => es.length === 7 && es.every(e => getComputedStyle(e).backgroundImage.startsWith('url("data:image/png'))));
   await page.click('#menuCampaign');
   const rows = await page.$$eval('.campRow', rs => rs.map(r => r.dataset.level));
   check('the level list starts at Level 1: the tutorial is on the menu, not a card (register 521)', rows.length >= 1 && rows[0] === LISTED[0].id && !rows.includes('tutorial'), rows.join());
@@ -475,9 +475,9 @@ try {
   const g3 = await gateAt();
   await nine.click('#undo'); const g4 = await gateAt();
   check('a hold on a one-way removes it, and undo brings it back', g3 === '' && g4 === 'gate:down', JSON.stringify([g3, g4]));
-  // The robot's antenna tip is the one pink on its tile.
-  const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 230 && d[i + 1] > 90 && d[i + 1] < 130 && d[i + 2] > 110 && d[i + 2] < 150) n++; return n; });
-  check('the start is drawn as the robot (its antenna tip shows)', tip > 3, String(tip));
+  // The start is drawn as the blob (register 593): its gel green fills much of its tile.
+  const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 150 && d[i] < 190 && d[i + 1] > 200 && d[i + 2] > 100 && d[i + 2] < 140) n++; return n / (d.length / 4); });
+  check('the start is drawn as the blob (its gel green fills its tile)', tip > 0.08, String(tip));
   // Level 15's laser (registers 255, 256): placed firing right, a tap turns it, a hold removes it.
   await nine.click('#campBack'); await nine.click(`.campRow[data-level="${LASER_7.id}"]`); await nine.click('[data-tool="turret"]');
   const gl = await nine.locator('#game').boundingBox(), tl = gl.width / 7;

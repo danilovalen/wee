@@ -1,8 +1,8 @@
-// The main menu's background: a small room the robot plays on a loop (the box blocks a laser, the
-// robot bumps the closed door, steps on the switch, goes through). Drawn in CSS, not the game's
+// The main menu's background: a small room the blob plays on a loop (the box blocks a laser, the
+// blob bumps the closed door, steps on the switch, goes through). Drawn in CSS, not the game's
 // scene, so it costs nothing while the menu is shut.
 import { drawCell } from '../view/tiles.js';
-import { drawPiece } from '../view/pieces.js';
+import { drawPiece, drawRobot } from '../view/pieces.js';
 import { T } from '../view/ink.js';
 
 const C = 52;
@@ -16,12 +16,6 @@ const cell = (k, s) => art(g => drawCell(g, k, 0, 0, s, 1, true));
 // down pushing the box into the laser's row, right to the block, down into the closed door, right onto
 // the switch, left back, down through the open door onto the goal.
 const WALLS = [[5, 2], [3, 4], [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [3, 6], [5, 6], [4, 7], [0, 7]];
-const ROBOT = `<svg viewBox="0 0 52 52" width="52" height="52" aria-hidden="true">
-<line x1="26" y1="6" x2="26" y2="13" stroke="#4b3fd6" stroke-width="3" stroke-linecap="round"/><circle cx="26" cy="5" r="3.5" fill="#ff6b81"/>
-<rect x="9" y="13" width="34" height="28" rx="9" fill="#7d6bff"/><rect x="14" y="19" width="24" height="12" rx="6" fill="#2a2440"/>
-<g class="msEyes"><circle cx="21" cy="25" r="3" fill="#7ef0ff"/><circle cx="31" cy="25" r="3" fill="#7ef0ff"/></g>
-<rect x="15" y="41" width="7" height="6" rx="2" fill="#4b3fd6"/><rect x="30" y="41" width="7" height="6" rx="2" fill="#4b3fd6"/></svg>`;
-
 const at = (c, r, dx = 0, dy = 0) => `left:${c * C + dx}px;top:${r * C + dy}px`;
 
 export function buildMenuScene(host) {
@@ -30,13 +24,15 @@ export function buildMenuScene(host) {
 <i class="msSwitch" style="${at(5, 4)}"><b class="off"></b><b class="on"></b></i>
 <i class="msDoor" style="${at(4, 5)}"></i><i class="msSpark" style="${at(4, 5, 6, -10)}">✱ ✱</i>
 <i class="msGoal" style="${at(4, 6)}"></i>
-<i class="msBox"></i><i class="msRobot">${ROBOT}</i></div>`;
+<i class="msBox"></i><i class="msRobot"><b class="msBody"></b></i></div>`;
   const room = host.firstElementChild, paint = (sel, url) => room.querySelectorAll(sel).forEach(e => { e.style.backgroundImage = url; });
   paint('.msSwitch .off', cell('toggle:red', { toggled: [], w: 1, open: {} }));
   paint('.msSwitch .on', cell('toggle:red', { toggled: [0], w: 1, open: { red: true } }));
   paint('.msDoor', cell('door:red', { toggled: [], w: 1, open: {} }));
   paint('.msGoal', cell('goal', null));
   paint('.msBox', art(g => drawPiece(g, { kind: 'box' }, 0, 0)));
+  // The player is the blob, the same sprite the room draws (register 593).
+  paint('.msBody', art(g => { g.translate(T / 2, T / 2); drawRobot(g); }));
   paint('.msEmitter', art(g => drawPiece(g, { kind: 'turret', turret: { dirs: ['right'], mode: 'input' } }, 0, 0)));
   // Fit: the room's six columns fill a phone's width, and the goal row always ends above the
   // buttons; on a wide screen it is centred with floor around it.

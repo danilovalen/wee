@@ -1,5 +1,6 @@
 // Tiles: floor, walls and every cell type, drawn in place.
 import { INK, T, frame, roundRect } from './ink.js';
+import { drawSprite } from './sprites.js';
 import { drawnColour } from '../rules/wires.js';
 import { gateOf, gateDirs } from '../rules/grid.js';
 
@@ -136,13 +137,8 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     star(g, 0.6); if (lit) { g.fillStyle = INK[col]; g.fill(); } else { g.globalAlpha = 0.5; g.stroke(); }
     g.globalAlpha = 1;
   } else if (c === 'goal') {
-    // A gold ring with a star in it, pulsing slowly.
-    const k = 0.5 + 0.5 * Math.sin(frame.clock / 400);
-    g.strokeStyle = INK.goal; g.lineWidth = 2.5; g.globalAlpha = 0.55 + 0.45 * k;
-    g.beginPath(); g.arc(16, 16, 12, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
-    g.fillStyle = INK.goal; g.beginPath();
-    for (let i = 0; i < 10; i++) { const r = i % 2 ? 3.2 : 7.5, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(16 + Math.cos(a) * r, 16 + Math.sin(a) * r); }
-    g.fill();
+    // The goal is a cyan berry (registers 593, 604).
+    drawSprite(g, 'berry', 0, 0);
   } else if (c === 'checkpoint') {
     const active = s && s.checkpoint.x === x && s.checkpoint.y === y;
     g.strokeStyle = INK.moverEdge; g.lineWidth = 2;
