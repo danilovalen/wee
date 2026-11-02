@@ -44,3 +44,11 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
   else drawPiece(x, { kind: tool, axis: 'h', dir: 1, mode: 'input' }, 0, 0);
   return c;
 }
+
+// A new palette or skin (registers 612, 613) draws every icon on the page again, keeping its colour and crate.
+export function repaintIcons() {
+  for (const old of document.querySelectorAll('canvas[data-icon]')) {
+    const { icon: tool, colour, crate } = old.dataset, c = tool === 'gate' ? icon(tool, 'red', colour || null, crate === 'true') : icon(tool, colour || 'red', null, crate === 'true');
+    Object.assign(c.dataset, old.dataset); c.className = old.className; old.replaceWith(c);
+  }
+}

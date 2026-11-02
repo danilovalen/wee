@@ -1,6 +1,9 @@
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 import { bindUnlock } from './unlock.js';
+import { buildLooks } from './looks.js';
+import { repaintIcons } from './icons.js';
+import { applyPalette } from '../view/look.js';
 import { buildMaker } from './maker.js';
 import { buildPuzzles } from './puzzles.js';
 import { buildProgress } from './progressCode.js';
@@ -24,6 +27,8 @@ import { bindDebug } from './debug.js';
 import { bindTutorial } from './tutorial.js';
 import { bindGlyphs } from './glyphs.js';
 
+// The chosen palette is on before anything is drawn (register 613).
+applyPalette();
 S.level = starterLevel(portrait());
 
 window.renderGameToText = () => S.mode === 'play' ? gameText(S.game, 'play') : JSON.stringify({ mode: 'edit', level: S.level });
@@ -38,7 +43,7 @@ buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
-bindGlyphs(); bindTutorial(); bindUnlock();
+bindGlyphs(); bindTutorial(); bindUnlock(); buildLooks();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });
 buildMaker();
@@ -48,6 +53,8 @@ bindInput();
 bindCamera();
 syncPanel();
 addEventListener('resize', fit);
+// A new palette or skin repaints the panels' icons and the room (registers 612, 613).
+addEventListener('wee:look', () => { repaintIcons(); syncPanel(); S.redraw = true; });
 watchStage();
 // Any input may change what the room looks like; the next frame redraws it.
 for (const t of ['pointerdown', 'pointermove', 'pointerup', 'keydown', 'click', 'input', 'change', 'resize']) addEventListener(t, () => { S.redraw = true; }, true);

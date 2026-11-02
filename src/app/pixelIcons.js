@@ -43,6 +43,13 @@ const ICON = {
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (g[y][x] && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !(g[y + dy] || [])[x + dx])) g[y][x] = 1;
     return g;
   },
+  // Looks: a painter's palette with a thumb hole and three dabs.
+  looks() {
+    const g = grid(); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const d = Math.hypot((x + 0.5 - 8) / 7, (y + 0.5 - 8) / 6); if (d <= 1) g[y][x] = 1; }
+    box(g, 9, 9, 11, 11, 0); box(g, 10, 12, 12, 13, 0);
+    for (const [x, y] of [[4, 5], [8, 3], [4, 9]]) box(g, x, y, x + 1, y + 1, 0);
+    return g;
+  },
   look() { const g = grid(); ring(g, 6.5, 6.5, 5.5, 2); for (let i = 0; i < 5; i++) box(g, 10 + i, 10 + i, 11 + i, 11 + i); return g; },
   erase() { const g = grid(); thick(g, 2, 2, 12, 12); thick(g, 12, 2, 2, 12); return g; },
   move() { const g = grid(); box(g, 7, 1, 8, 14); box(g, 1, 7, 14, 8); for (let i = 1; i <= 3; i++) { box(g, 7 - i, 1 + i, 8 + i, 1 + i); box(g, 7 - i, 14 - i, 8 + i, 14 - i); box(g, 1 + i, 7 - i, 1 + i, 8 + i); box(g, 14 - i, 7 - i, 14 - i, 8 + i); } return g; },

@@ -26,6 +26,7 @@ export function buildMenuScene(host) {
 <i class="msGoal" style="${at(4, 6)}"></i>
 <i class="msBox"></i><i class="msRobot"><b class="msBody"></b></i></div>`;
   const room = host.firstElementChild, paint = (sel, url) => room.querySelectorAll(sel).forEach(e => { e.style.backgroundImage = url; });
+  const draw = () => {
   paint('.msSwitch .off', cell('toggle:red', { toggled: [], w: 1, open: {} }));
   paint('.msSwitch .on', cell('toggle:red', { toggled: [0], w: 1, open: { red: true } }));
   paint('.msDoor', cell('door:red', { toggled: [], w: 1, open: {} }));
@@ -34,6 +35,10 @@ export function buildMenuScene(host) {
   // The player is the blob, the same sprite the room draws (register 593).
   paint('.msBody', art(g => { g.translate(T / 2, T / 2); drawRobot(g); }));
   paint('.msEmitter', art(g => drawPiece(g, { kind: 'turret', turret: { dirs: ['right'], mode: 'input' } }, 0, 0)));
+  };
+  draw();
+  // A new palette or skin paints the pieces again (registers 612, 613).
+  addEventListener('wee:look', draw);
   // Fit: the room's six columns fill a phone's width, and the goal row always ends above the
   // buttons; on a wide screen it is centred with floor around it.
   const fit = () => {

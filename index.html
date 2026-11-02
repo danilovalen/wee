@@ -231,6 +231,7 @@
     <div id="menuScene" class="menuScene" aria-hidden="true"></div>
     <b class="logo menuLogo">wee</b>
     <button id="menuUnlock" type="button" class="menuCorner" aria-pressed="false"></button>
+    <button id="menuLooks" type="button" class="menuCorner left" aria-label="Looks" title="Looks"></button>
     <div class="menuList">
       <section class="menuSec">
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
@@ -269,6 +270,12 @@
     <ul id="makerGoals" class="mkGoals"></ul>
     <p id="makerSay" class="hint" role="status"></p>
     <div class="row bar"><button id="makerBuild" type="button" class="primary">Build it</button><button id="makerNew" type="button">New</button><button id="makerDelete" type="button" hidden>Delete</button></div>
+  </dialog>
+  <dialog id="lookBox" class="rooms looks">
+    <div class="roomsHead"><b>Looks</b><span id="lookStars" class="lookStars"></span><button id="lookMenu" type="button">Menu</button></div>
+    <p class="hint">Stars from levels and side goals open palettes and skins.</p>
+    <h3>Palette</h3><div id="lookPalettes" class="lookGrid"></div>
+    <h3>Skins</h3><div id="lookSkins" class="lookSkins"></div>
   </dialog>
   <dialog id="puzzleBox" class="rooms">
     <div class="roomsHead"><b>Puzzles</b><button id="puzzleMenu" type="button">Menu</button></div>

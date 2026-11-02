@@ -488,6 +488,21 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .menuCorner { position: absolute; z-index: 2; top: 12px; right: 12px; width: 44px; height: 44px; padding: 10px; display: flex; align-items: center; justify-content: center; }
 .menuCorner .glyph, .unlockBadge .glyph { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .menuCorner.on { color: var(--gold); }
+.menuCorner.left { right: auto; left: 12px; }
+/* Looks (registers 612, 613): palettes as swatch buttons, skins as a pair of previews per object. */
+.looks h3 { margin: 12px 0 6px; font: 800 13px var(--label-face); color: var(--soft); text-transform: uppercase; letter-spacing: .06em; }
+.lookStars { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; margin-right: 8px; font: 800 15px var(--label-face); color: var(--gold); }
+.lookStars .glyph { width: 16px; height: 16px; --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
+.lookGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.lookGrid button { display: grid; justify-items: start; gap: 4px; padding: 8px 10px; text-align: left; }
+.lookSwatch { display: flex; gap: 2px; } .lookSwatch i { width: 16px; height: 16px; display: block; }
+.lookCost { display: inline-flex; align-items: center; gap: 2px; font: 700 12px var(--label-face); color: var(--soft); }
+.lookCost .glyph { width: 16px; height: 16px; }
+.lookSkins { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.lookSkin { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 6px; padding: 6px 8px; background: var(--field); }
+.lookSkin button { display: grid; justify-items: center; gap: 2px; padding: 4px; }
+.lookPic { width: 32px; height: 32px; image-rendering: pixelated; display: block; }
+button:disabled .lookPic { opacity: .35; }
 .unlockBadge { display: inline-flex; color: var(--gold); }
 .unlockBadge[hidden] { display: none; }
 #menuDebug { background: none; box-shadow: none; height: 44px; font: 13px var(--label-face); color: var(--soft); text-decoration: underline; }

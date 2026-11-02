@@ -3,6 +3,7 @@
 // the diagonal between them, so outer corners round, inner corners get a fillet and a
 // solid block has no seams. Doors, switches and the rest stay one tile each (tiles.js).
 import { INK, T, frame } from './ink.js';
+import { altSkin } from './look.js';
 
 export const MASSES = ['wall', 'water', 'sticky', 'gravel', 'death'];
 // Corner radius per kind, in pixels of a 32 px tile.
@@ -126,6 +127,11 @@ function drawPixelWalls(g, at, w, h) {
     if (n && e) floor(X + T - PX, Y, -1, 1);
     if (s && wv) floor(X, Y + T - PX, 1, -1);
     if (s && e) floor(X + T - PX, Y + T - PX, -1, -1);
+    // The block's other skin (register 613): lab tiles, a grout cross on every cell and a shine per tile.
+    if (altSkin('block')) {
+      g.fillStyle = INK.crack; g.fillRect(X, Y + T / 2 - PX, T, PX); g.fillRect(X + T / 2 - PX, Y, PX, T);
+      g.fillStyle = INK.mark; for (const [a, b] of [[3, 3], [11, 3], [3, 11], [11, 11]]) g.fillRect(X + a * PX, Y + b * PX, PX, PX);
+    }
   }
 }
 

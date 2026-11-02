@@ -1014,6 +1014,13 @@ const M = [
   ['src/view/sprites.js', "    const n = +k; if (n >= 1)", "    const n = 2; if (n >= 1)", 'browser'],
   ['src/view/pieces.js', "    if (e.crate) drawSprite(g, 'crateFrame', 0, 0);", "", 'campaign-play'],
   ['src/view/sprites.js', "body = lit ? INK.zap : '#727072'", "body = lit ? INK.beam : '#727072'", 'sim'],
+  // Rows 612, 613: Looks.
+  ['src/view/look.js', "set(v) { d.set.call(this, paint(v)); }", "set(v) { d.set.call(this, v); }", 'looks'],
+  ['src/app/looks.js', "const open = cost => unlocked() || totalStars() >= cost;", "const open = cost => unlocked() || cost === 0;", 'looks'],
+  ['src/view/look.js', "export const skinned = name => (ALT[name] && look.skins[ALT[name]] ? name + 'Alt' : name);", "export const skinned = name => name;", 'looks'],
+  ['src/view/look.js', "const save = () => { try { localStorage.setItem(KEY, JSON.stringify(look)); }", "const save = () => { try { 0; }", 'looks'],
+  ['src/app/main.js', "addEventListener('wee:look', () => { repaintIcons(); syncPanel();", "addEventListener('wee:look', () => { syncPanel();", 'looks'],
+  ['src/view/look.js', "if (p.greys && base[t]) root.style.setProperty(t, paint(base[t], p)); else root.style.removeProperty(t);", "if (p.greys && base[t]) root.style.setProperty(t, paint(base[t], p));", 'looks'],
   // Rows 565-583: challenge view and win card.
   ['src/view/scene.js', "g.strokeStyle = 'rgba(171,157,242,.95)'; g.lineWidth = 2.5;", "g.strokeStyle = 'rgba(0,0,0,0)'; g.lineWidth = 2.5;", 'challenge'],
   ['src/app/goalCard.js', "if (i < by[el].length) c.classList.add('used');", "", 'challenge'],
