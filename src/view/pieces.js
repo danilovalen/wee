@@ -43,7 +43,9 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
     drawSprite(g, e.kind, 0, 0, { colour: (e.axis === 'v' ? 'v' : 'h') + '|' + (e.dir < 0 ? -1 : 1) });
     modeBadge(g, e.mode);
   } else if (e.kind === 'turret') {
-    // A pushable laser wears the box's brown border (registers 336-338); a fixed one has no base (register 493).
+    // A laser stands on a wall-like block (register 622, as before 493); a pushable one wears the box's
+    // brown border round it (registers 336-338).
+    drawSprite(g, 'wallFace', 0, 0);
     if (e.crate) drawSprite(g, 'crateFrame', 0, 0);
   } else if (e.kind === 'box') {
     drawSprite(g, 'box', 0, 0);

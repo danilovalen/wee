@@ -89,16 +89,11 @@ Object.assign(BUILD, {
   laser(key) {
     const [dirs, next] = key.split('|'), g = grid();
     const turn = { right: (x, y) => [x, y], down: (x, y) => [15 - y, x], left: (x, y) => [15 - x, 15 - y], up: (x, y) => [y, 15 - x] };
-    // The housing every laser fires from (register 619): a dark box with a lit top-left edge and a lens.
-    box(g, 3, 3, 12, 12, '#2d2a2e'); box(g, 4, 4, 11, 11, '#5b595c'); box(g, 4, 4, 11, 4, '#727072'); box(g, 4, 4, 4, 11, '#727072');
-    box(g, 6, 6, 9, 9, '#403e41');
     for (const d of dirs.split(',')) {
       const lit = d === next, body = lit ? INK.zap : '#727072', edge = lit ? '#c4643a' : '#403e41', tip = lit ? INK.zapCore : '#939293';
       const put = (x, y, c) => { const [X, Y] = turn[d](x, y); g[Y][X] = c; };
-      for (let x = 12; x <= 15; x++) { put(x, 6, edge); put(x, 9, edge); put(x, 7, body); put(x, 8, body); }
-      put(14, 7, tip); put(15, 7, tip); put(14, 8, tip); put(15, 8, tip);
-      // The lens on the face it fires from, lit on the next to fire.
-      put(9, 7, lit ? INK.zapCore : '#939293'); put(9, 8, lit ? INK.zap : '#727072');
+      for (let x = 6; x <= 15; x++) { put(x, 6, edge); put(x, 9, edge); put(x, 7, body); put(x, 8, body); }
+      put(6, 7, edge); put(6, 8, edge); put(14, 7, tip); put(15, 7, tip); put(14, 8, tip); put(15, 8, tip);
     }
     return g;
   },

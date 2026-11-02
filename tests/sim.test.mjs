@@ -8,7 +8,7 @@ import { counterRoom, countOf } from '../tools/counterRoom.mjs';
 import { displayRoom, digitOf } from '../tools/displayRoom.mjs';
 import { hexRoom, hexOf } from '../tools/hexRoom.mjs';
 import { place, describe, turnGate, moveAt } from '../src/editor/edit.js';
-import { drawTurret, BADGE } from '../src/view/pieces.js';
+import { drawTurret, drawPiece, BADGE } from '../src/view/pieces.js';
 import { INK } from '../src/view/ink.js';
 import { newHistory, record, undo, redo, LIMIT } from '../src/editor/history.js';
 import { RT_PERIOD } from '../src/rules/base.js';
@@ -1193,11 +1193,10 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('the editor lights the barrel a turret fires first', lit.length > 0 && lit.every(([x, y]) => y >= 10) && lit.reduce((a, [, y]) => a + y, 0) / lit.length > 16, JSON.stringify(lit.slice(0, 4)));
 }
 
-{ // every laser fires from a housing (register 619): it paints the housing's face, not only barrels
-  let face = 0, fill = null;
-  const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? () => { if (fill === '#5b595c') face++; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } });
-  drawTurret(g, { dirs: ['right'], mode: 'input' });
-  check('a laser draws its housing', face > 0, String(face));
+{ // a laser stands on a wall-like block (registers 619, 622), and one mounted on a box does not
+  const faces = e => { let face = 0, fill = null; const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? () => { if (fill === '#5b595c') face++; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } }); drawPiece(g, e, 0, 0); return face; };
+  check('a laser stands on a wall-like block', faces({ kind: 'turret', x: 0, y: 0, turret: { dirs: ['right'], mode: 'input' } }) > 0);
+  check('a laser mounted on a box adds no block', faces({ kind: 'box', x: 0, y: 0, turret: { dirs: ['right'], mode: 'input' } }) === 0);
 }
 
 { // the mode badge (its dark disc) only on a turret that turns (register 300)
