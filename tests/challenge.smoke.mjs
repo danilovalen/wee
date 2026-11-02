@@ -19,8 +19,8 @@ try {
   await p.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; window.__noWinCard = true; });
   await p.goto(`http://localhost:${PORT}/index.html#/level/${ch.id}`); await p.waitForTimeout(1200);
   check('the tools row offers only the given pieces', JSON.stringify(await p.$$eval('#palette [data-tool]', bs => bs.filter(b => b.offsetParent).map(b => b.dataset.tool).sort())) === JSON.stringify([...new Set(ch.pieces.map(c => TOOL[c]))].sort()), 'tools');
-  // Every icon sits in the middle of its button (rows 568, 574: reset's sat on its left edge).
-  const off = await p.$$eval('button', bs => bs.filter(b => b.offsetParent && b.querySelector(':scope > svg.glyph')).map(b => { const a = b.getBoundingClientRect(), g = b.querySelector(':scope > svg.glyph').getBoundingClientRect(); return [b.id || b.dataset.tool, Math.abs((g.left - a.left) - (a.right - g.right)), Math.abs((g.top - a.top) - (a.bottom - g.bottom))]; }).filter(([, dx, dy]) => dx > 2 || dy > 2));
+  // Every icon sits in the middle of its button (rows 568, 574: reset's sat on its left edge); one with a word beside it (Test, 645) does not.
+  const off = await p.$$eval('button', bs => bs.filter(b => b.offsetParent && b.querySelector(':scope > svg.glyph') && getComputedStyle(b, '::after').content === 'none').map(b => { const a = b.getBoundingClientRect(), g = b.querySelector(':scope > svg.glyph').getBoundingClientRect(); return [b.id || b.dataset.tool, Math.abs((g.left - a.left) - (a.right - g.right)), Math.abs((g.top - a.top) - (a.bottom - g.bottom))]; }).filter(([, dx, dy]) => dx > 2 || dy > 2));
   check('every icon is centred in its button', off.length === 0, JSON.stringify(off));
   check('the room cannot be resized', await p.locator('[data-grip]').first().isHidden());
   const g = await p.locator('#game').boundingBox(), t = g.width / ch.rows[0].length, tap = (x, y) => p.mouse.click(g.x + t * (x + .5), g.y + t * (y + .5));

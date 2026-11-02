@@ -687,6 +687,8 @@ body.campaign #campColours:not([hidden]), body.simple #campColours:not([hidden])
 /* The tools are the objects' size: 46px square on a phone, a short icon button beside the desktop's text rows. */
 #campTools button { width: 32px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; }
 #campTools canvas { width: 20px; height: 20px; }
+/* A drawn icon is scaled without smoothing, so its pixels stay square (register 643). */
+canvas[data-icon] { image-rendering: pixelated; }
 @media (max-width: 700px) { #campTools button { width: 46px; height: 46px; } #campTools canvas { width: 28px; height: 28px; } }
 #campTools .lbl, #campTools .key { display: none; }
 #campColours button { width: 30px; height: 30px; padding: 0; clip-path: none; border: 0; position: relative; background: none; box-shadow: none; }
@@ -841,9 +843,14 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 /* The game's line icons (register 535). */
 .glyph { width: 22px; height: 22px; display: block; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 /* Pixel icons (register 602 S3): rectangles, no stroke; sizes are whole multiples of their 16 pixels. */
-.px:where(.glyph) { width: 24px; height: 24px; stroke: none; }  /* weak, so a place that sizes its glyph wins (register 625) */
+.px:where(.glyph) { width: 24px; height: 24px; }  /* weak, so a place that sizes its glyph wins (register 625) */
+/* A pixel icon is filled squares only: a stroke a place sets for line icons never reaches its paths (register 643). */
+.glyph.px path { stroke: none; }
 /* 24 is the nearest whole multiple to the line icons' 22; the margin keeps every button its old size. */
 button > .glyph.px { margin: -1px; }
+/* Test says its name beside its icon, so it reads as trying the room yourself (register 645). */
+body.campaign:not(.play) #campTest { display: inline-flex; align-items: center; gap: 6px; }
+#campTest::after { content: 'Test'; font: 700 15px var(--label-face); }
 .glyph.px .o { fill: var(--glyph-o, currentColor); }
 .glyph.px .i { fill: var(--glyph-i, currentColor); }
 :where(button[data-icon]:not([hidden])) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding-left: 8px; padding-right: 8px; }

@@ -702,6 +702,8 @@ body.campaign #campColours:not([hidden]), body.simple #campColours:not([hidden])
 /* The tools are the objects' size: 46px square on a phone, a short icon button beside the desktop's text rows. */
 #campTools button { width: 32px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; }
 #campTools canvas { width: 20px; height: 20px; }
+/* A drawn icon is scaled without smoothing, so its pixels stay square (register 643). */
+canvas[data-icon] { image-rendering: pixelated; }
 @media (max-width: 700px) { #campTools button { width: 46px; height: 46px; } #campTools canvas { width: 28px; height: 28px; } }
 #campTools .lbl, #campTools .key { display: none; }
 #campColours button { width: 30px; height: 30px; padding: 0; clip-path: none; border: 0; position: relative; background: none; box-shadow: none; }
@@ -856,9 +858,14 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 /* The game's line icons (register 535). */
 .glyph { width: 22px; height: 22px; display: block; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 /* Pixel icons (register 602 S3): rectangles, no stroke; sizes are whole multiples of their 16 pixels. */
-.px:where(.glyph) { width: 24px; height: 24px; stroke: none; }  /* weak, so a place that sizes its glyph wins (register 625) */
+.px:where(.glyph) { width: 24px; height: 24px; }  /* weak, so a place that sizes its glyph wins (register 625) */
+/* A pixel icon is filled squares only: a stroke a place sets for line icons never reaches its paths (register 643). */
+.glyph.px path { stroke: none; }
 /* 24 is the nearest whole multiple to the line icons' 22; the margin keeps every button its old size. */
 button > .glyph.px { margin: -1px; }
+/* Test says its name beside its icon, so it reads as trying the room yourself (register 645). */
+body.campaign:not(.play) #campTest { display: inline-flex; align-items: center; gap: 6px; }
+#campTest::after { content: 'Test'; font: 700 15px var(--label-face); }
 .glyph.px .o { fill: var(--glyph-o, currentColor); }
 .glyph.px .i { fill: var(--glyph-i, currentColor); }
 :where(button[data-icon]:not([hidden])) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding-left: 8px; padding-right: 8px; }
@@ -1423,7 +1430,8 @@ const ICON = {
   'ach-guardrails'() { const g = grid(); box(g, 0, 3, 15, 5); box(g, 0, 9, 15, 11); for (const x of [1, 7, 13]) box(g, x, 1, x + 1, 15); return g; },
   'ach-deadly'() { const g = grid(); for (let y = 0; y < 11; y++) for (let x = 0; x < N; x++) if (Math.hypot((x + 0.5 - 8) / 7, (y + 0.5 - 6.5) / 6) <= 1) g[y][x] = 1; box(g, 4, 11, 11, 14); box(g, 4, 5, 6, 8, 0); box(g, 9, 5, 11, 8, 0); box(g, 7, 9, 8, 10, 0); box(g, 6, 13, 6, 14, 0); box(g, 9, 13, 9, 14, 0); return g; },
   'ach-silver'() { const g = grid(); box(g, 5, 7, 10, 15); box(g, 6, 4, 9, 6); box(g, 7, 1, 8, 3); box(g, 4, 13, 11, 15); box(g, 7, 8, 8, 12, 0); return g; },
-  move() { const g = grid(); box(g, 7, 1, 8, 14); box(g, 1, 7, 14, 8); for (let i = 1; i <= 3; i++) { box(g, 7 - i, 1 + i, 8 + i, 1 + i); box(g, 7 - i, 14 - i, 8 + i, 14 - i); box(g, 1 + i, 7 - i, 1 + i, 8 + i); box(g, 14 - i, 7 - i, 14 - i, 8 + i); } return g; },
+  // Four arrows from the middle, heads small enough that it never reads as a blob.
+  move() { const g = grid(); box(g, 7, 2, 8, 13); box(g, 2, 7, 13, 8); for (const [x, y, dx, dy] of [[7, 1, 0, 1], [7, 14, 0, -1], [1, 7, 1, 0], [14, 7, -1, 0]]) { box(g, x - (dy ? 1 : 0), y - (dx ? 1 : 0), x + (dy ? 2 : 0), y + (dx ? 2 : 0)); box(g, x - (dy ? 2 : 0) + dx * 1, y - (dx ? 2 : 0) + dy * 1, x + (dy ? 3 : 0) + dx * 1, y + (dx ? 3 : 0) + dy * 1); } return g; },
 };
 
 // One path per value: the outline (1) in the ink, the inside (2) in the glyph's fill.
@@ -6217,8 +6225,9 @@ function icon(tool, colour = 'red', gateColour = null, crate = false) {
     x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
   } else if (tool === 'look' || tool === 'move' || tool === 'erase') {
     // The tool row's own icons are the HUD's pixel icons (register 602 S3), 2 units per pixel.
-    x.fillStyle = '#c1c0c0';
-    pixelBitmap(tool).forEach((row, py) => row.forEach((v, px) => { if (v) x.fillRect(px * 2, py * 2, 2, 2); }));
+    // Whole canvas pixels, centred, so no edge is smoothed (register 643).
+    x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#c1c0c0';
+    pixelBitmap(tool).forEach((row, py) => row.forEach((v, px) => { if (v) x.fillRect(4 + px * 2, 4 + py * 2, 2, 2); }));
   } else if (tool === 'start' || tool === 'robot') {
     // The campaign's goal rows name the robot, which plays them (register 323); a room's start is you.
     x.save(); x.translate(16, 16); x.scale(1.3, 1.3); (tool === 'robot' ? drawRobot : drawYou)(x); x.restore();

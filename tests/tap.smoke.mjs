@@ -28,6 +28,7 @@ try {
   await p.waitForTimeout(400); await p.tap(`.campRow[data-level="${C}"]`); await p.waitForTimeout(800);
   t = await tap('#palette [data-tool="wall"]'); check('a piece button never pops up after it is picked', steady(t), JSON.stringify(t));
   t = await tap('#campTools [data-tool="erase"]'); check('a tool button never pops up after it is picked', steady(t), JSON.stringify(t));
+  check('Test says its name beside its icon (register 645)', await p.$eval('#campTest', b => getComputedStyle(b, '::after').content) === '"Test"');
   t = await tap('#campTest'); check('Test never pops up after a tap', steady(t), JSON.stringify(t));
   t = await tap('#mode'); check('Edit never pops up after a tap', steady(t), JSON.stringify(t));
   t = await tap('#campBack'); check('Levels never pops up after a tap', steady(t), JSON.stringify(t));

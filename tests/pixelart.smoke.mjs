@@ -32,8 +32,14 @@ try {
   const pages = ['the menu', 'the level list', 'a level', 'Looks', 'the Sandbox editor'];
   const seen = {};
   seen['the menu'] = await rounded(p);
+  // A pixel icon is squares only: no stroke from a place's line-icon style rounds or thickens it (register 643).
+  const stroked = await p.$$eval('svg.glyph.px path', ps => ps.filter(e => getComputedStyle(e).stroke !== 'none').map(e => e.closest('[id]')?.id || '?'));
+  check('no pixel icon on the menu is stroked', stroked.length === 0 && await p.$$eval('svg.glyph.px path', ps => ps.length > 0), stroked.join());
+
   await p.click('#menuCampaign'); await p.waitForTimeout(400); seen['the level list'] = await rounded(p);
   await p.click('.campRow[data-level="3"]'); await p.waitForTimeout(600); seen['a level'] = await rounded(p);
+  const icons = await p.$$eval('canvas[data-icon]', cs => cs.filter(c => c.getBoundingClientRect().width).map(c => getComputedStyle(c).imageRendering));
+  check('the drawn icons in a level scale without smoothing', icons.length > 0 && icons.every(r => r === 'pixelated'), icons.join());
   await p.evaluate(() => { location.hash = '#/looks'; }); await p.waitForTimeout(500); seen['Looks'] = await rounded(p);
   await p.evaluate(() => { location.hash = '#/'; }); await p.waitForTimeout(400);
   await p.click('#menuSandbox'); await p.waitForTimeout(400); await p.click('#roomNew'); await p.waitForTimeout(400);
