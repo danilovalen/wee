@@ -1,4 +1,4 @@
-// Pieces the player has used (register 558): the first time a piece is placed in a campaign level, the
+// Pieces the player has used (register 558): once a campaign level using a piece is beaten, the
 // Sandbox's editor offers it. Pieces the campaign never teaches are offered from the start.
 import { allOpen } from './unlock.js';
 

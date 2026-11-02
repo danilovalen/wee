@@ -104,6 +104,8 @@ export function run() {
     for (const o of v.optional) if (o.met) low(o.id, v.tiles);
     rec.beaten = true; rec.room = S.level;
     write(p);
+    // Beating a level opens its pieces in the Sandbox's editor (registers 558, 626): the ones it offers and the ones in the room.
+    markUsed([...new Set([...Object.keys(def.palette || {}), ...Object.entries(placed(def, S.level).by).filter(([, l]) => l.length).map(([el]) => el)])].map(el => TOOL[el]).filter(Boolean));
     noteWin(def, before, rec, v, words);
   }
   S.camp.ranOn = JSON.stringify(S.level);
@@ -124,13 +126,14 @@ function star(n, main, label) {
   el.title = label;
   return el;
 }
-// sideOpen: the level's side goals are open, so their stars show (register 558).
+// sideOpen: the level's side goals are open, so their stars say what they are (register 558); shut, each
+// is an empty star with no words, so the plan still shows how many there are (register 625).
 function stars(def, rec, sideOpen = true) {
   const row = document.createElement('span'), best = rec.best || {}, line = document.createElement('span');
   row.className = 'campStars'; line.className = 'campStarLine';
   const met = id => rec.goals && rec.goals[id] ? best[id] ?? best.win ?? '' : null;
-  const side = sideOpen ? optionalGoals(def) : [];
-  row.append(star(rec.beaten ? best.win ?? '' : null, true, 'Win'), ...(side.length ? [line] : []), ...side.map(o => star(met(o.id), false, o.text)));
+  const side = optionalGoals(def);
+  row.append(star(rec.beaten ? best.win ?? '' : null, true, 'Win'), ...(side.length ? [line] : []), ...side.map(o => star(sideOpen ? met(o.id) : null, false, sideOpen ? o.text : 'Side goal')));
   row.setAttribute('aria-label', rec.beaten ? `Beaten, ${Object.values(rec.goals || {}).filter(Boolean).length} of ${optionalGoals(def).length} side goals` : 'Not beaten');
   return row;
 }
@@ -212,8 +215,6 @@ export function buildCampaign(actions) {
     stamp = s;
     if (S.camp.ranOn !== s) { S.camp.verdict = null; S.trail = null; S.camp.trailOf = null; }
     save(); syncBrief();
-    // A piece placed for the first time opens in the Sandbox's editor (register 558).
-    markUsed(Object.entries(placed(S.camp.def, S.level).by).filter(([, l]) => l.length).map(([el]) => TOOL[el]).filter(Boolean));
   };
   for (const t of ['pointerup', 'keyup', 'click']) addEventListener(t, () => setTimeout(watch, 0));
   addEventListener('wee:mode', () => { if (S.camp) { if (S.mode !== 'play') S.camp.testing = false; syncBrief(); } });

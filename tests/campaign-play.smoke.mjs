@@ -215,6 +215,9 @@ try {
   await page.click('#campBack');
   const row = await stars(1);
   check('the list keeps a beaten level: its main star holds the fewest tiles, one star per side goal (register 475)', /^7 \| /.test(row) && row.split(' | ')[1].split(' ').length === 5, row);
+  // Beating a level opens its pieces in the Sandbox's editor (register 626).
+  const kit = await page.evaluate(() => JSON.parse(localStorage.getItem('wee.pieces') || '[]'));
+  check('beating Level 1 opens its block in the Sandbox', kit.includes('wall'), JSON.stringify(kit));
   // The score per side goal is its own fewest tiles, kept apart from the win's (register 328).
   const rec1 = await page.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')).levels['1']);
   const metIds = Object.keys(rec1.goals || {}).filter(id => rec1.goals[id]);
@@ -543,8 +546,8 @@ try {
   await nine.click('[data-tool="button"]');
   const buttonDots = await dots(), doorIcon = await nine.evaluate(() => document.querySelector('#palette [data-tool="door"] canvas').dataset.colour);
   check('with a button chosen, red is picked back and red+blue is greyed; the door stays drawn in both', buttonDots === 'red*,blue,red|blue-' && doorIcon === 'red|blue', buttonDots + ' ' + doorIcon);
-  // A piece placed in a level is now known to the Sandbox's editor (register 558).
-  check('a door placed in a level is remembered for the Sandbox', (await nine.evaluate(() => JSON.parse(localStorage.getItem('wee.pieces') || '[]'))).includes('door'));
+  // Placing a piece does not open it: only beating its level does (register 626).
+  check('a door placed in a level is not yet open in the Sandbox', !(await nine.evaluate(() => JSON.parse(localStorage.getItem('wee.pieces') || '[]'))).includes('door'));
   await nine.close();
   check('no page errors', errors.length === 0, errors.join(' | '));
 } finally {

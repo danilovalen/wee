@@ -610,11 +610,11 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 @keyframes tutPulse { 50% { outline-color: transparent; } }
 @media (prefers-reduced-motion: reduce) { .tutRing, .tutTile { animation: none; } }
 .campOpt:empty { display: none; }
-.campStars { display: flex; align-items: center; gap: 2px; align-self: end; min-width: 0; }
+.campStars { display: flex; align-items: center; gap: 4px; align-self: end; min-width: 0; }
 .campStarLine { width: 2px; height: 20px; margin: 0 4px; background: var(--rule); flex: none; }
 .campStar { position: relative; width: 16px; height: 16px; flex: none; }
 .campStar.main { width: 32px; height: 32px; }
-.campStar svg { display: block; width: 100%; height: 100%; --glyph-o: var(--rule); --glyph-i: transparent; }
+.campStar svg { display: block; width: 100%; height: 100%; --glyph-o: var(--soft); --glyph-i: transparent; }
 .campStar.on svg { --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 .campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: #5a3f00; }
 .campStar.main i { font-size: 11px; }
@@ -826,7 +826,7 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 /* The game's line icons (register 535). */
 .glyph { width: 22px; height: 22px; display: block; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 /* Pixel icons (register 602 S3): rectangles, no stroke; sizes are whole multiples of their 16 pixels. */
-.glyph.px { width: 24px; height: 24px; stroke: none; }
+.px:where(.glyph) { width: 24px; height: 24px; stroke: none; }  /* weak, so a place that sizes its glyph wins (register 625) */
 /* 24 is the nearest whole multiple to the line icons' 22; the margin keeps every button its old size. */
 button > .glyph.px { margin: -1px; }
 .glyph.px .o { fill: var(--glyph-o, currentColor); }
@@ -864,6 +864,9 @@ body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; m
 .campNum { font: 800 18px var(--label-face, inherit); color: var(--soft); padding: 0 4px 0 0; min-width: 1.4em; text-align: center; }
 body:not(.campaign) .campNum { display: none; }
 body.tutorial .campNum { display: none; }
+/* The tutorial's bubble shows the stars it talks about (register 625). */
+.tutPic { display: flex; align-items: center; gap: 2px; margin-right: auto; }  /* in the button row, so the bubble's height never changes */
+.tutPic[hidden] { display: none; }
 header .campLast { order: 9; margin-left: auto; font-size: 13px; white-space: nowrap; }
 body:not(.campaign) header .campLast, body.campaign.tutorial header .campLast { display: none; }
 
@@ -1149,7 +1152,7 @@ body.challenge .growBar { display: none !important; }
     </div>
   </dialog>
   <div id="tutBox" class="tutBox" hidden role="status"><p id="tutSay"></p>
-    <span class="tutBtns"><small id="tutWait">Tap the ringed spot.</small><button id="tutSkip" type="button">Skip</button><button id="tutNext" type="button" class="primary">Next</button></span></div>
+    <span class="tutBtns"><span id="tutPic" class="tutPic campStars" hidden></span><small id="tutWait">Tap the ringed spot.</small><button id="tutSkip" type="button">Skip</button><button id="tutNext" type="button" class="primary">Next</button></span></div>
   <div id="tutTile" class="tutTile" hidden></div>
   <dialog id="winBox" class="winCard">
     <p id="winTitle" class="winTitle"></p>
@@ -6393,7 +6396,7 @@ return { TOOL, bindGoalCard, syncDots, words, syncBrief, clearTrail, stuckAt, fl
 // ---- src/app/known.js
 const m50 = (() => {
 const { allOpen } = m3;
-// Pieces the player has used (register 558): the first time a piece is placed in a campaign level, the
+// Pieces the player has used (register 558): once a campaign level using a piece is beaten, the
 // Sandbox's editor offers it. Pieces the campaign never teaches are offered from the start.
 
 const KEY = 'wee.pieces';
@@ -6430,7 +6433,7 @@ function achievements(levels, used, taught) {
     { id: 'shelf', name: 'Full shelf', text: 'Earn every side star on one level.', stars: 1, done: b.some(d => allSide(levels, d)) },
     { id: 'lab', name: 'Whole lab', text: 'Earn every side star on every level.', stars: 5, done: b.every(d => !optionalGoals(d).length || allSide(levels, d)) && b.some(d => optionalGoals(d).length) },
     { id: 'challenge', name: 'Challenger', text: 'Solve a challenge.', stars: 1, done: CHALLENGES.some(c => beaten(levels, c.id)) },
-    { id: 'pieces', name: 'Full kit', text: 'Place every kind of piece in the campaign.', stars: 2, done: taught.every(t => used.has(t)) },
+    { id: 'pieces', name: 'Full kit', text: 'Beat a level with every kind of piece.', stars: 2, done: taught.every(t => used.has(t)) },
   ];
 }
 const achievementStars = (levels, used, taught) => achievements(levels, used, taught).reduce((n, a) => n + (a.done ? a.stars : 0), 0);
@@ -7127,6 +7130,8 @@ function run() {
     for (const o of v.optional) if (o.met) low(o.id, v.tiles);
     rec.beaten = true; rec.room = S.level;
     write(p);
+    // Beating a level opens its pieces in the Sandbox's editor (registers 558, 626): the ones it offers and the ones in the room.
+    markUsed([...new Set([...Object.keys(def.palette || {}), ...Object.entries(placed(def, S.level).by).filter(([, l]) => l.length).map(([el]) => el)])].map(el => TOOL[el]).filter(Boolean));
     noteWin(def, before, rec, v, words);
   }
   S.camp.ranOn = JSON.stringify(S.level);
@@ -7147,13 +7152,14 @@ function star(n, main, label) {
   el.title = label;
   return el;
 }
-// sideOpen: the level's side goals are open, so their stars show (register 558).
+// sideOpen: the level's side goals are open, so their stars say what they are (register 558); shut, each
+// is an empty star with no words, so the plan still shows how many there are (register 625).
 function stars(def, rec, sideOpen = true) {
   const row = document.createElement('span'), best = rec.best || {}, line = document.createElement('span');
   row.className = 'campStars'; line.className = 'campStarLine';
   const met = id => rec.goals && rec.goals[id] ? best[id] ?? best.win ?? '' : null;
-  const side = sideOpen ? optionalGoals(def) : [];
-  row.append(star(rec.beaten ? best.win ?? '' : null, true, 'Win'), ...(side.length ? [line] : []), ...side.map(o => star(met(o.id), false, o.text)));
+  const side = optionalGoals(def);
+  row.append(star(rec.beaten ? best.win ?? '' : null, true, 'Win'), ...(side.length ? [line] : []), ...side.map(o => star(sideOpen ? met(o.id) : null, false, sideOpen ? o.text : 'Side goal')));
   row.setAttribute('aria-label', rec.beaten ? `Beaten, ${Object.values(rec.goals || {}).filter(Boolean).length} of ${optionalGoals(def).length} side goals` : 'Not beaten');
   return row;
 }
@@ -7235,8 +7241,6 @@ function buildCampaign(actions) {
     stamp = s;
     if (S.camp.ranOn !== s) { S.camp.verdict = null; S.trail = null; S.camp.trailOf = null; }
     save(); syncBrief();
-    // A piece placed for the first time opens in the Sandbox's editor (register 558).
-    markUsed(Object.entries(placed(S.camp.def, S.level).by).filter(([, l]) => l.length).map(([el]) => TOOL[el]).filter(Boolean));
   };
   for (const t of ['pointerup', 'keyup', 'click']) addEventListener(t, () => setTimeout(watch, 0));
   addEventListener('wee:mode', () => { if (S.camp) { if (S.mode !== 'play') S.camp.testing = false; syncBrief(); } });
@@ -11245,9 +11249,11 @@ const { toRoom, toScreen } = m82;
 const { T } = m8;
 const { go, current } = m4;
 const { progress, write } = m5;
+const { glyph } = m2;
 // The tutorial (registers 507, 512, 514, 515, 519, 521, 618): "Tutorial", one room, a coach bubble that walks the
 // player through moving the robot, building, Test, Run and the stars on the level list. Strict: each
 // step waits for one thing, and only the ringed thing answers a tap. Copy is a draft.
+
 
 
 
@@ -11274,8 +11280,8 @@ const STEPS = [
   { say: 'Playing it yourself doesn’t beat the level, so tap the pencil to go back.', ring: '#mode', done: () => S.mode === 'edit' },
   { say: 'By tapping play, the blob will find the shortest path to the berry and walk through it.', ring: '#campRun', enter: () => { ran = false; }, done: () => ran && S.mode === 'edit' },
   // Register 587: the side star, and that another room can earn it later (586).
-  { say: 'The small star is a side goal: you don’t need it to win, but it earns a star.', next: 'Next', ring: '#campBrief .campOpt li' },
-  { say: 'If one room can’t meet every goal, try another room later: stars you earn stay.', next: 'Next', ring: '#campBrief .campOpt li' },
+  { say: 'Winning fills the big star; each small star is a side goal, which you don’t need to win.', next: 'Next', ring: '#tutPic', pic: true },
+  { say: 'If one room can’t meet every goal, try another room later: stars you earn stay.', next: 'Next', ring: '#tutPic', pic: true },
   { say: 'You beat it, so tap the four squares to see the real levels.', ring: '#campBack', done: () => current() && current().name === 'levels' },
   { say: 'When you beat a level, its big star shows how many tiles you placed: fewer is better.', next: 'Next', ring: '.campRow[data-level="1"] .campStar.main', list: true },
   { say: 'Each side goal you meet fills one of its small stars.', wait: 'Tap Level 1 to start.', ring: '.campRow[data-level="1"]', list: true },
@@ -11292,6 +11298,9 @@ function draw() {
   if (shown === s) return;
   shown = s;
   $('tutSay').textContent = s.say;
+  // A big star and two small ones, as a level card draws them (register 625).
+  $('tutPic').hidden = !s.pic;
+  if (s.pic && !$('tutPic').childElementCount) $('tutPic').innerHTML = ['main', '', ''].map((k, i) => `<span class="campStar${k ? ' main on' : ''}">${glyph('star')}</span>${i === 0 ? '<span class="campStarLine"></span>' : ''}`).join('');
   $('tutNext').hidden = !s.next;
   $('tutWait').textContent = s.wait || (s.next ? '' : 'Tap the ringed spot.');
   const host = s.list ? $('campBox') : document.body;

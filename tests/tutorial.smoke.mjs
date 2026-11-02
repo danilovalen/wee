@@ -51,9 +51,9 @@ try {
   await p.click('#mode'); await p.waitForTimeout(400);
   check('Run is ringed, with how Run plays', /By tapping play, the blob will find the shortest path/.test(await say(p)) && (await ringed(p)) === 'campRun');
   await p.click('#campRun'); await p.waitForTimeout(4500);
-  // Register 587: the side star, ringed on the card, and that another room can earn it later.
-  const sideRing = () => p.evaluate(() => { const r = document.querySelector('.tutRing'); return !!r && r.matches('#campBrief .campOpt li') && r.getBoundingClientRect().height > 0; });
-  check('after the win the bubble shows the side goal on the card', /small star is a side goal/.test(await say(p)) && await sideRing(), await say(p));
+  // Registers 587, 625: the bubble draws the stars it talks about, a big one and small ones, and rings them.
+  const sideRing = () => p.evaluate(() => { const r = document.querySelector('.tutRing'); return !!r && r.matches('#tutPic') && r.getBoundingClientRect().height > 0 && r.querySelectorAll('.campStar.main').length === 1 && r.querySelectorAll('.campStar:not(.main)').length >= 1; });
+  check('after the win the bubble shows a big star and small side-goal stars', /each small star is a side goal/.test(await say(p)) && await sideRing(), await say(p));
   await p.click('#tutNext'); await p.waitForTimeout(300);
   check('then says another room can earn it, and a star stays', /try another room later: stars you earn stay/.test(await say(p)) && await sideRing(), await say(p));
   await p.click('#tutNext'); await p.waitForTimeout(300);
@@ -65,6 +65,8 @@ try {
   check('on the list, the bubble rings Level 1\'s big star', /its big star shows how many tiles/.test(await say(p)) && await p.evaluate(() => { const r = document.querySelector('.tutRing'); return r && r.matches('.campRow[data-level="1"] .campStar.main'); }) && await p.locator('#tutBox').isVisible());
   await p.click('#tutNext'); await p.waitForTimeout(300);
   check('then Level 1\'s card, with its side-goal stars', /side goal you meet/.test(await say(p)) && await p.evaluate(() => document.querySelector('.tutRing')?.dataset.level === '1'));
+  check('every star on the list is drawn the size of its slot, so none overlaps the next (register 625)', await p.$$eval('.campStar', ss => ss.length > 0 && ss.every(s => Math.round(s.firstElementChild.getBoundingClientRect().width) === Math.round(s.getBoundingClientRect().width))));
+  check('an unbeaten level\'s card shows its empty side-goal stars too (register 625)', await p.evaluate(() => document.querySelectorAll('.campRow[data-level="1"] .campStar:not(.main)').length >= 1));
   await p.click('.campRow[data-level="1"]'); await p.waitForTimeout(800);
   check('Level 1 opens and the bubble goes', (await p.evaluate(() => location.hash)) === '#/level/1' && await p.locator('#tutBox').isHidden());
   await p.click('#campBack'); await p.waitForTimeout(500);

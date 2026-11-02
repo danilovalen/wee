@@ -1022,7 +1022,7 @@ export const M = [
   ['src/view/pieces.js', "    drawSprite(g, 'wallFace', 0, 0);\n    if (e.crate)", "    if (e.crate)", 'sim'],
   // Row 623: pieces open on first use; achievements give stars.
   ['src/app/known.js', "export const known = (tool, taught) => allOpen() || !taught.includes(tool) || read().has(tool);", "export const known = (tool, taught) => true;", 'looks'],
-  ['src/app/campaign.js', "    markUsed(Object.entries(", "    void (Object.entries(", 'campaign-play'],
+  ['src/app/campaign.js', "    markUsed([...new Set(", "    void ([...new Set(", 'campaign-play'],
   ['src/app/looks.js', "+ earned(p).reduce((n, a) => n + (a.done ? a.stars : 0), 0);", ";", 'looks'],
   ['src/campaign/achievements.js', "stars: 1, done: b.length > 0 && beaten(levels, b[0].id) }", "stars: 1, done: false }", 'looks'],
   // Rows 612, 613: Looks.
@@ -1038,7 +1038,9 @@ export const M = [
   ['src/app/goalCard.js', "const rows = def.challenge ? [] : def.tutorial ?", "const rows = def.tutorial || def.challenge ?", 'challenge'],
   ['src/app/winCard.js', "$('winLevels').hidden = !!p.def.made;", "$('winLevels').hidden = true;", 'win'],
   ['src/app/goalCard.js', "optional: true, kept: !!kept[o.id] });", "optional: true, kept: false });", 'win'],
-  ['src/app/tutorial.js', "it earns a star.', next: 'Next', ring: '#campBrief .campOpt li' },", "it earns a star.', next: 'Next', ring: '#campBack' },", 'tutorial'],
+  ['style.css', ".px:where(.glyph) { width: 24px;", ".glyph.px { width: 24px;", 'tutorial'],
+  ['src/app/tutorial.js', "  $('tutPic').hidden = !s.pic;", "  $('tutPic').hidden = true;", 'tutorial'],
+  ['src/app/campaign.js', "  const side = optionalGoals(def);", "  const side = sideOpen ? optionalGoals(def) : [];", 'tutorial'],
   ['src/view/pieces.js', "drawSprite(g, 'blob', -T / 2, -T / 2, { outline: hidden });", "", 'campaign-play'],
   ['src/app/unlock.js', "export const unlocked = () => on;", "export const unlocked = () => false;", 'unlock'],
   // Row 608: no mutant goes stale.

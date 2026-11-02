@@ -16,7 +16,7 @@ export function achievements(levels, used, taught) {
     { id: 'shelf', name: 'Full shelf', text: 'Earn every side star on one level.', stars: 1, done: b.some(d => allSide(levels, d)) },
     { id: 'lab', name: 'Whole lab', text: 'Earn every side star on every level.', stars: 5, done: b.every(d => !optionalGoals(d).length || allSide(levels, d)) && b.some(d => optionalGoals(d).length) },
     { id: 'challenge', name: 'Challenger', text: 'Solve a challenge.', stars: 1, done: CHALLENGES.some(c => beaten(levels, c.id)) },
-    { id: 'pieces', name: 'Full kit', text: 'Place every kind of piece in the campaign.', stars: 2, done: taught.every(t => used.has(t)) },
+    { id: 'pieces', name: 'Full kit', text: 'Beat a level with every kind of piece.', stars: 2, done: taught.every(t => used.has(t)) },
   ];
 }
 export const achievementStars = (levels, used, taught) => achievements(levels, used, taught).reduce((n, a) => n + (a.done ? a.stars : 0), 0);

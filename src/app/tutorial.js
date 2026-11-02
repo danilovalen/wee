@@ -9,6 +9,7 @@ import { toRoom, toScreen } from './camera.js';
 import { T } from '../view/ink.js';
 import { go, current } from './nav.js';
 import { progress, write } from './progress.js';
+import { glyph } from './glyphs.js';
 
 const BLOCK = { x: 4, y: 1 };
 const settled = () => S.game && !S.game.player.dir && !S.game.entities.some(e => !e.dead && (e.rush || e.slide));
@@ -28,8 +29,8 @@ const STEPS = [
   { say: 'Playing it yourself doesn’t beat the level, so tap the pencil to go back.', ring: '#mode', done: () => S.mode === 'edit' },
   { say: 'By tapping play, the blob will find the shortest path to the berry and walk through it.', ring: '#campRun', enter: () => { ran = false; }, done: () => ran && S.mode === 'edit' },
   // Register 587: the side star, and that another room can earn it later (586).
-  { say: 'The small star is a side goal: you don’t need it to win, but it earns a star.', next: 'Next', ring: '#campBrief .campOpt li' },
-  { say: 'If one room can’t meet every goal, try another room later: stars you earn stay.', next: 'Next', ring: '#campBrief .campOpt li' },
+  { say: 'Winning fills the big star; each small star is a side goal, which you don’t need to win.', next: 'Next', ring: '#tutPic', pic: true },
+  { say: 'If one room can’t meet every goal, try another room later: stars you earn stay.', next: 'Next', ring: '#tutPic', pic: true },
   { say: 'You beat it, so tap the four squares to see the real levels.', ring: '#campBack', done: () => current() && current().name === 'levels' },
   { say: 'When you beat a level, its big star shows how many tiles you placed: fewer is better.', next: 'Next', ring: '.campRow[data-level="1"] .campStar.main', list: true },
   { say: 'Each side goal you meet fills one of its small stars.', wait: 'Tap Level 1 to start.', ring: '.campRow[data-level="1"]', list: true },
@@ -46,6 +47,9 @@ function draw() {
   if (shown === s) return;
   shown = s;
   $('tutSay').textContent = s.say;
+  // A big star and two small ones, as a level card draws them (register 625).
+  $('tutPic').hidden = !s.pic;
+  if (s.pic && !$('tutPic').childElementCount) $('tutPic').innerHTML = ['main', '', ''].map((k, i) => `<span class="campStar${k ? ' main on' : ''}">${glyph('star')}</span>${i === 0 ? '<span class="campStarLine"></span>' : ''}`).join('');
   $('tutNext').hidden = !s.next;
   $('tutWait').textContent = s.wait || (s.next ? '' : 'Tap the ringed spot.');
   const host = s.list ? $('campBox') : document.body;

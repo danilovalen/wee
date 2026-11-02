@@ -595,11 +595,11 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 @keyframes tutPulse { 50% { outline-color: transparent; } }
 @media (prefers-reduced-motion: reduce) { .tutRing, .tutTile { animation: none; } }
 .campOpt:empty { display: none; }
-.campStars { display: flex; align-items: center; gap: 2px; align-self: end; min-width: 0; }
+.campStars { display: flex; align-items: center; gap: 4px; align-self: end; min-width: 0; }
 .campStarLine { width: 2px; height: 20px; margin: 0 4px; background: var(--rule); flex: none; }
 .campStar { position: relative; width: 16px; height: 16px; flex: none; }
 .campStar.main { width: 32px; height: 32px; }
-.campStar svg { display: block; width: 100%; height: 100%; --glyph-o: var(--rule); --glyph-i: transparent; }
+.campStar svg { display: block; width: 100%; height: 100%; --glyph-o: var(--soft); --glyph-i: transparent; }
 .campStar.on svg { --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 .campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: #5a3f00; }
 .campStar.main i { font-size: 11px; }
@@ -811,7 +811,7 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 /* The game's line icons (register 535). */
 .glyph { width: 22px; height: 22px; display: block; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 /* Pixel icons (register 602 S3): rectangles, no stroke; sizes are whole multiples of their 16 pixels. */
-.glyph.px { width: 24px; height: 24px; stroke: none; }
+.px:where(.glyph) { width: 24px; height: 24px; stroke: none; }  /* weak, so a place that sizes its glyph wins (register 625) */
 /* 24 is the nearest whole multiple to the line icons' 22; the margin keeps every button its old size. */
 button > .glyph.px { margin: -1px; }
 .glyph.px .o { fill: var(--glyph-o, currentColor); }
@@ -849,6 +849,9 @@ body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; m
 .campNum { font: 800 18px var(--label-face, inherit); color: var(--soft); padding: 0 4px 0 0; min-width: 1.4em; text-align: center; }
 body:not(.campaign) .campNum { display: none; }
 body.tutorial .campNum { display: none; }
+/* The tutorial's bubble shows the stars it talks about (register 625). */
+.tutPic { display: flex; align-items: center; gap: 2px; margin-right: auto; }  /* in the button row, so the bubble's height never changes */
+.tutPic[hidden] { display: none; }
 header .campLast { order: 9; margin-left: auto; font-size: 13px; white-space: nowrap; }
 body:not(.campaign) header .campLast, body.campaign.tutorial header .campLast { display: none; }
 
