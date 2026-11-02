@@ -17,16 +17,16 @@ const goalAt = () => { const i = S.level.cells.indexOf('goal'); return { x: i % 
 const lost = () => settled() && !S.game.won && S.game.player.y !== 1 && S.game.player.x !== 3;
 let ran = false;
 const STEPS = [
-  { say: 'Swipe across the room, or press an arrow key, to slide the robot.', wait: 'Try any direction.', swipe: true, enter: () => setMode('play'), done: () => S.game && S.game.move > 0 && settled() },
-  { say: 'The robot only stops at a block or a wall, so it can’t stop on the star yet.', next: 'Next', tile: goalAt },
+  { say: 'Swipe across the room, or press an arrow key, to slide the blob.', wait: 'Try any direction.', swipe: true, enter: () => setMode('play'), done: () => S.game && S.game.move > 0 && settled() },
+  { say: 'The blob only stops at a block or a wall, so it can’t stop on the berry yet.', next: 'Next', tile: goalAt },
   { say: 'Tap the pencil to go back to building the room.', ring: '#mode', done: () => S.mode === 'edit' },
-  { say: 'You don’t move the robot to win: you build its room with blocks.', next: 'Next', ring: '#palette [data-tool="wall"]', enter: () => { S.ui.tool = 'wall'; syncPanel(); } },
-  { say: 'Place a block here, so the robot stops right above the star.', tile: () => BLOCK, done: () => S.level.cells[BLOCK.y * S.level.w + BLOCK.x] === 'wall' },
+  { say: 'You don’t move the blob to win: you build its room with blocks.', next: 'Next', ring: '#palette [data-tool="wall"]', enter: () => { S.ui.tool = 'wall'; syncPanel(); } },
+  { say: 'Place a block here, so the blob stops right above the berry.', tile: () => BLOCK, done: () => S.level.cells[BLOCK.y * S.level.w + BLOCK.x] === 'wall' },
   { say: 'Tap the arrows to try your room yourself.', ring: '#campTest', done: () => S.mode === 'play' },
-  { say: 'Swipe right, then down, to bring the robot to the star.', wait: 'Arrow keys work too.', swipe: true, tile: goalAt, done: () => S.game && S.game.won && settled(),
-    lost: { say: 'The robot can’t reach the star from there, so it goes back to its start.' } },
+  { say: 'Swipe right, then down, to bring the blob to the berry.', wait: 'Arrow keys work too.', swipe: true, tile: goalAt, done: () => S.game && S.game.won && settled(),
+    lost: { say: 'The blob can’t reach the berry from there, so it goes back to its start.' } },
   { say: 'Playing it yourself doesn’t beat the level, so tap the pencil to go back.', ring: '#mode', done: () => S.mode === 'edit' },
-  { say: 'By tapping play, the robot will find the shortest path to the star and walk through it.', ring: '#campRun', enter: () => { ran = false; }, done: () => ran && S.mode === 'edit' },
+  { say: 'By tapping play, the blob will find the shortest path to the berry and walk through it.', ring: '#campRun', enter: () => { ran = false; }, done: () => ran && S.mode === 'edit' },
   // Register 587: the side star, and that another room can earn it later (586).
   { say: 'The small star is a side goal: you don’t need it to win, but it earns a star.', next: 'Next', ring: '#campBrief .campOpt li' },
   { say: 'If one room can’t meet every goal, try another room later: stars you earn stay.', next: 'Next', ring: '#campBrief .campOpt li' },

@@ -260,7 +260,7 @@ try {
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(700);
   await page.keyboard.press('ArrowDown'); await page.waitForTimeout(900);
   const said = await page.locator('#campVerdictText').textContent();
-  check('reaching the goal in a test says so, and that it does not count', /You reached the goal in 2 moves/.test(said) && /does not beat the level: press Run/.test(said), said);
+  check('reaching the goal in a test says so, and that it does not count', /You reached the berry in 2 moves/.test(said) && /does not beat the level: press Run/.test(said), said);
   const kept1 = await page.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')).levels['1']);
   check('a test changes no record', JSON.stringify(kept1.goals) === JSON.stringify(JSON.parse(kept0).levels['1'].goals) && JSON.stringify(kept1.stats) === JSON.stringify(JSON.parse(kept0).levels['1'].stats));
   await page.click('#mode');
@@ -338,7 +338,7 @@ try {
   let room = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));
   await page.click('[data-tool="wall"]');
   const g = await tile(5, 5); await page.mouse.click(...g);
-  check('a refused tap changes nothing and says why on the tile', (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === room && await page.locator('#campTip').isVisible() && /move the goal, use Move/.test(await page.locator("#campTip").textContent()) && (await page.evaluate(() => window.wee.fxTypes())).includes('refuse'), await page.locator('#campTip').textContent());
+  check('a refused tap changes nothing and says why on the tile', (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === room && await page.locator('#campTip').isVisible() && /move the berry, use Move/.test(await page.locator("#campTip").textContent()) && (await page.evaluate(() => window.wee.fxTypes())).includes('refuse'), await page.locator('#campTip').textContent());
   // Register 441: a box placed on spikes takes their place, and spikes placed on a box take its, with no refusal.
   if (SPIKES_BOX) {
   await page.click('#campBack'); await page.click(`.campRow[data-level="${SPIKES_BOX.id}"]`);

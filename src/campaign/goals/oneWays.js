@@ -6,7 +6,7 @@ import { gates, both, oneWayLog, everyTile, countKind, cellsWhere, isGate, boxId
 
 export const ONE_WAY_GOALS = {
   robotThroughOneWayBothWays: {
-    text: 'Robot through a one-way both ways.',
+    text: 'Blob through a one-way both ways.',
     short: [{ el: 'start' }, 'through', { el: 'gate' }, '⇄'],
     judge: (room, moves) => both(oneWayLog(room, moves).robotWays),
   },
@@ -16,17 +16,17 @@ export const ONE_WAY_GOALS = {
     judge: (room, moves) => both(oneWayLog(room, moves).boxWays),
   },
   robotThroughEveryOneWay: {
-    text: 'Robot through every one-way.',
+    text: 'Blob through every one-way.',
     short: [{ el: 'start' }, 'through all', { el: 'gate' }],
     judge: (room, moves) => { const all = gates(room), l = oneWayLog(room, moves); return all.length > 0 && all.every(i => l.robotThrough.has(i)); },
   },
   robotThroughOneWay: {
-    text: 'Robot through a one-way.',
+    text: 'Blob through a one-way.',
     short: [{ el: 'start' }, 'through', { el: 'gate' }],
     judge: (room, moves) => oneWayLog(room, moves).robotThrough.size > 0,
   },
   robotHitsEveryOneWay: {
-    text: 'Robot collides with every one-way.',
+    text: 'Blob collides with every one-way.',
     short: [{ el: 'start' }, 'hits all', { el: 'gate' }],
     judge: (room, moves) => { const all = gates(room), l = oneWayLog(room, moves); return all.length > 0 && all.every(i => l.robotHits[i]); },
   },
@@ -61,7 +61,7 @@ export const ONE_WAY_GOALS = {
     judge: (room, moves) => everyTile(room, moves, 'gate', t => t.byBox),
   },
   robotThroughEveryPushedOneWay: {
-    text: 'Robot through every one-way.',
+    text: 'Blob through every one-way.',
     short: [{ el: 'start' }, 'through all', { el: 'gate' }],
     judge: (room, moves) => everyTile(room, moves, 'gate', t => t.robotLeft),
   },
@@ -77,7 +77,7 @@ export const ONE_WAY_GOALS = {
     judge: room => countKind(room, 'gate') >= 2,
   },
   robotThroughEveryOneWayBothWays: {
-    text: 'Robot through every one-way both ways.',
+    text: 'Blob through every one-way both ways.',
     short: [{ el: 'start' }, 'through all', { el: 'gate' }, '⇄'],
     judge: (room, moves) => {
       const gs = cellsWhere(room, isGate), w = oneWayLog(room, moves).robotWays;

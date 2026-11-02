@@ -55,7 +55,7 @@ export function replacing(level, ui, x, y, how) {
 }
 export const allows = (level, ui, x, y, how) => !refusal(level, ui, x, y, how);
 // A refusal said on the tile: the start and goal are never removed, only moved.
-const tipOf = msg => msg === 'Place the goal.' ? 'To move the goal, use Move.' : msg === 'Place the start.' ? 'To move the start, use Move.' : msg;
+const tipOf = msg => msg === 'Place the berry.' ? 'To move the berry, use Move.' : msg === 'Place the start.' ? 'To move the start, use Move.' : msg;
 
 // Why Move cannot carry a thing from one tile to another, or null when it can.
 export function moveRefusal(level, from, to) {

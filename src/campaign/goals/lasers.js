@@ -17,7 +17,7 @@ export const LASER_GOALS = {
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at).startsWith('door:'))) ok = true; }); return ok; },
   },
   laserThroughGoal: {
-    text: 'Laser through the goal.',
+    text: 'Laser through the berry.',
     short: [{ el: 'beam' }, 'through', { el: 'goal' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at) === 'goal')) ok = true; }); return ok; },
   },
@@ -88,7 +88,7 @@ export const LASER_GOALS = {
   },
   // Register 371: the robot's slide ends against a relay, and so does a pushed box: the relay is solid.
   robotAndBoxHitRelay: {
-    text: 'Robot and a box both collide with a relay.',
+    text: 'Blob and a box both collide with a relay.',
     short: [{ el: 'start' }, 'hits', { el: 'relay' }, '+', { el: 'box' }, 'hits', { el: 'relay' }],
     judge: (room, moves) => {
       let robot = false, dir = null;
@@ -183,7 +183,7 @@ export const LASER_GOALS = {
   },
   // Register 494 (level 14): the robot's slides end against each laser at least twice.
   robotHitsEveryLaserTwice: {
-    text: 'Robot collides with every laser 2 or more times.',
+    text: 'Blob collides with every laser 2 or more times.',
     short: [{ el: 'start' }, 'hits all', { el: 'laser' }, '×2'],
     judge: (room, moves) => {
       const ids = idsOf(room, e => !!e.turret), hits = {};

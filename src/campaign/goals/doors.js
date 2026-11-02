@@ -19,7 +19,7 @@ function closedDoorHits(room, moves) {
 
 export const DOOR_GOALS = {
   throughOpenDoor: {
-    text: 'Robot through an open door.',
+    text: 'Blob through an open door.',
     short: [{ el: 'start' }, 'through', { el: 'door' }],
     // A closed door is solid, so standing on a door tile means it is open.
     judge: (room, moves) => {
@@ -30,7 +30,7 @@ export const DOOR_GOALS = {
   },
   throughDoorsOfTwoColours: {
     needs: { door: 2 },
-    text: 'Robot through doors of two colours.',
+    text: 'Blob through doors of two colours.',
     short: [{ el: 'start' }, 'through', { el: 'door' }, 'of 2 colours'],
     // Standing on a door tile means it is open (register 243).
     judge: (room, moves) => {
@@ -40,19 +40,19 @@ export const DOOR_GOALS = {
     },
   },
   hitsClosedDoor: {
-    text: 'Robot collides with a closed door.',
+    text: 'Blob collides with a closed door.',
     short: [{ el: 'start' }, 'hits', { el: 'door' }],
     judge: (room, moves) => closedDoorHits(room, moves) >= 1,
   },
   // Register 556: level 3's side goal, two hits or more.
   hitsClosedDoorTwice: {
-    text: 'Robot collides with a closed door twice or more.',
+    text: 'Blob collides with a closed door twice or more.',
     short: [{ el: 'start' }, 'hits', { el: 'door' }, '×2'],
     judge: (room, moves) => closedDoorHits(room, moves) >= 2,
   },
   throughOpenDoorTwice: {
     // Two passes, not two doors (register 257): the row says so.
-    text: 'Robot through an open door twice, the same door or another.',
+    text: 'Blob through an open door twice, the same door or another.',
     short: [{ el: 'start' }, 'through', { el: 'door' }, '×2'],
     // One pass is stepping onto a door tile from a tile that is not one: a slide across two
     // doors side by side passes once.
@@ -119,7 +119,7 @@ export const DOOR_GOALS = {
   },
   // Inverted doors (registers 311, 312): open until their colour is held.
   robotThroughIdoor: {
-    text: 'Robot through an inverted door.',
+    text: 'Blob through an inverted door.',
     short: [{ el: 'start' }, 'through', { el: 'idoor' }],
     judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (/^idoor:/.test(s.cells[s.player.y * room.w + s.player.x] || '')) ok = true; }); return ok; },
   },
@@ -152,7 +152,7 @@ export const DOOR_GOALS = {
     judge: (room, moves) => everyTile(room, moves, 'door', t => t.boxLeft),
   },
   robotLeavesEveryDoor: {
-    text: 'Robot leaves every door.',
+    text: 'Blob leaves every door.',
     short: [{ el: 'start' }, 'leaves all', { el: 'door' }],
     judge: (room, moves) => everyTile(room, moves, 'door', t => t.robotLeft),
   },
@@ -171,7 +171,7 @@ export const DOOR_GOALS = {
   // Register 477: four doors or more, and the robot stands in every one.
   robotThroughFourDoors: {
     needs: { door: 4 },
-    text: 'At least 4 doors, and the robot through every one.',
+    text: 'At least 4 doors, and the blob through every one.',
     short: [{ el: 'start' }, 'through 4+', { el: 'door' }],
     judge: (room, moves) => {
       const doors = cellsWhere(room, c => /^door:/.test(c)), seen = new Set();
@@ -192,7 +192,7 @@ export const DOOR_GOALS = {
   // Register 490: the robot's slides end against closed doors of two colours.
   robotHitsDoorsOfTwoColours: {
     needs: { door: 2 },
-    text: 'Robot collides with closed doors of two colours.',
+    text: 'Blob collides with closed doors of two colours.',
     short: [{ el: 'start' }, 'hits', { el: 'door' }, 'of 2 colours'],
     judge: (room, moves) => {
       const cols = new Set();

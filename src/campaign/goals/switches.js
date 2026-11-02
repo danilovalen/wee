@@ -17,7 +17,7 @@ export const SWITCH_GOALS = {
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
   },
   onlyBoxesFlipSwitches: {
-    text: 'Only boxes turn switches on and off; the robot never crosses one.',
+    text: 'Only boxes turn switches on and off; the blob never crosses one.',
     short: ['only', { el: 'box' }, 'flips', { el: 'toggle' }],
     judge: (room, moves) => {
       let robot = false, flipped = false;
@@ -56,7 +56,7 @@ export const SWITCH_GOALS = {
     judge: (room, moves) => switches(room).length > replayPath(room, moves, () => {}).toggled.length,
   },
   robotOnButton: {
-    text: 'Robot steps on a button.',
+    text: 'Blob steps on a button.',
     short: [{ el: 'start' }, 'on', { el: 'button' }],
     judge: (room, moves) => {
       let ok = false;
@@ -71,7 +71,7 @@ export const SWITCH_GOALS = {
   },
   // Register 473: the robot steps onto a switch, flipping it, at least twice (the same switch or another).
   robotFlipsSwitchTwice: {
-    text: 'Robot flips a switch 2 or more times.',
+    text: 'Blob flips a switch 2 or more times.',
     short: [{ el: 'start' }, 'flips', { el: 'toggle' }, '×2'],
     judge: (room, moves) => {
       let flips = 0, was = -1;

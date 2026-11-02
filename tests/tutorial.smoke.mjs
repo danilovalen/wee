@@ -49,7 +49,7 @@ try {
   await p.keyboard.press('ArrowRight'); await p.waitForTimeout(900); await p.keyboard.press('ArrowDown'); await p.waitForTimeout(1300);
   check('reaching the star by hand moves on: Test does not beat the level', /doesn.t beat the level/.test(await say(p)) && (await ringed(p)) === 'mode');
   await p.click('#mode'); await p.waitForTimeout(400);
-  check('Run is ringed, with how Run plays', /By tapping play, the robot will find the shortest path/.test(await say(p)) && (await ringed(p)) === 'campRun');
+  check('Run is ringed, with how Run plays', /By tapping play, the blob will find the shortest path/.test(await say(p)) && (await ringed(p)) === 'campRun');
   await p.click('#campRun'); await p.waitForTimeout(4500);
   // Register 587: the side star, ringed on the card, and that another room can earn it later.
   const sideRing = () => p.evaluate(() => { const r = document.querySelector('.tutRing'); return !!r && r.matches('#campBrief .campOpt li') && r.getBoundingClientRect().height > 0; });

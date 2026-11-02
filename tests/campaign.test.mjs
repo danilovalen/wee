@@ -56,7 +56,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('the start and the goal sit one diagonal step in from their corners', r.start.x === 1 && r.start.y === 1 && r.cells[40] === 'goal');
   ok('the untouched room can run', placementErrors(d, r).length === 0);
   const none = { ...r, start: null, cells: r.cells.map(() => '') };
-  ok('a room needs its start and goal', placementErrors(d, none).map(e => e.msg).join() === 'Place the start.,Place the goal.');
+  ok('a room needs its start and goal', placementErrors(d, none).map(e => e.msg).join() === 'Place the start.,Place the berry.');
   const two = build(d, ['', '', '', '', '', 'G', 'G']);
   ok('only one goal', placementErrors(d, two).some(e => e.msg === 'Place only one goal.'));
   ok('a level has no powers', Object.values(r.powers).every(p => !p));
@@ -107,7 +107,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   // Too few is judged at Run, never a reason not to run (register 321).
   ok('too few of a required element does not stop a run', !placementErrors(d3, roomOf(d3)).some(e => /at least/.test(e.msg)));
   // The score is tiles (register 328): the fewest in any win, then per optional goal met.
-  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }) === ', fewest tiles 3; exactly 4 moves: 5; ≤3×4: 4; one box pushed in at least 2 moves, and hit once by the robot without moving: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }));
+  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }) === ', fewest tiles 3; exactly 4 moves: 5; ≤3×4: 4; one box pushed in at least 2 moves, and hit once by the blob without moving: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }));
   ok('no win, no score', scoreText(level('16'), {}) === '' && scoreText(level('16'), undefined) === '');
   ok('too few of a required element is missed at Run', underLimits(d3, roomOf(d3)).some(e => e.msg === 'Place at least 1 switch.'));
   const few = check(d3, build(d3, ['P#...', '.#.#.', '.#.#.', '...#G']));
@@ -214,7 +214,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const bare = why(['#######', '#P.x.G#', '#######']);
   ok('bare spikes in the way are named, and the spikes shown', /bare spikes/.test(bare.why) && !/laser/.test(bare.why) && at(bare, 3, 1), JSON.stringify(bare));
   const behind = why(['########', '#Pt.D.tG', '########']);
-  ok('a switch behind its own door is named', behind.why === 'The robot cannot reach the goal: the red door never opens, because 1 of its 2 switches never turns on.', behind.why);
+  ok('a switch behind its own door is named', behind.why === 'The blob cannot reach the berry: the red door never opens, because 1 of its 2 switches never turns on.', behind.why);
   ok('it points at the door and that switch, not the one that turns on', at(behind, 4, 1) && at(behind, 6, 1) && !at(behind, 2, 1));
   ok('none of several', why(['#########', '#P.D.t.tG', '#########']).why.endsWith('none of its 2 switches ever turns on.'));
   ok('a lone button', why(['#######', '#Po.D.G', '#######']).why.endsWith('its button is never pressed.'));
@@ -223,7 +223,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const apart = why(['#######', '#o.P.o#', '###D###', '###G###', '#######']);
   ok('switches each held but never together are said apart', apart.why.endsWith('It needs everything red held at once, and that never happens.') && at(apart, 1, 1) && at(apart, 5, 1) && at(apart, 3, 2), apart.why);
   const walls = why(['######', '#P##.G', '######']);
-  ok('with no door to blame, it says so plainly', walls.why === 'The robot cannot reach the goal from anywhere it can get to.' && walls.at.length === 0);
+  ok('with no door to blame, it says so plainly', walls.why === 'The blob cannot reach the berry from anywhere it can get to.' && walls.at.length === 0);
   const v = check({ ...level('1'), palette: { block: [0, 30], toggle: [0, 2], door: [0, 1] } }, build(level('1'), ['', '', '', '#######', '#.t..D#', '#....G#']));
   ok('an unsolvable verdict carries the reason and the tiles', v.ok && !v.won && v.fail.path === null && /door never opens/.test(v.fail.why) && v.fail.at.length > 0, JSON.stringify(v.fail));
 }

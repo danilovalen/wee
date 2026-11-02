@@ -101,7 +101,7 @@ export function placementErrors(def, room) {
   for (const i of stray) errs.push({ msg: 'This level does not have that.', at: i });
   if (!room.start) errs.push({ msg: 'Place the start.' });
   const goals = room.cells.filter(c => c === 'goal').length;
-  if (!goals) errs.push({ msg: 'Place the goal.' });
+  if (!goals) errs.push({ msg: 'Place the berry.' });
   if (goals > 1) errs.push({ msg: 'Place only one goal.' });
   for (const [el, list] of Object.entries(by)) {
     // A null maximum is no limit: cost is what keeps the count down.
@@ -165,17 +165,17 @@ const HOLD = {
 };
 export function stuckText(room) {
   const w = whyStuck(room), xy = i => ({ x: i % room.w, y: Math.floor(i / room.w) });
-  if (w.capped) return { why: 'The robot cannot reach the goal, and the room is too big to say why.', at: [] };
+  if (w.capped) return { why: 'The blob cannot reach the berry, and the room is too big to say why.', at: [] };
   // A move that ends with the robot hit says so, and shows the lasers (register 286).
   const lasers = () => room.entities.filter(e => e.turret).map(e => ({ x: e.x, y: e.y }));
   const spikes = () => room.cells.flatMap((c, i) => c === 'death' ? [xy(i)] : []);
-  if (!w.door && w.hit && (w.by || []).includes('laser')) return { why: 'The robot cannot reach the goal: a laser hits it on the way.', at: lasers() };
-  if (!w.door && w.hit && (w.by || []).includes('spikes')) return { why: 'The robot cannot reach the goal: it would have to step on bare spikes.', at: spikes() };
-  if (!w.door) return { why: 'The robot cannot reach the goal from anywhere it can get to.', at: [] };
+  if (!w.door && w.hit && (w.by || []).includes('laser')) return { why: 'The blob cannot reach the berry: a laser hits it on the way.', at: lasers() };
+  if (!w.door && w.hit && (w.by || []).includes('spikes')) return { why: 'The blob cannot reach the berry: it would have to step on bare spikes.', at: spikes() };
+  if (!w.door) return { why: 'The blob cannot reach the berry from anywhere it can get to.', at: [] };
   const has = c => c.split(':')[1].split('|').includes(w.door);
   const doors = room.cells.flatMap((c, i) => c.startsWith('door:') && has(c) ? [xy(i)] : []);
   const own = room.cells.flatMap((c, i) => /^(button|toggle|sensor):/.test(c) && has(c) ? [i] : []);
-  const head = `The robot cannot reach the goal: the ${w.door} door never opens`;
+  const head = `The blob cannot reach the berry: the ${w.door} door never opens`;
   if (!own.length) return { why: `${head}, because nothing ${w.door} opens it.`, at: doors };
   if (w.apart) return { why: `${head}. It needs everything ${w.door} held at once, and that never happens.`, at: [...doors, ...own.map(xy)] };
   // Said per kind, so a door held by a button and a switch names the one that fails.
@@ -194,9 +194,9 @@ export function check(def, room, opts) {
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
-  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'To let the robot search this room, make it smaller.' } };
+  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'To let the blob search this room, make it smaller.' } };
   const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room), tiles: tilesOf(def, room) };
-  if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
+  if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the blob to check.` } };
   // Each requirement holds on every shortest path or it is not met; the card marks each one.
   const failed = {};
   for (const path of r.paths) for (const id of def.require || []) if (!(id in failed) && !REQUIREMENTS[id].judge(room, path)) failed[id] = path;

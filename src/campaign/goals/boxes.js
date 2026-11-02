@@ -7,7 +7,7 @@ import { STEP, live, stoppedPushes, boxCount, boxIds, blockHits } from './helper
 
 export const BOX_GOALS = {
   touchBlockFourTimes: {
-    text: 'Robot touches the same block 4 times.',
+    text: 'Blob touches the same block 4 times.',
     short: [{ el: 'start' }, 'hits one', { el: 'block' }, '×4'],
     // A touch is a slide that ends against a block, as a collision ends against a door.
     judge: (room, moves) => {
@@ -30,7 +30,7 @@ export const BOX_GOALS = {
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 3),
   },
   boxPushedTwiceHitOnce: {
-    text: 'One box pushed in at least 2 moves, and hit once by the robot without moving.',
+    text: 'One box pushed in at least 2 moves, and hit once by the blob without moving.',
     short: [{ el: 'box' }, 'pushed ×2', '+', { el: 'box' }, 'hits ×1'],
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2 && b.hits >= 1),
   },
@@ -41,7 +41,7 @@ export const BOX_GOALS = {
     judge: (room, moves) => { const b = boxMoves(room, moves); return b.length > 0 && b.every(x => x.pushes >= 2); },
   },
   everyBoxHitOnce: {
-    text: 'Robot collides with every box without moving it.',
+    text: 'Blob collides with every box without moving it.',
     short: [{ el: 'start' }, 'hits all', { el: 'box' }],
     judge: (room, moves) => { const b = boxMoves(room, moves); return b.length > 0 && b.every(x => x.hits >= 1); },
   },
@@ -68,7 +68,7 @@ export const BOX_GOALS = {
   },
   // Register 472: every move of the path is one of at most two directions.
   robotTwoDirections: {
-    text: 'Robot moves in only two directions.',
+    text: 'Blob moves in only two directions.',
     short: [{ el: 'start' }, '2 ways'],
     judge: (room, moves) => new Set(moves.map(m => parseMove(m).k)).size <= 2,
   },

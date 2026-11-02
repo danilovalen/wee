@@ -1126,7 +1126,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('the goal is a cell', isCell('goal'));
   const e = room(['#####', '#P..#', '#####']);
   place(e, { tool: 'goal' }, 2, 1, 'place');
-  check('the editor places a goal and names it', e.cells[7] === 'goal' && describe(e, 2, 1) === 'Goal');
+  check('the editor places a goal and names it', e.cells[7] === 'goal' && describe(e, 2, 1) === 'Berry');
   check('not on the start', place(e, { tool: 'goal' }, 1, 1, 'place').length === 0);
 }
 

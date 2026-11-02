@@ -186,7 +186,7 @@ export function buildCampaign(actions) {
     if (!S.camp || !S.camp.testing) return;
     const out = $('campVerdict');
     out.className = 'campVerdict won'; out.hidden = false;
-    $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}, but playing it yourself does not beat the level: press Run and the robot plays it.`;
+    $('campVerdictText').textContent = `You reached the berry in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}, but playing it yourself does not beat the level: press Run and the blob plays it.`;
     $('campVerdictText').onclick = null;
   });
   // The verdict is read once: the next touch anywhere else blanks it (its band keeps its place); the card keeps the marks.

@@ -52,7 +52,7 @@ function show(p) {
   const box = $('winBox'), n = next(p.def);
   box.classList.toggle('gold', p.gold);
   $('winTitle').textContent = p.gold ? 'Every side goal met' : `${shownName(p.def)} beaten`;
-  $('winSay').textContent = p.gold ? `${shownName(p.def)} is done, all ${p.goals.length} stars.` : `The robot made it in ${p.moves} ${p.moves === 1 ? 'move' : 'moves'}.`;
+  $('winSay').textContent = p.gold ? `${shownName(p.def)} is done, all ${p.goals.length} stars.` : `The blob made it in ${p.moves} ${p.moves === 1 ? 'move' : 'moves'}.`;
   $('winStars').replaceChildren(...p.goals.map(o => {
     const s = document.createElement('span');
     s.className = 'winStar' + (p.met[o.id] ? ' on' : '') + (p.fresh.includes(o.id) ? ' new' : ''); s.textContent = '★';

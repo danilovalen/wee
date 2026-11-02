@@ -14,7 +14,7 @@ export const SPIKE_GOALS = {
     judge: (room, moves) => everyBoxLeaves(room, moves, 'death'),
   },
   everyBoxLeavesGoal: {
-    text: 'Every box leaves the goal it was on.',
+    text: 'Every box leaves the berry it was on.',
     short: ['all', { el: 'box' }, 'leaves', { el: 'goal' }],
     judge: (room, moves) => everyBoxLeaves(room, moves, 'goal'),
   },

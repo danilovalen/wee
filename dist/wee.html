@@ -3121,7 +3121,7 @@ function closedDoorHits(room, moves) {
 
 const DOOR_GOALS = {
   throughOpenDoor: {
-    text: 'Robot through an open door.',
+    text: 'Blob through an open door.',
     short: [{ el: 'start' }, 'through', { el: 'door' }],
     // A closed door is solid, so standing on a door tile means it is open.
     judge: (room, moves) => {
@@ -3132,7 +3132,7 @@ const DOOR_GOALS = {
   },
   throughDoorsOfTwoColours: {
     needs: { door: 2 },
-    text: 'Robot through doors of two colours.',
+    text: 'Blob through doors of two colours.',
     short: [{ el: 'start' }, 'through', { el: 'door' }, 'of 2 colours'],
     // Standing on a door tile means it is open (register 243).
     judge: (room, moves) => {
@@ -3142,19 +3142,19 @@ const DOOR_GOALS = {
     },
   },
   hitsClosedDoor: {
-    text: 'Robot collides with a closed door.',
+    text: 'Blob collides with a closed door.',
     short: [{ el: 'start' }, 'hits', { el: 'door' }],
     judge: (room, moves) => closedDoorHits(room, moves) >= 1,
   },
   // Register 556: level 3's side goal, two hits or more.
   hitsClosedDoorTwice: {
-    text: 'Robot collides with a closed door twice or more.',
+    text: 'Blob collides with a closed door twice or more.',
     short: [{ el: 'start' }, 'hits', { el: 'door' }, '×2'],
     judge: (room, moves) => closedDoorHits(room, moves) >= 2,
   },
   throughOpenDoorTwice: {
     // Two passes, not two doors (register 257): the row says so.
-    text: 'Robot through an open door twice, the same door or another.',
+    text: 'Blob through an open door twice, the same door or another.',
     short: [{ el: 'start' }, 'through', { el: 'door' }, '×2'],
     // One pass is stepping onto a door tile from a tile that is not one: a slide across two
     // doors side by side passes once.
@@ -3221,7 +3221,7 @@ const DOOR_GOALS = {
   },
   // Inverted doors (registers 311, 312): open until their colour is held.
   robotThroughIdoor: {
-    text: 'Robot through an inverted door.',
+    text: 'Blob through an inverted door.',
     short: [{ el: 'start' }, 'through', { el: 'idoor' }],
     judge: (room, moves) => { let ok = false; replayPath(room, moves, s => { if (/^idoor:/.test(s.cells[s.player.y * room.w + s.player.x] || '')) ok = true; }); return ok; },
   },
@@ -3254,7 +3254,7 @@ const DOOR_GOALS = {
     judge: (room, moves) => everyTile(room, moves, 'door', t => t.boxLeft),
   },
   robotLeavesEveryDoor: {
-    text: 'Robot leaves every door.',
+    text: 'Blob leaves every door.',
     short: [{ el: 'start' }, 'leaves all', { el: 'door' }],
     judge: (room, moves) => everyTile(room, moves, 'door', t => t.robotLeft),
   },
@@ -3273,7 +3273,7 @@ const DOOR_GOALS = {
   // Register 477: four doors or more, and the robot stands in every one.
   robotThroughFourDoors: {
     needs: { door: 4 },
-    text: 'At least 4 doors, and the robot through every one.',
+    text: 'At least 4 doors, and the blob through every one.',
     short: [{ el: 'start' }, 'through 4+', { el: 'door' }],
     judge: (room, moves) => {
       const doors = cellsWhere(room, c => /^door:/.test(c)), seen = new Set();
@@ -3294,7 +3294,7 @@ const DOOR_GOALS = {
   // Register 490: the robot's slides end against closed doors of two colours.
   robotHitsDoorsOfTwoColours: {
     needs: { door: 2 },
-    text: 'Robot collides with closed doors of two colours.',
+    text: 'Blob collides with closed doors of two colours.',
     short: [{ el: 'start' }, 'hits', { el: 'door' }, 'of 2 colours'],
     judge: (room, moves) => {
       const cols = new Set();
@@ -3338,7 +3338,7 @@ const SWITCH_GOALS = {
     judge: (room, moves) => { const h = toggleHistory(room, moves); return h.all.length > 0 && h.all.every(i => h.on.has(i)); },
   },
   onlyBoxesFlipSwitches: {
-    text: 'Only boxes turn switches on and off; the robot never crosses one.',
+    text: 'Only boxes turn switches on and off; the blob never crosses one.',
     short: ['only', { el: 'box' }, 'flips', { el: 'toggle' }],
     judge: (room, moves) => {
       let robot = false, flipped = false;
@@ -3377,7 +3377,7 @@ const SWITCH_GOALS = {
     judge: (room, moves) => switches(room).length > replayPath(room, moves, () => {}).toggled.length,
   },
   robotOnButton: {
-    text: 'Robot steps on a button.',
+    text: 'Blob steps on a button.',
     short: [{ el: 'start' }, 'on', { el: 'button' }],
     judge: (room, moves) => {
       let ok = false;
@@ -3392,7 +3392,7 @@ const SWITCH_GOALS = {
   },
   // Register 473: the robot steps onto a switch, flipping it, at least twice (the same switch or another).
   robotFlipsSwitchTwice: {
-    text: 'Robot flips a switch 2 or more times.',
+    text: 'Blob flips a switch 2 or more times.',
     short: [{ el: 'start' }, 'flips', { el: 'toggle' }, '×2'],
     judge: (room, moves) => {
       let flips = 0, was = -1;
@@ -3468,7 +3468,7 @@ const { STEP, live, stoppedPushes, boxCount, boxIds, blockHits } = m14;
 
 const BOX_GOALS = {
   touchBlockFourTimes: {
-    text: 'Robot touches the same block 4 times.',
+    text: 'Blob touches the same block 4 times.',
     short: [{ el: 'start' }, 'hits one', { el: 'block' }, '×4'],
     // A touch is a slide that ends against a block, as a collision ends against a door.
     judge: (room, moves) => {
@@ -3491,7 +3491,7 @@ const BOX_GOALS = {
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 3),
   },
   boxPushedTwiceHitOnce: {
-    text: 'One box pushed in at least 2 moves, and hit once by the robot without moving.',
+    text: 'One box pushed in at least 2 moves, and hit once by the blob without moving.',
     short: [{ el: 'box' }, 'pushed ×2', '+', { el: 'box' }, 'hits ×1'],
     judge: (room, moves) => boxMoves(room, moves).some(b => b.pushes >= 2 && b.hits >= 1),
   },
@@ -3502,7 +3502,7 @@ const BOX_GOALS = {
     judge: (room, moves) => { const b = boxMoves(room, moves); return b.length > 0 && b.every(x => x.pushes >= 2); },
   },
   everyBoxHitOnce: {
-    text: 'Robot collides with every box without moving it.',
+    text: 'Blob collides with every box without moving it.',
     short: [{ el: 'start' }, 'hits all', { el: 'box' }],
     judge: (room, moves) => { const b = boxMoves(room, moves); return b.length > 0 && b.every(x => x.hits >= 1); },
   },
@@ -3529,7 +3529,7 @@ const BOX_GOALS = {
   },
   // Register 472: every move of the path is one of at most two directions.
   robotTwoDirections: {
-    text: 'Robot moves in only two directions.',
+    text: 'Blob moves in only two directions.',
     short: [{ el: 'start' }, '2 ways'],
     judge: (room, moves) => new Set(moves.map(m => parseMove(m).k)).size <= 2,
   },
@@ -3565,7 +3565,7 @@ const { gates, both, oneWayLog, everyTile, countKind, cellsWhere, isGate, boxIds
 
 const ONE_WAY_GOALS = {
   robotThroughOneWayBothWays: {
-    text: 'Robot through a one-way both ways.',
+    text: 'Blob through a one-way both ways.',
     short: [{ el: 'start' }, 'through', { el: 'gate' }, '⇄'],
     judge: (room, moves) => both(oneWayLog(room, moves).robotWays),
   },
@@ -3575,17 +3575,17 @@ const ONE_WAY_GOALS = {
     judge: (room, moves) => both(oneWayLog(room, moves).boxWays),
   },
   robotThroughEveryOneWay: {
-    text: 'Robot through every one-way.',
+    text: 'Blob through every one-way.',
     short: [{ el: 'start' }, 'through all', { el: 'gate' }],
     judge: (room, moves) => { const all = gates(room), l = oneWayLog(room, moves); return all.length > 0 && all.every(i => l.robotThrough.has(i)); },
   },
   robotThroughOneWay: {
-    text: 'Robot through a one-way.',
+    text: 'Blob through a one-way.',
     short: [{ el: 'start' }, 'through', { el: 'gate' }],
     judge: (room, moves) => oneWayLog(room, moves).robotThrough.size > 0,
   },
   robotHitsEveryOneWay: {
-    text: 'Robot collides with every one-way.',
+    text: 'Blob collides with every one-way.',
     short: [{ el: 'start' }, 'hits all', { el: 'gate' }],
     judge: (room, moves) => { const all = gates(room), l = oneWayLog(room, moves); return all.length > 0 && all.every(i => l.robotHits[i]); },
   },
@@ -3620,7 +3620,7 @@ const ONE_WAY_GOALS = {
     judge: (room, moves) => everyTile(room, moves, 'gate', t => t.byBox),
   },
   robotThroughEveryPushedOneWay: {
-    text: 'Robot through every one-way.',
+    text: 'Blob through every one-way.',
     short: [{ el: 'start' }, 'through all', { el: 'gate' }],
     judge: (room, moves) => everyTile(room, moves, 'gate', t => t.robotLeft),
   },
@@ -3636,7 +3636,7 @@ const ONE_WAY_GOALS = {
     judge: room => countKind(room, 'gate') >= 2,
   },
   robotThroughEveryOneWayBothWays: {
-    text: 'Robot through every one-way both ways.',
+    text: 'Blob through every one-way both ways.',
     short: [{ el: 'start' }, 'through all', { el: 'gate' }, '⇄'],
     judge: (room, moves) => {
       const gs = cellsWhere(room, isGate), w = oneWayLog(room, moves).robotWays;
@@ -3710,7 +3710,7 @@ const LASER_GOALS = {
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at).startsWith('door:'))) ok = true; }); return ok; },
   },
   laserThroughGoal: {
-    text: 'Laser through the goal.',
+    text: 'Laser through the berry.',
     short: [{ el: 'beam' }, 'through', { el: 'goal' }],
     judge: (room, moves) => { let ok = false; beams(room, moves, (b, s) => { if (through(b, s).some(at => cellOf(room, at) === 'goal')) ok = true; }); return ok; },
   },
@@ -3781,7 +3781,7 @@ const LASER_GOALS = {
   },
   // Register 371: the robot's slide ends against a relay, and so does a pushed box: the relay is solid.
   robotAndBoxHitRelay: {
-    text: 'Robot and a box both collide with a relay.',
+    text: 'Blob and a box both collide with a relay.',
     short: [{ el: 'start' }, 'hits', { el: 'relay' }, '+', { el: 'box' }, 'hits', { el: 'relay' }],
     judge: (room, moves) => {
       let robot = false, dir = null;
@@ -3876,7 +3876,7 @@ const LASER_GOALS = {
   },
   // Register 494 (level 14): the robot's slides end against each laser at least twice.
   robotHitsEveryLaserTwice: {
-    text: 'Robot collides with every laser 2 or more times.',
+    text: 'Blob collides with every laser 2 or more times.',
     short: [{ el: 'start' }, 'hits all', { el: 'laser' }, '×2'],
     judge: (room, moves) => {
       const ids = idsOf(room, e => !!e.turret), hits = {};
@@ -3946,7 +3946,7 @@ const SPIKE_GOALS = {
     judge: (room, moves) => everyBoxLeaves(room, moves, 'death'),
   },
   everyBoxLeavesGoal: {
-    text: 'Every box leaves the goal it was on.',
+    text: 'Every box leaves the berry it was on.',
     short: ['all', { el: 'box' }, 'leaves', { el: 'goal' }],
     judge: (room, moves) => everyBoxLeaves(room, moves, 'goal'),
   },
@@ -4103,7 +4103,7 @@ function placementErrors(def, room) {
   for (const i of stray) errs.push({ msg: 'This level does not have that.', at: i });
   if (!room.start) errs.push({ msg: 'Place the start.' });
   const goals = room.cells.filter(c => c === 'goal').length;
-  if (!goals) errs.push({ msg: 'Place the goal.' });
+  if (!goals) errs.push({ msg: 'Place the berry.' });
   if (goals > 1) errs.push({ msg: 'Place only one goal.' });
   for (const [el, list] of Object.entries(by)) {
     // A null maximum is no limit: cost is what keeps the count down.
@@ -4167,17 +4167,17 @@ const HOLD = {
 };
 function stuckText(room) {
   const w = whyStuck(room), xy = i => ({ x: i % room.w, y: Math.floor(i / room.w) });
-  if (w.capped) return { why: 'The robot cannot reach the goal, and the room is too big to say why.', at: [] };
+  if (w.capped) return { why: 'The blob cannot reach the berry, and the room is too big to say why.', at: [] };
   // A move that ends with the robot hit says so, and shows the lasers (register 286).
   const lasers = () => room.entities.filter(e => e.turret).map(e => ({ x: e.x, y: e.y }));
   const spikes = () => room.cells.flatMap((c, i) => c === 'death' ? [xy(i)] : []);
-  if (!w.door && w.hit && (w.by || []).includes('laser')) return { why: 'The robot cannot reach the goal: a laser hits it on the way.', at: lasers() };
-  if (!w.door && w.hit && (w.by || []).includes('spikes')) return { why: 'The robot cannot reach the goal: it would have to step on bare spikes.', at: spikes() };
-  if (!w.door) return { why: 'The robot cannot reach the goal from anywhere it can get to.', at: [] };
+  if (!w.door && w.hit && (w.by || []).includes('laser')) return { why: 'The blob cannot reach the berry: a laser hits it on the way.', at: lasers() };
+  if (!w.door && w.hit && (w.by || []).includes('spikes')) return { why: 'The blob cannot reach the berry: it would have to step on bare spikes.', at: spikes() };
+  if (!w.door) return { why: 'The blob cannot reach the berry from anywhere it can get to.', at: [] };
   const has = c => c.split(':')[1].split('|').includes(w.door);
   const doors = room.cells.flatMap((c, i) => c.startsWith('door:') && has(c) ? [xy(i)] : []);
   const own = room.cells.flatMap((c, i) => /^(button|toggle|sensor):/.test(c) && has(c) ? [i] : []);
-  const head = `The robot cannot reach the goal: the ${w.door} door never opens`;
+  const head = `The blob cannot reach the berry: the ${w.door} door never opens`;
   if (!own.length) return { why: `${head}, because nothing ${w.door} opens it.`, at: doors };
   if (w.apart) return { why: `${head}. It needs everything ${w.door} held at once, and that never happens.`, at: [...doors, ...own.map(xy)] };
   // Said per kind, so a door held by a button and a switch names the one that fails.
@@ -4196,9 +4196,9 @@ function check(def, room, opts) {
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
-  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'To let the robot search this room, make it smaller.' } };
+  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'To let the blob search this room, make it smaller.' } };
   const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room), tiles: tilesOf(def, room) };
-  if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the robot to check.` } };
+  if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the blob to check.` } };
   // Each requirement holds on every shortest path or it is not met; the card marks each one.
   const failed = {};
   for (const path of r.paths) for (const id of def.require || []) if (!(id in failed) && !REQUIREMENTS[id].judge(room, path)) failed[id] = path;
@@ -5997,7 +5997,7 @@ function show(p) {
   const box = $('winBox'), n = next(p.def);
   box.classList.toggle('gold', p.gold);
   $('winTitle').textContent = p.gold ? 'Every side goal met' : `${shownName(p.def)} beaten`;
-  $('winSay').textContent = p.gold ? `${shownName(p.def)} is done, all ${p.goals.length} stars.` : `The robot made it in ${p.moves} ${p.moves === 1 ? 'move' : 'moves'}.`;
+  $('winSay').textContent = p.gold ? `${shownName(p.def)} is done, all ${p.goals.length} stars.` : `The blob made it in ${p.moves} ${p.moves === 1 ? 'move' : 'moves'}.`;
   $('winStars').replaceChildren(...p.goals.map(o => {
     const s = document.createElement('span');
     s.className = 'winStar' + (p.met[o.id] ? ' on' : '') + (p.fresh.includes(o.id) ? ' new' : ''); s.textContent = '★';
@@ -6196,7 +6196,7 @@ let A = null;
 const bindGoalCard = actions => { A = actions; };
 
 // A row's words, each object drawn as its palette icon (framed when the level offers it only pushable); the robot and the goal have their own.
-const WORD_ICON = { start: ['robot', 'Robot'], goal: ['goal', 'Goal'], beam: ['beam', 'Laser beam'] };
+const WORD_ICON = { start: ['robot', 'Blob'], goal: ['goal', 'Berry'], beam: ['beam', 'Laser beam'] };
 // The move minimum as a path and "4+" (register 546): while Run's robot plays it counts its moves, and
 // turns green once there are enough.
 let dotsEl = null;
@@ -6251,7 +6251,7 @@ function syncBrief() {
   // The tutorial teaches one thing, so its card is one order (registers 511, 512).
   // A challenge's only goal is the star, which the big star already says (register 582): its card holds
   // just the pieces to place, which are not a goal (register 566).
-  const rows = def.challenge ? [] : def.tutorial ? [{ id: 'star', parts: ['Get the robot to the star.'], text: 'Get the robot to the star.', met: ran ? v.won : null }]
+  const rows = def.challenge ? [] : def.tutorial ? [{ id: 'star', parts: ['Get the blob to the berry.'], text: 'Get the blob to the berry.', met: ran ? v.won : null }]
     : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
@@ -6542,7 +6542,7 @@ function buildCampaign(actions) {
     if (!S.camp || !S.camp.testing) return;
     const out = $('campVerdict');
     out.className = 'campVerdict won'; out.hidden = false;
-    $('campVerdictText').textContent = `You reached the goal in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}, but playing it yourself does not beat the level: press Run and the robot plays it.`;
+    $('campVerdictText').textContent = `You reached the berry in ${ev.detail.moves} ${ev.detail.moves === 1 ? 'move' : 'moves'}, but playing it yourself does not beat the level: press Run and the blob plays it.`;
     $('campVerdictText').onclick = null;
   });
   // The verdict is read once: the next touch anywhere else blanks it (its band keeps its place); the card keeps the marks.
@@ -8128,7 +8128,7 @@ const TOOLS = [
   { id: 'start', label: 'Start', group: 'basic' },
   { id: 'wall', label: 'Block', group: 'basic' },
   { id: 'checkpoint', label: 'Checkpoint', group: 'basic' },
-  { id: 'goal', label: 'Goal', group: 'basic' },
+  { id: 'goal', label: 'Berry', group: 'basic' },
   { id: 'mover', label: 'Moving block', group: 'pieces' },
   { id: 'enemy', label: 'Weak enemy', group: 'pieces' },
   { id: 'strong', label: 'Strong enemy', group: 'pieces' },
@@ -8601,7 +8601,7 @@ function describe(level, x, y) {
     else if (kind === 'water') parts.push('Water');
     else if (kind === 'sticky') parts.push('Sticky puddle');
     else if (kind === 'gravel') parts.push('Gravel');
-    else if (kind === 'goal') parts.push('Goal');
+    else if (kind === 'goal') parts.push('Berry');
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') { const [ds, col] = v.split('@'); parts.push(`${col ? cname(col) + ' one-way' : 'One-way'} ${ds.split(',').map(d => ARROW[d]).join(' ')}`); }
     else if (kind === 'sensor') parts.push(`${cname(v)} laser relay`);
@@ -9566,7 +9566,7 @@ function replacing(level, ui, x, y, how) {
 }
 const allows = (level, ui, x, y, how) => !refusal(level, ui, x, y, how);
 // A refusal said on the tile: the start and goal are never removed, only moved.
-const tipOf = msg => msg === 'Place the goal.' ? 'To move the goal, use Move.' : msg === 'Place the start.' ? 'To move the start, use Move.' : msg;
+const tipOf = msg => msg === 'Place the berry.' ? 'To move the berry, use Move.' : msg === 'Place the start.' ? 'To move the start, use Move.' : msg;
 
 // Why Move cannot carry a thing from one tile to another, or null when it can.
 function moveRefusal(level, from, to) {
@@ -10593,16 +10593,16 @@ const goalAt = () => { const i = S.level.cells.indexOf('goal'); return { x: i % 
 const lost = () => settled() && !S.game.won && S.game.player.y !== 1 && S.game.player.x !== 3;
 let ran = false;
 const STEPS = [
-  { say: 'Swipe across the room, or press an arrow key, to slide the robot.', wait: 'Try any direction.', swipe: true, enter: () => setMode('play'), done: () => S.game && S.game.move > 0 && settled() },
-  { say: 'The robot only stops at a block or a wall, so it can’t stop on the star yet.', next: 'Next', tile: goalAt },
+  { say: 'Swipe across the room, or press an arrow key, to slide the blob.', wait: 'Try any direction.', swipe: true, enter: () => setMode('play'), done: () => S.game && S.game.move > 0 && settled() },
+  { say: 'The blob only stops at a block or a wall, so it can’t stop on the berry yet.', next: 'Next', tile: goalAt },
   { say: 'Tap the pencil to go back to building the room.', ring: '#mode', done: () => S.mode === 'edit' },
-  { say: 'You don’t move the robot to win: you build its room with blocks.', next: 'Next', ring: '#palette [data-tool="wall"]', enter: () => { S.ui.tool = 'wall'; syncPanel(); } },
-  { say: 'Place a block here, so the robot stops right above the star.', tile: () => BLOCK, done: () => S.level.cells[BLOCK.y * S.level.w + BLOCK.x] === 'wall' },
+  { say: 'You don’t move the blob to win: you build its room with blocks.', next: 'Next', ring: '#palette [data-tool="wall"]', enter: () => { S.ui.tool = 'wall'; syncPanel(); } },
+  { say: 'Place a block here, so the blob stops right above the berry.', tile: () => BLOCK, done: () => S.level.cells[BLOCK.y * S.level.w + BLOCK.x] === 'wall' },
   { say: 'Tap the arrows to try your room yourself.', ring: '#campTest', done: () => S.mode === 'play' },
-  { say: 'Swipe right, then down, to bring the robot to the star.', wait: 'Arrow keys work too.', swipe: true, tile: goalAt, done: () => S.game && S.game.won && settled(),
-    lost: { say: 'The robot can’t reach the star from there, so it goes back to its start.' } },
+  { say: 'Swipe right, then down, to bring the blob to the berry.', wait: 'Arrow keys work too.', swipe: true, tile: goalAt, done: () => S.game && S.game.won && settled(),
+    lost: { say: 'The blob can’t reach the berry from there, so it goes back to its start.' } },
   { say: 'Playing it yourself doesn’t beat the level, so tap the pencil to go back.', ring: '#mode', done: () => S.mode === 'edit' },
-  { say: 'By tapping play, the robot will find the shortest path to the star and walk through it.', ring: '#campRun', enter: () => { ran = false; }, done: () => ran && S.mode === 'edit' },
+  { say: 'By tapping play, the blob will find the shortest path to the berry and walk through it.', ring: '#campRun', enter: () => { ran = false; }, done: () => ran && S.mode === 'edit' },
   // Register 587: the side star, and that another room can earn it later (586).
   { say: 'The small star is a side goal: you don’t need it to win, but it earns a star.', next: 'Next', ring: '#campBrief .campOpt li' },
   { say: 'If one room can’t meet every goal, try another room later: stars you earn stay.', next: 'Next', ring: '#campBrief .campOpt li' },

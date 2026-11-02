@@ -124,7 +124,7 @@ export function describe(level, x, y) {
     else if (kind === 'water') parts.push('Water');
     else if (kind === 'sticky') parts.push('Sticky puddle');
     else if (kind === 'gravel') parts.push('Gravel');
-    else if (kind === 'goal') parts.push('Goal');
+    else if (kind === 'goal') parts.push('Berry');
     else if (kind === 'spring') parts.push(`Spring ${ARROW[v]}`);
     else if (kind === 'gate') { const [ds, col] = v.split('@'); parts.push(`${col ? cname(col) + ' one-way' : 'One-way'} ${ds.split(',').map(d => ARROW[d]).join(' ')}`); }
     else if (kind === 'sensor') parts.push(`${cname(v)} laser relay`);
