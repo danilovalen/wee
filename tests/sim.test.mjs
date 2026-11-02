@@ -1193,6 +1193,13 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('the editor lights the barrel a turret fires first', lit.length > 0 && lit.every(([x, y]) => y >= 10) && lit.reduce((a, [, y]) => a + y, 0) / lit.length > 16, JSON.stringify(lit.slice(0, 4)));
 }
 
+{ // every laser fires from a housing (register 619): it paints the housing's face, not only barrels
+  let face = 0, fill = null;
+  const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? () => { if (fill === '#5b595c') face++; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } });
+  drawTurret(g, { dirs: ['right'], mode: 'input' });
+  check('a laser draws its housing', face > 0, String(face));
+}
+
 { // the mode badge (its dark disc) only on a turret that turns (register 300)
   const dots = t => { let n = 0, fill = null; const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? () => { if (fill === BADGE) n++; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } }); drawTurret(g, t, [24, 8]); return n ? 1 : 0; };
   check('a one-way laser wears no mode badge', dots({ dirs: ['right'], mode: 'input' }) === 0);

@@ -1019,6 +1019,7 @@ export const M = [
   ['src/view/look.js', "greys: ['#081820', '#346856', '#88c070', '#e0f8d0']", "greys: ['#0f380f', '#306230', '#8bac0f', '#9bbc0f']", 'palettes'],
   ['src/view/look.js', "  if (!p.hues && sat > 0.22) return p.greys[p.greys.length - (lum(c) >= 0.45 ? 1 : 2)];", "", 'palettes'],
   ['style.css', ".campReqs .mark::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--dim); clip-path: var(--ring-20); }", ".campReqs .mark::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--dim); border-radius: 50%; }", 'pixelart'],
+  ['src/view/sprites.js', "    box(g, 3, 3, 12, 12, '#2d2a2e'); box(g, 4, 4, 11, 11, '#5b595c');", "    box(g, 3, 3, 12, 12, '#2d2a2e');", 'sim'],
   // Rows 612, 613: Looks.
   ['src/view/look.js', "set(v) { d.set.call(this, paint(v)); }", "set(v) { d.set.call(this, v); }", 'looks'],
   ['src/app/looks.js', "const open = cost => unlocked() || totalStars() >= cost;", "const open = cost => unlocked() || cost === 0;", 'looks'],
