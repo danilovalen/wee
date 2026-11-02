@@ -1183,13 +1183,14 @@ const LONG = ['##########', '#..P....##', '##########'];
   check('a start it cannot fire is refused', (() => { try { parseLevel(JSON.stringify({ ...l, entities: [{ kind: 'turret', x: 2, y: 2, turret: { dirs: ['up'], mode: 'input', start: 'down' } }] })); return false; } catch { return true; } })());
 }
 
-// In the editor, a turret's lit barrel is the one it fires first.
+// In the editor, a turret's lit barrel is the one it fires first: read off what it paints, so the
+// check holds however the barrels are drawn.
 {
   const lit = [];
-  let angle = 0;
-  const g = new Proxy({}, { get: (o, k) => k === 'rotate' ? a => { angle = a; } : k === 'restore' ? () => { angle = 0; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle' && v === INK.zap && angle) lit.push(angle); o[k] = v; return true; } });
+  let fill = null;
+  const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? (x, y, w, h) => { if (fill === INK.zap) lit.push([x, y, w, h]); } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } });
   drawTurret(g, { dirs: ['up', 'down'], mode: 'input', start: 'down' });
-  check('the editor lights the barrel a turret fires first', lit.length === 1 && Math.abs(lit[0] - Math.PI / 2) < 1e-9, JSON.stringify(lit));
+  check('the editor lights the barrel a turret fires first', lit.length > 0 && lit.every(([x, y]) => y >= 10) && lit.reduce((a, [, y]) => a + y, 0) / lit.length > 16, JSON.stringify(lit.slice(0, 4)));
 }
 
 { // the mode badge (a 5.5 dot) only on a turret that turns (register 300)

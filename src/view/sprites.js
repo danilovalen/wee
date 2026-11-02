@@ -92,6 +92,19 @@ Object.assign(BUILD, {
     ellipse(g, 8, 8.5, 6, 6, d); ellipse(g, 8, 8.8, 3, 3, c);
     return g;
   },
+  // A laser: only its barrels (register 493), one per direction it fires, the next to fire lit orange
+  // (register 603). key: "right,down|right".
+  laser(key) {
+    const [dirs, next] = key.split('|'), g = grid();
+    const turn = { right: (x, y) => [x, y], down: (x, y) => [15 - y, x], left: (x, y) => [15 - x, 15 - y], up: (x, y) => [y, 15 - x] };
+    for (const d of dirs.split(',')) {
+      const lit = d === next, body = lit ? INK.zap : '#727072', edge = lit ? '#c4643a' : '#403e41', tip = lit ? INK.zapCore : '#939293';
+      const put = (x, y, c) => { const [X, Y] = turn[d](x, y); g[Y][X] = c; };
+      for (let x = 6; x <= 15; x++) { put(x, 6, edge); put(x, 9, edge); put(x, 7, body); put(x, 8, body); }
+      put(6, 7, edge); put(6, 8, edge); put(14, 7, tip); put(15, 7, tip); put(14, 8, tip); put(15, 8, tip);
+    }
+    return g;
+  },
 });
 
 // Each sprite as rows of [x, length, colour] runs, built on first use.

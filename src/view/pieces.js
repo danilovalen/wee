@@ -25,13 +25,8 @@ export function drawTurret(g, t, badge, mounted, framed = false) {
   if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
   // A pushable laser's barrels stay inside its box frame (register 554).
   else if (framed) { g.translate(16, 16); g.scale(0.78, 0.78); g.translate(-16, -16); }
-  for (const d of t.dirs) {
-    g.save(); g.translate(16, 16); g.rotate(AIM[d]);
-    g.fillStyle = d === next ? INK.zap : INK.barrel;
-    // Only the barrels (register 493): no base plate, no hub.
-    roundRect(g, -5, -4, 20, 8, 3); g.fill();
-    g.restore();
-  }
+  // Only the barrels (register 493), as a pixel sprite.
+  drawSprite(g, 'laser', 0, 0, { colour: t.dirs.join(',') + '|' + next });
   g.restore();
   // One direction always fires the same way, so how it turns says nothing (register 300).
   if (badge && t.dirs.length > 1) modeBadge(g, t.mode, badge[0], badge[1]);
