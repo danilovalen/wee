@@ -481,6 +481,12 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .menuSec button { height: 48px; font-size: 16px; }
 @media (min-width: 701px) { .menuList { width: min(640px, 100vw - 64px); grid-template-columns: 1fr 1fr; } #menuDebug { grid-column: 1 / -1; } }
 .menuList button.primary { background: var(--accent); color: var(--on-accent); }
+/* The session's unlock-all switch, top right (register 589); its badge in the top bar while on. */
+.menuCorner { position: absolute; z-index: 2; top: 12px; right: 12px; width: 44px; height: 44px; padding: 10px; display: flex; align-items: center; justify-content: center; }
+.menuCorner .glyph, .unlockBadge .glyph { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.menuCorner.on { color: var(--gold); }
+.unlockBadge { display: inline-flex; color: var(--gold); }
+.unlockBadge[hidden] { display: none; }
 #menuDebug { background: none; box-shadow: none; height: 44px; font: 13px var(--label-face); color: var(--soft); text-decoration: underline; }
 .menuScene { position: absolute; inset: 0; }
 /* The floor runs past the room on every side, so a wide screen shows more floor, not an island. */

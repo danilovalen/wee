@@ -1,5 +1,6 @@
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
+import { bindUnlock } from './unlock.js';
 import { buildMaker } from './maker.js';
 import { buildPuzzles } from './puzzles.js';
 import { buildProgress } from './progressCode.js';
@@ -37,7 +38,7 @@ buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
-bindGlyphs(); bindTutorial();
+bindGlyphs(); bindTutorial(); bindUnlock();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });
 buildMaker();

@@ -1024,6 +1024,7 @@ const M = [
   ['src/app/goalCard.js', "optional: true, kept: !!kept[o.id] });", "optional: true, kept: false });", 'win'],
   ['src/app/tutorial.js', "it earns a star.', next: 'Next', ring: '#campBrief .campOpt li' },", "it earns a star.', next: 'Next', ring: '#campBack' },", 'tutorial'],
   ['src/view/pieces.js', "drawSprite(g, 'blob', -T / 2, -T / 2, { outline: hidden });", "", 'campaign-play'],
+  ['src/app/unlock.js', "export const unlocked = () => on;", "export const unlocked = () => false;", 'unlock'],
 ];
 
 // SINCE=<commit> runs only the mutants added or changed since that commit: the full list takes hours.

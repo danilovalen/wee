@@ -4,6 +4,7 @@
 // Every level is open while the levels are being made. All copy is draft.
 import { LEVELS } from '../level/campaign.js';
 import { CHALLENGES } from '../level/challenges.js';
+import { unlocked } from './unlock.js';
 import { roomOf, coloursOf, placementErrors, check, optionalGoals, listed } from '../campaign/rules.js';
 import { newHistory } from '../editor/history.js';
 import { S, starterLevel } from '../editor/state.js';
@@ -136,7 +137,7 @@ function renderList() {
   const p = progress(), list = $('campList');
   // The challenges follow under their own heading while they are being playtested (register 562).
   const head = Object.assign(document.createElement('li'), { className: 'campSection', textContent: 'Challenges (playtest)' });
-  list.replaceChildren(...[...LEVELS.filter(listed), head, ...CHALLENGES].map(def => def === head ? head : (() => {
+  list.replaceChildren(...[...LEVELS.filter(d => listed(d) || (unlocked() && !d.tutorial)), head, ...CHALLENGES].map(def => def === head ? head : (() => {
     const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button');
     b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id;
     const name = document.createElement('b');

@@ -14,6 +14,7 @@
   <header data-join>
     <button id="logo" class="logo" type="button" title="Menu" aria-label="Menu">wee</button>
     <b id="campNum" class="campNum camp-only"></b>
+    <span id="unlockBadge" class="unlockBadge" hidden></span>
     <button id="roomTitle" class="roomTitle" type="button" title="This room">Untitled</button>
     <button id="campBack" type="button" class="camp-only">Levels</button>
     <button id="puzzleBack" type="button" class="puzzle-only">Puzzles</button>
@@ -229,6 +230,7 @@
   <dialog id="menuBox" class="menu">
     <div id="menuScene" class="menuScene" aria-hidden="true"></div>
     <b class="logo menuLogo">wee</b>
+    <button id="menuUnlock" type="button" class="menuCorner" aria-pressed="false"></button>
     <div class="menuList">
       <section class="menuSec">
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
