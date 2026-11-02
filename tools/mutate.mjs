@@ -621,7 +621,7 @@ export const M = [
   // Generator ingredients: icons, palette sections, powers apart (register 117)
   ['style.css', ".genSec[data-section=Powers] .genItems { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }", "", 'genui'],
   ['src/app/generator.js', "const ING_GROUP = { follow: 'pieces', mounted: 'pieces' };", "const ING_GROUP = {};", 'genui'],
-  ['src/app/icons.js', "  else if (tool === 'follow') drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);\n", "", 'genui'],
+  ['src/app/icons.js', "    x.fillStyle = '#221f22'; x.fillRect(18, 2, 12, 10); x.fillStyle = '#fcfcfa';\n    for (const [cx, cy] of [[20, 4], [22, 6], [20, 8], [24, 4], [26, 6], [24, 8]]) x.fillRect(cx, cy, 2, 2);", "", 'genui'],
   ['src/app/generator.js', "    else label.append(icon(ING_ICON[g.id] || g.id, ING_COLOUR[g.id]));", "    else label.append(icon(ING_ICON[g.id] || g.id));", 'genui'],
   ['src/app/generator.js', "['Powers', INGREDIENTS.filter(g => g.power)]", "['Powers', []]", 'genui'],
   // Flicker (register 119)
