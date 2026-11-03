@@ -19,12 +19,13 @@ const SHELF = 'wee.generated', FORM = 'wee.genForm', KEEP = 20, SLICE_MS = 25;
 const CHOICES = [['', 'Off'], ['allowed', 'Allowed'], ['must', 'Must use']];
 // Ingredients that are not a palette tool borrow the icon and section of the tool they are about.
 const ING_ICON = { door: 'door', and: 'button', colours: 'door' };
-const ING_GROUP = { follow: 'pieces', mounted: 'pieces' };
+// The inverted door is a door's tap now (register 676): it sits with the door.
+const ING_GROUP = { follow: 'pieces', mounted: 'pieces', idoor: 'switches' };
 const ING_COLOUR = { colours: 'blue' };
 export const ingGroup = g => ING_GROUP[g.id] || (TOOLS.find(t => t.id === (ING_ICON[g.id] || g.id)) || {}).group;
 // What the Sandbox open now can place (register 379): the menu's Sandbox has the campaign's pieces and no
 // powers, so the generator offers only those; ?sandbox offers everything.
-const offered = g => !S.simple || (!g.power && SIMPLE.includes(ING_ICON[g.id] === 'button' ? 'door' : ING_ICON[g.id] || g.id));
+const offered = g => !S.simple || (!g.power && SIMPLE.includes(ING_ICON[g.id] === 'button' || g.id === 'idoor' ? 'door' : ING_ICON[g.id] || g.id));
 function showOffered() {
   for (const li of $('genIng').querySelectorAll('.genSec')) {
     let any = false;

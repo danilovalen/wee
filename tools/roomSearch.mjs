@@ -29,7 +29,7 @@ export function searcher(def, seed = 1, opts = {}) {
   // switches and (in a level that names its colours) one-ways.
   const cols = coloursOf(def), choices = el => colouringsOf(def, el);
   // A one-way or laser faces a way; a switch is placed off or on (register 671).
-  const dirOf = el => el === 'gate' || el === 'laser' ? pick(DIRS) : el === 'toggle' ? pick([null, 'on']) : null;
+  const dirOf = el => el === 'gate' || el === 'laser' ? pick(DIRS) : el === 'toggle' ? pick([null, 'on']) : el === 'door' ? pick([null, 'inv']) : null;
   function make(g) {
     const r = roomOf({ ...def, size: [g.w, g.h] });
     r.cells.fill(''); r.start = { ...g.start };
@@ -39,7 +39,7 @@ export function searcher(def, seed = 1, opts = {}) {
       if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right') + (def.colours ? '@' + col : '');
       else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
       else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, ...(crateOf(c) ? { crate: true } : {}), turret: { dirs: [d || 'right'], mode: 'input' } });
-      else r.cells[y * g.w + x] = el === 'block' ? 'wall' : el === 'spikes' ? 'death' : CELL[el] + ':' + col + (el === 'toggle' && d === 'on' ? ':on' : '');
+      else r.cells[y * g.w + x] = el === 'block' ? 'wall' : el === 'spikes' ? 'death' : (el === 'door' && d === 'inv' ? 'i' : '') + CELL[el] + ':' + col + (el === 'toggle' && d === 'on' ? ':on' : '');
       if (['gate', 'door', 'idoor', 'relay'].includes(el) && pushingsOf(def, el)[0]) (r.crates ||= []).push({ x, y });
     }
     return r;
@@ -132,7 +132,7 @@ export function searcher(def, seed = 1, opts = {}) {
   function mutate(g0) {
     if (opts.aim !== false && rnd() < 0.3) { const a = aim(structuredClone(g0)); if (a) { seen.delete(a); return a; } }
     const g = structuredClone(g0), r = rnd(), els = Object.keys(def.palette);
-    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if ((it[0] === 'gate' || it[0] === 'laser' || it[0] === 'toggle') && rnd() < 0.5) it[3] = dirOf(it[0]); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(choices(it[0])); if (it[0] === 'laser' && pushes.length > 1 && rnd() < 0.3) it[4] = it[4] === 'crate' ? null : 'crate'; }
+    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if ((it[0] === 'gate' || it[0] === 'laser' || it[0] === 'toggle' || it[0] === 'door') && rnd() < 0.5) it[3] = dirOf(it[0]); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(choices(it[0])); if (it[0] === 'laser' && pushes.length > 1 && rnd() < 0.3) it[4] = it[4] === 'crate' ? null : 'crate'; }
     else if (r < 0.5) add(g, pick(els));
     else if (r < 0.65 && g.items.length) {
       const i = Math.floor(rnd() * g.items.length), [el] = g.items[i];
@@ -180,7 +180,7 @@ export function searcher(def, seed = 1, opts = {}) {
     rows.forEach((row, y) => [...row].forEach((c, x) => {
       if (c === 'P') g.start = { x, y }; else if (c === 'G') g.goal = { x, y };
       else if ('^>v<'.includes(c)) g.items.push(['gate', x, y, LEGEND[c].slice(5), cols[0]]);
-      else if (LEGEND[c]) { const [el, col] = element(LEGEND[c]); g.items.push([el, x, y, LEGEND[c].endsWith(':on') ? 'on' : null, col]); }
+      else if (LEGEND[c]) { const [el, col] = element(LEGEND[c]); g.items.push(el === 'idoor' && !def.palette.idoor ? ['door', x, y, 'inv', col] : [el, x, y, LEGEND[c].endsWith(':on') ? 'on' : null, col]); }
       else if (c === 'B') g.items.push(['box', x, y, null, null]);
       else if (FROM_LETTER[c]) g.items.push(['laser', x, y, FROM_LETTER[c], c === c.toUpperCase() ? 'crate' : null]);
     }));

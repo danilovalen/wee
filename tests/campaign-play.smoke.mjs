@@ -527,7 +527,7 @@ try {
   await tapD(); const d1 = await at3(); await tapD(); const d2 = await at3(); await tapD(); const d3 = await at3();
   const dHint = await dsb.evaluate(() => document.getElementById('toolName').textContent);
   await dsb.mouse.move(db.x + 3.5 * dt, db.y + 3.5 * dt); await dsb.mouse.down(); await dsb.waitForTimeout(800); await dsb.mouse.up(); const d4 = await at3();
-  check('a door goes down; a tap swaps it to an inverted door and back; a hold removes it; the tool says so', /^door:/.test(d1) && d2 === 'i' + d1 && d3 === d1 && d4 === '' && /swap the kind of door/.test(dHint), JSON.stringify([d1, d2, d3, d4, dHint]));
+  check('a door goes down; a tap swaps it to an inverted door and back; a hold removes it; the tool says so', /^door:/.test(d1) && d2 === 'i' + d1 && d3 === d1 && d4 === '' && /make it an inverted door and back/.test(dHint), JSON.stringify([d1, d2, d3, d4, dHint]));
   await dsb.close();
   // The start is drawn as the blob (register 593): its gel green fills much of its tile.
   const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 150 && d[i] < 190 && d[i + 1] > 200 && d[i + 2] > 100 && d[i + 2] < 140) n++; return n / (d.length / 4); });

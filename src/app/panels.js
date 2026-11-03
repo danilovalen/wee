@@ -8,7 +8,7 @@ import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
 import { toolsFor } from './campaign.js';
 import { syncBrief, TOOL } from './goalCard.js';
 import { coloursOf, colouringsOf, pushingsOf } from '../campaign/rules.js';
-import { S, bothDoors } from '../editor/state.js';
+import { S } from '../editor/state.js';
 import { $, canvas, touch } from './dom.js';
 import { change, step as undoStep, syncUndo } from './undo.js';
 import { runCheck, syncCheck, syncLint } from './check.js';
@@ -167,7 +167,7 @@ export function syncPanel() {
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   // In a level the one-way says how it is turned and taken away (register 234); draft copy.
-  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + ((S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1 })[ui.tool] ? (ui.tool === 'toggle' ? ' (tap one to turn it on or off, hold to remove it)' : ' (tap one to turn it, hold to remove it)') : (ui.tool === 'door' || ui.tool === 'idoor') && bothDoors() ? ' (tap one to swap the kind of door, hold to remove it)' : '');
+  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + ((S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1 })[ui.tool] ? (ui.tool === 'toggle' ? ' (tap one to turn it on or off, hold to remove it)' : ' (tap one to turn it, hold to remove it)') : ui.tool === 'door' ? ' (tap one to make it an inverted door and back, hold to remove it)' : '');
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
@@ -213,7 +213,7 @@ let tint = '';
 // In a level, Look, Erase and Move start the colours' line; in a Sandbox they stay in the palette, for the strip.
 const LINE = ['look', 'erase', 'move'];
 // The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
-export const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'death', 'box', 'button', 'toggle', 'door', 'idoor', 'sensor', 'gate', 'turret', 'wire'];
+export const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'death', 'box', 'button', 'toggle', 'door', 'sensor', 'gate', 'turret', 'wire'];
 const lined = () => !!(S.camp || S.simple);
 function placeTools() {
   const box = $('campTools');

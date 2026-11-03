@@ -1,6 +1,6 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { scoreText, underLimits, colouringsOf, stuckText, nameOf, roomOf, placed, placementErrors, overLimits, check, ELEMENTS, areaOf, stepsText } from '../src/campaign/rules.js';
+import { scoreText, underLimits, colouringsOf, stuckText, nameOf, roomOf, placed, placementErrors, overLimits, check, ELEMENTS, areaOf, stepsText, listed } from '../src/campaign/rules.js';
 import { REQUIREMENTS, trailOf } from '../src/campaign/requirements.js';
 import { boxMoves } from '../src/campaign/pushes.js';
 import { allShortest, replayPath } from '../src/campaign/robot.js';
@@ -575,5 +575,11 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
     ok(`level ${id} has a room meeting two side goals at once`, v.won && v.optional.find(o => o.id === 'mix').met, JSON.stringify(v.fail || v.optional));
   }
   ok('every level the list shows has such a room (the tutorial has no side goals)', LEVELS.filter(l => !l.hidden && !l.tutorial).every(l => KNOWN.pair[l.id]));
+}
+{ // register 677: the inverted door is a door's tap now, so the level it first appears in must still need one
+  const first = LEVELS.filter(listed).find(l => (KNOWN.small[l.id] || []).some(r => r.includes('I')));
+  const rows = KNOWN.small[first.id], plain = rows.map(r => r.replace(/I/g, 'D'));
+  ok(`level ${first.id}, the inverted door's first, is won with one`, check(first, build(first, rows)).won);
+  ok(`level ${first.id} cannot be won with plain doors in its place: its goals need an inverted door`, !check(first, build(first, plain)).won && first.require.some(id => /Idoor/.test(id)), JSON.stringify(first.require));
 }
 done();

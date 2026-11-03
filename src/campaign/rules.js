@@ -8,7 +8,8 @@ import { REQUIREMENTS } from './requirements.js';
 export const ELEMENTS = {
   block: { label: 'Block', cell: 'wall' },
   button: { label: 'Button', cell: 'button:red', kind: 'button:' },
-  door: { label: 'Door', cell: 'door:red', kind: 'door:' },
+  // An inverted door is a door a tap has turned (register 676): it counts as the level's door.
+  door: { label: 'Door', cell: 'door:red', kind: 'door:', also: 'idoor:' },
   box: { label: 'Box', piece: 'box' },
   toggle: { label: 'Switch', cell: 'toggle:red', kind: 'toggle:' },
   // Placed pointing right; a tap on one with its tool turns it. Any direction is the same element.
@@ -21,7 +22,7 @@ export const ELEMENTS = {
   // Spikes, the death block: a box covers them, the robot dies on them (registers 431, 435).
   spikes: { label: 'Spikes', cell: 'death' },
 };
-const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind));
+const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind)) || (!!ELEMENTS[k].also && c.startsWith(ELEMENTS[k].also));
 // A level's colours (def.colours, red when it names none). A one-way takes one only in a level
 // that names its colours (register 241); elsewhere it has none.
 export const coloursOf = def => def.colours || ['red'];

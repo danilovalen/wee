@@ -30,7 +30,6 @@ export const TOOLS = [
   { id: 'button', label: 'Button', group: 'switches' },
   { id: 'toggle', label: 'Switch', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
-  { id: 'idoor', label: 'Inverted door', group: 'switches' },
   { id: 'sensor', label: 'Laser relay', group: 'switches' },
 ];
 // The Sandbox's tool strip (registers 381, 383): one slot per group, the rest in the group's flyout.
@@ -43,7 +42,7 @@ export const STRIP = [
   ['enemies', 'Enemies', ['enemy', 'strong']],
   ['lasers', 'Lasers', ['turret', 'sensor']],
   ['switches', 'Switches', ['button', 'toggle', 'wire']],
-  ['doors', 'Doors', ['door', 'idoor', 'gate']],
+  ['doors', 'Doors', ['door', 'gate']],
   ['floors', 'Floors', ['water', 'sticky', 'gravel']],
 ];
 export const stripOf = tool => STRIP.find(([, , ts]) => ts.includes(tool));
