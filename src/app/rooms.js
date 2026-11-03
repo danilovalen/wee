@@ -128,7 +128,7 @@ const closeAll = () => { if ($('infoBox').open) $('infoBox').close(); if (curren
 export function buildRooms(actions) {
   A = actions;
   // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
-  const EXAMPLES = ['Hex counter'];
+  const EXAMPLES = ['Hex counter', 'Box into box'];  // the second: the owner's room from register 657
   const templateRows = (list = TEMPLATES, kind = 'Template') => list.map(t => { const { level } = splitRoom(t.level);
     return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: kind === 'Example' ? t.name : '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();

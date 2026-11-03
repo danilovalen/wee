@@ -35,7 +35,7 @@ try {
   // Registers 357 and 358: the Rooms page lists the example rooms and has a way back to the menu.
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await page.waitForTimeout(300);
   const examples = await page.$$eval('#roomList li', ls => ls.map(l => l.textContent).filter(t => t.includes('Example')).join('|'));
-  check('the Rooms page lists the hex counter as its one example', /Hex counter/.test(examples) && !examples.includes('|'), examples);
+  check('the Rooms page lists its two examples, the hex counter and the box room (register 657)', /Hex counter/.test(examples) && /Box into box/.test(examples) && examples.split('|').length === 2, examples);
   // Opened from the room, Rooms has Close; its first screen, from the menu, has Menu (register 399).
   await page.evaluate(() => document.getElementById('logo').click()); await page.click('#menuSandbox'); await page.waitForTimeout(400);
   await page.click('#roomsMenu');
