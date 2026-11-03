@@ -107,6 +107,8 @@ export function holds(level, x, y, tool, wire) {
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
+  // The Door tool owns both kinds of door: a tap turns one into the other (register 676).
+  if (tool === 'door') return /^i?door:/.test(c);
   if (tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;

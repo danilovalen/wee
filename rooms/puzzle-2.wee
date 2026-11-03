@@ -1,0 +1,38 @@
+{
+ "format": "wee-level",
+ "version": 1,
+ "name": "Puzzle 2",
+ "w": 7,
+ "h": 2,
+ "cells": [
+  "",
+  "door:red",
+  "",
+  "toggle:red:on",
+  "door:red",
+  "toggle:red:on",
+  "toggle:red",
+  "goal",
+  "wall",
+  "toggle:red:on",
+  "toggle:red:on",
+  "toggle:red",
+  "toggle:red",
+  "toggle:red"
+ ],
+ "start": {
+  "x": 2,
+  "y": 0
+ },
+ "entities": [],
+ "powers": {
+  "boomerang": false,
+  "dive": false,
+  "laser": false,
+  "cycle": false,
+  "swim": false,
+  "light": false,
+  "armored": false
+ },
+ "clock": "tile"
+}

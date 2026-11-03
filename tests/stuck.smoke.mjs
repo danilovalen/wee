@@ -50,6 +50,14 @@ try {
   await page.waitForFunction(() => !document.getElementById('win').hidden, null, { timeout: 3000 }).catch(() => {});
   await page.click('#playUndo'); await page.waitForTimeout(200);
   check('Undo after a win takes the win back: its card goes, the moves count drops', await page.locator('#win').isHidden() && (await page.textContent('#moves')) === 'Moves 0', await page.textContent('#moves'));
+  // A room with no way to its goal from the start is still being built: no bubble (register 681).
+  const walled = room(['#######', '#P..#.#', '#######']);
+  walled.cells[1 * walled.w + 5] = 'goal';
+  await page.keyboard.press('e'); await page.waitForTimeout(200);
+  await page.evaluate(l => window.wee.loadLevel(l), walled);
+  await page.keyboard.press('e'); await page.waitForTimeout(300);
+  await page.keyboard.press('ArrowRight'); await page.waitForTimeout(2500);
+  check('a room that cannot be won from its start never says you are stuck (register 681)', !(await shown()));
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the stuck smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

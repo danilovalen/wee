@@ -527,6 +527,9 @@ try {
   await tapD(); const d1 = await at3(); await tapD(); const d2 = await at3(); await tapD(); const d3 = await at3();
   const dHint = await dsb.evaluate(() => document.getElementById('toolName').textContent);
   await dsb.mouse.move(db.x + 3.5 * dt, db.y + 3.5 * dt); await dsb.mouse.down(); await dsb.waitForTimeout(800); await dsb.mouse.up(); const d4 = await at3();
+  await tapD(); const d5 = await at3(); await tapD(); const d6 = await at3();
+  await dsb.mouse.move(db.x + 3.5 * dt, db.y + 3.5 * dt); await dsb.mouse.down(); await dsb.waitForTimeout(800); await dsb.mouse.up(); const d7 = await at3();
+  check('a hold removes an inverted door too (register 683)', /^door:/.test(d5) && /^idoor:/.test(d6) && d7 === '', JSON.stringify([d5, d6, d7]));
   check('a door goes down; a tap swaps it to an inverted door and back; a hold removes it; the tool says so', /^door:/.test(d1) && d2 === 'i' + d1 && d3 === d1 && d4 === '' && /make it an inverted door and back/.test(dHint), JSON.stringify([d1, d2, d3, d4, dHint]));
   await dsb.close();
   // The start is drawn as the blob (register 593): its gel green fills much of its tile.

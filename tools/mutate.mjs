@@ -1143,6 +1143,7 @@ export const M = [
   ['src/app/input.js', "    if (S.mode === 'play' && (ev.key === 'z' || ev.key === 'Z') && !ev.altKey) { undoMove(); ev.preventDefault(); return; }\n", "", 'stuck'],
   ['src/app/input.js', "  $('playUndo').onclick = $('stuckReset').onclick = () => undoMove();", "  $('playUndo').onclick = $('stuckReset').onclick = () => S.pending.push('respawn');", 'stuck'],
   ['src/app/enabled.js', "    $('playUndo').disabled = !(S.undoPlay && S.undoPlay.length) || !!S.demoRunning;", "", 'stuck'],
+  ['src/app/stuck.js', "      if (from.wins !== true) return;", "", 'stuck'],
   ['src/campaign/goals/switches.js', "return all.length > 0 && all.every(i => room.cells[i].endsWith(':on')); }", "return all.length > 0; }", 'campaign'],
   ['src/campaign/goals/switches.js', "return all.length > 0 && all.every(i => flips.get(i) >= 2);", "return all.length > 0 && all.some(i => flips.get(i) >= 2);", 'campaign'],
   ['src/campaign/goals/switches.js', "if (was) for (const i of all) if (was.has(i) !== on.has(i)) flips.set(i, flips.get(i) + 1);", "if (was) for (const i of all) if (on.has(i)) flips.set(i, flips.get(i) + 1);", 'campaign'],
@@ -1154,6 +1155,7 @@ export const M = [
   ['src/app/fit.js', ", (stage + 2 * side) / ((level.w + 2) * T), (room + 2 * top) / ((level.h + 2) * T)));", "));", 'phone'],
   ['src/editor/edit.js', "if (/^door:/.test(c)) level.cells[i] = 'i' + c; else if (/^idoor:/.test(c)) level.cells[i] = c.slice(1);", "if (/^door:/.test(c)) level.cells[i] = 'i' + c;", 'campaign-play'],
   ['src/app/input.js', "const door = S.ui.tool === 'door' && /^i?door:/.test(", "const door = false && /^i?door:/.test(", 'campaign-play'],
+  ['src/editor/edit.js', "if (tool === 'door') return /^i?door:/.test(c);", "", 'campaign-play'],
   ['src/campaign/rules.js', " || (!!ELEMENTS[k].also && c.startsWith(ELEMENTS[k].also));", ";", 'campaign'],
 ];
 
