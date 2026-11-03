@@ -100,10 +100,11 @@ try {
   if (await hex.count()) { await hex.click(); await settle(); }
   check('the example opens under its own name, unsaved (register 409)', (await page.textContent('#roomTitle')).includes('Hex counter'), await page.textContent('#roomTitle'));
   check('opening an example from an untouched room asks nothing and lands in the room', asked.length === 0 && (await at()).hash === '#/room', asked.join(' | '));
-  // The box room was saved with powers on; an example opens with none (register 653).
+  // An example saved with powers on opens with none (register 653): the test turns one on in the hex counter's file.
+  await page.evaluate(async () => { (await import('/src/level/templates.js')).TEMPLATES.find(t => t.name === 'Hex counter').level.powers.boomerang = true; });
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await settle();
-  await page.locator('#roomList .example .roomRow', { hasText: 'Box into box' }).click(); await settle();
-  check('an opened example has no powers on (register 653)', await page.evaluate(() => window.wee.getLevel().w > 0 && Object.values(window.wee.getLevel().powers).every(v => !v)) && (await page.textContent('#roomTitle')).includes('Box into box'));
+  await page.locator('#roomList .example .roomRow', { hasText: 'Hex counter' }).click(); await settle();
+  check('an opened example has no powers on (register 653)', await page.evaluate(() => window.wee.getLevel().w > 0 && Object.values(window.wee.getLevel().powers).every(v => !v)) && (await page.textContent('#roomTitle')).includes('Hex counter'));
   // A link to a place opens it; a link to a level that does not exist falls back to its list.
   await page.goto(B + '#/levels'); await settle();
   check('a link to #/levels opens the list', (await at()).open === 'campBox');

@@ -13,6 +13,7 @@ export function syncEnabled() {
     $('mode').disabled = false;
     // Reset does nothing until the run has moved away from where it would put you.
     $('respawnBtn').disabled = !!S.game && stateKey(S.game) === S.freshKey;
+    $('playUndo').disabled = !(S.undoPlay && S.undoPlay.length) || !!S.demoRunning;
     return;
   }
   // With no start (a cut took it), there is nothing to play or check until one is placed.

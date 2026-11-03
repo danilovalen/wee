@@ -21,7 +21,14 @@ try {
       for (const [i, c] of Object.entries(cells)) l.cells[+i] = c;
       window.wee.loadLevel(l);
     }, cells);
-    await p.evaluate(() => { window.__fx = new Set(); clearInterval(window.__fxTimer); window.__fxTimer = setInterval(() => { window.wee.fxTypes().forEach(t => window.__fx.add(t)); if (window.wee.demoRunning()) window.__fx.add('running'); }, 16); });
+    // Every effect is noted as it is pushed, so a short one is never missed between two polls on a busy machine.
+    await p.evaluate(async () => {
+      window.__fx = new Set(); clearInterval(window.__fxTimer);
+      const { S } = await import('/src/editor/state.js');
+      const wrap = a => { if (!a.__noted) { const push = a.push.bind(a); a.push = (...x) => { for (const f of x) window.__fx.add(f.type); return push(...x); }; a.__noted = true; } return a; };
+      if (!window.__fxHooked) { let arr = wrap(S.fx); Object.defineProperty(S, 'fx', { configurable: true, get: () => arr, set: v => { arr = wrap(v); } }); window.__fxHooked = true; }
+      window.__fxTimer = setInterval(() => { if (window.wee.demoRunning()) window.__fx.add('running'); }, 16);
+    });
     await p.click('#campRun');
     await p.waitForFunction(() => !window.wee.demoRunning(), null, { timeout: 20000 });
     await p.waitForTimeout(100);

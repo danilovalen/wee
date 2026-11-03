@@ -150,6 +150,10 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .stuck { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; white-space: nowrap;
   background: var(--panel); box-shadow: inset 0 0 0 2px var(--bad), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-m); padding: 6px 10px; z-index: 5; }
 .stuck[hidden] { display: none; }
+/* A quiet note, not an alarm (register 661): grey edge, eased in. */
+.stuck { box-shadow: inset 0 0 0 2px var(--dim), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
+@media (prefers-reduced-motion: no-preference) { .stuck:not([hidden]) { animation: stuckIn .35s ease-out; } }
+@keyframes stuckIn { from { opacity: 0; transform: translate(-50%, -6px); } }
 .check { display: flex; gap: 8px; align-items: center; margin: 4px 0 0; font-size: 0.9em; }
 .check:has(#checkText:empty) { display: none; }
 .check [hidden] { display: none; }

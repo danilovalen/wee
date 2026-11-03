@@ -476,7 +476,7 @@ export const M = [
   ['src', "  for (const i of heat.tiles) fill(i, heat.colour);", "", 'lensui'],
   ['src', "if (lines && lines.length > 1) {", "if (false) {", 'lensui'],
   ['src', "    for (const i of frames) pxStroke(g, ", "    for (const i of []) pxStroke(g, ", 'designui'],
-  ['src', "if (r.done) { $('stuck').hidden = r.value !== false; return; }", "if (r.done) return;", 'stuck'],
+  ['src/app/stuck.js', "        if (r.value === false) timer =", "        if (false) timer =", 'stuck'],
   ['src', "  watchStuck(game);\n", "", 'stuck'],
   ['src', "  $('win').hidden = true;\n  resetStuck();\n", "  $('win').hidden = true;\n", 'stuck'],
   ['src', "const r = yield* searchFrom(cloneGame(s), max);", "const r = yield* searchFrom(s, max);", 'solve'],
@@ -1136,6 +1136,14 @@ export const M = [
   ['src/app/puzzles.js', "rec.beaten = true; rec.moves = Math.min(rec.moves || n, n); write(pr);", "", 'campaign-play'],
   ['src/app/puzzles.js', "S.camp = null; S.simple = true; S.level = noPowers(level);", "S.camp = null; S.simple = true; S.level = level;", 'modes'],
   ['style.css', "#menuTutorial, #menuSandbox { grid-column: span 3; }", "", 'campaign-play'],
+  ['src/app/play.js', "S.game = last.game; S.keylog.length = last.log;", "S.game = last.game;", 'stuck'],
+  ['src/app/play.js', "(S.undoPlay ||= []).push({ game: cloneGame(game), log: S.keylog.length });", "", 'stuck'],
+  ['src/app/play.js', "$('win').hidden = true; resetStuck(); $('moves').textContent = `Moves ${S.game.move}`;", "", 'stuck'],
+  ['src/app/stuck.js', "window.__stuckMs ?? WAIT_MS", "0", 'stuck'],
+  ['src/app/stuck.js', "$('stuck').hidden = false; play('stuck');", "$('stuck').hidden = false;", 'stuck'],
+  ['src/app/input.js', "    if (S.mode === 'play' && (ev.key === 'z' || ev.key === 'Z') && !ev.altKey) { undoMove(); ev.preventDefault(); return; }\n", "", 'stuck'],
+  ['src/app/input.js', "  $('playUndo').onclick = $('stuckReset').onclick = () => undoMove();", "  $('playUndo').onclick = $('stuckReset').onclick = () => S.pending.push('respawn');", 'stuck'],
+  ['src/app/enabled.js', "    $('playUndo').disabled = !(S.undoPlay && S.undoPlay.length) || !!S.demoRunning;", "", 'stuck'],
 ];
 
 // Run only as a script: the gate imports M.

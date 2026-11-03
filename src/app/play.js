@@ -3,7 +3,7 @@ import { syncDots } from './goalCard.js';
 import { iconOn } from './glyphs.js';
 import { frame as look } from '../view/ink.js';
 import { TICK_MS } from '../rules/base.js';
-import { createGame, step, gameText } from '../rules/game.js';
+import { createGame, step, gameText, cloneGame } from '../rules/game.js';
 import { aimKey } from '../rules/player.js';
 import { drawEdit, drawPlay } from '../view/scene.js';
 import { S } from '../editor/state.js';
@@ -22,7 +22,7 @@ import { gust } from './snow.js';
 import { motionFx } from '../view/juice.js';
 import { soundFx } from './sound.js';
 import { boilOn } from '../view/sprites.js';
-import { stateKey } from '../solve/solve.js';
+import { stateKey, settled } from '../solve/solve.js';
 import { respawn } from '../rules/life.js';
 // The run as Reset would leave it, to tell whether Reset would change anything.
 const resetKey = game => { const c = structuredClone(game); respawn(c); return stateKey(c); };
@@ -35,9 +35,23 @@ export function snapshot(s) {
   return { player: { x: s.player.x, y: s.player.y }, ents };
 }
 
+// Undo in play (register 661): each move from rest keeps the run as it was before it, so Undo takes back the
+// last move. The copied report drops what was undone, so it still replays to the same end.
+const KEEP = 300;
+const counts = k => !/^(power|clock):/.test(k);
+export function undoMove() {
+  const last = S.game && !S.demoRunning && S.undoPlay && S.undoPlay.pop();
+  if (!last) return false;
+  S.game = last.game; S.keylog.length = last.log; S.prev = snapshot(S.game); S.pending = []; S.acc = 0;
+  $('win').hidden = true; resetStuck(); $('moves').textContent = `Moves ${S.game.move}`;
+  syncEnabled(); S.redraw = true;
+  return true;
+}
+
 export function tick() {
   const game = S.game;
   feedDemo(game);
+  if (!S.demoRunning && S.pending.some(counts) && settled(game)) { (S.undoPlay ||= []).push({ game: cloneGame(game), log: S.keylog.length }); if (S.undoPlay.length > KEEP) S.undoPlay.shift(); }
   for (const k of S.pending) S.keylog.push({ t: game.tick, k });
   S.prev = snapshot(game);
   const before = { x: game.player.x, y: game.player.y }, wasDir = game.player.dir, openBefore = JSON.stringify(game.open);
@@ -93,7 +107,7 @@ export function setMode(m, keep) {
   // Play from here: the same room, starting on the tile you looked at.
   const from = m === 'play' && S.playFrom ? { ...S.level, start: S.playFrom } : S.level;
   S.playFrom = null;
-  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.game = createGame(from); S.freshKey = resetKey(S.game); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
+  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.game = createGame(from); S.freshKey = resetKey(S.game); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; S.undoPlay = []; }
   else S.game = null;
   syncEnabled();
 }

@@ -2,7 +2,7 @@
 import { describe, holds, place, turnGate, turnLaser, turnSwitch } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch, now } from './dom.js';
-import { setMode, aim } from './play.js';
+import { setMode, aim, undoMove } from './play.js';
 import { begin, end, change, step as undoStep } from './undo.js';
 import { save } from './rooms.js';
 import { selectDown, selectMove, selectUp, selectKey } from './select.js';
@@ -107,10 +107,13 @@ export function bindInput() {
   canvas.addEventListener('pointercancel', () => { S.carry = null; lift(); });
   canvas.addEventListener('pointerleave', () => { S.hover = null; });
 
+  $('playUndo').onclick = $('stuckReset').onclick = () => undoMove();
   window.addEventListener('keydown', ev => {
     // Typing in a field is typing, not a shortcut.
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName) && !['checkbox', 'radio', 'button'].includes(ev.target.type)) return;
     if (S.mode === 'edit' && selectKey(ev)) return;
+    // In play, Z (or Ctrl+Z) takes back your last move (register 661).
+    if (S.mode === 'play' && (ev.key === 'z' || ev.key === 'Z') && !ev.altKey) { undoMove(); ev.preventDefault(); return; }
     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'z' || ev.key === 'Z' || ev.key === 'y')) {
       undoStep(ev.key === 'z' && !ev.shiftKey, () => { syncPanel(); fit(); });
       ev.preventDefault(); return;

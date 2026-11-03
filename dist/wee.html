@@ -165,6 +165,10 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .stuck { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; white-space: nowrap;
   background: var(--panel); box-shadow: inset 0 0 0 2px var(--bad), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-m); padding: 6px 10px; z-index: 5; }
 .stuck[hidden] { display: none; }
+/* A quiet note, not an alarm (register 661): grey edge, eased in. */
+.stuck { box-shadow: inset 0 0 0 2px var(--dim), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
+@media (prefers-reduced-motion: no-preference) { .stuck:not([hidden]) { animation: stuckIn .35s ease-out; } }
+@keyframes stuckIn { from { opacity: 0; transform: translate(-50%, -6px); } }
 .check { display: flex; gap: 8px; align-items: center; margin: 4px 0 0; font-size: 0.9em; }
 .check:has(#checkText:empty) { display: none; }
 .check [hidden] { display: none; }
@@ -1093,13 +1097,14 @@ body.challenge .growBar { display: none !important; }
       <div id="lensChips" class="chips" hidden></div>
       <div id="pad" class="pad" hidden>
         <button id="hideBtn" type="button">Hide / Swim</button>
+        <button id="playUndo" type="button" title="Undo your last move (Z)">Undo</button>
         <button id="respawnBtn" type="button">Reset</button>
         <button id="reportBtn" type="button">Copy report</button>
         <span id="moves" class="moves"></span>
       </div>
       <div id="stuck" class="stuck" hidden>
-        <span>The goal is out of reach.</span>
-        <button id="stuckReset" type="button">Reset</button>
+        <span>Stuck? Undo your last move.</span>
+        <button id="stuckReset" type="button">Undo</button>
       </div>
       <div id="win" class="win" hidden>
         <b id="winText"></b>
@@ -1838,6 +1843,8 @@ const VOICES = {
   win: () => [523, 659, 784, 1047].forEach((f, i) => blip(f, f, 120, 'square', 0.035, i * 90)),
   star: () => { blip(988, 988, 70, 'square', 0.03); blip(1319, 1319, 120, 'square', 0.03, 70); },
   tick: () => blip(1200, 1500, 30, 'square', 0.02),
+  // Two soft falling notes: undo (register 661).
+  stuck: () => { blip(660, 640, 90, 'triangle', 0.035); blip(440, 420, 140, 'triangle', 0.035, 110); },
 };
 const play = (name, f = {}) => VOICES[name] && VOICES[name](f);
 
@@ -8491,6 +8498,7 @@ function syncEnabled() {
     $('mode').disabled = false;
     // Reset does nothing until the run has moved away from where it would put you.
     $('respawnBtn').disabled = !!S.game && stateKey(S.game) === S.freshKey;
+    $('playUndo').disabled = !(S.undoPlay && S.undoPlay.length) || !!S.demoRunning;
     return;
   }
   // With no start (a cut took it), there is nothing to play or check until one is placed.
@@ -10816,7 +10824,7 @@ function buildPanels(actions) {
   document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { change(() => { S.level.clock = r.value; }); if (S.game) S.pending.push('clock:' + r.value); });
   $('mode').onclick = () => setMode(S.mode === 'play' ? 'edit' : 'play');
   $('hideBtn').onclick = () => S.pending.push('hide');
-  $('respawnBtn').onclick = $('stuckReset').onclick = () => S.pending.push('respawn');
+  $('respawnBtn').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
   $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
@@ -11101,28 +11109,34 @@ const m106 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m26;
 const { S } = m41;
 const { $ } = m0;
+const { play } = m6;
 // While you play: once everything has come to rest, a search in the background asks whether
-// the goal can still be reached, and says so when it cannot. All copy is draft.
+// the goal can still be reached. When it cannot, a few seconds later a quiet bubble suggests Undo, with a
+// sound that means "undo" (register 661).
 
 
 
-const SLICE_MS = 8;
-let job = null;
 
-function resetStuck() { job = null; $('stuck').hidden = true; }
+const SLICE_MS = 8, WAIT_MS = 2500;
+let job = null, timer = null;
+
+function resetStuck() { job = null; clearTimeout(timer); $('stuck').hidden = true; }
 
 function watchStuck(game) {
   if (game.won || !settled(game) || unsearchable(S.played)) return;
   const key = stateKey(game);
   if (job && job.key === key) return;
   const me = job = { key }, it = canWin(game);
-  $('stuck').hidden = true;
+  $('stuck').hidden = true; clearTimeout(timer);
   const slice = () => {
     if (job !== me) return;
     const until = performance.now() + SLICE_MS;
     for (;;) {
       const r = it.next();
-      if (r.done) { $('stuck').hidden = r.value !== false; return; }
+      if (r.done) {
+        if (r.value === false) timer = setTimeout(() => { if (job === me) { $('stuck').hidden = false; play('stuck'); } }, window.__stuckMs ?? WAIT_MS);
+        return;
+      }
       if (performance.now() > until) break;
     }
     setTimeout(slice, 0);
@@ -11137,7 +11151,7 @@ const { syncDots } = m53;
 const { iconOn } = m2;
 const { frame: look } = m8;
 const { TICK_MS } = m7;
-const { createGame, step, gameText } = m25;
+const { createGame, step, gameText, cloneGame } = m25;
 const { aimKey } = m24;
 const { drawEdit, drawPlay } = m48;
 const { S } = m41;
@@ -11156,7 +11170,7 @@ const { gust } = m72;
 const { motionFx } = m47;
 const { soundFx } = m6;
 const { boilOn } = m12;
-const { stateKey } = m26;
+const { stateKey, settled } = m26;
 const { respawn } = m18;
 const { syncEnabled } = m79;
 const { enterPlay, leavePlay, follow, clearView } = m91;
@@ -11196,9 +11210,23 @@ function snapshot(s) {
   return { player: { x: s.player.x, y: s.player.y }, ents };
 }
 
+// Undo in play (register 661): each move from rest keeps the run as it was before it, so Undo takes back the
+// last move. The copied report drops what was undone, so it still replays to the same end.
+const KEEP = 300;
+const counts = k => !/^(power|clock):/.test(k);
+function undoMove() {
+  const last = S.game && !S.demoRunning && S.undoPlay && S.undoPlay.pop();
+  if (!last) return false;
+  S.game = last.game; S.keylog.length = last.log; S.prev = snapshot(S.game); S.pending = []; S.acc = 0;
+  $('win').hidden = true; resetStuck(); $('moves').textContent = `Moves ${S.game.move}`;
+  syncEnabled(); S.redraw = true;
+  return true;
+}
+
 function tick() {
   const game = S.game;
   feedDemo(game);
+  if (!S.demoRunning && S.pending.some(counts) && settled(game)) { (S.undoPlay ||= []).push({ game: cloneGame(game), log: S.keylog.length }); if (S.undoPlay.length > KEEP) S.undoPlay.shift(); }
   for (const k of S.pending) S.keylog.push({ t: game.tick, k });
   S.prev = snapshot(game);
   const before = { x: game.player.x, y: game.player.y }, wasDir = game.player.dir, openBefore = JSON.stringify(game.open);
@@ -11254,7 +11282,7 @@ function setMode(m, keep) {
   // Play from here: the same room, starting on the tile you looked at.
   const from = m === 'play' && S.playFrom ? { ...S.level, start: S.playFrom } : S.level;
   S.playFrom = null;
-  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.game = createGame(from); S.freshKey = resetKey(S.game); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; }
+  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.game = createGame(from); S.freshKey = resetKey(S.game); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; S.undoPlay = []; }
   else S.game = null;
   syncEnabled();
 }
@@ -11327,14 +11355,14 @@ async function copyReport() {
   catch { $('reportText').value = text; $('reportBox').showModal(); $('reportText').select(); }
 }
 function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mode, true), 2500); }
-return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
+return { snapshot, undoMove, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
 const m108 = (() => {
 const { describe, holds, place, turnGate, turnLaser, turnSwitch } = m96;
 const { S } = m41;
 const { $, canvas, touch, now } = m0;
-const { setMode, aim } = m107;
+const { setMode, aim, undoMove } = m107;
 const { begin, end, change, step: undoStep } = m89;
 const { save } = m88;
 const { selectDown, selectMove, selectUp, selectKey } = m102;
@@ -11454,10 +11482,13 @@ function bindInput() {
   canvas.addEventListener('pointercancel', () => { S.carry = null; lift(); });
   canvas.addEventListener('pointerleave', () => { S.hover = null; });
 
+  $('playUndo').onclick = $('stuckReset').onclick = () => undoMove();
   window.addEventListener('keydown', ev => {
     // Typing in a field is typing, not a shortcut.
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName) && !['checkbox', 'radio', 'button'].includes(ev.target.type)) return;
     if (S.mode === 'edit' && selectKey(ev)) return;
+    // In play, Z (or Ctrl+Z) takes back your last move (register 661).
+    if (S.mode === 'play' && (ev.key === 'z' || ev.key === 'Z') && !ev.altKey) { undoMove(); ev.preventDefault(); return; }
     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'z' || ev.key === 'Z' || ev.key === 'y')) {
       undoStep(ev.key === 'z' && !ev.shiftKey, () => { syncPanel(); fit(); });
       ev.preventDefault(); return;

@@ -110,7 +110,7 @@ export function buildPanels(actions) {
   document.querySelectorAll('input[name=clock]').forEach(r => r.onchange = () => { change(() => { S.level.clock = r.value; }); if (S.game) S.pending.push('clock:' + r.value); });
   $('mode').onclick = () => setMode(S.mode === 'play' ? 'edit' : 'play');
   $('hideBtn').onclick = () => S.pending.push('hide');
-  $('respawnBtn').onclick = $('stuckReset').onclick = () => S.pending.push('respawn');
+  $('respawnBtn').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
   $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };

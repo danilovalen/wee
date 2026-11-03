@@ -35,6 +35,8 @@ export const VOICES = {
   win: () => [523, 659, 784, 1047].forEach((f, i) => blip(f, f, 120, 'square', 0.035, i * 90)),
   star: () => { blip(988, 988, 70, 'square', 0.03); blip(1319, 1319, 120, 'square', 0.03, 70); },
   tick: () => blip(1200, 1500, 30, 'square', 0.02),
+  // Two soft falling notes: undo (register 661).
+  stuck: () => { blip(660, 640, 90, 'triangle', 0.035); blip(440, 420, 140, 'triangle', 0.035, 110); },
 };
 export const play = (name, f = {}) => VOICES[name] && VOICES[name](f);
 
