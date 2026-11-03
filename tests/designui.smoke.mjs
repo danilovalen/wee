@@ -4,6 +4,8 @@ import { chromium } from 'playwright-core';
 import { readFileSync } from 'node:fs';
 import { serve } from '../tools/serve.mjs';
 import { suite, pickTool } from './lib.mjs';
+import { runMetrics } from '../src/solve/metrics.js';
+import { metricLines } from '../src/app/metricLines.js';
 
 const { check, done } = suite('design-ui');
 const server = await serve(5189);
@@ -24,6 +26,9 @@ try {
   const n = await notes();
   check('a power the room needs says what it saves', n.includes('Without Boomerang: 19 moves instead of 9.'), n);
   check('the powers that change nothing are named together', n.includes('Without Dive, Laser, Cycle: no change.'), n);
+  // The room's metrics (register 650): ruin, first ruin, places, choices, forced steps, ways to win.
+  const want = metricLines(runMetrics(first));
+  check('the room\'s six metrics are in the notes, as measured', want.length === 6 && want.every(t => n.includes(t)), JSON.stringify(want.filter(t => !n.includes(t))));
   check('routes and dead ends are counted', n.includes('2 shortest routes.') && n.includes('103 of 186 positions can no longer reach the goal.'), n);
   check('a piece a plain wall could replace is named', n.includes('As a wall, these do the same job: box at 3, 1.'), n);
   // Check opens the well on its findings, and the status bar counts the five notes.

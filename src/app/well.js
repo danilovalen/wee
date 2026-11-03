@@ -13,11 +13,11 @@ export function openWell(tab) {
 }
 export function closeWell() { WELL.open = false; syncWell(); }
 
-// Warnings plus design notes, not counting the line that says they are being worked out.
+// Warnings plus design notes, not counting the line that says they are being worked out, nor the room's measures.
 function findings() {
   const lint = $('lintBox').hidden ? 0 : $('lintList').children.length;
   // Notes dimmed by an edit are about the room before it, so they are not counted.
-  const design = $('designBox').hidden || $('designBox').classList.contains('stale') ? 0 : $('designList').querySelectorAll('li:not(.working)').length;
+  const design = $('designBox').hidden || $('designBox').classList.contains('stale') ? 0 : $('designList').querySelectorAll('li:not(.working):not(.metric)').length;  // the room's measures (650) are not findings
   return lint + design;
 }
 

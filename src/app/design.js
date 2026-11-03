@@ -2,6 +2,8 @@
 // how many shortest routes there are, and how many positions trap you. Runs a slice at a
 // time and stops when the room changes. All copy is draft.
 import { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } from '../solve/design.js';
+import { roomMetrics } from '../solve/metrics.js';
+import { metricLines } from './metricLines.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
 import { syncWell } from './well.js';
@@ -54,6 +56,8 @@ export function runDesign(par) {
       S.design.traps = r.traps;
       lines.push(line(`${r.routes} shortest ${r.routes === 1 ? 'route' : 'routes'}.`), line(`${r.dead} of ${r.positions} positions can no longer reach the goal.`));
     } else lines.push(line('Too many positions to count routes and dead ends.'));
+    sliced(roomMetrics(level), stamp, m => {
+    for (const t of metricLines(m)) { const li = line(t); li.className = 'metric'; lines.push(li); }
     sliced(powerCheck(level, MAX), stamp, ps => {
       const idle = ps.filter(p => p.without === par);
       for (const p of ps) if (p.without !== par) lines.push(line(`Without ${NAME[p.power]}: ${moves(p.without)} instead of ${par}.`));
@@ -70,6 +74,7 @@ export function runDesign(par) {
         if (!unused.length && !plain.length) lines.push(line('Each piece and tile changes the answer, and nothing could be a plain wall instead.'));
         swap();
       });
+    });
     });
   });
 }
