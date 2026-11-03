@@ -11,6 +11,11 @@ const m = rows => runMetrics(room(rows));
 const open = m(['######', '#....#', '#P..G#', '######']);
 check('an open room: nothing can lose the run, and no first ruin', open.ruin === 0 && open.firstRuin === null, JSON.stringify(open));
 check('it counts the places the blob can reach', open.places >= 3, JSON.stringify(open));
+// Mashing (register 685), exact: one arrow of four wins at once, so within 2 presses it is 1/4 + 3/4 x 1/4.
+const lane = m(['#####', '#P.G#', '#####']);
+check('mashing: random arrows win as often as the arithmetic says, and half win by press 3', lane.mash === 0.4375 && lane.mashBudget === 2 && lane.mashHalf === 3, JSON.stringify(lane));
+const deadly = m(['######', '#xP.G#', '######']);
+check('a press that dies ends the try, so mashing wins less', deadly.mash < lane.mash, JSON.stringify(deadly));
 const spikes = m(['######', '#xP.G#', '######']);
 check('spikes beside the start: some moves kill, from the very first move', spikes.hazard > 0 && spikes.lock === 0 && spikes.firstRuin === 0, JSON.stringify(spikes));
 const lock = m(['#######', '#G.P>.#', '#######']);
@@ -29,7 +34,7 @@ check('the shortest ways match the routes the design notes count', fm.shortest =
 check('a room too big to measure says so', runMetrics(room(['######', '#....#', '#P..G#', '######']), 2) === null);
 // The lines say each number in plain words, one sentence each.
 const lines = metricLines(spikes);
-check('six lines, each one sentence', lines.length === 6 && lines.every(l => l.endsWith('.') && l.split('. ').length === 1), JSON.stringify(lines));
+check('seven lines, each one sentence', lines.length === 7 && lines.every(l => l.endsWith('.') && l.split('. ').length === 1), JSON.stringify(lines));
 check('a room that cannot lose says so', metricLines(open)[0] === 'Ruin: no move can lose the run.' && metricLines(open)[1] === 'First ruin: never.');
 check('too big says so', metricLines(null)[0].startsWith('Too many positions'));
 done();

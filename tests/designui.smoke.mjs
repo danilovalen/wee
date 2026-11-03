@@ -28,7 +28,7 @@ try {
   check('the powers that change nothing are named together', n.includes('Without Dive, Laser, Cycle: no change.'), n);
   // The room's metrics (register 650): ruin, first ruin, places, choices, forced steps, ways to win.
   const want = metricLines(runMetrics(first));
-  check('the room\'s six metrics are in the notes, as measured', want.length === 6 && want.every(t => n.includes(t)), JSON.stringify(want.filter(t => !n.includes(t))));
+  check('the room\'s seven metrics are in the notes, as measured', want.length === 7 && want.every(t => n.includes(t)), JSON.stringify(want.filter(t => !n.includes(t))));
   check('routes and dead ends are counted', n.includes('2 shortest routes.') && n.includes('103 of 186 positions can no longer reach the goal.'), n);
   check('a piece a plain wall could replace is named', n.includes('As a wall, these do the same job: box at 3, 1.'), n);
   check('walls the answer does not need are named, each one tested alone (register 686)', /Without these walls, nothing changes: \d+, \d+/.test(n), n);

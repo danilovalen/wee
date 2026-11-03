@@ -1,4 +1,5 @@
 // The room's metrics in plain words (register 650), apart from the page so a test can read them.
+import { MASH_CAP } from '../solve/metrics.js';
 const pct = x => `${Math.round(x * 100)}%`;
 export function metricLines(m) {
   if (!m) return ['Too many positions to measure the room.'];
@@ -9,5 +10,6 @@ export function metricLines(m) {
     `Choices: ${m.choices.toFixed(1)} safe moves per step on the shortest path.`,
     `Forced steps: ${pct(m.forced)} of the shortest path has one safe move.`,
     `Ways to win: ${m.shortest} shortest, ${m.near} within 2 moves more.`,
+    `Mashing: random arrows win ${m.mash > 0 && m.mash < 0.005 ? 'under 1%' : pct(m.mash)} of tries within ${m.mashBudget ?? 0} presses, ${m.mashHalf == null ? `and most tries do not win within ${MASH_CAP}` : `and half of all tries by press ${m.mashHalf}`}.`,
   ];
 }
