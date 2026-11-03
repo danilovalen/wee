@@ -1,6 +1,6 @@
 // The one text legend for rooms (register 462): tests, tools and the known rooms all read it.
 //   .  floor          #  block          P  robot start    G  goal          x  spikes
-//   t T  red, blue switch       o q  red, blue button      D Q  red, blue door     X  red-and-blue door
+//   t T  red, blue switch       u U  the same, placed on (register 668)       o q  red, blue button      D Q  red, blue door     X  red-and-blue door
 //   I J  red, blue inverted door          r R  red, blue relay
 //   > < ^ v  one-way that way   =  one-way across   |  one-way up and down
 //   n e s w  laser firing up, right, down, left    N E S W  the same, pushable
@@ -8,7 +8,7 @@
 //   ~  water   %  sticky puddle   g  gravel   k  breakable block   C  checkpoint
 //   8 6 2 4  spring facing up, right, down, left (numpad)   7 9 1 3  triangle, solid in that corner (7 = north-west)
 export const CELL = {
-  '#': 'wall', x: 'death', G: 'goal', t: 'toggle:red', T: 'toggle:blue', o: 'button:red', q: 'button:blue',
+  '#': 'wall', x: 'death', G: 'goal', t: 'toggle:red', T: 'toggle:blue', u: 'toggle:red:on', U: 'toggle:blue:on', o: 'button:red', q: 'button:blue',
   D: 'door:red', Q: 'door:blue', X: 'door:red|blue', I: 'idoor:red', J: 'idoor:blue', r: 'sensor:red', R: 'sensor:blue',
   '>': 'gate:right', '<': 'gate:left', '^': 'gate:up', v: 'gate:down', '=': 'gate:right,left', '|': 'gate:up,down',
   '~': 'water', '%': 'sticky', g: 'gravel', k: 'crack', C: 'checkpoint',

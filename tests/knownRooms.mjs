@@ -4,7 +4,7 @@ export const KNOWN = {
   // The smallest winning room found per level; its size is the size goal (register 486).
   small: {
     1: ['P#', 'G.', '..'],
-    2: ['.tD', 'G.#', 'DP.'],
+    2: ['...', 'PGD', 'Duu'],  // its switches start on (register 670)
     3: ['#G#', 'PtD', '#.D'],
     4: ['Pt.', 'D.t', '..G', 'D.D'],
     5: ['.G..', '.#..', '.B.P', '....'],
@@ -33,7 +33,7 @@ export const KNOWN = {
   // A winning room that meets two side goals at once, per level (register 506).
   pair: {
     1: ['P.#.', '...#', '.#..', '..#G'],
-    2: ['Dt.', '..P', 'DGD'],
+    2: ['D.P', 'uu#', 'DDG'],
     3: ['DG.', 't..', 'PD.'],
     4: ['Pt.', 'D..', 'G.t', '...'],
     5: ['#..#..', '......', '.B.#..', '#.P...', '...#.#', '......', '.B.#..', '##....', '.#....', '.#.G.#', '..##..'],
@@ -101,7 +101,7 @@ export const KNOWN = {
     // Found by tools/climb.mjs (register 456): 11 moves, level 24's exact count.
     24: ['.#..', '.r.x', '.N.G', 'v.#.', '.N.N', '..P.'],
     1: ['P.#.#', '.....', '.###.', '.#...', '.#..G'],
-    2: ['P..D#', '..t..', '.##.#', '.#...', '#...G'],
+    2: ['G#P', 'D#D', 'u..'],
     3: ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'],
     4: ['Pt.tD', '.#...', '.....', '###.#', '.#..G'],
     // His room (register 271): 19 moves; boxes push boxes since register 278, so two boxes are needed.

@@ -1010,7 +1010,6 @@ export const M = [
   ['src/view/pieces.js', "    if (e.crate) drawSprite(g, 'crateFrame', 0, 0);", "", 'campaign-play'],
   ['src/view/sprites.js', "body = lit ? INK.zap : '#727072'", "body = lit ? INK.beam : '#727072'", 'sim'],
   // Rows 558, 609-611, 616: the floor plan's locks.
-  ['src/campaign/progression.js', "  if (i > 0) return beaten(p, b[i - 1]);", "  if (i > 0) return true;", 'progression'],
   ['src/campaign/progression.js', "export const sideRoom = k => (k % 2 ? PUZZLES[(k - 1) / 2] : CHALLENGES[k / 2 - 1]) || null;", "export const sideRoom = k => CHALLENGES[k - 1] || null;", 'progression'],
   ['src/campaign/progression.js', "  return k < 0 || beaten(p, b[k]);", "  return true;", 'progression'],
   ['src/app/goalCard.js', "allOpen() || !builders().includes(def) || sideGoalsOpen(def.id, progress());", "true;", 'unlock'],
@@ -1144,6 +1143,11 @@ export const M = [
   ['src/app/input.js', "    if (S.mode === 'play' && (ev.key === 'z' || ev.key === 'Z') && !ev.altKey) { undoMove(); ev.preventDefault(); return; }\n", "", 'stuck'],
   ['src/app/input.js', "  $('playUndo').onclick = $('stuckReset').onclick = () => undoMove();", "  $('playUndo').onclick = $('stuckReset').onclick = () => S.pending.push('respawn');", 'stuck'],
   ['src/app/enabled.js', "    $('playUndo').disabled = !(S.undoPlay && S.undoPlay.length) || !!S.demoRunning;", "", 'stuck'],
+  ['src/campaign/goals/switches.js', "return all.length > 0 && all.every(i => room.cells[i].endsWith(':on')); }", "return all.length > 0; }", 'campaign'],
+  ['src/campaign/goals/switches.js', "return all.length > 0 && all.every(i => flips.get(i) >= 2);", "return all.length > 0 && all.some(i => flips.get(i) >= 2);", 'campaign'],
+  ['src/campaign/goals/switches.js', "if (was) for (const i of all) if (was.has(i) !== on.has(i)) flips.set(i, flips.get(i) + 1);", "if (was) for (const i of all) if (on.has(i)) flips.set(i, flips.get(i) + 1);", 'campaign'],
+  ['src/campaign/progression.js', "export const AHEAD = 3;", "export const AHEAD = 1;", 'progression'],
+  ['src/campaign/progression.js', "beaten(p, d) ? k + 1 : f, 0);", "beaten(p, d) && k === f ? k + 1 : f, 0);", 'progression'],
 ];
 
 // Run only as a script: the gate imports M.

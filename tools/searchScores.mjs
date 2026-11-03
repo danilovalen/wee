@@ -106,6 +106,14 @@ export const SCORES = {
   // The most relays lit at once, as a share; and the fewest (register 375).
   laserThroughEveryRelay: (room, moves) => { let best = 0; replayPath(room, moves, s => { const r = s.cells.flatMap((c, i) => /^sensor:/.test(c || '') ? [i] : []); if (r.length) best = Math.max(best, r.filter(i => s.lit.has(i)).length / r.length); }); return 0.9 * best; },
   laserThroughNoRelay: (room, moves) => { let best = 0; replayPath(room, moves, s => { const r = s.cells.flatMap((c, i) => /^sensor:/.test(c || '') ? [i] : []); if (r.length) best = Math.max(best, 1 - r.filter(i => s.lit.has(i)).length / r.length); }); return 0.9 * best; },
+  // Register 670: the share of switches placed on, and of the flips every switch still owes.
+  everySwitchStartsOn: room => { const all = room.cells.filter(c => c.startsWith('toggle:')); return all.length ? all.filter(c => c.endsWith(':on')).length / all.length : 0; },
+  everySwitchFlipsTwice: (room, moves) => {
+    const all = room.cells.flatMap((c, i) => c.startsWith('toggle:') ? [i] : []), flips = new Map(all.map(i => [i, 0]));
+    let was = null;
+    replayPath(room, moves, s => { const on = new Set(s.toggled); if (was) for (const i of all) if (was.has(i) !== on.has(i)) flips.set(i, flips.get(i) + 1); was = on; });
+    return all.length ? mean(all.map(i => Math.min(2, flips.get(i)) / 2)) : 0;
+  },
   everyToggleOffAtEnd: (room, moves) => {
     const n = room.cells.filter(c => c.startsWith('toggle:')).length;
     return n ? 1 - replayPath(room, moves, () => {}).toggled.length / n : 0;

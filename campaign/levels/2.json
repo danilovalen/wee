@@ -28,10 +28,11 @@
  "rules": [],
  "require": [
   "hitsClosedDoor",
-  "throughOpenDoor"
+  "throughOpenDoor",
+  "everySwitchStartsOn"
  ],
  "optional": [
   "throughOpenDoorTwice",
-  "robotFlipsSwitchTwice"
+  "everySwitchFlipsTwice"
  ]
 }

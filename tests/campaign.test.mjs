@@ -260,7 +260,8 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
 }
 { // level 2: a toggle, a door, run into it closed, then go through it open
   const d = level('2');
-  const v = check(d, build(d, ['#######', '#P..#.#', '#.t...#', '###D.##', '#.....#', '#....G#', '#######']));
+  // Its switches start on (register 670): a room the search found.
+  const v = check(d, build(d, ['D.P', 'uu#', 'DDG']));
   ok('level 2 can be won', v.ok && v.won && v.length >= 5 && v.length <= 9, JSON.stringify(v.fail || v.length));
   const lazy = check(d, build(d, ['', '#P...t#', '', '', '', '#...D.#']));
   ok('a door the robot never meets closed fails level 2', lazy.ok && !lazy.won, JSON.stringify(lazy.fail));
@@ -445,7 +446,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
     // Mix holds where one room meets two goals at once: level 5's smallest room also takes exactly 8.
     if (l.id === '2') {
       // Level 2's own path goal, met on every shortest path of a room the search found.
-      const w2 = check(l, build(l, ['....D.', 'DP.D.#', '#.....', '..t.G.']));
+      const w2 = check(l, build(l, ['G#P', 'D#D', 'u..']));
       ok('level 2: a known room wins and meets through an open door twice', w2.won && w2.optional.find(o => o.id === 'throughOpenDoorTwice').met, JSON.stringify(w2.fail || w2.optional));
       ok('a path goal is not met when a shortest path misses it', !v.optional.find(o => o.id === 'throughOpenDoorTwice').met, JSON.stringify(v.optional));
     }
@@ -536,6 +537,10 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
    ['robotTwoDirections', false, ['#####', '#P..#', '#...#', '#####'], ['right', 'down', 'left']],
    ['robotFlipsSwitchTwice', true, ['#######', '#Pt...#', '#.#####', '#######'], ['right', 'left']],
    ['robotFlipsSwitchTwice', false, ['#######', '#Pt...#', '#######'], ['right']],
+   ['everySwitchStartsOn', true, ['#Puu.#'], []], ['everySwitchStartsOn', false, ['#Put.#'], []], ['everySwitchStartsOn', false, ['#P...#'], []],
+   ['everySwitchFlipsTwice', true, ['#######', '#Pt...#', '#.#####', '#######'], ['right', 'left']],
+   ['everySwitchFlipsTwice', true, ['#######', '#Pt.t.#', '#.#####', '#######'], ['right', 'left']], ['everySwitchFlipsTwice', false, ['#######', '#Pt.t.#', '#######'], ['right']], ['everySwitchFlipsTwice', false, ['#######', '#Pt#t.#', '#######'], ['right', 'left', 'right']],
+   ['everySwitchFlipsTwice', false, ['#######', '#Pu...#', '#######'], ['right']],
    ['atMostOneDoor', true, ['#P.D.#'], []], ['atMostOneDoor', false, ['#PDD.#'], []],
    ['robotThroughFourDoors', true, ['#P.DDDD.#', '#o......#'], ['right'], null, r => { r.entities.push({ kind: 'box', x: 1, y: 1, dir: 1, mode: 'input' }); }],
    ['everyBoxHitsBlockTwice', true, ['######', '#....#', '#PB..#', '#....#', '######'], ['right', 'up', 'right', 'down']],

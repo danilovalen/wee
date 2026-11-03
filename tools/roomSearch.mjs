@@ -28,6 +28,8 @@ export function searcher(def, seed = 1, opts = {}) {
   // An item is [element, x, y, direction, colour]; a level's colours tint its buttons, doors,
   // switches and (in a level that names its colours) one-ways.
   const cols = coloursOf(def), choices = el => colouringsOf(def, el);
+  // A one-way or laser faces a way; a switch is placed off or on (register 671).
+  const dirOf = el => el === 'gate' || el === 'laser' ? pick(DIRS) : el === 'toggle' ? pick([null, 'on']) : null;
   function make(g) {
     const r = roomOf({ ...def, size: [g.w, g.h] });
     r.cells.fill(''); r.start = { ...g.start };
@@ -37,7 +39,7 @@ export function searcher(def, seed = 1, opts = {}) {
       if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right') + (def.colours ? '@' + col : '');
       else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
       else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, ...(crateOf(c) ? { crate: true } : {}), turret: { dirs: [d || 'right'], mode: 'input' } });
-      else r.cells[y * g.w + x] = el === 'block' ? 'wall' : el === 'spikes' ? 'death' : CELL[el] + ':' + col;
+      else r.cells[y * g.w + x] = el === 'block' ? 'wall' : el === 'spikes' ? 'death' : CELL[el] + ':' + col + (el === 'toggle' && d === 'on' ? ':on' : '');
       if (['gate', 'door', 'idoor', 'relay'].includes(el) && pushingsOf(def, el)[0]) (r.crates ||= []).push({ x, y });
     }
     return r;
@@ -50,7 +52,7 @@ export function searcher(def, seed = 1, opts = {}) {
   // A laser item's last slot says whether it is pushable: the level's only choice, or either when it offers both (register 373).
   const pushes = pushingsOf(def, 'laser'), crateOf = c => pushes.length > 1 ? c === 'crate' : pushes[0];
   const slot = el => el === 'laser' ? (pushes.length > 1 && rnd() < 0.5 ? 'crate' : null) : TINTS.includes(el) ? pick(choices(el)) : null;
-  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push([el, ...f, el === 'gate' || el === 'laser' ? pick(DIRS) : null, slot(el)]); };
+  const add = (g, el) => { const f = freeTile(g); if (f) g.items.push([el, ...f, dirOf(el), slot(el)]); };
   function random() {
     const w = 4 + Math.floor(rnd() * 5), h = 4 + Math.floor(rnd() * 5);
     const g = { w, h, start: { x: Math.floor(rnd() * w), y: Math.floor(rnd() * h) }, goal: null, items: [] };
@@ -93,7 +95,7 @@ export function searcher(def, seed = 1, opts = {}) {
     g.items = g.items.filter(i => i[1] !== x || i[2] !== y);
     const have = g.items.filter(i => i[0] === el);
     if (have.length && rnd() < 0.6) { const it = pick(have); [it[1], it[2]] = [x, y]; }
-    else g.items.push([el, x, y, el === 'gate' || el === 'laser' ? pick(DIRS) : null, slot(el)]);
+    else g.items.push([el, x, y, dirOf(el), slot(el)]);
     return true;
   }
   // Edits that aim (register 364): a piece on the robot's path, a piece or the goal on a beam, an
@@ -130,7 +132,7 @@ export function searcher(def, seed = 1, opts = {}) {
   function mutate(g0) {
     if (opts.aim !== false && rnd() < 0.3) { const a = aim(structuredClone(g0)); if (a) { seen.delete(a); return a; } }
     const g = structuredClone(g0), r = rnd(), els = Object.keys(def.palette);
-    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if ((it[0] === 'gate' || it[0] === 'laser') && rnd() < 0.5) it[3] = pick(DIRS); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(choices(it[0])); if (it[0] === 'laser' && pushes.length > 1 && rnd() < 0.3) it[4] = it[4] === 'crate' ? null : 'crate'; }
+    if (r < 0.35 && g.items.length) { const f = freeTile(g), it = pick(g.items); if (f) [it[1], it[2]] = f; if ((it[0] === 'gate' || it[0] === 'laser' || it[0] === 'toggle') && rnd() < 0.5) it[3] = dirOf(it[0]); if (TINTS.includes(it[0]) && rnd() < 0.3) it[4] = pick(choices(it[0])); if (it[0] === 'laser' && pushes.length > 1 && rnd() < 0.3) it[4] = it[4] === 'crate' ? null : 'crate'; }
     else if (r < 0.5) add(g, pick(els));
     else if (r < 0.65 && g.items.length) {
       const i = Math.floor(rnd() * g.items.length), [el] = g.items[i];
@@ -178,7 +180,7 @@ export function searcher(def, seed = 1, opts = {}) {
     rows.forEach((row, y) => [...row].forEach((c, x) => {
       if (c === 'P') g.start = { x, y }; else if (c === 'G') g.goal = { x, y };
       else if ('^>v<'.includes(c)) g.items.push(['gate', x, y, LEGEND[c].slice(5), cols[0]]);
-      else if (LEGEND[c]) { const [el, col] = element(LEGEND[c]); g.items.push([el, x, y, null, col]); }
+      else if (LEGEND[c]) { const [el, col] = element(LEGEND[c]); g.items.push([el, x, y, LEGEND[c].endsWith(':on') ? 'on' : null, col]); }
       else if (c === 'B') g.items.push(['box', x, y, null, null]);
       else if (FROM_LETTER[c]) g.items.push(['laser', x, y, FROM_LETTER[c], c === c.toUpperCase() ? 'crate' : null]);
     }));

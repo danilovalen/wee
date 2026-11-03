@@ -17,12 +17,13 @@ export const sideRoom = k => (k % 2 ? PUZZLES[(k - 1) / 2] : CHALLENGES[k / 2 - 
 export const plan = () => builders().map((def, i) => ({ def, side: sideRoom(i + 1) }));
 
 const beaten = (p, def) => !!(p.levels && p.levels[def.id] && p.levels[def.id].beaten);
-// Whether a level can be played: the first builder level always; any other once the builder level
-// before it (for a side room, the one that opens it) is beaten. Levels outside the plan stay open.
+// Whether a level can be played: the builder levels up to AHEAD past the furthest one beaten, so a player
+// stuck on one has others to try (register 673); a side room once the builder level that opens it is
+// beaten. Levels outside the plan stay open.
+export const AHEAD = 3;
 export function isOpen(id, p) {
   const b = builders(), i = b.findIndex(d => d.id === id);
-  if (i === 0) return true;
-  if (i > 0) return beaten(p, b[i - 1]);
+  if (i >= 0) return i < AHEAD + b.reduce((f, d, k) => beaten(p, d) ? k + 1 : f, 0);
   const k = plan().findIndex(r => r.side && r.side.id === id);
   return k < 0 || beaten(p, b[k]);
 }

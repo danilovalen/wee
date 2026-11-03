@@ -79,6 +79,22 @@ export const SWITCH_GOALS = {
       return flips >= 2;
     },
   },
+  // Register 670: Level 2 teaches the switch placed on.
+  everySwitchStartsOn: {
+    text: 'Every switch starts on.',
+    short: ['all', { el: 'toggle' }, 'start on'],
+    judge: room => { const all = switches(room); return all.length > 0 && all.every(i => room.cells[i].endsWith(':on')); },
+  },
+  everySwitchFlipsTwice: {
+    text: 'Every switch flips 2 or more times.',
+    short: ['all', { el: 'toggle' }, 'flip', '×2'],
+    judge: (room, moves) => {
+      const all = switches(room), flips = new Map(all.map(i => [i, 0]));
+      let was = null;
+      replayPath(room, moves, s => { const on = new Set(s.toggled); if (was) for (const i of all) if (was.has(i) !== on.has(i)) flips.set(i, flips.get(i) + 1); was = on; });
+      return all.length > 0 && all.every(i => flips.get(i) >= 2);
+    },
+  },
   twoSwitches: {
     needs: { toggle: 2 },
     text: 'At least 2 switches in the room.',

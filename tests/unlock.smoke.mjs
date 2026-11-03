@@ -21,9 +21,10 @@ try {
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
   check('there are hidden levels to unlock', hidden.length > 0, hidden.join());
   check('locked, the list leaves them out', (await rows()).every(id => !hidden.includes(id)));
-  // The floor plan's locks (registers 558, 616): a fresh player has only the first builder level open.
-  const shut = await p.$$eval('#campList .campRow', bs => bs.map(b => [b.dataset.level, b.disabled]));
-  check('a fresh player can open only the first level; the rest are shut', shut.length > 2 && !shut[0][1] && shut.slice(1).every(([, off]) => off), JSON.stringify(shut.slice(0, 4)));
+  // The floor plan's locks (registers 558, 616, 673): a fresh player has the first three builder levels open, and no side room.
+  const shut = await p.$$eval('#campList li.main .campRow', bs => bs.map(b => [b.dataset.level, b.disabled]));
+  const sides = await p.$$eval('#campList li.side .campRow', bs => bs.map(b => b.disabled));
+  check('a fresh player can open the first three levels; the rest, and every side room, are shut', shut.length > 4 && shut.slice(0, 3).every(([, off]) => !off) && shut.slice(3).every(([, off]) => off) && sides.length > 0 && sides.every(Boolean), JSON.stringify(shut.slice(0, 5)));
   await p.click(`#campList [data-level="${shut[0][0]}"]`); await p.waitForTimeout(500);
   check('an unbeaten level shows no side goals yet', await p.$$eval('.campReqs .optional', o => o.length === 0));
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
