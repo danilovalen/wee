@@ -39,11 +39,23 @@ function closePages(keep, popups) {
   for (const d of document.querySelectorAll('dialog[open]')) if (d.id !== keep && (PAGES.includes(d.id) || popups)) { shut.add(d.id); d.close(); }
 }
 
+// A page change dissolves through a pixel checkerboard (register 647): solid, half, gone, in 180 ms. It sits
+// over everything (a popover is above an open page) and takes no taps. Not under reduced motion, and not for
+// a test driving the page unless it asks (window.__wipe).
+function wipe() {
+  const w = $('wipe');
+  if (!w || matchMedia('(prefers-reduced-motion: reduce)').matches || (navigator.webdriver && !window.__wipe)) return;
+  try { w.hidePopover(); w.showPopover(); } catch { return; }
+  w.classList.remove('run'); void w.offsetWidth; w.classList.add('run');
+  clearTimeout(wipe.timer); wipe.timer = setTimeout(() => { try { w.hidePopover(); } catch { /* gone */ } }, 200);
+}
+
 async function show(name, arg, popups = false) {
-  const def = places[name], t = ++turn;
+  const def = places[name], t = ++turn, from0 = here && here.name;
   if (here && (here.name !== name || here.arg !== arg)) places[here.name].exit?.(name);
   here = { name, arg };
   closePages(def.page, popups);
+  if (here && from0 && from0 !== name) wipe();
   // The page opens at once and fills as it loads, so a tap or Escape right after lands on it.
   if (def.page && !$(def.page).open) $(def.page).showModal();
   const ok = await def.enter(arg);

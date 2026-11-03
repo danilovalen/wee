@@ -2,7 +2,7 @@
 // 32-unit tile, so one art pixel is 2 units. Each sprite is built once from simple shapes, kept as runs
 // of one colour per row, and drawn with whole-unit rectangles so it stays sharp at any zoom.
 import { INK } from './ink.js';
-import { skinned } from './look.js';
+import { skinned, look } from './look.js';
 
 import { N, PX, grid, ellipse, box, line, steps, mixHex } from './pixel.js';
 import { PIECE_SPRITES } from './pieceSprites.js';
@@ -117,6 +117,34 @@ function runsOf(name, param, exact) {
 }
 export const SPRITES = Object.keys(BUILD);
 
+// Boil (register 647, as in Baba Is You): every few frames an edge pixel of a row grows or shrinks by one,
+// a different few each frame, so a still sprite shimmers. Off under reduced motion, when turned off on the
+// Looks page, and for a test driving the page unless it asks (window.__boil).
+const BOIL_MS = 260;
+export function boilOn() {
+  if (typeof window === 'undefined' || look.boil === false) return false;
+  if (navigator.webdriver && !window.__boil) return false;
+  return !(typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+const boils = new Map();
+function boiled(key, list) {
+  const f = Math.floor(performance.now() / BOIL_MS) % 3;
+  if (!f) return list;
+  const k = key + '#' + f;
+  if (boils.has(k)) return boils.get(k);
+  const hash = s => { let h = 2166136261; for (const ch of s) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
+  const firsts = new Set(), lasts = new Map();
+  list.forEach((r, i) => { if (![...firsts].some(j => list[j][1] === r[1])) firsts.add(i); lasts.set(r[1], i); });
+  const out = list.map((r, i) => {
+    const h = hash(k + ':' + i) % 9;
+    if (h === 0 && firsts.has(i) && r[2] > 2) return [r[0] + 1, r[1], r[2] - 1, ...r.slice(3)];
+    if (h === 1 && [...lasts.values()].includes(i) && r[2] > 2) return [r[0], r[1], r[2] - 1, ...r.slice(3)];
+    return r;
+  });
+  boils.set(k, out);
+  return out;
+}
+
 // Draws a sprite with its top-left at (x, y) in room units; outline draws only its edge pixels (a hidden blob).
 // colour: a hex for the colour-keyed pieces (doors, switches, buttons).
 // exact: draw this very sprite, not the skin its object wears (the Looks page's previews).
@@ -137,7 +165,7 @@ export function drawSprite(g, name, x, y, { outline = false, colour = null, exac
   if (m && !m.b && !m.c) {
     g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
     const X = u => Math.round(m.a * u + m.e), Y = u => Math.round(m.d * u + m.f);
-    for (const [rx, ry, n, c] of runsOf(name, colour, exact)) { const x0 = X(x + rx * PX), y0 = Y(y + ry * PX); g.fillStyle = c; g.fillRect(x0, y0, X(x + (rx + n) * PX) - x0, Y(y + (ry + 1) * PX) - y0); }
+    for (const [rx, ry, n, c] of exact || !boilOn() ? runsOf(name, colour, exact) : boiled((exact ? '' : skinned(name)) + ':' + colour, runsOf(name, colour, exact))) { const x0 = X(x + rx * PX), y0 = Y(y + ry * PX); g.fillStyle = c; g.fillRect(x0, y0, X(x + (rx + n) * PX) - x0, Y(y + (ry + 1) * PX) - y0); }
     g.restore(); return;
   }
   for (const [rx, ry, n, c, r, d] of runsOf(name, colour, exact)) { g.fillStyle = c; g.fillRect(x + rx * PX, y + ry * PX, n * PX + (r ? 0.5 : 0), PX + (d ? 0.5 : 0)); }

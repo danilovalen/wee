@@ -4,11 +4,12 @@ import { $ } from './dom.js';
 import { place, go, back, current } from './nav.js';
 import { glyph } from './glyphs.js';
 import { unlocked } from './unlock.js';
-import { PALETTES, SKINS, look, paint, setPalette, setSkin } from '../view/look.js';
+import { PALETTES, SKINS, look, paint, setPalette, setSkin, setBoil } from '../view/look.js';
+import { soundOn, setSound } from './sound.js';
 import { drawSprite } from '../view/sprites.js';
 import { INK, T } from '../view/ink.js';
 import { available, owns, affords, buy } from './wallet.js';
-import { sawLooks } from './achieve.js';
+import { sawLooks, countUp } from './achieve.js';
 
 // A sprite drawn exactly as named onto a small canvas, in the palette p.
 const SAMPLE = { blob: [], berry: [], wallFace: [], box: [], doorShut: [INK.red], switchOff: [INK.red], buttonUp: [INK.red], laser: ['right|right'] };
@@ -30,7 +31,12 @@ const state = (b, key, cost) => {
 };
 
 function render() {
-  $('lookStars').innerHTML = glyph('star') + available();
+  clearInterval($('lookStars').countTimer); $('lookStars').innerHTML = glyph('star') + available();
+  // Sound and the sprites' wobble, each a switch (register 647).
+  for (const [id, onNow, set] of [['feelSound', soundOn(), setSound], ['feelBoil', look.boil !== false, setBoil]]) {
+    const b = $(id); b.classList.toggle('on', onNow); b.setAttribute('aria-pressed', String(onNow));
+    b.onclick = () => { set(!onNow); render(); dispatchEvent(new CustomEvent('wee:feel')); };
+  }
   $('lookPalettes').replaceChildren(...PALETTES.map(p => {
     const b = document.createElement('button'), key = 'palette:' + p.id;
     b.type = 'button'; b.dataset.palette = p.id; b.classList.toggle('on', look.palette === p.id);
@@ -61,7 +67,7 @@ function render() {
 }
 
 export function buildLooks() {
-  place('looks', { page: 'lookBox', parent: () => 'menu', enter: () => { render(); sawLooks(); } });
+  place('looks', { page: 'lookBox', parent: () => 'menu', enter: () => { render(); countUp($('lookStars'), available()); sawLooks(); } });
   $('lookStars').onclick = () => go('achievements');
   $('menuLooks').innerHTML = glyph('looks');
   $('menuLooks').onclick = () => go('looks');

@@ -752,9 +752,10 @@ try {
   const rgb = (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round(x * t), Math.round(y * t), 1, 1).data].slice(0, 3); }, [x, y]);
   const orange = ([r, g, b]) => r > 220 && g > 110 && g < 200 && b < 120;
   await page.keyboard.press('e');
-  await page.evaluate(() => { window.wee.press('right'); window.advanceTime(1500); });
+  // The tile the blob stops against flashes for a moment (register 647): sample once it has passed.
+  await page.evaluate(() => { window.wee.press('right'); window.advanceTime(1500); }); await page.waitForTimeout(150);
   const sparkFull = await rgb(5 + 26 / 32, 2 + 3 / 32);
-  await page.evaluate(() => { window.wee.press('up'); window.advanceTime(1500); });
+  await page.evaluate(() => { window.wee.press('up'); window.advanceTime(1500); }); await page.waitForTimeout(150);
   const sparkHalf = await rgb(5 + 21 / 32, 2 + 2 / 32), burnt = await rgb(5 + 26 / 32, 2 + 3 / 32);
   check('a lit fuse sparks at its end, and burns one length shorter each move', orange(sparkFull) && orange(sparkHalf) && !orange(burnt) && !(Math.abs(burnt[0] - 176) < 14 && Math.abs(burnt[1] - 138) < 14 && Math.abs(burnt[2] - 92) < 14), JSON.stringify({ sparkFull, sparkHalf, burnt }));
   await page.evaluate(() => { window.wee.press('left'); window.advanceTime(60); });

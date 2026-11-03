@@ -9,6 +9,7 @@ import { CHALLENGES } from '../level/challenges.js';
 import { shownName } from '../campaign/names.js';
 import { earnedList, available, owns, affords } from './wallet.js';
 import { PALETTES, SKINS } from '../view/look.js';
+import { play } from './sound.js';
 
 // Every look with its key and cost, palettes first.
 export const LOOKS = [...PALETTES.map(p => ({ key: 'palette:' + p.id, cost: p.cost })), ...SKINS.map(s => ({ key: 'skin:' + s.id, cost: s.cost }))];
@@ -35,6 +36,17 @@ export function badge(a) {
   return b;
 }
 const where = id => { const d = [...LEVELS, ...CHALLENGES].find(l => l.id === id); return d ? (d.challenge ? d.id.toUpperCase() : shownName(d)) : ''; };
+
+// A star count counts up from nothing as its page opens, ticking as it goes (register 647).
+export function countUp(el, n) {
+  clearInterval(el.countTimer);
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches, step = Math.max(1, Math.ceil(n / 8));
+  let i = still ? n : 0;
+  const show = () => { el.innerHTML = `${glyph('star')}<b>${i}</b>`; el.dataset.count = String(i); };
+  show();
+  if (i >= n) return;
+  el.countTimer = setInterval(() => { i = Math.min(n, i + step); show(); play('tick'); if (i >= n) clearInterval(el.countTimer); }, 45);
+}
 
 let fresh = new Set();
 function render() {
@@ -65,7 +77,7 @@ function next() {
   t.replaceChildren(item.badge, Object.assign(document.createElement('span'), { className: 'toastText' }), Object.assign(document.createElement('small'), { textContent: item.plus || '' }));
   t.querySelector('.toastText').append(Object.assign(document.createElement('b'), { textContent: item.title }), Object.assign(document.createElement('span'), { textContent: item.text }));
   t.dataset.kind = item.kind; t.onclick = () => { queue.length = 0; next(); if ($('winBox').open) $('winBox').close(); go(item.kind === 'look' ? 'looks' : 'achievements'); };
-  raise(); t.hidden = false;
+  raise(); t.hidden = false; play(item.kind === 'look' ? 'tick' : 'star');
   clearTimeout(next.timer); next.timer = setTimeout(next, window.__toastMs ?? 3000);
 }
 // An open modal page makes everything outside it untappable, so the popup lives inside the topmost one.
@@ -93,7 +105,7 @@ export function noteEarned(was) {
 export function buildAchieve() {
   place('achievements', {
     page: 'achBox', parent: () => 'menu',
-    enter: () => { const s = seen(), done = doneIds(); fresh = new Set([...done].filter(id => !s.ach.includes(id))); s.ach = [...done]; keep(s); render(); syncDots(); },
+    enter: () => { const s = seen(), done = doneIds(); fresh = new Set([...done].filter(id => !s.ach.includes(id))); s.ach = [...done]; keep(s); render(); countUp($('achCount'), available()); syncDots(); },
   });
   $('menuAchieve').innerHTML = glyph('trophy');
   $('menuAchieve').onclick = () => go('achievements');

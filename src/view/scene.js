@@ -8,8 +8,9 @@ import { drawMasses, inMass, overlay } from './masses.js';
 import { drawHeat, drawLensMarks } from './lenses.js';
 import { drawReach, drawTrim, drawWires, isGrey, wireColoursAt } from './wires.js';
 import { netsOf } from '../rules/wires.js';
+import { drawJuice, squashOf } from './juice.js';
 
-const BUMP_MS = 420, GHOST_MS = 360;
+const BUMP_MS = 380, GHOST_MS = 360;
 
 // A pushable tile (register 336): the tile cut to fit inside the box's brown border.
 function drawCrated(g, c, x, y, s, k = 1, ox = 0, oy = 0) {
@@ -31,10 +32,8 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   drawWires(g, level.w, level.wires);
   // A challenge's open tiles, where its pieces go (register 562): a dashed outline on the floor.
   if (open) { g.strokeStyle = 'rgba(171,157,242,.55)'; g.lineWidth = 1.5; g.setLineDash([4, 3]); for (const [x, y] of open) pxStroke(g, x * T + 3.5, y * T + 3.5, T - 7, T - 7, 2); g.setLineDash([]); }
-  const pop = (x, y) => {
-    const f = fx.find(f => f.type === 'place' && f.x === x && f.y === y);
-    return f ? 0.6 + 0.4 * ease(Math.min(1, (now - f.at) / 160)) : 1;
-  };
+  // A placed piece pops in, a frame too big, then settles (register 647).
+  const pop = (x, y, f = fx.find(f => f.type === 'place' && f.x === x && f.y === y), t = f ? Math.min(1, (now - f.at) / 180) : 1) => t >= 1 ? 1 : t < 0.55 ? 0.6 + 0.55 * ease(t / 0.55) : 1.15 - 0.15 * ease((t - 0.55) / 0.45);
   // A block the player placed on a challenge never melts into the room's own blocks (registers 565, 576).
   const mineAt = open ? new Set(open.map(([x, y]) => y * level.w + x)) : new Set();
   const crated = crateSet(level), massed = crated.size || mineAt.size ? level.cells.map((c, i) => crated.has(i) || mineAt.has(i) ? '' : c) : level.cells;
@@ -58,6 +57,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     if (f.cell) drawCell(g, f.cell, f.x, f.y, null, 1 - ease(t) * 0.8);
     if (f.piece) drawPiece(g, f.piece, f.x * T, f.y * T, 1 - ease(t) * 0.8, 1 - t);
   }
+  drawJuice(g, fx, now);
   drawLensMarks(g, level.w, lens);
   if (reach && reach.x < level.w && reach.y < level.h) drawReach(g, level, reach, netsOf(level));
   // A piece or tile the room's answer does not depend on gets a dashed red frame.
@@ -291,9 +291,9 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     const ux = Math.sign(ex - px), uy = Math.sign(ey - py);
     g.beginPath(); g.moveTo(px + T / 2 + ux * 9, py + T / 2 + uy * 9); g.lineTo(ex + T / 2 - ux * 13, ey + T / 2 - uy * 13); g.stroke(); g.lineCap = 'butt';
   }
-  // A failed attempt (register 642): two nudges toward the berry it could not reach, a whole art pixel each.
-  const bump = fx.find(f => f.type === 'bump' && now - f.at < BUMP_MS);
-  if (bump) { const n = 2 * Math.round(2 * Math.abs(Math.sin((now - bump.at) / BUMP_MS * Math.PI * 2))); px += bump.dx * n; py += bump.dy * n; }
-  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky);
+  // A failed attempt nudges toward the berry (642); setting off stretches the blob and stopping squashes it (647).
+  const bump = fx.find(f => f.type === 'bump' && now - f.at < BUMP_MS); if (bump) { const n = 2 * Math.round(2 * Math.abs(Math.sin((now - bump.at) / BUMP_MS * Math.PI * 2))); px += bump.dx * n; py += bump.dy * n; }
+  const sq = squashOf(fx, now), hz = sq && DIRS[sq.dir][0] !== 0; if (sq) { g.save(); g.translate(px + T / 2, py + T / 2); g.scale(hz ? sq.along : sq.across, hz ? sq.across : sq.along); g.translate(-px - T / 2, -py - T / 2); }
+  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky); if (sq) g.restore(); drawJuice(g, fx, now);
   g.restore();
 }

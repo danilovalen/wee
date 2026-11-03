@@ -25,7 +25,8 @@ const ICON = {
   edit() { const g = grid(); for (let i = 0; i < 9; i++) box(g, 4 + i, 10 - i, 5 + i, 11 - i); box(g, 2, 12, 4, 13); box(g, 12, 1, 14, 3); box(g, 13, 2, 13, 2, 0); return g; },
   undo() { const g = grid(); for (let i = 0; i < 4; i++) box(g, 2 + i, 5 - i, 2 + i, 6 + i); box(g, 3, 5, 10, 6); for (let y = 6; y <= 11; y++) box(g, y > 7 && y < 10 ? 12 : 11, y, y > 7 && y < 10 ? 13 : 12, y); box(g, 5, 12, 11, 13); return g; },
   redo() { return mirror(ICON.undo()); },
-  reset() { const g = grid(); ring(g, 8, 8.5, 6.5, 2); box(g, 9, 0, 15, 5, 0); box(g, 10, 1, 14, 2); box(g, 13, 1, 14, 5); return g; },
+  // A loop with its head at the top, pointing on round (register 646): square steps, no curve to read as a blob.
+  reset() { const g = grid(), b = (x0, y0, x1, y1) => box(g, x0, y0 + 1, x1, y1 + 1); b(5, 2, 9, 3); b(3, 3, 4, 4); b(2, 4, 3, 10); b(3, 10, 4, 11); b(4, 12, 11, 13); b(4, 11, 5, 12); b(10, 11, 11, 12); b(12, 7, 13, 11); b(11, 6, 12, 7); b(10, 0, 10, 5); b(11, 1, 11, 4); b(12, 2, 12, 3); return g; },
   menu() { const g = grid(); box(g, 2, 3, 13, 4); box(g, 2, 7, 13, 8); box(g, 2, 11, 13, 12); return g; },
   next() { const g = grid(); box(g, 2, 7, 12, 8); for (let i = 0; i < 5; i++) { box(g, 9 + i, 3 + i, 10 + i, 3 + i); box(g, 9 + i, 12 - i, 10 + i, 12 - i); } return g; },
   skip() { const g = grid(); for (let y = 3; y <= 12; y++) { const w = Math.round((y <= 7.5 ? y - 3 : 12 - y) * 1.4); box(g, 3, y, 3 + w, y); } box(g, 11, 3, 12, 12); return g; },
@@ -52,6 +53,9 @@ const ICON = {
   },
   look() { const g = grid(); ring(g, 6.5, 6.5, 5.5, 2); for (let i = 0; i < 5; i++) box(g, 10 + i, 10 + i, 11 + i, 11 + i); return g; },
   erase() { const g = grid(); thick(g, 2, 2, 12, 12); thick(g, 12, 2, 2, 12); return g; },
+  // The menu's speaker (register 647): a box and a cone, with two waves when sound is on and a cross when off.
+  sound() { const g = ICON.mute(); for (let y = 4; y <= 11; y++) g[y].fill(0, 10); box(g, 10, 6, 11, 9); box(g, 12, 3, 13, 4); box(g, 13, 5, 14, 10); box(g, 12, 11, 13, 12); return g; },
+  mute() { const g = grid(); box(g, 1, 6, 3, 9); for (let i = 0; i < 5; i++) box(g, 4 + i, 5 - i, 4 + i, 10 + i); thick(g, 10, 5, 14, 9); thick(g, 14, 5, 10, 9); return g; },
   // The menu's door to Achievements: a cup on a stand.
   trophy() { const g = grid(); box(g, 3, 1, 12, 7); for (let y = 8; y <= 9; y++) box(g, 4 + (y - 8), y, 11 - (y - 8), y); box(g, 7, 10, 8, 12); box(g, 4, 13, 11, 14); box(g, 0, 2, 2, 3); box(g, 0, 4, 1, 5); box(g, 13, 2, 15, 3); box(g, 14, 4, 15, 5); box(g, 1, 6, 3, 6); box(g, 12, 6, 14, 6); return g; },
   // Achievements (register 639): one picture each; the badge adds the star slot it fills.

@@ -8,6 +8,7 @@ import { shownName } from '../campaign/names.js';
 import { $ } from './dom.js';
 import { glyph } from './glyphs.js';
 import { go, up } from './nav.js';
+import { play } from './sound.js';
 
 let pending = null;
 // Cards already shown this session, by level: kept apart from saved progress, which a page opened as
@@ -57,6 +58,8 @@ function show(p) {
   $('winStars').replaceChildren(...p.goals.map(o => {
     const s = document.createElement('span');
     s.className = 'winStar' + (p.met[o.id] ? ' on' : '') + (p.fresh.includes(o.id) ? ' new' : ''); s.innerHTML = glyph('star');
+    // Lit stars land one after another, each with a tick and a hop (register 647).
+    if (p.met[o.id]) { const i = p.goals.filter(g => p.met[g.id]).indexOf(o); s.style.animationDelay = `${0.3 + i * 0.14}s`; s.classList.add('tick'); setTimeout(() => play(p.fresh.includes(o.id) ? 'star' : 'tick'), 300 + i * 140); }
     return s;
   }));
   $('winGoals').replaceChildren(...p.goals.map(o => {

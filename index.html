@@ -231,6 +231,7 @@
     <div id="menuScene" class="menuScene" aria-hidden="true"></div>
     <b class="logo menuLogo">wee</b>
     <button id="menuUnlock" type="button" class="menuCorner" aria-pressed="false"></button>
+    <button id="menuSound" type="button" class="menuCorner right2" aria-pressed="true"></button>
     <button id="menuLooks" type="button" class="menuCorner left" aria-label="Looks" title="Looks"></button>
     <button id="menuAchieve" type="button" class="menuCorner left2" aria-label="Achievements" title="Achievements"></button>
     <div class="menuList">
@@ -277,6 +278,7 @@
     <p class="hint">Spend stars from levels, side goals and achievements on palettes and skins.</p>
     <h3>Palette</h3><div id="lookPalettes" class="lookGrid"></div>
     <h3>Skins</h3><div id="lookSkins" class="lookSkins"></div>
+    <h3>Feel</h3><div class="lookFeel"><button id="feelSound" type="button">Sound</button><button id="feelBoil" type="button">Wobble</button></div>
   </dialog>
   <dialog id="achBox" class="rooms achieve">
     <div class="roomsHead"><b>Achievements</b><span id="achCount" class="lookStars"></span><button id="achMenu" type="button">Menu</button></div>
@@ -284,6 +286,7 @@
     <ul id="achList" class="achList"></ul>
   </dialog>
   <div id="toast" class="toast" role="status" hidden></div>
+  <div id="wipe" class="wipe" popover="manual" aria-hidden="true"></div>
   <dialog id="puzzleBox" class="rooms">
     <div class="roomsHead"><b>Puzzles</b><button id="puzzleMenu" type="button">Menu</button></div>
     <p id="puzzleNone" class="hint">To add a puzzle, open Rooms in the Sandbox, hold a room and choose Add to Puzzles.</p>

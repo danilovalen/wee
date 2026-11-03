@@ -93,4 +93,5 @@ export function applyPalette() {
 }
 
 export function setPalette(id) { look.palette = id; save(); applyPalette(); dispatchEvent(new CustomEvent('wee:look')); }
+export function setBoil(v) { look.boil = v; save(); dispatchEvent(new CustomEvent('wee:look')); }
 export function setSkin(id, alt) { if (alt) look.skins[id] = true; else delete look.skins[id]; save(); dispatchEvent(new CustomEvent('wee:look')); }

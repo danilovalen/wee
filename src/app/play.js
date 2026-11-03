@@ -19,6 +19,9 @@ import { lensMarks, lensBusy } from './lenses.js';
 import { syncWell } from './well.js';
 import { syncChips } from './chips.js';
 import { gust } from './snow.js';
+import { motionFx } from '../view/juice.js';
+import { soundFx } from './sound.js';
+import { boilOn } from '../view/sprites.js';
 import { stateKey } from '../solve/solve.js';
 import { respawn } from '../rules/life.js';
 // The run as Reset would leave it, to tell whether Reset would change anything.
@@ -37,7 +40,7 @@ export function tick() {
   feedDemo(game);
   for (const k of S.pending) S.keylog.push({ t: game.tick, k });
   S.prev = snapshot(game);
-  const before = { x: game.player.x, y: game.player.y }, wasDir = game.player.dir;
+  const before = { x: game.player.x, y: game.player.y }, wasDir = game.player.dir, openBefore = JSON.stringify(game.open);
   step(game, S.pending);
   S.pending = [];
   const t = now();
@@ -45,6 +48,7 @@ export function tick() {
   if (S.camp && S.demoRunning) syncDots(game.move);
   // Drift: a slide starting gusts the snow; each tile the player leaves holds a fading ghost.
   if (game.player.dir && game.player.dir !== wasDir) gust(game.player.dir);
+  motionFx(game, before, wasDir, openBefore, t, S.fx);
   if ((game.player.x !== before.x || game.player.y !== before.y) && Math.abs(game.player.x - before.x) + Math.abs(game.player.y - before.y) === 1) S.fx.push({ type: 'ghost', x: before.x, y: before.y, at: t });
   // Where Reset would put you moves only when you reach a checkpoint.
   if (game.events.some(e => e.type === 'checkpoint')) S.freshKey = resetKey(game);
@@ -102,7 +106,7 @@ const ANIMATED = /^(water|goal)$/;
 function editNeedsDraw(t) {
   if (S.redraw) return true;
   if (S.fx.length || S.paste || S.moving || S.carry || lensBusy()) return true;
-  return t - (S.drawnAt || 0) > AMBIENT_MS && S.level.cells.some(c => ANIMATED.test(c));
+  return t - (S.drawnAt || 0) > AMBIENT_MS && (boilOn() || S.level.cells.some(c => ANIMATED.test(c)));
 }
 // The next frame is asked for first, so one error in a frame cannot stop the game for good (register 508);
 // the error is kept for the Debug copy.
@@ -126,6 +130,7 @@ export function render() {
   S.draws++;
   const t = now();
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
+  soundFx(S.fx);
   look.avatar = S.camp ? 'robot' : 'you';
   clearView();
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);

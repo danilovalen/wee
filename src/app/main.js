@@ -3,6 +3,7 @@
 import { bindUnlock } from './unlock.js';
 import { buildLooks } from './looks.js';
 import { buildAchieve } from './achieve.js';
+import { bindSound } from './sound.js';
 import { repaintIcons } from './icons.js';
 import { applyPalette } from '../view/look.js';
 import { buildMaker } from './maker.js';
@@ -44,7 +45,7 @@ buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
-bindGlyphs(); bindTutorial(); bindUnlock(); buildLooks(); buildAchieve();
+bindGlyphs(); bindTutorial(); bindUnlock(); buildLooks(); buildAchieve(); bindSound();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });
 buildMaker();
