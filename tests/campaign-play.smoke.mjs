@@ -491,6 +491,16 @@ try {
   const g3 = await gateAt();
   await nine.click('#undo'); const g4 = await gateAt();
   check('a hold on a one-way removes it, and undo brings it back', g3 === '' && g4 === 'gate:down', JSON.stringify([g3, g4]));
+  // Level 2's switch (registers 655, 668): placed off, a tap turns it on and off, a hold removes it.
+  await nine.click('#campMenu').catch(() => {}); await nine.goto('http://localhost:5217/#/levels'); await nine.click('.campRow[data-level="2"]'); await nine.click('[data-tool="toggle"]');
+  const sb = await nine.locator('#game').boundingBox(), sl = await nine.evaluate(() => window.wee.getLevel()), swT = sb.width / sl.w;
+  const free = await nine.evaluate(() => { const l = window.wee.getLevel(); for (let i = 0; i < l.cells.length; i++) { const x = i % l.w, y = (i - x) / l.w; if (!l.cells[i] && !(l.start && l.start.x === x && l.start.y === y) && !l.entities.some(e => e.x === x && e.y === y)) return { x, y, i }; } });
+  const swAt = () => nine.evaluate(i => window.wee.getLevel().cells[i], free.i), tapSw = async () => { await nine.mouse.click(sb.x + (free.x + 0.5) * swT, sb.y + (free.y + 0.5) * swT); await nine.waitForTimeout(700); };
+  const swPix = () => nine.evaluate(f => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, d = c.getContext('2d').getImageData(Math.round(f.x * t), Math.round(f.y * t), Math.round(t), Math.round(t)).data; let h = 0; for (let i = 0; i < d.length; i += 4) h = (h * 31 + d[i] + d[i + 1] * 3 + d[i + 2] * 7) % 1e9; return h; }, free);
+  await tapSw(); const w1 = await swAt(), p1 = await swPix(); await tapSw(); const w2 = await swAt(), p2 = await swPix(); await tapSw(); const w3 = await swAt(), p3 = await swPix();
+  check('an on switch is drawn on, and off again after another tap', p1 !== p2 && p1 === p3, [p1, p2, p3].join());
+  const swHint = await nine.evaluate(() => document.getElementById('toolName').textContent);
+  check('a switch goes down off; a tap turns it on, another off, and the tool says so', w1 === 'toggle:red' && w2 === 'toggle:red:on' && w3 === 'toggle:red' && swHint === 'Switch (tap one to turn it on or off, hold to remove it)', JSON.stringify([w1, w2, w3, swHint]));
   // The start is drawn as the blob (register 593): its gel green fills much of its tile.
   const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 150 && d[i] < 190 && d[i + 1] > 200 && d[i + 2] > 100 && d[i + 2] < 140) n++; return n / (d.length / 4); });
   check('the start is drawn as the blob (its gel green fills its tile)', tip > 0.08, String(tip));

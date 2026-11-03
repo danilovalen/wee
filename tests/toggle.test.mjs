@@ -2,6 +2,8 @@
 // and holds its colour's doors like any other switch.
 import { createGame, step } from '../src/rules/game.js';
 import { respawn } from '../src/rules/life.js';
+import { turnSwitch, describe } from '../src/editor/edit.js';
+import { isCell } from '../src/level/format.js';
 import { stateKey } from '../src/solve/solve.js';
 import { TOOLS } from '../src/editor/palette.js';
 import { MECHANISMS } from '../src/solve/tags.js';
@@ -69,5 +71,20 @@ const idx = (s, x, y) => y * s.w + x;
   const html = readFileSync('index.html', 'utf8').replace(/<[^>]*>/g, ' ');
   check('no player-facing word says toggle', !said.some(t => /toggle/i.test(t)) && !/toggle/i.test(html), said.filter(t => /toggle/i.test(t)).join(' | '));
   check('the tile is named Switch', TOOLS.find(t => t.id === 'toggle').label === 'Switch' && ELEMENTS.toggle.label === 'Switch');
+}
+{ // a switch placed already on (registers 655, 668): its doors start open, crossing it turns it off
+  const l = room(['#######', '#P.t..#', '##D####', '##.....', '#######']);
+  turnSwitch(l, 3, 1);
+  check('tapping a placed switch turns it on in the room', l.cells[idx(l, 3, 1)] === 'toggle:red:on' && isCell(l.cells[idx(l, 3, 1)]), l.cells[idx(l, 3, 1)]);
+  check('an on switch says so', /switch, on/.test(describe(l, 3, 1)), describe(l, 3, 1));
+  const s = createGame(l);
+  check('a switch placed on starts on and opens its door', s.toggled.includes(idx(s, 3, 1)) && s.open.red);
+  slide(s, 'right');
+  check('crossing an on switch turns it off', !s.toggled.includes(idx(s, 3, 1)) && !s.open.red, JSON.stringify(s.toggled));
+  respawn(s);
+  check('a reset starts it on again', s.toggled.includes(idx(s, 3, 1)) && s.open.red);
+  check('only a switch takes on', !isCell('door:red:on') && !isCell('button:red:on'));
+  turnSwitch(l, 3, 1);
+  check('a second tap turns it off again', l.cells[idx(l, 3, 1)] === 'toggle:red');
 }
 done();

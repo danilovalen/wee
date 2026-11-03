@@ -3,7 +3,7 @@
 import { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } from './base.js';
 import { aimOf, computeBeams, turnTurrets } from './beams.js';
 import { cellAt, inWater } from './grid.js';
-import { explode, flipToggles, freshPieces, refreshDoors } from './life.js';
+import { explode, flipToggles, freshPieces, refreshDoors, startOn } from './life.js';
 import { fireSprings, rushOnce, slidePiece } from './pieces.js';
 import { input, slideOnce, unhide } from './player.js';
 import { checkStuck } from './sticky.js';
@@ -26,7 +26,7 @@ export function createGame(level) {
     // the ground, which keeps what lies under them (spikes come back when a tile leaves).
     tiles: (l.crates || []).map((c, id) => ({ id, x: c.x, y: c.y, cell: l.cells[c.y * l.w + c.x] })),
     ground: l.cells.map((c, i) => (l.crates || []).some(k => k.y * l.w + k.x === i) ? '' : c),
-    open: {}, broken: [], toggled: [], onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
+    open: {}, broken: [], toggled: startOn(l.cells), onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };
   s.originCrates = s.crates; s.originTiles = s.tiles;
   computeBeams(s, false);

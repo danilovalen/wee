@@ -1,5 +1,5 @@
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
-import { describe, holds, place, turnGate, turnLaser } from '../editor/edit.js';
+import { describe, holds, place, turnGate, turnLaser, turnSwitch } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch, now } from './dom.js';
 import { setMode, aim } from './play.js';
@@ -71,8 +71,8 @@ export function bindInput() {
     if (S.ui.tool === 'select') { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }
     // Move: press on a thing, release on the tile it goes to; the outline shows where.
     if (S.ui.tool === 'move') { canvas.setPointerCapture(ev.pointerId); S.carry = c; S.hover = c; return; }
-    // In a level, the one-way or laser tool on its own piece: a tap turns it, a hold removes it (registers 234, 255).
-    if ((S.camp || S.simple) && (S.ui.tool === 'gate' || S.ui.tool === 'turret') && ev.button !== 2 && holds(S.level, c.x, c.y, S.ui.tool)) {
+    // In a level, the one-way, laser or switch tool on its own piece: a tap turns it, a hold removes it (registers 234, 255, 668).
+    if ((S.camp || S.simple) && (S.ui.tool === 'gate' || S.ui.tool === 'turret' || S.ui.tool === 'toggle') && ev.button !== 2 && holds(S.level, c.x, c.y, S.ui.tool)) {
       const at = c, tool = S.ui.tool;
       S.gateHold = { at, tool, timer: setTimeout(() => { S.gateHold = null; change(() => place(S.level, { ...S.ui, tool }, at.x, at.y, 'remove')); S.fx.push({ type: 'erase', x: at.x, y: at.y, at: now() }); S.redraw = true; }, GATE_HOLD_MS) };
       return;
@@ -91,7 +91,7 @@ export function bindInput() {
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
   const lift = () => {
-    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool } = S.gateHold; S.gateHold = null; change(() => (tool === 'turret' ? turnLaser : turnGate)(S.level, at.x, at.y)); S.redraw = true; return; }
+    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool } = S.gateHold; S.gateHold = null; change(() => ({ turret: turnLaser, toggle: turnSwitch }[tool] || turnGate)(S.level, at.x, at.y)); S.redraw = true; return; }
     S.painting = 0; S.swipe = null; selectUp(); end();
   };
   canvas.addEventListener('pointerup', ev => {

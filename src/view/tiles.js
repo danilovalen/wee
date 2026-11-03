@@ -78,7 +78,7 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     if (kind === 'toggle') {
       // A switch plate: a pill in its colour with a knob, left and hollow while off, right
       // and filled while on.
-      const on = s && s.toggled.includes(y * s.w + x);
+      const on = s ? s.toggled.includes(y * s.w + x) : c.endsWith(':on');
       drawSprite(g, on ? 'switchOn' : 'switchOff', 0, 0, { colour: INK[col] });
     } else if (kind === 'button') {
       const down = s && pressedAt(s, x, y);

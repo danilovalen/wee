@@ -27,7 +27,7 @@ export function switchesOf(s) {
       const x = i % s.w, y = (i - x) / s.w;
       if (c.startsWith('button:')) list.push({ i, x, y, col: c.slice(7), button: true });
       else if (c.startsWith('sensor:')) list.push({ i, x, y, col: c.slice(7), button: false });
-      else if (c.startsWith('toggle:')) list.push({ i, x, y, col: c.slice(7), toggle: true });
+      else if (c.startsWith('toggle:')) list.push({ i, x, y, col: c.split(':')[1], toggle: true });
     });
     SWITCHES.set(s.cells, list);
   }
@@ -52,6 +52,8 @@ function doorsOf(s, cell) {
 // on each toggle is kept, so standing still or sliding on does not flip it twice; with flip
 // false, the occupants are only noted (a run's start, a reset). Both are replaced, never
 // edited, so a copy of a run can share them.
+// The switches placed already on (register 668): where a run, and a reset, starts them.
+export const startOn = cells => cells.flatMap((c, i) => c.startsWith('toggle:') && c.endsWith(':on') ? [i] : []);
 export function flipToggles(s, flip = true) {
   const list = switchesOf(s).filter(w => w.toggle);
   if (!list.length) return;
@@ -132,7 +134,7 @@ export function respawn(s) {
   s.cells = s.originCells; s.crates = s.originCrates; s.tiles = s.originTiles;
   Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, pushing: null, snap: true });
   // Doors start over as a new room's do, so a one-way that turns back on reset launches nothing a start would not.
-  s.toggled = []; s.open = {}; flipToggles(s, false);
+  s.toggled = startOn(s.originCells); s.open = {}; flipToggles(s, false);
   refreshDoors(s);
 }
 

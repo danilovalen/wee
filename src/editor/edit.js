@@ -76,6 +76,12 @@ export function turnGate(level, x, y) {
   level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',') + (col ? '@' + col : '');
 }
 
+// Turns a switch on or off where the room starts (register 668).
+export function turnSwitch(level, x, y) {
+  const i = idx(level, x, y), c = level.cells[i];
+  if (c.startsWith('toggle:')) level.cells[i] = c.endsWith(':on') ? c.slice(0, -3) : c + ':on';
+}
+
 // Turns a laser a quarter clockwise: the way it fires (register 255).
 export function turnLaser(level, x, y) {
   const e = level.entities[pieceAt(level, x, y)];
@@ -129,6 +135,7 @@ export function describe(level, x, y) {
     else if (kind === 'gate') { const [ds, col] = v.split('@'); parts.push(`${col ? cname(col) + ' one-way' : 'One-way'} ${ds.split(',').map(d => ARROW[d]).join(' ')}`); }
     else if (kind === 'sensor') parts.push(`${cname(v)} laser relay`);
     else if (kind === 'idoor') parts.push(`${cname(v)} inverted door`);
+    else if (kind === 'toggle') parts.push(`${cname(v)} switch${c.endsWith(':on') ? ', on' : ''}`);
     else parts.push(`${cname(v)} ${kind}`);
   }
   if (crateAt(level, x, y)) parts.push('pushable');

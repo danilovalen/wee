@@ -2652,8 +2652,9 @@ function isCell(c) {
   if (c.startsWith('spring:')) return CLOCKWISE.includes(c.slice(7));
   if (c.startsWith('gate:')) { const [d, col, extra] = c.slice(5).split('@'), ds = d.split(','); return extra === undefined && (col === undefined || (col !== 'wire' && colourOk(col))) && new Set(ds).size === ds.length && ds.every(x => CLOCKWISE.includes(x)); }
   if (c.startsWith('tri:')) return CORNERS.includes(c.slice(4));
-  const [kind, colour] = c.split(':');
-  return (kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor') && colourOk(colour);
+  // A switch placed already on reads toggle:<colour>:on (register 668).
+  const [kind, colour, on] = c.split(':');
+  return (kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor') && colourOk(colour) && (on === undefined || (kind === 'toggle' && on === 'on'));
 }
 
 // A colour, or two in the palette's order, 'red|blue' (registers 313, 316).
@@ -2879,7 +2880,7 @@ function switchesOf(s) {
       const x = i % s.w, y = (i - x) / s.w;
       if (c.startsWith('button:')) list.push({ i, x, y, col: c.slice(7), button: true });
       else if (c.startsWith('sensor:')) list.push({ i, x, y, col: c.slice(7), button: false });
-      else if (c.startsWith('toggle:')) list.push({ i, x, y, col: c.slice(7), toggle: true });
+      else if (c.startsWith('toggle:')) list.push({ i, x, y, col: c.split(':')[1], toggle: true });
     });
     SWITCHES.set(s.cells, list);
   }
@@ -2904,6 +2905,8 @@ function doorsOf(s, cell) {
 // on each toggle is kept, so standing still or sliding on does not flip it twice; with flip
 // false, the occupants are only noted (a run's start, a reset). Both are replaced, never
 // edited, so a copy of a run can share them.
+// The switches placed already on (register 668): where a run, and a reset, starts them.
+const startOn = cells => cells.flatMap((c, i) => c.startsWith('toggle:') && c.endsWith(':on') ? [i] : []);
 function flipToggles(s, flip = true) {
   const list = switchesOf(s).filter(w => w.toggle);
   if (!list.length) return;
@@ -2984,7 +2987,7 @@ function respawn(s) {
   s.cells = s.originCells; s.crates = s.originCrates; s.tiles = s.originTiles;
   Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, pushing: null, snap: true });
   // Doors start over as a new room's do, so a one-way that turns back on reset launches nothing a start would not.
-  s.toggled = []; s.open = {}; flipToggles(s, false);
+  s.toggled = startOn(s.originCells); s.open = {}; flipToggles(s, false);
   refreshDoors(s);
 }
 
@@ -3051,7 +3054,7 @@ function land(s, e, t) {
   if (c === 'water') { e.sticky = false; if (e.fuse != null) { e.fuse = null; s.events.push({ type: 'fizzle', id: e.id }); } }
   return true;
 }
-return { startAim, freshPieces, switchesOf, flipToggles, refreshDoors, respawn, smash, light, explode, die, kill, covers, land };
+return { startAim, freshPieces, switchesOf, startOn, flipToggles, refreshDoors, respawn, smash, light, explode, die, kill, covers, land };
 })();
 // ---- src/rules/beams.js
 const m19 = (() => {
@@ -3663,7 +3666,7 @@ const m25 = (() => {
 const { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } = m7;
 const { aimOf, computeBeams, turnTurrets } = m19;
 const { cellAt, inWater } = m17;
-const { explode, flipToggles, freshPieces, refreshDoors } = m18;
+const { explode, flipToggles, freshPieces, refreshDoors, startOn } = m18;
 const { fireSprings, rushOnce, slidePiece } = m22;
 const { input, slideOnce, unhide } = m24;
 const { checkStuck } = m20;
@@ -3696,7 +3699,7 @@ function createGame(level) {
     // the ground, which keeps what lies under them (spikes come back when a tile leaves).
     tiles: (l.crates || []).map((c, id) => ({ id, x: c.x, y: c.y, cell: l.cells[c.y * l.w + c.x] })),
     ground: l.cells.map((c, i) => (l.crates || []).some(k => k.y * l.w + k.x === i) ? '' : c),
-    open: {}, broken: [], toggled: [], onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
+    open: {}, broken: [], toggled: startOn(l.cells), onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };
   s.originCrates = s.crates; s.originTiles = s.tiles;
   computeBeams(s, false);
@@ -5719,7 +5722,7 @@ function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     if (kind === 'toggle') {
       // A switch plate: a pill in its colour with a knob, left and hollow while off, right
       // and filled while on.
-      const on = s && s.toggled.includes(y * s.w + x);
+      const on = s ? s.toggled.includes(y * s.w + x) : c.endsWith(':on');
       drawSprite(g, on ? 'switchOn' : 'switchOff', 0, 0, { colour: INK[col] });
     } else if (kind === 'button') {
       const down = s && pressedAt(s, x, y);
@@ -10016,6 +10019,12 @@ function turnGate(level, x, y) {
   level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',') + (col ? '@' + col : '');
 }
 
+// Turns a switch on or off where the room starts (register 668).
+function turnSwitch(level, x, y) {
+  const i = idx(level, x, y), c = level.cells[i];
+  if (c.startsWith('toggle:')) level.cells[i] = c.endsWith(':on') ? c.slice(0, -3) : c + ':on';
+}
+
 // Turns a laser a quarter clockwise: the way it fires (register 255).
 function turnLaser(level, x, y) {
   const e = level.entities[pieceAt(level, x, y)];
@@ -10069,6 +10078,7 @@ function describe(level, x, y) {
     else if (kind === 'gate') { const [ds, col] = v.split('@'); parts.push(`${col ? cname(col) + ' one-way' : 'One-way'} ${ds.split(',').map(d => ARROW[d]).join(' ')}`); }
     else if (kind === 'sensor') parts.push(`${cname(v)} laser relay`);
     else if (kind === 'idoor') parts.push(`${cname(v)} inverted door`);
+    else if (kind === 'toggle') parts.push(`${cname(v)} switch${c.endsWith(':on') ? ', on' : ''}`);
     else parts.push(`${cname(v)} ${kind}`);
   }
   if (crateAt(level, x, y)) parts.push('pushable');
@@ -10154,7 +10164,7 @@ function place(level, ui, x, y, how) {
   if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
   return out;
 }
-return { CRATE_TOOLS, crateAt, moveAt, swapAt, turnGate, turnLaser, wiresAt, holds, describe, place };
+return { CRATE_TOOLS, crateAt, moveAt, swapAt, turnGate, turnSwitch, turnLaser, wiresAt, holds, describe, place };
 })();
 // ---- src/app/chips.js
 const m97 = (() => {
@@ -10819,7 +10829,7 @@ function syncPanel() {
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   // In a level the one-way says how it is turned and taken away (register 234); draft copy.
-  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + ((S.camp || S.simple) && (ui.tool === 'gate' || ui.tool === 'turret') ? ' (tap one to turn it, hold to remove it)' : '');
+  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + ((S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1 })[ui.tool] ? (ui.tool === 'toggle' ? ' (tap one to turn it on or off, hold to remove it)' : ' (tap one to turn it, hold to remove it)') : '');
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
@@ -11277,7 +11287,7 @@ return { snapshot, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
 const m108 = (() => {
-const { describe, holds, place, turnGate, turnLaser } = m96;
+const { describe, holds, place, turnGate, turnLaser, turnSwitch } = m96;
 const { S } = m41;
 const { $, canvas, touch, now } = m0;
 const { setMode, aim } = m107;
@@ -11364,8 +11374,8 @@ function bindInput() {
     if (S.ui.tool === 'select') { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }
     // Move: press on a thing, release on the tile it goes to; the outline shows where.
     if (S.ui.tool === 'move') { canvas.setPointerCapture(ev.pointerId); S.carry = c; S.hover = c; return; }
-    // In a level, the one-way or laser tool on its own piece: a tap turns it, a hold removes it (registers 234, 255).
-    if ((S.camp || S.simple) && (S.ui.tool === 'gate' || S.ui.tool === 'turret') && ev.button !== 2 && holds(S.level, c.x, c.y, S.ui.tool)) {
+    // In a level, the one-way, laser or switch tool on its own piece: a tap turns it, a hold removes it (registers 234, 255, 668).
+    if ((S.camp || S.simple) && (S.ui.tool === 'gate' || S.ui.tool === 'turret' || S.ui.tool === 'toggle') && ev.button !== 2 && holds(S.level, c.x, c.y, S.ui.tool)) {
       const at = c, tool = S.ui.tool;
       S.gateHold = { at, tool, timer: setTimeout(() => { S.gateHold = null; change(() => place(S.level, { ...S.ui, tool }, at.x, at.y, 'remove')); S.fx.push({ type: 'erase', x: at.x, y: at.y, at: now() }); S.redraw = true; }, GATE_HOLD_MS) };
       return;
@@ -11384,7 +11394,7 @@ function bindInput() {
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
   const lift = () => {
-    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool } = S.gateHold; S.gateHold = null; change(() => (tool === 'turret' ? turnLaser : turnGate)(S.level, at.x, at.y)); S.redraw = true; return; }
+    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool } = S.gateHold; S.gateHold = null; change(() => ({ turret: turnLaser, toggle: turnSwitch }[tool] || turnGate)(S.level, at.x, at.y)); S.redraw = true; return; }
     S.painting = 0; S.swipe = null; selectUp(); end();
   };
   canvas.addEventListener('pointerup', ev => {
