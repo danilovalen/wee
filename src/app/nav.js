@@ -129,6 +129,6 @@ export function bindNav() {
     if (!here || places[here.name].page !== id) return;
     if (places[here.name].parent(here.arg) == null) $(id).showModal(); else up();
   });
-  // The logo is the way to the menu from anywhere.
-  $('logo').onclick = () => go('menu');
+  // Back, where the logo was (register 665): up one place, which from a Sandbox room is the menu.
+  $('logo').onclick = () => up();
 }

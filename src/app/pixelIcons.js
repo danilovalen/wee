@@ -28,6 +28,7 @@ const ICON = {
   // A loop with its head at the top, pointing on round (register 646): square steps, no curve to read as a blob.
   reset() { const g = grid(), b = (x0, y0, x1, y1) => box(g, x0, y0 + 1, x1, y1 + 1); b(5, 2, 9, 3); b(3, 3, 4, 4); b(2, 4, 3, 10); b(3, 10, 4, 11); b(4, 12, 11, 13); b(4, 11, 5, 12); b(10, 11, 11, 12); b(12, 7, 13, 11); b(11, 6, 12, 7); b(10, 0, 10, 5); b(11, 1, 11, 4); b(12, 2, 12, 3); return g; },
   menu() { const g = grid(); box(g, 2, 3, 13, 4); box(g, 2, 7, 13, 8); box(g, 2, 11, 13, 12); return g; },
+  back() { return mirror(ICON.next()); },
   next() { const g = grid(); box(g, 2, 7, 12, 8); for (let i = 0; i < 5; i++) { box(g, 9 + i, 3 + i, 10 + i, 3 + i); box(g, 9 + i, 12 - i, 10 + i, 12 - i); } return g; },
   skip() { const g = grid(); for (let y = 3; y <= 12; y++) { const w = Math.round((y <= 7.5 ? y - 3 : 12 - y) * 1.4); box(g, 3, y, 3 + w, y); } box(g, 11, 3, 12, 12); return g; },
   fit() { const g = grid(); for (const [x, y, sx, sy] of [[1, 1, 1, 1], [14, 1, -1, 1], [1, 14, 1, -1], [14, 14, -1, -1]]) { box(g, Math.min(x, x + 4 * sx), Math.min(y, y + sy), Math.max(x, x + 4 * sx), Math.max(y, y + sy)); box(g, Math.min(x, x + sx), Math.min(y, y + 4 * sy), Math.max(x, x + sx), Math.max(y, y + 4 * sy)); } return g; },

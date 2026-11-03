@@ -34,20 +34,20 @@ colour there is a rule the player reads. Each thing has its own pastel (see the 
 - **Snow** (soft blue-gray flakes on the light ground) falls slowly behind the shell, over the page ground, never over the room.
 - **Gust:** when the player starts a slide, the snow rushes the same way for a moment, then settles.
 - **Frost:** the bars and columns are the panel tone at 78%, blurred, so the snow shows faintly.
-- **Wordmark:** "wee" in the pixel face (Pixelify Sans 700), violet, with a lighter sheen passing over it.
+- **Wordmark:** "wee" in the pixel face (Departure Mono), violet, with a lighter sheen passing over it.
 - **Trail:** each tile the player leaves holds a fading ghost of the player.
 - **Reduced motion:** the snow stands still, no gust, no sheen, no ghost.
 - Light only: Fog is a light palette and there is no dark theme yet. The Manga light theme is not ported.
 
-## Type (2026-11-02, register 617: one pixel face, Pixelify Sans, OFL; it replaced Bitter, Asap and Comfortaa)
+## Type (2026-11-03, register 652: one pixel face, Departure Mono, OFL; it replaced Pixelify Sans, which replaced Bitter, Asap and Comfortaa in register 617)
 
 Manga's roles, read from manga-engine's `public/core-ui.css`:
 
 | role | face | where |
 |---|---|---|
-| text | Pixelify Sans 400 | body, notes, fields, hover lines |
-| labels and actions | Pixelify Sans 400 (controls), 700 (heads) | buttons, chips, tabs, status bar, section heads |
-| wee's name | Pixelify Sans 700 | the wordmark and room titles only |
+| text | Departure Mono | body, notes, fields, hover lines |
+| labels and actions | Departure Mono (one weight; bold uses it as drawn) | buttons, chips, tabs, status bar, section heads |
+| wee's name | Departure Mono | the wordmark and room titles only |
 
 Outfit is not used: in Manga it is one page's detail heading, not a role.
 The faces are files in `fonts/` (OFL, licences beside them), linked from `fonts.css`, and the
@@ -115,6 +115,6 @@ Read by `tests/manga.test.mjs`. `name | value`, one per row, values verbatim.
 | `--orange` | `#fc9867` |
 | `--kept` | `#3a3528` |
 | `--shade` | `#19181a` |
-| `--text-face` | `'Pixelify', monospace` |
-| `--label-face` | `'Pixelify', monospace` |
-| `--wee-face` | `'Pixelify', monospace` |
+| `--text-face` | `'Departure', monospace` |
+| `--label-face` | `'Departure', monospace` |
+| `--wee-face` | `'Departure', monospace` |

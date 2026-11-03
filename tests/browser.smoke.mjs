@@ -58,10 +58,13 @@ try {
     await document.fonts.ready;
     const fam = sel => getComputedStyle(document.querySelector(sel)).fontFamily.split(',')[0].replace(/["']/g, '');
     return { body: fam('body'), button: fam('#mode'), head: fam('.ghead'), logo: fam('.logo'),
-      loaded: ['400 14px Pixelify', '700 13px Pixelify'].filter(f => !document.fonts.check(f)) };
+      loaded: ['400 14px Departure', '700 13px Departure'].filter(f => !document.fonts.check(f)) };
   });
-  check('text, controls, heads and the wordmark are the pixel face (register 617)', [type.body, type.button, type.head, type.logo].every(f => f === 'Pixelify'), JSON.stringify(type));
+  check('text, controls, heads and the wordmark are the pixel face (registers 617, 652)', [type.body, type.button, type.head, type.logo].every(f => f === 'Departure'), JSON.stringify(type));
   check('and both its weights actually loaded', !type.loaded.length, type.loaded.join(' | '));
+  // Departure Mono has one weight: bold draws it as it is, never thickened by the browser (register 652).
+  const ink = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 200; c.height = 30; const g = c.getContext('2d'); const n = w => { g.clearRect(0, 0, 200, 30); g.font = `${w} 22px Departure`; g.fillText('MWMW', 2, 22); let k = 0; const d = g.getImageData(0, 0, 200, 30).data; for (let i = 3; i < d.length; i += 4) if (d[i] > 128) k++; return k; }; return [n(400), n(700)]; });
+  check('bold text is the face as drawn, not smeared', ink[0] > 50 && ink[0] === ink[1], ink.join());
   const cut = await page.evaluate(() => {
     const out = [];
     for (const panel of document.querySelectorAll('aside, header')) {

@@ -1,4 +1,4 @@
-/* wee's face, served from fonts/ and inlined as a data URI by the single-file build: Pixelify Sans, the neon
-   lab's pixel face for every word (registers 599, 617). */
-@font-face { font-family: 'Pixelify'; font-weight: 400; font-display: swap; src: url('fonts/pixelify-sans-latin-400-normal.woff2') format('woff2'); }
-@font-face { font-family: 'Pixelify'; font-weight: 700; font-display: swap; src: url('fonts/pixelify-sans-latin-700-normal.woff2') format('woff2'); }
+/* wee's face, served from fonts/ and inlined as a data URI by the single-file build: Departure Mono, a pixel
+   face made to be read (register 652). It has one weight; the range lets bold use it as drawn, never smeared.
+   It is far wider than the face it replaced, so it is drawn at 90%: letters as tall as before, rows that still fit. */
+@font-face { font-family: 'Departure'; font-weight: 100 900; font-display: swap; size-adjust: 90%; src: url('fonts/departure-mono-regular.woff2') format('woff2'); }

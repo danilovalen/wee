@@ -38,5 +38,7 @@ export function bindGlyphs() {
   iconOn($('undo'), 'undo', 'Undo'); iconOn($('redo'), 'redo', 'Redo'); iconOn($('campReset'), 'reset', 'Clear the room');
   for (const id of ['campMenu', 'puzzleMenu', 'makerMenu', 'roomsMenu']) iconOn($(id), 'menu', 'Menu');
   // Skip stays words, apart from Next's arrow, so it is never taken for Next (register 664).
-  iconOn($('tutNext'), 'next', 'Next'); iconOn($('fitBtn'), 'fit', 'Show the whole room');
+  iconOn($('tutNext'), 'next', 'Next');
+  // Off the menu the logo's place is a Back button (register 665).
+  iconOn($('logo'), 'back', 'Back'); iconOn($('fitBtn'), 'fit', 'Show the whole room');
 }

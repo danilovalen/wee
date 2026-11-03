@@ -55,7 +55,7 @@ export function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses
       // Each move's number sits at the middle of its arrow.
       const mx = (ax + bx) / 2, my = (ay + by) / 2;
       g.fillStyle = INK.mark; pxDisc(g, mx, my, 6);
-      g.fillStyle = INK.goal; g.font = '700 8px Pixelify, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = INK.goal; g.font = '700 8px Departure, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText(String(n), mx, my + 0.5);
     }
   }

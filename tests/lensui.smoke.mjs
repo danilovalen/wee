@@ -61,8 +61,10 @@ try {
   await page.keyboard.press('3');
   await settle();
   check('key 3 cycles Lines to Solution', await on('lines') === 'solution' && (await legend()).includes('a shortest way, 1 moves'), await legend());
-  const arrow = await pixel(2.5, 1);
-  check('and the arrow is drawn', arrow[0] > 200 && arrow[1] > 150 && arrow[2] < 140, JSON.stringify(arrow));
+  // Sampled along the arrow, not on the move number at its middle, whose face is any font's (register 652).
+  const along = []; for (const x of [2.1, 2.2, 2.3, 2.7, 2.8, 2.9]) along.push(await pixel(x, 1));
+  const arrow = along.find(p => p[0] > 200 && p[1] > 150 && p[2] < 140) || along[0];
+  check('and the arrow is drawn', arrow[0] > 200 && arrow[1] > 150 && arrow[2] < 140, JSON.stringify(along));
   await page.keyboard.press('1');
   await settle();
   check('key 1 cycles Colour to Distance', await on('colour') === 'distance');

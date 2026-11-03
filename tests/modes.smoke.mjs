@@ -37,7 +37,8 @@ try {
   const examples = await page.$$eval('#roomList li', ls => ls.map(l => l.textContent).filter(t => t.includes('Example')).join('|'));
   check('the Rooms page lists its two examples, the hex counter and the box room (register 657)', /Hex counter/.test(examples) && /Box into box/.test(examples) && examples.split('|').length === 2, examples);
   // Opened from the room, Rooms has Close; its first screen, from the menu, has Menu (register 399).
-  await page.evaluate(() => document.getElementById('logo').click()); await page.click('#menuSandbox'); await page.waitForTimeout(400);
+  // Back goes up a place: from the Rooms page to the room, then to the menu (register 665).
+  await page.evaluate(() => document.getElementById('logo').click()); await page.waitForTimeout(400); await page.evaluate(() => document.getElementById('logo').click()); await page.click('#menuSandbox'); await page.waitForTimeout(400);
   await page.click('#roomsMenu');
   check('the first Sandbox screen has a Menu button that returns to the menu', await page.evaluate(() => document.getElementById('menuBox').open && !document.getElementById('roomsBox').open));
   await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); });

@@ -114,7 +114,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const r = over.trail.robot;
     g.strokeStyle = INK.mark; g.lineWidth = 4; g.beginPath();
     r.forEach((p, i) => (i ? g.lineTo : g.moveTo).call(g, ...mid(p))); g.stroke();
-    g.font = `700 ${Math.round(T * 0.26)}px Pixelify, monospace`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `700 ${Math.round(T * 0.26)}px Departure, monospace`; g.textAlign = 'center'; g.textBaseline = 'middle';
     for (let i = 1; i < r.length; i++) {
       const [ax, ay] = mid(r[i - 1]), [bx, by] = mid(r[i]), x = (ax + bx) / 2, y = (ay + by) / 2;
       g.fillStyle = INK.mark; pxDisc(g, x, y, T * 0.2);

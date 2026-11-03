@@ -61,11 +61,11 @@ try {
   check('a made level has its address too', /^#\/level\/m\d+$/.test((await at()).hash));
   await page.click('#campBack'); await settle();
   check('Maker in a made level goes back to the Maker', (await at()).open === 'makerBox');
-  // Ruling 2: the logo is the menu, one tap from a level.
+  // Register 665: the logo's place is a Back button; a level has Levels instead, so it shows none.
   await page.goForward(); await settle();
-  await page.click('#logo'); await settle();
-  check('the logo goes to the menu from inside a level', (await at()).open === 'menuBox' && !(await at()).camp);
-  check('the logo is on screen on a phone', await page.locator('#logo').isVisible());
+  check('a level shows no Back where the logo was: Levels is its way back', await page.locator('#logo').isHidden() && await page.locator('#campBack').isVisible());
+  await page.click('#campBack'); await settle(); await page.click(':is(#campMenu, #makerMenu):visible'); await settle();
+  check('Levels then Menu reach the menu from inside a level', (await at()).open === 'menuBox' && !(await at()).camp);
   // The Sandbox: the Rooms page, the room, Close, Menu and a reload.
   await page.click('#menuSandbox'); await page.waitForTimeout(800);
   check('the Sandbox opens on its Rooms page, at #/rooms/start', (await at()).hash === '#/rooms/start' && (await at()).open === 'roomsBox');
@@ -125,20 +125,21 @@ try {
     await f.press('#campList button', 'Escape'); await fp.waitForTimeout(300);
     check('in a preview frame, Levels and Escape step back through the router\'s own entries', list === 'campBox' && await fat() === 'menuBox', list);
     await f.click('#menuCampaign'); await f.click(`#campList button[data-level="${FIRST}"]`); await fp.waitForTimeout(300);
-    await f.click('#logo'); await fp.waitForTimeout(300);
-    check('in a preview frame the logo goes to the menu', await fat() === 'menuBox' && ferr.length === 0, ferr.join(' | '));
+    await f.click('#campBack'); await fp.waitForTimeout(300); await f.click('#campMenu'); await fp.waitForTimeout(300);
+    check('in a preview frame Levels then Menu go to the menu', await fat() === 'menuBox' && ferr.length === 0, ferr.join(' | '));
     await fp.close();
   } else check('the built single file is served for the preview-frame check', false, 'run npm run build');
   // Register 424: the menu is where history starts, so Back from it leaves the game, never into a room.
   await page.goto('about:blank'); await page.goto(B); await settle();
   await page.click('#menuSandbox'); await settle(); await page.click('#roomNew'); await settle();
+  check('a Sandbox room shows Back, an arrow, where the logo was (register 665)', await page.locator('#logo').isVisible() && await page.evaluate(() => { const b = document.getElementById('logo'); return b.getAttribute('aria-label') === 'Back' && b.dataset.icon === 'back' && !!b.querySelector('svg'); }));
   await page.click('#logo'); await settle();
-  check('the logo goes to the menu', (await at()).open === 'menuBox' && (await at()).hash === '#/');
+  check('Back from a Sandbox room goes to the menu', (await at()).open === 'menuBox' && (await at()).hash === '#/');
   await page.goBack(); await settle();
   check('Back from the menu leaves the game, not into the editor', page.url() === 'about:blank', page.url());
   await page.goto(B); await settle();
   await page.click('#menuCampaign'); await settle(); await page.click(`#campList button[data-level="${SECOND}"]`); await settle();
-  await page.click('#logo'); await settle(); await page.goBack(); await settle();
+  await page.click('#campBack'); await settle(); await page.click('#campMenu'); await settle(); await page.goBack(); await settle();
   check('from a level too, Back from the menu leaves the game', page.url() === 'about:blank', page.url());
   check('no page errors', errors.length === 0, errors.join(' | '));
 } finally {

@@ -27,11 +27,11 @@ try {
   check('the Debug copy carries the error', /one bad frame/.test(await page.inputValue('#reportText')));
 
   const nav = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true }); await nav.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; });
-  await nav.goto(url('#/level/' + C)); await nav.waitForTimeout(600);
+  await nav.goto(url('#/room')); await nav.waitForTimeout(600);
   // An entry that says the tab is deeper than it is: history.go(-n) then never answers.
   await nav.evaluate(() => history.replaceState({ ...history.state, n: 5 }, '', location.href));
   await nav.click('#logo'); await nav.waitForTimeout(1000);
-  check('the logo still reaches the menu when history never answers', await nav.evaluate(() => document.getElementById('menuBox').open));
+  check('Back from a room still reaches the menu when history never answers', await nav.evaluate(() => document.getElementById('menuBox').open));
   await nav.evaluate(() => document.getElementById('menuCampaign').click()); await nav.waitForTimeout(500);
   check('and every move after it still answers', await nav.evaluate(() => document.getElementById('campBox').open));
   await nav.click(`.campRow[data-level="${B}"]`); await nav.waitForTimeout(600);
