@@ -1,7 +1,7 @@
 // Design notes: each power and each piece or tile tested by taking it out, every position
 // mapped for dead ends, and shortest routes counted.
 import { readFileSync } from 'node:fs';
-import { powerCheck, elementCheck, routes } from '../src/solve/design.js';
+import { powerCheck, elementCheck, wallCheck, routes } from '../src/solve/design.js';
 import { solve } from '../src/solve/solve.js';
 import { splitRoom, joinRoom } from '../src/level/room.js';
 import { room, suite } from './lib.mjs';
@@ -15,6 +15,11 @@ const first = splitRoom(JSON.parse(readFileSync('tests/fixtures/first-room-v1.we
 const ps = Object.fromEntries(run(powerCheck(first)).map(p => [p.power, p.without]));
 check('a power is tested with only it switched off', ps.boomerang === 19 && ps.dive === 9 && ps.laser === 9 && ps.cycle === 9, JSON.stringify(ps));
 check('a power that is off, or needs a block that does not exist, is not tested', !('swim' in ps) && !('light' in ps));
+
+// Each wall taken out alone (register 686): the one that stops the slide on the goal matters; one off the path does not.
+const walls = run(wallCheck(goal(room(['#######', '#P..#.#', '#.#...#', '#######']), 3, 1))), wallAt = (x, y) => walls.find(w => w.x === x && w.y === y);
+check('a wall that stops you on the goal changes the answer', wallAt(4, 1).without !== 1, JSON.stringify(wallAt(4, 1)));
+check('a wall off the path leaves the answer as it was', wallAt(2, 2).without === 1, JSON.stringify(wallAt(2, 2)));
 
 // Two corners, two ways round: right then down, or down then right.
 const square = goal(room(['#####', '#P..#', '#...#', '#...#', '#####']), 3, 3);

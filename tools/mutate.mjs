@@ -1049,6 +1049,7 @@ export const M = [
   ['src/app/metricLines.js', "    m.firstRuin == null ? 'First ruin: never.'", "    m.firstRuin == null ? 'First ruin: 0 moves in.'", 'metrics'],
   ['src/app/design.js', "    for (const t of metricLines(m)) { const li = line(t); li.className = 'metric'; lines.push(li); }", "", 'designui'],
   ['src/app/well.js', "li:not(.working):not(.metric)", "li:not(.working)", 'designui'],
+  ['src/solve/design.js', "    if (level.cells[i] !== 'wall') continue;\n    const cells = [...level.cells]; cells[i] = '';", "    if (level.cells[i] !== 'wall') continue;\n    const cells = [...level.cells];", 'design'],
   ['src/app/menuScene.js', "    for (const [x, y] of WALLS) cells[y * w + x] = 'wall';", "    for (const [x, y] of WALLS) if ((x + y) % 2) cells[y * w + x] = 'wall';", 'feel'],
   ['style.css', "button.down:not(:disabled) { filter: brightness(.8); --lip-y: top 2px; }", "button.down:not(:disabled) { filter: brightness(.8); }", 'feel'],
   ['style.css', "button.down:not(:disabled) > :is(svg, canvas, i, img) { translate: 0 2px; }", "button.down:not(:disabled) > :is(svg, canvas, i, img) { }", 'feel'],

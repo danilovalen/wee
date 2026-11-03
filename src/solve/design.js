@@ -45,6 +45,19 @@ export function* elementCheck(level, max) {
   return out;
 }
 
+// The answer with each wall taken out, one at a time (register 686): a wall that can go and leave the
+// answer as it was does nothing for the room. The editor's notes read it; the generator does not, as
+// its rooms are built round their walls.
+export function* wallCheck(level, max) {
+  const out = [];
+  for (let i = 0; i < level.cells.length; i++) {
+    if (level.cells[i] !== 'wall') continue;
+    const cells = [...level.cells]; cells[i] = '';
+    out.push({ x: i % level.w, y: Math.floor(i / level.w), what: 'wall', without: answer(yield* search({ ...level, cells }, max)) });
+  }
+  return out;
+}
+
 // The pieces and tiles a room could do without: taking one out leaves the answer as it was
 // (unused), or its stand-in does the same job (plain). The editor's notes and the generator's
 // judge both read this, so a generated room never holds what the notes would flag.

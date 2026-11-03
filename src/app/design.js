@@ -1,7 +1,7 @@
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
 // how many shortest routes there are, and how many positions trap you. Runs a slice at a
 // time and stops when the room changes. All copy is draft.
-import { powerCheck, elementCheck, routes, idleElements, NOTES_MAX } from '../solve/design.js';
+import { powerCheck, elementCheck, wallCheck, routes, idleElements, NOTES_MAX } from '../solve/design.js';
 import { roomMetrics } from '../solve/metrics.js';
 import { metricLines } from './metricLines.js';
 import { S } from '../editor/state.js';
@@ -71,8 +71,13 @@ export function runDesign(par) {
         const walls = plain.filter(e => e.as === 'wall'), turrets = plain.filter(e => e.as === 'turret');
         if (walls.length) lines.push(line(`As a wall, these do the same job: ${walls.map(name).join('; ')}.`, walls));
         if (turrets.length) lines.push(line(`As a fixed turret, these do the same job: ${turrets.map(name).join('; ')}.`, turrets));
-        if (!unused.length && !plain.length) lines.push(line('Each piece and tile changes the answer, and nothing could be a plain wall instead.'));
+        sliced(wallCheck(level, MAX), stamp, ws => {
+        const idle = ws.filter(w => w.without === par);
+        S.design.unused.push(...idle);
+        if (idle.length) lines.push(line(`Without these walls, nothing changes: ${idle.map(w => `${w.x}, ${w.y}`).join('; ')}.`, idle));
+        if (!unused.length && !plain.length && !idle.length) lines.push(line('Each piece, tile and wall changes the answer, and nothing could be a plain wall instead.'));
         swap();
+        });
       });
     });
     });
