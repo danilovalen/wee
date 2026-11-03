@@ -6,6 +6,7 @@
 import { T } from '../view/ink.js';
 import { S } from '../editor/state.js';
 import { $, canvas, g, buffer, shown } from './dom.js';
+import { syncRing } from './ring.js';
 
 const MIN_TILE = 28, MAX_TILE = 56;
 // The middle of the view the mover may cross without the view moving, as a share of each side.
@@ -57,6 +58,7 @@ export function apply(anchor) {
   // The room's resize bars act on its edges, which a zoomed view may not show: Fit first.
   $('roomWrap').classList.toggle('zoomed', zoomed);
   S.redraw = true;
+  syncRing();
 }
 
 // fit() hands over the fitted scale and the area the room may use, in CSS px.

@@ -153,7 +153,7 @@ export const M = [
   ['src', "if (d !== sw.last) S.pending.push(aim(d));", "", 'phone'],
   ['src', "if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);", "if (S.painting && S.hover && S.ui.tool !== 'start') paint(S.hover.x, S.hover.y, S.painting);", 'phone'],
   ['src', "$('hideBtn').onclick = () => S.pending.push('hide');", "", 'phone'],
-  ['src', "const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));", "const zoom = Math.max(1, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));", 'phone'],
+  ['src', "const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T)", "const zoom = Math.max(1, Math.min(2.5, stage / (level.w * T)", 'phone'],
   ['src', "  for (const k of S.pending) S.keylog.push({ t: game.tick, k });\n", "", 'phone'],
   ['src', "S.played = JSON.parse(JSON.stringify(from)); S.keylog = [];", "S.played = from; S.keylog = [];", 'phone'],
   ['style.css', ".opt[hidden] { display: none; }", "", 'browser'],
@@ -1148,6 +1148,10 @@ export const M = [
   ['src/campaign/goals/switches.js', "if (was) for (const i of all) if (was.has(i) !== on.has(i)) flips.set(i, flips.get(i) + 1);", "if (was) for (const i of all) if (on.has(i)) flips.set(i, flips.get(i) + 1);", 'campaign'],
   ['src/campaign/progression.js', "export const AHEAD = 3;", "export const AHEAD = 1;", 'progression'],
   ['src/campaign/progression.js', "beaten(p, d) ? k + 1 : f, 0);", "beaten(p, d) && k === f ? k + 1 : f, 0);", 'progression'],
+  ['src/app/play.js', "  syncRing();\n", "", 'browser'],
+  ['src/app/ring.js', "return x === 0 || y === 0 || x === w - 1 || y === h - 1 ? 'wall' : '';", "return 'wall';", 'browser'],
+  ['src/app/ring.js', "left: game.offsetLeft - tile + 'px', top: game.offsetTop - tile + 'px'", "left: game.offsetLeft + 'px', top: game.offsetTop + 'px'", 'browser'],
+  ['src/app/fit.js', ", (stage + 2 * side) / ((level.w + 2) * T), (room + 2 * top) / ((level.h + 2) * T)));", "));", 'phone'],
 ];
 
 // Run only as a script: the gate imports M.

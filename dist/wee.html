@@ -115,7 +115,10 @@ h2:not(:first-child) { margin-top: 16px; }
 #keys:empty { display: none; }
 .hint { color: var(--dim); font-size: 12px; margin: 10px 0 0; }
 #stage { display: flex; flex-direction: column; align-items: center; min-width: 0; position: relative; }
-#game { display: block; border-radius: var(--r-m); border: 0; image-rendering: auto; touch-action: none; }
+/* The outskirts, one tile of wall round the room, behind it (register 672). */
+.ring { position: absolute; pointer-events: none; image-rendering: pixelated; }
+.ring[hidden] { display: none; }
+#game { position: relative; display: block; border-radius: var(--r-m); border: 0; image-rendering: auto; touch-action: none; }
 body.play #tools { opacity: .45; pointer-events: none; }
 .power { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; padding: 6px 0; box-shadow: inset 0 -1px 0 var(--rule); cursor: pointer; }
 .power:last-child { box-shadow: none; }
@@ -129,7 +132,7 @@ button { touch-action: manipulation; }
 /* In a level the play row keeps its place while editing, so the room does not move (register 222). */
 body.campaign .pad, body.campaign .pad[hidden] { display: none !important; }  /* a lone 'Moves 0' under the room (register 520) */
 .pad { flex-wrap: wrap; }
-.pad button { flex: 1 1 30%; min-height: 48px; font-size: 16px; }
+.pad button { flex: 1 1 22%; min-height: 48px; font-size: 16px; white-space: nowrap; padding-left: 6px; padding-right: 6px; }
 @media (max-width: 700px) { main { grid-template-columns: 1fr; } #stage { order: -1; } }
 @media (max-width: 700px) {
   #wellBtn:disabled { display: none; }
@@ -1085,7 +1088,7 @@ body.challenge .growBar { display: none !important; }
     <section id="stage">
       <div id="campBrief" class="campBrief camp-only"></div>
       <div id="campVerdict" class="campVerdict camp-only" role="status" hidden><span id="campVerdictText"></span></div>
-      <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="game"></canvas>
+      <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="ring" class="ring" aria-hidden="true"></canvas><canvas id="game"></canvas>
         <div id="campTip" class="campTip" role="status" hidden></div>
         <button id="fitBtn" class="fitBtn" type="button" hidden title="Show the whole room">Fit</button>
         <div class="growBar" data-bar="top"><button type="button" class="grip" data-grip="top" aria-label="Drag to add or remove rows at the top" title="Drag to add or remove rows at the top"><i></i></button></div>
@@ -9429,16 +9432,53 @@ function buildSize({ after }) {
 }
 return { syncSize, closeSize, buildSize };
 })();
-// ---- src/app/camera.js
+// ---- src/app/ring.js
 const m91 = (() => {
+const { T } = m8;
+const { drawMasses } = m44;
+const { look } = m5;
+const { S } = m41;
+const { $ } = m0;
+// The room's outskirts (register 672): one tile of wall all round the room, outside it, so a slide always
+// ends against something drawn. It is its own canvas behind the room's, so the room keeps every tile and
+// its own coordinates; a zoomed view, which may not show the room's edges, draws none.
+
+
+
+
+
+let drawn = '';
+function syncRing() {
+  const ring = $('ring'), game = $('game'), level = S.level;
+  const zoomed = $('roomWrap').classList.contains('zoomed');
+  const tile = game.getBoundingClientRect().width / level.w;
+  ring.hidden = zoomed || !(tile > 0);
+  if (ring.hidden) { drawn = ''; return; }
+  const w = level.w + 2, h = level.h + 2, dpr = window.devicePixelRatio || 1;
+  const key = [w, h, tile, dpr, look.palette, JSON.stringify(look.skins), game.offsetLeft, game.offsetTop].join();
+  if (key === drawn) return;
+  drawn = key;
+  const k = tile * dpr / T;
+  ring.width = Math.round(w * T * k); ring.height = Math.round(h * T * k);
+  Object.assign(ring.style, { width: w * tile + 'px', height: h * tile + 'px', left: game.offsetLeft - tile + 'px', top: game.offsetTop - tile + 'px' });
+  const cells = Array.from({ length: w * h }, (_, i) => { const x = i % w, y = (i - x) / w; return x === 0 || y === 0 || x === w - 1 || y === h - 1 ? 'wall' : ''; });
+  const g = ring.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); g.imageSmoothingEnabled = false; g.clearRect(0, 0, w * T, h * T);
+  drawMasses(g, cells, w, h);
+}
+return { syncRing };
+})();
+// ---- src/app/camera.js
+const m92 = (() => {
 const { T } = m8;
 const { S } = m41;
 const { $, canvas, g, buffer, shown } = m0;
+const { syncRing } = m91;
 // The camera (register 408). A room whose tiles, fitted to the screen, are too small to tap zooms:
 // a pinch or Ctrl and the wheel zooms around the fingers or the pointer, two fingers or the wheel pan,
 // and Fit shows the whole room again. One finger keeps editing and playing. While playing zoomed in,
 // the view follows the mover, still while they stay in the middle and sliding only as they near an edge.
 // Zoomed in, the view fills the room's whole area, not the fitted room's shape (register 414).
+
 
 
 
@@ -9492,6 +9532,7 @@ function apply(anchor) {
   // The room's resize bars act on its edges, which a zoomed view may not show: Fit first.
   $('roomWrap').classList.toggle('zoomed', zoomed);
   S.redraw = true;
+  syncRing();
 }
 
 // fit() hands over the fitted scale and the area the room may use, in CSS px.
@@ -9576,12 +9617,12 @@ function bindCamera() {
 return { cam, zoomable, apply, setFit, clearView, toRoom, toScreen, fitView, enterPlay, leavePlay, follow, bindCamera };
 })();
 // ---- src/app/fit.js
-const m92 = (() => {
+const m93 = (() => {
 const { T } = m8;
 const { S } = m41;
 const { $ } = m0;
 const { syncSize } = m90;
-const { setFit, apply } = m91;
+const { setFit, apply } = m92;
 // Sizes the canvas to the room and the screen, sharp on high-density displays.
 
 
@@ -9635,7 +9676,9 @@ function fit() {
   const room = wide ? area.clientHeight - 2 * BAR
     : S.mode === 'play' && !S.camp ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
       : area.clientHeight - 2 * BAR;
-  const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T)));
+  // The outskirts' wall (register 672) takes one tile each side, in the margin the grips already keep where that is enough.
+  const top = (wide || S.mode !== 'play' || S.camp ? BAR : EDGE);
+  const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T), (stage + 2 * side) / ((level.w + 2) * T), (room + 2 * top) / ((level.h + 2) * T)));
   // The camera sizes the canvas: to the fitted room, or zoomed in, to the whole of stage x room.
   setFit(zoom, stage, room); apply();
   $('w').value = level.w; $('h').value = level.h;
@@ -9650,7 +9693,7 @@ function watchStage() {
 return { fit, watchStage };
 })();
 // ---- src/editor/palette.js
-const m93 = (() => {
+const m94 = (() => {
 
 // The palette: every tool, its group and label, and the words the editor uses for
 // powers, colours, clocks and directions. Draft copy throughout.
@@ -9723,7 +9766,7 @@ const CORNER_NAME = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'b
 return { TOOLS, STRIP, stripOf, POWER_TEXT, NAMES, GROUPS, COLOUR_NAME, WIRE_NAME, CLOCK_NAME, ARROW, CORNER_NAME };
 })();
 // ---- src/solve/lenses.js
-const m94 = (() => {
+const m95 = (() => {
 const { createGame } = m25;
 const { computeBeams } = m19;
 const { successors, stateKey, unsearchable, MAX_STATES } = m26;
@@ -9808,10 +9851,10 @@ function* lensData(level, max = MAX_STATES) {
 return { lensData };
 })();
 // ---- src/app/lenses.js
-const m95 = (() => {
+const m96 = (() => {
 const { reach } = m26;
 const { routes } = m74;
-const { lensData } = m94;
+const { lensData } = m95;
 const { INK } = m8;
 const { S } = m41;
 const { $ } = m0;
@@ -10007,10 +10050,10 @@ function buildLenses() {
 return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
 // ---- src/editor/edit.js
-const m96 = (() => {
+const m97 = (() => {
 const { CLOCKWISE, CARRIES_TURRET } = m7;
 const { CRATED } = m16;
-const { TOOLS, WIRE_NAME, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m93;
+const { TOOLS, WIRE_NAME, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } = m94;
 // Editing a level in place: what a tile holds, the Look line, and placing or removing
 // with the current tool. Returns what changed so the caller can animate it.
 
@@ -10236,12 +10279,12 @@ function place(level, ui, x, y, how) {
 return { CRATE_TOOLS, crateAt, moveAt, swapAt, turnGate, turnSwitch, turnLaser, wiresAt, holds, describe, place };
 })();
 // ---- src/app/chips.js
-const m97 = (() => {
-const { describe } = m96;
+const m98 = (() => {
+const { describe } = m97;
 const { S } = m41;
 const { INK } = m8;
 const { $, touch } = m0;
-const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m95;
+const { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } = m96;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
@@ -10303,7 +10346,7 @@ function syncInfo() {
 return { buildChips, syncChips };
 })();
 // ---- src/app/reset.js
-const m98 = (() => {
+const m99 = (() => {
 const { S } = m41;
 const { roomOf } = m37;
 const { $ } = m0;
@@ -10322,7 +10365,7 @@ function buildReset(after) {
 return { buildReset };
 })();
 // ---- src/app/sheets.js
-const m99 = (() => {
+const m100 = (() => {
 const { $ } = m0;
 const { closeWell } = m77;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
@@ -10350,8 +10393,8 @@ function buildSheets() {
 return { openSheet, buildSheets };
 })();
 // ---- src/app/keys.js
-const m100 = (() => {
-const { TOOLS } = m93;
+const m101 = (() => {
+const { TOOLS } = m94;
 const { $ } = m0;
 // Keyboard: one letter per common tool, Tab to hide both side columns, and ? for a list of
 // every key. The letters avoid E (play), R (rotate, reset) and the lens digits. All copy is draft.
@@ -10403,7 +10446,7 @@ const showKeys = () => $('keysBox').showModal();
 return { TOOL_KEYS, buildKeys, toolForKey, bareKey, showKeys };
 })();
 // ---- src/level/region.js
-const m101 = (() => {
+const m102 = (() => {
 const { CLOCKWISE } = m7;
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
 // each takes a level or a clip and returns a new one. The start never moves.
@@ -10468,8 +10511,8 @@ function pasteRegion(level, clip, x, y) {
 return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 })();
 // ---- src/app/select.js
-const m102 = (() => {
-const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m101;
+const m103 = (() => {
+const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m102;
 const { S } = m41;
 const { change } = m89;
 const { $ } = m0;
@@ -10592,8 +10635,8 @@ function selectOverlay() {
 return { buildSelect, syncSelect, selectDown, selectMove, selectUp, selectKey, selectOverlay };
 })();
 // ---- src/app/strip.js
-const m103 = (() => {
-const { STRIP, stripOf, TOOLS } = m93;
+const m104 = (() => {
+const { STRIP, stripOf, TOOLS } = m94;
 const { S } = m41;
 const { $ } = m0;
 const { icon } = m49;
@@ -10706,12 +10749,12 @@ function syncStrip() {
 return { inSandbox, buildStrip, syncStrip };
 })();
 // ---- src/app/panels.js
-const m104 = (() => {
+const m105 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS, POWERS_SHOWN } = m7;
 const { resizeLevel, moveSide, wallBorder } = m16;
 const { INK } = m8;
 const { paint, look } = m5;
-const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m93;
+const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m94;
 const { toolsFor } = m70;
 const { syncBrief, TOOL } = m53;
 const { coloursOf, colouringsOf, pushingsOf } = m37;
@@ -10719,17 +10762,17 @@ const { S } = m41;
 const { $, canvas, touch } = m0;
 const { change, step: undoStep, syncUndo } = m89;
 const { runCheck, syncCheck, syncLint } = m80;
-const { buildLenses, syncLenses } = m95;
+const { buildLenses, syncLenses } = m96;
 const { buildWell, openWell } = m77;
-const { buildChips } = m97;
-const { buildReset } = m98;
+const { buildChips } = m98;
+const { buildReset } = m99;
 const { buildSize } = m90;
-const { buildSheets } = m99;
-const { buildKeys } = m100;
+const { buildSheets } = m100;
+const { buildKeys } = m101;
 const { syncRoomsButton } = m88;
-const { buildSelect, syncSelect } = m102;
+const { buildSelect, syncSelect } = m103;
 const { icon } = m49;
-const { buildStrip, syncStrip } = m103;
+const { buildStrip, syncStrip } = m104;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 
@@ -11030,13 +11073,13 @@ function syncColours() {
 return { keysText, buildPanels, syncPanel, SIMPLE, pairInk };
 })();
 // ---- src/app/campaignMove.js
-const m105 = (() => {
+const m106 = (() => {
 const { placementErrors, START_ON } = m37;
-const { place, moveAt, swapAt } = m96;
+const { place, moveAt, swapAt } = m97;
 const { S } = m41;
 const { $, now } = m0;
 const { T } = m8;
-const { toScreen } = m91;
+const { toScreen } = m92;
 // Placing and moving inside a level: what the level refuses, why, and saying so on the tile.
 
 
@@ -11122,7 +11165,7 @@ function say(x, y, why, ms = 1500) {
 return { moveIn, refusal, replacing, allows, moveRefusal, refuse, say };
 })();
 // ---- src/app/stuck.js
-const m106 = (() => {
+const m107 = (() => {
 const { canWin, settled, stateKey, unsearchable } = m26;
 const { S } = m41;
 const { $ } = m0;
@@ -11163,7 +11206,7 @@ function watchStuck(game) {
 return { resetStuck, watchStuck };
 })();
 // ---- src/app/play.js
-const m107 = (() => {
+const m108 = (() => {
 const { syncDots } = m53;
 const { iconOn } = m2;
 const { frame: look } = m8;
@@ -11173,16 +11216,16 @@ const { aimKey } = m24;
 const { drawEdit, drawPlay } = m48;
 const { S } = m41;
 const { $, g, now, present } = m0;
-const { openSheet } = m99;
-const { syncPanel, keysText } = m104;
+const { openSheet } = m100;
+const { syncPanel, keysText } = m105;
 const { feedDemo } = m80;
 const { noteError } = m68;
-const { selectOverlay } = m102;
-const { moveRefusal } = m105;
-const { watchStuck, resetStuck } = m106;
-const { lensMarks, lensBusy } = m95;
+const { selectOverlay } = m103;
+const { moveRefusal } = m106;
+const { watchStuck, resetStuck } = m107;
+const { lensMarks, lensBusy } = m96;
 const { syncWell } = m77;
-const { syncChips } = m97;
+const { syncChips } = m98;
 const { gust } = m72;
 const { motionFx } = m47;
 const { soundFx } = m6;
@@ -11190,7 +11233,8 @@ const { boilOn } = m12;
 const { stateKey, settled } = m26;
 const { respawn } = m18;
 const { syncEnabled } = m79;
-const { enterPlay, leavePlay, follow, clearView } = m91;
+const { syncRing } = m91;
+const { enterPlay, leavePlay, follow, clearView } = m92;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
 
@@ -11219,6 +11263,7 @@ const { enterPlay, leavePlay, follow, clearView } = m91;
 
 // The run as Reset would leave it, to tell whether Reset would change anything.
 const resetKey = game => { const c = structuredClone(game); respawn(c); return stateKey(c); };
+
 
 
 function snapshot(s) {
@@ -11339,6 +11384,7 @@ function render() {
   soundFx(S.fx);
   look.avatar = S.camp ? 'robot' : 'you';
   clearView();
+  syncRing();
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
   else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
   present();
@@ -11375,21 +11421,21 @@ function flash(msg) { $('keys').textContent = msg; setTimeout(() => setMode(S.mo
 return { snapshot, undoMove, tick, aim, setMode, frame, render, report, copyReport };
 })();
 // ---- src/app/input.js
-const m108 = (() => {
-const { describe, holds, place, turnGate, turnLaser, turnSwitch } = m96;
+const m109 = (() => {
+const { describe, holds, place, turnGate, turnLaser, turnSwitch } = m97;
 const { S } = m41;
 const { $, canvas, touch, now } = m0;
-const { setMode, aim, undoMove } = m107;
+const { setMode, aim, undoMove } = m108;
 const { begin, end, change, step: undoStep } = m89;
 const { save } = m88;
-const { selectDown, selectMove, selectUp, selectKey } = m102;
-const { LENS_GROUPS, cycleLens, lensesOff } = m95;
-const { syncPanel } = m104;
-const { fit } = m92;
-const { toolForKey, bareKey, showKeys } = m100;
-const { TOOLS } = m93;
-const { refusal, moveRefusal, moveIn, refuse, replacing } = m105;
-const { toRoom } = m91;
+const { selectDown, selectMove, selectUp, selectKey } = m103;
+const { LENS_GROUPS, cycleLens, lensesOff } = m96;
+const { syncPanel } = m105;
+const { fit } = m93;
+const { toolForKey, bareKey, showKeys } = m101;
+const { TOOLS } = m94;
+const { refusal, moveRefusal, moveIn, refuse, replacing } = m106;
+const { toRoom } = m92;
 const { T } = m8;
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
 
@@ -11535,7 +11581,7 @@ function bindInput() {
 return { bindInput };
 })();
 // ---- src/gen/ingredients.js
-const m109 = (() => {
+const m110 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m7;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -11646,12 +11692,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m110 = (() => {
+const m111 = (() => {
 const { search, move, stateKey } = m26;
 const { createGame } = m25;
 const { elementCheck, idleElements, NOTES_MAX } = m74;
 const { contains } = m82;
-const { ING, variants } = m109;
+const { ING, variants } = m110;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -11737,7 +11783,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m111 = (() => {
+const m112 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -11754,13 +11800,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m112 = (() => {
+const m113 = (() => {
 const { CLOCKWISE, CORNERS } = m7;
 const { emptyLevel, wallBorder } = m16;
-const { INGREDIENTS, ING, spot } = m109;
-const { judge, lockedIn } = m110;
+const { INGREDIENTS, ING, spot } = m110;
+const { judge, lockedIn } = m111;
 const { contains } = m82;
-const { rng } = m111;
+const { rng } = m112;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -11915,10 +11961,10 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m113 = (() => {
+const m114 = (() => {
 const { noPowers, POWERS_SHOWN } = m7;
-const { INGREDIENTS } = m109;
-const { generate, normalize, recipeLabel, LIMITS } = m112;
+const { INGREDIENTS } = m110;
+const { generate, normalize, recipeLabel, LIMITS } = m113;
 const { stampOf } = m61;
 const { S } = m41;
 const { thumbURL } = m86;
@@ -11927,8 +11973,8 @@ const { change } = m89;
 const { dirty, remember, syncRoomsButton } = m88;
 const { icon } = m49;
 const { current, back } = m4;
-const { TOOLS, GROUPS } = m93;
-const { SIMPLE } = m104;
+const { TOOLS, GROUPS } = m94;
+const { SIMPLE } = m105;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
@@ -12129,12 +12175,12 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/tutorial.js
-const m114 = (() => {
+const m115 = (() => {
 const { S } = m41;
 const { $ } = m0;
-const { setMode } = m107;
-const { syncPanel } = m104;
-const { toRoom, toScreen } = m91;
+const { setMode } = m108;
+const { syncPanel } = m105;
+const { toRoom, toScreen } = m92;
 const { T } = m8;
 const { go, current } = m4;
 const { progress, write } = m13;
@@ -12269,7 +12315,7 @@ function bindTutorial() {
 return { stop, bindTutorial };
 })();
 // ---- src/app/main.js
-const m115 = (() => {
+const m116 = (() => {
 const { bindUnlock } = m3;
 const { buildLooks } = m57;
 const { buildAchieve } = m56;
@@ -12286,18 +12332,18 @@ const { newHistory } = m40;
 const { S, starterLevel } = m41;
 const { portrait, $ } = m0;
 const { startSnow, windNow } = m72;
-const { fit, watchStage } = m92;
-const { buildPanels, syncPanel } = m104;
+const { fit, watchStage } = m93;
+const { buildPanels, syncPanel } = m105;
 const { change } = m89;
-const { bindInput } = m108;
-const { setMode, frame, render, tick, report, copyReport } = m107;
-const { bindCamera } = m91;
+const { bindInput } = m109;
+const { setMode, frame, render, tick, report, copyReport } = m108;
+const { bindCamera } = m92;
 const { buildRooms } = m88;
-const { buildGenerator } = m113;
+const { buildGenerator } = m114;
 const { buildCampaign } = m70;
 const { bindNav, start } = m4;
 const { bindDebug } = m68;
-const { bindTutorial } = m114;
+const { bindTutorial } = m115;
 const { bindGlyphs } = m2;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.

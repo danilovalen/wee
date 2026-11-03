@@ -55,6 +55,9 @@ try {
   // The phone editor is one screen: icon tools named in a line above them, bottom tabs, and
   // Room and Powers in sheets (register 105).
   const one = await page.evaluate(() => ({ down: document.documentElement.scrollHeight - innerHeight, label: [...document.querySelectorAll('#palette .lbl')].some(l => l.offsetParent), wide: Math.max(...[...document.querySelectorAll('#palette button')].filter(b => b.offsetParent).map(b => b.getBoundingClientRect().width)), name: document.getElementById('toolName').textContent, nav: !!document.getElementById('phoneNav').offsetParent, powers: !!document.getElementById('powerList').offsetParent }));
+  // The outskirts' wall fits on the phone too: the room leaves one tile each side for it (register 672).
+  const ringIn = await page.evaluate(() => { const q = document.getElementById('ring').getBoundingClientRect(); return !document.getElementById('ring').hidden && q.left >= 0 && q.right <= innerWidth; });
+  check('the wall round the room fits on the screen', ringIn);
   check('the editor is one screen with icon tools, the tool named above them, and bottom tabs', one.down <= 0 && !one.label && one.wide <= 50 && one.name === 'Look' && one.nav && !one.powers, JSON.stringify(one));
   check('there is no Powers tab while powers are hidden (register 653)', await page.locator('[data-sheet=powers]').isHidden());
   await page.click('[data-sheet=room]');
@@ -165,6 +168,10 @@ try {
   await page.screenshot({ path: 'shots/phone-play.png' });
   await page.click('#mode');
   check('back in edit, Look is picked, its Edit slot showing it', await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')) && await page.locator('#strip [data-slot=edit]').evaluate(b => b.classList.contains('on') && b.dataset.shows === 'look'));
+  // A small room's tiles are big, so its wall needs room left for it, beyond the grips' margin.
+  await page.evaluate(() => { window.wee.setMode('edit'); window.wee.loadLevel(window.wee.blank(4, 4)); });
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  check('a small room\'s wall fits on the screen too', await page.evaluate(() => { const q = document.getElementById('ring').getBoundingClientRect(); return !document.getElementById('ring').hidden && q.left >= 0 && q.right <= innerWidth; }), await page.evaluate(() => JSON.stringify(document.getElementById('ring').getBoundingClientRect())));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) {
   check('the smoke ran to the end', false, err.message);

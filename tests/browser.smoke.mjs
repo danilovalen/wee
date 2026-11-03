@@ -29,6 +29,15 @@ try {
   check('a fresh start has no unsaved tile', await page.locator('#openNow').isHidden());
   check('floors are their own section: water, sticky puddle, gravel and wire', (await page.$$eval('[data-tool][data-in=floors]', bs => bs.map(b => b.dataset.tool).join())) === 'water,sticky,gravel,wire' && await page.locator('[data-group=floors]').count() === 1);
   await page.click('#roomsBox .roomsHead form button');
+  // The outskirts (register 672): one tile of wall drawn all round the room, outside it, the room's own canvas untouched.
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const ring = await page.evaluate(() => {
+    const g = document.getElementById('game').getBoundingClientRect(), r = document.getElementById('ring'), q = r.getBoundingClientRect(), l = window.wee.getLevel(), t = g.width / l.w;
+    const c = r.getContext('2d'), k = r.width / q.width, ink = (x, y) => c.getImageData(Math.round(x * k), Math.round(y * k), 1, 1).data[3];
+    return { shown: !r.hidden, w: Math.abs(q.width - (l.w + 2) * t) < 1.5, left: Math.abs(q.left - (g.left - t)) < 1.5, top: Math.abs(q.top - (g.top - t)) < 1.5,
+      wall: ink(t / 2, t / 2) > 0 && ink(q.width - t / 2, q.height / 2) > 0, hole: ink(q.width / 2, q.height / 2) === 0 };
+  });
+  check('one tile of wall rings the room, outside it, with nothing drawn over the room', Object.values(ring).every(Boolean), JSON.stringify(ring));
   // Powers are hidden for now (register 653): a new Sandbox room starts with every power off.
   check('a new room has no powers on', await page.evaluate(() => Object.values(window.wee.getLevel().powers).every(v => !v)));
   // These checks were written against the old starter room; a new room is 7x7 now (register 430).

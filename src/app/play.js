@@ -27,6 +27,7 @@ import { respawn } from '../rules/life.js';
 // The run as Reset would leave it, to tell whether Reset would change anything.
 const resetKey = game => { const c = structuredClone(game); respawn(c); return stateKey(c); };
 import { syncEnabled } from './enabled.js';
+import { syncRing } from './ring.js';
 import { enterPlay, leavePlay, follow, clearView } from './camera.js';
 
 export function snapshot(s) {
@@ -147,6 +148,7 @@ export function render() {
   soundFx(S.fx);
   look.avatar = S.camp ? 'robot' : 'you';
   clearView();
+  syncRing();
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
   else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
   present();

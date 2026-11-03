@@ -53,10 +53,11 @@ try {
     const cutOff = () => page.evaluate(() => ['ctx', 'statusBar', 'well', 'lensChips'].flatMap(id => { const bar = document.getElementById(id), r = bar.getBoundingClientRect();
       return [...bar.querySelectorAll('button, .opt > span')].filter(b => b.offsetParent && b.closest('.wellBody') === null).filter(b => { const q = b.getBoundingClientRect(); return q.right > r.right + 0.5 || q.bottom > r.bottom + 0.5 || b.scrollWidth > b.clientWidth + 1; }).map(b => `${id}:${b.textContent.trim().slice(0, 16)}`); }));
     // The room's share of the height; a room held back by the window's width loses nothing to height, so it counts as whole.
-    const share = () => page.evaluate(() => { const a = document.getElementById('roomArea'), c = document.getElementById('game').getBoundingClientRect(); return c.width >= a.clientWidth - 40 && c.height < a.clientHeight - 40 ? 1 : a.clientHeight / innerHeight; });
+    const share = () => page.evaluate(() => { const a = document.getElementById('roomArea'), r = document.getElementById('ring'), c = (r.hidden ? document.getElementById('game') : r).getBoundingClientRect(); return c.width >= a.clientWidth - 40 && c.height < a.clientHeight - 40 ? 1 : a.clientHeight / innerHeight; });
     // The room takes the area it is given, less the margin its "+" handles sit in, and no more.
     // Fills its area, less the bars of + and − above and below it (register 298).
-    const fills = () => page.evaluate(() => { const c = document.getElementById('game').getBoundingClientRect(), a = document.getElementById('roomArea'); return (c.width >= a.clientWidth - 110 || c.height >= a.clientHeight - 90) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
+    // The room with its outskirts' wall (register 672) is what fills the area.
+    const fills = () => page.evaluate(() => { const r = document.getElementById('ring'), c = (r.hidden ? document.getElementById('game') : r).getBoundingClientRect(), a = document.getElementById('roomArea'); return (c.width >= a.clientWidth - 110 || c.height >= a.clientHeight - 90) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
     const ctxOpts = await page.evaluate(() => [...document.querySelectorAll('#ctx .opt')].filter(o => !o.hidden).length);
     check(`${w}x${h}: the turret's options sit in the context bar`, ctxOpts >= 3, String(ctxOpts));
     const open = await share();
