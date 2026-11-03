@@ -642,6 +642,8 @@ body.tutorial #campVerdict { display: none !important; }
 body.tutorial #campBrief { visibility: hidden; height: 112px; overflow: hidden; }  /* the bubble's place */
 body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: none !important; }
 .tutBox p { margin: 0; font-size: 15px; line-height: 1.4; min-height: 2.8em; }
+/* Skip is quiet and apart, in the bubble's corner, so it never reads as Next (register 664). */
+.tutBox .tutSkip { justify-self: end; height: auto; min-height: 0; padding: 2px 4px; margin: -6px -6px -2px 0; background: none; box-shadow: none; color: var(--dim); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
 .tutBox small { opacity: .7; }
 .tutBtns { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-height: 36px; }
 .tutBtns small { flex: 1; }
@@ -660,7 +662,7 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 .campStar.on svg { --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 .campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: #5a3f00; }
 .campStar.main i { font-size: 11px; }
-.campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
+.campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
 .campGoal { padding: 8px 10px; border-radius: var(--r-s); background: var(--field); }
 .campHead { margin: 0 0 4px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .campLast { color: var(--dim); font-weight: 700; font-size: 0.92em; }
@@ -1205,8 +1207,8 @@ body.challenge .growBar { display: none !important; }
       <button id="menuDebug" type="button" title="Copies what the game knows about where you are.">Debug</button>
     </div>
   </dialog>
-  <div id="tutBox" class="tutBox" hidden role="status"><p id="tutSay"></p>
-    <span class="tutBtns"><span id="tutPic" class="tutPic campStars" hidden></span><small id="tutWait">Tap the ringed spot.</small><button id="tutSkip" type="button">Skip</button><button id="tutNext" type="button" class="primary">Next</button></span></div>
+  <div id="tutBox" class="tutBox" hidden role="status"><button id="tutSkip" type="button" class="tutSkip">Skip tutorial</button><p id="tutSay"></p>
+    <span class="tutBtns"><span id="tutPic" class="tutPic campStars" hidden></span><small id="tutWait">Tap the ringed spot.</small><button id="tutNext" type="button" class="primary">Next</button></span></div>
   <div id="tutTile" class="tutTile" hidden></div>
   <dialog id="winBox" class="winCard">
     <p id="winTitle" class="winTitle"></p>
@@ -1518,7 +1520,8 @@ function bindGlyphs() {
   iconOn($('campBack'), 'levels', 'Levels'); iconOn($('campRun'), 'run', 'Run'); iconOn($('campTest'), 'test', 'Test: play it yourself');
   iconOn($('undo'), 'undo', 'Undo'); iconOn($('redo'), 'redo', 'Redo'); iconOn($('campReset'), 'reset', 'Clear the room');
   for (const id of ['campMenu', 'puzzleMenu', 'makerMenu', 'roomsMenu']) iconOn($(id), 'menu', 'Menu');
-  iconOn($('tutSkip'), 'skip', 'Skip'); iconOn($('tutNext'), 'next', 'Next'); iconOn($('fitBtn'), 'fit', 'Show the whole room');
+  // Skip stays words, apart from Next's arrow, so it is never taken for Next (register 664).
+  iconOn($('tutNext'), 'next', 'Next'); iconOn($('fitBtn'), 'fit', 'Show the whole room');
 }
 return { glyph, iconOn, bindGlyphs };
 })();
@@ -7746,6 +7749,8 @@ function enterLevel(id) {
 function leaveLevel() {
   save();
   S.camp = null; S.trail = null;
+  // A level's goals leave with it (register 667).
+  $('campBrief').replaceChildren(); $('campVerdict').hidden = true;
   document.body.classList.remove('campaign', 'challenge');
   $('campTest').after($('undo'), $('redo'), $('campReset'));
   // The sandbox never inherits a campaign room.
@@ -12085,6 +12090,7 @@ const STEPS = [
 ];
 
 let step = -1, ring = null, sel = null, shown = null;
+const seen = () => { const p = progress(); p.levels.tutorial = { ...(p.levels.tutorial || {}), seen: true }; write(p); };
 const active = () => step >= 0;
 const now = () => { const s = STEPS[step]; return s.lost && lost() ? { ...s, ...s.lost, next: null, wait: null, swipe: false } : s; };
 
@@ -12139,6 +12145,8 @@ function loop() {
 function allowed(ev) {
   const t = ev.target, s = now(), inside = q => t.closest && t.closest(q);
   if (inside('#tutBox')) return true;
+  // Levels always answers: it leaves the tutorial (register 669).
+  if (inside('#campBack')) return true;
   if (sel && inside(sel)) return true;
   if (s.swipe && (inside('#roomArea') || t === document.documentElement || t === document.body)) return true;
   if (s.tile && s.done && !s.swipe && inside('#game')) {
@@ -12150,7 +12158,8 @@ function allowed(ev) {
 const ARROWS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 
 function bindTutorial() {
-  for (const type of ['pointerdown', 'pointerup', 'click', 'contextmenu', 'wheel']) addEventListener(type, ev => {
+  // A let-go always gets through, so a stroke started on the ringed tile ends wherever it is released (register 663).
+  for (const type of ['pointerdown', 'click', 'contextmenu', 'wheel']) addEventListener(type, ev => {
     if (!active() || allowed(ev)) return;
     ev.preventDefault(); ev.stopImmediatePropagation();
   }, { capture: true, passive: false });
@@ -12160,12 +12169,13 @@ function bindTutorial() {
   }, true);
   $('tutNext').onclick = () => to(step + 1);
   // Skipping counts as seen, so Campaign opens the list from then on.
-  $('tutSkip').onclick = () => { const p = progress(); p.levels.tutorial = { ...(p.levels.tutorial || {}), seen: true }; write(p); stop(); go('levels'); };
+  $('tutSkip').onclick = () => { seen(); stop(); go('levels'); };
   addEventListener('wee:demoDone', () => { if (active() && S.camp && S.camp.verdict && S.camp.verdict.won) ran = true; });
   // Started at once, so the room opens already in the first step's mode and nothing flashes.
   addEventListener('wee:place', ev => {
     const p = ev.detail;
     if (p.name === 'level' && p.arg === 'tutorial') { if (!active()) begin(); }
+    // Leaving any other way ends it: the room's save keeps it from opening again by itself (register 669).
     else if (!(active() && p.name === 'levels' && STEPS[step].list) && !(active() && p.name === 'levels' && step === STEPS.length - 3)) { if (active()) stop(); }
   });
 }

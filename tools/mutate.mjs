@@ -1121,6 +1121,11 @@ export const M = [
   ['src/app/input.js', "S.ui.tool === 'turret' || S.ui.tool === 'toggle') &&", "S.ui.tool === 'turret') &&", 'campaign-play'],
   ['src/app/input.js', "({ turret: turnLaser, toggle: turnSwitch }[tool] || turnGate)", "({ turret: turnLaser }[tool] || turnGate)", 'campaign-play'],
   ['src/view/tiles.js', "const on = s ? s.toggled.includes(y * s.w + x) : c.endsWith(':on');", "const on = s && s.toggled.includes(y * s.w + x);", 'campaign-play'],
+  ['style.css', ".campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; gap: 6px;", ".campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px;", 'tutorial'],
+  ['src/app/tutorial.js', "for (const type of ['pointerdown', 'click', 'contextmenu', 'wheel'])", "for (const type of ['pointerdown', 'pointerup', 'click', 'contextmenu', 'wheel'])", 'tutorial'],
+  ['src/app/tutorial.js', "  if (inside('#campBack')) return true;", "", 'tutorial'],
+  ['src/app/glyphs.js', "  iconOn($('tutNext'), 'next', 'Next');", "  iconOn($('tutSkip'), 'skip', 'Skip'); iconOn($('tutNext'), 'next', 'Next');", 'tutorial'],
+  ['src/app/campaign.js', "  $('campBrief').replaceChildren(); $('campVerdict').hidden = true;", "", 'tutorial'],
 ];
 
 // Run only as a script: the gate imports M.

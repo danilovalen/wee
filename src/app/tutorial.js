@@ -37,6 +37,7 @@ const STEPS = [
 ];
 
 let step = -1, ring = null, sel = null, shown = null;
+const seen = () => { const p = progress(); p.levels.tutorial = { ...(p.levels.tutorial || {}), seen: true }; write(p); };
 const active = () => step >= 0;
 const now = () => { const s = STEPS[step]; return s.lost && lost() ? { ...s, ...s.lost, next: null, wait: null, swipe: false } : s; };
 
@@ -91,6 +92,8 @@ function loop() {
 function allowed(ev) {
   const t = ev.target, s = now(), inside = q => t.closest && t.closest(q);
   if (inside('#tutBox')) return true;
+  // Levels always answers: it leaves the tutorial (register 669).
+  if (inside('#campBack')) return true;
   if (sel && inside(sel)) return true;
   if (s.swipe && (inside('#roomArea') || t === document.documentElement || t === document.body)) return true;
   if (s.tile && s.done && !s.swipe && inside('#game')) {
@@ -102,7 +105,8 @@ function allowed(ev) {
 const ARROWS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 
 export function bindTutorial() {
-  for (const type of ['pointerdown', 'pointerup', 'click', 'contextmenu', 'wheel']) addEventListener(type, ev => {
+  // A let-go always gets through, so a stroke started on the ringed tile ends wherever it is released (register 663).
+  for (const type of ['pointerdown', 'click', 'contextmenu', 'wheel']) addEventListener(type, ev => {
     if (!active() || allowed(ev)) return;
     ev.preventDefault(); ev.stopImmediatePropagation();
   }, { capture: true, passive: false });
@@ -112,12 +116,13 @@ export function bindTutorial() {
   }, true);
   $('tutNext').onclick = () => to(step + 1);
   // Skipping counts as seen, so Campaign opens the list from then on.
-  $('tutSkip').onclick = () => { const p = progress(); p.levels.tutorial = { ...(p.levels.tutorial || {}), seen: true }; write(p); stop(); go('levels'); };
+  $('tutSkip').onclick = () => { seen(); stop(); go('levels'); };
   addEventListener('wee:demoDone', () => { if (active() && S.camp && S.camp.verdict && S.camp.verdict.won) ran = true; });
   // Started at once, so the room opens already in the first step's mode and nothing flashes.
   addEventListener('wee:place', ev => {
     const p = ev.detail;
     if (p.name === 'level' && p.arg === 'tutorial') { if (!active()) begin(); }
+    // Leaving any other way ends it: the room's save keeps it from opening again by itself (register 669).
     else if (!(active() && p.name === 'levels' && STEPS[step].list) && !(active() && p.name === 'levels' && step === STEPS.length - 3)) { if (active()) stop(); }
   });
 }

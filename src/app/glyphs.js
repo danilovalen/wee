@@ -37,5 +37,6 @@ export function bindGlyphs() {
   iconOn($('campBack'), 'levels', 'Levels'); iconOn($('campRun'), 'run', 'Run'); iconOn($('campTest'), 'test', 'Test: play it yourself');
   iconOn($('undo'), 'undo', 'Undo'); iconOn($('redo'), 'redo', 'Redo'); iconOn($('campReset'), 'reset', 'Clear the room');
   for (const id of ['campMenu', 'puzzleMenu', 'makerMenu', 'roomsMenu']) iconOn($(id), 'menu', 'Menu');
-  iconOn($('tutSkip'), 'skip', 'Skip'); iconOn($('tutNext'), 'next', 'Next'); iconOn($('fitBtn'), 'fit', 'Show the whole room');
+  // Skip stays words, apart from Next's arrow, so it is never taken for Next (register 664).
+  iconOn($('tutNext'), 'next', 'Next'); iconOn($('fitBtn'), 'fit', 'Show the whole room');
 }

@@ -78,6 +78,8 @@ export function enterLevel(id) {
 function leaveLevel() {
   save();
   S.camp = null; S.trail = null;
+  // A level's goals leave with it (register 667).
+  $('campBrief').replaceChildren(); $('campVerdict').hidden = true;
   document.body.classList.remove('campaign', 'challenge');
   $('campTest').after($('undo'), $('redo'), $('campReset'));
   // The sandbox never inherits a campaign room.

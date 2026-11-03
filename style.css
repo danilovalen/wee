@@ -627,6 +627,8 @@ body.tutorial #campVerdict { display: none !important; }
 body.tutorial #campBrief { visibility: hidden; height: 112px; overflow: hidden; }  /* the bubble's place */
 body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: none !important; }
 .tutBox p { margin: 0; font-size: 15px; line-height: 1.4; min-height: 2.8em; }
+/* Skip is quiet and apart, in the bubble's corner, so it never reads as Next (register 664). */
+.tutBox .tutSkip { justify-self: end; height: auto; min-height: 0; padding: 2px 4px; margin: -6px -6px -2px 0; background: none; box-shadow: none; color: var(--dim); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
 .tutBox small { opacity: .7; }
 .tutBtns { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-height: 36px; }
 .tutBtns small { flex: 1; }
@@ -645,7 +647,7 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 .campStar.on svg { --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 .campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: #5a3f00; }
 .campStar.main i { font-size: 11px; }
-.campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
+.campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
 .campGoal { padding: 8px 10px; border-radius: var(--r-s); background: var(--field); }
 .campHead { margin: 0 0 4px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .campLast { color: var(--dim); font-weight: 700; font-size: 0.92em; }

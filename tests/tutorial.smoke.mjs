@@ -26,8 +26,8 @@ try {
   check('only the bubble, the room and Levels/Edit show: no goals card, undo, Reset or tool row (register 519)', await p.evaluate(() => ['campBrief', 'undo', 'redo', 'campReset', 'campTools'].every(id => { const e = document.getElementById(id), s = getComputedStyle(e); return s.visibility === 'hidden' || s.display === 'none' || e.getBoundingClientRect().height === 0; })));
   check('the bubble sits above the room, not over it', await p.evaluate(() => document.getElementById('tutBox').getBoundingClientRect().bottom <= document.getElementById('game').getBoundingClientRect().top));
   check('step 1 opens ready to slide, the tools never flashing first', /Swipe across the room/.test(await say(p)) && await p.evaluate(() => document.body.classList.contains('play') && !window.__seen.tools));
-  await p.evaluate(() => document.getElementById('campBack').click()); await p.waitForTimeout(300);
-  check('a tap off the bubble does nothing (Levels stays shut)', (await p.evaluate(() => location.hash)) === '#/level/tutorial');
+  await p.mouse.click(5, 5); await p.waitForTimeout(300);
+  check('a tap off the bubble does nothing', (await p.evaluate(() => location.hash)) === '#/level/tutorial');
   await p.keyboard.press('ArrowRight'); await p.waitForTimeout(1100);
   check('the player slides the robot, then the star is ringed', /only stops at a block or a wall/.test(await say(p)) && await p.locator('#tutTile').isVisible());
   await p.click('#tutNext'); await p.waitForTimeout(300);
@@ -38,8 +38,11 @@ try {
   const c = await p.locator('#game').boundingBox(), t = c.width / 5;
   await p.mouse.click(c.x + t * 0.5, c.y + t * 3.5); await p.waitForTimeout(300);
   check('a block on any other tile is refused', (await p.evaluate(() => window.wee.getLevel().cells.filter(x => x === 'wall').length)) === 0 && /Place a block here/.test(await say(p)));
-  await p.mouse.click(c.x + t * 4.5, c.y + t * 1.5); await p.waitForTimeout(400);
+  // A press on the ringed tile let go off the room ends the stroke: the mouse placing nothing after (register 663).
+  await p.mouse.move(c.x + t * 4.5, c.y + t * 1.5); await p.mouse.down(); await p.mouse.move(c.x + c.width + 30, c.y + t * 1.5, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(400);
   check('the block on the ringed tile moves on to Test', (await ringed(p)) === 'campTest');
+  await p.mouse.move(c.x + t * 0.5, c.y + t * 3.5, { steps: 6 }); await p.mouse.move(c.x + t * 3.5, c.y + t * 0.5, { steps: 6 }); await p.waitForTimeout(200);
+  check('let go off the room, the stroke ends: moving the mouse places nothing', (await p.evaluate(() => window.wee.getLevel().cells.filter(x => x === 'wall').length)) === 1, String(await p.evaluate(() => window.wee.getLevel().cells.filter(x => x === 'wall').length)));
   await p.click('#campTest'); await p.waitForTimeout(500);
   check('Test asks the player to bring the robot to the star', /Swipe right, then down/.test(await say(p)));
   await p.keyboard.press('ArrowDown'); await p.waitForTimeout(1100);
@@ -78,10 +81,28 @@ try {
   check('no page errors', errors.length === 0, errors.join(' | '));
   await p.close();
   const s = await fresh();
-  await s.p.click('#menuCampaign'); await s.p.waitForTimeout(1000); await s.p.click('#tutSkip'); await s.p.waitForTimeout(500);
+  await s.p.click('#menuCampaign'); await s.p.waitForTimeout(1000);
+  check('Skip says Skip tutorial and sits apart from the bubble\'s buttons (register 664)', await s.p.evaluate(() => { const k = document.getElementById('tutSkip'); return k.textContent === 'Skip tutorial' && !k.closest('.tutBtns') && k.getBoundingClientRect().bottom <= document.getElementById('tutSay').getBoundingClientRect().top + 1; }), await s.p.evaluate(() => JSON.stringify([document.getElementById('tutSkip').textContent, document.getElementById('tutSkip').getBoundingClientRect().bottom, document.getElementById('tutSay').getBoundingClientRect().top])));
+  await s.p.click('#tutSkip'); await s.p.waitForTimeout(500);
   check('Skip goes to the list', (await s.p.evaluate(() => location.hash)) === '#/levels' && await s.p.locator('#tutBox').isHidden());
   await s.p.click('#campMenu'); await s.p.waitForTimeout(400); await s.p.click('#menuCampaign'); await s.p.waitForTimeout(600);
   check('after Skip, Campaign opens the list', (await s.p.evaluate(() => location.hash)) === '#/levels');
+  // The tutorial's goals leave with it (register 667): a new Sandbox room shows no goals.
+  await s.p.click('#campMenu'); await s.p.waitForTimeout(400); await s.p.click('#menuSandbox'); await s.p.waitForTimeout(500);
+  await s.p.click('#roomNew').catch(() => {}); await s.p.waitForTimeout(400);
+  check('after the tutorial, the Sandbox shows no goals', await s.p.evaluate(() => { const b = document.getElementById('campBrief'); return !b.childElementCount && !b.offsetParent; }));
+  await s.p.close();
+  // Leaving the tutorial any other way ends it for good (register 669).
+  const l = await fresh();
+  await l.p.click('#menuCampaign'); await l.p.waitForTimeout(1000);
+  await l.p.click('#campBack'); await l.p.waitForTimeout(600);
+  check('Levels answers in the tutorial and ends it (register 669)', (await l.p.evaluate(() => location.hash)) === '#/levels' && await l.p.locator('#tutBox').isHidden(), await l.p.evaluate(() => location.hash));
+  await l.p.click('#campMenu'); await l.p.waitForTimeout(400); await l.p.click('#menuCampaign'); await l.p.waitForTimeout(800);
+  check('after Levels, Campaign opens the list, not the tutorial', (await l.p.evaluate(() => location.hash)) === '#/levels' && await l.p.locator('#tutBox').isHidden(), await l.p.evaluate(() => location.hash));
+  await l.p.evaluate(() => { localStorage.clear(); location.hash = '#/menu'; }); await l.p.reload(); await l.p.waitForTimeout(600);
+  await l.p.click('#menuCampaign'); await l.p.waitForTimeout(800); await l.p.evaluate(() => { location.hash = '#/menu'; }); await l.p.waitForTimeout(600);
+  await l.p.click('#menuCampaign'); await l.p.waitForTimeout(800);
+  check('left any other way, the tutorial does not open again by itself', (await l.p.evaluate(() => location.hash)) === '#/levels' && await l.p.locator('#tutBox').isHidden(), await l.p.evaluate(() => location.hash));
 } catch (err) { check('the tutorial smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }
 done();
