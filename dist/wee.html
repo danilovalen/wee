@@ -5566,7 +5566,10 @@ const S = {
   // puzzle: the Puzzles room being played by hand, { id, fewest }, or null.
   puzzle: null,
 };
-return { starterLevel, S };
+
+// Both kinds of door are on offer: the Sandbox, or a level whose palette has both (register 675).
+const bothDoors = () => !!(S.simple || (S.camp && S.camp.def.palette.door && S.camp.def.palette.idoor));
+return { starterLevel, S, bothDoors };
 })();
 // ---- src/view/pieces.js
 const m42 = (() => {
@@ -10131,6 +10134,12 @@ function turnGate(level, x, y) {
   level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',') + (col ? '@' + col : '');
 }
 
+// Turns a door into an inverted door of its colour, and back (register 675).
+function turnDoor(level, x, y) {
+  const i = idx(level, x, y), c = level.cells[i];
+  if (/^door:/.test(c)) level.cells[i] = 'i' + c; else if (/^idoor:/.test(c)) level.cells[i] = c.slice(1);
+}
+
 // Turns a switch on or off where the room starts (register 668).
 function turnSwitch(level, x, y) {
   const i = idx(level, x, y), c = level.cells[i];
@@ -10276,7 +10285,7 @@ function place(level, ui, x, y, how) {
   if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
   return out;
 }
-return { CRATE_TOOLS, crateAt, moveAt, swapAt, turnGate, turnSwitch, turnLaser, wiresAt, holds, describe, place };
+return { CRATE_TOOLS, crateAt, moveAt, swapAt, turnGate, turnDoor, turnSwitch, turnLaser, wiresAt, holds, describe, place };
 })();
 // ---- src/app/chips.js
 const m98 = (() => {
@@ -10758,7 +10767,7 @@ const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m94;
 const { toolsFor } = m70;
 const { syncBrief, TOOL } = m53;
 const { coloursOf, colouringsOf, pushingsOf } = m37;
-const { S } = m41;
+const { S, bothDoors } = m41;
 const { $, canvas, touch } = m0;
 const { change, step: undoStep, syncUndo } = m89;
 const { runCheck, syncCheck, syncLint } = m80;
@@ -10941,7 +10950,7 @@ function syncPanel() {
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   // In a level the one-way says how it is turned and taken away (register 234); draft copy.
-  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + ((S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1 })[ui.tool] ? (ui.tool === 'toggle' ? ' (tap one to turn it on or off, hold to remove it)' : ' (tap one to turn it, hold to remove it)') : '');
+  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + ((S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1 })[ui.tool] ? (ui.tool === 'toggle' ? ' (tap one to turn it on or off, hold to remove it)' : ' (tap one to turn it, hold to remove it)') : (ui.tool === 'door' || ui.tool === 'idoor') && bothDoors() ? ' (tap one to swap the kind of door, hold to remove it)' : '');
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);
@@ -11422,8 +11431,8 @@ return { snapshot, undoMove, tick, aim, setMode, frame, render, report, copyRepo
 })();
 // ---- src/app/input.js
 const m109 = (() => {
-const { describe, holds, place, turnGate, turnLaser, turnSwitch } = m97;
-const { S } = m41;
+const { describe, holds, place, turnGate, turnLaser, turnSwitch, turnDoor } = m97;
+const { S, bothDoors } = m41;
 const { $, canvas, touch, now } = m0;
 const { setMode, aim, undoMove } = m108;
 const { begin, end, change, step: undoStep } = m89;
@@ -11510,7 +11519,9 @@ function bindInput() {
     // Move: press on a thing, release on the tile it goes to; the outline shows where.
     if (S.ui.tool === 'move') { canvas.setPointerCapture(ev.pointerId); S.carry = c; S.hover = c; return; }
     // In a level, the one-way, laser or switch tool on its own piece: a tap turns it, a hold removes it (registers 234, 255, 668).
-    if ((S.camp || S.simple) && (S.ui.tool === 'gate' || S.ui.tool === 'turret' || S.ui.tool === 'toggle') && ev.button !== 2 && holds(S.level, c.x, c.y, S.ui.tool)) {
+    // A door tool on either door turns it into the other where both are offered (register 675).
+    const door = (S.ui.tool === 'door' || S.ui.tool === 'idoor') && bothDoors() && /^i?door:/.test(S.level.cells[c.y * S.level.w + c.x] || '');
+    if ((S.camp || S.simple) && ev.button !== 2 && (door || ((S.ui.tool === 'gate' || S.ui.tool === 'turret' || S.ui.tool === 'toggle') && holds(S.level, c.x, c.y, S.ui.tool)))) {
       const at = c, tool = S.ui.tool;
       S.gateHold = { at, tool, timer: setTimeout(() => { S.gateHold = null; change(() => place(S.level, { ...S.ui, tool }, at.x, at.y, 'remove')); S.fx.push({ type: 'erase', x: at.x, y: at.y, at: now() }); S.redraw = true; }, GATE_HOLD_MS) };
       return;
@@ -11529,7 +11540,7 @@ function bindInput() {
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
   const lift = () => {
-    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool } = S.gateHold; S.gateHold = null; change(() => ({ turret: turnLaser, toggle: turnSwitch }[tool] || turnGate)(S.level, at.x, at.y)); S.redraw = true; return; }
+    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool } = S.gateHold; S.gateHold = null; change(() => ({ turret: turnLaser, toggle: turnSwitch, door: turnDoor, idoor: turnDoor }[tool] || turnGate)(S.level, at.x, at.y)); S.redraw = true; return; }
     S.painting = 0; S.swipe = null; selectUp(); end();
   };
   canvas.addEventListener('pointerup', ev => {

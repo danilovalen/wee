@@ -76,6 +76,12 @@ export function turnGate(level, x, y) {
   level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',') + (col ? '@' + col : '');
 }
 
+// Turns a door into an inverted door of its colour, and back (register 675).
+export function turnDoor(level, x, y) {
+  const i = idx(level, x, y), c = level.cells[i];
+  if (/^door:/.test(c)) level.cells[i] = 'i' + c; else if (/^idoor:/.test(c)) level.cells[i] = c.slice(1);
+}
+
 // Turns a switch on or off where the room starts (register 668).
 export function turnSwitch(level, x, y) {
   const i = idx(level, x, y), c = level.cells[i];

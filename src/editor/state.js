@@ -20,3 +20,6 @@ export const S = {
   // puzzle: the Puzzles room being played by hand, { id, fewest }, or null.
   puzzle: null,
 };
+
+// Both kinds of door are on offer: the Sandbox, or a level whose palette has both (register 675).
+export const bothDoors = () => !!(S.simple || (S.camp && S.camp.def.palette.door && S.camp.def.palette.idoor));

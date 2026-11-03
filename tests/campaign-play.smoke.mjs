@@ -2,7 +2,7 @@
 // its own palette, Run, and the saved best.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { suite, dragGrip } from './lib.mjs';
+import { suite, dragGrip, pickTool } from './lib.mjs';
 import { LEVELS } from '../src/level/campaign.js';
 import { listed } from '../src/campaign/rules.js';
 const LISTED = LEVELS.filter(listed), pick = f => LISTED.find(f);
@@ -516,6 +516,19 @@ try {
   check('an on switch is drawn on, and off again after another tap', p1 !== p2 && p1 === p3, [p1, p2, p3].join());
   const swHint = await nine.evaluate(() => document.getElementById('toolName').textContent);
   check('a switch goes down off; a tap turns it on, another off, and the tool says so', w1 === 'toggle:red' && w2 === 'toggle:red:on' && w3 === 'toggle:red' && swHint === 'Switch (tap one to turn it on or off, hold to remove it)', JSON.stringify([w1, w2, w3, swHint]));
+  // The Sandbox's doors (register 675): a door tool's tap on a placed door swaps its kind, a hold removes it.
+  const dsb = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await dsb.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; });
+  dsb.on('pageerror', e => errors.push(e.message));
+  await dsb.goto('http://localhost:5217/'); await dsb.waitForTimeout(500);
+  await dsb.click('#menuSandbox'); await dsb.waitForTimeout(300); await dsb.click('#roomNew'); await dsb.waitForTimeout(400);
+  await pickTool(dsb, 'door');
+  const db = await dsb.locator('#game').boundingBox(), dw = await dsb.evaluate(() => window.wee.getLevel().w), dt = db.width / dw, at3 = () => dsb.evaluate(w => window.wee.getLevel().cells[3 * w + 3], dw);
+  const tapD = async () => { await dsb.mouse.click(db.x + 3.5 * dt, db.y + 3.5 * dt); await dsb.waitForTimeout(700); };
+  await tapD(); const d1 = await at3(); await tapD(); const d2 = await at3(); await tapD(); const d3 = await at3();
+  const dHint = await dsb.evaluate(() => document.getElementById('toolName').textContent);
+  await dsb.mouse.move(db.x + 3.5 * dt, db.y + 3.5 * dt); await dsb.mouse.down(); await dsb.waitForTimeout(800); await dsb.mouse.up(); const d4 = await at3();
+  check('a door goes down; a tap swaps it to an inverted door and back; a hold removes it; the tool says so', /^door:/.test(d1) && d2 === 'i' + d1 && d3 === d1 && d4 === '' && /swap the kind of door/.test(dHint), JSON.stringify([d1, d2, d3, d4, dHint]));
+  await dsb.close();
   // The start is drawn as the blob (register 593): its gel green fills much of its tile.
   const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 150 && d[i] < 190 && d[i + 1] > 200 && d[i + 2] > 100 && d[i + 2] < 140) n++; return n / (d.length / 4); });
   check('the start is drawn as the blob (its gel green fills its tile)', tip > 0.08, String(tip));

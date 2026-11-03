@@ -36,7 +36,7 @@ export const M = [
   ['src', "beams(room, moves, b => { if (cellOf(room, b.stop).startsWith('gate:')) ok = true; });", "beams(room, moves, b => { if (b.stop) ok = true; });", 'campaign'],
   ['src', "judge: (room, moves) => oneWayLog(room, moves).robotThrough.size > 0,", "judge: () => true,", 'campaign'],
   ['src', "if (lined()) { ui.mount = false;", "if (lined()) { ui.mount = true;", 'campaign-play'],
-  ['src', "change(() => ({ turret: turnLaser, toggle: turnSwitch }[tool] || turnGate)(S.level, at.x, at.y));", "change(() => turnGate(S.level, at.x, at.y));", 'campaign-play'],
+  ['src', "change(() => ({ turret: turnLaser, toggle: turnSwitch, door: turnDoor, idoor: turnDoor }[tool] || turnGate)(S.level, at.x, at.y));", "change(() => turnGate(S.level, at.x, at.y));", 'campaign-play'],
   // boxes push boxes (register 278)
   ['src/rules/player.js', "        if (!pushChain(s, nx, ny, t.d)) return 'blocked';", "        return 'blocked';", 'sim'],
   ['src/rules/crates.js', "if (!e && crateAt(s, cx, cy) && pushesTile(s, cx, cy, d))", "if (crateAt(s, cx, cy) && pushesTile(s, cx, cy, d))", 'campaign'],
@@ -869,7 +869,7 @@ export const M = [
   ['src/app/panels.js', "const all = [...coloursOf(def), ...new Set(each.filter(c => c.includes('|')))];", "const all = coloursOf(def);", 'campaign-play'],
   ['src/app/panels.js', "return c && !c.includes(ui.colour) ? c[0] : ui.colour;", "return ui.colour;", 'campaign-play'],
   ['src/campaign/goals/lasers.js', "r.slice(7).split('|').some(col => c.slice(5).split('|').includes(col))", "c.slice(5).split('|').includes(r.slice(7))", 'campaign'],
-  ['src', "    if ((S.camp || S.simple) && (S.ui.tool === 'gate' || S.ui.tool === 'turret' || S.ui.tool === 'toggle') && ev.button !== 2 && holds(S.level, c.x, c.y, S.ui.tool)) {", "    if (false) {", 'campaign-play'],
+  ['src', "    if ((S.camp || S.simple) && ev.button !== 2 && (door ||", "    if (false && ev.button !== 2 && (door ||", 'campaign-play'],
   ['src', "  (frame.avatar === 'you' ? drawYou : drawRobot)(g, hidden);\n", "  drawYou(g, hidden);\n", 'campaign-play'],
   ['style.css', ".menu { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0;", ".menu { width: min(92vw, 520px); margin: auto;", 'campaign-play'],
   ['style.css', ".msRobot { animation-name: msRobot, msFade;", ".msRobot { animation-name: msFade;", 'campaign-play'],
@@ -957,7 +957,7 @@ export const M = [
   ['src', "replayPath(room, moves, s => { if (s.events.some(ev => ev.type === 'kill' && ev.how === 'door'", "replayPath(room, moves, s => { if (s.events.some(ev => ev.type === 'kill' && ev.how === 'nothing'", 'campaign'],
   ['src', "  if (old8) p.levels['7'] = old8;\n", "", 'campaign-play'],
   ['src', "  delete p.levels['7']; delete p.levels['8'];\n", "  delete p.levels['8'];\n", 'campaign-play'],
-  ['src', "((S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1 })[ui.tool] ? (ui.tool === 'toggle' ? ' (tap one to turn it on or off, hold to remove it)' : ' (tap one to turn it, hold to remove it)') : '')", "''", 'campaign-play'],
+  ['src', "((S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1 })[ui.tool] ?", "(false && ({ gate: 1, turret: 1, toggle: 1 })[ui.tool] ?", 'campaign-play'],
   ['src', "change(() => place(S.level, { ...S.ui, tool }, at.x, at.y, 'remove'));", "change(() => {});", 'campaign-play'],
   ['src/app/input.js', "if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool }", "if (S.gateHold) { const { at, tool }", 'campaign-play'],
   ['src', "      const at = c, tool = S.ui.tool;\n", "      const at = c, tool = S.ui.tool; if (at) return;\n", 'campaign-play'],
@@ -1120,7 +1120,7 @@ export const M = [
   ['src/editor/edit.js', "level.cells[i] = c.endsWith(':on') ? c.slice(0, -3) : c + ':on';", "level.cells[i] = c + ':on';", 'toggle'],
   ['src/editor/edit.js', "parts.push(`${cname(v)} switch${c.endsWith(':on') ? ', on' : ''}`);", "parts.push(`${cname(v)} switch`);", 'toggle'],
   ['src/app/input.js', "S.ui.tool === 'turret' || S.ui.tool === 'toggle') &&", "S.ui.tool === 'turret') &&", 'campaign-play'],
-  ['src/app/input.js', "({ turret: turnLaser, toggle: turnSwitch }[tool] || turnGate)", "({ turret: turnLaser }[tool] || turnGate)", 'campaign-play'],
+  ['src/app/input.js', "({ turret: turnLaser, toggle: turnSwitch, door: turnDoor, idoor: turnDoor }[tool] || turnGate)", "({ turret: turnLaser, door: turnDoor, idoor: turnDoor }[tool] || turnGate)", 'campaign-play'],
   ['src/view/tiles.js', "const on = s ? s.toggled.includes(y * s.w + x) : c.endsWith(':on');", "const on = s && s.toggled.includes(y * s.w + x);", 'campaign-play'],
   ['style.css', ".campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; gap: 6px;", ".campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; display: grid; gap: 6px;", 'tutorial'],
   ['src/app/tutorial.js', "for (const type of ['pointerdown', 'click', 'contextmenu', 'wheel'])", "for (const type of ['pointerdown', 'pointerup', 'click', 'contextmenu', 'wheel'])", 'tutorial'],
@@ -1152,6 +1152,9 @@ export const M = [
   ['src/app/ring.js', "return x === 0 || y === 0 || x === w - 1 || y === h - 1 ? 'wall' : '';", "return 'wall';", 'browser'],
   ['src/app/ring.js', "left: game.offsetLeft - tile + 'px', top: game.offsetTop - tile + 'px'", "left: game.offsetLeft + 'px', top: game.offsetTop + 'px'", 'browser'],
   ['src/app/fit.js', ", (stage + 2 * side) / ((level.w + 2) * T), (room + 2 * top) / ((level.h + 2) * T)));", "));", 'phone'],
+  ['src/editor/edit.js', "if (/^door:/.test(c)) level.cells[i] = 'i' + c; else if (/^idoor:/.test(c)) level.cells[i] = c.slice(1);", "if (/^door:/.test(c)) level.cells[i] = 'i' + c;", 'campaign-play'],
+  ['src/editor/state.js', "export const bothDoors = () => !!(S.simple || (S.camp && S.camp.def.palette.door && S.camp.def.palette.idoor));", "export const bothDoors = () => false;", 'campaign-play'],
+  ['src/app/input.js', "door: turnDoor, idoor: turnDoor }", "}", 'campaign-play'],
 ];
 
 // Run only as a script: the gate imports M.
