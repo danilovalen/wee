@@ -24,6 +24,7 @@ import { madeLevel } from './made.js';
 import { progress, write, firstTime } from './progress.js';
 import { TOOL, words, syncBrief, clearTrail, flashStuck, bindGoalCard } from './goalCard.js';
 import { place, go, back, up } from './nav.js';
+import { puzzleRow } from './puzzles.js';
 
 // Every level hands you Move, to carry anything placed (the start and goal too) elsewhere.
 const ALWAYS = ['move'];
@@ -158,6 +159,7 @@ function stars(def, rec, sideOpen = true) {
 // The floor plan (registers 558, 609-611): the builder levels down a corridor, each with the side
 // room it opens beside it; a room shuts until the level that opens it is beaten.
 function room(def, p, kind) {
+  if (def.puzzle) return puzzleRow(def, p.levels[def.id] || {}, allOpen() || isOpen(def.id, p), kind);
   const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button'), open = allOpen() || isOpen(def.id, p);
   li.className = kind; b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id; b.disabled = !open; b.classList.toggle('locked', !open);
   const name = document.createElement('b');

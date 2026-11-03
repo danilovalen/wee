@@ -20,4 +20,16 @@ if (withSide >= 0) {
 }
 check('a level\'s side goals show once it is beaten', !sideGoalsOpen(b[0].id, none) && sideGoalsOpen(b[0].id, beat(b[0])));
 check('a level off the plan stays open', isOpen('tutorial', none));
+// The campaign's puzzles (registers 651, 660, 662): each is a room in rooms/ named "Puzzle N", the same room the
+// Sandbox offers as an example, in the N-th puzzle slot, and solvable with every power off.
+{
+  const { TEMPLATES } = await import('../src/level/templates.js');
+  const { allShortest } = await import('../src/campaign/robot.js');
+  const { noPowers } = await import('../src/rules/base.js');
+  const { splitRoom } = await import('../src/level/room.js');
+  const named = TEMPLATES.filter(t => /^Puzzle \d+$/.test(t.name));
+  check('every room named Puzzle N is a campaign puzzle, and nothing else is', named.length > 0 && named.length === PUZZLES.filter(Boolean).length && named.every(t => PUZZLES[+t.name.slice(7) - 1]?.room === t.level), named.map(t => t.name).join());
+  check('Puzzle N opens after the N-th odd builder level', PUZZLES.every((p, i) => !p || sideRoom(2 * i + 1) === p));
+  for (const p of PUZZLES.filter(Boolean)) check(`${p.name} is solvable with every power off`, allShortest(noPowers(splitRoom(p.room).level)).status === 'solved');
+}
 done();

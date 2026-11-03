@@ -887,7 +887,7 @@ export const M = [
   ['src', "some(b => b.pushes >= 2 && b.hits >= 1),", "some(b => b.pushes >= 2),", 'campaign'],
   ['src', "if (now.boxes[id] !== undefined && now.boxes[id] !== was.boxes[id]) { if (now.touched.has(id))", "if (now.boxes[id] !== undefined) { if (now.touched.has(id))", 'campaign'],
   ['src', " && (p.x !== was.s.player.x || p.y !== was.s.player.y)) b.hits++;", ") b.hits++;", 'campaign'],
-  ['src', "rec.beaten = true;", "", 'campaign-play'],
+  ['src/app/campaign.js', "    rec.beaten = true; rec.room = S.level;", "    rec.room = S.level;", 'campaign-play'],
   // the goal card, refused taps and the move preview
   ['src', "base.reqs = Object.fromEntries((def.require || []).map(id => [id, !(id in failed)]));", "base.reqs = Object.fromEntries((def.require || []).map(id => [id, true]));", 'campaign'],
   ['src', "met: ran ? v.inRange : null", "met: null", 'campaign-play'],
@@ -1128,6 +1128,14 @@ export const M = [
   ['src/app/tutorial.js', "  if (inside('#campBack')) return true;", "", 'tutorial'],
   ['src/app/glyphs.js', "  iconOn($('tutNext'), 'next', 'Next');", "  iconOn($('tutSkip'), 'skip', 'Skip'); iconOn($('tutNext'), 'next', 'Next');", 'tutorial'],
   ['src/app/campaign.js', "  $('campBrief').replaceChildren(); $('campVerdict').hidden = true;", "", 'tutorial'],
+  ['src/campaign/progression.js', "export const PUZZLES = Array.from({ length: 12 }, (_, i) => authored(i + 1));", "export const PUZZLES = [];", 'progression'],
+  ['src/app/rooms.js', "const EXAMPLES = ['Hex counter', ...PUZZLES.filter(Boolean).map(p => p.name)];", "const EXAMPLES = ['Hex counter'];", 'modes'],
+  ['index.html', '<button id="menuPuzzles" type="button" class="primary" hidden>', '<button id="menuPuzzles" type="button" class="primary">', 'modes'],
+  ['src/app/campaign.js', "  if (def.puzzle) return puzzleRow(def, p.levels[def.id] || {}, allOpen() || isOpen(def.id, p), kind);\n", "", 'campaign-play'],
+  ['src/app/puzzles.js', "$('puzzleBack').textContent = inCampaign ? 'Levels' : 'Puzzles';", "", 'campaign-play'],
+  ['src/app/puzzles.js', "rec.beaten = true; rec.moves = Math.min(rec.moves || n, n); write(pr);", "", 'campaign-play'],
+  ['src/app/puzzles.js', "S.camp = null; S.simple = true; S.level = noPowers(level);", "S.camp = null; S.simple = true; S.level = level;", 'modes'],
+  ['style.css', "#menuTutorial, #menuSandbox { grid-column: span 3; }", "", 'campaign-play'],
 ];
 
 // Run only as a script: the gate imports M.

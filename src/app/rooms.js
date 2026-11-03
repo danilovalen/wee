@@ -2,6 +2,7 @@
 // templates, and moving rooms in and out as files.
 import { noPowers } from '../rules/base.js';
 import { TEMPLATES } from '../level/templates.js';
+import { PUZZLES } from '../campaign/progression.js';
 import { encodeRoom, decodeRoom } from '../level/code.js';
 import { splitRoom, joinRoom, stampOf, pack, unpack } from '../level/room.js';
 import { starterLevel } from '../editor/state.js';
@@ -130,7 +131,8 @@ const closeAll = () => { if ($('infoBox').open) $('infoBox').close(); if (curren
 export function buildRooms(actions) {
   A = actions;
   // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
-  const EXAMPLES = ['Hex counter', 'Box into box'];  // the second: the owner's room from register 657
+  // The hex counter, then every campaign puzzle, so a puzzle can be opened and changed here (register 662).
+  const EXAMPLES = ['Hex counter', ...PUZZLES.filter(Boolean).map(p => p.name)];
   const templateRows = (list = TEMPLATES, kind = 'Template') => list.map(t => { const { level } = splitRoom(t.level);
     return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: kind === 'Example' ? t.name : '', fixture: kind !== 'Example' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();

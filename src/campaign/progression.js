@@ -3,10 +3,13 @@
 // builder level, a challenge after the second, and so on, and solving one opens nothing but its star.
 import { LEVELS } from '../level/campaign.js';
 import { CHALLENGES } from '../level/challenges.js';
+import { TEMPLATES } from '../level/templates.js';
 import { listed } from './rules.js';
 
-// Authored puzzles, none yet: their slots on the floor plan stay empty until there are some.
-export const PUZZLES = [];
+// Authored puzzles (registers 651, 660, 662): the rooms in rooms/ named "Puzzle N", so the Sandbox offers the
+// same rooms as examples. Puzzle N takes the N-th puzzle slot; a slot with no such room stays empty.
+const authored = n => { const t = TEMPLATES.find(r => r.name === `Puzzle ${n}`); return t ? { id: 'p' + n, name: t.name, puzzle: true, room: t.level } : null; };
+export const PUZZLES = Array.from({ length: 12 }, (_, i) => authored(i + 1));
 export const builders = () => LEVELS.filter(listed);
 // The side room after the k-th builder level (1-based), or null.
 export const sideRoom = k => (k % 2 ? PUZZLES[(k - 1) / 2] : CHALLENGES[k / 2 - 1]) || null;

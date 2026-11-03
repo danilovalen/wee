@@ -815,6 +815,8 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 .menuSec { grid-template-columns: repeat(6, 1fr); }
 .menuSec > button { grid-column: span 2; padding-left: 4px; padding-right: 4px; white-space: nowrap; font-size: 15px; }
 #menuCampaign { grid-column: 1 / -1; }
+/* With Puzzles in the campaign (register 651), Tutorial and Sandbox split the second row. */
+#menuTutorial, #menuSandbox { grid-column: span 3; }
 
 /* The camera (register 408): Fit while zoomed in; the resize bars wait until the whole room shows. */
 .fitBtn { position: absolute; right: 8px; bottom: 8px; z-index: 3; line-height: 1.2; }

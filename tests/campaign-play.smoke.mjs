@@ -58,7 +58,7 @@ try {
   check('Sandbox looks exactly like Campaign (register 218)', await look('#menuCampaign') === await look('#menuSandbox'), await look('#menuSandbox'));
   // Register 400: a box with one button gives it the whole row.
   const spans = await page.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(); return Math.abs(r('menuCampaign').width - (r('menuSandbox').right - r('menuTutorial').left)) < 1 && r('menuTutorial').top === r('menuSandbox').top; });
-  check('Campaign has the top row, as wide as Tutorial, Puzzles and Sandbox together below it (register 521)', spans);
+  check('Campaign has the top row, as wide as Tutorial and Sandbox together below it (registers 521, 651)', spans);
   check('Tutorial fits its button', await page.$eval('#menuTutorial', b => b.scrollWidth <= b.clientWidth));
   check('the menu is one box with no heading line (registers 418, 433, 468)', await page.evaluate(() => document.querySelectorAll('.menuSec').length === 1 && !document.querySelector('.menuSec p') && !document.querySelector('.menuSec').textContent.includes('Play as the robot') && !document.querySelector('.menuList').textContent.includes('little circle')));
   // Register 401: the page paints nothing but its ground until the first place is up.
@@ -107,7 +107,7 @@ try {
   // A card reads its place in the list, not its id (registers 527, 528): the last listed level.
   const LAST = LISTED.length - 1, head = await page.$eval(`.campRow[data-level="${LISTED[LAST].id}"]`, r => { const n = r.querySelector('.campRowHead b'), ps = r.querySelector('.campParts'), nb = n.getBoundingClientRect(), pb = ps.getBoundingClientRect(), b = r.getBoundingClientRect(); return { text: n.textContent, line: Math.abs(nb.top + nb.height / 2 - (pb.top + pb.height / 2)) < 4, right: b.right - pb.right < 24 }; });
   check('a card reads its place in the list, its pieces on the same line at the right (register 527)', head.text === String(LAST + 1) && head.line && head.right, JSON.stringify(head));
-  const nums = await page.$$eval('.campRow:not([data-level^="c"]) b', bs => bs.map(b => +b.textContent));
+  const nums = await page.$$eval('li.main .campRow b', bs => bs.map(b => +b.textContent));
   check('the list numbers run 1, 2, 3 with no gap (register 528)', nums.every((n, i) => n === i + 1), nums.join());
   // Register 562: the challenges sit apart, after the levels, under their own heading, and one opens with only its open tiles taking pieces.
   check('each challenge is a side room beside the builder level that opens it (registers 609-611)', await page.evaluate(() => { const cs = [...document.querySelectorAll('#campList .campRow[data-level^="c"]')].map(b => b.parentNode); return cs.length >= 1 && cs.every(li => li.classList.contains('side') && li.previousElementSibling.classList.contains('main')); }));
@@ -476,6 +476,21 @@ try {
   const up = await v2.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')));
   check('a save from the day the colour level was 7 moves 8-11 back to 7-10 and that level to 11', up.v === 4 && up.levels['6']?.best === 'six' && up.levels['7']?.best === 'seven' && up.levels['10']?.best === 'ten' && up.levels['11']?.best === 'colours' && !up.levels['8'] && up.last === '11', JSON.stringify(up));
   await v2.close();
+  // The campaign's puzzles (register 651): the side room after Level 1 is Puzzle 1, played by hand with no powers, back to Levels, and its win is a star on the list.
+  const pz = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await pz.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; });
+  pz.on('pageerror', e => errors.push(e.message));
+  await pz.goto('http://localhost:5217/#/levels'); await pz.waitForTimeout(600);
+  const slot = await pz.evaluate(async () => { const { plan, PUZZLES } = await import('/src/campaign/progression.js'); const first = PUZZLES.find(Boolean), k = plan().findIndex(r => r.side === first); const row = document.querySelector(`.campRow[data-level="${first.id}"]`); return { id: first.id, k, side: !!row && row.closest('li').classList.contains('side'), name: row && row.textContent }; });
+  check('a puzzle sits in the side room after an odd builder level, named P and its number', slot.k >= 0 && slot.k % 2 === 0 && slot.side && /^P\d/.test(slot.name), JSON.stringify(slot));
+  await pz.click(`.campRow[data-level="${slot.id}"]`); await pz.waitForTimeout(600);
+  check('the puzzle plays by hand with no powers, its way back named Levels', await pz.evaluate(() => document.body.classList.contains('puzzle') && document.body.classList.contains('play') && !Object.values(window.wee.getLevel().powers).some(Boolean)) && (await pz.textContent('#puzzleBack')) === 'Levels');
+  const way = await pz.evaluate(async () => (await import('/src/campaign/robot.js')).allShortest(window.wee.getLevel()).paths[0]);
+  for (const k of way) { await pz.evaluate(k => window.wee.press(k), k); await pz.waitForTimeout(1200); }
+  check('solving it in the fewest moves says so', /fewest there are/.test(await pz.textContent('#winText')), await pz.textContent('#winText'));
+  await pz.click('#puzzleBack'); await pz.waitForTimeout(500);
+  const pzWon = await pz.evaluate(id => { const s = document.querySelector(`.campRow[data-level="${id}"] .campStar`); return location.hash + ' ' + (s && s.classList.contains('on') ? s.textContent : 'off'); }, slot.id);
+  check('back on the list, the puzzle wears its star with your moves', pzWon === `#/levels ${way.length}`, pzWon);
+  await pz.close();
   // Level 9: a one-way is placed pointing right, and a tap on it with its tool turns it; the robot is drawn as a robot.
   const nine = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await nine.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; }); await nine.addInitScript(() => { window.__noWinCard = true; });
   nine.on('pageerror', e => errors.push(e.message));
