@@ -24,17 +24,17 @@ try {
   await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => document.getElementById('roomsBox').close());
   await openPanel();
-  // Ingredients sit in the palette's sections with the palette's icons; powers are their own section, last.
+  // Ingredients sit in the palette's sections with the palette's icons; powers are hidden for now (register 653).
   await page.locator('.genIngBox summary').click();
   const secs = await page.$$eval('#genIng .genSec', ss => ss.map(s => ({ name: s.dataset.section, n: s.querySelectorAll('select').length, icons: [...s.querySelectorAll('canvas')].map(c => c.toDataURL()) })));
   const iconsAll = secs.filter(s => s.name !== 'Powers').flatMap(s => s.icons);
-  check('ingredients come in the palette\'s sections, then Powers last', secs.map(s => s.name).join() === 'Basics,Pieces,Tiles,Floors,Switches,Powers', secs.map(s => s.name).join());
+  check('ingredients come in the palette\'s sections, and no Powers', secs.map(s => s.name).join() === 'Basics,Pieces,Tiles,Floors,Switches', secs.map(s => s.name).join());
   check('every ingredient but a power wears an icon, and no two icons are the same', secs.filter(s => s.name !== 'Powers').every(s => s.icons.length === s.n) && new Set(iconsAll).size === iconsAll.length, `${iconsAll.length} icons, ${new Set(iconsAll).size} distinct`);
   check('every icon draws something', await page.$$eval('#genIng canvas', cs => cs.every(c => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; for (let i = 3; i < d.length; i += 4) if (d[i]) return true; return false; })));
   check('every ingredient fits its own cell, overlapping none', await page.$$eval('#genIng .genItems li', ls => ls.every(li => { const l = li.firstElementChild.getBoundingClientRect(), c = li.getBoundingClientRect(); return l.right <= c.right + 1 && li.firstElementChild.scrollWidth <= li.clientWidth + 1; })));
   check('no ingredient choice is cut short', await page.$$eval('#genIng select', ss => ss.every(s => s.scrollWidth <= s.clientWidth + 1 && s.getBoundingClientRect().width >= 80)));
-  check('every ingredient is in exactly one section', secs.reduce((n, x) => n + x.n, 0) === INGREDIENTS.length, `${secs.reduce((n, x) => n + x.n, 0)} of ${INGREDIENTS.length}`);
-  check('powers sit only in Powers, named', secs.at(-1).n >= 5 && !secs.at(-1).icons.length && await page.$$eval('#genIng [data-section=Powers] .genName', ns => ns.length >= 5));
+  check('every ingredient but a power is in exactly one section', secs.reduce((n, x) => n + x.n, 0) === INGREDIENTS.filter(g => !g.power).length, `${secs.reduce((n, x) => n + x.n, 0)} of ${INGREDIENTS.filter(g => !g.power).length}`);
+  check('no power is offered to the generator', !(await page.locator('#genIng .genName').count()));
   await page.locator('.genIngBox summary').click();
   check('Generate a room opens its own panel', await page.locator('#genBox').isVisible() && !(await page.locator('#roomsBox').isVisible()));
   check('a checkpoint cannot be Must use, and says why', await page.evaluate(() => { const s = document.querySelector('#genIng select[data-id=checkpoint]'); return ![...s.options].some(o => o.value === 'must') && /never dies/.test(s.closest('label').title); }));
@@ -43,18 +43,22 @@ try {
   await page.selectOption('#genIng select[data-id=sensor]', 'must');
   check('an ingredient brings what it needs, shown as Allowed', await page.evaluate(() => ['turret', 'door'].every(id => document.querySelector(`#genIng select[data-id=${id}]`).value === 'allowed')));
   for (const id of ['sensor', 'turret', 'door']) await page.selectOption(`#genIng select[data-id=${id}]`, '');
-  await page.selectOption('#genIng select[data-id=crack]', 'must');
-  const broughtDive = await page.inputValue('#genIng select[data-id=dive]');
-  await page.selectOption('#genIng select[data-id=dive]', '');
+  await page.selectOption('#genIng select[data-id=water]', 'must');
+  const broughtMover = await page.inputValue('#genIng select[data-id=mover]');
+  await page.selectOption('#genIng select[data-id=mover]', '');
   await page.selectOption('#genIng select[data-id=gravel]', 'allowed');
-  check('something an ingredient brings along can be set Off, and stays Off', broughtDive === 'allowed' && (await page.inputValue('#genIng select[data-id=dive]')) === '' && (await page.inputValue('#genIng select[data-id=crack]')) === 'must', broughtDive);
-  for (const id of ['crack', 'gravel']) await page.selectOption(`#genIng select[data-id=${id}]`, '');
+  check('something an ingredient brings along can be set Off, and stays Off', broughtMover === 'allowed' && (await page.inputValue('#genIng select[data-id=mover]')) === '' && (await page.inputValue('#genIng select[data-id=water]')) === 'must', broughtMover);
+  // A Breakable block brings Dive along, but a hidden power is never brought (register 653).
+  await page.selectOption('#genIng select[data-id=crack]', 'allowed');
+  for (const id of ['gravel', 'water']) await page.selectOption(`#genIng select[data-id=${id}]`, '');
   await page.selectOption('#genIng select[data-id=box]', 'must');
   for (const [id, v] of [['genW', 7], ['genH', 7], ['genMin', 3], ['genMax', 10], ['genSeed', 1]]) await page.fill('#' + id, String(v));
   await page.click('#genGo');
   await page.waitForSelector('#genResult:not([hidden])', { timeout: 30000 });
   check('a recipe that can fit, fits', (await page.textContent('#genInfo')).startsWith('Fits.'), await page.textContent('#genInfo'));
   check('the shelf names it by its recipe', (await page.textContent('#genShelf')).includes('7x7, 3-10 moves, Box'));
+  check('a hidden power is never brought along (register 653)', await page.evaluate(() => { const r = JSON.parse(localStorage.getItem('wee.genForm')).recipe; return r.ing.crack === 'allowed' && !('dive' in r.ing); }));
+  await page.selectOption('#genIng select[data-id=crack]', '');
   check('nothing reaches your rooms before Save', await page.evaluate(() => JSON.parse(localStorage.getItem('wee.rooms') || '[]').length === 0));
 
   // Stop keeps the closest room so far.

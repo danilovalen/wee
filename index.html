@@ -29,7 +29,7 @@
     <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room (colour, dots, lines and frames): keys 1 to 4 cycle them and 0 turns them off.">Lenses</button>
     <button id="genBtn" type="button" data-edit title="Generate a room">Generate</button>
     <span class="spacer"></span>
-    <button id="powersBtn" type="button" class="sandbox-only" title="Powers, status and how the world moves">Powers</button>
+    <button id="powersBtn" type="button" class="sandbox-only" title="How the world moves">World</button>
     <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
     <button id="roomsBtn" type="button">Rooms</button>
   </header>
@@ -173,10 +173,11 @@
       </div>
     </section>
     <aside id="powers">
-      <h2>Powers</h2>
-      <div id="powerList"></div>
-      <h2>Status</h2>
-      <div id="statusList"></div>
+      <!-- The blob's powers are hidden for now (register 653). -->
+      <h2 hidden>Powers</h2>
+      <div id="powerList" hidden></div>
+      <h2 hidden>Status</h2>
+      <div id="statusList" hidden></div>
       <div id="worldMoves">
         <h2>World moves</h2>
         <label class="radio"><input type="radio" name="clock" value="tile"> Each tile you slide</label>
@@ -199,7 +200,7 @@
   <nav id="phoneNav" class="phoneNav">
     <button type="button" data-sheet="build" class="on"><i>&#9998;</i>Build</button>
     <button type="button" data-sheet="room"><i>&#9638;</i>Room</button>
-    <button type="button" data-sheet="powers"><i>&#9889;</i>Powers</button>
+    <button type="button" data-sheet="powers" hidden><i>&#9889;</i>Powers</button>
     <button type="button" id="navRooms"><i>&#9776;</i>Rooms</button>
   </nav>
   <div id="sizePop" class="sizePop" hidden role="dialog" aria-label="Room size">

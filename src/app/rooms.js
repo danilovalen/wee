@@ -1,5 +1,6 @@
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
+import { noPowers } from '../rules/base.js';
 import { TEMPLATES } from '../level/templates.js';
 import { encodeRoom, decodeRoom } from '../level/code.js';
 import { splitRoom, joinRoom, stampOf, pack, unpack } from '../level/room.js';
@@ -43,9 +44,10 @@ export function followUndo() {
   else if (S.room === g.prev && now === g.genStamp) S.room = g.gen;
 }
 
+// A test fixture keeps its powers so the rules can still be tried; every room a player opens has none (register 653).
 export function openRoom(level, meta) {
-  S.level = level;
-  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null, recipe: meta.recipe || null, puzzle: !!meta.puzzle, saved: stampOf(level), edited: false };
+  S.level = meta.fixture ? level : noPowers(level);
+  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null, recipe: meta.recipe || null, puzzle: !!meta.puzzle, saved: stampOf(S.level), edited: false };
   S.genPrev = null;
   S.history = newHistory();
   remember(S.room.id);
@@ -130,7 +132,7 @@ export function buildRooms(actions) {
   // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
   const EXAMPLES = ['Hex counter', 'Box into box'];  // the second: the owner's room from register 657
   const templateRows = (list = TEMPLATES, kind = 'Template') => list.map(t => { const { level } = splitRoom(t.level);
-    return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: kind === 'Example' ? t.name : '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
+    return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: kind === 'Example' ? t.name : '', fixture: kind !== 'Example' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
   exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
   // Rooms from the menu (rooms/start) is the Sandbox's first screen, its way back Menu; from a room, Close (registers 395, 399).

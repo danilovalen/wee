@@ -56,13 +56,12 @@ try {
   // Room and Powers in sheets (register 105).
   const one = await page.evaluate(() => ({ down: document.documentElement.scrollHeight - innerHeight, label: [...document.querySelectorAll('#palette .lbl')].some(l => l.offsetParent), wide: Math.max(...[...document.querySelectorAll('#palette button')].filter(b => b.offsetParent).map(b => b.getBoundingClientRect().width)), name: document.getElementById('toolName').textContent, nav: !!document.getElementById('phoneNav').offsetParent, powers: !!document.getElementById('powerList').offsetParent }));
   check('the editor is one screen with icon tools, the tool named above them, and bottom tabs', one.down <= 0 && !one.label && one.wide <= 50 && one.name === 'Look' && one.nav && !one.powers, JSON.stringify(one));
-  await page.click('[data-sheet=powers]');
-  check('Powers opens a sheet with the powers', await page.locator('#powerList').isVisible() && await page.locator('#sheetPowers #powers').count() === 1);
+  check('there is no Powers tab while powers are hidden (register 653)', await page.locator('[data-sheet=powers]').isHidden());
   await page.click('[data-sheet=room]');
   check('Room swaps it for the size and world moves', await page.locator('#sheetRoom #w').isVisible() && await page.locator('#sheetRoom [name=clock]').first().isVisible() && !(await page.locator('#powerList').isVisible()));
   await page.click('[data-sheet=build]');
   check('Build puts the sheet away', await page.locator('#sheet').isHidden());
-  await page.click('[data-sheet=powers]'); await page.click('#checkBtn');
+  await page.click('[data-sheet=room]'); await page.click('#checkBtn');
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   check('Check opens its findings in place of a sheet', await page.locator('#sheet').isHidden() && await page.locator('#well').isVisible());
   await page.click('#wellClose');
@@ -114,6 +113,8 @@ try {
   await pick('water');
   await page.click('#mode');
   await page.evaluate(() => { window.__manualClock = true; });
+  // A room has no powers for now (register 653), so the test turns Cycle on to see its button.
+  await page.evaluate(() => window.wee.setPower('cycle', true));
   check('the play buttons show in play', await page.locator('#hideBtn').isVisible());
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const full = await page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, h: innerHeight, tools: !!document.getElementById('tools').offsetParent, bottom: document.getElementById('pad').getBoundingClientRect().bottom, room: document.getElementById('game').getBoundingClientRect().height }));
@@ -138,8 +139,8 @@ try {
   await page.click('#hideBtn');
   await page.evaluate(() => window.advanceTime(60));
   check('the hide button hides', (await text()).player.hidden);
-  // Powers are set in the editor, so leave play, set one, and come back.
-  const setPower = async (n, on) => { await page.click('#mode'); await page.click('[data-sheet=powers]'); await page.locator(`[data-power=${n}]`).setChecked(on); await page.click('[data-sheet=build]'); await page.click('#mode'); };
+  // Powers have no switch on screen for now (register 653), so the test sets them directly.
+  const setPower = (n, on) => page.evaluate(([n, on]) => window.wee.setPower(n, on), [n, on]);
   // the tap button names only what the tap does with the powers that are on
   const tapBtn = async () => page.evaluate(() => { const b = document.getElementById('hideBtn'); return b.offsetParent ? b.textContent : null; });
   check('with Cycle alone it says Hide', await tapBtn() === 'Hide', String(await tapBtn()));

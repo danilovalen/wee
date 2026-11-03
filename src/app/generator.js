@@ -1,6 +1,7 @@
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
+import { noPowers, POWERS_SHOWN } from '../rules/base.js';
 import { INGREDIENTS } from '../gen/ingredients.js';
 import { generate, normalize, recipeLabel, LIMITS } from '../gen/generate.js';
 import { stampOf } from '../level/room.js';
@@ -44,6 +45,8 @@ function recipeFromForm() {
   const off = [];
   for (const sel of $('genIng').querySelectorAll('select')) if (sel.value) ing[sel.dataset.id] = sel.value; else if (sel.dataset.off) off.push(sel.dataset.id);
   const base = $('genKeep').checked && S.level ? { base: structuredClone(S.level) } : {};
+  // A hidden power is never brought along (register 653).
+  if (!POWERS_SHOWN) off.push(...INGREDIENTS.filter(g => g.power).map(g => g.id));
   return normalize({ w: $('genW').value, h: $('genH').value, min: $('genMin').value, max: $('genMax').value, seed: $('genSeed').value, ing, off, ...base });
 }
 
@@ -143,7 +146,7 @@ export function openInEditor(entry) {
   }
   if (S.mode !== 'edit') A.setMode('edit');
   const prev = S.room, prevStamp = stampOf(S.level);
-  change(() => { S.level = structuredClone(entry.level); });
+  change(() => { S.level = noPowers(structuredClone(entry.level)); });
   S.room = { id: null, name: '', note: '', solution: entry.fit ? entry.verdict.moves : null, recipe: entry.recipe, saved: stampOf(S.level), edited: false };
   S.genPrev = { prev, prevStamp, gen: S.room, genStamp: S.room.saved };
   remember(null);
@@ -170,7 +173,7 @@ export function buildGenerator(actions) {
     li.append(label);
     return li;
   };
-  const sections = [...GROUPS.map(([id, name]) => [name, INGREDIENTS.filter(g => !g.power && ingGroup(g) === id)]), ['Powers', INGREDIENTS.filter(g => g.power)]];
+  const sections = [...GROUPS.map(([id, name]) => [name, INGREDIENTS.filter(g => !g.power && ingGroup(g) === id)]), ['Powers', INGREDIENTS.filter(g => g.power && POWERS_SHOWN)]];
   $('genIng').replaceChildren(...sections.filter(([, gs]) => gs.length).map(([name, gs]) => {
     const sec = document.createElement('li'), list = document.createElement('ul');
     sec.className = 'genSec'; list.className = 'genItems';

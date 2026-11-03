@@ -1,12 +1,13 @@
 // The one shared state of the page: the level being edited, the editor's settings and
 // the run being played. Every app file reads and writes it here, never in a copy.
 import { emptyLevel } from '../level/format.js';
+import { noPowers } from '../rules/base.js';
 import { newHistory } from './history.js';
 
 // A new room is 7x7 open floor (register 430): the room's edge stops the robot, so it needs no wall
 // border (register 380). tall is kept for callers; the size no longer follows the screen.
 export function starterLevel(tall) { // eslint-disable-line no-unused-vars
-  return emptyLevel(7, 7);
+  return noPowers(emptyLevel(7, 7));  // a new room has no powers (register 653)
 }
 
 export const S = {

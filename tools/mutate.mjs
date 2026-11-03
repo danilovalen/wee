@@ -494,7 +494,7 @@ export const M = [
   ['src', "e.turret ? e.turret.aim % e.turret.dirs.length : -1", "e.turret ? e.turret.aim : -1", 'solve'],
   ['src', "    if (!confirm('Open the generated room instead of this one, and lose its changes?')) return false;\n", "", 'genui'],
   ['src', "    if (!confirm(`Replace ${name}? Undo brings back its unsaved changes.`)) return false;\n", "", 'genui'],
-  ['src', "change(() => { S.level = structuredClone(entry.level); });", "S.level = structuredClone(entry.level);", 'genui'],
+  ['src', "change(() => { S.level = noPowers(structuredClone(entry.level)); });", "S.level = noPowers(structuredClone(entry.level));", 'genui'],
   ['src', "if (S.room === g.gen && now === g.prevStamp) S.room = g.prev;", "if (false) S.room = g.prev;", 'genui'],
   ['src', "else if (S.room === g.prev && now === g.genStamp) S.room = g.gen;", "else if (false) S.room = g.gen;", 'genui'],
   ['src', "if (performance.now() > until || $('genStop')", "if ($('genStop')", 'genui'],
@@ -623,7 +623,6 @@ export const M = [
   ['src/app/generator.js', "const ING_GROUP = { follow: 'pieces', mounted: 'pieces' };", "const ING_GROUP = {};", 'genui'],
   ['src/app/icons.js', "    x.fillStyle = '#221f22'; x.fillRect(18, 2, 12, 10); x.fillStyle = '#fcfcfa';\n    for (const [cx, cy] of [[20, 4], [22, 6], [20, 8], [24, 4], [26, 6], [24, 8]]) x.fillRect(cx, cy, 2, 2);", "", 'genui'],
   ['src/app/generator.js', "    else label.append(icon(ING_ICON[g.id] || g.id, ING_COLOUR[g.id]));", "    else label.append(icon(ING_ICON[g.id] || g.id));", 'genui'],
-  ['src/app/generator.js', "['Powers', INGREDIENTS.filter(g => g.power)]", "['Powers', []]", 'genui'],
   // Flicker (register 119)
   ['src/app/check.js', "    else { $('checkText').classList.add('stale'); $('showSolution').disabled = true; }", "    else { $('checkText').textContent = ''; }", 'flicker'],
   ['src/app/design.js', "  $('designBox').classList.add('stale');\n}", "  $('designBox').hidden = true; $('designList').replaceChildren();\n}", 'flicker'],
@@ -964,7 +963,7 @@ export const M = [
   ['src', "  if (all.some(next => !newError(level, next))) return null;", "  if (!newError(level, all[0])) return null;", 'campaign-play'],
   ['index.html', '<button id="menuSandbox" type="button" class="primary">', '<button id="menuSandbox" type="button">', 'campaign-play'],
   ['style.css', "#reportBox, dialog[id].rooms { --page: 720px; width: 100vw;", "#reportBox, dialog[id].rooms { --page: 720px;", 'steady'],
-  ['src/editor/state.js', "  return emptyLevel(7, 7);", "  const l = emptyLevel(7, 7); l.cells.fill('wall', 0, l.w); return l;", 'campaign'],
+  ['src/editor/state.js', "  return noPowers(emptyLevel(7, 7));", "  const l = noPowers(emptyLevel(7, 7)); l.cells.fill('wall', 0, l.w); return l;", 'campaign'],
   ['src/app/strip.js', "  if (open && before !== null && before !== tool) open = null;", "", 'browser'],
   ['src/app/strip.js', "      if (open === g) { setOpen(null); return; }\n", "", 'browser'],
   ['src/app/strip.js', "    b.querySelector('.more').hidden = m.length < 2;", "    b.querySelector('.more').hidden = false;", 'modes'],
@@ -982,7 +981,7 @@ export const M = [
   ['src/app/nav.js', "  document.documentElement.classList.remove('booting');\n", "", 'campaign-play'],
   ['style.css', "html.booting body > :not(dialog[open]) { visibility: hidden; }", "", 'campaign-play'],
   ['style.css', "#menuCampaign { grid-column: 1 / -1; }", "", 'campaign-play'],
-  ['src/app/rooms.js', "{ name: kind === 'Example' ? t.name : '' }", "{ name: '' }", 'nav'],
+  ['src/app/rooms.js', "{ name: kind === 'Example' ? t.name : '', ", "{ name: '', ", 'nav'],
   ['src/app/strip.js', "open = members(g).length > 1 ? g : null; before = lastOf(g);", "open = null; before = lastOf(g);", 'browser'],
   ['src/app/levelParts.js', "icon('gate', 'red', def.colours ? 'red' : null, crate)", "icon('gate', 'red', null, crate)", 'campaign-play'],
   ['src/app/camera.js', "export const zoomable = () => cam.fit * T < MIN_TILE;", "export const zoomable = () => true;", 'camera'],
@@ -998,7 +997,7 @@ export const M = [
   ['style.css', ".moreMenu { position: absolute; right: 0; top: calc(100% + 8px); gap: 8px; }", ".moreMenu { position: absolute; right: 0; top: calc(100% - 2px); }", 'spacing'],  ['src/rules/life.js', "  if (t.death && !covers(e)) { kill(s, e, 'death'); return false; }", "  if (t.death) { kill(s, e, 'death'); return false; }", 'sim'],
   ['src/rules/player.js', "  if (t.death && !entAt(s, t.x, t.y)) { die(s, 'spikes'); return 'died'; }", "  if (t.death) { die(s, 'spikes'); return 'died'; }", 'sim'],
   ['src/rules/player.js', "  if (cellAt(s, nx, ny) === 'death') { die(s, 'spikes'); return 'died'; }", "", 'sim'],
-  ['src/editor/state.js', "  return emptyLevel(7, 7);", "  return tall ? emptyLevel(12, 14) : emptyLevel(20, 12);", 'campaign'],
+  ['src/editor/state.js', "  return noPowers(emptyLevel(7, 7));", "  return noPowers(tall ? emptyLevel(12, 14) : emptyLevel(20, 12));", 'campaign'],
   ['src/app/nav.js', "    if (n > 0 && !fixed) {", "    if (false) {", 'nav'],
   ['src/app/levelParts.js', "    const crate = pushingsOf(def, el).every(Boolean);", "    const crate = false;", 'campaign-play'],
   ['src/campaign/rules.js', "/^(button|toggle):|^death$/", "/^(button|toggle):/", 'campaign'],
@@ -1106,6 +1105,13 @@ export const M = [
   // Row 608: no mutant goes stale.
   ['tools/mutantLocate.mjs', "existsSync(file) && readFileSync(file, 'utf8').includes(from) ? file : null", "existsSync(file) ? file : null", 'mutants'],
   ['tools/mutantLocate.mjs', "return hits.length === 1 ? hits[0] : null;", "return hits[0] || null;", 'mutants'],
+  ['src/rules/base.js', "export const noPowers = l => POWERS_SHOWN ? l : { ...l, powers: Object.fromEntries(POWERS.map(p => [p, false])) };", "export const noPowers = l => l;", 'nav'],
+  ['src/editor/state.js', "return noPowers(emptyLevel(7, 7));", "return emptyLevel(7, 7);", 'browser'],
+  ['src/app/rooms.js', "S.level = meta.fixture ? level : noPowers(level);", "S.level = level;", 'nav'],
+  ['src/app/generator.js', "['Powers', INGREDIENTS.filter(g => g.power && POWERS_SHOWN)]]", "['Powers', INGREDIENTS.filter(g => g.power)]]", 'genui'],
+  ['src/app/panels.js', "for (const p of POWERS_SHOWN ? POWERS : []) {", "for (const p of POWERS) {", 'browser'],
+  ['index.html', '<button type="button" data-sheet="powers" hidden>', '<button type="button" data-sheet="powers">', 'phone'],
+  ['src/app/generator.js', "  if (!POWERS_SHOWN) off.push(...INGREDIENTS.filter(g => g.power).map(g => g.id));", "", 'genui'],
 ];
 
 // Run only as a script: the gate imports M.

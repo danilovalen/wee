@@ -43,6 +43,10 @@ export const CARRIES_TURRET = ['box', 'heavy', 'enemy', 'strong'];
 
 // A power listed in NEEDS cannot act until its block type exists.
 export const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'light', 'armored'];
+// The blob's powers are hidden for now (register 653): no room turns one on and nothing on screen offers them.
+// The rules keep them, so turning this on brings them back.
+export const POWERS_SHOWN = false;
+export const noPowers = l => POWERS_SHOWN ? l : { ...l, powers: Object.fromEntries(POWERS.map(p => [p, false])) };
 export const NEEDS = { light: 'dark levels' };
 
 // Water stops you unless you are swimming, and stops weak enemies, light boxes and

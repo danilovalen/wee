@@ -1,6 +1,6 @@
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
-import { CLOCKWISE, COLOURS, POWERS, NEEDS } from '../rules/base.js';
+import { CLOCKWISE, COLOURS, POWERS, NEEDS, POWERS_SHOWN } from '../rules/base.js';
 import { resizeLevel, moveSide, wallBorder } from '../level/format.js';
 import { INK } from '../view/ink.js';
 import { paint, look } from '../view/look.js';
@@ -95,7 +95,7 @@ export function buildPanels(actions) {
     else ui.aim = [...ui.aim, d];
     syncPanel();
   });
-  for (const p of POWERS) {
+  for (const p of POWERS_SHOWN ? POWERS : []) {
     const row = document.createElement('label');
     row.className = 'power' + (NEEDS[p] ? ' off' : '');
     const box = document.createElement('input');

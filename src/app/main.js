@@ -18,6 +18,7 @@ import { portrait, $ } from './dom.js';
 import { startSnow, windNow } from './snow.js';
 import { fit, watchStage } from './fit.js';
 import { buildPanels, syncPanel } from './panels.js';
+import { change } from './undo.js';
 import { bindInput } from './input.js';
 import { setMode, frame, render, tick, report, copyReport } from './play.js';
 import { bindCamera } from './camera.js';
@@ -39,7 +40,9 @@ window.advanceTime = ms => {
   for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
   S.acc = 0; render();
 };
-window.wee = { draws: () => S.draws, demoRunning: () => !!S.demoRunning, trail: () => S.trail, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, wind: () => windNow(), fxTypes: () => S.fx.map(f => f.type), loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
+window.wee = { draws: () => S.draws, demoRunning: () => !!S.demoRunning, trail: () => S.trail, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, wind: () => windNow(), fxTypes: () => S.fx.map(f => f.type),
+  // Powers have no switch on screen for now (register 653); the tests still turn them on and off here.
+  setPower: (p, on) => { change(() => { S.level.powers[p] = on; }); if (S.game) S.pending.push(`power:${p}:${on ? 1 : 0}`); syncPanel(); }, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
 
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });

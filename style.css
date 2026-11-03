@@ -424,6 +424,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   .opt .note { display: none; }
   .opt button { min-height: 36px; }
   #placeHint:not(.msg) { display: none; }
+  .phoneNav button[hidden] { display: none; }
   .phoneNav button:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
   .phoneNav button:focus:not(:focus-visible) { outline: none; }
   #tools .hint { margin: 0 0 4px; font-size: 12.5px; }

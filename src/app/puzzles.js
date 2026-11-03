@@ -1,5 +1,6 @@
 // Puzzles (register 302): rooms marked in the Sandbox, played by hand as the little circle.
 // Your best is kept; the fewest moves come from the robot's own search.
+import { noPowers } from '../rules/base.js';
 import { S } from '../editor/state.js';
 import { list } from './store.js';
 import { splitRoom } from '../level/room.js';
@@ -27,7 +28,7 @@ async function listPuzzles() {
 function play(r) {
   const { level } = splitRoom(r), found = allShortest(level);
   S.puzzle = { id: r.id, fewest: found.status === 'solved' ? found.length : null };
-  S.camp = null; S.simple = true; S.level = level;
+  S.camp = null; S.simple = true; S.level = noPowers(level);
   document.body.classList.add('puzzle', 'simple');
   A.setMode('play'); A.syncPanel(); A.fit();
 }

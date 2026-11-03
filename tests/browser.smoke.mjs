@@ -29,13 +29,13 @@ try {
   check('a fresh start has no unsaved tile', await page.locator('#openNow').isHidden());
   check('floors are their own section: water, sticky puddle, gravel and wire', (await page.$$eval('[data-tool][data-in=floors]', bs => bs.map(b => b.dataset.tool).join())) === 'water,sticky,gravel,wire' && await page.locator('[data-group=floors]').count() === 1);
   await page.click('#roomsBox .roomsHead form button');
+  // Powers are hidden for now (register 653): a new Sandbox room starts with every power off.
+  check('a new room has no powers on', await page.evaluate(() => Object.values(window.wee.getLevel().powers).every(v => !v)));
   // These checks were written against the old starter room; a new room is 7x7 now (register 430).
   await page.evaluate(() => window.wee.loadLevel(window.wee.blank(20, 12)));
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));
   // A tool sits in one tab of the palette: open its tab, then pick it.
   const pick = t => pickTool(page, t);
-  // Powers, status and world moves open from the header in a Sandbox (register 381).
-  const powers = async f => { const was = await page.locator('#powers').isVisible(); if (!was) await page.click('#powersBtn'); await f(); if (!was) await page.click('#powersBtn'); };
   // Canvas clicks are aimed from the room's position with the page scrolled to the top.
   for (const fn of ['click', 'move']) { const real = page.mouse[fn].bind(page.mouse); page.mouse[fn] = async (...a) => { await page.evaluate(() => scrollTo(0, 0)); return real(...a); }; }
   const box = await page.locator('#game').boundingBox();
@@ -224,15 +224,16 @@ try {
     return [d[0], d[1], d[2]];
   }, s.player);
   check('the player is painted on its tile', px[2] > 200 && px[2] - px[1] > 80 && px[0] < px[2] - 60, px.join(','));
-  await powers(() => page.locator('#statusList [data-power=armored]').setChecked(true));
+  await page.evaluate(() => window.wee.setPower('armored', true));
   await page.evaluate(() => window.advanceTime(60));
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const rim = await page.evaluate(({ x, y }) => {
     const c = document.getElementById('game'), tile = c.width / window.wee.getLevel().w;
     const d = c.getContext('2d').getImageData(Math.round((x + 0.5 + 11.5 / 32) * tile), Math.round((y + 0.5) * tile), 1, 1).data;
     return [d[0], d[1], d[2]];
   }, s.player);
   check('armored, the player wears a steel rim', rim[2] > 160 && rim[0] > 110 && rim[0] < rim[2], rim.join(','));
-  await powers(() => page.locator('#statusList [data-power=armored]').setChecked(false));
+  await page.evaluate(() => window.wee.setPower('armored', false));
 
   await page.keyboard.press('ArrowDown');
   await page.evaluate(() => window.advanceTime(600));
@@ -536,7 +537,7 @@ try {
   await page.keyboard.press('ArrowUp'); await page.evaluate(() => window.advanceTime(60));
   check('an early side key goes in as an aimed-back shot', JSON.parse(await page.evaluate(() => window.wee.report())).keys.some(k => k.k === 'back:up'));
   // a report replays to exactly the state the run ended in, including a power turned off mid-run
-  await powers(() => page.locator('[data-power=boomerang]').setChecked(false));
+  await page.evaluate(() => window.wee.setPower('boomerang', false));
   await page.keyboard.press('ArrowDown'); await page.evaluate(() => window.advanceTime(1500));
   const same = await page.evaluate(() => {
     const r = JSON.parse(window.wee.report());
@@ -544,7 +545,7 @@ try {
     return JSON.stringify(again) === JSON.stringify(r.end) && r.level.powers.boomerang === true && r.keys.some(k => k.k === 'power:boomerang:0');
   });
   check('a copied report replays to the same end, with a power turned off mid-run', same);
-  await powers(() => page.locator('[data-power=boomerang]').setChecked(true));
+  await page.evaluate(() => window.wee.setPower('boomerang', true));
   await page.keyboard.press('e');
 
   // undo takes back a whole drag in one step, redo puts it back, and both keys work
@@ -675,9 +676,8 @@ try {
   // Manga: "on" is an accent ring inside a sticker shadow, and no control draws a border.
   const onLook = await page.$eval('[data-tool].on', b => { const c = getComputedStyle(b); return { shadow: c.boxShadow, border: c.borderTopWidth, accent: c.color }; });
   check('a picked tool wears the accent inset ring and no border', onLook.shadow.includes('inset') && onLook.shadow.includes(onLook.accent + ' 0px 0px 0px 2px inset') && onLook.accent === 'rgb(171, 157, 242)' && onLook.border === '0px', JSON.stringify(onLook));
-  // a disabled power reads as disabled and cannot be ticked
-  const hook = page.locator('[data-power=light]');
-  check('a power that cannot act yet is disabled', await hook.isDisabled());
+  // Powers are hidden for now (register 653): nothing on screen offers one.
+  check('no power is offered on screen', await page.locator('[data-power]').count() === 0);
   // served with a rooms directory, the page saves to the server instead of the browser
   const roomsDir = mkdtempSync(join(tmpdir(), 'wee-rooms-'));
   const withApi = await serve(PORT + 1, { rooms: roomsDir });

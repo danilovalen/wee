@@ -439,6 +439,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   .opt .note { display: none; }
   .opt button { min-height: 36px; }
   #placeHint:not(.msg) { display: none; }
+  .phoneNav button[hidden] { display: none; }
   .phoneNav button:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
   .phoneNav button:focus:not(:focus-visible) { outline: none; }
   #tools .hint { margin: 0 0 4px; font-size: 12.5px; }
@@ -988,7 +989,7 @@ body.challenge .growBar { display: none !important; }
     <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room (colour, dots, lines and frames): keys 1 to 4 cycle them and 0 turns them off.">Lenses</button>
     <button id="genBtn" type="button" data-edit title="Generate a room">Generate</button>
     <span class="spacer"></span>
-    <button id="powersBtn" type="button" class="sandbox-only" title="Powers, status and how the world moves">Powers</button>
+    <button id="powersBtn" type="button" class="sandbox-only" title="How the world moves">World</button>
     <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
     <button id="roomsBtn" type="button">Rooms</button>
   </header>
@@ -1132,10 +1133,11 @@ body.challenge .growBar { display: none !important; }
       </div>
     </section>
     <aside id="powers">
-      <h2>Powers</h2>
-      <div id="powerList"></div>
-      <h2>Status</h2>
-      <div id="statusList"></div>
+      <!-- The blob's powers are hidden for now (register 653). -->
+      <h2 hidden>Powers</h2>
+      <div id="powerList" hidden></div>
+      <h2 hidden>Status</h2>
+      <div id="statusList" hidden></div>
       <div id="worldMoves">
         <h2>World moves</h2>
         <label class="radio"><input type="radio" name="clock" value="tile"> Each tile you slide</label>
@@ -1158,7 +1160,7 @@ body.challenge .growBar { display: none !important; }
   <nav id="phoneNav" class="phoneNav">
     <button type="button" data-sheet="build" class="on"><i>&#9998;</i>Build</button>
     <button type="button" data-sheet="room"><i>&#9638;</i>Room</button>
-    <button type="button" data-sheet="powers"><i>&#9889;</i>Powers</button>
+    <button type="button" data-sheet="powers" hidden><i>&#9889;</i>Powers</button>
     <button type="button" id="navRooms"><i>&#9776;</i>Rooms</button>
   </nav>
   <div id="sizePop" class="sizePop" hidden role="dialog" aria-label="Room size">
@@ -1906,6 +1908,10 @@ const CARRIES_TURRET = ['box', 'heavy', 'enemy', 'strong'];
 
 // A power listed in NEEDS cannot act until its block type exists.
 const POWERS = ['boomerang', 'dive', 'laser', 'cycle', 'swim', 'light', 'armored'];
+// The blob's powers are hidden for now (register 653): no room turns one on and nothing on screen offers them.
+// The rules keep them, so turning this on brings them back.
+const POWERS_SHOWN = false;
+const noPowers = l => POWERS_SHOWN ? l : { ...l, powers: Object.fromEntries(POWERS.map(p => [p, false])) };
 const NEEDS = { light: 'dark levels' };
 
 // Water stops you unless you are swimming, and stops weak enemies, light boxes and
@@ -1920,7 +1926,7 @@ const BREAKS = ['strong', 'heavy'];
 const breaks = e => BREAKS.includes(e.kind);
 
 const DIR_OF = (dx, dy) => Object.keys(DIRS).find(k => DIRS[k][0] === dx && DIRS[k][1] === dy);
-return { TICK_MS, RT_PERIOD, HIDE_TICKS, LASER_TICKS, DIRS, OPPOSITE, COLOURS, CORNERS, EXIT_FACE, ENTRY_FACE, OUT, OPP, openFaces, turn, CLOCKWISE, KINDS, LIGHT, PUSHED, FUSE, MOVES, ENEMY, MODES, CARRIES_TURRET, POWERS, NEEDS, WADES, wades, HOLDS_DOOR, BREAKS, breaks, DIR_OF };
+return { TICK_MS, RT_PERIOD, HIDE_TICKS, LASER_TICKS, DIRS, OPPOSITE, COLOURS, CORNERS, EXIT_FACE, ENTRY_FACE, OUT, OPP, openFaces, turn, CLOCKWISE, KINDS, LIGHT, PUSHED, FUSE, MOVES, ENEMY, MODES, CARRIES_TURRET, POWERS, POWERS_SHOWN, noPowers, NEEDS, WADES, wades, HOLDS_DOOR, BREAKS, breaks, DIR_OF };
 })();
 // ---- src/view/ink.js
 const m8 = (() => {
@@ -5502,15 +5508,17 @@ return { LIMIT, newHistory, record, undo, redo };
 // ---- src/editor/state.js
 const m41 = (() => {
 const { emptyLevel } = m16;
+const { noPowers } = m7;
 const { newHistory } = m40;
 // The one shared state of the page: the level being edited, the editor's settings and
 // the run being played. Every app file reads and writes it here, never in a copy.
 
 
+
 // A new room is 7x7 open floor (register 430): the room's edge stops the robot, so it needs no wall
 // border (register 380). tall is kept for callers; the size no longer follows the screen.
 function starterLevel(tall) { // eslint-disable-line no-unused-vars
-  return emptyLevel(7, 7);
+  return noPowers(emptyLevel(7, 7));  // a new room has no powers (register 653)
 }
 
 const S = {
@@ -7168,6 +7176,7 @@ return { META, splitRoom, joinRoom, stampOf, pack, unpack };
 })();
 // ---- src/app/puzzles.js
 const m61 = (() => {
+const { noPowers } = m7;
 const { S } = m41;
 const { list } = m59;
 const { splitRoom } = m60;
@@ -7176,6 +7185,7 @@ const { $ } = m0;
 const { place, go, back, up } = m4;
 // Puzzles (register 302): rooms marked in the Sandbox, played by hand as the little circle.
 // Your best is kept; the fewest moves come from the robot's own search.
+
 
 
 
@@ -7202,7 +7212,7 @@ async function listPuzzles() {
 function play(r) {
   const { level } = splitRoom(r), found = allShortest(level);
   S.puzzle = { id: r.id, fewest: found.status === 'solved' ? found.length : null };
-  S.camp = null; S.simple = true; S.level = level;
+  S.camp = null; S.simple = true; S.level = noPowers(level);
   document.body.classList.add('puzzle', 'simple');
   A.setMode('play'); A.syncPanel(); A.fit();
 }
@@ -8951,6 +8961,7 @@ return { versionOf, row, renderList };
 })();
 // ---- src/app/rooms.js
 const m88 = (() => {
+const { noPowers } = m7;
 const { TEMPLATES } = m80;
 const { encodeRoom, decodeRoom } = m81;
 const { splitRoom, joinRoom, stampOf, pack, unpack } = m60;
@@ -8967,6 +8978,7 @@ const { buildMore } = m85;
 const { renderList: drawList, row } = m87;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
+
 
 
 
@@ -9009,9 +9021,10 @@ function followUndo() {
   else if (S.room === g.prev && now === g.genStamp) S.room = g.gen;
 }
 
+// A test fixture keeps its powers so the rules can still be tried; every room a player opens has none (register 653).
 function openRoom(level, meta) {
-  S.level = level;
-  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null, recipe: meta.recipe || null, puzzle: !!meta.puzzle, saved: stampOf(level), edited: false };
+  S.level = meta.fixture ? level : noPowers(level);
+  S.room = { id: meta.id || null, name: meta.name || '', note: meta.note || '', solution: meta.solution || null, recipe: meta.recipe || null, puzzle: !!meta.puzzle, saved: stampOf(S.level), edited: false };
   S.genPrev = null;
   S.history = newHistory();
   remember(S.room.id);
@@ -9096,7 +9109,7 @@ function buildRooms(actions) {
   // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
   const EXAMPLES = ['Hex counter', 'Box into box'];  // the second: the owner's room from register 657
   const templateRows = (list = TEMPLATES, kind = 'Template') => list.map(t => { const { level } = splitRoom(t.level);
-    return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: kind === 'Example' ? t.name : '' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
+    return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: kind === 'Example' ? t.name : '', fixture: kind !== 'Example' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
   exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
   // Rooms from the menu (rooms/start) is the Sandbox's first screen, its way back Menu; from a room, Close (registers 395, 399).
@@ -10274,7 +10287,7 @@ const LIST = [
   ['Tools', Object.entries(TOOL_KEYS).map(([t, k]) => [k, name(t)])],
   ['Lenses', [['1 to 4', 'Next lens in Colour, Dots, Lines or Frames'], ['0', 'Every lens off']]],
   ['Select', [['Ctrl+C', 'Copy'], ['Ctrl+X', 'Cut'], ['Ctrl+V', 'Paste'], ['Delete', 'Delete'], ['R', 'Rotate'], ['Escape', 'Let go']]],
-  ['Playing', [['Arrows', 'Slide'], ['Space', 'Hide, or start or stop swimming, with those powers'], ['R', 'Reset the room'], ['E', 'Back to editing']]],
+  ['Playing', [['Arrows', 'Slide'], ['R', 'Reset the room'], ['E', 'Back to editing']]],
 ];
 
 function buildKeys() {
@@ -10615,7 +10628,7 @@ return { inSandbox, buildStrip, syncStrip };
 })();
 // ---- src/app/panels.js
 const m104 = (() => {
-const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m7;
+const { CLOCKWISE, COLOURS, POWERS, NEEDS, POWERS_SHOWN } = m7;
 const { resizeLevel, moveSide, wallBorder } = m16;
 const { INK } = m8;
 const { paint, look } = m5;
@@ -10734,7 +10747,7 @@ function buildPanels(actions) {
     else ui.aim = [...ui.aim, d];
     syncPanel();
   });
-  for (const p of POWERS) {
+  for (const p of POWERS_SHOWN ? POWERS : []) {
     const row = document.createElement('label');
     row.className = 'power' + (NEEDS[p] ? ' off' : '');
     const box = document.createElement('input');
@@ -11801,6 +11814,7 @@ return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generate
 })();
 // ---- src/app/generator.js
 const m113 = (() => {
+const { noPowers, POWERS_SHOWN } = m7;
 const { INGREDIENTS } = m109;
 const { generate, normalize, recipeLabel, LIMITS } = m112;
 const { stampOf } = m60;
@@ -11816,6 +11830,7 @@ const { SIMPLE } = m104;
 // The Generator: pick a size, a move range and what the room is made of, and it makes one
 // room that fits, a slice at a time so the page stays responsive. Its rooms wait on their
 // own shelf; one joins your rooms only when you open it and Save. All copy is draft.
+
 
 
 
@@ -11858,6 +11873,8 @@ function recipeFromForm() {
   const off = [];
   for (const sel of $('genIng').querySelectorAll('select')) if (sel.value) ing[sel.dataset.id] = sel.value; else if (sel.dataset.off) off.push(sel.dataset.id);
   const base = $('genKeep').checked && S.level ? { base: structuredClone(S.level) } : {};
+  // A hidden power is never brought along (register 653).
+  if (!POWERS_SHOWN) off.push(...INGREDIENTS.filter(g => g.power).map(g => g.id));
   return normalize({ w: $('genW').value, h: $('genH').value, min: $('genMin').value, max: $('genMax').value, seed: $('genSeed').value, ing, off, ...base });
 }
 
@@ -11957,7 +11974,7 @@ function openInEditor(entry) {
   }
   if (S.mode !== 'edit') A.setMode('edit');
   const prev = S.room, prevStamp = stampOf(S.level);
-  change(() => { S.level = structuredClone(entry.level); });
+  change(() => { S.level = noPowers(structuredClone(entry.level)); });
   S.room = { id: null, name: '', note: '', solution: entry.fit ? entry.verdict.moves : null, recipe: entry.recipe, saved: stampOf(S.level), edited: false };
   S.genPrev = { prev, prevStamp, gen: S.room, genStamp: S.room.saved };
   remember(null);
@@ -11984,7 +12001,7 @@ function buildGenerator(actions) {
     li.append(label);
     return li;
   };
-  const sections = [...GROUPS.map(([id, name]) => [name, INGREDIENTS.filter(g => !g.power && ingGroup(g) === id)]), ['Powers', INGREDIENTS.filter(g => g.power)]];
+  const sections = [...GROUPS.map(([id, name]) => [name, INGREDIENTS.filter(g => !g.power && ingGroup(g) === id)]), ['Powers', INGREDIENTS.filter(g => g.power && POWERS_SHOWN)]];
   $('genIng').replaceChildren(...sections.filter(([, gs]) => gs.length).map(([name, gs]) => {
     const sec = document.createElement('li'), list = document.createElement('ul');
     sec.className = 'genSec'; list.className = 'genItems';
@@ -12164,6 +12181,7 @@ const { portrait, $ } = m0;
 const { startSnow, windNow } = m71;
 const { fit, watchStage } = m92;
 const { buildPanels, syncPanel } = m104;
+const { change } = m89;
 const { bindInput } = m108;
 const { setMode, frame, render, tick, report, copyReport } = m107;
 const { bindCamera } = m91;
@@ -12204,6 +12222,7 @@ const { bindGlyphs } = m2;
 
 
 
+
 // The chosen palette is on before anything is drawn (register 613).
 applyPalette();
 S.level = starterLevel(portrait());
@@ -12214,7 +12233,9 @@ window.advanceTime = ms => {
   for (let i = 0; i < Math.round(ms / TICK_MS); i++) tick();
   S.acc = 0; render();
 };
-window.wee = { draws: () => S.draws, demoRunning: () => !!S.demoRunning, trail: () => S.trail, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, wind: () => windNow(), fxTypes: () => S.fx.map(f => f.type), loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
+window.wee = { draws: () => S.draws, demoRunning: () => !!S.demoRunning, trail: () => S.trail, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, wind: () => windNow(), fxTypes: () => S.fx.map(f => f.type),
+  // Powers have no switch on screen for now (register 653); the tests still turn them on and off here.
+  setPower: (p, on) => { change(() => { S.level.powers[p] = on; }); if (S.game) S.pending.push(`power:${p}:${on ? 1 : 0}`); syncPanel(); }, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
 
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
