@@ -1151,7 +1151,7 @@ export const M = [
   ['src/campaign/progression.js', "export const AHEAD = 3;", "export const AHEAD = 1;", 'progression'],
   ['src/campaign/progression.js', "beaten(p, d) ? k + 1 : f, 0);", "beaten(p, d) && k === f ? k + 1 : f, 0);", 'progression'],
   ['src/app/play.js', "  syncRing();\n", "", 'browser'],
-  ['src/app/ring.js', "return x === 0 || y === 0 || x === w - 1 || y === h - 1 ? 'wall' : '';", "return 'wall';", 'browser'],
+  ['src/app/ring.js', "return x === 0 || y === 0 || x === w - 1 || y === h - 1 ? 'wall' :", "return true ? 'wall' :", 'browser'],
   ['src/app/ring.js', "left: game.offsetLeft - tile + 'px', top: game.offsetTop - tile + 'px'", "left: game.offsetLeft + 'px', top: game.offsetTop + 'px'", 'browser'],
   ['src/app/fit.js', ", (stage + 2 * side) / ((level.w + 2) * T), (room + 2 * top) / ((level.h + 2) * T)));", "));", 'phone'],
   ['src/editor/edit.js', "if (/^door:/.test(c)) level.cells[i] = 'i' + c; else if (/^idoor:/.test(c)) level.cells[i] = c.slice(1);", "if (/^door:/.test(c)) level.cells[i] = 'i' + c;", 'campaign-play'],

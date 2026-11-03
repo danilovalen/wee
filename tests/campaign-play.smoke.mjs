@@ -317,7 +317,8 @@ try {
   await page.waitForTimeout(150);
   const stuck = await verdict();
   check('a run that cannot finish says why', /red door never opens, because its switch never turns on/.test(stuck), stuck);
-  check('and flashes the tiles that stop it', (await page.evaluate(() => window.wee.fxTypes())).filter(t => t === 'flash').length === 2);
+  const flashes = await page.waitForFunction(() => window.wee.fxTypes().filter(t => t === 'flash').length === 2, null, { timeout: 2000 }).then(() => true, () => false);
+  check('and flashes the tiles that stop it', flashes);
   await page.waitForTimeout(1000);
   await page.click('#campVerdictText');
   check('tapping the verdict flashes them again', (await page.evaluate(() => window.wee.fxTypes())).filter(t => t === 'flash').length === 2);
