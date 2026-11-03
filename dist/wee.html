@@ -589,8 +589,7 @@ button:disabled .lookPic { opacity: .35; }
 .msRoom > i { position: absolute; display: block; }
 /* A pixel mass like the room's walls (register 605): a light top-left bevel, a dark bottom-right one, corners
    cut by a 2-step stair, one art pixel being 4 px here. */
-.msWall { width: 48px; height: 48px; background: var(--mid); box-shadow: inset 4px 4px 0 var(--lite), inset -4px -4px 0 #403e41;
-  clip-path: polygon(8px 0, calc(100% - 8px) 0, calc(100% - 8px) 4px, calc(100% - 4px) 4px, calc(100% - 4px) 8px, 100% 8px, 100% calc(100% - 8px), calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) 100%, 8px 100%, 8px calc(100% - 4px), 4px calc(100% - 4px), 4px calc(100% - 8px), 0 calc(100% - 8px), 0 8px, 4px 8px, 4px 4px, 8px 4px); }
+.msWalls { left: 0; top: 0; width: 312px; height: 416px; background: 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
 .msEmitter, .msSwitch, .msSwitch b, .msDoor, .msGoal { width: 52px; height: 52px; background: center / 100% no-repeat; }
 .msEmitter { z-index: 1; }
 .msBeam { height: 6px; border-radius: var(--r-pill); background: var(--orange); box-shadow: 0 0 8px 2px rgba(252,152,103,.6); animation: msBeam 12s linear infinite, msHum .4s linear infinite; }
@@ -7569,11 +7568,13 @@ return { noteError, noteLeaving, bindDebug, copyDebug };
 // ---- src/app/menuScene.js
 const m68 = (() => {
 const { drawCell } = m43;
+const { drawMasses } = m44;
 const { drawPiece, drawRobot } = m42;
 const { T } = m8;
 // The main menu's background: a small room the blob plays on a loop (the box blocks a laser, the
 // blob bumps the closed door, steps on the switch, goes through). Drawn in CSS, not the game's
 // scene, so it costs nothing while the menu is shut.
+
 
 
 
@@ -7591,7 +7592,7 @@ const WALLS = [[5, 2], [3, 4], [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [3, 6], [
 const at = (c, r, dx = 0, dy = 0) => `left:${c * C + dx}px;top:${r * C + dy}px`;
 
 function buildMenuScene(host) {
-  host.innerHTML = `<div class="msRoom">${WALLS.map(([c, r]) => `<i class="msWall" style="${at(c, r, 2, 2)}"></i>`).join('')}
+  host.innerHTML = `<div class="msRoom"><i class="msWalls"></i>
 <i class="msEmitter" style="${at(0, 3)}"></i><i class="msBeam" style="${at(0, 3, 24, 23)}"></i>
 <i class="msSwitch" style="${at(5, 4)}"><b class="off"></b><b class="on"></b></i>
 <i class="msDoor" style="${at(4, 5)}"></i><i class="msSpark" style="${at(4, 5, 6, -10)}">✱ ✱</i>
@@ -7599,6 +7600,11 @@ function buildMenuScene(host) {
 <i class="msBox"></i><i class="msRobot"><b class="msBody"></b></i></div>`;
   const room = host.firstElementChild, paint = (sel, url) => room.querySelectorAll(sel).forEach(e => { e.style.backgroundImage = url; });
   const draw = () => {
+  // The walls as one mass, drawn as the room draws them, so neighbours join with no seam (register 648).
+  { const c = document.createElement('canvas'), w = 6, h = 8, cells = Array(w * h).fill('');
+    for (const [x, y] of WALLS) cells[y * w + x] = 'wall';
+    c.width = w * T * 3; c.height = h * T * 3; const g = c.getContext('2d'); g.scale(3, 3); drawMasses(g, cells, w, h);
+    room.querySelector('.msWalls').style.backgroundImage = `url(${c.toDataURL()})`; }
   paint('.msSwitch .off', cell('toggle:red', { toggled: [], w: 1, open: {} }));
   paint('.msSwitch .on', cell('toggle:red', { toggled: [0], w: 1, open: { red: true } }));
   paint('.msDoor', cell('door:red', { toggled: [], w: 1, open: {} }));
@@ -10503,7 +10509,6 @@ const { CLOCKWISE, COLOURS, POWERS, NEEDS } = m7;
 const { resizeLevel, moveSide, wallBorder } = m16;
 const { INK } = m8;
 const { paint, look } = m5;
-const { known } = m14;
 const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m91;
 const { toolsFor } = m69;
 const { syncBrief, TOOL } = m52;
@@ -10525,7 +10530,6 @@ const { icon } = m49;
 const { buildStrip, syncStrip } = m101;
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
-
 
 
 
@@ -10727,7 +10731,8 @@ function syncPanel() {
 }
 // The tools this room offers: a level's own, the simple Sandbox's, or every Sandbox tool.
 // The simple Sandbox offers a campaign piece once it has been used in the campaign (register 558).
-const offeredTools = () => S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE.filter(t => known(t, Object.values(TOOL))) : TOOLS.filter(t => !t.campaign).map(t => t.id);
+// The Sandbox offers every piece for now (register 649); known() still says what the campaign has opened.
+const offeredTools = () => S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE : TOOLS.filter(t => !t.campaign).map(t => t.id);
 
 // A level with more than one colour shows them as a row of dots over its tools (register 245):
 // what you place takes the chosen one, and a one-way takes a colour only in a level that names

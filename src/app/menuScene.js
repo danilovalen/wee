@@ -2,6 +2,7 @@
 // blob bumps the closed door, steps on the switch, goes through). Drawn in CSS, not the game's
 // scene, so it costs nothing while the menu is shut.
 import { drawCell } from '../view/tiles.js';
+import { drawMasses } from '../view/masses.js';
 import { drawPiece, drawRobot } from '../view/pieces.js';
 import { T } from '../view/ink.js';
 
@@ -19,7 +20,7 @@ const WALLS = [[5, 2], [3, 4], [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [3, 6], [
 const at = (c, r, dx = 0, dy = 0) => `left:${c * C + dx}px;top:${r * C + dy}px`;
 
 export function buildMenuScene(host) {
-  host.innerHTML = `<div class="msRoom">${WALLS.map(([c, r]) => `<i class="msWall" style="${at(c, r, 2, 2)}"></i>`).join('')}
+  host.innerHTML = `<div class="msRoom"><i class="msWalls"></i>
 <i class="msEmitter" style="${at(0, 3)}"></i><i class="msBeam" style="${at(0, 3, 24, 23)}"></i>
 <i class="msSwitch" style="${at(5, 4)}"><b class="off"></b><b class="on"></b></i>
 <i class="msDoor" style="${at(4, 5)}"></i><i class="msSpark" style="${at(4, 5, 6, -10)}">✱ ✱</i>
@@ -27,6 +28,11 @@ export function buildMenuScene(host) {
 <i class="msBox"></i><i class="msRobot"><b class="msBody"></b></i></div>`;
   const room = host.firstElementChild, paint = (sel, url) => room.querySelectorAll(sel).forEach(e => { e.style.backgroundImage = url; });
   const draw = () => {
+  // The walls as one mass, drawn as the room draws them, so neighbours join with no seam (register 648).
+  { const c = document.createElement('canvas'), w = 6, h = 8, cells = Array(w * h).fill('');
+    for (const [x, y] of WALLS) cells[y * w + x] = 'wall';
+    c.width = w * T * 3; c.height = h * T * 3; const g = c.getContext('2d'); g.scale(3, 3); drawMasses(g, cells, w, h);
+    room.querySelector('.msWalls').style.backgroundImage = `url(${c.toDataURL()})`; }
   paint('.msSwitch .off', cell('toggle:red', { toggled: [], w: 1, open: {} }));
   paint('.msSwitch .on', cell('toggle:red', { toggled: [0], w: 1, open: { red: true } }));
   paint('.msDoor', cell('door:red', { toggled: [], w: 1, open: {} }));

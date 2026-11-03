@@ -24,6 +24,14 @@ try {
   const kit = await p.evaluate(async () => { const k = await import('/src/app/known.js'); const before = k.known('box', ['box']); k.markUsed(['box']); const after = k.known('box', ['box']); return { before, after, other: k.known('wire', ['box']) }; });
   check('a campaign piece opens in the Sandbox only once used', !kit.before && kit.after && kit.other, JSON.stringify(kit));
   await p.evaluate(() => localStorage.removeItem('wee.pieces'));
+  // The Sandbox offers every piece on a fresh save, nothing locked (register 649).
+  const sand = await browser.newPage({ viewport: { width: 393, height: 852 } });
+  await sand.addInitScript(() => { window.__noTutorial = true; });
+  await sand.goto(`http://localhost:${PORT}/index.html`); await sand.waitForTimeout(600);
+  await sand.click('#menuSandbox'); await sand.waitForTimeout(500); await sand.click('#roomNew'); await sand.waitForTimeout(300);
+  const slots = await sand.$$eval('#strip .slot', ss => ss.filter(s => s.getBoundingClientRect().width > 0).map(s => s.dataset.slot));
+  check('on a fresh save the Sandbox offers every group of pieces', slots.length === 7, slots.join());
+  await sand.close();
   check('with no stars every other skin is shut', await p.$$eval('#lookSkins [data-alt=true]', bs => bs.length > 0 && bs.every(b => b.disabled)));
 
   // Stars open what they reach: one beaten level with two side goals is three stars.

@@ -574,8 +574,7 @@ button:disabled .lookPic { opacity: .35; }
 .msRoom > i { position: absolute; display: block; }
 /* A pixel mass like the room's walls (register 605): a light top-left bevel, a dark bottom-right one, corners
    cut by a 2-step stair, one art pixel being 4 px here. */
-.msWall { width: 48px; height: 48px; background: var(--mid); box-shadow: inset 4px 4px 0 var(--lite), inset -4px -4px 0 #403e41;
-  clip-path: polygon(8px 0, calc(100% - 8px) 0, calc(100% - 8px) 4px, calc(100% - 4px) 4px, calc(100% - 4px) 8px, 100% 8px, 100% calc(100% - 8px), calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) 100%, 8px 100%, 8px calc(100% - 4px), 4px calc(100% - 4px), 4px calc(100% - 8px), 0 calc(100% - 8px), 0 8px, 4px 8px, 4px 4px, 8px 4px); }
+.msWalls { left: 0; top: 0; width: 312px; height: 416px; background: 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
 .msEmitter, .msSwitch, .msSwitch b, .msDoor, .msGoal { width: 52px; height: 52px; background: center / 100% no-repeat; }
 .msEmitter { z-index: 1; }
 .msBeam { height: 6px; border-radius: var(--r-pill); background: var(--orange); box-shadow: 0 0 8px 2px rgba(252,152,103,.6); animation: msBeam 12s linear infinite, msHum .4s linear infinite; }
