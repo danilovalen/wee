@@ -1144,6 +1144,7 @@ export const M = [
   ['src/app/input.js', "  $('playUndo').onclick = $('stuckReset').onclick = () => undoMove();", "  $('playUndo').onclick = $('stuckReset').onclick = () => S.pending.push('respawn');", 'stuck'],
   ['src/app/enabled.js', "    $('playUndo').disabled = !(S.undoPlay && S.undoPlay.length) || !!S.demoRunning;", "", 'stuck'],
   ['src/app/stuck.js', "      if (from.wins !== true) return;", "", 'stuck'],
+  ['src/app/ring.js', "'wall' : inner[(y - 1) * level.w + x - 1];", "'wall' : '';", 'browser'],
   ['src/campaign/goals/switches.js', "return all.length > 0 && all.every(i => room.cells[i].endsWith(':on')); }", "return all.length > 0; }", 'campaign'],
   ['src/campaign/goals/switches.js', "return all.length > 0 && all.every(i => flips.get(i) >= 2);", "return all.length > 0 && all.some(i => flips.get(i) >= 2);", 'campaign'],
   ['src/campaign/goals/switches.js', "if (was) for (const i of all) if (was.has(i) !== on.has(i)) flips.set(i, flips.get(i) + 1);", "if (was) for (const i of all) if (on.has(i)) flips.set(i, flips.get(i) + 1);", 'campaign'],

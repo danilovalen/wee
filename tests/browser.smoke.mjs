@@ -40,6 +40,16 @@ try {
   check('one tile of wall rings the room, outside it, with nothing drawn over the room', Object.values(ring).every(Boolean), JSON.stringify(ring));
   // Powers are hidden for now (register 653): a new Sandbox room starts with every power off.
   check('a new room has no powers on', await page.evaluate(() => Object.values(window.wee.getLevel().powers).every(v => !v)));
+  // A block on the room's edge joins the ring as one mass (register 682): no bevel between them.
+  const joined = await page.evaluate(async () => {
+    const l = window.wee.blank(7, 7); l.cells[6 * 7 + 3] = 'wall'; window.wee.loadLevel(l);
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const g = document.getElementById('game').getBoundingClientRect(), r = document.getElementById('ring'), q = r.getBoundingClientRect(), t = g.width / 7;
+    const c = r.getContext('2d'), k = r.width / q.width, px = (x, y) => [...c.getImageData(Math.round(x * k), Math.round(y * k), 1, 1).data].join();
+    const edge = x => px((x + 1.5) * t, 8 * t + 1), face = px(3.5 * t, 8.5 * t);
+    return { underBlock: edge(3) === face, underFloor: edge(1) !== face, hole: px(4.5 * t, 7.5 * t).endsWith(',0') };
+  });
+  check('a block on the room\'s edge joins the ring, with no edge between them (register 682)', Object.values(joined).every(Boolean), JSON.stringify(joined));
   // These checks were written against the old starter room; a new room is 7x7 now (register 430).
   await page.evaluate(() => window.wee.loadLevel(window.wee.blank(20, 12)));
   const text = async () => JSON.parse(await page.evaluate(() => window.renderGameToText()));

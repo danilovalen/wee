@@ -1,6 +1,8 @@
 // The room's outskirts (register 672): one tile of wall all round the room, outside it, so a slide always
 // ends against something drawn. It is its own canvas behind the room's, so the room keeps every tile and
-// its own coordinates; a zoomed view, which may not show the room's edges, draws none.
+// its own coordinates; a zoomed view, which may not show the room's edges, draws none. The ring knows the
+// room's own blocks, so a block on the room's edge joins it as one mass (register 682); the room itself is
+// then cleared, so the ring draws nothing over it.
 import { T } from '../view/ink.js';
 import { drawMasses } from '../view/masses.js';
 import { look } from '../view/look.js';
@@ -15,13 +17,18 @@ export function syncRing() {
   ring.hidden = zoomed || !(tile > 0);
   if (ring.hidden) { drawn = ''; return; }
   const w = level.w + 2, h = level.h + 2, dpr = window.devicePixelRatio || 1;
-  const key = [w, h, tile, dpr, look.palette, JSON.stringify(look.skins), game.offsetLeft, game.offsetTop].join();
+  // As the room draws them: a crate and a block placed on a challenge's open tile stand alone.
+  const open = S.camp && S.camp.def.challenge ? S.camp.def.challenge.open : [];
+  const crates = new Set([...(level.crates || []), ...open.map(([x, y]) => ({ x, y }))].map(c => c.y * level.w + c.x));
+  const inner = level.cells.map((c, i) => !crates.has(i) && (c === 'wall' || /^(spring:|crack$|tri:)/.test(c)) ? c : '');
+  const key = [w, h, inner.join('|'), tile, dpr, look.palette, JSON.stringify(look.skins), game.offsetLeft, game.offsetTop].join();
   if (key === drawn) return;
   drawn = key;
   const k = tile * dpr / T;
   ring.width = Math.round(w * T * k); ring.height = Math.round(h * T * k);
   Object.assign(ring.style, { width: w * tile + 'px', height: h * tile + 'px', left: game.offsetLeft - tile + 'px', top: game.offsetTop - tile + 'px' });
-  const cells = Array.from({ length: w * h }, (_, i) => { const x = i % w, y = (i - x) / w; return x === 0 || y === 0 || x === w - 1 || y === h - 1 ? 'wall' : ''; });
+  const cells = Array.from({ length: w * h }, (_, i) => { const x = i % w, y = (i - x) / w; return x === 0 || y === 0 || x === w - 1 || y === h - 1 ? 'wall' : inner[(y - 1) * level.w + x - 1]; });
   const g = ring.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); g.imageSmoothingEnabled = false; g.clearRect(0, 0, w * T, h * T);
   drawMasses(g, cells, w, h);
+  g.clearRect(T, T, level.w * T, level.h * T);
 }
