@@ -67,7 +67,7 @@ function finish(r) {
 // A check goes stale the moment the room changes, and a live one starts after a pause.
 export function syncCheck() {
   const stamp = JSON.stringify(S.level);
-  if (!S.level.start) { S.check = null; clearDesign(); clearTimeout(liveTimer); $('checkText').textContent = 'To check or play, place the start.'; $('checkText').dataset.verdict = ''; $('checkText').classList.remove('stale'); $('showSolution').hidden = true; return; }
+  if (!S.level.start) { S.check = null; clearDesign(); clearTimeout(liveTimer); $('checkText').textContent = 'To check or play, place the blob.'; $('checkText').dataset.verdict = ''; $('checkText').classList.remove('stale'); $('showSolution').hidden = true; return; }
   if (S.check && S.check.stamp === stamp) return;
   // The room changed: the old verdict stays, dimmed, until the live check replaces it.
   // A room just opened (nothing to undo) is another room: its verdict and notes go.

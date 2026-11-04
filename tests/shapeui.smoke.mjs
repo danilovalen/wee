@@ -14,7 +14,7 @@ page.on('pageerror', e => errors.push(e.message));
 const OFF = { boomerang: false, dive: false, laser: false, cycle: false };
 const level = () => page.evaluate(() => window.wee.getLevel());
 const notes = () => page.waitForFunction(() => /Trim to|Every row and column/.test(document.getElementById('designList').textContent) && /Without the |Removing any one/.test(document.getElementById('designList').textContent), null, { timeout: 60000 }).then(() => page.textContent('#designList'));
-const hint = () => page.waitForFunction(() => { const t = document.getElementById('placeHint').textContent; return t && !t.endsWith('...') && !/^(Click|Tap) to place/.test(t); }, null, { timeout: 30000 }).then(() => page.textContent('#placeHint'));
+const hint = () => page.waitForFunction(() => { const t = document.getElementById('placeSay').textContent; return t && !t.endsWith('...'); }, null, { timeout: 60000 }).then(() => page.textContent('#placeSay'));
 try {
   await page.goto('http://localhost:5281/?sandbox=full');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady); await page.evaluate(() => window.wee.roomsReady);
@@ -29,6 +29,15 @@ try {
   check('Apply trims the room', (await level()).h < 4, JSON.stringify([(await level()).w, (await level()).h]));
   await page.click('#undo');
   check('and Undo puts it back', (await level()).h === 4);
+  // Register 719: an offer is one line, the sentence beside a small Apply, and nothing scrolls sideways.
+  await page.click('#checkBtn'); await notes();
+  const line = await page.$eval('#designList li:has(> .apply)', li => { const [say, ap] = li.children, lh = parseFloat(getComputedStyle(say).lineHeight) || 16, body = li.closest('.wellBody') || li.parentElement;
+    return { oneLine: say.getBoundingClientRect().height < 2 * lh + 12, small: ap.getBoundingClientRect().width < 120, flat: body.scrollWidth <= body.clientWidth + 1 }; });
+  check('an offer reads on one line beside a small Apply, and nothing scrolls sideways (register 719)', line.oneLine && line.small && line.flat, JSON.stringify(line));
+  // Register 726: an edit makes the notes stale, and a stale note offers no Apply.
+  await page.evaluate(() => window.wee.loadLevel({ ...window.wee.getLevel(), cells: window.wee.getLevel().cells.map((c, i) => i === 7 ? 'wall' : c) }));
+  await page.waitForTimeout(100);
+  check('a note gone stale offers no Apply (register 726)', await page.$$eval('#designList .apply', bs => bs.every(b => !b.offsetParent)));
   // Best spot: a block in the lane makes the way round longer; it is the longest any tile gives.
   const lane = room(['#######', '#.....#', '#P...G#', '#######'], { powers: OFF });
   await page.evaluate(l => window.wee.loadLevel(l), lane);
@@ -47,19 +56,57 @@ try {
     }
     return best;
   }, lane);
-  check('Best spot names the tile and the longer count, the longest any tile gives (register 694)', !!m && +m[3] > 1 && +m[3] === longest, p + ' / ' + longest);
+  check('Most moves names the tile and the longer count, the longest any tile gives, under its own button (registers 694, 723, 724)', !!m && +m[3] > 1 && +m[3] === longest && await page.locator('#placeSay').isVisible() && (await page.textContent('#placeBtn')) === 'Most moves', p + ' / ' + longest);
+  // Register 726: the offer goes when the room changes, and Apply never brings back the room it came from.
+  await page.evaluate(l => window.wee.loadLevel(l), spare); await page.waitForTimeout(150);
+  const other = JSON.stringify(await level());
+  check('opening another room drops the offer: Apply is gone (register 726)', await page.locator('#shapeAsk').isHidden() && await page.locator('#placeBtn').isVisible());
+  await page.evaluate(from => dispatchEvent(new CustomEvent('wee:apply', { detail: { level: { w: 1 }, from } })), JSON.stringify(lane));
+  check('and an Apply found in another room changes nothing', JSON.stringify(await level()) === other);
+  await page.evaluate(l => window.wee.loadLevel(l), lane);
+  await page.click('#placeBtn'); await hint();
   await page.click('#shapeNo');
   check('Cancel leaves the room as it was', JSON.stringify((await level()).cells) === JSON.stringify(lane.cells) && await page.locator('#shapeAsk').isHidden() && await page.locator('#placeBtn').isVisible());
   await page.click('#placeBtn'); await hint(); await page.click('#shapeYes');
   check('Apply places it there', m && (await level()).cells[+m[2] * lane.w + +m[1]] === 'wall');
+  const walled = await level();
   // Best spot with the Start tool tries the blob on every empty tile (register 705).
   await page.evaluate(l => window.wee.loadLevel(l), lane);
   await pickTool(page, 'start');
   await page.click('#placeBtn');
   const b = await hint();
-  check('Best spot moves the blob where the room is longest, and calls it the blob', /^A blob at \d+, \d+ makes it \d+ moves instead of 1\.$/.test(b), b);
+  check('Most moves moves the blob where the room is longest, and says it moves (register 724)', /^Moving the blob to \d+, \d+ makes it \d+ moves instead of 1\.$/.test(b), b);
   await page.click('#shapeNo');
   await pickTool(page, 'wall'); await page.click('#placeBtn'); await hint(); await page.click('#shapeYes');
+  // With the blob already where the room is longest, it says so (register 724).
+  await page.evaluate(l => window.wee.loadLevel(l), room(['#####', '#P#.#', '#.#.#', '#...#', '#####'], { powers: OFF }));
+  await page.evaluate(() => { const l = window.wee.getLevel(); l.cells[1 * l.w + 3] = 'goal'; window.wee.loadLevel(l); });
+  await pickTool(page, 'start'); await page.click('#placeBtn');
+  const at = await hint();
+  check('the blob already at its longest says so', at === 'The blob is already where it takes the most moves.', at);
+  // Register 728: a one-way is tried every way round; the offer names the way and draws it at half strength.
+  const way = room(['#######', '#.....#', '#P...G#', '#....##', '#######'], { powers: OFF });
+  await page.evaluate(l => window.wee.loadLevel(l), way);
+  await pickTool(page, 'gate');
+  await page.evaluate(() => { const b = document.querySelector('[data-pass=right]'); if (b && !b.classList.contains('on')) b.click(); for (const d of ['up', 'down', 'left']) { const o = document.querySelector(`[data-pass=${d}]`); if (o && o.classList.contains('on')) o.click(); } });
+  await page.click('#placeBtn');
+  const g = await hint(), want = await page.evaluate(async l => {
+    const { search } = await import('/src/solve/solve.js'), { place } = await import('/src/editor/edit.js');
+    let best = 0;
+    for (const pass of [['up'], ['right'], ['down'], ['left']]) for (let y = 0; y < l.h; y++) for (let x = 0; x < l.w; x++) {
+      const c = JSON.parse(JSON.stringify(l));
+      if (c.cells[y * l.w + x] || (c.start.x === x && c.start.y === y) || !place(c, { tool: 'gate', pass }, x, y, 'place').length) continue;
+      const it = search(c, 5000); let r; while (!(r = it.next()).done); if (r.value.status === 'solved') best = Math.max(best, r.value.moves.length);
+    }
+    return best;
+  }, way);
+  const gm = g.match(/^A one-way pointing (up|right|down|left) at (\d+), (\d+) makes it (\d+) moves instead of 1\.$/);
+  check('set pointing right, Most moves still finds the way round that is longest and names it (register 728)', !!gm && gm[1] !== 'right' && +gm[4] === want && want > 1, g + ' / ' + want);
+  const ghost = await page.evaluate(async () => (await import('/src/app/shape.js')).offerGhost());
+  check('and draws the offered one-way at half strength where it would go', !!ghost && gm && ghost.x === +gm[2] && ghost.y === +gm[3] && ghost.paste.cells[0].startsWith('gate:' + gm[1]), JSON.stringify(ghost));
+  await page.click('#shapeYes');
+  check('Apply places it that way round and sets the tool so', gm && (await level()).cells[+gm[3] * way.w + +gm[2]].startsWith('gate:' + gm[1]) && await page.evaluate(async d => { const { S } = await import('/src/editor/state.js'); return S.ui.pass.join() === d; }, gm[1]));
+  await page.evaluate(l => window.wee.loadLevel(l), walled);
   // Remove one: in the notes; taking that block out shortens it, and nothing else lengthens it.
   await page.click('#checkBtn');
   const r = await notes();

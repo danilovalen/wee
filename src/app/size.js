@@ -33,7 +33,7 @@ function resize(side, k, after) {
   }
   const lost = S.level.start && !l.start;
   change(() => { S.level = l; }); after();
-  if (lost) $('placeHint').textContent = 'To play, place the start again.';
+  if (lost) $('placeHint').textContent = 'To play, place the blob again.';
 }
 // A grip on each side of the room: drag it out to add lines there, in to cut them, one line per tile
 // dragged, the whole drag one undo step (register 540). A cut that something is in the way of stops
@@ -64,7 +64,7 @@ function grip(b, side, after) {
   const stop = () => {
     if (!drag) return;
     b.classList.remove('held');
-    if (drag.changed) { end(); if (drag.lost) $('placeHint').textContent = 'To play, place the start again.'; }
+    if (drag.changed) { end(); if (drag.lost) $('placeHint').textContent = 'To play, place the blob again.'; }
     drag = null;
   };
   b.addEventListener('pointerup', stop); b.addEventListener('pointercancel', stop); b.addEventListener('lostpointercapture', stop);

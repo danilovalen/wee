@@ -377,7 +377,7 @@ try {
   check('the size readout is a label with nothing behind it', await page.$eval('#sizeBtn', e => e.tagName === 'SPAN') && !(await page.locator('#sizePop, #border, [data-side]').count()));
   await dragGrip(page, 'left', -2);
   check('a cut through the start takes it off', (await text()).level.w === 3 && (await text()).level.start === null, JSON.stringify([(await text()).level.w, (await text()).level.start]));
-  check('with no start, Play and Check are greyed out and the check line says why', await page.locator('#mode').isDisabled() && await page.locator('#checkBtn').isDisabled() && (await page.textContent('#checkText')).includes('place the start'));
+  check('with no start, Play and Check are greyed out and the check line says why', await page.locator('#mode').isDisabled() && await page.locator('#checkBtn').isDisabled() && (await page.textContent('#checkText')).includes('place the blob'));
   await page.keyboard.press('e');
   check('and E does not start a run', (await text()).mode === 'edit');
   { const gb = await page.locator('#game').boundingBox(), lw = (await text()).level;

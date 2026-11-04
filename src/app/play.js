@@ -13,6 +13,7 @@ import { syncPanel, keysText } from './panels.js';
 import { feedDemo } from './check.js';
 import { noteError } from './debug.js';
 import { selectOverlay } from './select.js';
+import { offerGhost } from './shape.js';
 import { moveRefusal } from './campaignMove.js';
 import { watchStuck, resetStuck } from './stuck.js';
 import { lensMarks, lensBusy } from './lenses.js';
@@ -150,7 +151,7 @@ export function render() {
   clearView();
   syncRing();
   if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
+  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || offerGhost() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
   present();
 }
 

@@ -986,8 +986,12 @@ body.challenge .growBar { display: none !important; }
 }
 
 /* A design note that offers a change: its sentence, then Apply (register 698). */
+/* An offer: the sentence takes the line, Apply sits small at its end (register 719); a note gone stale
+   while the room changed has no Apply (register 726). */
 #designList li:has(> .apply) { display: flex; gap: 8px; align-items: center; }
-#designList .apply { flex: none; }
+#designList li:has(> .apply) > button:first-child { flex: 1 1 auto; min-width: 0; width: auto; }
+#designList .apply { flex: none; width: auto; padding: 2px 10px; }
+#designBox.stale .apply { display: none; }
 #bestOpt #shapeAsk { display: inline-flex; gap: 6px; }
 #bestOpt #shapeAsk[hidden], #bestOpt [hidden] { display: none; }
 body.campaign #bestOpt { display: none !important; }
@@ -1007,3 +1011,7 @@ body.campaign #bestOpt { display: none !important; }
   body.sandbox .ctx { min-height: 0; grid-template-rows: 18px; }
   body.sandbox .ctx #ctxNote, body.sandbox .ctx #placeHint { grid-row: 1; }
 }
+
+/* Most moves answers under its own button (register 724). */
+.placeSay { flex-basis: 100%; margin: 4px 0 0; font-size: 12px; white-space: normal; max-width: 320px; }
+.placeSay[hidden] { display: none; }

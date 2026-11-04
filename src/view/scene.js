@@ -133,7 +133,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     p.cells.forEach((c, i) => { const x = ox + i % p.w, y = oy + Math.floor(i / p.w); if (x < level.w && y < level.h) drawCell(g, c, x, y, null); });
     for (const e of p.entities) if (ox + e.x < level.w && oy + e.y < level.h) drawPiece(g, e, (ox + e.x) * T, (oy + e.y) * T);
     g.globalAlpha = 1;
-    for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) {
+    for (let j = 0; j < (over.bare ? 0 : p.h); j++) for (let i = 0; i < p.w; i++) {
       const x = ox + i, y = oy + j;
       if (x >= level.w || y >= level.h) continue;
       const busy = level.cells[y * level.w + x] || level.entities.some(e => e.x === x && e.y === y);
