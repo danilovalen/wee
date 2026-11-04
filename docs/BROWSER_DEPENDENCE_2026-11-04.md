@@ -103,5 +103,7 @@ Suggested order: 1, 2, 3 together with 4, then 5, 6, 7. Nothing here touches the
 
 1. Is Undo enough to replace "This cannot be undone" deletes (rooms, made levels), or should a deleted
    room be recoverable for a while?
-2. Should the Sandbox editor be fully playable on a controller, or is a controller for Campaign play only?
+2. ~~Should the Sandbox editor be fully playable on a controller?~~ **Owner (2026-11-04): editor too.** A room
+   cursor moved by the d-pad, A uses the tool, B the second action, shoulders zoom; touch and keyboard get the
+   same cursor.
 3. Should the progress code and room import/export survive the port, and in what form?
