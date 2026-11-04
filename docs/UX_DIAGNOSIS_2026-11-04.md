@@ -128,4 +128,5 @@ Rows 718-729 fold into these.
 2. ~~Which measures he reads~~ **Owner (2026-11-04): moves, routes, traps (positions that can no
    longer win) and reuse.** Those four show as big numbers; flow undos, wrong turns, ruin, choices,
    forced steps, places and ways to win sit behind one tap.
-3. Where the lens icons sit: over the room's top edge, or in the right column with Findings?
+3. ~~Where the lens icons sit~~ **Owner (2026-11-04): a row along the room's top edge**, the same
+   row over the room on a phone.
