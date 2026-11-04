@@ -1,7 +1,7 @@
 // Design notes: each power and each piece or tile tested by taking it out, every position
 // mapped for dead ends, and shortest routes counted.
 import { readFileSync } from 'node:fs';
-import { powerCheck, elementCheck, wallCheck, routes } from '../src/solve/design.js';
+import { powerCheck, elementCheck, wallCheck, baitCheck, routes } from '../src/solve/design.js';
 import { solve } from '../src/solve/solve.js';
 import { splitRoom, joinRoom } from '../src/level/room.js';
 import { room, suite } from './lib.mjs';
@@ -20,6 +20,12 @@ check('a power that is off, or needs a block that does not exist, is not tested'
 const walls = run(wallCheck(goal(room(['#######', '#P..#.#', '#.#...#', '#######']), 3, 1))), wallAt = (x, y) => walls.find(w => w.x === x && w.y === y);
 check('a wall that stops you on the goal changes the answer', wallAt(4, 1).without !== 1, JSON.stringify(wallAt(4, 1)));
 check('a wall off the path leaves the answer as it was', wallAt(2, 2).without === 1, JSON.stringify(wallAt(2, 2)));
+
+// Bait (register 692): of two buttons the answer does not need, the one whose removal changes where you can
+// get stuck is bait; the one that changes nothing reachable is idle. The room is a fixed copy kept with the tests.
+const baitRoom = JSON.parse(readFileSync('tests/fixtures/bait-room.wee', 'utf8'));
+const split = run(baitCheck(baitRoom, [{ x: 2, y: 0, what: 'button' }, { x: 0, y: 3, what: 'button' }]));
+check('a piece that changes the dead ends is bait, one that changes nothing is idle', split.bait.map(e => `${e.x},${e.y}`).join() === '2,0' && split.idle.map(e => `${e.x},${e.y}`).join() === '0,3', JSON.stringify(split));
 
 // Two corners, two ways round: right then down, or down then right.
 const square = goal(room(['#####', '#P..#', '#...#', '#...#', '#####']), 3, 3);

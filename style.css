@@ -181,7 +181,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .roomRow { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; }
 .roomRow span { display: grid; }
 .roomRow small { color: var(--dim); }
-.thumb { width: 56px; height: auto; max-height: 56px; object-fit: contain; border-radius: var(--r-s); flex: none; }
+.thumb { width: 56px; height: auto; max-height: 56px; object-fit: contain; border-radius: var(--r-s); flex: none; image-rendering: pixelated; }  /* crisp, never smoothed (register 687) */
 .rooms select { background: var(--field); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px 8px; font: inherit; }
 .explored { margin: 6px 0 10px; }
 .explored summary { cursor: pointer; color: var(--dim); }

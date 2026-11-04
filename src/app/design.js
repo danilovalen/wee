@@ -1,7 +1,7 @@
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
 // how many shortest routes there are, and how many positions trap you. Runs a slice at a
 // time and stops when the room changes. All copy is draft.
-import { powerCheck, elementCheck, wallCheck, routes, idleElements, NOTES_MAX } from '../solve/design.js';
+import { powerCheck, elementCheck, wallCheck, baitCheck, routes, idleElements, NOTES_MAX } from '../solve/design.js';
 import { roomMetrics } from '../solve/metrics.js';
 import { metricLines } from './metricLines.js';
 import { S } from '../editor/state.js';
@@ -65,18 +65,21 @@ export function runDesign(par) {
         sliced(elementCheck(level, MAX), stamp, es => {
         const name = e => `${PIECE[e.what] || e.what} at ${e.x}, ${e.y}`;
         const { unused, plain } = idleElements(es, par);
-        S.design.unused = [...unused, ...plain];
-        S.redraw = true;
-        if (unused.length) lines.push(line(`Without these, nothing changes: ${unused.map(name).join('; ')}.`, unused));
+        S.design.unused = [...plain];
         const walls = plain.filter(e => e.as === 'wall'), turrets = plain.filter(e => e.as === 'turret');
         if (walls.length) lines.push(line(`As a wall, these do the same job: ${walls.map(name).join('; ')}.`, walls));
         if (turrets.length) lines.push(line(`As a fixed turret, these do the same job: ${turrets.map(name).join('; ')}.`, turrets));
         sliced(wallCheck(level, MAX), stamp, ws => {
-        const idle = ws.filter(w => w.without === par);
-        S.design.unused.push(...idle);
-        if (idle.length) lines.push(line(`Without these walls, nothing changes: ${idle.map(w => `${w.x}, ${w.y}`).join('; ')}.`, idle));
-        if (!unused.length && !plain.length && !idle.length) lines.push(line('Each piece, tile and wall changes the answer, and nothing could be a plain wall instead.'));
+        // What the answer does not need is idle, unless it changes where you can get stuck: then it is bait (692).
+        sliced(baitCheck(level, [...unused, ...ws.filter(w => w.without === par)], MAX), stamp, ({ idle, bait }) => {
+        const pieces = idle.filter(e => e.what !== 'wall'), walls = idle.filter(e => e.what === 'wall');
+        S.design.unused.push(...idle); S.redraw = true;
+        if (pieces.length) lines.push(line(`Without these, nothing changes: ${pieces.map(name).join('; ')}.`, pieces));
+        if (walls.length) lines.push(line(`Without these walls, nothing changes: ${walls.map(w => `${w.x}, ${w.y}`).join('; ')}.`, walls));
+        if (bait.length) lines.push(line(`These leave the answer alone but change where you can get stuck: ${bait.map(name).join('; ')}.`, bait));
+        if (!idle.length && !bait.length && !plain.length) lines.push(line('Each piece, tile and wall changes the answer, and nothing could be a plain wall instead.'));
         swap();
+        });
         });
       });
     });

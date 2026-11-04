@@ -25,6 +25,16 @@ try {
   await page.waitForFunction(() => window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   check('wee starts on the library', await page.locator('#roomsBox').isVisible());
+  // An example's card shows the room as it is drawn, with its ring of wall, on whole pixels (register 687).
+  await page.waitForFunction(() => [...document.querySelectorAll('#roomsBox li')].some(li => /Example, \d+x\d+/.test(li.textContent) && li.querySelector('.thumb')?.complete));
+  const card = await page.evaluate(() => {
+    const li = [...document.querySelectorAll('#roomsBox li')].find(l => /Example, \d+x\d+/.test(l.textContent) && l.querySelector('.thumb'));
+    const [, w, h] = li.textContent.match(/Example, (\d+)x(\d+)/).map(Number), img = li.querySelector('.thumb');
+    const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+    const corner = [...g.getImageData(8, 8, 1, 1).data], mid = [...g.getImageData(Math.floor(c.width / 2), 8, 1, 1).data];
+    return { size: img.naturalWidth === (w + 2) * 16 && img.naturalHeight === (h + 2) * 16, crisp: getComputedStyle(img).imageRendering === 'pixelated', ring: corner[3] === 255 && corner.join() === mid.join() };
+  });
+  check('an example card draws the room with its ring of wall, crisp (register 687)', Object.values(card).every(Boolean), JSON.stringify(card));
   check('focus starts on New room, not on Close', await page.evaluate(() => document.activeElement.id) === 'roomNew', await page.evaluate(() => document.activeElement.id));
   check('a fresh start has no unsaved tile', await page.locator('#openNow').isHidden());
   check('floors are their own section: water, sticky puddle, gravel and wire', (await page.$$eval('[data-tool][data-in=floors]', bs => bs.map(b => b.dataset.tool).join())) === 'water,sticky,gravel,wire' && await page.locator('[data-group=floors]').count() === 1);

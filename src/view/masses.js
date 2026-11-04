@@ -135,3 +135,11 @@ export function drawMasses(g, cells, w, h, skip = () => false) {
     g.restore();
   }
 }
+
+// The wall ring round a room (register 672), as the cells of a room two wider and two taller: the room's
+// own blocks inside it, so a block on the room's edge joins the ring (682). loose: tiles whose block stands alone.
+export function ringCells(level, loose = new Set()) {
+  const w = level.w + 2, h = level.h + 2;
+  const inner = level.cells.map((c, i) => !loose.has(i) && (c === 'wall' || /^(spring:|crack$|tri:)/.test(c)) ? c : '');
+  return Array.from({ length: w * h }, (_, i) => { const x = i % w, y = (i - x) / w; return x === 0 || y === 0 || x === w - 1 || y === h - 1 ? 'wall' : inner[(y - 1) * level.w + x - 1]; });
+}

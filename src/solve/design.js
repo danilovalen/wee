@@ -68,6 +68,21 @@ export function idleElements(checked, par) {
   return { unused, plain };
 }
 
+// Of the pieces, tiles and walls the answer does not need, which still change where you can get stuck
+// (register 692): bait that leads you into a trap, or a guide. Taking one out changes how many positions can
+// no longer reach the goal. Returns { idle, bait }; with a room too big to map, every one counts as idle.
+export function* baitCheck(level, unneeded, max) {
+  const base = yield* routes(level, max), idle = [], bait = [];
+  for (const e of unneeded) {
+    const i = e.y * level.w + e.x, cells = [...level.cells];
+    if (!e.piece) cells[i] = '';
+    const without = { ...level, cells, entities: e.piece ? level.entities.filter(p => p.x !== e.x || p.y !== e.y) : level.entities };
+    const r = base && (yield* routes(without, max));
+    (r && r.dead !== base.dead ? bait : idle).push(e);
+  }
+  return { idle, bait };
+}
+
 // Every position the room can reach, as a graph: how many can no longer reach the goal,
 // the tiles where every stop is such a dead end, and how many shortest routes there are.
 // Null when the room has real-time pieces or more positions than max.

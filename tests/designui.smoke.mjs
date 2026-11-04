@@ -35,7 +35,9 @@ try {
   // The status bar counts the six notes.
   check('Check opens the well on the design notes, floating over the room (register 689)', await page.locator('#designList').isVisible() && await page.$eval('#well', e => getComputedStyle(e).position) === 'absolute');
   await page.waitForTimeout(100);
-  check('the status bar counts the notes', (await page.textContent('#wellBtn')) === 'Findings 6', await page.textContent('#wellBtn'));
+  check('pieces the answer does not need but that change where you get stuck are named as such (register 692)', /These leave the answer alone but change where you can get stuck: \w/.test(n), n);
+  const notesN = await page.$$eval('#designList li:not(.working):not(.metric)', ls => ls.length) + await page.$$eval('#lintBox:not([hidden]) #lintList li', ls => ls.length);
+  check('the status bar counts the notes', (await page.textContent('#wellBtn')) === `Findings ${notesN}` && notesN >= 6, await page.textContent('#wellBtn'));
 
   await page.click('#stopsBtn');
   await page.waitForFunction(() => /Frames: \d+/.test(document.getElementById('lensLegend').textContent), null, { timeout: 30000 });
