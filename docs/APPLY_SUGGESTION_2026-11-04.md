@@ -98,6 +98,6 @@ offers.
 
 ## Questions for the owner (one at a time)
 
-1. A, B or C?
-2. Should the preview also run the lenses on the previewed room (the new solution line), or show only the
-   change itself?
+1. ~~A, B or C?~~ **Owner (2026-11-04): B.** Pick a line to preview it; Apply only on the picked line.
+2. ~~Lenses on the previewed room?~~ **Owner (2026-11-04): yes, redraw.** The lenses that are on draw for
+   the previewed room, so the new answer shows before Apply.
