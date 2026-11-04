@@ -129,4 +129,4 @@ Rows 718-729 fold into these.
    longer win) and reuse.** Those four show as big numbers; flow undos, wrong turns, ruin, choices,
    forced steps, places and ways to win sit behind one tap.
 3. ~~Where the lens icons sit~~ **Owner (2026-11-04): a row along the room's top edge**, the same
-   row over the room on a phone.
+   row over the room on a phone. **Changed (2026-11-04, register 749): in the header.**
