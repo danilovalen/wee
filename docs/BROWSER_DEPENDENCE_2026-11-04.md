@@ -101,8 +101,8 @@ Suggested order: 1, 2, 3 together with 4, then 5, 6, 7. Nothing here touches the
 
 ## Questions for the owner (to ask one at a time)
 
-1. Is Undo enough to replace "This cannot be undone" deletes (rooms, made levels), or should a deleted
-   room be recoverable for a while?
+1. ~~What protects a delete once the popups go?~~ **Owner (2026-11-04): an Undo line.** Delete at once; a line
+   says "Room deleted." with Undo, which brings it back until you leave the page.
 2. ~~Should the Sandbox editor be fully playable on a controller?~~ **Owner (2026-11-04): editor too.** A room
    cursor moved by the d-pad, A uses the tool, B the second action, shoulders zoom; touch and keyboard get the
    same cursor.
