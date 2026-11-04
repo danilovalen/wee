@@ -5,7 +5,7 @@ import { T, INK } from './ink.js';
 import { DIRS } from '../rules/base.js';
 
 const P = 2, snap = v => Math.round(v / P) * P;
-export const JUICE_MS = { place: 220, erase: 320, land: 260, hit: 90, launch: 90 };
+export const JUICE_MS = { eat: 320, place: 220, erase: 320, land: 260, hit: 90, launch: 90 };
 const ease = t => 1 - (1 - t) * (1 - t);
 // Under reduced motion nothing here moves.
 const still = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -17,8 +17,9 @@ export function drawJuice(g, fx, now) {
     const ms = JUICE_MS[f.type], t = ms ? (now - f.at) / ms : 1;
     if (t < 0 || t >= 1) continue;
     const cx = f.x * T + T / 2, cy = f.y * T + T / 2;
-    if (f.type === 'place') {
-      g.fillStyle = '#fcfcfa'; g.globalAlpha = 1 - t;
+    // An eaten berry (register 702) bursts like a placed piece, in the berry's cyan.
+    if (f.type === 'place' || f.type === 'eat') {
+      g.fillStyle = f.type === 'eat' ? '#78dce8' : '#fcfcfa'; g.globalAlpha = 1 - t;
       for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) dot(g, cx + sx * (T / 2 + 10 * ease(t)) - P, cy + sy * (T / 2 + 10 * ease(t)) - P, P * (t < 0.5 ? 2 : 1));
     } else if (f.type === 'erase') {
       g.fillStyle = '#939293'; g.globalAlpha = 1 - t;

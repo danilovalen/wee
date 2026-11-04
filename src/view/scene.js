@@ -157,7 +157,7 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
   if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
   drawFloor(g, s.w, s.h);
   // A broken block is floor for the rest of the run.
-  const cells = s.broken.length ? s.cells.map((c, i) => s.broken.includes(i) ? '' : c) : s.cells;
+  const cells = s.broken.length || s.eaten.length ? s.cells.map((c, i) => s.broken.includes(i) || s.eaten.includes(i) ? '' : c) : s.cells;
   drawWires(g, s.w, s.wires, r => !!s.open[s.wireOf[`${r.w}:${r.y * s.w + r.x}`]]);
   drawMasses(g, s.crates.size ? cells.map((c, i) => s.crates.has(i) ? '' : c) : cells, s.w, s.h);
   cells.forEach((c, i) => {

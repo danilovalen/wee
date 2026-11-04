@@ -62,7 +62,11 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const none = { ...r, start: null, cells: r.cells.map(() => '') };
   ok('a room needs its start and goal', placementErrors(d, none).map(e => e.msg).join() === 'Place the blob.,Place the berry.');
   const two = build(d, ['', '', '', '', '', 'G', 'G']);
-  ok('only one goal', placementErrors(d, two).some(e => e.msg === 'Place only one goal.'));
+  ok('only one berry', placementErrors(d, two).some(e => e.msg === 'Place only one berry.'));
+  // Register 706: a level takes more than one berry only on purpose, by saying how many.
+  ok('every level that does not say how many berries refuses a second one', LEVELS.filter(l => !l.berries).every(l => placementErrors(l, { ...two, w: 7, h: 7 }).some(e => e.msg === 'Place only one berry.')));
+  const three = build(d, ['', '', '', '', 'G', 'G', 'G']);
+  ok('a level that says 3 berries takes 3, and refuses a fourth', !placementErrors({ ...d, berries: 3 }, three).some(e => /berr/.test(e.msg)) && placementErrors({ ...d, berries: 3 }, build(d, ['', '', '', 'G', 'G', 'G', 'G'])).some(e => e.msg === 'This level takes at most 3 berries.'));
   ok('a level has no powers', Object.values(r.powers).every(p => !p));
   const NUMBERED = LEVELS.filter(l => !l.tutorial);
   ok('the tutorial comes first, then levels numbered from 1 in order, a hidden one after them (register 512)', LEVELS[0].id === 'tutorial' && NUMBERED.filter(l => !l.hidden).map(l => l.id).join() === NUMBERED.filter(l => !l.hidden).map((_, i) => String(i + 1)).join());

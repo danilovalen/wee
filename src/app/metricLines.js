@@ -1,5 +1,5 @@
 // The room's metrics in plain words (register 650), apart from the page so a test can read them.
-import { MASH_CAP } from '../solve/metrics.js';
+const n = (k, w) => `${k} ${w}${k === 1 ? '' : 's'}`;
 const pct = x => `${Math.round(x * 100)}%`;
 export function metricLines(m) {
   if (!m) return ['Too many positions to measure the room.'];
@@ -10,6 +10,20 @@ export function metricLines(m) {
     `Choices: ${m.choices.toFixed(1)} safe moves per step on the shortest path.`,
     `Forced steps: ${pct(m.forced)} of the shortest path has one safe move.`,
     `Ways to win: ${m.shortest} shortest, ${m.near} within 2 moves more.`,
-    `Mashing: random arrows win ${m.mash > 0 && m.mash < 0.005 ? 'under 1%' : pct(m.mash)} of tries within ${m.mashBudget ?? 0} presses, ${m.mashHalf == null ? `and most tries do not win within ${MASH_CAP}` : `and half of all tries by press ${m.mashHalf}`}.`,
+    m.undos == null ? 'Going with the flow: the room has no answer to follow.' : m.undos ? `Going with the flow, you need about ${n(m.undos, 'undo')}.` : 'Going with the flow, you reach the berry without an undo.',
+    ...turnLines(m.wrong),
   ];
 }
+
+// Wrong turns off the shortest path (register 709): how many, how many trap you, and the deepest trap,
+// which flashes where it starts.
+function turnLines(w) {
+  if (!w) return [];
+  if (!w.turns) return ['Wrong turns: every move on the shortest path keeps it shortest.'];
+  const head = w.traps ? `Wrong turns: ${w.turns} on the shortest path, ${w.traps} of them ${w.traps === 1 ? 'a trap' : 'traps'}.` : `Wrong turns: ${w.turns} on the shortest path, and from each the berry is still in reach.`;
+  if (!w.deep) return [head];
+  const deep = w.deep.depth ? `The deepest trap lets you walk ${n(w.deep.depth, 'move')} before you are stuck.` : 'The deepest trap ends the run at once.';
+  return [head, { text: deep, spots: [w.deep.at] }];
+}
+// Reuse (register 717): how many blocks the answer leans on, and how often the busiest one.
+export const reuseText = r => r ? `Reuse: ${r.moves} ${r.moves === 1 ? 'move leans' : 'moves lean'} on ${n(r.blocks, 'block')}, the busiest ${n(r.busiest, 'time')}.` : 'Reuse: too many positions to follow the answer.';

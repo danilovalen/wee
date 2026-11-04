@@ -103,7 +103,8 @@ export function placementErrors(def, room) {
   if (!room.start) errs.push({ msg: 'Place the blob.' });
   const goals = room.cells.filter(c => c === 'goal').length;
   if (!goals) errs.push({ msg: 'Place the berry.' });
-  if (goals > 1) errs.push({ msg: 'Place only one goal.' });
+  // A level takes more than one berry only when it says how many (registers 702, 706).
+  if (goals > (def.berries || 1)) errs.push({ msg: def.berries ? `This level takes at most ${def.berries} berries.` : 'Place only one berry.' });
   for (const [el, list] of Object.entries(by)) {
     // A null maximum is no limit: cost is what keeps the count down.
     const max = (def.palette[el] || [0, 0])[1];

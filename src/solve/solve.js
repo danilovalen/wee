@@ -21,6 +21,7 @@ export function stateKey(s) {
   if (s.broken.length) k += '|' + [...s.broken].sort((a, b) => a - b).join(',');
   if (s.toggled.length) k += '|t' + s.toggled.join(',');
   if (s.crates.size) for (const i of [...s.crates].sort((a, b) => a - b)) k += '|c' + i + s.cells[i];
+  if (s.eaten.length) k += '|e' + s.eaten.join(',');
   return k;
 }
 

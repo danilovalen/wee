@@ -26,7 +26,7 @@ export function createGame(level) {
     // the ground, which keeps what lies under them (spikes come back when a tile leaves).
     tiles: (l.crates || []).map((c, id) => ({ id, x: c.x, y: c.y, cell: l.cells[c.y * l.w + c.x] })),
     ground: l.cells.map((c, i) => (l.crates || []).some(k => k.y * l.w + k.x === i) ? '' : c),
-    open: {}, broken: [], toggled: startOn(l.cells), onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
+    berries: l.cells.filter(c => c === 'goal').length, eaten: [], open: {}, broken: [], toggled: startOn(l.cells), onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };
   s.originCrates = s.crates; s.originTiles = s.tiles;
   computeBeams(s, false);
@@ -78,10 +78,16 @@ export function step(s, inputs = []) {
   return s;
 }
 
-// You win by coming to rest on a goal: sliding over one does not count.
+// You win by coming to rest on a goal: sliding over one does not count. With two or more berries,
+// resting on one eats it, and the last one eaten wins (register 702). eaten is replaced, never edited.
 function checkWin(s) {
-  const p = s.player;
-  if (s.won || p.dir || p.hidden || cellAt(s, p.x, p.y) !== 'goal') return;
+  const p = s.player, i = p.y * s.w + p.x;
+  if (s.won || p.dir || p.hidden || cellAt(s, p.x, p.y) !== 'goal' || s.eaten.includes(i)) return;
+  if (s.berries > 1) {
+    s.eaten = [...s.eaten, i].sort((a, b) => a - b);
+    s.events.push({ type: 'eat', x: p.x, y: p.y });
+    if (s.eaten.length < s.berries) return;
+  }
   s.won = true;
   s.events.push({ type: 'win', x: p.x, y: p.y, moves: s.move });
 }
@@ -89,7 +95,7 @@ function checkWin(s) {
 // The one text reading of the game: tests, the bot and the agent all use it.
 export function gameText(s, mode = 'play') {
   return JSON.stringify({
-    mode, tick: s.tick, clock: s.clock, worldSteps: s.worldSteps, deaths: s.deaths, moves: s.move, won: s.won,
+    mode, tick: s.tick, clock: s.clock, worldSteps: s.worldSteps, deaths: s.deaths, moves: s.move, won: s.won, ...(s.berries > 1 ? { eaten: s.eaten.length, berries: s.berries } : {}),
     player: { x: s.player.x, y: s.player.y, sliding: s.player.dir, hidden: s.player.hidden, swimming: s.player.swimming, sticky: s.player.sticky, stuck: s.player.stuck && (s.player.stuck.ride ? 'riding' : 'glued') },
     checkpoint: s.checkpoint,
     pieces: s.entities.filter(e => !e.dead).map(e => ({

@@ -130,7 +130,7 @@ function launch(s, cols, was) {
 export function respawn(s) {
   for (const e of s.entities) e.dead = true;
   s.entities = freshPieces(s.origin);
-  s.broken = [];
+  s.broken = []; s.eaten = [];
   s.cells = s.originCells; s.crates = s.originCrates; s.tiles = s.originTiles;
   Object.assign(s.player, { x: s.checkpoint.x, y: s.checkpoint.y, dir: null, moved: 0, hidden: false, hideTicks: 0, sticky: false, stuck: null, pushing: null, snap: true });
   // Doors start over as a new room's do, so a one-way that turns back on reset launches nothing a start would not.
