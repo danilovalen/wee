@@ -16,6 +16,7 @@ export const M = [
   ['tools/roomSearch.mjs', "if (g.goal) g.items.push(['berry', x, y, null, null]); else g.goal = { x, y };", "g.goal = { x, y };", 'search'],
   ['tools/searchScores.mjs', "  fiveBerries: room => Math.min(1, room.cells.filter(c => c === 'goal').length / 5),\n", "", 'search'],
   ['src/app/chips.js', "d.dataset.join = ''; return d;", "return d;", 'spacing'],
+  ['style.css', '#checkBtn { min-width: 10.5ch; }', '#checkBtn { min-width: 9.5ch; }', 'still'],
   // tiles as pieces, the robot on a stuck one-way, win cards after a reset (registers 460, 461, 459)
   ['src/rules/crates.js', "cells[from] = s.ground[from];", "cells[from] = '';", 'campaign'],
   ['src/rules/life.js', "        crushTile(s, d);\n", "", 'sim'],

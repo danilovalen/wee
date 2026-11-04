@@ -1054,7 +1054,7 @@ body.campaign #bestOpt { display: none !important; }
 }
 
 /* Check and Checked take the same width, so the header never moves (register 730). */
-#checkBtn { min-width: 9.5ch; }
+#checkBtn { min-width: 10.5ch; }
 
 /* On a phone the tool's how-to reads in plain case after its name, and its options start at the left. */
 .toolName .toolHow { margin-left: 8px; font: 400 12px var(--body-face, inherit); letter-spacing: 0; text-transform: none; }
