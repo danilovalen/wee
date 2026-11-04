@@ -54,4 +54,5 @@ The browser gate uses Chromium at `/opt/pw-browsers/chromium`; set `CHROMIUM` el
 
 - Goal sentences are direct, starting on their subject with no article: "Laser through an open door.", not "A laser goes through an open door." Opening line after line on "A" or "The" reads machine-written (register 308).
 - Teaching text (the tutorial, a hint) speaks to the player as an order: "Get the robot to the star.", never a goal's short form, which reads as a fact there (register 511). Before writing any player-facing line, re-read the copy rules here and in the danilo-copywriting skill.
+- Never make "nothing" or "no X" the subject that acts: "Taking nothing out makes it longer." reads as an action that lengthens the room and means the opposite. Say what is true of the things that are there: "Removing any one piece or tile does not make it longer." (register 700).
 - One sentence per on-screen message: "You are X. That thing Y." strings read machine-made (register 310). The `arch` test holds it.
