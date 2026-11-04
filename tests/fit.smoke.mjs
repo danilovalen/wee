@@ -47,6 +47,8 @@ try {
     for (const g of ['colour', 'lines']) await page.click(`[data-chip=${g}]`);
     await page.click('#checkBtn');
     await page.waitForFunction(() => /changes the answer|nothing changes|same job/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
+    // Check leaves the well shut (register 680); open it on the notes.
+    if (await page.locator('#well').isHidden()) await page.click('#wellBtn');
     const settle = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     await settle();
     // A bar's control past the bar's edge, or with its own text cut, is cut off.

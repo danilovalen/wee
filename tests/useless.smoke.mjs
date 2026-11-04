@@ -50,7 +50,7 @@ const boot = async scene => {
   for (let i = 0, a = await look(''), same = 0; i < 30 && same < 3; i++) { await page.waitForTimeout(250); const b = await look(''); same = a === b ? same + 1 : 0; a = b; }
 };
 const SCOPE = 'header button, #statusBar button, #pad button';
-const live = () => page.$$eval(SCOPE, bs => bs.filter(b => b.offsetParent && !b.disabled && !(b.classList.contains('on') && !b.hasAttribute('aria-pressed'))).map(b => b.id || b.textContent.trim()));
+const live = () => page.$$eval(SCOPE, bs => bs.filter(b => b.offsetParent && b.checkVisibility({ visibilityProperty: true }) && !b.disabled && !(b.classList.contains('on') && !b.hasAttribute('aria-pressed'))).map(b => b.id || b.textContent.trim()));
 
 
 try {

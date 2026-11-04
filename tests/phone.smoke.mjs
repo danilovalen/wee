@@ -120,7 +120,7 @@ try {
   await page.evaluate(() => window.wee.setPower('cycle', true));
   check('the play buttons show in play', await page.locator('#hideBtn').isVisible());
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-  const full = await page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, h: innerHeight, tools: !!document.getElementById('tools').offsetParent, bottom: document.getElementById('pad').getBoundingClientRect().bottom, room: document.getElementById('game').getBoundingClientRect().height }));
+  const full = await page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, h: innerHeight, tools: document.getElementById('tools').checkVisibility({ visibilityProperty: true }), bottom: document.getElementById('pad').getBoundingClientRect().bottom, room: document.getElementById('game').getBoundingClientRect().height }));
   check('play takes one screen: nothing scrolls, the editor is gone, the buttons are on screen', full.scroll <= full.h + 1 && !full.tools && full.bottom <= full.h, JSON.stringify(full));
   // a swipe right: the player starts at (1,1) and slides to the room's edge (a new room has no border, register 380)
   const s0 = at(3, 3), s1 = at(6, 3);

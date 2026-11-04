@@ -113,7 +113,8 @@ export function buildPanels(actions) {
   $('respawnBtn').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
-  $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
+  // Wide, Check leaves the well as it was so nothing moves (680); a phone's well floats, so it opens.
+  $('checkBtn').onclick = () => { runCheck(); if (matchMedia('(max-width: 700px)').matches) openWell('findings'); };
   buildWell();
   buildChips();
   buildSize({ after: () => { syncPanel(); fit(); } });

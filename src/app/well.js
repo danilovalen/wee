@@ -29,6 +29,8 @@ export function syncWell() {
   if (key === shown) return;
   shown = key;
   $('well').hidden = !open;
+  // An open well keeps its space in play too, so the room does not grow and shrink (register 680).
+  document.body.classList.toggle('wellOpen', WELL.open);
   // With nothing found and the well shut there is nothing to open: the button greys out
   // (a phone hides a greyed one), so nothing beside it moves.
   $('wellBtn').hidden = !edit;

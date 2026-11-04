@@ -522,7 +522,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .menuSec { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: color-mix(in srgb, var(--panel) 88%, transparent); border-radius: var(--r-l); padding: 10px; }
 .menuSec h2 { grid-column: 1 / -1; margin: 0; font: 800 15px var(--label-face); }
 .menuSec button { height: 48px; font-size: 16px; }
-@media (min-width: 701px) { .menuList { width: min(640px, 100vw - 64px); grid-template-columns: 1fr 1fr; } #menuDebug { grid-column: 1 / -1; } }
+@media (min-width: 701px) { .menuList { width: min(320px, 100vw - 64px); } }  /* one box, centred under the title (register 678) */
 .menuList button.primary { --fill: var(--accent); --frame: #ddd6ff; color: var(--on-accent); }
 /* The session's unlock-all switch, top right (register 589); its badge in the top bar while on. */
 .menuCorner { position: absolute; z-index: 2; top: 12px; right: 12px; width: 44px; height: 44px; padding: 10px; display: flex; align-items: center; justify-content: center; }
@@ -760,7 +760,7 @@ body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #check
 .mkGoals select { flex: 0 0 118px; }
 
 /* Register 332: in a level's play, the editing buttons go away instead of greying out. */
-body.campaign.play :is(#undo, #redo, #campReset) { display: none; }
+body.campaign.play :is(#undo, #redo, #campReset) { visibility: hidden; }  /* kept in place, so nothing beside them moves (register 680) */
 body.campaign #campReset { order: 6; margin-left: auto; }
 
 /* Register 322: in a level and the simple Sandbox the room takes the screen and every strip of
@@ -976,6 +976,33 @@ body.challenge .growBar { display: none !important; }
 
 #campList .campSection { grid-column: 1 / -1; margin: 10px 2px 0; font: 800 13px var(--label-face, inherit); color: var(--soft); }
 .wires button { background: var(--dot); }
+
+/* Nothing moves when something appears (registers 679, 680): a part that comes and goes keeps its place,
+   hidden rather than removed, so nothing beside or below it shifts. */
+@media (min-width: 701px) {
+  body:not(.campaign) .ctx { grid-template-rows: 36px 18px; align-content: start; }
+  body:not(.campaign) .ctx #options:not(:has(.opt:not([hidden]))) { display: flex; visibility: hidden; }
+  body:not(.campaign) .ctx #ctxNote, body:not(.campaign) .ctx #placeHint { grid-row: 2; }
+  body.wellOpen:not(.campaign) #well[hidden] { display: flex; visibility: hidden; }
+  body.play:not(.campaign) #sizeBtn, body:not(.campaign) .statusBar > #wellBtn[hidden] { display: revert; visibility: hidden; }
+}
+@media (max-width: 700px) {
+  body.play:not(.campaign) #tools, body.play:not(.campaign) #powers:not([hidden]), body.play:not(.campaign) #lensChips:not([hidden]), body.play:not(.campaign) #statusBar { display: revert; visibility: hidden; }
+  body.sandbox .toolName { flex: none; height: 26px; overflow: hidden; }
+  body.sandbox #tools { height: 214px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
+  body.sandbox #strip { margin-top: auto; }
+  .statusBar { height: 34px; box-sizing: border-box; }
+  #wellBtn:disabled { display: revert; visibility: hidden; }
+}
+@media (max-width: 700px) {
+  body.play:not(.campaign) #phoneNav { display: flex !important; visibility: hidden; }
+  body.play:not(.campaign) #pad { position: fixed; left: 20px; right: 20px; width: auto; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); margin: 0; max-width: none; z-index: 5; flex-wrap: wrap; }
+  body.play:not(.campaign) #pad .moves { flex: 1 0 100%; text-align: center; }
+}
+@media (min-width: 701px) {
+  body:not(.campaign) .statusBar > #pad[hidden] { display: flex; visibility: hidden; }
+  .statusBar .moves { display: inline-block; min-width: 10ch; font-variant-numeric: tabular-nums; }
+}
 </style>
 </head>
 <body>
@@ -8434,6 +8461,8 @@ function syncWell() {
   if (key === shown) return;
   shown = key;
   $('well').hidden = !open;
+  // An open well keeps its space in play too, so the room does not grow and shrink (register 680).
+  document.body.classList.toggle('wellOpen', WELL.open);
   // With nothing found and the well shut there is nothing to open: the button greys out
   // (a phone hides a greyed one), so nothing beside it moves.
   $('wellBtn').hidden = !edit;
@@ -10951,7 +10980,8 @@ function buildPanels(actions) {
   $('respawnBtn').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
-  $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
+  // Wide, Check leaves the well as it was so nothing moves (680); a phone's well floats, so it opens.
+  $('checkBtn').onclick = () => { runCheck(); if (matchMedia('(max-width: 700px)').matches) openWell('findings'); };
   buildWell();
   buildChips();
   buildSize({ after: () => { syncPanel(); fit(); } });

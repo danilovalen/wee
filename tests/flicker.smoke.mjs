@@ -48,7 +48,7 @@ try {
   // A first Check, so there are notes and a Findings count to keep steady.
   await page.click('#checkBtn');
   await page.waitForFunction(() => !document.getElementById('designBox').classList.contains('stale') && !document.querySelector('#designList .working') && document.getElementById('designList').children.length > 1, null, { timeout: 20000 });
-  await page.click('#wellClose');
+  if (await page.locator('#well').isVisible()) await page.click('#wellClose');
   await page.waitForTimeout(300);
 
   // One edit: a wall placed with the mouse.

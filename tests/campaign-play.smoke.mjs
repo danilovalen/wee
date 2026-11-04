@@ -455,7 +455,8 @@ try {
     return { below: ['undo', 'redo', 'campReset'].every(id => document.getElementById(id).parentNode.id === 'campHistory'), levels: radius('campBack'), run: radius('campRun'), test: radius('campTest'), seam: r('campRun').left - r('campBack').right }; });
   check('on a phone the header is one joined strip of Levels, Run and Test; undo, redo and Reset sit with the tools (plan step 2)', bar.below && bar.seam <= 2, JSON.stringify(bar));
   await phone.click('#campTest'); await phone.waitForTimeout(200);
-  const inPlay = await phone.evaluate(() => ['undo', 'redo', 'campReset', 'campRun', 'mode'].map(id => id + ':' + (getComputedStyle(document.getElementById(id)).display !== 'none')).join());
+  // Hidden in place (register 680), so nothing beside them moves.
+  const inPlay = await phone.evaluate(() => ['undo', 'redo', 'campReset', 'campRun', 'mode'].map(id => id + ':' + document.getElementById(id).checkVisibility({ visibilityProperty: true })).join());
   check('in play the editing buttons are hidden, not greyed (register 332)', inPlay === 'undo:false,redo:false,campReset:false,campRun:false,mode:true', inPlay);
   await phone.close();
   // 226: level 8 became level 7 (243 moved it to 8 for a day; 246 moved it back). A v1 save's level 8 record ends on 7, the old 7 dropped.

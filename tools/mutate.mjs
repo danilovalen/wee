@@ -512,7 +512,7 @@ export const M = [
   ['src', "closeWell() : openWell('findings'));", "closeWell() : openWell());", 'browser'],
   ['src', "  $('wellBtn').disabled = !n && !open;", "  $('wellBtn').disabled = false;", 'flicker'],
   ['src', "return lint + design;", "return lint;", 'designui'],
-  ['src', "$('checkBtn').onclick = () => { runCheck(); openWell('findings'); };", "$('checkBtn').onclick = () => { runCheck(); };", 'designui'],
+  ['src', "if (matchMedia('(max-width: 700px)').matches) openWell('findings'); };", "};", 'phone'],
   // lens chips and the hover line (U2)
   ['src', "    b.classList.toggle('auto', isAuto(gr.id));", "", 'lensui'],
   ['src', "export const isAuto = group => L().pick[group] === undefined && !!lensOn(group);", "export const isAuto = group => false;", 'lensui'],
@@ -854,7 +854,6 @@ export const M = [
   // Registers 330, 339, 340: a gold laser; the relay a soft eight-point star.
   ['src/app/lenses.js', "colour: INK.zap }", "colour: INK.beam }", 'lensui'],
   // Registers 322, 331, 332: joined strips, Reset at the right, editing buttons hidden in play.
-  ['style.css', "body.campaign.play :is(#undo, #redo, #campReset) { display: none; }", "", 'campaign-play'],
   ['style.css', "body.campaign #campReset { order: 6; margin-left: auto; }", "", 'campaign-play'],
   // Registers 329, 334: every relay lit at the end; level 19 hidden from the list.
   ['src/campaign/goals/lasers.js', "return relays.length > 0 && relays.every(i => end.lit.has(i));", "return relays.length > 0 && relays.some(i => end.lit.has(i));", 'campaign'],
@@ -1049,6 +1048,13 @@ export const M = [
   ['src/app/metricLines.js', "    m.firstRuin == null ? 'First ruin: never.'", "    m.firstRuin == null ? 'First ruin: 0 moves in.'", 'metrics'],
   ['src/app/design.js', "    for (const t of metricLines(m)) { const li = line(t); li.className = 'metric'; lines.push(li); }", "", 'designui'],
   ['src/app/well.js', "li:not(.working):not(.metric)", "li:not(.working)", 'designui'],
+  ['style.css', "  body.wellOpen:not(.campaign) #well[hidden] { display: flex; visibility: hidden; }\n", "", 'still'],
+  ['style.css', "body.campaign.play :is(#undo, #redo, #campReset) { visibility: hidden; }", "body.campaign.play :is(#undo, #redo, #campReset) { display: none; }", 'still'],
+  ['style.css', "  body.sandbox #strip { margin-top: auto; }\n", "", 'still'],
+  ['style.css', ".menuList { width: min(320px, 100vw - 64px); }", ".menuList { width: min(640px, 100vw - 64px); grid-template-columns: 1fr 1fr; }", 'still'],
+  ['style.css', "  body:not(.campaign) .statusBar > #pad[hidden] { display: flex; visibility: hidden; }\n", "", 'still'],
+  ['style.css', "  body:not(.campaign) .ctx { grid-template-rows: 36px 18px; align-content: start; }\n", "", 'still'],
+  ['style.css', "  body.play:not(.campaign) #pad { position: fixed;", "  body.play:not(.campaign) #pad { position: static;", 'still'],
   ['src/solve/metrics.js', "      const q = p / 4;", "      const q = p / 3;", 'metrics'],
   ['src/solve/metrics.js', "if (at < KEYS.length && n.arrows[at] !== 'die') n.arrows[at] = key;", "", 'metrics'],
   ['src/solve/design.js', "    if (level.cells[i] !== 'wall') continue;\n    const cells = [...level.cells]; cells[i] = '';", "    if (level.cells[i] !== 'wall') continue;\n    const cells = [...level.cells];", 'design'],
