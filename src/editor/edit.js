@@ -110,6 +110,7 @@ export function holds(level, x, y, tool, wire) {
   // The Door tool owns both kinds of door: a tap turns one into the other (register 676).
   if (tool === 'door') return /^i?door:/.test(c);
   if (tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
+  if (tool === 'start') return !!level.start && level.start.x === x && level.start.y === y;
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;
 }
@@ -171,11 +172,12 @@ export function place(level, ui, x, y, how) {
   const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
   const isStart = !!level.start && level.start.x === x && level.start.y === y;
   if (t === 'erase') {
-    // Erase takes the top thing first: a piece, then a tile, then the wires under them.
-    if (pi >= 0) removePiece(); else if (level.cells[i]) setCell(''); else for (const r of wiresAt(level, x, y)) setWire(level, x, y, r.w, false);
+    // Erase takes the top thing first: the blob (register 705), a piece, then a tile, then the wires under them.
+    if (isStart) { gone.start = true; level.start = null; } else if (pi >= 0) removePiece(); else if (level.cells[i]) setCell(''); else for (const r of wiresAt(level, x, y)) setWire(level, x, y, r.w, false);
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
-    if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
+    if (ui.tool === 'start') { if (isStart) { gone.start = true; level.start = null; } }
+    else if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
     else if (['wall', 'crack', 'checkpoint', 'button', 'toggle', 'door', 'idoor', 'tri', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
@@ -225,7 +227,7 @@ export function place(level, ui, x, y, how) {
   }
   const c = level.cells[i];
   setCrate(level, x, y, CRATE_TOOLS.includes(t) ? !!ui.crate && CRATED(c) : crateAt(level, x, y) && CRATED(c));
-  if (gone.cell || gone.piece) out.push(gone);
+  if (gone.cell || gone.piece || gone.start) out.push(gone);
   if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
   return out;
 }

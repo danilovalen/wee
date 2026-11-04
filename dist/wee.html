@@ -735,7 +735,7 @@ canvas[data-icon] { image-rendering: pixelated; }
 .progRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 
 /* The simple Sandbox (register 302): the campaign's tool line and colours, none of the dev panels. */
-body.simple #groups, body.simple #stopsBtn, body.simple #genBtn, body.simple #lensChips, body.simple .opt, body.simple #powers, body.simple #worldMoves, body.simple #ctxNote, body.simple [data-sheet=powers] { display: none !important; }
+body.simple #groups, body.simple #stopsBtn, body.simple #genBtn, body.simple #lensChips, body.simple .opt:not([data-for=select], #bestOpt), body.simple #powers, body.simple #worldMoves, body.simple #ctxNote, body.simple [data-sheet=powers] { display: none !important; }
 
 /* A puzzle (register 302): you play a room by hand; nothing to edit, a way back to the list. */
 .puzzle-only { display: none; }
@@ -1006,6 +1006,22 @@ body.challenge .growBar { display: none !important; }
 #bestOpt #shapeAsk { display: inline-flex; gap: 6px; }
 #bestOpt #shapeAsk[hidden], #bestOpt [hidden] { display: none; }
 body.campaign #bestOpt { display: none !important; }
+
+/* A wide Sandbox: the chosen tool's options, colours and Pushable chip float beside its slot (register 697),
+   and the bar over the room keeps only the hint. */
+.toolPop { display: none; }
+@media (min-width: 701px) {
+  body.sandbox .toolPop:not([hidden]) { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; position: fixed; z-index: 55; padding: 8px 10px; max-width: 380px; background: var(--panel); border-radius: var(--r-m); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+  body.play .toolPop { display: none !important; }
+  .toolPop #options { display: flex; flex-direction: column; gap: 8px; }
+  .toolPop #options:not(:has(.opt:not([hidden]))) { display: none; }
+  .toolPop .opt { margin: 0; flex-wrap: nowrap; }
+  .toolPop .opt > span:first-child { width: auto; }
+  .toolPop .opt .note { display: none; }
+  .toolPop #campTop { margin: 0; }
+  body.sandbox .ctx { min-height: 0; grid-template-rows: 18px; }
+  body.sandbox .ctx #ctxNote, body.sandbox .ctx #placeHint { grid-row: 1; }
+}
 </style>
 </head>
 <body>
@@ -1033,6 +1049,7 @@ body.campaign #bestOpt { display: none !important; }
     <button id="roomsBtn" type="button">Rooms</button>
   </header>
   <div id="ctx" class="ctx"><p id="ctxNote" class="hint"></p></div>
+  <div id="toolPop" class="toolPop" role="group" aria-label="Tool options" hidden></div>
   <main>
     <aside id="tools">
       <h2>Build</h2>
@@ -5389,7 +5406,7 @@ function underLimits(def, room) {
 function placementErrors(def, room) {
   const errs = [], { by, stray } = placed(def, room);
   for (const i of stray) errs.push({ msg: 'This level does not have that.', at: i });
-  if (!room.start) errs.push({ msg: 'Place the start.' });
+  if (!room.start) errs.push({ msg: 'Place the blob.' });
   const goals = room.cells.filter(c => c === 'goal').length;
   if (!goals) errs.push({ msg: 'Place the berry.' });
   if (goals > 1) errs.push({ msg: 'Place only one goal.' });
@@ -8489,6 +8506,7 @@ function holds(level, x, y, tool, wire) {
   // The Door tool owns both kinds of door: a tap turns one into the other (register 676).
   if (tool === 'door') return /^i?door:/.test(c);
   if (tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'sensor' || tool === 'gate') return c.startsWith(tool + ':');
+  if (tool === 'start') return !!level.start && level.start.x === x && level.start.y === y;
   if (tool === 'turret') return !!pc && (pc.kind === 'turret' || !!pc.turret);
   return !!pc && pc.kind === tool;
 }
@@ -8550,11 +8568,12 @@ function place(level, ui, x, y, how) {
   const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
   const isStart = !!level.start && level.start.x === x && level.start.y === y;
   if (t === 'erase') {
-    // Erase takes the top thing first: a piece, then a tile, then the wires under them.
-    if (pi >= 0) removePiece(); else if (level.cells[i]) setCell(''); else for (const r of wiresAt(level, x, y)) setWire(level, x, y, r.w, false);
+    // Erase takes the top thing first: the blob (register 705), a piece, then a tile, then the wires under them.
+    if (isStart) { gone.start = true; level.start = null; } else if (pi >= 0) removePiece(); else if (level.cells[i]) setCell(''); else for (const r of wiresAt(level, x, y)) setWire(level, x, y, r.w, false);
   } else if (t === 'remove') {
     const host = pi >= 0 ? level.entities[pi] : null;
-    if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
+    if (ui.tool === 'start') { if (isStart) { gone.start = true; level.start = null; } }
+    else if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }
     else if (['wall', 'crack', 'checkpoint', 'button', 'toggle', 'door', 'idoor', 'tri', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
@@ -8604,7 +8623,7 @@ function place(level, ui, x, y, how) {
   }
   const c = level.cells[i];
   setCrate(level, x, y, CRATE_TOOLS.includes(t) ? !!ui.crate && CRATED(c) : crateAt(level, x, y) && CRATED(c));
-  if (gone.cell || gone.piece) out.push(gone);
+  if (gone.cell || gone.piece || gone.start) out.push(gone);
   if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
   return out;
 }
@@ -8630,7 +8649,7 @@ const { $, now, DEFAULT_HINT } = m0;
 
 
 const SLICE_MS = 25, clone = l => JSON.parse(JSON.stringify(l));
-const name = t => ((TOOLS.find(x => x.id === t) || {}).label || t).toLowerCase();
+const name = t => t === 'start' ? 'blob' : ((TOOLS.find(x => x.id === t) || {}).label || t).toLowerCase();
 const flash = (x, y) => { S.fx.push({ type: 'flash', x, y, at: now() }); S.redraw = true; };
 
 // The answer's length, or null when the room cannot be won (or is too big to tell).
@@ -9063,7 +9082,7 @@ return { sliced, clearDesign, runDesign };
 // ---- src/app/enabled.js
 const m83 = (() => {
 const { S } = m41;
-const { $ } = m0;
+const { $, DEFAULT_HINT } = m0;
 const { stateKey } = m26;
 // A control that would do nothing right now is greyed out, never left to refuse a click.
 // Runs after every change to the room, every switch between editing and playing, and each
@@ -9071,6 +9090,7 @@ const { stateKey } = m26;
 
 
 
+const NO_BLOB = 'Place the blob to play or check this room.';
 function syncEnabled() {
   const level = S.level, play = S.mode === 'play';
   document.querySelectorAll('[data-edit]').forEach(b => { b.disabled = play; });
@@ -9081,8 +9101,12 @@ function syncEnabled() {
     $('playUndo').disabled = !(S.undoPlay && S.undoPlay.length) || !!S.demoRunning;
     return;
   }
-  // With no start (a cut took it), there is nothing to play or check until one is placed.
+  // With no start (taken off, register 705, or cut), there is nothing to play or check until one is placed,
+  // and the hint says so.
   $('mode').disabled = !level.start;
+  const hint = $('placeHint');
+  if (!level.start && hint.textContent === DEFAULT_HINT) hint.textContent = NO_BLOB;
+  else if (level.start && hint.textContent === NO_BLOB) hint.textContent = DEFAULT_HINT;
   // Check is greyed out while this exact room's full check runs or once it is done: a second
   // press would redo the same work and redraw the same words.
   const stamp = level.start && S.check && !S.check.live ? JSON.stringify(level) : null;
@@ -10208,7 +10232,9 @@ function place(wide) {
     else if (el.parentElement !== h.parent) h.parent.insertBefore(el, h.next && h.next.parentElement === h.parent ? h.next : null);
   }
   if (wide) {
-    inside($('options'), $('ctx')); inside($('placeHint'), $('ctx'));
+    // A wide Sandbox shows the options beside the chosen tool instead (src/app/strip.js, register 697).
+    if (!document.body.classList.contains('sandbox')) inside($('options'), $('ctx'));
+    inside($('placeHint'), $('ctx'));
     after($('statusBar'), document.querySelector('main'));
     if ($('pad').nextElementSibling !== $('keys')) $('keys').before($('pad'));
   } else {
@@ -10908,9 +10934,9 @@ const { icon } = m49;
 
 
 const HOLD_MS = 450;
-// Wide screens keep the chosen tool's options in the bar over the room (#ctx, src/app/fit.js); in a
-// Sandbox its colours and Pushable chip join them there.
-const BAR = ['campTop'];
+// A wide Sandbox shows the chosen tool's options, colours and Pushable chip in a panel beside its slot
+// (register 697), so what a tool can do sits next to it; levels and phones keep them where they were.
+const BAR = ['campTop', 'options'];
 const TINTED = ['button', 'toggle', 'door', 'idoor', 'sensor'];
 let A = null, open = null, before = null;
 
@@ -10945,19 +10971,31 @@ function buildStrip(actions) {
   addEventListener('resize', () => { if (inSandbox()) placeBar(); place(); });
 }
 
-// The options bar over the room (wide screens), or the panel's own place (a phone, and every level).
+// The panel beside the slot (a wide Sandbox), or each part's own place (a phone, and every level).
 function placeBar() {
-  const into = inSandbox() && wide() ? $('ctx') : null;
+  const into = inSandbox() && wide() ? $('toolPop') : null;
   for (const id of [...BAR].reverse()) {
     const el = $(id);
     el.home ||= el.parentNode.insertBefore(document.createComment(id), el);
     if (into && el.parentNode !== into) into.prepend(el);
-    else if (!into && el.parentNode !== el.home.parentNode) el.home.after(el);
+    else if (!into && el.parentNode === $('toolPop')) { if (id === 'options') $(wide() ? 'ctx' : 'tools').append(el); else el.home.after(el); }
   }
+}
+// The panel hides while the flyout is open, while playing, and when the tool has nothing to set.
+function placePop() {
+  const pop = $('toolPop'), slot = document.querySelector('#strip .slot.on'), top = $('campTop');
+  const shown = el => !el.hidden && getComputedStyle(el).display !== 'none';
+  const has = [...pop.querySelectorAll('.opt')].some(o => shown(o) && [...o.children].some(shown)) || (pop.contains(top) && getComputedStyle(top).display !== 'none' && (!$('campColours').hidden || !$('campCrate').hidden));
+  pop.hidden = !(inSandbox() && wide()) || !!open || S.mode === 'play' || !has || !slot;
+  if (pop.hidden) return;
+  const r = slot.getBoundingClientRect();
+  pop.style.left = r.right + 6 + 'px';
+  pop.style.top = Math.max(8, Math.min(innerHeight - pop.offsetHeight - 8, r.top)) + 'px';
 }
 
 // The flyout sits by its slot: to its right on a wide screen; on a phone straight above it, joined to it.
 function place() {
+  placePop();
   const pal = $('palette');
   if (!open) { pal.style.left = pal.style.top = pal.style.bottom = ''; return; }
   const slot = document.querySelector(`#strip [data-slot="${open}"]`).getBoundingClientRect();
@@ -11233,7 +11271,7 @@ let tint = '';
 // In a level, Look, Erase and Move start the colours' line; in a Sandbox they stay in the palette, for the strip.
 const LINE = ['look', 'erase', 'move'];
 // The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
-const SIMPLE = ['look', 'erase', 'move', 'start', 'goal', 'wall', 'death', 'box', 'button', 'toggle', 'door', 'sensor', 'gate', 'turret', 'wire'];
+const SIMPLE = ['look', 'select', 'erase', 'move', 'start', 'goal', 'wall', 'death', 'box', 'button', 'toggle', 'door', 'sensor', 'gate', 'turret', 'wire'];
 const lined = () => !!(S.camp || S.simple);
 function placeTools() {
   const box = $('campTools');
@@ -11357,13 +11395,14 @@ function refusal(level, ui, x, y, how) {
   if (fixedAt(x, y)) return 'Only the marked tiles take pieces.';
   const e = newPlacementError(level, placed(level, ui, x, y, how));
   // The robot's start is never removed, so a tile placed under it cannot take its place.
-  if (e && e.msg === START_ON && level.start && level.start.x === x && level.start.y === y) return tipOf('Place the start.');
+  if (e && e.msg === START_ON && level.start && level.start.x === x && level.start.y === y) return tipOf('Place the blob.');
   return e ? tipOf(e.msg) : null;
 }
 const placed = (level, ui, x, y, how, first) => { const next = structuredClone(level); if (first) first(next); place(next, ui, x, y, how); return next; };
 function newPlacementError(level, next) {
   const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg));
-  return placementErrors(def, next).find(e => !/^Place at least/.test(e.msg) && !before.has(e.msg)) || null;
+  // Too few is fine while building, the start included (register 705); Run says so.
+  return placementErrors(def, next).find(e => !/^Place at least|^Place the blob\./.test(e.msg) && !before.has(e.msg)) || null;
 }
 // A box or the robot placed onto a button, a switch or spikes takes the tile's place, and one of
 // those placed under a box takes the box's, instead of refusing (register 441). Returns the room or null.
@@ -11382,7 +11421,7 @@ function replacing(level, ui, x, y, how) {
 }
 const allows = (level, ui, x, y, how) => !refusal(level, ui, x, y, how);
 // A refusal said on the tile: the start and goal are never removed, only moved.
-const tipOf = msg => msg === 'Place the berry.' ? 'To move the berry, use Move.' : msg === 'Place the start.' ? 'To move the start, use Move.' : msg;
+const tipOf = msg => msg === 'Place the berry.' ? 'To move the berry, use Move.' : msg === 'Place the blob.' ? 'To move the blob, use Move.' : msg;
 
 // Why Move cannot carry a thing from one tile to another, or null when it can.
 function moveRefusal(level, from, to) {
@@ -11774,7 +11813,7 @@ function bindInput() {
       return;
     }
     begin();
-    S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
+    S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
     paint(c.x, c.y, S.painting, true);
   });

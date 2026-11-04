@@ -2,7 +2,7 @@
 // Puzzles played by hand, and the Level maker for the robot.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, pickTool } from './lib.mjs';
 
 const { check, done } = suite('modes');
 const server = await serve(5241);
@@ -27,7 +27,7 @@ try {
   await page.click('#roomNew'); await page.waitForTimeout(300);
   check('the Sandbox paints only its own groups (the strip bug of register 411)', (await page.evaluate(() => [...document.querySelectorAll('#strip .slot')].filter(s => s.getBoundingClientRect().width > 0).length)) === 7);
   check('the Sandbox offers red, blue and wire, and no red+blue (register 407)', (await page.evaluate(() => { document.querySelector('#strip [data-slot=doors]').click(); return [...document.querySelectorAll('[data-camp-colour]')].map(b => b.dataset.campColour).join(); })) === 'red,blue,wire');
-  check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,death,door,erase,gate,goal,look,move,sensor,start,toggle,turret,wall,wire', await shown());
+  check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,death,door,erase,gate,goal,look,move,select,sensor,start,toggle,turret,wall,wire', await shown());
   check('the Sandbox offers red, blue and grey, and no powers', await page.evaluate(() => document.querySelectorAll('[data-camp-colour]').length === 3 && getComputedStyle(document.querySelector('[data-sheet=powers]')).display === 'none'));
   // Register 379: the Sandbox's generator offers only what the Sandbox can place, and no powers.
   const ing = await page.evaluate(() => { document.getElementById('roomGen').click(); const on = [...document.querySelectorAll('#genIng select')].filter(s => s.offsetParent).map(s => s.dataset.id); document.getElementById('genBox').close(); return on; });
@@ -100,6 +100,14 @@ try {
     await page.waitForFunction(() => window.wee && window.wee.roomsReady); await page.evaluate(() => window.wee.roomsReady);
     await page.evaluate(() => { for (const d of document.querySelectorAll('dialog[open]')) d.close(); }); await page.waitForTimeout(200);
     check(`${url.includes('#room') ? 'a room link' : '?sandbox'} paints only the Sandbox's seven groups: no enemies, no floors`, (await painted()) === 'edit,room,walls,pieces,lasers,switches,doors', await painted());
+    if (!url.includes('#room')) {
+      await page.dispatchEvent('#strip [data-slot="edit"]', 'contextmenu');
+      check('the simple Sandbox\'s Edit slot offers Select (register 711)', await page.locator('#palette [data-tool="select"]').isVisible());
+      await page.click('#palette [data-tool="select"]');
+      check('and Select shows its Copy and Paste buttons', await page.locator('#selCopy').isVisible() && await page.locator('#selPaste').isVisible());
+      await pickTool(page, 'wall'); await page.waitForTimeout(100);
+      check('the simple Sandbox offers Best spot with the tool, on a phone too (register 697)', await page.locator('#placeBtn').isVisible());
+    }
   }
   await page.goto('about:blank'); await page.goto('http://localhost:5241/?sandbox=full');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady); await page.evaluate(() => window.wee.roomsReady);

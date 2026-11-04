@@ -60,7 +60,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('the start and the goal sit one diagonal step in from their corners', r.start.x === 1 && r.start.y === 1 && r.cells[40] === 'goal');
   ok('the untouched room can run', placementErrors(d, r).length === 0);
   const none = { ...r, start: null, cells: r.cells.map(() => '') };
-  ok('a room needs its start and goal', placementErrors(d, none).map(e => e.msg).join() === 'Place the start.,Place the berry.');
+  ok('a room needs its start and goal', placementErrors(d, none).map(e => e.msg).join() === 'Place the blob.,Place the berry.');
   const two = build(d, ['', '', '', '', '', 'G', 'G']);
   ok('only one goal', placementErrors(d, two).some(e => e.msg === 'Place only one goal.'));
   ok('a level has no powers', Object.values(r.powers).every(p => !p));

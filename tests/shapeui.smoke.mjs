@@ -33,7 +33,7 @@ try {
   const lane = room(['#######', '#.....#', '#P...G#', '#######'], { powers: OFF });
   await page.evaluate(l => window.wee.loadLevel(l), lane);
   await pickTool(page, 'wall');
-  check('Best spot sits with the tool\'s options', await page.locator('#placeBtn').isVisible());
+  check('Best spot sits with the tool\'s options', await page.locator('#placeBtn').waitFor({ state: 'visible', timeout: 2000 }).then(() => true, () => false));
   await page.click('#placeBtn');
   const p = await hint();
   const m = p.match(/^A block at (\d+), (\d+) makes it (\d+) moves instead of 1\.$/);
@@ -52,6 +52,14 @@ try {
   check('Cancel leaves the room as it was', JSON.stringify((await level()).cells) === JSON.stringify(lane.cells) && await page.locator('#shapeAsk').isHidden() && await page.locator('#placeBtn').isVisible());
   await page.click('#placeBtn'); await hint(); await page.click('#shapeYes');
   check('Apply places it there', m && (await level()).cells[+m[2] * lane.w + +m[1]] === 'wall');
+  // Best spot with the Start tool tries the blob on every empty tile (register 705).
+  await page.evaluate(l => window.wee.loadLevel(l), lane);
+  await pickTool(page, 'start');
+  await page.click('#placeBtn');
+  const b = await hint();
+  check('Best spot moves the blob where the room is longest, and calls it the blob', /^A blob at \d+, \d+ makes it \d+ moves instead of 1\.$/.test(b), b);
+  await page.click('#shapeNo');
+  await pickTool(page, 'wall'); await page.click('#placeBtn'); await hint(); await page.click('#shapeYes');
   // Remove one: in the notes; taking that block out shortens it, and nothing else lengthens it.
   await page.click('#checkBtn');
   const r = await notes();

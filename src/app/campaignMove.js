@@ -30,13 +30,14 @@ export function refusal(level, ui, x, y, how) {
   if (fixedAt(x, y)) return 'Only the marked tiles take pieces.';
   const e = newPlacementError(level, placed(level, ui, x, y, how));
   // The robot's start is never removed, so a tile placed under it cannot take its place.
-  if (e && e.msg === START_ON && level.start && level.start.x === x && level.start.y === y) return tipOf('Place the start.');
+  if (e && e.msg === START_ON && level.start && level.start.x === x && level.start.y === y) return tipOf('Place the blob.');
   return e ? tipOf(e.msg) : null;
 }
 const placed = (level, ui, x, y, how, first) => { const next = structuredClone(level); if (first) first(next); place(next, ui, x, y, how); return next; };
 function newPlacementError(level, next) {
   const def = S.camp.def, before = new Set(placementErrors(def, level).map(e => e.msg));
-  return placementErrors(def, next).find(e => !/^Place at least/.test(e.msg) && !before.has(e.msg)) || null;
+  // Too few is fine while building, the start included (register 705); Run says so.
+  return placementErrors(def, next).find(e => !/^Place at least|^Place the blob\./.test(e.msg) && !before.has(e.msg)) || null;
 }
 // A box or the robot placed onto a button, a switch or spikes takes the tile's place, and one of
 // those placed under a box takes the box's, instead of refusing (register 441). Returns the room or null.
@@ -55,7 +56,7 @@ export function replacing(level, ui, x, y, how) {
 }
 export const allows = (level, ui, x, y, how) => !refusal(level, ui, x, y, how);
 // A refusal said on the tile: the start and goal are never removed, only moved.
-const tipOf = msg => msg === 'Place the berry.' ? 'To move the berry, use Move.' : msg === 'Place the start.' ? 'To move the start, use Move.' : msg;
+const tipOf = msg => msg === 'Place the berry.' ? 'To move the berry, use Move.' : msg === 'Place the blob.' ? 'To move the blob, use Move.' : msg;
 
 // Why Move cannot carry a thing from one tile to another, or null when it can.
 export function moveRefusal(level, from, to) {

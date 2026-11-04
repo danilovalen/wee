@@ -20,7 +20,9 @@ try {
     const ctxCut = () => page.evaluate(() => { const c = document.getElementById('ctx'), r = c.getBoundingClientRect(), opts = document.getElementById('options').getBoundingClientRect();
       const parts = [...c.querySelectorAll('button, .opt > span, #ctxNote, #placeHint')].filter(e => e.offsetParent);
       return c.scrollWidth > c.clientWidth || c.scrollHeight > c.clientHeight || parts.some(e => { const q = e.getBoundingClientRect(); return q.right > r.right + 0.5 || q.bottom > r.bottom + 0.5 || e.scrollWidth > e.clientWidth + 1; })
-        || [...c.querySelectorAll('#ctxNote, #placeHint')].some(e => e.offsetParent && opts.height && e.getBoundingClientRect().top < opts.bottom - 1); });
+        || [...c.querySelectorAll('#ctxNote, #placeHint')].some(e => e.offsetParent && opts.height && c.contains(document.getElementById('options')) && e.getBoundingClientRect().top < opts.bottom - 1)
+        // In a wide Sandbox the options float beside the slot (register 697): whole, and inside the window.
+        || [...document.querySelectorAll('#toolPop button, #toolPop .opt > span')].filter(e => e.offsetParent).some(e => { const q = e.getBoundingClientRect(), p = document.getElementById('toolPop').getBoundingClientRect(); return q.right > p.right + 0.5 || q.bottom > p.bottom + 0.5 || p.bottom > innerHeight || p.right > innerWidth || e.scrollWidth > e.clientWidth + 1; }); });
     const cutTools = [];
     let turretNote = false;
     for (const t of await page.$$eval('[data-tool]:not([data-camp])', bs => bs.map(b => b.dataset.tool))) {
@@ -52,7 +54,7 @@ try {
     const settle = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     await settle();
     // A bar's control past the bar's edge, or with its own text cut, is cut off.
-    const cutOff = () => page.evaluate(() => ['ctx', 'statusBar', 'well', 'lensChips'].flatMap(id => { const bar = document.getElementById(id), r = bar.getBoundingClientRect();
+    const cutOff = () => page.evaluate(() => ['ctx', 'toolPop', 'statusBar', 'well', 'lensChips'].flatMap(id => { const bar = document.getElementById(id), r = bar.getBoundingClientRect();
       return [...bar.querySelectorAll('button, .opt > span')].filter(b => b.offsetParent && b.closest('.wellBody') === null).filter(b => { const q = b.getBoundingClientRect(); return q.right > r.right + 0.5 || q.bottom > r.bottom + 0.5 || b.scrollWidth > b.clientWidth + 1; }).map(b => `${id}:${b.textContent.trim().slice(0, 16)}`); }));
     // The room's share of the height; a room held back by the window's width loses nothing to height, so it counts as whole.
     const share = () => page.evaluate(() => { const a = document.getElementById('roomArea'), r = document.getElementById('ring'), c = (r.hidden ? document.getElementById('game') : r).getBoundingClientRect(); return c.width >= a.clientWidth - 40 && c.height < a.clientHeight - 40 ? 1 : a.clientHeight / innerHeight; });
@@ -60,8 +62,13 @@ try {
     // Fills its area, less the bars of + and − above and below it (register 298).
     // The room with its outskirts' wall (register 672) is what fills the area.
     const fills = () => page.evaluate(() => { const r = document.getElementById('ring'), c = (r.hidden ? document.getElementById('game') : r).getBoundingClientRect(), a = document.getElementById('roomArea'); return (c.width >= a.clientWidth - 110 || c.height >= a.clientHeight - 90) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
-    const ctxOpts = await page.evaluate(() => [...document.querySelectorAll('#ctx .opt')].filter(o => !o.hidden).length);
-    check(`${w}x${h}: the turret's options sit in the context bar`, ctxOpts >= 3, String(ctxOpts));
+    // Register 697: in a wide Sandbox they sit beside the turret's slot, inside the window.
+    const pop = await page.evaluate(() => { const p = document.getElementById('toolPop'), r = p.getBoundingClientRect(), s = document.querySelector('#strip .slot.on').getBoundingClientRect();
+      return { opts: [...p.querySelectorAll('.opt')].filter(o => !o.hidden).length, beside: !p.hidden && Math.abs(r.left - s.right - 6) < 1 && r.top <= s.bottom && r.bottom >= s.top, inside: r.bottom <= innerHeight && r.right <= innerWidth }; });
+    check(`${w}x${h}: the turret's options sit beside its slot, inside the window`, pop.opts >= 3 && pop.beside && pop.inside, JSON.stringify(pop));
+    await page.dispatchEvent('#strip .slot.on', 'contextmenu'); await page.waitForTimeout(100);
+    check(`${w}x${h}: the options panel hides while the flyout is open`, await page.locator('#toolPop').isHidden() && await page.locator('#palette.fly').isVisible());
+    await page.keyboard.press('Escape'); await page.waitForTimeout(50);
     const open = await share();
     // Over the room, its four "+" show and none is clipped by the room's area.
     const gb = await page.locator('#game').boundingBox();

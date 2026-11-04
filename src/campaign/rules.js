@@ -100,7 +100,7 @@ export function underLimits(def, room) {
 export function placementErrors(def, room) {
   const errs = [], { by, stray } = placed(def, room);
   for (const i of stray) errs.push({ msg: 'This level does not have that.', at: i });
-  if (!room.start) errs.push({ msg: 'Place the start.' });
+  if (!room.start) errs.push({ msg: 'Place the blob.' });
   const goals = room.cells.filter(c => c === 'goal').length;
   if (!goals) errs.push({ msg: 'Place the berry.' });
   if (goals > 1) errs.push({ msg: 'Place only one goal.' });

@@ -80,7 +80,7 @@ export function bindInput() {
       return;
     }
     begin();
-    S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && S.ui.tool !== 'start' ? 'remove' : 'place';
+    S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
     paint(c.x, c.y, S.painting, true);
   });

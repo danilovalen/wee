@@ -23,7 +23,9 @@ function place(wide) {
     else if (el.parentElement !== h.parent) h.parent.insertBefore(el, h.next && h.next.parentElement === h.parent ? h.next : null);
   }
   if (wide) {
-    inside($('options'), $('ctx')); inside($('placeHint'), $('ctx'));
+    // A wide Sandbox shows the options beside the chosen tool instead (src/app/strip.js, register 697).
+    if (!document.body.classList.contains('sandbox')) inside($('options'), $('ctx'));
+    inside($('placeHint'), $('ctx'));
     after($('statusBar'), document.querySelector('main'));
     if ($('pad').nextElementSibling !== $('keys')) $('keys').before($('pad'));
   } else {

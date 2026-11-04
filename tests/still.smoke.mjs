@@ -7,7 +7,8 @@ import { suite } from './lib.mjs';
 const { check, done } = suite('still');
 const server = await serve(5279);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const boxes = p => p.evaluate(() => Object.fromEntries([...document.querySelectorAll('[id]')].filter(e => e.checkVisibility({ visibilityProperty: true }))
+// The floating options panel follows the chosen tool's slot (register 697), over the room, so it moves by design.
+const boxes = p => p.evaluate(() => Object.fromEntries([...document.querySelectorAll('[id]')].filter(e => !e.closest('#toolPop') && e.checkVisibility({ visibilityProperty: true }))
   .map(e => [e.id, e.getBoundingClientRect()]).filter(([, r]) => r.width && r.height).map(([k, r]) => [k, [r.x, r.y, r.width, r.height].map(Math.round).join()])));
 // A tool's options are the content of a fixed slot: they change with the tool, and nothing round them may.
 const SLOTS = new Set(['options']);

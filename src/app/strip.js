@@ -8,9 +8,9 @@ import { $ } from './dom.js';
 import { icon } from './icons.js';
 
 const HOLD_MS = 450;
-// Wide screens keep the chosen tool's options in the bar over the room (#ctx, src/app/fit.js); in a
-// Sandbox its colours and Pushable chip join them there.
-const BAR = ['campTop'];
+// A wide Sandbox shows the chosen tool's options, colours and Pushable chip in a panel beside its slot
+// (register 697), so what a tool can do sits next to it; levels and phones keep them where they were.
+const BAR = ['campTop', 'options'];
 const TINTED = ['button', 'toggle', 'door', 'idoor', 'sensor'];
 let A = null, open = null, before = null;
 
@@ -45,19 +45,31 @@ export function buildStrip(actions) {
   addEventListener('resize', () => { if (inSandbox()) placeBar(); place(); });
 }
 
-// The options bar over the room (wide screens), or the panel's own place (a phone, and every level).
+// The panel beside the slot (a wide Sandbox), or each part's own place (a phone, and every level).
 function placeBar() {
-  const into = inSandbox() && wide() ? $('ctx') : null;
+  const into = inSandbox() && wide() ? $('toolPop') : null;
   for (const id of [...BAR].reverse()) {
     const el = $(id);
     el.home ||= el.parentNode.insertBefore(document.createComment(id), el);
     if (into && el.parentNode !== into) into.prepend(el);
-    else if (!into && el.parentNode !== el.home.parentNode) el.home.after(el);
+    else if (!into && el.parentNode === $('toolPop')) { if (id === 'options') $(wide() ? 'ctx' : 'tools').append(el); else el.home.after(el); }
   }
+}
+// The panel hides while the flyout is open, while playing, and when the tool has nothing to set.
+function placePop() {
+  const pop = $('toolPop'), slot = document.querySelector('#strip .slot.on'), top = $('campTop');
+  const shown = el => !el.hidden && getComputedStyle(el).display !== 'none';
+  const has = [...pop.querySelectorAll('.opt')].some(o => shown(o) && [...o.children].some(shown)) || (pop.contains(top) && getComputedStyle(top).display !== 'none' && (!$('campColours').hidden || !$('campCrate').hidden));
+  pop.hidden = !(inSandbox() && wide()) || !!open || S.mode === 'play' || !has || !slot;
+  if (pop.hidden) return;
+  const r = slot.getBoundingClientRect();
+  pop.style.left = r.right + 6 + 'px';
+  pop.style.top = Math.max(8, Math.min(innerHeight - pop.offsetHeight - 8, r.top)) + 'px';
 }
 
 // The flyout sits by its slot: to its right on a wide screen; on a phone straight above it, joined to it.
 function place() {
+  placePop();
   const pal = $('palette');
   if (!open) { pal.style.left = pal.style.top = pal.style.bottom = ''; return; }
   const slot = document.querySelector(`#strip [data-slot="${open}"]`).getBoundingClientRect();

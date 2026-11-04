@@ -720,7 +720,7 @@ canvas[data-icon] { image-rendering: pixelated; }
 .progRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 
 /* The simple Sandbox (register 302): the campaign's tool line and colours, none of the dev panels. */
-body.simple #groups, body.simple #stopsBtn, body.simple #genBtn, body.simple #lensChips, body.simple .opt, body.simple #powers, body.simple #worldMoves, body.simple #ctxNote, body.simple [data-sheet=powers] { display: none !important; }
+body.simple #groups, body.simple #stopsBtn, body.simple #genBtn, body.simple #lensChips, body.simple .opt:not([data-for=select], #bestOpt), body.simple #powers, body.simple #worldMoves, body.simple #ctxNote, body.simple [data-sheet=powers] { display: none !important; }
 
 /* A puzzle (register 302): you play a room by hand; nothing to edit, a way back to the list. */
 .puzzle-only { display: none; }
@@ -991,3 +991,19 @@ body.challenge .growBar { display: none !important; }
 #bestOpt #shapeAsk { display: inline-flex; gap: 6px; }
 #bestOpt #shapeAsk[hidden], #bestOpt [hidden] { display: none; }
 body.campaign #bestOpt { display: none !important; }
+
+/* A wide Sandbox: the chosen tool's options, colours and Pushable chip float beside its slot (register 697),
+   and the bar over the room keeps only the hint. */
+.toolPop { display: none; }
+@media (min-width: 701px) {
+  body.sandbox .toolPop:not([hidden]) { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; position: fixed; z-index: 55; padding: 8px 10px; max-width: 380px; background: var(--panel); border-radius: var(--r-m); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+  body.play .toolPop { display: none !important; }
+  .toolPop #options { display: flex; flex-direction: column; gap: 8px; }
+  .toolPop #options:not(:has(.opt:not([hidden]))) { display: none; }
+  .toolPop .opt { margin: 0; flex-wrap: nowrap; }
+  .toolPop .opt > span:first-child { width: auto; }
+  .toolPop .opt .note { display: none; }
+  .toolPop #campTop { margin: 0; }
+  body.sandbox .ctx { min-height: 0; grid-template-rows: 18px; }
+  body.sandbox .ctx #ctxNote, body.sandbox .ctx #placeHint { grid-row: 1; }
+}

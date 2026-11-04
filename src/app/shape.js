@@ -10,7 +10,7 @@ import { S } from '../editor/state.js';
 import { $, now, DEFAULT_HINT } from './dom.js';
 
 const SLICE_MS = 25, clone = l => JSON.parse(JSON.stringify(l));
-const name = t => ((TOOLS.find(x => x.id === t) || {}).label || t).toLowerCase();
+const name = t => t === 'start' ? 'blob' : ((TOOLS.find(x => x.id === t) || {}).label || t).toLowerCase();
 const flash = (x, y) => { S.fx.push({ type: 'flash', x, y, at: now() }); S.redraw = true; };
 
 // The answer's length, or null when the room cannot be won (or is too big to tell).
