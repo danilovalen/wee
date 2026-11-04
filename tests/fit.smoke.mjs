@@ -45,10 +45,12 @@ try {
     await page.evaluate(l => window.wee.loadLevel(l), first);
     await pickTool(page, 'turret');
     if (!(await page.locator('[data-aim=up]').getAttribute('class') || '').includes('on')) await page.click('[data-aim=up]');
-    await page.click('#stopsBtn');
-    for (const g of ['colour', 'lines']) await page.click(`[data-chip=${g}]`);
+    const lost = await page.evaluate(() => { const a = document.getElementById('roomArea').getBoundingClientRect(); return [...document.querySelectorAll('[data-lens-icon]')].filter(b => { const r = b.getBoundingClientRect(), hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+      return r.left < a.left - 0.5 || r.right > a.right + 0.5 || !(hit && b.contains(hit)); }).map(b => b.dataset.lensIcon); });
+    check(`${w}x${h}: every lens icon sits on the room's edge, whole and tappable (register 721)`, !lost.length, lost.join(' '));
+    for (const id of ['stops', 'traps', 'distance', 'solution']) await page.click(`[data-lens-icon=${id}]`);
     await page.click('#checkBtn');
-    await page.waitForFunction(() => /changes the answer|nothing changes|same job/.test(document.getElementById('designList').textContent), null, { timeout: 60000 });
+    await page.waitForFunction(() => !!document.getElementById('designBox').dataset.done, null, { timeout: 60000 });
     // Check leaves the well shut (register 680); open it on the notes.
     if (await page.locator('#well').isHidden()) await page.click('#wellBtn');
     const settle = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
@@ -80,15 +82,11 @@ try {
     // The Sandbox's strip is icons at every width (register 381); each slot and each flyout tool is named on hover.
     const unnamed = await page.evaluate(() => [...document.querySelectorAll('#strip .slot:not([hidden]), [data-tool]:not([data-camp])')].filter(b => !b.title).map(b => b.dataset.slot || b.dataset.tool));
     check(`${w}x${h}: the tool strip's slots and tools are always named on hover`, !unnamed.length, unnamed.join(' '));
-    check(`${w}x${h}: everything open: nothing scrolls, nothing is cut, the room fills its area`, !(await over()) && !(await cutOff()).length && await page.locator('#well').isVisible() && await page.locator('#lensChips').isVisible() && await fills(), JSON.stringify({ cut: await cutOff(), over: await over() }));
-    check(`${w}x${h}: everything open, the room keeps at least 45% of the height`, open >= 0.45, open.toFixed(2));
-    await page.click('#wellClose');
-    await settle();
-    const shut = await share();
-    check(`${w}x${h}: with the well shut the room keeps at least 65% (the side pairs take their width, register 318)`, shut >= 0.65 && await fills(), shut.toFixed(2));
+    check(`${w}x${h}: everything open: nothing scrolls, nothing is cut, the room fills its area`, !(await over()) && !(await cutOff()).length && await page.locator('#well').isVisible() && await page.locator('#lensBar').isVisible() && await fills(), JSON.stringify({ cut: await cutOff(), over: await over() }));
+    check(`${w}x${h}: everything open, the room keeps at least 65% of the height: Findings is a column beside it (register 730)`, open >= 0.65, open.toFixed(2));
     await page.click('#mode');
     await settle();
-    check(`${w}x${h}: play mode: the play buttons sit in the status bar, the lens chips go, and nothing is cut`, await page.locator('#lensChips').isHidden() && !(await over()) && !(await cutOff()).length && await page.evaluate(() => document.getElementById('pad').parentElement.id === 'statusBar' && !!document.getElementById('pad').offsetParent), JSON.stringify(await cutOff()));
+    check(`${w}x${h}: play mode: the play buttons sit in the status bar, the lens icons go, and nothing is cut`, await page.locator('#lensBar').isHidden() && !(await over()) && !(await cutOff()).length && await page.evaluate(() => document.getElementById('pad').parentElement.id === 'statusBar' && !!document.getElementById('pad').offsetParent), JSON.stringify(await cutOff()));
     await page.click('#mode');
     await page.click('#genBtn');
     await page.locator('.genIngBox summary').click();
@@ -113,6 +111,6 @@ try {
   }
   check('on a short screen every column can still be scrolled to its end', !reach.length, reach.join(' '));
   await low.close();
-} catch (err) { check('the fit smoke ran to the end', false, err.message); }
+} catch (err) { check('the fit smoke ran to the end', false, process.env.DBG ? err.message.split('\n').slice(0, 12).join(' | ') : err.message); }
 finally { await browser.close(); server.close(); }
 done();

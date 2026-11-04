@@ -12,7 +12,7 @@ import { allOpen } from './unlock.js';
 import { builders, sideGoalsOpen } from '../campaign/progression.js';
 
 // The editor tool that places each palette element.
-export const TOOL = { spikes: 'death', block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle', gate: 'gate', laser: 'turret', idoor: 'idoor', relay: 'sensor' };
+export const TOOL = { spikes: 'death', block: 'wall', box: 'box', button: 'button', door: 'door', toggle: 'toggle', gate: 'gate', laser: 'turret', idoor: 'idoor', relay: 'sensor', berry: 'goal' };
 let A = null;
 // The campaign's actions (setMode), for drawing a missed path.
 export const bindGoalCard = actions => { A = actions; };

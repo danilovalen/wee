@@ -17,21 +17,30 @@ export function closeWell() { WELL.open = false; syncWell(); }
 function findings() {
   const lint = $('lintBox').hidden ? 0 : $('lintList').children.length;
   // Notes dimmed by an edit are about the room before it, so they are not counted.
-  const design = $('designBox').hidden || $('designBox').classList.contains('stale') ? 0 : $('designList').querySelectorAll('li:not(.working):not(.metric)').length;  // the room's measures (650) are not findings
+  const design = $('designBox').hidden || $('designBox').classList.contains('stale') ? 0 : $('designList').querySelectorAll('li:not(.working):not(.metric):not(.nums):not(.more)').length;  // the room's measures (650) are not findings
   return lint + design;
+}
+
+// On a wide Sandbox the well is a column right of the room, always there, so the room is never covered
+// and nothing moves when it fills (register 730); elsewhere it floats over the room's foot (689).
+function home() {
+  const col = document.body.classList.contains('sandbox') && innerWidth > 700, to = col ? document.querySelector('main') : $('roomArea');
+  if ($('well').parentNode !== to) to.append($('well'));
+  document.body.classList.toggle('wellColumn', col);
+  return col;
 }
 
 let shown = '';
 export function syncWell() {
-  const edit = S.mode === 'edit', open = WELL.open && edit, n = findings();
+  const col = home(), edit = S.mode === 'edit', open = (WELL.open && edit) || col, n = findings();
   const label = n ? `Findings ${n}` : 'Findings';
-  const key = [open, WELL.tab, label, edit, $('lensBox').hidden, n].join();
+  const key = [open, col, WELL.tab, label, edit, $('lensBox').hidden, n].join();
   if (key === shown) return;
   shown = key;
   $('well').hidden = !open;
   // With nothing found and the well shut there is nothing to open: the button greys out
   // (a phone hides a greyed one), so nothing beside it moves.
-  $('wellBtn').hidden = !edit;
+  $('wellBtn').hidden = !edit || col;
   $('wellBtn').disabled = !n && !open;
   $('wellBtn').textContent = label;
   $('wellBtn').setAttribute('aria-expanded', String(open));
@@ -43,8 +52,8 @@ export function syncWell() {
 }
 
 export function buildWell() {
-  // The well floats over the foot of the room itself, not over what sits under it (registers 689, 690).
-  $('roomArea').append($('well'));
+  home();
+  addEventListener('resize', syncWell);
   document.querySelectorAll('[data-well]').forEach(b => b.onclick = () => openWell(b.dataset.well));
   $('wellClose').onclick = closeWell;
   $('wellBtn').onclick = () => (WELL.open && WELL.tab === 'findings' ? closeWell() : openWell('findings'));

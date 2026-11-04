@@ -67,8 +67,8 @@ export const KNOWN = {
     21: ['.#..#..#', '.#......', '#..#....', '....G.#.', 'PBBx.#..', '.....#..', '#......#', '....#...', '..#.....'],
     // Found by tools/levelSearch.mjs --all (register 387): the fewest moves found with a relay pushed into another, 5, in 9x3.
     20: ['....G...e', '........e', '.BD.r.rPw'],
-    // Found by tools/levelSearch.mjs with the goal required (register 365): 8 moves, the laser through the goal.
-    19: ['#D.##', '...##', 'rG.WP', 'rW..D', 'D....', '..#..', '.....'],
+    // Found by tools/levelSearch.mjs --add fiveBerries --seeded (register 734): five berries, all eaten, 17 moves, 4x4.
+    19: ['##G.', '.GP.', '.ESG', 'DGrG'],
     // Found by tools/levelSearch.mjs (2026-10-19, register 283): two lasers, pointing right and down, 4 moves.
     14: ['..G', 'DeD', 't.t', '.sP', '#D.'],
     // Found by tools/climb.mjs (register 425): no pushable laser, the box pushed in 2 moves and hit once, 7 moves, 6x6.
@@ -77,7 +77,8 @@ export const KNOWN = {
     18: ['.II.', 'I..s', 'B.Br', '....', '.B..', '...P', '.G.r'],
     // His room (register 293): a box goes through the one-way.
     15: ['#..#.P...#', '#....B....', '#B.#......', 'e....>.G.#'],
-    4: ['PtttD.', '......', '......', '......', '.#.G..'],
+    // Found by tools/levelSearch.mjs --add noEmptySpace --seeded (register 734): no bare floor, 5 moves, 4x3.
+    4: ['I#PD', 'uItD', 'IG##'],
     // Found by tools/levelSearch.mjs --seeded (register 276, with boxes pushing boxes): 6 moves.
     6: ['BB#DP.', '..#.B.', 'DBBGt.', '.DDDB.'],
     7: ['BP.B.o', '.BB#..', 'D.....', '.oG.#.'],

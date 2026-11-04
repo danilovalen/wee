@@ -7,8 +7,9 @@ import { BOX_GOALS } from './goals/boxes.js';
 import { ONE_WAY_GOALS } from './goals/oneWays.js';
 import { LASER_GOALS } from './goals/lasers.js';
 import { SPIKE_GOALS } from './goals/spikes.js';
+import { ROOM_GOALS } from './goals/rooms.js';
 
-export const REQUIREMENTS = { ...DOOR_GOALS, ...SWITCH_GOALS, ...BOX_GOALS, ...ONE_WAY_GOALS, ...LASER_GOALS, ...SPIKE_GOALS };
+export const REQUIREMENTS = { ...DOOR_GOALS, ...SWITCH_GOALS, ...BOX_GOALS, ...ONE_WAY_GOALS, ...LASER_GOALS, ...SPIKE_GOALS, ...ROOM_GOALS };
 
 // A path drawn on its room: where the robot is after each move, and each box's places in order.
 export function trailOf(room, moves) {

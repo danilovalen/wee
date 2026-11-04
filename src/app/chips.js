@@ -5,11 +5,11 @@ import { describe } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { INK } from '../view/ink.js';
 import { $, touch } from './dom.js';
-import { LENS_GROUPS, lensOn, isAuto, cycleLens, lensLine, tileFacts } from './lenses.js';
+import { LENS_GROUPS, LENS_TIPS, lensOn, isAuto, cycleLens, lensLine, tileFacts, toggleLens } from './lenses.js';
 
 // A 26 by 12 mark per lens, the same marks the room draws.
 const ARROW = (c, w = 1.6) => `<path d="M2 6H20" stroke="${c}" stroke-width="${w}"/><path d="M24 6l-5-3.5v7z" fill="${c}"/>`;
-const MARK = {
+export const MARK = {
   off: `<path d="M6 6H20" stroke="currentColor" stroke-opacity=".4" stroke-width="1.5"/>`,
   distance: `<defs><linearGradient id="chipDist"><stop offset="0" stop-color="hsl(120,75%,45%)"/><stop offset="1" stop-color="hsl(0,75%,45%)"/></linearGradient></defs><rect x="1" y="2" width="24" height="8" rx="2" fill="url(#chipDist)"/>`,
   beams: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.zap}" fill-opacity=".55"/>`,
@@ -23,7 +23,20 @@ const MARK = {
 };
 const NAME = Object.fromEntries(LENS_GROUPS.flatMap(g => g.lenses));
 
+// Every lens as its own on/off icon in a row on the room's top edge, two groups either side of the top grip
+// (registers 721, 730). The chips row and the Lenses tab are gone.
 export function buildChips() {
+  const side = () => Object.assign(document.createElement('div'), { className: 'lensSide' });
+  const left = side(), right = side();
+  for (const gr of LENS_GROUPS) for (const [id] of gr.lenses) {
+    const b = Object.assign(document.createElement('button'), { type: 'button', className: 'lensIcon' });
+    b.dataset.lensIcon = id; b.dataset.group = gr.id;
+    b.innerHTML = `<svg viewBox="0 0 26 12" aria-hidden="true">${MARK[id]}</svg>`;
+    b.onclick = () => toggleLens(id);
+    (['colour', 'dots'].includes(gr.id) ? left : right).append(b);
+  }
+  $('lensBar').replaceChildren(left, right);
+  $('roomArea').prepend($('lensBar'));
   $('lensChips').replaceChildren(...LENS_GROUPS.map(gr => {
     const b = Object.assign(document.createElement('button'), { type: 'button', className: 'chip' });
     b.dataset.chip = gr.id;
@@ -32,9 +45,20 @@ export function buildChips() {
   }));
 }
 
-let shown = '';
+let shown = '', barShown = '';
 export function syncChips() {
-  const show = S.lens.open && S.mode === 'edit';
+  const bar = S.mode === 'edit' && !S.camp && !S.puzzle;
+  const barKey = bar + LENS_GROUPS.map(g => `${lensOn(g.id)}${lensLine(lensOn(g.id) || '')}`).join();
+  if (barKey !== barShown) {
+    barShown = barKey;
+    $('lensBar').hidden = !bar;
+    for (const b of document.querySelectorAll('[data-lens-icon]')) {
+      const id = b.dataset.lensIcon, on = lensOn(b.dataset.group) === id, name = NAME[id];
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+      b.title = `${name}: ${on ? lensLine(id) : LENS_TIPS[id]}`; b.setAttribute('aria-label', `${name} lens`);
+    }
+  }
+  const show = false;
   const key = show + LENS_GROUPS.map(g => `${lensOn(g.id)}${isAuto(g.id)}${lensLine(lensOn(g.id) || '')}`).join();
   if (key !== shown) {
     shown = key;

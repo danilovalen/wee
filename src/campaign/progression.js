@@ -29,3 +29,15 @@ export function isOpen(id, p) {
 }
 // A level's side goals show once it is beaten.
 export const sideGoalsOpen = (id, p) => !!(p.levels && p.levels[id] && p.levels[id].beaten);
+
+// Levels off the plan, shown while everything is unlocked, join it in number order: each goes before the
+// first planned level with a higher number (register 731).
+const num = def => /^\d+$/.test(def.id) ? +def.id : Infinity;
+export function listOrder(entries, extras) {
+  const out = [...entries];
+  for (const def of [...extras].sort((a, b) => num(a) - num(b))) {
+    const i = out.findIndex(e => num(e.def) > num(def));
+    out.splice(i < 0 ? out.length : i, 0, { def, side: null });
+  }
+  return out;
+}

@@ -2,7 +2,9 @@
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
 // you pick one in that group. Data comes from searches run a slice at a time, again whenever
 // the room changes. All copy is draft.
-import { reach } from '../solve/solve.js';
+import { reach, move } from '../solve/solve.js';
+import { createGame } from '../rules/game.js';
+import { DIR_OF } from '../rules/base.js';
 import { routes } from '../solve/design.js';
 import { lensData } from '../solve/lenses.js';
 import { INK } from '../view/ink.js';
@@ -70,6 +72,8 @@ function ensure() {
   const on = onNow(), stamp = JSON.stringify(S.level);
   if ((on.includes('stops') || on.includes('traps')) && (!S.stops || S.stops.stamp !== stamp)) runStops(stamp);
   if (on.some(id => SEARCHED.includes(id)) && (!S.lensData || S.lensData.stamp !== stamp)) {
+    // The last finished map stays, to draw the old line dimmed until the new one is ready (register 720).
+    if (S.lensData && S.lensData.d) S.lensPrev = { w: JSON.parse(S.lensData.stamp).w, d: S.lensData.d, hist: S.history };
     S.lensData = { stamp, d: undefined };
     sliced(lensData(JSON.parse(stamp)), stamp, d => { if (S.lensData.stamp === stamp) { S.lensData.d = d; S.redraw = true; legend(); } });
   }
@@ -114,7 +118,7 @@ export function lensMarks() {
     if (d && colour === 'pieces') out.heat = { tiles: d.pieces, colour: INK.box };
     if (st && lensOn('dots') === 'stops') out.dots = st.list || [...(st.out.stops || [])];
     if (d && lensOn('dots') === 'passes') { out.dots = [...d.stops]; out.small = [...d.passes]; }
-    if (d && lensOn('lines') === 'solution') out.lines = d.solution;
+    if (lensOn('lines') === 'solution') Object.assign(out, solutionMarks(d));
     if (d && lensOn('lines') === 'moves') out.moves = [...d.moves].map(([k, n]) => { const [a, b] = k.split('>').map(Number); return { a, b, n }; }).filter(m => m.a !== m.b);
     if (d && lensOn('frames') === 'danger') out.crosses = d.danger;
     if (st && st.traps && lensOn('frames') === 'traps') out.frames = new Set(st.traps);
@@ -186,4 +190,37 @@ export function buildLenses() {
   $('lensFollow').onchange = e => { L().follow = e.target.checked; syncLenses(); };
   // The Lenses tab turns them on in place: the header's button is not there in every mode (register 690).
   $('stopsBtn').onclick = $('lensOff').onclick = toggleLenses;
+}
+
+// The Solution line: the new answer when ready; until then the last one, dimmed (register 720); and when an
+// edit leaves no way to the berry, the last answer cut where the room now stops it (register 722).
+function solutionMarks(d) {
+  // Only within the same room: another room opened since has its own history.
+  const prev = S.lensPrev && S.lensPrev.w === S.level.w && S.lensPrev.hist === S.history ? S.lensPrev.d : null;
+  if (d && d.solution.length) return { lines: d.solution };
+  if (!prev || !prev.solution.length) return {};
+  if (d === null) return {};
+  if (d === undefined) return { lines: prev.solution, stale: true };
+  return { lines: prev.solution, ...cutOf(S.level, prev.solution) };
+}
+// Replays an old answer, stop by stop, on the room as it is now: where it first ends somewhere else, the
+// line is cut, and the tile past that stop, the one that now stops it, is marked.
+export function cutOf(level, path) {
+  const w = level.w;
+  let s = createGame(level);
+  for (let n = 1; n < path.length; n++) {
+    const a = path[n - 1], b = path[n], k = DIR_OF(Math.sign(b % w - a % w), Math.sign(Math.floor(b / w) - Math.floor(a / w)));
+    const t = k && move(s, k), at = t ? t.player.y * w + t.player.x : a;
+    if (at !== b || !t) { const [dx, dy] = k ? [Math.sign(b % w - a % w), Math.sign(Math.floor(b / w) - Math.floor(a / w))] : [0, 0]; return { cutAt: n - 1, stopper: at + dy * w + dx }; }
+    s = t;
+  }
+  return { cutAt: path.length - 1, stopper: null };
+}
+// One lens on or off by itself (register 721). Lenses that draw the same way share a row, so turning one on
+// turns the other off.
+export function toggleLens(id) {
+  const gr = LENS_GROUPS.find(g => g.lenses.some(([l]) => l === id));
+  L().open = true;
+  L().pick[gr.id] = lensOn(gr.id) === id ? 'off' : id;
+  syncLenses();
 }

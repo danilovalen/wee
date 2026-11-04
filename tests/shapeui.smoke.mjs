@@ -13,7 +13,7 @@ const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 const OFF = { boomerang: false, dive: false, laser: false, cycle: false };
 const level = () => page.evaluate(() => window.wee.getLevel());
-const notes = () => page.waitForFunction(() => /Trim to|Every row and column/.test(document.getElementById('designList').textContent) && /Without the |Removing any one/.test(document.getElementById('designList').textContent), null, { timeout: 60000 }).then(() => page.textContent('#designList'));
+const notes = () => page.waitForFunction(() => !!document.getElementById('designBox').dataset.done && !document.getElementById('designBox').classList.contains('stale'), null, { timeout: 60000 }).then(() => page.textContent('#designList'));
 const hint = () => page.waitForFunction(() => { const t = document.getElementById('placeSay').textContent; return t && !t.endsWith('...'); }, null, { timeout: 60000 }).then(() => page.textContent('#placeSay'));
 try {
   await page.goto('http://localhost:5281/?sandbox=full');

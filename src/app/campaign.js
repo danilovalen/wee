@@ -5,7 +5,7 @@
 import { LEVELS } from '../level/campaign.js';
 import { CHALLENGES } from '../level/challenges.js';
 import { unlocked, allOpen } from './unlock.js';
-import { plan, builders, isOpen, sideGoalsOpen } from '../campaign/progression.js';
+import { plan, builders, isOpen, sideGoalsOpen, listOrder } from '../campaign/progression.js';
 import { roomOf, coloursOf, placementErrors, check, optionalGoals, listed, placed } from '../campaign/rules.js';
 import { markUsed } from './known.js';
 import { featsOf, record } from '../campaign/feats.js';
@@ -173,11 +173,10 @@ function room(def, p, kind) {
   li.append(b);
   return li;
 }
+// Unlocked for the session, the levels off the plan join it in number order; a hidden one never shows (731).
 function renderList() {
-  const p = progress(), rows = [];
-  for (const { def, side } of plan()) rows.push(room(def, p, 'main'), side ? room(side, p, 'side') : Object.assign(document.createElement('li'), { className: 'side none' }));
-  // Unlocked for the session, the levels off the plan show at its end.
-  if (unlocked()) for (const def of LEVELS.filter(d => !d.tutorial && !listed(d))) rows.push(room(def, p, 'main'), Object.assign(document.createElement('li'), { className: 'side none' }));
+  const p = progress(), rows = [], extras = unlocked() ? LEVELS.filter(d => !d.tutorial && !d.hidden && !listed(d)) : [];
+  for (const { def, side } of listOrder(plan(), extras)) rows.push(room(def, p, 'main'), side ? room(side, p, 'side') : Object.assign(document.createElement('li'), { className: 'side none' }));
   $('campList').replaceChildren(...rows);
 }
 

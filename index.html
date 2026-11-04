@@ -135,6 +135,7 @@
       </div>
 </div>
       <div id="lensChips" class="chips" hidden></div>
+      <div id="lensBar" class="lensBar" role="toolbar" aria-label="Lenses" hidden></div>
       <div id="pad" class="pad" hidden>
         <button id="hideBtn" type="button">Hide / Swim</button>
         <button id="playUndo" type="button" title="Undo your last move (Z)">Undo</button>
@@ -165,8 +166,8 @@
         <div class="wellBody">
           <div data-pane="findings">
             <p id="wellEmpty" class="hint">To see design notes, press Check.</p>
-            <details id="lintBox" class="lint" hidden open><summary id="lintSum"></summary><ul id="lintList"></ul></details>
-            <details id="designBox" class="lint design" hidden open><summary>Design notes</summary><ul id="designList"></ul></details>
+            <div id="lintBox" class="lint" hidden><p id="lintSum" class="lintSum"></p><ul id="lintList"></ul></div>
+            <div id="designBox" class="lint design" hidden><ul id="designList"></ul></div>
           </div>
           <div data-pane="lenses">
             <button id="lensOff" type="button">Show lenses</button>
@@ -282,7 +283,7 @@
   <dialog id="campBox" class="rooms">
     <div class="roomsHead"><b>Campaign</b><button id="campMenu" type="button">Menu</button></div>
     <ul id="campList" class="campList"></ul>
-    <div class="row bar progRow"><button id="progCopy" type="button">Copy progress</button><button id="progLoad" type="button">Load progress</button><button id="progReset" type="button">Reset progress</button></div>
+    <div class="row bar progRow"><button id="progCopy" type="button" aria-label="Copy progress">Copy<span class="wideOnly"> progress</span></button><button id="progLoad" type="button" aria-label="Load progress">Load<span class="wideOnly"> progress</span></button><button id="progReset" type="button" aria-label="Reset progress">Reset<span class="wideOnly"> progress</span></button></div>
   </dialog>
   <dialog id="progBox" class="confirm">
     <p id="progSay"></p>

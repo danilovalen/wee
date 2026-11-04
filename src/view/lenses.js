@@ -22,7 +22,7 @@ export function drawHeat(g, w, heat) {
 
 // marks: { dots: [tiles], small: [tiles], lines: [tiles in order], moves: [{ a, b, n }],
 // frames: Set of tiles, crosses: Set of tiles }.
-export function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses } = {}) {
+export function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses, stale, cutAt, stopper } = {}) {
   if (dots) {
     g.fillStyle = INK.player;
     for (const i of dots) { const [x, y] = centre(i, w); pxDisc(g, x, y, 4); }
@@ -49,14 +49,23 @@ export function drawLensMarks(g, w, { dots, small, lines, moves, frames, crosses
   if (lines && lines.length > 1) {
     g.strokeStyle = INK.goal; g.fillStyle = INK.goal; g.lineWidth = 2.5; g.lineCap = 'square';
     for (let n = 1; n < lines.length; n++) {
+      // Dimmed while a new answer is worked out (720), and past where an edit stops the old one (722).
+      g.globalAlpha = stale || (cutAt != null && n > cutAt) ? 0.35 : 1;
       const [ax, ay] = centre(lines[n - 1], w), [bx, by] = centre(lines[n], w), a = Math.atan2(by - ay, bx - ax);
       g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx - Math.cos(a) * 7, by - Math.sin(a) * 7); g.stroke();
       g.beginPath(); g.moveTo(bx, by); g.lineTo(bx - Math.cos(a - 0.5) * 9, by - Math.sin(a - 0.5) * 9); g.lineTo(bx - Math.cos(a + 0.5) * 9, by - Math.sin(a + 0.5) * 9); g.closePath(); g.fill();
-      // Each move's number sits at the middle of its arrow.
+      // Each move's number sits at the middle of its arrow, white on a dark disc ringed in light (725).
       const mx = (ax + bx) / 2, my = (ay + by) / 2;
-      g.fillStyle = INK.mark; pxDisc(g, mx, my, 6);
-      g.fillStyle = INK.goal; g.font = '700 8px Departure, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText(String(n), mx, my + 0.5);
+      g.fillStyle = '#f4f1ea'; pxDisc(g, mx, my, 10); g.fillStyle = '#1d1b24'; pxDisc(g, mx, my, 8.5);
+      g.fillStyle = '#ffffff'; g.font = `${n > 9 ? 9 : 12}px Departure, monospace`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(String(n), Math.round(mx), Math.round(my) + 1);
+      g.fillStyle = INK.goal;
+    }
+    g.globalAlpha = 1;
+    if (stopper != null && stopper >= 0) {
+      const x = (stopper % w) * T, y = Math.floor(stopper / w) * T;
+      g.strokeStyle = '#ff4d6d'; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(x + 10, y + 10); g.lineTo(x + T - 10, y + T - 10); g.moveTo(x + T - 10, y + 10); g.lineTo(x + 10, y + T - 10); g.stroke();
     }
   }
   if (crosses) {

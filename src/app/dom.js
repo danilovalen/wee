@@ -18,4 +18,5 @@ export const portrait = () => innerHeight > innerWidth;
 export const now = () => performance.now();
 
 // The bar's line when there is nothing to say: how to place and remove.
-export const DEFAULT_HINT = touch ? 'Tap to place, tap one again to remove it, and Look changes nothing.' : 'Click to place, click one again or right click to remove it, and Look changes nothing.';
+// The hint line holds messages only; how to place and remove is behind ? and in the tutorial (register 730).
+export const DEFAULT_HINT = '';

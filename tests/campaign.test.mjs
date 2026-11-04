@@ -586,4 +586,23 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok(`level ${first.id}, the inverted door's first, is won with one`, check(first, build(first, rows)).won);
   ok(`level ${first.id} cannot be won with plain doors in its place: its goals need an inverted door`, !check(first, build(first, plain)).won && first.require.some(id => /Idoor/.test(id)), JSON.stringify(first.require));
 }
+// Register 731: unlocked, the levels off the plan join it in number order, never at the end.
+{
+  const { listOrder, plan } = await import('../src/campaign/progression.js');
+  const extras = LEVELS.filter(d => !d.tutorial && !d.hidden && !listed(d));
+  const ids = listOrder(plan(), extras).map(e => e.def.id).filter(id => /^\d+$/.test(id)).map(Number);
+  ok('unlocked, numbered levels run in number order (register 731)', ids.every((n, i) => !i || n > ids[i - 1]) && extras.every(d => ids.includes(+d.id) || !/^\d+$/.test(d.id)));
+  ok('a hidden level is never among the extras', !extras.some(d => d.hidden));
+}
+// Register 734: two new side goals, and level 19 takes berries.
+{
+  const R = REQUIREMENTS, room = rows => { const h = rows.length, w = rows[0].length, cells = [], l = { w, h, cells, entities: [], start: null };
+    rows.forEach((r, y) => [...r].forEach((c, x) => { cells.push(c === '#' ? 'wall' : c === 'G' ? 'goal' : c === 'B' ? 'toggle:red' : ''); if (c === 'P') l.start = { x, y }; if (c === 'b') l.entities.push({ kind: 'box', x, y }); })); return l; };
+  ok('five berries: met with five in the room, not with four', R.fiveBerries.judge(room(['GGGGG', 'P....'])) && !R.fiveBerries.judge(room(['GGGG.', 'P....'])));
+  ok('no bare floor: met when every tile holds something, the blob and pieces included', R.noEmptySpace.judge(room(['P#G', 'b#B'])) && !R.noEmptySpace.judge(room(['P#G', 'b.B'])));
+  const l19 = LEVELS.find(l => l.id === '19'), l4 = LEVELS.find(l => l.id === '4');
+  ok('level 19 asks for five berries and takes up to nine; level 4 asks for no bare floor', l19.optional.includes('fiveBerries') && l19.berries === 9 && l19.palette.berry && l4.optional.includes('noEmptySpace'));
+  ok('the swapped side goals are gone (register 733)', !l19.optional.includes('laserThroughGoal') && !l4.optional.includes('thirdToggleOnAtEnd'));
+}
 done();
+

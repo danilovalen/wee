@@ -115,5 +115,7 @@ export function syncStrip() {
   // The flyout lists its group in the strip's order, not the palette's.
   for (const b of pal.querySelectorAll('[data-tool]')) { const i = open ? members(open).indexOf(b.dataset.tool) : -1; b.hidden = i < 0; b.style.order = i < 0 ? '' : String(i); }
   for (const h of pal.querySelectorAll('.ghead')) h.hidden = true;
+  // The options panel shows with the pick, not a frame later; the frame after places it exactly.
+  placePop();
   requestAnimationFrame(place);
 }

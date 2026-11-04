@@ -21,6 +21,8 @@ export const ELEMENTS = {
   relay: { label: 'Laser relay', cell: 'sensor:red', kind: 'sensor:' },
   // Spikes, the death block: a box covers them, the robot dies on them (registers 431, 435).
   spikes: { label: 'Spikes', cell: 'death' },
+  // More berries, in a level that says how many it takes (registers 702, 706, 734).
+  berry: { label: 'Berry', cell: 'goal' },
 };
 const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.startsWith(ELEMENTS[k].kind)) || (!!ELEMENTS[k].also && c.startsWith(ELEMENTS[k].also));
 // A level's colours (def.colours, red when it names none). A one-way takes one only in a level

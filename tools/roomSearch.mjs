@@ -39,6 +39,7 @@ export function searcher(def, seed = 1, opts = {}) {
       if (el === 'gate') r.cells[y * g.w + x] = 'gate:' + (d || 'right') + (def.colours ? '@' + col : '');
       else if (el === 'box') r.entities.push({ kind: 'box', x, y, dir: 1, mode: 'input' });
       else if (el === 'laser') r.entities.push({ kind: 'turret', x, y, ...(crateOf(c) ? { crate: true } : {}), turret: { dirs: [d || 'right'], mode: 'input' } });
+      else if (el === 'berry') r.cells[y * g.w + x] = 'goal';
       else r.cells[y * g.w + x] = el === 'block' ? 'wall' : el === 'spikes' ? 'death' : (el === 'door' && d === 'inv' ? 'i' : '') + CELL[el] + ':' + col + (el === 'toggle' && d === 'on' ? ':on' : '');
       if (['gate', 'door', 'idoor', 'relay'].includes(el) && pushingsOf(def, el)[0]) (r.crates ||= []).push({ x, y });
     }

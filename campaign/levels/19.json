@@ -20,6 +20,10 @@
   "door": [
    1,
    null
+  ],
+  "berry": [
+   0,
+   null
   ]
  },
  "pushable": {
@@ -38,7 +42,8 @@
   "throughOpenDoor"
  ],
  "optional": [
-  "laserThroughGoal",
+  "fiveBerries",
   "laserThroughAndStoppedByDoor"
- ]
+ ],
+ "berries": 9
 }

@@ -338,16 +338,16 @@ try {
   box6.powers = { ...box6.powers, boomerang: false, dive: false, laser: false };
   await page.evaluate(l => window.wee.loadLevel(l), box6);
   await pick('look');
-  await page.click('#stopsBtn');
+  await page.click('[data-lens-icon=stops]');
   await page.waitForFunction(() => document.getElementById('lensLegend').textContent.includes('tiles you can stop on'));
   check('Lenses open on Stops, counting the tiles you can stop on', (await page.textContent('#lensLegend')).includes('Dots: 4 tiles'), await page.textContent('#lensLegend'));
   const dot = async (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * t), Math.round((y + 0.5) * t), 1, 1).data; return d[2] > 200 && d[2] - d[1] > 50; }, [x, y]); // the player's sky on a light gray floor
   // The legend can land a frame before the room draws the dots, so let two frames pass first.
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   check('a stop gets a dot, a tile you only slide over does not', await dot(4, 2) && !(await dot(2, 2)));
-  await page.click('#stopsBtn');
+  await page.click('[data-lens-icon=stops]');
   await page.waitForTimeout(80);
-  check('Closing the lenses takes the dots away', !(await dot(4, 2)));
+  check('Turning Stops off takes the dots away', !(await dot(4, 2)));
   await page.evaluate(() => scrollTo(0, 0));
   const L6 = await page.locator('#game').boundingBox();
   const at6 = (x, y) => ({ x: L6.x + (x + 0.5) * L6.width / 6, y: L6.y + (y + 0.5) * L6.height / 4 });
@@ -661,13 +661,7 @@ try {
   // The label follows on the next frame, so wait for it rather than race it.
   await page.waitForFunction(() => document.getElementById('wellBtn').textContent === 'Findings 2', null, { timeout: 3000 }).catch(() => {});
   check('the status bar counts the warnings', (await page.textContent('#wellBtn')) === 'Findings 2', await page.textContent('#wellBtn'));
-  if (await page.locator('#well').isHidden()) await page.click('#wellBtn');
-  await page.click('[data-well=lenses]');
-  await page.click('#wellBtn');
-  check('the Findings button opens the well on its findings, from any tab', await page.locator('#lintList').isVisible());
-  await page.click('#wellBtn');
-  check('and pressed again, shuts it', await page.locator('#well').isHidden());
-  await page.click('#wellBtn');
+  check('on a wide screen the findings column shows the warnings, with no button needed to open it (register 730)', await page.locator('#lintList').isVisible() && await page.locator('#wellBtn').isHidden());
   await page.locator('#lintList button').last().click();
   await page.waitForTimeout(60);
   const gold = await page.evaluate(() => {

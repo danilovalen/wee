@@ -56,6 +56,6 @@ check('reuse counts the blocks the answer stops against', corr.moves === 3 && co
 const zig = run(reuse(room(['#######', '#P.#..#', '##.#..#', '##...G#', '#######'])));
 check('reuse counts blocks, not move names', zig.moves === 3 && zig.blocks === 3, JSON.stringify(zig));
 check('and says it in one sentence', reuseText(corr) === 'Reuse: 3 moves lean on 3 blocks, the busiest 1 time.', reuseText(corr));
-check('a room that cannot lose says so', metricLines(open)[0] === 'Ruin: no move can lose the run.' && metricLines(open)[1] === 'First ruin: never.');
+check('a room that cannot lose says so', metricLines(open)[0] === 'Ruin: every move keeps the berry in reach.' && metricLines(open)[1] === 'First ruin: never.');
 check('too big says so', metricLines(null)[0].startsWith('Too many positions'));
 done();
