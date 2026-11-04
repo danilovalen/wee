@@ -1,5 +1,6 @@
 // The room's size: a grip on each side adds or cuts rows or columns there, and the size
 // readout in the status bar opens the rest (width and height, add or cut a side, Border).
+import { buildShape } from './shape.js';
 import { $, now } from './dom.js';
 import { S } from '../editor/state.js';
 import { moveSide } from '../level/format.js';
@@ -85,6 +86,7 @@ function grip(b, side, after) {
 }
 
 export function buildSize({ after }) {
+  buildShape(after);
   document.querySelectorAll('[data-grip]').forEach(b => grip(b, b.dataset.grip, after));
   $('sizeBtn').onclick = () => ($('sizePop').hidden ? openSize() : closeSize());
   document.addEventListener('pointerdown', ev => { if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize(); });

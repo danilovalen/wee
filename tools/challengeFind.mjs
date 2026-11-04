@@ -17,6 +17,8 @@ export const SPECS = [
   { id: 'c3', name: 'A box', size: 6, fixed: ['#', '#', '#'], pieces: ['B', '#'], open: 9, want: { stops: 7, trap: true } },
   { id: 'c4', name: 'The door', size: 6, fixed: ['#', '#', 'D'], pieces: ['t', '#'], open: 10, want: { stops: 6 } },
   { id: 'c5', name: 'One way', size: 6, fixed: ['#', '#', '#'], pieces: ['>', '#'], open: 10, want: { forks: 2, trap: true, stops: 7 } },
+  // A box to push onto a button that holds the door open (register 696).
+  { id: 'c6', name: 'The button', size: 5, fixed: ['#', '#', '#', 'D'], pieces: ['B', 'o'], open: 9, want: { stops: 4 }, needs: 'D' },
 ];
 const MIN_PLACEMENTS = 30;
 
@@ -42,6 +44,8 @@ export function find(spec, seconds) {
     let m = measure(ch);
     if (m.wins.length !== 1) continue;
     const sol = placementOf(ch, m.wins[0].rows);
+    // needs: a door the answer must pass open; with it a wall for good, the placement must not win.
+    if (spec.needs && judge(ch, rowsWith(ch, sol).map(r => r.split(spec.needs).join('#'))).won) continue;
     const sh = shape(ch, sol);
     if (!fits(spec.want, sh)) continue;
     ch = { ...ch, rows: trim(ch, sol) }; m = measure(ch);

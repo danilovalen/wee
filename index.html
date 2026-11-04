@@ -223,6 +223,14 @@
         <button type="button" data-side="right" data-delta="-1" title="Cut the right column">&rarr;</button>
         <button id="border" type="button">Border</button>
       </div>
+      <div class="shape">
+        <span>Shape</span>
+        <button id="trimBtn" type="button" title="Take out the rows and columns the room does not need">Trim</button>
+        <button id="placeBtn" type="button" title="Put the current piece where it makes the room longest">Place one</button>
+        <button id="removeBtn" type="button" title="Take out the one thing that makes the room longest">Remove one</button>
+        <p id="shapeSay" class="hint" aria-live="polite"></p>
+        <p id="shapeAsk" class="shapeAsk" hidden><button id="shapeYes" type="button" class="primary">Apply</button><button id="shapeNo" type="button">Cancel</button></p>
+      </div>
         </div>
   </div>
   <dialog id="keysBox" class="rooms keys">
