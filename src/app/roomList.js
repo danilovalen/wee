@@ -9,10 +9,20 @@ import { menuOn } from './tilemenu.js';
 // Thumbnails and tags are worked out once per version of a room, not on every redraw.
 const thumbs = new Map(), tagCache = new Map();
 export const versionOf = (r, level) => r && r.id ? r.id + '@' + r.updated : JSON.stringify(level);
+// A thumbnail is drawn as the room is (register 687), which costs more than a row: each is drawn only once
+// its row scrolls into view, a few at a time, so opening Rooms never freezes.
+const queue = [];
+const seen = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) { seen.unobserve(e.target); if (!queue.length) setTimeout(pump, 0); queue.push(e.target.job); } });
+const pump = () => {
+  const until = performance.now() + 8;
+  while (queue.length && performance.now() < until) { const [img, level, version] = queue.shift(); if (!thumbs.has(version)) thumbs.set(version, thumbURL(level)); img.src = thumbs.get(version); }
+  if (queue.length) setTimeout(pump, 0);
+};
 function thumb(level, version) {
-  if (!thumbs.has(version)) thumbs.set(version, thumbURL(level));
   const img = new Image();
-  img.src = thumbs.get(version); img.className = 'thumb'; img.alt = '';
+  img.className = 'thumb'; img.alt = '';
+  if (thumbs.has(version)) img.src = thumbs.get(version);
+  else { img.job = [img, level, version]; seen.observe(img); }
   return img;
 }
 

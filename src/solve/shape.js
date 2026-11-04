@@ -20,21 +20,24 @@ export function cutLine(l, axis, k) {
   };
 }
 
-// Plays the same: the same shortest length, the same number of tiles where every stop is a trap, and dead
-// ends if and only if the room had them.
-export const same = (a, b) => !!b && b.par === a.par && b.traps.length === a.traps.length && (b.dead > 0) === (a.dead > 0);
+// Plays the same: the same shortest length, dead ends if and only if the room had them, and every trap tile
+// kept but those in the line taken out (register 712: a column of dead corners may go). lost: trap tiles in it.
+export const same = (a, b, lost = 0) => !!b && b.par === a.par && b.traps.length === a.traps.length - lost && (b.dead > 0) === (a.dead > 0);
+const inLine = (l, axis, k) => i => (axis === 'col' ? i % l.w : Math.floor(i / l.w)) === k;
 
 // { level, cut } with cut the number of lines taken out, or null when nothing can go (or the room is too big
 // to map, or has no answer).
 export function* trimRoom(level, max) {
   const base = yield* routes(level, max);
   if (!base || base.par == null) return null;
-  let cur = level, cut = 0;
+  let cur = level, now = base, cut = 0;
   for (let found = true; found;) {
     found = false;
     scan: for (const axis of ['row', 'col']) for (let k = 0; k < (axis === 'col' ? cur.w : cur.h); k++) {
       const next = cutLine(cur, axis, k);
-      if (next && same(base, yield* routes(next, max))) { cur = next; cut++; found = true; break scan; }
+      if (!next) continue;
+      const r = yield* routes(next, max);
+      if (same(now, r, now.traps.filter(inLine(cur, axis, k)).length)) { cur = next; now = r; cut++; found = true; break scan; }
     }
   }
   return cut ? { level: cur, cut } : null;

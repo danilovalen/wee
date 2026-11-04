@@ -3,7 +3,6 @@
 // tick of a run. Controls marked data-edit work on the room being edited, so a run greys them.
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
-import { moveSide } from '../level/format.js';
 import { stateKey } from '../solve/solve.js';
 
 export function syncEnabled() {
@@ -22,6 +21,4 @@ export function syncEnabled() {
   // press would redo the same work and redraw the same words.
   const stamp = level.start && S.check && !S.check.live ? JSON.stringify(level) : null;
   $('checkBtn').disabled = !level.start || (!!stamp && S.check.stamp === stamp);
-  // A side's add or cut is greyed out when it cannot happen (a placed thing, one line left, 40x30).
-  document.querySelectorAll('[data-side][data-delta]').forEach(b => { b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta); });
 }

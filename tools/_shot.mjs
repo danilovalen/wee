@@ -1,0 +1,16 @@
+import { chromium } from 'playwright-core';
+import { serve } from './serve.mjs';
+const OUT = process.argv[2];
+const srv = await serve(4391);
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const p = await b.newPage({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+await p.addInitScript(() => { window.__noTutorial = true; });
+const errs = []; p.on('pageerror', e => errs.push(e.message));
+await p.goto('http://localhost:4391/'); await p.waitForTimeout(700);
+await p.screenshot({ path: `${OUT}/f-menu.png` });
+await p.click('#menuCampaign'); await p.waitForTimeout(400);
+await p.screenshot({ path: `${OUT}/f-list.png`, clip: { x: 0, y: 0, width: 393, height: 320 } });
+await p.click('.campRow >> nth=0'); await p.waitForTimeout(600);
+await p.screenshot({ path: `${OUT}/f-level.png` });
+console.log(JSON.stringify(errs));
+await b.close(); srv.close?.(); process.exit(0);

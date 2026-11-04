@@ -61,7 +61,7 @@ try {
   check('the editor is one screen with icon tools, the tool named above them, and bottom tabs', one.down <= 0 && !one.label && one.wide <= 50 && one.name === 'Look' && one.nav && !one.powers, JSON.stringify(one));
   check('there is no Powers tab while powers are hidden (register 653)', await page.locator('[data-sheet=powers]').isHidden());
   await page.click('[data-sheet=room]');
-  check('Room swaps it for the size and world moves', await page.locator('#sheetRoom #w').isVisible() && await page.locator('#sheetRoom [name=clock]').first().isVisible() && !(await page.locator('#powerList').isVisible()));
+  check('Room swaps it for the world moves (the size is set with the grips, register 707)', await page.locator('#sheetRoom [name=clock]').first().isVisible() && !(await page.locator('#powerList').isVisible()));
   await page.click('[data-sheet=build]');
   check('Build puts the sheet away', await page.locator('#sheet').isHidden());
   await page.click('[data-sheet=room]'); await page.click('#checkBtn');

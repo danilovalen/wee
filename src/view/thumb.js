@@ -1,10 +1,10 @@
 // A room's thumbnail, drawn as the room draws it (register 687): its tiles, pieces and the ring of wall round
-// it, at half scale on whole pixels, so a card shows the room itself and stays crisp. Returns a data URL.
+// it, at a quarter scale on whole pixels, so a card shows the room itself and stays crisp. Returns a data URL.
 import { T } from './ink.js';
 import { drawEdit } from './scene.js';
 import { drawMasses, ringCells } from './masses.js';
 
-const K = 0.5;
+const K = 0.25;
 
 export function thumbURL(level) {
   const w = level.w + 2, h = level.h + 2, c = document.createElement('canvas');

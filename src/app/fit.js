@@ -12,7 +12,7 @@ import { setFit, apply } from './camera.js';
 const HOMES = new Map();
 const home = el => { if (!HOMES.has(el)) HOMES.set(el, { parent: el.parentElement, next: el.nextElementSibling }); return HOMES.get(el); };
 let sheeted;
-const SHEETED = () => sheeted || (sheeted = [[$('powers'), $('sheetPowers')], [document.querySelector('#sizePop .roomBody'), $('sheetRoom')], [$('worldMoves'), $('sheetRoom')], [$('stopsBtn'), $('sheetRoom')], [$('genBtn'), $('sheetRoom')]]);
+const SHEETED = () => sheeted || (sheeted = [[$('powers'), $('sheetPowers')], [$('worldMoves'), $('sheetRoom')], [$('stopsBtn'), $('sheetRoom')], [$('genBtn'), $('sheetRoom')]]);
 
 function place(wide) {
   const after = (el, ref) => { if (ref.nextElementSibling !== el) ref.after(el); };
@@ -36,7 +36,7 @@ function place(wide) {
 const EDGE = 14;
 // The resize ears stand 18px off each side of the room (registers 298, 318, 320); above and below,
 // the room keeps a little more, so an ear never touches the card over it.
-const BAR = 30;
+export const BAR = 30;
 const SIDE = 18;
 
 export function fit() {
@@ -57,7 +57,6 @@ export function fit() {
   const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T), (stage + 2 * side) / ((level.w + 2) * T), (room + 2 * top) / ((level.h + 2) * T)));
   // The camera sizes the canvas: to the fitted room, or zoomed in, to the whole of stage x room.
   setFit(zoom, stage, room); apply();
-  $('w').value = level.w; $('h').value = level.h;
   syncSize(level);
   S.redraw = true;
 }

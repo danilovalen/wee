@@ -205,15 +205,6 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .lint summary { cursor: pointer; color: var(--gold); }
 .lint ul { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 4px; }
 .lint button { text-align: left; width: 100%; }
-.sides { display: grid; grid-template-columns: auto repeat(4, minmax(0, 1fr)); gap: 4px; align-items: center; margin-top: 6px; }
-.sides button { min-width: 0; padding-left: 0; padding-right: 0; }
-.sides span { font-size: 0.85em; color: var(--dim); }
-.shape { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 4px; align-items: center; margin-top: 8px; }
-.shape > span { font-size: 0.85em; color: var(--dim); }
-.shape #shapeSay, .shape .shapeAsk { grid-column: 1 / -1; margin: 2px 0 0; min-height: 1.4em; }
-.shape .shapeAsk { display: flex; gap: 6px; }
-.shape .shapeAsk[hidden] { display: none; }
-.sides #border { grid-column: 1 / -1; }
 .roomBox { margin-bottom: 10px; }
 #codeIn { flex: 1; min-width: 0; }
 
@@ -360,12 +351,10 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 /* Round on the outside, flat where the ear meets the room. */
 /* Never lifted or pressed: the house button motion would move it under the finger (register 227). */
 /* A 44px-deep touch target, grown outward only, so it never covers a tile. */
-body.play .growBar, body.play #sizeBtn, body.play .sizePop { display: none; }
+body.play .growBar, body.play #sizeBtn { display: none; }
 .roomArea { padding: 0; }
 @media (max-width: 700px) { .roomArea { padding: 0 0 8px; } }
-#sizeBtn { font-variant-numeric: tabular-nums; }
-.sizePop { position: fixed; z-index: 40; background: var(--panel); border: 0; border-radius: var(--r-m); padding: 10px 12px; box-shadow: 0 8px 24px rgba(40,44,60,.18); width: 260px; }
-.sizePop[hidden] { display: none; }
+#sizeBtn { font-variant-numeric: tabular-nums; padding: 3px 8px; color: var(--dim); }  /* a plain readout (register 707) */
 /* Between a phone and a desktop the tools are icons, named on hover, so the room keeps the width. */
 @media (min-width: 701px) and (max-width: 1100px) {
   main { grid-template-columns: 132px minmax(0, 1fr) 180px; }
@@ -996,7 +985,7 @@ body.challenge .growBar { display: none !important; }
 @media (max-width: 700px) {
   body.play:not(.campaign) #tools, body.play:not(.campaign) #powers:not([hidden]), body.play:not(.campaign) #lensChips:not([hidden]), body.play:not(.campaign) #statusBar { display: revert; visibility: hidden; }
   body.sandbox .toolName { flex: none; height: 26px; overflow: hidden; }
-  body.sandbox #tools { height: 214px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
+  body.sandbox #tools { height: 256px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
   body.sandbox #strip { margin-top: auto; }
   .statusBar { height: 34px; box-sizing: border-box; }
   #wellBtn:disabled { display: revert; visibility: hidden; }
@@ -1010,6 +999,13 @@ body.challenge .growBar { display: none !important; }
   body:not(.campaign) .statusBar > #pad[hidden] { display: flex; visibility: hidden; }
   .statusBar .moves { display: inline-block; min-width: 10ch; font-variant-numeric: tabular-nums; }
 }
+
+/* A design note that offers a change: its sentence, then Apply (register 698). */
+#designList li:has(> .apply) { display: flex; gap: 8px; align-items: center; }
+#designList .apply { flex: none; }
+#bestOpt #shapeAsk { display: inline-flex; gap: 6px; }
+#bestOpt #shapeAsk[hidden], #bestOpt [hidden] { display: none; }
+body.campaign #bestOpt { display: none !important; }
 </style>
 </head>
 <body>
@@ -1053,6 +1049,10 @@ body.challenge .growBar { display: none !important; }
           <button id="selRotate" type="button">Rotate</button>
           <button id="selPaste" type="button">Paste</button>
           <small class="note">Drag to mark a box, then drag inside it to move it.</small>
+        </div>
+        <div class="opt" data-for="start goal checkpoint wall crack death tri spring box heavy bomb mover enemy strong turret sensor button toggle door idoor gate water sticky gravel" id="bestOpt">
+          <button id="placeBtn" type="button" title="Put this piece where it makes the room longest">Best spot</button>
+          <span id="shapeAsk" hidden><button id="shapeYes" type="button" class="primary">Apply</button><button id="shapeNo" type="button">Cancel</button></span>
         </div>
         <div class="opt" data-for="look">
           <button id="playHere" type="button" hidden>Play from here</button>
@@ -1191,7 +1191,7 @@ body.challenge .growBar { display: none !important; }
   </main>
   <footer id="statusBar" class="statusBar">
     <button id="wellBtn" type="button">Findings</button>
-    <button id="sizeBtn" type="button" data-edit aria-label="Room size" aria-expanded="false"></button>
+    <span id="sizeBtn" class="sizeLabel" aria-label="Room size"></span>
     <p class="check"><span id="checkText"></span> <button id="showSolution" type="button" hidden>Show solution</button></p>
     <p id="info" class="hint"></p>
     <p id="keys" class="hint"></p>
@@ -1207,35 +1207,6 @@ body.challenge .growBar { display: none !important; }
     <button type="button" data-sheet="powers" hidden><i>&#9889;</i>Powers</button>
     <button type="button" id="navRooms"><i>&#9776;</i>Rooms</button>
   </nav>
-  <div id="sizePop" class="sizePop" hidden role="dialog" aria-label="Room size">
-        <div class="roomBody">
-      <div class="size">
-        <label>Width <input id="w" type="number" min="1" max="40"></label>
-        <label>Height <input id="h" type="number" min="1" max="30"></label>
-      </div>
-      <div class="sides">
-        <span>Add</span>
-        <button type="button" data-side="top" data-delta="1" title="Add a row on top">&uarr;</button>
-        <button type="button" data-side="bottom" data-delta="1" title="Add a row at the bottom">&darr;</button>
-        <button type="button" data-side="left" data-delta="1" title="Add a column on the left">&larr;</button>
-        <button type="button" data-side="right" data-delta="1" title="Add a column on the right">&rarr;</button>
-        <span>Cut</span>
-        <button type="button" data-side="top" data-delta="-1" title="Cut the top row">&uarr;</button>
-        <button type="button" data-side="bottom" data-delta="-1" title="Cut the bottom row">&darr;</button>
-        <button type="button" data-side="left" data-delta="-1" title="Cut the left column">&larr;</button>
-        <button type="button" data-side="right" data-delta="-1" title="Cut the right column">&rarr;</button>
-        <button id="border" type="button">Border</button>
-      </div>
-      <div class="shape">
-        <span>Shape</span>
-        <button id="trimBtn" type="button" title="Take out the rows and columns the room does not need">Trim</button>
-        <button id="placeBtn" type="button" title="Put the current piece where it makes the room longest">Place one</button>
-        <button id="removeBtn" type="button" title="Take out the one thing that makes the room longest">Remove one</button>
-        <p id="shapeSay" class="hint" aria-live="polite"></p>
-        <p id="shapeAsk" class="shapeAsk" hidden><button id="shapeYes" type="button" class="primary">Apply</button><button id="shapeNo" type="button">Cancel</button></p>
-      </div>
-        </div>
-  </div>
   <dialog id="keysBox" class="rooms keys">
     <div class="roomsHead"><b>Keys</b><form method="dialog"><button>Close</button></form></div>
     <div id="keysList" class="keysList"></div>
@@ -1424,7 +1395,10 @@ function present() {
 const touch = matchMedia('(pointer: coarse)').matches;
 const portrait = () => innerHeight > innerWidth;
 const now = () => performance.now();
-return { $, canvas, buffer, g, shown, present, touch, portrait, now };
+
+// The bar's line when there is nothing to say: how to place and remove.
+const DEFAULT_HINT = touch ? 'Tap to place, tap one again to remove it, and Look changes nothing.' : 'Click to place, click one again or right click to remove it, and Look changes nothing.';
+return { $, canvas, buffer, g, shown, present, touch, portrait, now, DEFAULT_HINT };
 })();
 // ---- src/app/pixelIcons.js
 const m1 = (() => {
@@ -8303,21 +8277,24 @@ function cutLine(l, axis, k) {
   };
 }
 
-// Plays the same: the same shortest length, the same number of tiles where every stop is a trap, and dead
-// ends if and only if the room had them.
-const same = (a, b) => !!b && b.par === a.par && b.traps.length === a.traps.length && (b.dead > 0) === (a.dead > 0);
+// Plays the same: the same shortest length, dead ends if and only if the room had them, and every trap tile
+// kept but those in the line taken out (register 712: a column of dead corners may go). lost: trap tiles in it.
+const same = (a, b, lost = 0) => !!b && b.par === a.par && b.traps.length === a.traps.length - lost && (b.dead > 0) === (a.dead > 0);
+const inLine = (l, axis, k) => i => (axis === 'col' ? i % l.w : Math.floor(i / l.w)) === k;
 
 // { level, cut } with cut the number of lines taken out, or null when nothing can go (or the room is too big
 // to map, or has no answer).
 function* trimRoom(level, max) {
   const base = yield* routes(level, max);
   if (!base || base.par == null) return null;
-  let cur = level, cut = 0;
+  let cur = level, now = base, cut = 0;
   for (let found = true; found;) {
     found = false;
     scan: for (const axis of ['row', 'col']) for (let k = 0; k < (axis === 'col' ? cur.w : cur.h); k++) {
       const next = cutLine(cur, axis, k);
-      if (next && same(base, yield* routes(next, max))) { cur = next; cut++; found = true; break scan; }
+      if (!next) continue;
+      const r = yield* routes(next, max);
+      if (same(now, r, now.traps.filter(inLine(cur, axis, k)).length)) { cur = next; now = r; cut++; found = true; break scan; }
     }
   }
   return cut ? { level: cur, cut } : null;
@@ -8633,8 +8610,113 @@ function place(level, ui, x, y, how) {
 }
 return { CRATE_TOOLS, crateAt, moveAt, swapAt, turnGate, turnDoor, turnSwitch, turnLaser, wiresAt, holds, describe, place };
 })();
-// ---- src/solve/lint.js
+// ---- src/app/shape.js
 const m77 = (() => {
+const { trimRoom } = m74;
+const { search } = m26;
+const { NOTES_MAX } = m73;
+const { place } = m76;
+const { TOOLS } = m75;
+const { S } = m41;
+const { $, now, DEFAULT_HINT } = m0;
+// The Shape helpers (registers 693, 694, 698): Trim and Remove one are offered in the design notes after a
+// Check, each with Apply; Best spot sits with the tool's options and puts the current piece where it makes
+// the room longest. Each searches first, a slice at a time, and changes the room only on Apply.
+
+
+
+
+
+
+
+const SLICE_MS = 25, clone = l => JSON.parse(JSON.stringify(l));
+const name = t => ((TOOLS.find(x => x.id === t) || {}).label || t).toLowerCase();
+const flash = (x, y) => { S.fx.push({ type: 'flash', x, y, at: now() }); S.redraw = true; };
+
+// The answer's length, or null when the room cannot be won (or is too big to tell).
+function* movesOf(level) { const r = yield* search(level, NOTES_MAX); return r.status === 'solved' ? r.moves.length : null; }
+
+// Every empty tile tried with the tool as it is set now, the same way a tap would place it.
+function* placeBest(level, ui) {
+  const base = yield* movesOf(level);
+  let best = null;
+  for (let y = 0; y < level.h; y++) for (let x = 0; x < level.w; x++) {
+    const i = y * level.w + x;
+    if (level.cells[i] || level.entities.some(e => e.x === x && e.y === y) || (level.start && level.start.x === x && level.start.y === y)) continue;
+    const l = clone(level);
+    if (!place(l, ui, x, y, 'place').length) continue;
+    const n = yield* movesOf(l);
+    if (n != null && n > (best ? best.moves : base ?? 0)) best = { level: l, moves: n, x, y };
+  }
+  return best && { ...best, from: base };
+}
+
+// Every piece and every tile but the goal, taken out alone.
+function* removeBest(level) {
+  const base = yield* movesOf(level);
+  let best = null;
+  const tryOut = function* (l, x, y, what) { const n = yield* movesOf(l); if (n != null && n > (best ? best.moves : base ?? 0)) best = { level: l, moves: n, x, y, what }; };
+  for (let k = 0; k < level.entities.length; k++) { const e = level.entities[k], l = clone(level); l.entities.splice(k, 1); yield* tryOut(l, e.x, e.y, e.kind); }
+  for (let i = 0; i < level.cells.length; i++) {
+    const c = level.cells[i];
+    if (!c || c === 'goal') continue;
+    const l = clone(level); l.cells[i] = '';
+    yield* tryOut(l, i % level.w, Math.floor(i / level.w), c.split(':')[0]);
+  }
+  return best && { ...best, from: base };
+}
+
+// What each search found, as one plain sentence (register 700: say what is true of what is there).
+const trimText = r => r ? `Trim to ${r.level.w}x${r.level.h}: it plays the same.` : 'Every row and column is needed.';
+const removeText = r => r ? `Without the ${name(r.what)} at ${r.x}, ${r.y} it takes ${r.moves} moves instead of ${r.from}.` : 'Removing any one piece or tile does not make it longer.';
+const placeText = (t, r) => !r ? `A ${name(t)} on any empty tile does not make it longer.` : r.from == null ? `A ${name(t)} at ${r.x}, ${r.y} makes it ${r.moves} moves.` : `A ${name(t)} at ${r.x}, ${r.y} makes it ${r.moves} moves instead of ${r.from}.`;
+
+// Apply hands the new room to the editor, which makes it one undo step and refits (panels.js).
+const applyRoom = level => dispatchEvent(new CustomEvent('wee:apply', { detail: level }));
+// A design note that offers a change: its text flashes where, and Apply makes it.
+function offerLine(text, found) {
+  const li = document.createElement('li');
+  if (!found) { li.textContent = text; return li; }
+  const say = Object.assign(document.createElement('button'), { type: 'button', textContent: text });
+  li.append(say);
+  say.onclick = () => found.x != null && flash(found.x, found.y);
+  const apply = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Apply', className: 'apply' });
+  apply.onclick = () => applyRoom(found.level);
+  li.append(apply);
+  return li;
+}
+
+let offer = null, token = 0;
+function run(it, done) {
+  const me = ++token, stamp = JSON.stringify(S.level);
+  const slice = () => {
+    if (me !== token || JSON.stringify(S.level) !== stamp) return;
+    const until = performance.now() + SLICE_MS;
+    for (;;) { const r = it.next(); if (r.done) { done(r.value); return; } if (performance.now() > until) break; }
+    setTimeout(slice, 0);
+  };
+  setTimeout(slice, 0);
+}
+function say(text, found = null) {
+  offer = found;
+  $('placeHint').textContent = text || DEFAULT_HINT;
+  $('shapeAsk').hidden = !found; $('placeBtn').hidden = !!found;
+  if (found) flash(found.x, found.y);
+}
+
+function buildShape() {
+  $('placeBtn').onclick = () => {
+    const tool = S.ui.tool;
+    say(`Trying a ${name(tool)} on every empty tile...`);
+    run(placeBest(clone(S.level), { ...S.ui }), r => say(placeText(tool, r), r));
+  };
+  $('shapeYes').onclick = () => { if (!offer) return; const l = offer.level; say(''); applyRoom(l); };
+  $('shapeNo').onclick = () => { token++; say(''); };
+}
+return { placeBest, removeBest, trimText, removeText, offerLine, run, buildShape };
+})();
+// ---- src/solve/lint.js
+const m78 = (() => {
 const { DIRS } = m7;
 const { createGame, step } = m25;
 const { parseMove } = m26;
@@ -8686,7 +8768,7 @@ function brokenAt(level, moves) {
 return { lint, brokenAt };
 })();
 // ---- src/solve/metrics.js
-const m78 = (() => {
+const m79 = (() => {
 const { createGame, step, cloneGame } = m25;
 const { stateKey, settled, successors } = m26;
 // Room metrics for the Sandbox (register 650, docs/ROOM_METRICS_PLAN.md): how deadly a room is, how much
@@ -8800,8 +8882,8 @@ const runMetrics = (level, max) => { const it = roomMetrics(level, max); for (;;
 return { roomMetrics, MASH_CAP, runMetrics };
 })();
 // ---- src/app/metricLines.js
-const m79 = (() => {
-const { MASH_CAP } = m78;
+const m80 = (() => {
+const { MASH_CAP } = m79;
 // The room's metrics in plain words (register 650), apart from the page so a test can read them.
 
 const pct = x => `${Math.round(x * 100)}%`;
@@ -8820,7 +8902,7 @@ function metricLines(m) {
 return { metricLines };
 })();
 // ---- src/app/well.js
-const m80 = (() => {
+const m81 = (() => {
 const { S } = m41;
 const { $ } = m0;
 // The well: a fixed-height drawer under the room, with a tab for findings (warnings and
@@ -8876,16 +8958,20 @@ function buildWell() {
 return { WELL, openWell, closeWell, syncWell, buildWell };
 })();
 // ---- src/app/design.js
-const m81 = (() => {
+const m82 = (() => {
 const { powerCheck, elementCheck, wallCheck, baitCheck, routes, idleElements, NOTES_MAX } = m73;
-const { roomMetrics } = m78;
-const { metricLines } = m79;
+const { roomMetrics } = m79;
+const { metricLines } = m80;
 const { S } = m41;
 const { $, now } = m0;
-const { syncWell } = m80;
+const { syncWell } = m81;
+const { trimRoom } = m74;
+const { removeBest, offerLine, trimText, removeText } = m77;
 // Design notes, after a Check: what each power and each piece or tile does to the answer,
 // how many shortest routes there are, and how many positions trap you. Runs a slice at a
 // time and stops when the room changes. All copy is draft.
+
+
 
 
 
@@ -8962,7 +9048,9 @@ function runDesign(par) {
         if (walls.length) lines.push(line(`Without these walls, nothing changes: ${walls.map(w => `${w.x}, ${w.y}`).join('; ')}.`, walls));
         if (bait.length) lines.push(line(`These leave the answer alone but change where you can get stuck: ${bait.map(name).join('; ')}.`, bait));
         if (!idle.length && !bait.length && !plain.length) lines.push(line('Each piece, tile and wall changes the answer, and nothing could be a plain wall instead.'));
-        swap();
+        // What the Shape helpers would change, each with Apply (registers 693, 694, 698).
+        sliced(trimRoom(level, MAX), stamp, t => { lines.push(offerLine(trimText(t), t));
+        sliced(removeBest(level), stamp, r => { lines.push(offerLine(removeText(r), r)); swap(); }); });
         });
         });
       });
@@ -8973,15 +9061,13 @@ function runDesign(par) {
 return { sliced, clearDesign, runDesign };
 })();
 // ---- src/app/enabled.js
-const m82 = (() => {
+const m83 = (() => {
 const { S } = m41;
 const { $ } = m0;
-const { moveSide } = m16;
 const { stateKey } = m26;
 // A control that would do nothing right now is greyed out, never left to refuse a click.
 // Runs after every change to the room, every switch between editing and playing, and each
 // tick of a run. Controls marked data-edit work on the room being edited, so a run greys them.
-
 
 
 
@@ -9001,20 +9087,18 @@ function syncEnabled() {
   // press would redo the same work and redraw the same words.
   const stamp = level.start && S.check && !S.check.live ? JSON.stringify(level) : null;
   $('checkBtn').disabled = !level.start || (!!stamp && S.check.stamp === stamp);
-  // A side's add or cut is greyed out when it cannot happen (a placed thing, one line left, 40x30).
-  document.querySelectorAll('[data-side][data-delta]').forEach(b => { b.disabled = !moveSide(level, b.dataset.side, +b.dataset.delta); });
 }
 return { syncEnabled };
 })();
 // ---- src/app/check.js
-const m83 = (() => {
+const m84 = (() => {
 const { search, parseMove } = m26;
-const { lint, brokenAt } = m77;
+const { lint, brokenAt } = m78;
 const { now } = m0;
 const { S } = m41;
 const { $ } = m0;
-const { runDesign, clearDesign } = m81;
-const { syncEnabled } = m82;
+const { runDesign, clearDesign } = m82;
+const { syncEnabled } = m83;
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
 // answer. Show solution plays the found moves in play mode, one each time you come to rest.
 
@@ -9138,7 +9222,7 @@ function syncLint() {
 return { checkText, runCheck, syncCheck, feedDemo, syncLint };
 })();
 // ---- src/level/code.js
-const m84 = (() => {
+const m85 = (() => {
 const { parseLevel } = m16;
 // A share code: the level as compressed, URL-safe text, so a room fits in a message or
 // a link (#room=<code>). Uses the platform's own deflate, in the page and in Node.
@@ -9170,7 +9254,7 @@ async function decodeRoom(code) {
 return { encodeRoom, decodeRoom };
 })();
 // ---- src/solve/tags.js
-const m85 = (() => {
+const m86 = (() => {
 const { createGame, step } = m25;
 const { parseMove } = m26;
 // The mechanism index: what a room contains, and what its solution actually does.
@@ -9255,7 +9339,7 @@ function uses(level, moves) {
 return { MECHANISMS, LABEL, contains, uses };
 })();
 // ---- src/app/draft.js
-const m86 = (() => {
+const m87 = (() => {
 const { S } = m41;
 // Autosave: the room being edited, with its name and note, kept in this browser after
 // every change, so a closed tab or a phone that drops the page loses nothing. Saving the
@@ -9288,8 +9372,8 @@ function flushDraft(dirty) { if (dirty && timer) { clearTimeout(timer); write();
 return { readDraft, clearDraft, noteChange, flushDraft };
 })();
 // ---- src/app/tilemenu.js
-const m87 = (() => {
-const { encodeRoom } = m84;
+const m88 = (() => {
+const { encodeRoom } = m85;
 const { splitRoom } = m61;
 const { S } = m41;
 const { put, remove, newId } = m60;
@@ -9376,7 +9460,7 @@ function buildTileMenu(lib) {
 return { menuOn, buildTileMenu };
 })();
 // ---- src/app/more.js
-const m88 = (() => {
+const m89 = (() => {
 const { $ } = m0;
 // The Rooms page's More (register 399): what is done rarely (open a code, import, export) waits behind one button.
 
@@ -9391,16 +9475,16 @@ function buildMore() {
 return { buildMore };
 })();
 // ---- src/view/thumb.js
-const m89 = (() => {
+const m90 = (() => {
 const { T } = m8;
 const { drawEdit } = m48;
 const { drawMasses, ringCells } = m44;
 // A room's thumbnail, drawn as the room draws it (register 687): its tiles, pieces and the ring of wall round
-// it, at half scale on whole pixels, so a card shows the room itself and stays crisp. Returns a data URL.
+// it, at a quarter scale on whole pixels, so a card shows the room itself and stays crisp. Returns a data URL.
 
 
 
-const K = 0.5;
+const K = 0.25;
 
 function thumbURL(level) {
   const w = level.w + 2, h = level.h + 2, c = document.createElement('canvas');
@@ -9415,12 +9499,12 @@ function thumbURL(level) {
 return { thumbURL };
 })();
 // ---- src/app/roomList.js
-const m90 = (() => {
+const m91 = (() => {
 const { splitRoom } = m61;
-const { thumbURL } = m89;
-const { contains, MECHANISMS } = m85;
+const { thumbURL } = m90;
+const { contains, MECHANISMS } = m86;
 const { $ } = m0;
-const { menuOn } = m87;
+const { menuOn } = m88;
 // The Rooms page's list: each saved room as a row with its thumbnail and tags, built a few rows at a
 // time so a long list never freezes the page, filtered by mechanism with a tally of what is explored.
 
@@ -9431,10 +9515,20 @@ const { menuOn } = m87;
 // Thumbnails and tags are worked out once per version of a room, not on every redraw.
 const thumbs = new Map(), tagCache = new Map();
 const versionOf = (r, level) => r && r.id ? r.id + '@' + r.updated : JSON.stringify(level);
+// A thumbnail is drawn as the room is (register 687), which costs more than a row: each is drawn only once
+// its row scrolls into view, a few at a time, so opening Rooms never freezes.
+const queue = [];
+const seen = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) { seen.unobserve(e.target); if (!queue.length) setTimeout(pump, 0); queue.push(e.target.job); } });
+const pump = () => {
+  const until = performance.now() + 8;
+  while (queue.length && performance.now() < until) { const [img, level, version] = queue.shift(); if (!thumbs.has(version)) thumbs.set(version, thumbURL(level)); img.src = thumbs.get(version); }
+  if (queue.length) setTimeout(pump, 0);
+};
 function thumb(level, version) {
-  if (!thumbs.has(version)) thumbs.set(version, thumbURL(level));
   const img = new Image();
-  img.src = thumbs.get(version); img.className = 'thumb'; img.alt = '';
+  img.className = 'thumb'; img.alt = '';
+  if (thumbs.has(version)) img.src = thumbs.get(version);
+  else { img.job = [img, level, version]; seen.observe(img); }
   return img;
 }
 
@@ -9502,23 +9596,23 @@ function renderList(saved, open, examples) {
 return { versionOf, row, renderList };
 })();
 // ---- src/app/rooms.js
-const m91 = (() => {
+const m92 = (() => {
 const { noPowers } = m7;
 const { TEMPLATES } = m51;
 const { PUZZLES } = m52;
-const { encodeRoom, decodeRoom } = m84;
+const { encodeRoom, decodeRoom } = m85;
 const { splitRoom, joinRoom, stampOf, pack, unpack } = m61;
 const { starterLevel } = m41;
 const { newHistory } = m40;
 const { S } = m41;
 const { list, put, remove, where, newId, detect } = m60;
-const { uses } = m85;
+const { uses } = m86;
 const { $ } = m0;
-const { readDraft, noteChange, flushDraft, clearDraft } = m86;
-const { buildTileMenu } = m87;
+const { readDraft, noteChange, flushDraft, clearDraft } = m87;
+const { buildTileMenu } = m88;
 const { place, go, current, back } = m4;
-const { buildMore } = m88;
-const { renderList: drawList, row } = m90;
+const { buildMore } = m89;
+const { renderList: drawList, row } = m91;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
 
@@ -9756,13 +9850,13 @@ async function bootRooms() {
 return { dirty, leaveOk, syncRoomsButton, remember, followUndo, openRoom, fillCurrent, say, save, refresh, buildRooms, bootRooms };
 })();
 // ---- src/app/undo.js
-const m92 = (() => {
+const m93 = (() => {
 const { record, undo, redo } = m40;
 const { S } = m41;
 const { $ } = m0;
-const { syncCheck, syncLint } = m83;
-const { syncRoomsButton, followUndo } = m91;
-const { syncEnabled } = m82;
+const { syncCheck, syncLint } = m84;
+const { syncRoomsButton, followUndo } = m92;
+const { syncEnabled } = m83;
 // Every change to the level goes through change(), so it can be undone as one step.
 
 
@@ -9802,111 +9896,15 @@ function step(back, after) {
 }
 return { syncUndo, begin, end, change, step };
 })();
-// ---- src/app/shape.js
-const m93 = (() => {
-const { trimRoom } = m74;
-const { search } = m26;
-const { NOTES_MAX } = m73;
-const { place } = m76;
-const { TOOLS } = m75;
-const { S } = m41;
-const { $, now } = m0;
-const { change } = m92;
-// The room-size popover's Shape tools (registers 693, 694): Trim, Place one and Remove one. Each searches
-// first, a slice at a time, then says what it found, flashes where, and changes the room only on Apply.
-
-
-
-
-
-
-
-
-const SLICE_MS = 25, clone = l => JSON.parse(JSON.stringify(l));
-let offer = null, token = 0;
-
-// The answer's length, or null when the room cannot be won (or is too big to tell).
-function* movesOf(level) { const r = yield* search(level, NOTES_MAX); return r.status === 'solved' ? r.moves.length : null; }
-
-// Every empty tile tried with the tool as it is set now, the same way a tap would place it.
-function* placeBest(level, ui) {
-  const base = yield* movesOf(level);
-  let best = null;
-  for (let y = 0; y < level.h; y++) for (let x = 0; x < level.w; x++) {
-    const i = y * level.w + x;
-    if (level.cells[i] || level.entities.some(e => e.x === x && e.y === y) || (level.start && level.start.x === x && level.start.y === y)) continue;
-    const l = clone(level);
-    if (!place(l, ui, x, y, 'place').length) continue;
-    const n = yield* movesOf(l);
-    if (n != null && n > (best ? best.moves : base ?? 0)) best = { level: l, moves: n, x, y };
-  }
-  return best && { ...best, from: base };
-}
-
-// Every piece and every tile but the goal, taken out alone.
-function* removeBest(level) {
-  const base = yield* movesOf(level);
-  let best = null;
-  const tryOut = function* (l, x, y, what) { const n = yield* movesOf(l); if (n != null && n > (best ? best.moves : base ?? 0)) best = { level: l, moves: n, x, y, what }; };
-  for (let k = 0; k < level.entities.length; k++) { const e = level.entities[k], l = clone(level); l.entities.splice(k, 1); yield* tryOut(l, e.x, e.y, e.kind); }
-  for (let i = 0; i < level.cells.length; i++) {
-    const c = level.cells[i];
-    if (!c || c === 'goal') continue;
-    const l = clone(level); l.cells[i] = '';
-    yield* tryOut(l, i % level.w, Math.floor(i / level.w), c.split(':')[0]);
-  }
-  return best && { ...best, from: base };
-}
-
-function run(it, done) {
-  const me = ++token, stamp = JSON.stringify(S.level);
-  const slice = () => {
-    if (me !== token || JSON.stringify(S.level) !== stamp) return;
-    const until = performance.now() + SLICE_MS;
-    for (;;) { const r = it.next(); if (r.done) { done(r.value); return; } if (performance.now() > until) break; }
-    setTimeout(slice, 0);
-  };
-  setTimeout(slice, 0);
-}
-
-function say(text, found = null) {
-  offer = found;
-  $('shapeSay').textContent = text;
-  $('shapeAsk').hidden = !found;
-  if (found && found.x != null) S.fx.push({ type: 'flash', x: found.x, y: found.y, at: now() });
-  S.redraw = true;
-}
-const name = t => ((TOOLS.find(x => x.id === t) || {}).label || t).toLowerCase(), PLACES = new Set(['look', 'erase', 'select', 'move', 'start']);
-
-function buildShape(after) {
-  $('trimBtn').onclick = () => {
-    say('Looking for rows and columns to take out...');
-    run(trimRoom(clone(S.level), NOTES_MAX), r => r ? say(`Trimmed to ${r.level.w}x${r.level.h}, it plays the same.`, { level: r.level }) : say('Nothing can go without changing how it plays.'));
-  };
-  $('placeBtn').onclick = () => {
-    const tool = S.ui.tool;
-    if (PLACES.has(tool)) { say('Pick a piece or tile to place first.'); return; }
-    say(`Trying a ${name(tool)} on every empty tile...`);
-    run(placeBest(clone(S.level), { ...S.ui }), r => r ? say(`A ${name(tool)} at ${r.x}, ${r.y} makes it ${r.moves} moves instead of ${r.from ?? 'no answer'}.`, r) : say(`No ${name(tool)} makes it longer.`));
-  };
-  $('removeBtn').onclick = () => {
-    say('Trying each piece and tile taken out...');
-    run(removeBest(clone(S.level)), r => r ? say(`Without the ${name(r.what)} at ${r.x}, ${r.y} it takes ${r.moves} moves instead of ${r.from ?? 'no answer'}.`, r) : say('Taking nothing out makes it longer.'));
-  };
-  $('shapeYes').onclick = () => { if (!offer) return; const l = offer.level; change(() => { S.level = l; }); say(''); after(); };
-  $('shapeNo').onclick = () => { token++; say(''); };
-}
-return { buildShape };
-})();
 // ---- src/app/size.js
 const m94 = (() => {
-const { buildShape } = m93;
+const { buildShape } = m77;
 const { $, now } = m0;
 const { S } = m41;
 const { moveSide } = m16;
-const { change, begin, end } = m92;
-// The room's size: a grip on each side adds or cuts rows or columns there, and the size
-// readout in the status bar opens the rest (width and height, add or cut a side, Border).
+const { change, begin, end } = m93;
+// The room's size: a grip on each side adds or cuts rows or columns there; the status bar shows the
+// size and opens nothing (registers 704, 707).
 
 
 
@@ -9915,14 +9913,6 @@ const { change, begin, end } = m92;
 function syncSize(level) {
   $('sizeBtn').textContent = `${level.w}×${level.h}`;
 }
-
-function place() {
-  const pop = $('sizePop'), r = $('sizeBtn').getBoundingClientRect();
-  pop.style.bottom = `${innerHeight - r.top + 6}px`;
-  pop.style.left = `${Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8))}px`;
-}
-function closeSize() { $('sizePop').hidden = true; $('sizeBtn').setAttribute('aria-expanded', 'false'); }
-function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('aria-expanded', 'true'); place(); }
 
 // A + or a − on each side: a tap adds or cuts one line there. A cut that would take a placed thing
 // (or the room's last line) does nothing and flashes what is in the way (register 252).
@@ -9992,14 +9982,10 @@ function grip(b, side, after) {
 }
 
 function buildSize({ after }) {
-  buildShape(after);
+  buildShape();
   document.querySelectorAll('[data-grip]').forEach(b => grip(b, b.dataset.grip, after));
-  $('sizeBtn').onclick = () => ($('sizePop').hidden ? openSize() : closeSize());
-  document.addEventListener('pointerdown', ev => { if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize(); });
-  addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSize(); });
-  addEventListener('resize', () => { if (!$('sizePop').hidden) place(); });
 }
-return { syncSize, closeSize, buildSize };
+return { syncSize, buildSize };
 })();
 // ---- src/app/ring.js
 const m95 = (() => {
@@ -10211,7 +10197,7 @@ const { setFit, apply } = m96;
 const HOMES = new Map();
 const home = el => { if (!HOMES.has(el)) HOMES.set(el, { parent: el.parentElement, next: el.nextElementSibling }); return HOMES.get(el); };
 let sheeted;
-const SHEETED = () => sheeted || (sheeted = [[$('powers'), $('sheetPowers')], [document.querySelector('#sizePop .roomBody'), $('sheetRoom')], [$('worldMoves'), $('sheetRoom')], [$('stopsBtn'), $('sheetRoom')], [$('genBtn'), $('sheetRoom')]]);
+const SHEETED = () => sheeted || (sheeted = [[$('powers'), $('sheetPowers')], [$('worldMoves'), $('sheetRoom')], [$('stopsBtn'), $('sheetRoom')], [$('genBtn'), $('sheetRoom')]]);
 
 function place(wide) {
   const after = (el, ref) => { if (ref.nextElementSibling !== el) ref.after(el); };
@@ -10256,7 +10242,6 @@ function fit() {
   const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T), (stage + 2 * side) / ((level.w + 2) * T), (room + 2 * top) / ((level.h + 2) * T)));
   // The camera sizes the canvas: to the fitted room, or zoomed in, to the whole of stage x room.
   setFit(zoom, stage, room); apply();
-  $('w').value = level.w; $('h').value = level.h;
   syncSize(level);
   S.redraw = true;
 }
@@ -10265,7 +10250,7 @@ function fit() {
 function watchStage() {
   new ResizeObserver(() => requestAnimationFrame(fit)).observe($('roomArea'));
 }
-return { fit, watchStage };
+return { BAR, fit, watchStage };
 })();
 // ---- src/solve/lenses.js
 const m98 = (() => {
@@ -10360,8 +10345,8 @@ const { lensData } = m98;
 const { INK } = m8;
 const { S } = m41;
 const { $ } = m0;
-const { sliced } = m81;
-const { WELL, closeWell } = m80;
+const { sliced } = m82;
+const { WELL, closeWell } = m81;
 // Lenses: four groups, by what they paint (a tile's colour, a dot, lines, a frame), with one
 // lens on per group and every group at once. A tool in hand can open a lens by itself, until
 // you pick one in that group. Data comes from searches run a slice at a time, again whenever
@@ -10624,7 +10609,7 @@ const m101 = (() => {
 const { S } = m41;
 const { roomOf } = m37;
 const { $ } = m0;
-const { change } = m92;
+const { change } = m93;
 // Reset: the room goes back to the level's start, after a yes (register 291). One undo step.
 
 
@@ -10641,7 +10626,7 @@ return { buildReset };
 // ---- src/app/sheets.js
 const m102 = (() => {
 const { $ } = m0;
-const { closeWell } = m80;
+const { closeWell } = m81;
 // A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
 // Rooms opens the rooms list. One sheet at a time; Build, Escape or play closes it.
 
@@ -10788,7 +10773,7 @@ return { norm, copyRegion, clearRegion, rotateClip, pasteRegion };
 const m105 = (() => {
 const { copyRegion, clearRegion, rotateClip, pasteRegion, norm } = m104;
 const { S } = m41;
-const { change } = m92;
+const { change } = m93;
 const { $ } = m0;
 // The Select tool: drag a box, then Copy, Cut, Delete or Rotate it, or drag inside it to move
 // it; Paste shows the copy as a ghost under the pointer and stamps it on a click or tap. One
@@ -11025,7 +11010,6 @@ return { inSandbox, buildStrip, syncStrip };
 // ---- src/app/panels.js
 const m107 = (() => {
 const { CLOCKWISE, COLOURS, POWERS, NEEDS, POWERS_SHOWN } = m7;
-const { resizeLevel, moveSide, wallBorder } = m16;
 const { INK } = m8;
 const { paint, look } = m5;
 const { TOOLS, GROUPS, POWER_TEXT, NAMES } = m75;
@@ -11033,17 +11017,17 @@ const { toolsFor } = m70;
 const { syncBrief, TOOL } = m53;
 const { coloursOf, colouringsOf, pushingsOf } = m37;
 const { S } = m41;
-const { $, canvas, touch } = m0;
-const { change, step: undoStep, syncUndo } = m92;
-const { runCheck, syncCheck, syncLint } = m83;
+const { $, canvas, touch, DEFAULT_HINT } = m0;
+const { change, step: undoStep, syncUndo } = m93;
+const { runCheck, syncCheck, syncLint } = m84;
 const { buildLenses, syncLenses } = m99;
-const { buildWell, openWell } = m80;
+const { buildWell, openWell } = m81;
 const { buildChips } = m100;
 const { buildReset } = m101;
 const { buildSize } = m94;
 const { buildSheets } = m102;
 const { buildKeys } = m103;
-const { syncRoomsButton } = m91;
+const { syncRoomsButton } = m92;
 const { buildSelect, syncSelect } = m105;
 const { icon } = m49;
 const { buildStrip, syncStrip } = m106;
@@ -11071,8 +11055,6 @@ const { buildStrip, syncStrip } = m106;
 
 
 
-
-const DEFAULT_HINT = touch ? 'Tap to place, tap one again to remove it, and Look changes nothing.' : 'Click to place, click one again or right click to remove it, and Look changes nothing.';
 function syncCtxText() {
   const note = [...document.querySelectorAll('.opt:not([hidden]) .note')].map(n => n.textContent).join(' ');
   const message = $('placeHint').textContent !== DEFAULT_HINT;
@@ -11176,6 +11158,7 @@ function buildPanels(actions) {
   $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };
   $('showSolution').onclick = () => { const moves = S.check?.result?.moves; if (!moves) return; setMode('play'); S.demo = [...moves]; };
   const after = () => { syncPanel(); fit(); };
+  addEventListener('wee:apply', e => { change(() => { S.level = e.detail; }); after(); });
   $('undo').onclick = () => undoStep(true, after);
   $('redo').onclick = () => undoStep(false, after);
   buildReset(after);
@@ -11183,18 +11166,6 @@ function buildPanels(actions) {
   $('placeHint').textContent = DEFAULT_HINT;
   // The context bar's one line of text: a message, else the tool's note, else the default hint.
   new MutationObserver(syncCtxText).observe($('placeHint'), { childList: true, characterData: true, subtree: true });
-  const resize = () => {
-    const level = S.level;
-    const w = Math.max(1, Math.min(40, +$('w').value || level.w)), h = Math.max(1, Math.min(30, +$('h').value || level.h));
-    if (w !== level.w || h !== level.h) { change(() => { S.level = resizeLevel(level, w, h); }); fit(); }
-  };
-  $('w').onchange = resize; $('h').onchange = resize;
-  document.querySelectorAll('[data-side]').forEach(b => b.onclick = () => {
-    const l = moveSide(S.level, b.dataset.side, +b.dataset.delta);
-    if (!l) return;
-    change(() => { S.level = l; }); syncPanel(); fit();
-  });
-  $('border').onclick = () => { change(() => { S.level = wallBorder(S.level); }); syncPanel(); };
 }
 
 function syncPanel() {
@@ -11503,13 +11474,13 @@ const { S } = m41;
 const { $, g, now, present } = m0;
 const { openSheet } = m102;
 const { syncPanel, keysText } = m107;
-const { feedDemo } = m83;
+const { feedDemo } = m84;
 const { noteError } = m68;
 const { selectOverlay } = m105;
 const { moveRefusal } = m108;
 const { watchStuck, resetStuck } = m109;
 const { lensMarks, lensBusy } = m99;
-const { syncWell } = m80;
+const { syncWell } = m81;
 const { syncChips } = m100;
 const { gust } = m72;
 const { motionFx } = m47;
@@ -11517,7 +11488,7 @@ const { soundFx } = m6;
 const { boilOn } = m12;
 const { stateKey, settled } = m26;
 const { respawn } = m18;
-const { syncEnabled } = m82;
+const { syncEnabled } = m83;
 const { syncRing } = m95;
 const { enterPlay, leavePlay, follow, clearView } = m96;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
@@ -11711,8 +11682,8 @@ const { describe, holds, place, turnGate, turnLaser, turnSwitch, turnDoor } = m7
 const { S } = m41;
 const { $, canvas, touch, now } = m0;
 const { setMode, aim, undoMove } = m110;
-const { begin, end, change, step: undoStep } = m92;
-const { save } = m91;
+const { begin, end, change, step: undoStep } = m93;
+const { save } = m92;
 const { selectDown, selectMove, selectUp, selectKey } = m105;
 const { LENS_GROUPS, cycleLens, lensesOff } = m99;
 const { syncPanel } = m107;
@@ -11983,7 +11954,7 @@ const m113 = (() => {
 const { search, move, stateKey } = m26;
 const { createGame } = m25;
 const { elementCheck, idleElements, NOTES_MAX } = m73;
-const { contains } = m85;
+const { contains } = m86;
 const { ING, variants } = m112;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
@@ -12092,7 +12063,7 @@ const { CLOCKWISE, CORNERS } = m7;
 const { emptyLevel, wallBorder } = m16;
 const { INGREDIENTS, ING, spot } = m112;
 const { judge, lockedIn } = m113;
-const { contains } = m85;
+const { contains } = m86;
 const { rng } = m114;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
@@ -12254,10 +12225,10 @@ const { INGREDIENTS } = m112;
 const { generate, normalize, recipeLabel, LIMITS } = m115;
 const { stampOf } = m61;
 const { S } = m41;
-const { thumbURL } = m89;
+const { thumbURL } = m90;
 const { $ } = m0;
-const { change } = m92;
-const { dirty, remember, syncRoomsButton } = m91;
+const { change } = m93;
+const { dirty, remember, syncRoomsButton } = m92;
 const { icon } = m49;
 const { current, back } = m4;
 const { TOOLS, GROUPS } = m75;
@@ -12622,11 +12593,11 @@ const { portrait, $ } = m0;
 const { startSnow, windNow } = m72;
 const { fit, watchStage } = m97;
 const { buildPanels, syncPanel } = m107;
-const { change } = m92;
+const { change } = m93;
 const { bindInput } = m111;
 const { setMode, frame, render, tick, report, copyReport } = m110;
 const { bindCamera } = m96;
-const { buildRooms } = m91;
+const { buildRooms } = m92;
 const { buildGenerator } = m116;
 const { buildCampaign } = m70;
 const { bindNav, start } = m4;

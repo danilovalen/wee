@@ -7,6 +7,8 @@ import { metricLines } from './metricLines.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
 import { syncWell } from './well.js';
+import { trimRoom } from '../solve/shape.js';
+import { removeBest, offerLine, trimText, removeText } from './shape.js';
 
 const SLICE_MS = 25, MAX = NOTES_MAX;
 const NAME = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', armored: 'Armored' };
@@ -78,7 +80,9 @@ export function runDesign(par) {
         if (walls.length) lines.push(line(`Without these walls, nothing changes: ${walls.map(w => `${w.x}, ${w.y}`).join('; ')}.`, walls));
         if (bait.length) lines.push(line(`These leave the answer alone but change where you can get stuck: ${bait.map(name).join('; ')}.`, bait));
         if (!idle.length && !bait.length && !plain.length) lines.push(line('Each piece, tile and wall changes the answer, and nothing could be a plain wall instead.'));
-        swap();
+        // What the Shape helpers would change, each with Apply (registers 693, 694, 698).
+        sliced(trimRoom(level, MAX), stamp, t => { lines.push(offerLine(trimText(t), t));
+        sliced(removeBest(level), stamp, r => { lines.push(offerLine(removeText(r), r)); swap(); }); });
         });
         });
       });

@@ -1,5 +1,5 @@
-// The room's size: a grip on each side adds or cuts rows or columns there, and the size
-// readout in the status bar opens the rest (width and height, add or cut a side, Border).
+// The room's size: a grip on each side adds or cuts rows or columns there; the status bar shows the
+// size and opens nothing (registers 704, 707).
 import { buildShape } from './shape.js';
 import { $, now } from './dom.js';
 import { S } from '../editor/state.js';
@@ -9,14 +9,6 @@ import { change, begin, end } from './undo.js';
 export function syncSize(level) {
   $('sizeBtn').textContent = `${level.w}×${level.h}`;
 }
-
-function place() {
-  const pop = $('sizePop'), r = $('sizeBtn').getBoundingClientRect();
-  pop.style.bottom = `${innerHeight - r.top + 6}px`;
-  pop.style.left = `${Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8))}px`;
-}
-export function closeSize() { $('sizePop').hidden = true; $('sizeBtn').setAttribute('aria-expanded', 'false'); }
-function openSize() { $('sizePop').hidden = false; $('sizeBtn').setAttribute('aria-expanded', 'true'); place(); }
 
 // A + or a − on each side: a tap adds or cuts one line there. A cut that would take a placed thing
 // (or the room's last line) does nothing and flashes what is in the way (register 252).
@@ -86,10 +78,6 @@ function grip(b, side, after) {
 }
 
 export function buildSize({ after }) {
-  buildShape(after);
+  buildShape();
   document.querySelectorAll('[data-grip]').forEach(b => grip(b, b.dataset.grip, after));
-  $('sizeBtn').onclick = () => ($('sizePop').hidden ? openSize() : closeSize());
-  document.addEventListener('pointerdown', ev => { if (!$('sizePop').hidden && !ev.target.closest('#sizePop, #sizeBtn')) closeSize(); });
-  addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSize(); });
-  addEventListener('resize', () => { if (!$('sizePop').hidden) place(); });
 }

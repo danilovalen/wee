@@ -26,13 +26,13 @@ try {
   await page.evaluate(() => window.wee.roomsReady);
   check('wee starts on the library', await page.locator('#roomsBox').isVisible());
   // An example's card shows the room as it is drawn, with its ring of wall, on whole pixels (register 687).
-  await page.waitForFunction(() => [...document.querySelectorAll('#roomsBox li')].some(li => /Example, \d+x\d+/.test(li.textContent) && li.querySelector('.thumb')?.complete));
+  await page.waitForFunction(() => [...document.querySelectorAll('#roomsBox li')].some(li => /Example, \d+x\d+/.test(li.textContent) && li.querySelector('.thumb')?.naturalWidth > 0));
   const card = await page.evaluate(() => {
     const li = [...document.querySelectorAll('#roomsBox li')].find(l => /Example, \d+x\d+/.test(l.textContent) && l.querySelector('.thumb'));
     const [, w, h] = li.textContent.match(/Example, (\d+)x(\d+)/).map(Number), img = li.querySelector('.thumb');
     const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext('2d'); g.drawImage(img, 0, 0);
-    const corner = [...g.getImageData(8, 8, 1, 1).data], mid = [...g.getImageData(Math.floor(c.width / 2), 8, 1, 1).data];
-    return { size: img.naturalWidth === (w + 2) * 16 && img.naturalHeight === (h + 2) * 16, crisp: getComputedStyle(img).imageRendering === 'pixelated', ring: corner[3] === 255 && corner.join() === mid.join() };
+    const corner = [...g.getImageData(4, 4, 1, 1).data], mid = [...g.getImageData(Math.floor(c.width / 2), 4, 1, 1).data];
+    return { size: img.naturalWidth === (w + 2) * 8 && img.naturalHeight === (h + 2) * 8, crisp: getComputedStyle(img).imageRendering === 'pixelated', ring: corner[3] === 255 && corner.join() === mid.join() };
   });
   check('an example card draws the room with its ring of wall, crisp (register 687)', Object.values(card).every(Boolean), JSON.stringify(card));
   check('focus starts on New room, not on Close', await page.evaluate(() => document.activeElement.id) === 'roomNew', await page.evaluate(() => document.activeElement.id));
@@ -358,7 +358,6 @@ try {
   check('Play from here starts the run on that tile', (await text()).mode === 'play' && (await text()).player.x === 3 && (await text()).player.y === 2);
   await page.keyboard.press('e');
   check('and the room itself keeps its start', (await text()).level.start.x === 1);
-  // adding and cutting a side, and Border, are single undoable steps
   await page.evaluate(l => window.wee.loadLevel(l), room(['.....', '.P...', '.....']));
   // A grip on each side: drag it out to add lines there, in to cut them, one undo step per drag (register 540).
   await dragGrip(page, 'right', 1);
@@ -374,39 +373,22 @@ try {
   check('a drag in stops at the room\'s 1-tall floor (register 319)', (await text()).level.h === 1);
   check('no grip sits over a tile', await page.evaluate(() => { const g = document.getElementById('game').getBoundingClientRect(); return [...document.querySelectorAll('[data-grip]')].every(b => { const r = b.getBoundingClientRect(); return r.bottom <= g.top + 0.5 || r.top >= g.bottom - 0.5 || r.right <= g.left + 0.5 || r.left >= g.right - 0.5; }); }));
   await page.click('#undo');
-  check('the size readout opens the size controls', await page.locator('#sizePop').isHidden() && await page.click('#sizeBtn').then(() => page.locator('#sizePop').isVisible()));
-  await page.keyboard.press('Escape');
-  check('Escape shuts them', await page.locator('#sizePop').isHidden());
-  await page.click('#sizeBtn');
-  await page.click('[data-side=top][data-delta="1"]');
-  check('Add above makes the room a row taller, start moved down', (await text()).level.h === 4 && (await text()).level.start.y === 2);
-  await page.click('#border');
-  check('Border walls the edge', (await text()).level.cells.slice(0, 5).every(c => c === 'wall'));
-  await page.click('#undo'); await page.click('#undo');
-  check('and each undoes in one step', (await text()).level.h === 3);
-  await page.click('#sizeBtn');
-  await page.click('[data-side=left][data-delta="-1"]'); await page.click('[data-side=left][data-delta="-1"]');
-  check('a cut through the start takes it off', (await text()).level.w === 3 && (await text()).level.start === null);
+  // The size is a plain label now: the grips add and cut lines, and the room's ring of wall replaced Border (registers 704, 707).
+  check('the size readout is a label with nothing behind it', await page.$eval('#sizeBtn', e => e.tagName === 'SPAN') && !(await page.locator('#sizePop, #border, [data-side]').count()));
+  await dragGrip(page, 'left', -2);
+  check('a cut through the start takes it off', (await text()).level.w === 3 && (await text()).level.start === null, JSON.stringify([(await text()).level.w, (await text()).level.start]));
   check('with no start, Play and Check are greyed out and the check line says why', await page.locator('#mode').isDisabled() && await page.locator('#checkBtn').isDisabled() && (await page.textContent('#checkText')).includes('place the start'));
   await page.keyboard.press('e');
   check('and E does not start a run', (await text()).mode === 'edit');
-  await page.keyboard.press('Escape');
   { const gb = await page.locator('#game').boundingBox(), lw = (await text()).level;
     await pick('look'); await page.mouse.click(gb.x + 1.5 * gb.width / lw.w, gb.y + 0.5 * gb.height / lw.h);
     await page.click('#playHere');
     check('Play from here works with no start, and Edit stays clickable', (await text()).mode === 'play' && !(await page.locator('#mode').isDisabled()));
-    await page.click('#mode'); await page.click('#sizeBtn'); }
-  for (let i = 0; i < 4; i++) await page.click('[data-side=bottom][data-delta="-1"]', { force: true });
-  check('a cut that would leave less than 1 tall is greyed out', (await text()).level.h === 1 && await page.locator('[data-side=bottom][data-delta="-1"]').isDisabled(), String((await text()).level.h));
-  await page.click('#undo'); await page.click('#undo');
-  await page.keyboard.press('Escape');
+    await page.click('#mode'); }
   await pick('start'); const g0 = await page.locator('#game').boundingBox(); const lv0 = (await text()).level;
   await page.mouse.click(g0.x + 1.5 * g0.width / lv0.w, g0.y + 1.5 * g0.height / lv0.h);
   check('placing the start again brings Play back', (await text()).level.start && !(await page.locator('#mode').isDisabled()), JSON.stringify((await text()).level) + await page.locator('#mode').isDisabled());
   await pick('look');
-  await page.click('#sizeBtn');
-  await page.mouse.click(5, 5);
-  check('a click elsewhere shuts the size controls', await page.locator('#sizePop').isHidden());
   await page.evaluate(l => window.wee.loadLevel(l), JSON.parse(JSON.stringify(roomBeforePanel)));
 
   // the Rooms panel: name and save the room, find it in the list, come back to it

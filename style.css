@@ -190,15 +190,6 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .lint summary { cursor: pointer; color: var(--gold); }
 .lint ul { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 4px; }
 .lint button { text-align: left; width: 100%; }
-.sides { display: grid; grid-template-columns: auto repeat(4, minmax(0, 1fr)); gap: 4px; align-items: center; margin-top: 6px; }
-.sides button { min-width: 0; padding-left: 0; padding-right: 0; }
-.sides span { font-size: 0.85em; color: var(--dim); }
-.shape { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 4px; align-items: center; margin-top: 8px; }
-.shape > span { font-size: 0.85em; color: var(--dim); }
-.shape #shapeSay, .shape .shapeAsk { grid-column: 1 / -1; margin: 2px 0 0; min-height: 1.4em; }
-.shape .shapeAsk { display: flex; gap: 6px; }
-.shape .shapeAsk[hidden] { display: none; }
-.sides #border { grid-column: 1 / -1; }
 .roomBox { margin-bottom: 10px; }
 #codeIn { flex: 1; min-width: 0; }
 
@@ -345,12 +336,10 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 /* Round on the outside, flat where the ear meets the room. */
 /* Never lifted or pressed: the house button motion would move it under the finger (register 227). */
 /* A 44px-deep touch target, grown outward only, so it never covers a tile. */
-body.play .growBar, body.play #sizeBtn, body.play .sizePop { display: none; }
+body.play .growBar, body.play #sizeBtn { display: none; }
 .roomArea { padding: 0; }
 @media (max-width: 700px) { .roomArea { padding: 0 0 8px; } }
-#sizeBtn { font-variant-numeric: tabular-nums; }
-.sizePop { position: fixed; z-index: 40; background: var(--panel); border: 0; border-radius: var(--r-m); padding: 10px 12px; box-shadow: 0 8px 24px rgba(40,44,60,.18); width: 260px; }
-.sizePop[hidden] { display: none; }
+#sizeBtn { font-variant-numeric: tabular-nums; padding: 3px 8px; color: var(--dim); }  /* a plain readout (register 707) */
 /* Between a phone and a desktop the tools are icons, named on hover, so the room keeps the width. */
 @media (min-width: 701px) and (max-width: 1100px) {
   main { grid-template-columns: 132px minmax(0, 1fr) 180px; }
@@ -981,7 +970,7 @@ body.challenge .growBar { display: none !important; }
 @media (max-width: 700px) {
   body.play:not(.campaign) #tools, body.play:not(.campaign) #powers:not([hidden]), body.play:not(.campaign) #lensChips:not([hidden]), body.play:not(.campaign) #statusBar { display: revert; visibility: hidden; }
   body.sandbox .toolName { flex: none; height: 26px; overflow: hidden; }
-  body.sandbox #tools { height: 214px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
+  body.sandbox #tools { height: 256px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
   body.sandbox #strip { margin-top: auto; }
   .statusBar { height: 34px; box-sizing: border-box; }
   #wellBtn:disabled { display: revert; visibility: hidden; }
@@ -995,3 +984,10 @@ body.challenge .growBar { display: none !important; }
   body:not(.campaign) .statusBar > #pad[hidden] { display: flex; visibility: hidden; }
   .statusBar .moves { display: inline-block; min-width: 10ch; font-variant-numeric: tabular-nums; }
 }
+
+/* A design note that offers a change: its sentence, then Apply (register 698). */
+#designList li:has(> .apply) { display: flex; gap: 8px; align-items: center; }
+#designList .apply { flex: none; }
+#bestOpt #shapeAsk { display: inline-flex; gap: 6px; }
+#bestOpt #shapeAsk[hidden], #bestOpt [hidden] { display: none; }
+body.campaign #bestOpt { display: none !important; }

@@ -1,7 +1,6 @@
 // The side panels: the tool palette and its options, powers and status, the room size,
 // and the file buttons. syncPanel makes every control show the current state.
 import { CLOCKWISE, COLOURS, POWERS, NEEDS, POWERS_SHOWN } from '../rules/base.js';
-import { resizeLevel, moveSide, wallBorder } from '../level/format.js';
 import { INK } from '../view/ink.js';
 import { paint, look } from '../view/look.js';
 import { TOOLS, GROUPS, POWER_TEXT, NAMES } from '../editor/palette.js';
@@ -9,7 +8,7 @@ import { toolsFor } from './campaign.js';
 import { syncBrief, TOOL } from './goalCard.js';
 import { coloursOf, colouringsOf, pushingsOf } from '../campaign/rules.js';
 import { S } from '../editor/state.js';
-import { $, canvas, touch } from './dom.js';
+import { $, canvas, touch, DEFAULT_HINT } from './dom.js';
 import { change, step as undoStep, syncUndo } from './undo.js';
 import { runCheck, syncCheck, syncLint } from './check.js';
 import { buildLenses, syncLenses } from './lenses.js';
@@ -24,7 +23,6 @@ import { buildSelect, syncSelect } from './select.js';
 import { icon } from './icons.js';
 import { buildStrip, syncStrip } from './strip.js';
 
-const DEFAULT_HINT = touch ? 'Tap to place, tap one again to remove it, and Look changes nothing.' : 'Click to place, click one again or right click to remove it, and Look changes nothing.';
 function syncCtxText() {
   const note = [...document.querySelectorAll('.opt:not([hidden]) .note')].map(n => n.textContent).join(' ');
   const message = $('placeHint').textContent !== DEFAULT_HINT;
@@ -128,6 +126,7 @@ export function buildPanels(actions) {
   $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };
   $('showSolution').onclick = () => { const moves = S.check?.result?.moves; if (!moves) return; setMode('play'); S.demo = [...moves]; };
   const after = () => { syncPanel(); fit(); };
+  addEventListener('wee:apply', e => { change(() => { S.level = e.detail; }); after(); });
   $('undo').onclick = () => undoStep(true, after);
   $('redo').onclick = () => undoStep(false, after);
   buildReset(after);
@@ -135,18 +134,6 @@ export function buildPanels(actions) {
   $('placeHint').textContent = DEFAULT_HINT;
   // The context bar's one line of text: a message, else the tool's note, else the default hint.
   new MutationObserver(syncCtxText).observe($('placeHint'), { childList: true, characterData: true, subtree: true });
-  const resize = () => {
-    const level = S.level;
-    const w = Math.max(1, Math.min(40, +$('w').value || level.w)), h = Math.max(1, Math.min(30, +$('h').value || level.h));
-    if (w !== level.w || h !== level.h) { change(() => { S.level = resizeLevel(level, w, h); }); fit(); }
-  };
-  $('w').onchange = resize; $('h').onchange = resize;
-  document.querySelectorAll('[data-side]').forEach(b => b.onclick = () => {
-    const l = moveSide(S.level, b.dataset.side, +b.dataset.delta);
-    if (!l) return;
-    change(() => { S.level = l; }); syncPanel(); fit();
-  });
-  $('border').onclick = () => { change(() => { S.level = wallBorder(S.level); }); syncPanel(); };
 }
 
 export function syncPanel() {

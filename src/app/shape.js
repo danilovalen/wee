@@ -1,22 +1,23 @@
-// The room-size popover's Shape tools (registers 693, 694): Trim, Place one and Remove one. Each searches
-// first, a slice at a time, then says what it found, flashes where, and changes the room only on Apply.
+// The Shape helpers (registers 693, 694, 698): Trim and Remove one are offered in the design notes after a
+// Check, each with Apply; Best spot sits with the tool's options and puts the current piece where it makes
+// the room longest. Each searches first, a slice at a time, and changes the room only on Apply.
 import { trimRoom } from '../solve/shape.js';
 import { search } from '../solve/solve.js';
 import { NOTES_MAX } from '../solve/design.js';
 import { place } from '../editor/edit.js';
 import { TOOLS } from '../editor/palette.js';
 import { S } from '../editor/state.js';
-import { $, now } from './dom.js';
-import { change } from './undo.js';
+import { $, now, DEFAULT_HINT } from './dom.js';
 
 const SLICE_MS = 25, clone = l => JSON.parse(JSON.stringify(l));
-let offer = null, token = 0;
+const name = t => ((TOOLS.find(x => x.id === t) || {}).label || t).toLowerCase();
+const flash = (x, y) => { S.fx.push({ type: 'flash', x, y, at: now() }); S.redraw = true; };
 
 // The answer's length, or null when the room cannot be won (or is too big to tell).
 function* movesOf(level) { const r = yield* search(level, NOTES_MAX); return r.status === 'solved' ? r.moves.length : null; }
 
 // Every empty tile tried with the tool as it is set now, the same way a tap would place it.
-function* placeBest(level, ui) {
+export function* placeBest(level, ui) {
   const base = yield* movesOf(level);
   let best = null;
   for (let y = 0; y < level.h; y++) for (let x = 0; x < level.w; x++) {
@@ -31,7 +32,7 @@ function* placeBest(level, ui) {
 }
 
 // Every piece and every tile but the goal, taken out alone.
-function* removeBest(level) {
+export function* removeBest(level) {
   const base = yield* movesOf(level);
   let best = null;
   const tryOut = function* (l, x, y, what) { const n = yield* movesOf(l); if (n != null && n > (best ? best.moves : base ?? 0)) best = { level: l, moves: n, x, y, what }; };
@@ -45,7 +46,28 @@ function* removeBest(level) {
   return best && { ...best, from: base };
 }
 
-function run(it, done) {
+// What each search found, as one plain sentence (register 700: say what is true of what is there).
+export const trimText = r => r ? `Trim to ${r.level.w}x${r.level.h}: it plays the same.` : 'Every row and column is needed.';
+export const removeText = r => r ? `Without the ${name(r.what)} at ${r.x}, ${r.y} it takes ${r.moves} moves instead of ${r.from}.` : 'Removing any one piece or tile does not make it longer.';
+const placeText = (t, r) => !r ? `A ${name(t)} on any empty tile does not make it longer.` : r.from == null ? `A ${name(t)} at ${r.x}, ${r.y} makes it ${r.moves} moves.` : `A ${name(t)} at ${r.x}, ${r.y} makes it ${r.moves} moves instead of ${r.from}.`;
+
+// Apply hands the new room to the editor, which makes it one undo step and refits (panels.js).
+const applyRoom = level => dispatchEvent(new CustomEvent('wee:apply', { detail: level }));
+// A design note that offers a change: its text flashes where, and Apply makes it.
+export function offerLine(text, found) {
+  const li = document.createElement('li');
+  if (!found) { li.textContent = text; return li; }
+  const say = Object.assign(document.createElement('button'), { type: 'button', textContent: text });
+  li.append(say);
+  say.onclick = () => found.x != null && flash(found.x, found.y);
+  const apply = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Apply', className: 'apply' });
+  apply.onclick = () => applyRoom(found.level);
+  li.append(apply);
+  return li;
+}
+
+let offer = null, token = 0;
+export function run(it, done) {
   const me = ++token, stamp = JSON.stringify(S.level);
   const slice = () => {
     if (me !== token || JSON.stringify(S.level) !== stamp) return;
@@ -55,31 +77,19 @@ function run(it, done) {
   };
   setTimeout(slice, 0);
 }
-
 function say(text, found = null) {
   offer = found;
-  $('shapeSay').textContent = text;
-  $('shapeAsk').hidden = !found;
-  if (found && found.x != null) S.fx.push({ type: 'flash', x: found.x, y: found.y, at: now() });
-  S.redraw = true;
+  $('placeHint').textContent = text || DEFAULT_HINT;
+  $('shapeAsk').hidden = !found; $('placeBtn').hidden = !!found;
+  if (found) flash(found.x, found.y);
 }
-const name = t => ((TOOLS.find(x => x.id === t) || {}).label || t).toLowerCase(), PLACES = new Set(['look', 'erase', 'select', 'move', 'start']);
 
-export function buildShape(after) {
-  $('trimBtn').onclick = () => {
-    say('Looking for rows and columns to take out...');
-    run(trimRoom(clone(S.level), NOTES_MAX), r => r ? say(`Trimmed to ${r.level.w}x${r.level.h}, it plays the same.`, { level: r.level }) : say('Nothing can go without changing how it plays.'));
-  };
+export function buildShape() {
   $('placeBtn').onclick = () => {
     const tool = S.ui.tool;
-    if (PLACES.has(tool)) { say('Pick a piece or tile to place first.'); return; }
     say(`Trying a ${name(tool)} on every empty tile...`);
-    run(placeBest(clone(S.level), { ...S.ui }), r => r ? say(`A ${name(tool)} at ${r.x}, ${r.y} makes it ${r.moves} moves instead of ${r.from ?? 'no answer'}.`, r) : say(`No ${name(tool)} makes it longer.`));
+    run(placeBest(clone(S.level), { ...S.ui }), r => say(placeText(tool, r), r));
   };
-  $('removeBtn').onclick = () => {
-    say('Trying each piece and tile taken out...');
-    run(removeBest(clone(S.level)), r => r ? say(`Without the ${name(r.what)} at ${r.x}, ${r.y} it takes ${r.moves} moves instead of ${r.from ?? 'no answer'}.`, r) : say('Taking nothing out makes it longer.'));
-  };
-  $('shapeYes').onclick = () => { if (!offer) return; const l = offer.level; change(() => { S.level = l; }); say(''); after(); };
+  $('shapeYes').onclick = () => { if (!offer) return; const l = offer.level; say(''); applyRoom(l); };
   $('shapeNo').onclick = () => { token++; say(''); };
 }

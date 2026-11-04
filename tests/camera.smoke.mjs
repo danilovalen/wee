@@ -42,7 +42,8 @@ try {
   check('a pinch on a big room zooms in', c1.z > 1.5, JSON.stringify(c1));
   // Register 414: zoomed in, the view fills the room's area instead of keeping the fitted room's shape.
   const zoomedBox = await page.locator('#game').boundingBox();
-  check('zoomed in, the view grows to fill the area', zoomedBox.height > fitted.height + 100 && zoomedBox.width >= fitted.width - 1, `${Math.round(fitted.width)}x${Math.round(fitted.height)} -> ${Math.round(zoomedBox.width)}x${Math.round(zoomedBox.height)}`);
+  const room = await page.evaluate(async () => { const { BAR } = await import('/src/app/fit.js'); return document.getElementById('roomArea').clientHeight - 2 * BAR; });
+  check('zoomed in, the view grows to fill the area', zoomedBox.height > fitted.height && Math.abs(zoomedBox.height - room) <= 2 && zoomedBox.width >= fitted.width - 1, `${Math.round(fitted.width)}x${Math.round(fitted.height)} -> ${Math.round(zoomedBox.width)}x${Math.round(zoomedBox.height)} of ${room}`);
   check('Fit shows while zoomed, and the resize bars wait', await page.locator('#fitBtn').isVisible() && await page.locator('.growBar').first().isHidden());
   check('the pinch placed nothing: the first finger\'s stroke is taken back', (await walls()) === before, `${before} -> ${await walls()}`);
   // A tap lands on the tile drawn under the finger: the pixel there turns from floor to wall.
