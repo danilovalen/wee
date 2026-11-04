@@ -69,4 +69,5 @@ phone, where the finger leaves the screen.
 
 ## Question for the owner
 
-1. Should the filter follow the focus live, or hold on a tapped tile until released?
+1. ~~Live or held?~~ **Owner (2026-11-04): live, and a tap holds it.** The filter follows the mouse or the
+   cursor; a tap (or A) pins it on a tile until that tile is tapped again or Esc / B.
