@@ -123,8 +123,8 @@ Rows 718-729 fold into these.
 
 ## Questions for the owner (to ask one at a time)
 
-1. On a wide screen, Findings in a right column beside the room (proposal 2), or a sheet that
-   shrinks the room instead of covering it?
+1. ~~On a wide screen, Findings in a right column, or a sheet that shrinks the room?~~ **Owner
+   (2026-11-04): right column.**
 2. The measures as a grid of numbers (proposal 3): which of the dozen does he actually read? The
    rest can live behind a tap.
 3. Where the lens icons sit: over the room's top edge, or in the right column with Findings?
