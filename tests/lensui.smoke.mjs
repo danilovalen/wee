@@ -96,6 +96,17 @@ try {
   // The chips follow on the next frame, so wait for it rather than race it.
   const gone = await page.waitForFunction(() => document.getElementById('lensChips').hidden, null, { timeout: 3000 }).then(() => true, () => false);
   check('the Lenses button hides the chips and the rows', gone && await page.locator('#lensBox').isHidden() && await page.locator('#well').isHidden());
+  // The simple Sandbox has no Lenses button in its header: the well's Lenses tab turns them on in place (register 690).
+  const simple = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await simple.goto('http://localhost:5213/?sandbox');
+  await simple.waitForFunction(() => window.wee && window.wee.roomsReady); await simple.evaluate(() => window.wee.roomsReady);
+  await simple.evaluate(() => document.getElementById('roomsBox').close());
+  await simple.evaluate(() => { const b = document.getElementById('wellBtn'); b.disabled = false; b.click(); });
+  await simple.click('[data-well=lenses]');
+  const offered = !(await simple.locator('#stopsBtn').isVisible()) && await simple.locator('#lensOff').isVisible() && (await simple.textContent('#lensOff')) === 'Show lenses';
+  await simple.click('#lensOff'); await simple.waitForTimeout(300);
+  check('with no Lenses button in the header, the Lenses tab shows them in place', offered && await simple.locator('#lensRows').isVisible() && await simple.locator('#lensOff').isHidden(), String(offered));
+  await simple.close();
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the lens smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

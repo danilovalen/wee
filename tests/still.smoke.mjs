@@ -29,8 +29,8 @@ try {
     await still(p, `${w}px Sandbox, Play`, click(p, '#mode'), 600);
     await still(p, `${w}px Sandbox, back to editing`, click(p, '#mode'), 600);
     if (w > 700) {
-      // With the well opened by hand, it keeps its space through Play and back.
-      await p.evaluate(() => { const b = document.getElementById('wellBtn'); b.disabled = false; b.click(); }); await p.waitForTimeout(400);
+      // With the well open, Play and back move nothing.
+      await p.evaluate(() => { if (!document.getElementById('well').hidden) return; const b = document.getElementById('wellBtn'); b.disabled = false; b.click(); }); await p.waitForTimeout(400);
       check(`${w}px Sandbox: the well is open for the next two checks`, await p.locator('#well').isVisible());
       await still(p, `${w}px Sandbox with the well open, Play`, click(p, '#mode'), 600);
       await still(p, `${w}px Sandbox with the well open, back to editing`, click(p, '#mode'), 600);

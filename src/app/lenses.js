@@ -184,5 +184,6 @@ export function buildLenses() {
     return row;
   }));
   $('lensFollow').onchange = e => { L().follow = e.target.checked; syncLenses(); };
-  $('stopsBtn').onclick = toggleLenses;
+  // The Lenses tab turns them on in place: the header's button is not there in every mode (register 690).
+  $('stopsBtn').onclick = $('lensOff').onclick = toggleLenses;
 }

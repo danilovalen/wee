@@ -50,6 +50,28 @@ try {
   await page.waitForFunction(() => !document.getElementById('win').hidden, null, { timeout: 3000 }).catch(() => {});
   await page.click('#playUndo'); await page.waitForTimeout(200);
   check('Undo after a win takes the win back: its card goes, the moves count drops', await page.locator('#win').isHidden() && (await page.textContent('#moves')) === 'Moves 0', await page.textContent('#moves'));
+  // Stuck, the bubble stays through moves and Undos that leave you stuck, with no second sound; it goes on the
+  // Undo that makes the goal reachable again (register 688).
+  const wide = room(['##########', '#...P>...#', '##########']);
+  wide.cells[1 * wide.w + 1] = 'goal';
+  await page.keyboard.press('e'); await page.waitForTimeout(200);
+  await page.evaluate(l => window.wee.loadLevel(l), wide);
+  await page.keyboard.press('e'); await page.waitForTimeout(300);
+  await page.evaluate(() => { window.__stuckMs = 300; window.__heard = 0; });
+  await page.keyboard.press('ArrowRight');
+  await page.waitForFunction(() => !document.getElementById('stuck').hidden, null, { timeout: 5000 });
+  const flicker = await page.evaluate(async () => {
+    let gone = 0; const id = setInterval(() => { if (document.getElementById('stuck').hidden) gone++; }, 10);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', code: 'ArrowLeft', bubbles: true }));
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowLeft', code: 'ArrowLeft', bubbles: true }));
+    await new Promise(r => setTimeout(r, 1200)); clearInterval(id); return gone;
+  });
+  const moved = await at();
+  check('still stuck after another move: the bubble never goes, and no second sound (register 688)', flicker === 0 && moved !== '8,1' && await page.evaluate(() => window.__heard === 1), JSON.stringify({ flicker, moved, heard: await page.evaluate(() => window.__heard) }));
+  await page.keyboard.press('z'); await page.waitForTimeout(800);
+  check('an Undo that leaves you stuck keeps it up', await shown() && await at() === '8,1', await at());
+  await page.keyboard.press('z'); await page.waitForTimeout(800);
+  check('the Undo that makes the goal reachable takes it away', !(await shown()) && await page.evaluate(() => window.__heard === 1), await at());
   // A room with no way to its goal from the start is still being built: no bubble (register 681).
   const walled = room(['#######', '#P..#.#', '#######']);
   walled.cells[1 * walled.w + 5] = 'goal';

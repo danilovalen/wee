@@ -29,8 +29,6 @@ export function syncWell() {
   if (key === shown) return;
   shown = key;
   $('well').hidden = !open;
-  // An open well keeps its space in play too, so the room does not grow and shrink (register 680).
-  document.body.classList.toggle('wellOpen', WELL.open);
   // With nothing found and the well shut there is nothing to open: the button greys out
   // (a phone hides a greyed one), so nothing beside it moves.
   $('wellBtn').hidden = !edit;
@@ -45,6 +43,8 @@ export function syncWell() {
 }
 
 export function buildWell() {
+  // The well floats over the foot of the room itself, not over what sits under it (registers 689, 690).
+  $('roomArea').append($('well'));
   document.querySelectorAll('[data-well]').forEach(b => b.onclick = () => openWell(b.dataset.well));
   $('wellClose').onclick = closeWell;
   $('wellBtn').onclick = () => (WELL.open && WELL.tab === 'findings' ? closeWell() : openWell('findings'));

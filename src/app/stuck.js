@@ -11,15 +11,18 @@ import { play } from './sound.js';
 const SLICE_MS = 8, WAIT_MS = 2500;
 let job = null, timer = null, start = null;
 
-export function resetStuck() { job = null; clearTimeout(timer); $('stuck').hidden = true; }
+// keep: an Undo keeps the bubble up until the search finds the goal reachable again (register 688).
+export function resetStuck(keep = false) { job = null; clearTimeout(timer); if (!keep) $('stuck').hidden = true; }
 
 export function watchStuck(game) {
-  if (game.won || !settled(game) || unsearchable(S.played)) return;
+  if (game.won) { resetStuck(); return; }
+  if (!settled(game) || unsearchable(S.played)) return;
   const key = stateKey(game);
   if (job && job.key === key) return;
   if (!start || start.of !== S.played) start = { of: S.played, it: canWin(createGame(S.played)), wins: undefined };
   const me = job = { key }, it = canWin(game), from = start;
-  $('stuck').hidden = true; clearTimeout(timer);
+  // Still stuck after a move or an Undo, the bubble stays as it is, with no second sound (register 688).
+  clearTimeout(timer);
   const slice = () => {
     if (job !== me) return;
     const until = performance.now() + SLICE_MS;
@@ -28,7 +31,8 @@ export function watchStuck(game) {
       if (from.wins !== true) return;
       const r = it.next();
       if (r.done) {
-        if (r.value === false) timer = setTimeout(() => { if (job === me) { $('stuck').hidden = false; play('stuck'); } }, window.__stuckMs ?? WAIT_MS);
+        if (r.value !== false) $('stuck').hidden = true;
+        else if ($('stuck').hidden) timer = setTimeout(() => { if (job === me) { $('stuck').hidden = false; play('stuck'); } }, window.__stuckMs ?? WAIT_MS);
         return;
       }
       if (performance.now() > until) break;

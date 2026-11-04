@@ -983,7 +983,9 @@ body.challenge .growBar { display: none !important; }
   body:not(.campaign) .ctx { grid-template-rows: 36px 18px; align-content: start; }
   body:not(.campaign) .ctx #options:not(:has(.opt:not([hidden]))) { display: flex; visibility: hidden; }
   body:not(.campaign) .ctx #ctxNote, body:not(.campaign) .ctx #placeHint { grid-row: 2; }
-  body.wellOpen:not(.campaign) #well[hidden] { display: flex; visibility: hidden; }
+  /* The well floats over the foot of the room, so opening or closing it moves nothing (registers 680, 689). */
+  #roomArea { position: relative; }
+  .well { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; box-shadow: 0 -8px 24px rgba(0, 0, 0, .35); }
   body.play:not(.campaign) #sizeBtn, body:not(.campaign) .statusBar > #wellBtn[hidden] { display: revert; visibility: hidden; }
 }
 @media (max-width: 700px) {
@@ -1159,7 +1161,7 @@ body.challenge .growBar { display: none !important; }
             <details id="designBox" class="lint design" hidden open><summary>Design notes</summary><ul id="designList"></ul></details>
           </div>
           <div data-pane="lenses">
-            <p id="lensOff" class="hint">To see lenses, press Lenses in the header.</p>
+            <button id="lensOff" type="button">Show lenses</button>
             <div id="lensBox" class="lensBox" hidden>
               <div id="lensRows"></div>
               <label class="lensFollow"><input type="checkbox" id="lensFollow" checked> Follow the tool</label>
@@ -8461,8 +8463,6 @@ function syncWell() {
   if (key === shown) return;
   shown = key;
   $('well').hidden = !open;
-  // An open well keeps its space in play too, so the room does not grow and shrink (register 680).
-  document.body.classList.toggle('wellOpen', WELL.open);
   // With nothing found and the well shut there is nothing to open: the button greys out
   // (a phone hides a greyed one), so nothing beside it moves.
   $('wellBtn').hidden = !edit;
@@ -8477,6 +8477,8 @@ function syncWell() {
 }
 
 function buildWell() {
+  // The well floats over the foot of the room itself, not over what sits under it (registers 689, 690).
+  $('roomArea').append($('well'));
   document.querySelectorAll('[data-well]').forEach(b => b.onclick = () => openWell(b.dataset.well));
   $('wellClose').onclick = closeWell;
   $('wellBtn').onclick = () => (WELL.open && WELL.tab === 'findings' ? closeWell() : openWell('findings'));
@@ -10130,7 +10132,8 @@ function buildLenses() {
     return row;
   }));
   $('lensFollow').onchange = e => { L().follow = e.target.checked; syncLenses(); };
-  $('stopsBtn').onclick = toggleLenses;
+  // The Lenses tab turns them on in place: the header's button is not there in every mode (register 690).
+  $('stopsBtn').onclick = $('lensOff').onclick = toggleLenses;
 }
 return { LENS_GROUPS, LENS_TIPS, AUTO, lensOn, isAuto, toggleLenses, pickLens, cycleLens, lensesOff, lensMarks, tileFacts, lensBusy, lensLine, syncLenses, buildLenses };
 })();
@@ -10980,8 +10983,8 @@ function buildPanels(actions) {
   $('respawnBtn').onclick = () => S.pending.push('respawn');
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
-  // Wide, Check leaves the well as it was so nothing moves (680); a phone's well floats, so it opens.
-  $('checkBtn').onclick = () => { runCheck(); if (matchMedia('(max-width: 700px)').matches) openWell('findings'); };
+  // The well floats over the room, so Check can open it on the findings and nothing moves (register 689).
+  $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
   buildWell();
   buildChips();
   buildSize({ after: () => { syncPanel(); fit(); } });
@@ -11277,15 +11280,18 @@ const { play } = m6;
 const SLICE_MS = 8, WAIT_MS = 2500;
 let job = null, timer = null, start = null;
 
-function resetStuck() { job = null; clearTimeout(timer); $('stuck').hidden = true; }
+// keep: an Undo keeps the bubble up until the search finds the goal reachable again (register 688).
+function resetStuck(keep = false) { job = null; clearTimeout(timer); if (!keep) $('stuck').hidden = true; }
 
 function watchStuck(game) {
-  if (game.won || !settled(game) || unsearchable(S.played)) return;
+  if (game.won) { resetStuck(); return; }
+  if (!settled(game) || unsearchable(S.played)) return;
   const key = stateKey(game);
   if (job && job.key === key) return;
   if (!start || start.of !== S.played) start = { of: S.played, it: canWin(createGame(S.played)), wins: undefined };
   const me = job = { key }, it = canWin(game), from = start;
-  $('stuck').hidden = true; clearTimeout(timer);
+  // Still stuck after a move or an Undo, the bubble stays as it is, with no second sound (register 688).
+  clearTimeout(timer);
   const slice = () => {
     if (job !== me) return;
     const until = performance.now() + SLICE_MS;
@@ -11294,7 +11300,8 @@ function watchStuck(game) {
       if (from.wins !== true) return;
       const r = it.next();
       if (r.done) {
-        if (r.value === false) timer = setTimeout(() => { if (job === me) { $('stuck').hidden = false; play('stuck'); } }, window.__stuckMs ?? WAIT_MS);
+        if (r.value !== false) $('stuck').hidden = true;
+        else if ($('stuck').hidden) timer = setTimeout(() => { if (job === me) { $('stuck').hidden = false; play('stuck'); } }, window.__stuckMs ?? WAIT_MS);
         return;
       }
       if (performance.now() > until) break;
@@ -11380,7 +11387,7 @@ function undoMove() {
   const last = S.game && !S.demoRunning && S.undoPlay && S.undoPlay.pop();
   if (!last) return false;
   S.game = last.game; S.keylog.length = last.log; S.prev = snapshot(S.game); S.pending = []; S.acc = 0;
-  $('win').hidden = true; resetStuck(); $('moves').textContent = `Moves ${S.game.move}`;
+  $('win').hidden = true; resetStuck(true); $('moves').textContent = `Moves ${S.game.move}`;
   syncEnabled(); S.redraw = true;
   return true;
 }

@@ -44,7 +44,7 @@ export function undoMove() {
   const last = S.game && !S.demoRunning && S.undoPlay && S.undoPlay.pop();
   if (!last) return false;
   S.game = last.game; S.keylog.length = last.log; S.prev = snapshot(S.game); S.pending = []; S.acc = 0;
-  $('win').hidden = true; resetStuck(); $('moves').textContent = `Moves ${S.game.move}`;
+  $('win').hidden = true; resetStuck(true); $('moves').textContent = `Moves ${S.game.move}`;
   syncEnabled(); S.redraw = true;
   return true;
 }

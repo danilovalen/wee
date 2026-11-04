@@ -968,7 +968,9 @@ body.challenge .growBar { display: none !important; }
   body:not(.campaign) .ctx { grid-template-rows: 36px 18px; align-content: start; }
   body:not(.campaign) .ctx #options:not(:has(.opt:not([hidden]))) { display: flex; visibility: hidden; }
   body:not(.campaign) .ctx #ctxNote, body:not(.campaign) .ctx #placeHint { grid-row: 2; }
-  body.wellOpen:not(.campaign) #well[hidden] { display: flex; visibility: hidden; }
+  /* The well floats over the foot of the room, so opening or closing it moves nothing (registers 680, 689). */
+  #roomArea { position: relative; }
+  .well { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; box-shadow: 0 -8px 24px rgba(0, 0, 0, .35); }
   body.play:not(.campaign) #sizeBtn, body:not(.campaign) .statusBar > #wellBtn[hidden] { display: revert; visibility: hidden; }
 }
 @media (max-width: 700px) {
