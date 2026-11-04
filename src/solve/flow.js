@@ -52,12 +52,16 @@ export function wrongTurns(nodes, path, toWin) {
 export function* reuse(level, max) {
   const r = yield* search(level, max);
   if (r.status !== 'solved') return null;
-  const uses = new Map();
-  let s = createGame(level);
+  const uses = new Map(), crossed = new Set();
+  let s = createGame(level), overlap = 0;
   for (const m of r.moves) {
+    // Path reuse (register 727): a move counts when it runs over a tile an earlier move already crossed.
     let dir = null;
-    const t = move(s, m, x => { if (x.player.dir) dir = x.player.dir; });
+    const from = s.player.y * s.w + s.player.x, here = new Set();
+    const t = move(s, m, x => { if (x.player.dir) dir = x.player.dir; here.add(x.player.y * x.w + x.player.x); });
     if (!t) return null;
+    if ([...here].some(i => crossed.has(i))) overlap++;
+    crossed.add(from); for (const i of here) crossed.add(i);
     if (dir) {
       const [dx, dy] = DIRS[dir], x = t.player.x + dx, y = t.player.y + dy, e = t.entities.find(o => !o.dead && o.x === x && o.y === y);
       const id = e ? 'p' + e.id : x < 0 || y < 0 || x >= t.w || y >= t.h ? 'edge' : 't' + (y * t.w + x);
@@ -66,5 +70,22 @@ export function* reuse(level, max) {
     s = t;
     yield uses.size;
   }
-  return { moves: r.moves.length, blocks: uses.size, busiest: Math.max(0, ...uses.values()) };
+  return { moves: r.moves.length, blocks: uses.size, busiest: Math.max(0, ...uses.values()), overlap, stops: uses };
+}
+
+// Choke points (register 727): places on the way that every win goes through; take one out of the map and
+// the berry cannot be reached. Only places on a shortest path can be, so only those are tried.
+export function chokePoints(nodes, first, path) {
+  const out = [];
+  for (const k of path) {
+    if (k === first) continue;
+    const seen = new Set([first, k]), q = [first];
+    let wins = false;
+    for (let i = 0; i < q.length && !wins; i++) for (const o of nodes.get(q[i]).out) {
+      if (o.win) { wins = true; break; }
+      if (o.key && !seen.has(o.key)) { seen.add(o.key); q.push(o.key); }
+    }
+    if (!wins) out.push(nodes.get(k).at);
+  }
+  return out;
 }

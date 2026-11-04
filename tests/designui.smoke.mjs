@@ -34,6 +34,12 @@ try {
   await page.click('#moreMeasures');
   check('the room\'s metrics are in the notes, as measured', await page.$$eval('#designList .metric', ls => ls.every(l => !!l.offsetParent)) && want.length >= 8 && want.every(t => n.includes(t)), JSON.stringify(want.filter(t => !n.includes(t))));
   check('a piece a plain wall could replace is named', n.includes('As a wall, these do the same job: box at 3, 1.'), n);
+  // A mark explains itself where it is (diagnosis 5): Look on that box says what the notes say.
+  check('a checked room says Checked on its button', (await page.textContent('#checkBtn')).trim() === 'Checked', await page.textContent('#checkBtn'));
+  await pickTool(page, 'look');
+  { const b = await page.locator('#game').boundingBox(), lv = await page.evaluate(() => window.wee.getLevel());
+    await page.mouse.click(b.x + 3.5 * b.width / lv.w, b.y + 1.5 * b.height / lv.h); }
+  check('Look on a piece a wall could replace says so on the spot', (await page.textContent('#placeHint')).includes('a plain block here would do the same job'), await page.textContent('#placeHint'));
   check('walls the answer does not need are named, each one tested alone (register 686)', /These walls change nothing: \d+, \d+/.test(n), n);
   // The status bar counts the six notes.
   const col = await page.evaluate(() => { const w = document.getElementById('well').getBoundingClientRect(), r = document.getElementById('roomArea').getBoundingClientRect(); return { right: w.left >= r.right - 1, tall: w.height > 300 }; });

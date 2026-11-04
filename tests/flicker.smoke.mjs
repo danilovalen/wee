@@ -44,11 +44,13 @@ try {
   await page.evaluate(l => window.wee.loadLevel(l), r);
   await page.waitForFunction(() => /^Solvable/.test(document.getElementById('checkText').textContent));
   // Before any Check there is nothing to find: Findings greys out but keeps its place.
-  check('with nothing to find, Findings is greyed out, not taken away', await page.locator('#wellBtn').isVisible() && await page.locator('#wellBtn').isDisabled());
+  // On a wide screen Findings is a column beside the room, always there; elsewhere the button greys out.
+  const column = await page.evaluate(() => document.body.classList.contains('wellColumn'));
+  check('with nothing to find, Findings keeps its place: a column, or a greyed-out button', column ? await page.locator('#well').isVisible() : await page.locator('#wellBtn').isVisible() && await page.locator('#wellBtn').isDisabled());
   // A first Check, so there are notes and a Findings count to keep steady.
   await page.click('#checkBtn');
   await page.waitForFunction(() => !document.getElementById('designBox').classList.contains('stale') && !document.querySelector('#designList .working') && document.getElementById('designList').children.length > 1, null, { timeout: 20000 });
-  if (await page.locator('#well').isVisible()) await page.click('#wellClose');
+  if (await page.locator('#wellClose').isVisible()) await page.click('#wellClose');
   await page.waitForTimeout(300);
 
   // One edit: a wall placed with the mouse.

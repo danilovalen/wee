@@ -26,7 +26,7 @@ const NAME = Object.fromEntries(LENS_GROUPS.flatMap(g => g.lenses));
 // Every lens as its own on/off icon in a row on the room's top edge, two groups either side of the top grip
 // (registers 721, 730). The chips row and the Lenses tab are gone.
 export function buildChips() {
-  const side = () => Object.assign(document.createElement('div'), { className: 'lensSide' });
+  const side = () => { const d = Object.assign(document.createElement('div'), { className: 'lensSide' }); d.dataset.join = ''; return d; };
   const left = side(), right = side();
   for (const gr of LENS_GROUPS) for (const [id] of gr.lenses) {
     const b = Object.assign(document.createElement('button'), { type: 'button', className: 'lensIcon' });

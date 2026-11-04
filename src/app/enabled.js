@@ -27,5 +27,8 @@ export function syncEnabled() {
   // Check is greyed out while this exact room's full check runs or once it is done: a second
   // press would redo the same work and redraw the same words.
   const stamp = level.start && S.check && !S.check.live ? JSON.stringify(level) : null;
-  $('checkBtn').disabled = !level.start || (!!stamp && S.check.stamp === stamp);
+  const done = !!stamp && S.check.stamp === stamp;
+  $('checkBtn').disabled = !level.start || done;
+  // Greyed because the notes are up to date, it says so (register 730).
+  $('checkBtn').textContent = done ? 'Checked' : 'Check';
 }

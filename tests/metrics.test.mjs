@@ -2,7 +2,7 @@
 // and forced steps on the shortest path, and the ways to win, shortest and within 2 moves more.
 import { runMetrics } from '../src/solve/metrics.js';
 import { metricLines, reuseText } from '../src/app/metricLines.js';
-import { flowUndos, reuse, wrongTurns } from '../src/solve/flow.js';
+import { flowUndos, reuse, wrongTurns, chokePoints } from '../src/solve/flow.js';
 const run = it => { for (;;) { const r = it.next(); if (r.done) return r.value; } };
 import { room, suite } from './lib.mjs';
 import { readFileSync } from 'node:fs';
@@ -47,7 +47,7 @@ check('the shortest ways match the routes the design notes count', fm.shortest =
 check('a room too big to measure says so', runMetrics(room(['######', '#....#', '#P..G#', '######']), 2) === null);
 // The lines say each number in plain words, one sentence each.
 const lines = metricLines(spikes), text = l => typeof l === 'string' ? l : l.text;
-check('each line is one sentence, the deepest trap flashable where it starts', lines.length === 9 && lines.map(text).every(l => l.endsWith('.') && l.split('. ').length === 1) && lines.some(l => l.spots && l.spots[0].x === 2), JSON.stringify(lines));
+check('each line is one sentence, the deepest trap flashable where it starts', lines.length === 10 && lines.map(text).every(l => l.endsWith('.') && l.split('. ').length === 1) && lines.some(l => l.spots && l.spots[0].x === 2), JSON.stringify(lines));
 check('no line about mashing is left (register 710)', !lines.map(text).some(l => /Mashing/.test(l)));
 // Reuse (register 717): the corridor's three moves each stop against a different wall.
 const corr = run(reuse(room(['#####', '#P#G#', '#.#.#', '#...#', '#####'])));
@@ -55,6 +55,14 @@ check('reuse counts the blocks the answer stops against', corr.moves === 3 && co
 // Right, down, right: two moves the same way, against two different walls.
 const zig = run(reuse(room(['#######', '#P.#..#', '##.#..#', '##...G#', '#######'])));
 check('reuse counts blocks, not move names', zig.moves === 3 && zig.blocks === 3, JSON.stringify(zig));
+// Register 727: path reuse counts moves over ground already crossed; the corridor never crosses itself.
+check('a corridor has no path reuse', corr.overlap === 0, JSON.stringify(corr));
+const back = run(reuse(JSON.parse(readFileSync('rooms/puzzle-1.wee', 'utf8'))));
+check('Puzzle 1, whose lines cross, has path reuse', back && back.overlap >= 1 && back.overlap < back.moves, JSON.stringify(back));
+// Choke points: a place every way goes through is one; two ways round make none.
+const line = new Map([['s', { out: [{ key: 'a' }], at: { x: 0, y: 0 } }], ['a', { out: [{ key: 'b' }, { key: 'c' }], at: { x: 1, y: 0 } }], ['b', { out: [{ win: true }], at: { x: 2, y: 0 } }], ['c', { out: [{ win: true }], at: { x: 2, y: 1 } }]]);
+const ch = chokePoints(line, 's', ['s', 'a', 'b']);
+check('a place every way goes through is a choke point; a place with a way round is not', ch.length === 1 && ch[0].x === 1, JSON.stringify(ch));
 check('and says it in one sentence', reuseText(corr) === 'Reuse: 3 moves lean on 3 blocks, the busiest 1 time.', reuseText(corr));
 check('a room that cannot lose says so', metricLines(open)[0] === 'Ruin: every move keeps the berry in reach.' && metricLines(open)[1] === 'First ruin: never.');
 check('too big says so', metricLines(null)[0].startsWith('Too many positions'));

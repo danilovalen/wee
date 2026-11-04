@@ -6,7 +6,7 @@ import { setMode, aim, undoMove } from './play.js';
 import { begin, end, change, step as undoStep } from './undo.js';
 import { save } from './rooms.js';
 import { selectDown, selectMove, selectUp, selectKey } from './select.js';
-import { LENS_GROUPS, cycleLens, lensesOff } from './lenses.js';
+import { LENS_GROUPS, cycleLens, lensesOff, tileFacts } from './lenses.js';
 import { syncPanel } from './panels.js';
 import { fit } from './fit.js';
 import { toolForKey, bareKey, showKeys } from './keys.js';
@@ -58,7 +58,7 @@ export function bindInput() {
     if (S.mode === 'play') return;
     const c = cellFromEvent(ev); if (!c) return;
     if (S.ui.tool === 'look') {
-      $('placeHint').textContent = describe(S.level, c.x, c.y);
+      $('placeHint').textContent = [describe(S.level, c.x, c.y), ...tileFacts(c.y * S.level.w + c.x)].join(', ');
       // On a phone there is no hover: a Look tap shows what a grey piece reaches (register 352).
       S.lookTile = c;
       // You can start a run from any tile you could stand on.

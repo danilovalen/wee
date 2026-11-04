@@ -179,7 +179,9 @@ export function searcher(def, seed = 1, opts = {}) {
     // A tile's letter gives its palette element and colour: door:red is ['door', 'red'], death is spikes.
     const element = cell => { const [kind, col] = cell.split(':'); return [{ death: 'spikes', wall: 'block', sensor: 'relay' }[kind] || kind, col || null]; };
     rows.forEach((row, y) => [...row].forEach((c, x) => {
-      if (c === 'P') g.start = { x, y }; else if (c === 'G') g.goal = { x, y };
+      if (c === 'P') g.start = { x, y };
+      // The first berry is the room's own; any more are berries off the palette (register 702).
+      else if (c === 'G') { if (g.goal) g.items.push(['berry', x, y, null, null]); else g.goal = { x, y }; }
       else if ('^>v<'.includes(c)) g.items.push(['gate', x, y, LEGEND[c].slice(5), cols[0]]);
       else if (LEGEND[c]) { const [el, col] = element(LEGEND[c]); g.items.push(el === 'idoor' && !def.palette.idoor ? ['door', x, y, 'inv', col] : [el, x, y, LEGEND[c].endsWith(':on') ? 'on' : null, col]); }
       else if (c === 'B') g.items.push(['box', x, y, null, null]);

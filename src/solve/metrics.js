@@ -5,7 +5,7 @@
 // included, plus the plain moves that kill (the solver drops those).
 import { createGame, step, cloneGame } from '../rules/game.js';
 import { stateKey, settled, successors } from './solve.js';
-import { flowUndos, wrongTurns } from './flow.js';
+import { flowUndos, wrongTurns, chokePoints } from './flow.js';
 
 const KEYS = ['up', 'right', 'down', 'left'], NEAR = 2;
 const limit = s => 4 * s.w * s.h + 40;
@@ -78,10 +78,10 @@ export function* roomMetrics(level, max = 5000) {
     }
   }
   // Going with the flow (registers 708-710) and the wrong turns along the way (709).
-  const undos = par ? yield* flowUndos(nodes, first) : null, wrong = par ? wrongTurns(nodes, path, toWin) : null;
+  const undos = par ? yield* flowUndos(nodes, first) : null, wrong = par ? wrongTurns(nodes, path, toWin) : null, chokes = par ? chokePoints(nodes, first, path) : null;
   const share = n => moves ? n / moves : 0;
   return { ruin: share(hazard + lock), hazard: share(hazard), lock: share(lock), firstRuin, places: nodes.size, par,
     choices: steps.length ? steps.reduce((a, b) => a + b, 0) / steps.length : 0, forced: steps.length ? steps.filter(c => c === 1).length / steps.length : 0, shortest, near,
-    undos, wrong };
+    undos, wrong, chokes };
 }
 export const runMetrics = (level, max) => { const it = roomMetrics(level, max); for (;;) { const r = it.next(); if (r.done) return r.value; } };

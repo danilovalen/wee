@@ -32,7 +32,7 @@ try {
   await p.click('#menuUnlock'); await p.waitForTimeout(150);
   check('the corner button says it is on', (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'true');
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
-  check('unlocked, the list shows every hidden level', (await rows()).filter(id => hidden.includes(id)).length === hidden.length, JSON.stringify(await rows()));
+  check('unlocked, the list shows every level unlock opens, and still leaves out the ones marked hidden (register 731)', (ids => hidden.every(id => ids.includes(id) === !LEVELS.find(l => l.id === id).hidden))(await rows()), JSON.stringify(await rows()));
   check('unlocked, no room is shut', await p.$$eval('#campList .campRow', bs => bs.every(b => !b.disabled)));
   await p.click(`#campList [data-level="${(await rows())[0]}"]`); await p.waitForTimeout(500);
   check('a padlock badge shows in the top bar while it is on', await p.locator('#unlockBadge').isVisible());

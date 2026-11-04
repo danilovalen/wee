@@ -155,7 +155,9 @@ export function syncPanel() {
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   // In a level the one-way says how it is turned and taken away (register 234); draft copy.
-  $('toolName').textContent = TOOLS.find(t => t.id === ui.tool).label + ((S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1 })[ui.tool] ? (ui.tool === 'toggle' ? ' (tap one to turn it on or off, hold to remove it)' : ' (tap one to turn it, hold to remove it)') : ui.tool === 'door' ? ' (tap one to make it an inverted door and back, hold to remove it)' : '');
+  // The tool's name as a label, and how to use it in plain case beside it, not shouted (register 730).
+  const how = (S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1 })[ui.tool] ? (ui.tool === 'toggle' ? 'To switch one on or off, tap it, and to remove it, hold it.' : 'To turn one, tap it, and to remove it, hold it.') : ui.tool === 'door' ? 'To make one an inverted door and back, tap it, and to remove it, hold it.' : '';
+  $('toolName').replaceChildren(TOOLS.find(t => t.id === ui.tool).label, ...(how ? [Object.assign(document.createElement('span'), { className: 'toolHow', textContent: how })] : []));
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
   const tap = [level.powers.cycle && 'Hide', level.powers.swim && 'Swim'].filter(Boolean);

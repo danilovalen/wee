@@ -12,6 +12,7 @@ export function metricLines(m) {
     `Ways to win: ${m.shortest} shortest, ${m.near} within 2 moves more.`,
     m.undos == null ? 'Going with the flow: the room has no answer to follow.' : m.undos ? `Going with the flow, you need about ${n(m.undos, 'undo')}.` : 'Going with the flow, you reach the berry without an undo.',
     ...turnLines(m.wrong),
+    ...chokeLines(m.chokes),
   ];
 }
 
@@ -27,3 +28,7 @@ function turnLines(w) {
 }
 // Reuse (register 717): how many blocks the answer leans on, and how often the busiest one.
 export const reuseText = r => r ? `Reuse: ${r.moves} ${r.moves === 1 ? 'move leans' : 'moves lean'} on ${n(r.blocks, 'block')}, the busiest ${n(r.busiest, 'time')}.` : 'Reuse: too many positions to follow the answer.';
+// Path reuse (register 727): moves that run over ground an earlier move covered.
+export const pathReuseText = r => r ? `Path reuse: ${r.overlap} of ${n(r.moves, 'move')} cross tiles an earlier move crossed.` : '';
+// Choke points (register 727), flashable where they are.
+const chokeLines = c => !c ? [] : c.length ? [{ text: `Choke points: ${c.length} ${c.length === 1 ? 'place every way to the berry goes' : 'places every way to the berry goes'} through.`, spots: c }] : ['Choke points: every place on the way has a way round.'];

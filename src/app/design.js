@@ -3,7 +3,7 @@
 // time and stops when the room changes. All copy is draft.
 import { powerCheck, elementCheck, wallCheck, baitCheck, routes, idleElements, NOTES_MAX } from '../solve/design.js';
 import { roomMetrics } from '../solve/metrics.js';
-import { metricLines, reuseText } from './metricLines.js';
+import { metricLines, reuseText, pathReuseText } from './metricLines.js';
 import { reuse } from '../solve/flow.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
@@ -49,7 +49,7 @@ export function clearDesign(fresh = false) {
 // Called with a finished check of a solvable room. The notes come in three parts (register 730): first what
 // can be changed (Trim and Remove one, worked out first, then idle and bait pieces), then the four numbers
 // the owner reads (moves, routes, traps, reuse), then the other notes; the rest of the measures sit behind
-// one tap. Each part shows as soon as it is worked out.
+// one tap. The notes are swapped in once, when all of it is worked out, so nothing flickers.
 export function runDesign(par) {
   const level = JSON.parse(JSON.stringify(S.level)), stamp = JSON.stringify(level), list = $('designList');
   S.design = { stamp, unused: [], traps: null };
@@ -60,11 +60,10 @@ export function runDesign(par) {
   const metric = t => { const li = typeof t === 'string' ? line(t) : line(t.text, t.spots); li.className = 'metric'; more.push(li); };
   sliced(routes(level), stamp, r => {
     if (r) { S.design.traps = r.traps; nums.Routes = r.routes; nums.Traps = r.dead; } else nums.Routes = nums.Traps = '?';
-    swap();
-    sliced(trimRoom(level, MAX), stamp, t => { offers.push(offerLine(trimText(t), t)); swap();
-    sliced(removeBest(level), stamp, rm => { offers.push(offerLine(removeText(rm), rm)); swap();
-    sliced(reuse(level, MAX), stamp, ru => { nums.Reuse = ru ? `${ru.busiest}×` : '?'; nums.reuseOf = ru ? `${ru.blocks} ${ru.blocks === 1 ? 'block' : 'blocks'}` : ''; metric(reuseText(ru)); swap();
-    sliced(roomMetrics(level), stamp, m => { metricLines(m).forEach(metric); swap();
+    sliced(trimRoom(level, MAX), stamp, t => { offers.push(offerLine(trimText(t), t));
+    sliced(removeBest(level), stamp, rm => { offers.push(offerLine(removeText(rm), rm));
+    sliced(reuse(level, MAX), stamp, ru => { nums.Reuse = ru ? `${ru.busiest}×` : '?'; nums.reuseOf = ru ? `${ru.blocks} ${ru.blocks === 1 ? 'block' : 'blocks'}` : ''; metric(reuseText(ru)); if (ru) metric(pathReuseText(ru));
+    sliced(roomMetrics(level), stamp, m => { metricLines(m).forEach(metric);
     sliced(powerCheck(level, MAX), stamp, ps => {
       const idle = ps.filter(p => p.without === par);
       for (const p of ps) if (p.without !== par) notes.push(line(`Without ${NAME[p.power]}: ${moves(p.without)} instead of ${par}.`));

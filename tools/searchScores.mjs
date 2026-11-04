@@ -52,6 +52,9 @@ export const SCORES = {
     return mean(gs.map(i => !w[i] ? 0 : w[i].size >= 2 ? 1 : 0.5));
   },
   threeSpikes: room => Math.min(1, room.cells.filter(c => c === 'death').length / 3),
+  // Register 734: the share of five berries placed, and the share of tiles that hold something.
+  fiveBerries: room => Math.min(1, room.cells.filter(c => c === 'goal').length / 5),
+  noEmptySpace: room => room.cells.filter((c, i) => c || room.entities.some(e => !e.dead && e.y * room.w + e.x === i) || (room.start && room.start.y * room.w + room.start.x === i)).length / room.cells.length,
   // Per pushable tile, the share of tiles that did it (registers 448, 452); a half step for being on the way.
   boxPushesEveryOneWay: (room, moves) => mean(tileLog(room, moves, 'gate').map(t => t.byBox ? 1 : 0)),
   robotThroughEveryPushedOneWay: (room, moves) => mean(tileLog(room, moves, 'gate').map(t => t.robotLeft ? 1 : t.robotIn ? 0.5 : 0)),

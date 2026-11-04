@@ -501,7 +501,7 @@ try {
   const gb = await nine.locator('#game').boundingBox(), gt = gb.width / 7, gateAt = () => nine.evaluate(() => window.wee.getLevel().cells[3 * 7 + 3]);
   await nine.mouse.click(gb.x + 3.5 * gt, gb.y + 3.5 * gt); const g1 = await gateAt();
   const hint = await nine.evaluate(() => [document.getElementById('toolName').textContent, document.getElementById('campTip').hidden]);
-  check('the one-way tool says how to turn and remove one, and no tip pops up', hint[0] === 'One-way (tap one to turn it, hold to remove it)' && hint[1] === true, JSON.stringify(hint));
+  check('the one-way tool says how to turn and remove one, and no tip pops up', hint[0] === 'One-wayTo turn one, tap it, and to remove it, hold it.' && hint[1] === true, JSON.stringify(hint));
   await nine.mouse.click(gb.x + 3.5 * gt, gb.y + 3.5 * gt); await nine.waitForTimeout(700); const g2 = await gateAt();
   check('a one-way goes down pointing right, and a tap on it turns it a quarter clockwise', g1 === 'gate:right' && g2 === 'gate:down', g1 + ' ' + g2);
   await nine.mouse.move(gb.x + 3.5 * gt, gb.y + 3.5 * gt); await nine.mouse.down(); await nine.waitForTimeout(800); await nine.mouse.up();
@@ -517,7 +517,7 @@ try {
   await tapSw(); const w1 = await swAt(), p1 = await swPix(); await tapSw(); const w2 = await swAt(), p2 = await swPix(); await tapSw(); const w3 = await swAt(), p3 = await swPix();
   check('an on switch is drawn on, and off again after another tap', p1 !== p2 && p1 === p3, [p1, p2, p3].join());
   const swHint = await nine.evaluate(() => document.getElementById('toolName').textContent);
-  check('a switch goes down off; a tap turns it on, another off, and the tool says so', w1 === 'toggle:red' && w2 === 'toggle:red:on' && w3 === 'toggle:red' && swHint === 'Switch (tap one to turn it on or off, hold to remove it)', JSON.stringify([w1, w2, w3, swHint]));
+  check('a switch goes down off; a tap turns it on, another off, and the tool says so', w1 === 'toggle:red' && w2 === 'toggle:red:on' && w3 === 'toggle:red' && swHint === 'SwitchTo switch one on or off, tap it, and to remove it, hold it.', JSON.stringify([w1, w2, w3, swHint]));
   // The Sandbox's doors (register 675): a door tool's tap on a placed door swaps its kind, a hold removes it.
   const dsb = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await dsb.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; });
   dsb.on('pageerror', e => errors.push(e.message));
@@ -532,7 +532,7 @@ try {
   await tapD(); const d5 = await at3(); await tapD(); const d6 = await at3();
   await dsb.mouse.move(db.x + 3.5 * dt, db.y + 3.5 * dt); await dsb.mouse.down(); await dsb.waitForTimeout(800); await dsb.mouse.up(); const d7 = await at3();
   check('a hold removes an inverted door too (register 683)', /^door:/.test(d5) && /^idoor:/.test(d6) && d7 === '', JSON.stringify([d5, d6, d7]));
-  check('a door goes down; a tap swaps it to an inverted door and back; a hold removes it; the tool says so', /^door:/.test(d1) && d2 === 'i' + d1 && d3 === d1 && d4 === '' && /make it an inverted door and back/.test(dHint), JSON.stringify([d1, d2, d3, d4, dHint]));
+  check('a door goes down; a tap swaps it to an inverted door and back; a hold removes it; the tool says so', /^door:/.test(d1) && d2 === 'i' + d1 && d3 === d1 && d4 === '' && /make one an inverted door and back/.test(dHint), JSON.stringify([d1, d2, d3, d4, dHint]));
   await dsb.close();
   // The start is drawn as the blob (register 593): its gel green fills much of its tile.
   const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 150 && d[i] < 190 && d[i + 1] > 200 && d[i + 2] > 100 && d[i + 2] < 140) n++; return n / (d.length / 4); });

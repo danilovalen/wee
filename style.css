@@ -1018,7 +1018,7 @@ body.campaign #bestOpt { display: none !important; }
 
 /* Findings (register 730): the four numbers big, the other measures behind one tap; nothing folds. */
 #designList .nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 6px 0; }
-#designList .nums > div { display: grid; justify-items: center; padding: 6px 4px; border-radius: var(--r-s, 8px); background: color-mix(in srgb, var(--panel) 70%, #000); }
+#designList .nums > div { display: grid; justify-items: center; padding: 6px 4px; border-radius: var(--r-s); background: color-mix(in srgb, var(--panel) 70%, #000); }
 #designList .nums b { font-size: 22px; line-height: 1.1; }
 #designList .nums small { font-size: 10.5px; color: var(--dim); text-align: center; }
 #designList .more button { width: auto; }
@@ -1052,3 +1052,10 @@ body.campaign #bestOpt { display: none !important; }
   .campList li.side.none { display: none; }
   .wideOnly { display: none; }
 }
+
+/* Check and Checked take the same width, so the header never moves (register 730). */
+#checkBtn { min-width: 9.5ch; }
+
+/* On a phone the tool's how-to reads in plain case after its name, and its options start at the left. */
+.toolName .toolHow { margin-left: 8px; font: 400 12px var(--body-face, inherit); letter-spacing: 0; text-transform: none; }
+@media (max-width: 700px) { body.sandbox #campTop { justify-content: flex-start; } }

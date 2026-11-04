@@ -137,6 +137,9 @@ export function tileFacts(i) {
     if (d.danger.has(i)) out.push('a move kills you here');
   } else if (st && st.list && st.list.includes(i)) out.push('you can stop here');
   if (st && st.traps && st.traps.includes(i)) out.push('the goal is out of reach for good from here');
+  // A red-framed tile says why it is framed (register 730): what the design notes found about it.
+  const x = i % S.level.w, y = Math.floor(i / S.level.w), u = S.design && S.design.stamp === JSON.stringify(S.level) && S.design.unused.find(e => e.x === x && e.y === y);
+  if (u) out.push(u.as === 'wall' ? 'a plain block here would do the same job' : u.as === 'turret' ? 'a fixed turret here would do the same job' : 'taking this out changes nothing');
   return out;
 }
 // Whether a search the lenses wait on is still running, so the room keeps redrawing.
