@@ -12,6 +12,17 @@ const FAINT = '#4a4752';
 export function drawHeat(g, w, heat) {
   if (!heat) return;
   const fill = (i, colour) => { g.fillStyle = colour; g.fillRect((i % w) * T, Math.floor(i / w) * T, T, T); };
+  if (heat.whatif) {
+    // Warm where a change makes the answer longer, cool where shorter, stronger the bigger the change (755).
+    const ds = [...heat.whatif.values()].filter(r => r.moves).map(r => Math.abs(r.moves - (heat.base || 0)));
+    const max = Math.max(1, ...ds);
+    for (const [i, r] of heat.whatif) {
+      if (!r.moves) continue;
+      const d = r.moves - (heat.base || 0);
+      if (d) fill(i, `hsla(${d > 0 ? 25 : 200}, 85%, 55%, ${0.2 + 0.45 * Math.abs(d) / max})`);
+    }
+    return;
+  }
   if (heat.distance) {
     const max = Math.max(1, ...heat.distance.values());
     // Near the goal is green, far is red; a tile no stop on can still win is grey.
@@ -74,7 +85,13 @@ function labelSpots(path, w) {
 
 // marks: { rings: [{ i, use }], passing: [{ i, use }], lines: [tiles in order], moves: [{ a, b, n }],
 // frames: Set of tiles, crosses: Set of tiles, focus: a tile the line lenses narrow to }.
-export function drawLensMarks(g, w, { rings, passing, lines, moves, frames, crosses, stale, cutAt, stopper, focus } = {}) {
+export function drawLensMarks(g, w, { rings, passing, lines, moves, frames, crosses, stale, cutAt, stopper, focus, deltas } = {}) {
+  if (deltas) for (const { i, breaks, same, d } of deltas) {
+    const x = (i % w) * T, y = Math.floor(i / w) * T;
+    if (breaks) { g.fillStyle = '#ff4d6d'; pxLine(g, x + 9, y + 9, x + T - 9, y + T - 9, 4); pxLine(g, x + T - 9, y + 9, x + 9, y + T - 9, 4); }
+    else if (d) pxNumber(g, (d > 0 ? '+' : '-') + Math.abs(d), x + T / 2, y + T / 2);
+    else if (same) { g.fillStyle = '#c1c0c0'; pxDisc(g, x + T / 2, y + T / 2, 2); }
+  }
   if (passing) for (const { i, use } of passing) { const [x, y] = centre(i, w); g.fillStyle = USE[use] || INK.player; pxDisc(g, x, y, 3); }
   if (rings) for (const { i, use } of rings) { const [x, y] = centre(i, w); g.strokeStyle = USE[use] || INK.player; pxRing(g, x, y, 7, 2); }
   if (moves && moves.length) {

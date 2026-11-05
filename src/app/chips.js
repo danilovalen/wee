@@ -15,6 +15,7 @@ export const MARK = {
   distance: `<defs><linearGradient id="chipDist"><stop offset="0" stop-color="hsl(120,75%,45%)"/><stop offset="1" stop-color="hsl(0,75%,45%)"/></linearGradient></defs><rect x="1" y="2" width="24" height="8" rx="2" fill="url(#chipDist)"/>`,
   beams: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.zap}" fill-opacity=".55"/>`,
   pieces: `<rect x="1" y="2" width="24" height="8" rx="2" fill="${INK.box}" fill-opacity=".6"/>`,
+  whatif: `<rect x="1" y="2" width="12" height="8" fill="hsl(25,85%,55%)"/><rect x="13" y="2" width="12" height="8" fill="hsl(200,85%,55%)"/>`,
   stops: `<circle cx="13" cy="6" r="3.5" fill="${INK.player}"/>`,
   passes: `<circle cx="7" cy="6" r="3.5" fill="${INK.player}"/><circle cx="15" cy="6" r="1.6" fill="${INK.player}"/><circle cx="21" cy="6" r="1.6" fill="${INK.player}"/>`,
   solution: ARROW(INK.goal, 2.2),

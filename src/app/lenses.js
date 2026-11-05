@@ -12,10 +12,11 @@ import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 import { sliced } from './design.js';
 import { WELL, closeWell } from './well.js';
+import { ensureWhatIf, whatIfBusy, whatIfFact, whatIfTool } from './whatif.js';
 
 const STOPS_BUDGET_MS = 2000;
 export const LENS_GROUPS = [
-  { id: 'colour', label: 'Colour', key: '1', lenses: [['distance', 'Distance'], ['beams', 'Beams'], ['pieces', 'Pieces']] },
+  { id: 'colour', label: 'Colour', key: '1', lenses: [['distance', 'Distance'], ['beams', 'Beams'], ['pieces', 'Pieces'], ['whatif', 'What if']] },
   { id: 'dots', label: 'Dots', key: '2', lenses: [['stops', 'Stops'], ['passes', 'Passes']] },
   { id: 'lines', label: 'Lines', key: '3', lenses: [['solution', 'Solution'], ['moves', 'Moves']] },
   { id: 'frames', label: 'Frames', key: '4', lenses: [['traps', 'Traps'], ['danger', 'Danger']] },
@@ -26,6 +27,7 @@ export const LENS_TIPS = {
   distance: 'Colour each tile by how many moves it takes to win from there.',
   beams: 'Colour every tile a laser can ever reach.',
   pieces: 'Colour every tile a box, a moving block or an enemy can ever stand on.',
+  whatif: 'With a piece in hand, colour each tile by what placing it there does to the answer; with Erase, by what taking it out does.',
   stops: 'Ring every tile you can stop on: ice if every shortest win stops there, orange if some do.',
   passes: 'Dot every tile you slide through: ice if every shortest win passes it, orange if some do.',
   solution: 'Draw one shortest way to the goal, its moves numbered.',
@@ -136,6 +138,9 @@ export function lensMarks() {
     if (d && colour === 'distance') out.heat = { distance: d.distance, hopeless: S.level.cells.includes('goal') ? d.hopeless : [] };
     if (d && colour === 'beams') out.heat = { tiles: d.beams, colour: INK.zap };
     if (d && colour === 'pieces') out.heat = { tiles: d.pieces, colour: INK.box };
+    // What if (755): warm where a change lengthens the answer, cool where it shortens it, the change in moves on it.
+    const wi = colour === 'whatif' && ensureWhatIf();
+    if (wi) { out.heat = { whatif: wi.map, base: wi.base }; out.deltas = [...wi.map].map(([i, r]) => ({ i, breaks: !r.moves, same: r.same, d: r.moves - (wi.base || 0) })); }
     // A ring where you can stop, a dot where you slide through, coloured by what the shortest wins do there:
     // every one, some, or none (registers 750, 769).
     // With no berry there is no win to measure by, so the marks keep one plain colour.
@@ -161,13 +166,14 @@ export function tileFacts(i) {
     if (d.danger.has(i)) out.push('a move kills you here');
   } else if (st && st.list && st.list.includes(i)) out.push('you can stop here');
   if (st && st.traps && st.traps.includes(i)) out.push('the goal is out of reach for good from here');
+  if (lensesHere() && isOn('whatif')) out.push(...whatIfFact(i));
   // A red-framed tile says why it is framed (register 730): what the design notes found about it.
   const x = i % S.level.w, y = Math.floor(i / S.level.w), u = S.design && S.design.stamp === JSON.stringify(S.level) && S.design.unused.find(e => e.x === x && e.y === y);
   if (u) out.push(u.as === 'wall' ? 'a plain block here would do the same job' : u.as === 'turret' ? 'a fixed turret here would do the same job' : 'taking this out changes nothing');
   return out;
 }
 // Whether a search the lenses wait on is still running, so the room keeps redrawing.
-export const lensBusy = () => onNow().length > 0 && ((fresh(S.stops) && !S.stops.list) || (fresh(S.lensData) && S.lensData.d === undefined));
+export const lensBusy = () => onNow().length > 0 && ((fresh(S.stops) && !S.stops.list) || (fresh(S.lensData) && S.lensData.d === undefined) || (isOn('whatif') && whatIfBusy()));
 
 export function lensLine(id) {
   const st = fresh(S.stops), ld = fresh(S.lensData), d = ld ? ld.d : undefined, part = d && d.capped ? ' Partial: the room has more positions than were searched.' : '';
@@ -180,6 +186,7 @@ export function lensLine(id) {
     case 'danger': return !d ? wait : d.danger.size ? `Frames: ${tiles(d.danger.size)} where a move kills you.${part}` : `Frames: no move kills you.${part}`;
     case 'traps': return !S.level.cells.includes('goal') ? 'Frames: place a berry to find traps.' : st && st.traps ? `Frames: ${tiles(st.traps.length)} where the goal is out of reach for good.` : wait;
     case 'distance': return !d ? wait : !S.level.cells.includes('goal') ? 'Colour: place a berry to see how far each tile is.' : `Colour: green is near the goal, red is far, grey can no longer win.${part}`;
+    case 'whatif': return !whatIfTool() ? 'What if: pick a piece, or Erase, to see what each tile would do.' : whatIfBusy() ? 'What if: working it out, tile by tile...' : `What if: warm tiles make the answer longer, cool ones shorter, a red X can't be won; point at one for more.`;
     case 'beams': return !d ? wait : `Colour: red where a laser can ever reach.${part}`;
     case 'pieces': return !d ? wait : `Colour: brown where a box, block or enemy can ever be.${part}`;
     case 'solution': return !d ? wait : d.solution.length ? `Lines: a shortest way, ${d.solution.length - 1} moves, numbered.${part}` : !S.level.cells.includes('goal') ? 'Lines: place a berry to see a way.' : 'Lines: no way to the goal.';

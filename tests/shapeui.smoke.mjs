@@ -129,7 +129,7 @@ try {
   const bt = await hint();
   check('Most moves names the piece with its colour (register 764)', /\ba red button\b/.test(bt), bt);
   // Doors are tried plain and inverted, switches off and on (register 767).
-  check('Most moves tries a door both ways and a switch off and on (register 767)', await page.evaluate(async () => { const { variants } = await import('/src/app/shape.js'); const d = variants({ tool: 'door', colour: 'red' }), t = variants({ tool: 'toggle', colour: 'red' }); return d.length === 2 && d.some(u => u.inverted) && t.length === 2 && t.some(u => u.on); }));
+  check('Most moves tries a door both ways and a switch off and on (register 767)', await page.evaluate(async () => { const { variants } = await import('/src/editor/variants.js'); const d = variants({ tool: 'door', colour: 'red' }), t = variants({ tool: 'toggle', colour: 'red' }); return d.length === 2 && d.some(u => u.inverted) && t.length === 2 && t.some(u => u.on); }));
   // Never a piece a plain block would match, such as a laser aimed into a wall (register 765).
   const lz = await page.evaluate(async l => {
     const { placeBest } = await import('/src/app/shape.js'), { place } = await import('/src/editor/edit.js'), { search } = await import('/src/solve/solve.js');

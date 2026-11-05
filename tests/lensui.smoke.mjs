@@ -30,7 +30,7 @@ try {
   const floor = await pixel(4, 1);
   const bar = await page.evaluate(() => { const b = document.getElementById('lensBar'), redo = document.getElementById('redo').getBoundingClientRect(), q = b.getBoundingClientRect();
     return { n: b.querySelectorAll('[data-lens-icon]').length, header: b.parentElement.tagName, right: q.left >= redo.right, row: Math.abs((q.top + q.bottom) / 2 - (redo.top + redo.bottom) / 2) < 8, seps: b.querySelectorAll('.lensSep').length, tips: [...b.querySelectorAll('[data-lens-icon]')].every(x => x.title.length > 10), on: b.querySelectorAll('.on').length }; });
-  check('nine lens icons sit in the header right of Redo, four groups split by three lines, all off, each saying what it shows (registers 749, 770)', bar.n === 9 && bar.header === 'HEADER' && bar.right && bar.row && bar.seps === 3 && bar.tips && bar.on === 0, JSON.stringify(bar));
+  check('ten lens icons sit in the header right of Redo, four groups split by three lines, all off, each saying what it shows (registers 749, 755, 770)', bar.n === 10 && bar.header === 'HEADER' && bar.right && bar.row && bar.seps === 3 && bar.tips && bar.on === 0, JSON.stringify(bar));
   check('the chips row, the Lenses tab and the Lenses button are gone', await page.locator('#lensChips').isHidden() && await page.locator('[data-well=lenses]').isHidden() && await page.locator('#stopsBtn').isHidden());
   await pickTool(page, 'turret');
   check('a tool in hand turns no lens on by itself', await on('colour') === 'off');
@@ -112,13 +112,27 @@ try {
   const dz = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round(3 * t + 1 * t / 32), Math.round(1.5 * t), 1, 1).data]; });
   check('Danger frames the tile where a move kills you', (await legend()).includes('1 tile where a move kills you') && dz[0] > 200 && dz[1] > 100 && dz[2] < 120, JSON.stringify(dz) + await legend());
   await page.keyboard.press('0'); await page.waitForTimeout(80);
+  // What if (755): with a block in hand, each lane tile shows what a block there does to the answer.
+  const lane = room(['#######', '#.....#', '#P...G#', '#######'], { powers: OFF });
+  await page.evaluate(l => window.wee.loadLevel(l), lane);
+  await pickTool(page, 'wall');
+  await tap('whatif');
+  await page.waitForFunction(() => /warm tiles make the answer longer/.test(document.getElementById('lensLegend').textContent), null, { timeout: 30000 });
+  const warm = await pixel(2.65, 1.65), bare = await pixel(0.65, 0.65);
+  check('What if tints a tile warm where a block there makes the answer longer (register 755)', warm[0] > warm[2] + 40 && JSON.stringify(warm) !== JSON.stringify(bare), JSON.stringify([warm, bare]));
+  const lb = await page.locator('#game').boundingBox(), llv = await page.evaluate(() => window.wee.getLevel());
+  await page.mouse.move(lb.x + 3.5 * lb.width / llv.w, lb.y + 2.5 * lb.height / llv.h);
+  const t0 = Date.now(); await page.waitForFunction(() => /\d+ routes?, \d+ traps/.test(document.getElementById('info').textContent), null, { timeout: 30000 }).catch(() => {}); const took = Date.now() - t0;
+  check('pointing at a tile says what the change does, with its routes, traps and reuse (register 755)', /Place a block here and the answer takes \d+ moves instead of 1, .*routes?, .*traps, reuse/.test(await page.textContent('#info')), took + 'ms: ' + await page.textContent('#info'));
+  await page.mouse.move(lb.x - 40, lb.y - 40);
+  await tap('whatif');
   check('key 0 turns every lens off', !(await legend()).trim() && await page.locator('#lensBar .on').count() === 0);
   // The simple Sandbox has the same icons.
   const simple = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   await simple.goto('http://localhost:5213/?sandbox');
   await simple.waitForFunction(() => window.wee && window.wee.roomsReady); await simple.evaluate(() => window.wee.roomsReady);
   await simple.evaluate(() => document.getElementById('roomsBox').close());
-  check('the simple Sandbox shows the same nine icons', await simple.locator('#lensBar [data-lens-icon]').count() === 9 && await simple.locator('#lensBar').isVisible());
+  check('the simple Sandbox shows the same ten icons', await simple.locator('#lensBar [data-lens-icon]').count() === 10 && await simple.locator('#lensBar').isVisible());
   await simple.close();
   // A phone folds the icons into one Lenses button (register 749).
   const phone = await browser.newPage({ viewport: { width: 390, height: 800 } });
