@@ -64,6 +64,7 @@ try {
   if (await page.locator('#wellClose').isVisible()) await page.click('#wellClose');
   await pickTool(page, 'look');
   const t0 = Date.now();
+  await page.click('#lensFold');
   w = await worst(async () => { await page.click('[data-lens-icon=stops]'); await page.waitForFunction(() => document.getElementById('lensLegend').textContent.includes('stop on'), null, { timeout: 30000 }); });
   check('Show stops answers within a few seconds', Date.now() - t0 < 8000, `${Date.now() - t0} ms`);
   check(`and never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);

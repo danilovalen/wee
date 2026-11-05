@@ -123,8 +123,8 @@ export const PIECE_SPRITES = {
     const n = +k; if (n >= 1) { g[2][10] = '#b08a5c'; g[1][11] = '#b08a5c'; } if (n >= 2) { g[1][12] = '#b08a5c'; g[1][13] = '#b08a5c'; }
     return g;
   },
-  // You, when a person plays (register 302): a round violet body with two eyes, about 20 units across.
-  you() {
+  // The blob, everywhere (registers 302, 777): a round violet body with two eyes, about 20 units across.
+  blob() {
     const g = grid(); ellipse(g, 8, 8, 5.3, 5.3, '#4b3fd6'); ellipse(g, 8, 8, 4.4, 4.4, '#ab9df2');
     g[5][6] = '#ddd6ff'; box(g, 6, 7, 6, 7, '#7ef0ff'); box(g, 9, 7, 9, 7, '#7ef0ff');
     return g;

@@ -5,6 +5,7 @@ import { drawCell } from '../view/tiles.js';
 import { drawMasses } from '../view/masses.js';
 import { drawPiece, drawRobot } from '../view/pieces.js';
 import { T } from '../view/ink.js';
+import { bindMenuSound } from './menuSound.js';
 
 const C = 52;
 // Each piece is painted by the game's own drawing, so the menu cannot drift from the room (register 553).
@@ -54,5 +55,6 @@ export function buildMenuScene(host) {
   };
   fit();
   addEventListener('resize', fit);
+  bindMenuSound(room.querySelector('.msRobot'), () => host.closest('dialog').open && !document.hidden);
   return fit;
 }

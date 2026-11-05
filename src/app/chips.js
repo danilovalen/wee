@@ -30,7 +30,7 @@ export function buildChips() {
     const d = Object.assign(document.createElement('div'), { className: 'lensSide' }); d.dataset.join = ''; d.dataset.group = gr.id;
     for (const [id] of gr.lenses) {
       const b = Object.assign(document.createElement('button'), { type: 'button', className: 'lensIcon' });
-      b.dataset.lensIcon = id; b.dataset.group = gr.id;
+      b.id = 'lens-' + id; b.dataset.lensIcon = id; b.dataset.group = gr.id;
       b.innerHTML = `<svg viewBox="0 0 26 12" aria-hidden="true">${MARK[id]}</svg>`;
       b.onclick = () => toggleLens(id);
       d.append(b);
@@ -51,11 +51,14 @@ export function buildChips() {
 
 let shown = '', barShown = '';
 export function syncChips() {
-  const bar = S.mode === 'edit' && !S.camp && !S.puzzle;
+  // Lenses are for building: gone in a campaign level or a puzzle, and only hidden while playing, so the header
+  // keeps its place (registers 760, 680).
+  const here = !S.camp && !S.puzzle, bar = here && S.mode === 'edit';
   const barKey = bar + LENS_GROUPS.flatMap(g => g.lenses.map(([id]) => `${isOn(id)}${isOn(id) ? lensLine(id) : ''}`)).join();
   if (barKey !== barShown) {
     barShown = barKey;
-    $('lensBar').hidden = $('lensFold').hidden = !bar;
+    $('lensBar').hidden = $('lensFold').hidden = !here;
+    $('lensBar').classList.toggle('idle', !bar); $('lensFold').classList.toggle('idle', !bar);
     for (const b of document.querySelectorAll('[data-lens-icon]')) {
       const id = b.dataset.lensIcon, on = isOn(id), name = NAME[id];
       b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));

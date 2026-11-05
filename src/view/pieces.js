@@ -47,14 +47,11 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
   g.restore();
 }
 
-// The campaign's player is the blob (register 593): a gel drop, drawn as a pixel sprite centred on its tile.
+// The player is the blob everywhere (registers 593, 777), a pixel sprite centred on its tile; Hero swaps it.
 export function drawRobot(g, hidden = false) {
   drawSprite(g, 'blob', -T / 2, -T / 2, { outline: hidden });
 }
-// You, when a person plays (register 302): a round body with two eyes, about 20 across.
-export function drawYou(g, hidden = false) {
-  drawSprite(g, 'you', -T / 2, -T / 2, { outline: hidden });
-}
+export const drawYou = drawRobot;
 
 // Hidden, you are a dashed outline with your eyes peeking: drawn over whatever passes
 // on top of you, so you can still be found. Swimming on land you wear a blue drop;

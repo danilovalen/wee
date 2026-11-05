@@ -75,8 +75,8 @@ function labelSpots(path, w) {
 // marks: { rings: [{ i, use }], passing: [{ i, use }], lines: [tiles in order], moves: [{ a, b, n }],
 // frames: Set of tiles, crosses: Set of tiles, focus: a tile the line lenses narrow to }.
 export function drawLensMarks(g, w, { rings, passing, lines, moves, frames, crosses, stale, cutAt, stopper, focus } = {}) {
-  if (passing) for (const { i, use } of passing) { const [x, y] = centre(i, w); g.fillStyle = USE[use]; pxDisc(g, x, y, 3); }
-  if (rings) for (const { i, use } of rings) { const [x, y] = centre(i, w); g.strokeStyle = USE[use || 'required']; pxRing(g, x, y, 7, 2); }
+  if (passing) for (const { i, use } of passing) { const [x, y] = centre(i, w); g.fillStyle = USE[use] || INK.player; pxDisc(g, x, y, 3); }
+  if (rings) for (const { i, use } of rings) { const [x, y] = centre(i, w); g.strokeStyle = USE[use] || INK.player; pxRing(g, x, y, 7, 2); }
   if (moves && moves.length) {
     // One arrow per move between two stops, wider the more positions make it.
     const max = Math.max(...moves.map(m => m.n));

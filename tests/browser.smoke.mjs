@@ -351,11 +351,11 @@ try {
   await pick('look');
   await page.click('[data-lens-icon=stops]');
   await page.waitForFunction(() => document.getElementById('lensLegend').textContent.includes('tiles you can stop on'));
-  check('Lenses open on Stops, counting the tiles you can stop on', (await page.textContent('#lensLegend')).includes('Dots: 4 tiles'), await page.textContent('#lensLegend'));
-  const dot = async (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * t), Math.round((y + 0.5) * t), 1, 1).data; return d[2] > 200 && d[2] - d[1] > 50; }, [x, y]); // the player's sky on a light gray floor
+  check('Lenses open on Stops, counting the tiles you can stop on', (await page.textContent('#lensLegend')).includes('Rings: 4 tiles'), await page.textContent('#lensLegend'));
+  const dot = async (x, y) => page.evaluate(([x, y]) => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; const d = c.getContext('2d').getImageData(Math.round((x + 0.5) * t + 7 * t / 32), Math.round((y + 0.5) * t), 1, 1).data; return d[2] > 200 && d[2] - d[1] > 50; }, [x, y]); // the player's sky on a light gray floor
   // The legend can land a frame before the room draws the dots, so let two frames pass first.
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-  check('a stop gets a dot, a tile you only slide over does not', await dot(4, 2) && !(await dot(2, 2)));
+  check('a stop gets a ring, a tile you only slide over does not', await dot(4, 2) && !(await dot(2, 2)));
   await page.click('[data-lens-icon=stops]');
   await page.waitForTimeout(80);
   check('Turning Stops off takes the dots away', !(await dot(4, 2)));

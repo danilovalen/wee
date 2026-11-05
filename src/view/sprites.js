@@ -15,8 +15,8 @@ const C = {
 };
 
 const BUILD = {
-  // A gel drop: dark rim, body, lighter belly, a shine, two eyes, a squashed base.
-  blob() {
+  // Hero, the other look (register 777): a gel drop, dark rim, body, lighter belly, a shine, two eyes, a squashed base.
+  blobAlt() {
     const g = grid();
     ellipse(g, 8, 9.5, 7.5, 6.5, C.blobD); ellipse(g, 8, 9.2, 6.6, 5.7, C.blob); ellipse(g, 8, 10.4, 4.5, 3.4, C.blobM);
     ellipse(g, 5, 6.5, 1.8, 1.3, C.blobH); g[5][4] = C.white; box(g, 2, 14, 13, 14, C.blobS); box(g, 4, 15, 11, 15, C.blobD);

@@ -45,10 +45,13 @@ try {
     await page.evaluate(l => window.wee.loadLevel(l), first);
     await pickTool(page, 'turret');
     if (!(await page.locator('[data-aim=up]').getAttribute('class') || '').includes('on')) await page.click('[data-aim=up]');
-    const lost = await page.evaluate(() => { const a = document.getElementById('roomArea').getBoundingClientRect(); return [...document.querySelectorAll('[data-lens-icon]')].filter(b => { const r = b.getBoundingClientRect(), hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-      return r.left < a.left - 0.5 || r.right > a.right + 0.5 || !(hit && b.contains(hit)); }).map(b => b.dataset.lensIcon); });
-    check(`${w}x${h}: every lens icon sits on the room's edge, whole and tappable (register 721)`, !lost.length, lost.join(' '));
+    // On a narrower screen the icons fold into one Lenses button, which opens them (register 749).
+    if (await page.locator('#lensFold').isVisible()) await page.click('#lensFold');
+    const lost = await page.evaluate(() => [...document.querySelectorAll('[data-lens-icon]')].filter(b => { const r = b.getBoundingClientRect(), hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+      return r.left < -0.5 || r.right > innerWidth + 0.5 || !(hit && b.contains(hit)); }).map(b => b.dataset.lensIcon));
+    check(`${w}x${h}: every lens icon is whole and tappable, in the header or its Lenses fold (registers 721, 749)`, !lost.length, lost.join(' '));
     for (const id of ['stops', 'traps', 'distance', 'solution']) await page.click(`[data-lens-icon=${id}]`);
+    if (await page.locator('#lensFold').isVisible()) await page.click('#lensFold');
     await page.click('#checkBtn');
     await page.waitForFunction(() => !!document.getElementById('designBox').dataset.done, null, { timeout: 60000 });
     // Check leaves the well shut (register 680); open it on the notes.
@@ -82,7 +85,7 @@ try {
     // The Sandbox's strip is icons at every width (register 381); each slot and each flyout tool is named on hover.
     const unnamed = await page.evaluate(() => [...document.querySelectorAll('#strip .slot:not([hidden]), [data-tool]:not([data-camp])')].filter(b => !b.title).map(b => b.dataset.slot || b.dataset.tool));
     check(`${w}x${h}: the tool strip's slots and tools are always named on hover`, !unnamed.length, unnamed.join(' '));
-    check(`${w}x${h}: everything open: nothing scrolls, nothing is cut, the room fills its area`, !(await over()) && !(await cutOff()).length && await page.locator('#well').isVisible() && await page.locator('#lensBar').isVisible() && await fills(), JSON.stringify({ cut: await cutOff(), over: await over() }));
+    check(`${w}x${h}: everything open: nothing scrolls, nothing is cut, the room fills its area`, !(await over()) && !(await cutOff()).length && await page.locator('#well').isVisible() && (await page.locator('#lensBar').isVisible() || await page.locator('#lensFold').isVisible()) && await fills(), JSON.stringify({ cut: await cutOff(), over: await over() }));
     check(`${w}x${h}: everything open, the room keeps at least 65% of the height: Findings is a column beside it (register 730)`, open >= 0.65, open.toFixed(2));
     await page.click('#mode');
     await settle();

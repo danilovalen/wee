@@ -46,6 +46,17 @@ try {
   check('Pieces on turns Beams off: they draw the same way', await on('colour') === 'pieces' && await page.$eval('[data-lens-icon=beams]', b => !b.classList.contains('on')));
   await tap('pieces');
   check('a second tap turns it off', await on('colour') === 'off');
+  // With no berry there is no win to measure by: a stop's ring keeps the player's violet, not a verdict colour.
+  await tap('stops'); await settle();
+  const plain = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round(1.5 * t + 7 * t / 32), Math.round(2.5 * t), 1, 1).data]; });
+  check('with no berry the rings are plain violet', Math.abs(plain[0] - 0xab) < 12 && Math.abs(plain[1] - 0x9d) < 12 && Math.abs(plain[2] - 0xf2) < 12, JSON.stringify(plain));
+  check('and the legend says nothing about wins', !/ice|orange/.test(await legend()), await legend());
+  await tap('stops');
+  // While you play the icons hide but keep their place, so the header does not move (register 680).
+  await page.keyboard.press('e'); await page.waitForTimeout(150);
+  const idle = await page.evaluate(() => ({ vis: getComputedStyle(document.getElementById('lensBar')).visibility, w: document.getElementById('lensBar').getBoundingClientRect().width }));
+  await page.keyboard.press('e'); await page.waitForTimeout(150);
+  check('while you play the lens icons hide and keep their place', idle.vis === 'hidden' && idle.w > 100, JSON.stringify(idle));
   await pickTool(page, 'look');
   await page.evaluate(l => window.wee.loadLevel(l), oneWay);
   await page.keyboard.press('3');

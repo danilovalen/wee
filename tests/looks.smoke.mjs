@@ -17,6 +17,15 @@ try {
   await p.addInitScript(() => { window.__noTutorial = true; });
   await p.goto(`http://localhost:${PORT}/index.html`); await p.waitForTimeout(800);
   await p.click('#menuLooks'); await p.waitForTimeout(300);
+  const hues = await p.evaluate(async () => {
+    const { drawSprite } = await import('/src/view/sprites.js');
+    const mid = name => { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'); drawSprite(g, name, 0, 0, { exact: true }); return [...g.getImageData(16, 17, 1, 1).data]; };
+    const { drawRobot } = await import('/src/view/pieces.js');
+    const robot = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'); g.translate(16, 16); drawRobot(g); return [...g.getImageData(16, 17, 1, 1).data]; })();
+    return { blob: mid('blob'), alt: mid('blobAlt'), robot };
+  });
+  // Register 777: the violet blob the Sandbox drew is the blob everywhere; the green gel drop is Hero's other skin.
+  check('the blob is violet and Hero\'s other skin is the green gel drop (register 777)', hues.blob[2] > hues.blob[1] + 40 && hues.alt[1] > hues.alt[2] + 40 && hues.robot.join() === hues.blob.join(), JSON.stringify(hues));
   check('the menu\'s corner opens Looks', await p.$eval('#lookBox', d => d.open));
   const shut = await p.$$eval('#lookPalettes [data-palette]', bs => bs.map(b => [b.dataset.palette, b.disabled]));
   check('with no stars only the first palette is open', shut.length === PALETTES.length && shut.every(([id, off]) => off === (id !== 'neon')), JSON.stringify(shut));

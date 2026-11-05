@@ -27,6 +27,8 @@ const look = id => page.evaluate(id => {
     text: document.body.innerText.split(own).join(''),
     pressed: [...document.querySelectorAll('[aria-pressed], [aria-expanded]')].filter(e => e !== me).map(e => e.getAttribute('aria-pressed') + e.getAttribute('aria-expanded')).join(),
     copied: window.__copied,
+    // A lens draws on the room and names itself in the legend.
+    legend: document.getElementById('lensLegend').textContent,
   });
 }, id);
 const SCENES = {

@@ -138,7 +138,8 @@ export function lensMarks() {
     if (d && colour === 'pieces') out.heat = { tiles: d.pieces, colour: INK.box };
     // A ring where you can stop, a dot where you slide through, coloured by what the shortest wins do there:
     // every one, some, or none (registers 750, 769).
-    const use = (m, i) => (m && m.get(i)) || 'unused';
+    // With no berry there is no win to measure by, so the marks keep one plain colour.
+    const goal = S.level.cells.includes('goal'), use = (m, i) => !goal ? null : (m && m.get(i)) || 'unused';
     if (isOn('stops')) { const list = d ? [...d.stops] : st ? st.list || [...(st.out.stops || [])] : null; if (list) out.rings = list.map(i => ({ i, use: d ? use(d.wins.stop, i) : null })); }
     if (d && isOn('passes')) out.passing = [...d.through].map(i => ({ i, use: use(d.wins.pass, i) }));
     if (isOn('solution')) Object.assign(out, solutionMarks(d));
@@ -171,10 +172,10 @@ export const lensBusy = () => onNow().length > 0 && ((fresh(S.stops) && !S.stops
 export function lensLine(id) {
   const st = fresh(S.stops), ld = fresh(S.lensData), d = ld ? ld.d : undefined, part = d && d.capped ? ' Partial: the room has more positions than were searched.' : '';
   if (['stops', 'traps'].includes(id) && st && st.why || SEARCHED.includes(id) && d === null) return 'Has real-time pieces, so lenses cannot map it.';
-  const wait = 'Working it out...';
+  const wait = 'Working it out...', hasGoal = S.level.cells.includes('goal');
   switch (id) {
-    case 'stops': return !d && !(st && st.list) ? wait : `Rings: ${tiles(d ? d.stops.size : st.list.length)} you can stop on; ice if every shortest win stops there, orange if only some do, grey otherwise.${part}`;
-    case 'passes': return !d ? wait : `Dots: ${tiles(d.through.size)} you slide through; ice if every shortest win passes there, orange if only some do, grey otherwise.${part}`;
+    case 'stops': return !d && !(st && st.list) ? wait : `Rings: ${tiles(d ? d.stops.size : st.list.length)} you can stop on${hasGoal ? '; ice if every shortest win stops there, orange if only some do, grey otherwise' : ''}.${part}`;
+    case 'passes': return !d ? wait : `Dots: ${tiles(d.through.size)} you slide through${hasGoal ? '; ice if every shortest win passes there, orange if only some do, grey otherwise' : ''}.${part}`;
     case 'moves': return !d ? wait : `Lines: every move from stop to stop, thicker where more positions make it.${part}`;
     case 'danger': return !d ? wait : d.danger.size ? `Frames: ${tiles(d.danger.size)} where a move kills you.${part}` : `Frames: no move kills you.${part}`;
     case 'traps': return !S.level.cells.includes('goal') ? 'Frames: place a berry to find traps.' : st && st.traps ? `Frames: ${tiles(st.traps.length)} where the goal is out of reach for good.` : wait;

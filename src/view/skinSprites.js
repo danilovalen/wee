@@ -3,13 +3,6 @@ import { INK } from './ink.js';
 import { grid, ellipse, box, line, turn, slab, steps, mixHex, W } from './pixel.js';
 
 export const SKIN_SPRITES = {
-  // Hero: an amoeba, a lumpy cell with a dark nucleus and one eye in it.
-  blobAlt() {
-    const g = grid(); ellipse(g, 8, 9, 7, 6, '#4f7432'); ellipse(g, 3.5, 6, 2.6, 2.2, '#4f7432'); ellipse(g, 13, 12.5, 2.4, 2, '#4f7432');
-    ellipse(g, 8, 9, 6, 5, '#a9dc76'); ellipse(g, 3.8, 6.2, 1.8, 1.4, '#a9dc76'); ellipse(g, 12.6, 12.2, 1.6, 1.2, '#a9dc76');
-    ellipse(g, 9, 9.5, 2.8, 2.4, '#6f9e45'); box(g, 8, 8, 9, 9, '#fcfcfa'); g[9][9] = '#221f22'; g[5][5] = '#e6f8d0'; g[6][5] = '#c3eb9a';
-    return g;
-  },
   // Berry: a cyan cherry pair on one stalk.
   berryAlt() {
     const g = grid(); ellipse(g, 5, 11, 3.6, 3.6, '#3f9aa6'); ellipse(g, 11, 11.5, 3.6, 3.6, '#3f9aa6');
