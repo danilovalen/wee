@@ -78,7 +78,7 @@ try {
   await page.click('#roomNew'); await settle();
   check('a new room from the first screen lands in the room', (await at()).hash === '#/room' && (await at()).open === '', JSON.stringify(await at()));
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await settle();
-  check('from the room, the Rooms page has Close and no Menu (register 399)', await page.locator('#roomsClose').isVisible() && await page.locator('#roomsMenu').isHidden());
+  check('from the room, the Rooms page has Close, and Menu too since a room has no Back (registers 399, 771)', await page.locator('#roomsClose').isVisible() && await page.locator('#roomsMenu').isVisible());
   await page.click('#roomsBox .roomsHead form button'); await settle();
   check('Close on the Rooms page goes to the room', (await at()).hash === '#/room' && (await at()).open === '');
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await settle();
@@ -133,9 +133,12 @@ try {
   // Register 424: the menu is where history starts, so Back from it leaves the game, never into a room.
   await page.goto('about:blank'); await page.goto(B); await settle();
   await page.click('#menuSandbox'); await settle(); await page.click('#roomNew'); await settle();
-  check('a Sandbox room shows Back, an arrow, where the logo was (register 665)', await page.locator('#logo').isVisible() && await page.evaluate(() => { const b = document.getElementById('logo'); return b.getAttribute('aria-label') === 'Back' && b.dataset.icon === 'back' && !!b.querySelector('svg'); }));
-  await page.click('#logo'); await settle();
-  check('Back from a Sandbox room goes to the menu', (await at()).open === 'menuBox' && (await at()).hash === '#/');
+  const roomsWay = (await page.locator('#roomsBtn').isVisible()) ? '#roomsBtn' : '#navRooms';
+  check('a Sandbox room has no Back: Rooms is its way out (register 771)', await page.locator('#logo').isHidden() && await page.locator(roomsWay).isVisible());
+  await page.click(roomsWay); await settle();
+  check('the Rooms page from a room offers both Close and Menu (register 771)', await page.locator('#roomsClose').isVisible() && await page.locator('#roomsMenu').isVisible());
+  await page.click('#roomsMenu'); await settle();
+  check('Menu from a Sandbox room\'s Rooms page goes to the menu', (await at()).open === 'menuBox' && (await at()).hash === '#/');
   await page.goBack(); await settle();
   check('Back from the menu leaves the game, not into the editor', page.url() === 'about:blank', page.url());
   await page.goto(B); await settle();

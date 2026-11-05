@@ -298,6 +298,23 @@
   <dialog id="roomsBox" class="rooms library">
     <div class="roomsHead"><b>Rooms</b><button id="roomsMenu" type="button">Menu</button><form method="dialog" id="roomsClose"><button>Close</button></form></div>
     <p id="roomsWhere" class="hint"></p>
+    <section id="thisRoom" class="thisRoom" hidden>
+      <h3>This room</h3>
+      <label class="field">Name <input id="roomName" type="text" maxlength="60" placeholder="Name this room"></label>
+      <label class="field">Note <textarea id="roomNote" rows="2" maxlength="400" placeholder="What is this room about?"></textarea></label>
+      <div class="row bar">
+        <button id="roomSave" type="button" class="primary">Save</button>
+        <button id="roomSaveAs" type="button">Save as new</button>
+      </div>
+      <h3>Share</h3>
+      <div class="row bar">
+        <button id="copyCode" type="button">Copy code</button>
+        <button id="copyLink" type="button">Copy link</button>
+        <button id="roomDownload" type="button">Download</button>
+      </div>
+      <input id="shareOut" type="text" readonly hidden>
+      <div class="danger row bar"><button id="roomDelete" type="button">Delete this room</button></div>
+    </section>
     <div class="libBarWrap">
       <div class="row bar libBar">
         <button id="roomNew" type="button" class="primary" autofocus>New room</button>
@@ -331,24 +348,6 @@
       <form id="tileRename" class="row" hidden><input id="tileName" aria-label="Room name"><button type="submit">Save</button></form>
       <input id="tileCode" readonly hidden aria-label="Room code">
     </div>
-  </dialog>
-  <dialog id="infoBox" class="rooms">
-    <div class="roomsHead"><b>This room</b><form method="dialog"><button>Close</button></form></div>
-    <label class="field">Name <input id="roomName" type="text" maxlength="60" placeholder="Name this room"></label>
-    <label class="field">Note <textarea id="roomNote" rows="2" maxlength="400" placeholder="What is this room about?"></textarea></label>
-    <div class="row bar">
-      <button id="roomSave" type="button" class="primary">Save</button>
-      <button id="roomSaveAs" type="button">Save as new</button>
-    </div>
-    <p id="infoSay" class="hint"></p>
-    <h3>Share</h3>
-    <div class="row bar">
-      <button id="copyCode" type="button">Copy code</button>
-      <button id="copyLink" type="button">Copy link</button>
-      <button id="roomDownload" type="button">Download</button>
-    </div>
-    <input id="shareOut" type="text" readonly hidden>
-    <div class="danger row bar"><button id="roomDelete" type="button">Delete this room</button></div>
   </dialog>
   <dialog id="genBox" class="rooms gen">
     <div class="roomsHead"><b>Generate a room</b><form method="dialog"><button>Close</button></form></div>

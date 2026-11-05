@@ -5,6 +5,7 @@ import { describe } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { INK } from '../view/ink.js';
 import { $, touch } from './dom.js';
+import { iconOn } from './glyphs.js';
 import { LENS_GROUPS, LENS_TIPS, lensOn, isOn, isAuto, cycleLens, lensLine, tileFacts, toggleLens } from './lenses.js';
 
 // A 26 by 12 mark per lens, the same marks the room draws.
@@ -40,6 +41,8 @@ export function buildChips() {
   const sep = () => Object.assign(document.createElement('span'), { className: 'lensSep' });
   $('lensBar').replaceChildren(...runs.flatMap((r, k) => k ? [sep(), r] : [r]));
   $('redo').after($('lensFold'), $('lensBar'));
+  // On a phone the fold is one icon, so the header still fits its width.
+  iconOn($('lensFold'), 'look', 'Lenses');
   $('lensFold').onclick = () => { const open = !$('lensBar').classList.contains('open'); $('lensBar').classList.toggle('open', open); $('lensFold').setAttribute('aria-expanded', String(open)); };
   $('lensChips').replaceChildren(...LENS_GROUPS.map(gr => {
     const b = Object.assign(document.createElement('button'), { type: 'button', className: 'chip' });

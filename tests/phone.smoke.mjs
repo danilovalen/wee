@@ -42,7 +42,7 @@ try {
   check('holding a room opens its menu instead of the room', await page.locator('#tileMenu').isVisible() && await page.locator('#roomsBox').isVisible());
   const m = await page.locator('#tileMenu').boundingBox();
   check('and the menu sits inside the screen', m.x >= 0 && m.y >= 0 && m.x + m.width <= 393 && m.y + m.height <= 852, JSON.stringify(m));
-  await page.locator('#roomsBox .roomsHead').click();
+  await page.locator('#roomsBox .roomsHead b').click();
   await hold(100);
   check('a short tap still opens the room', !(await page.locator('#roomsBox').isVisible()));
 

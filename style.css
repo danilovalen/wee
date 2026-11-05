@@ -770,6 +770,8 @@ body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; ali
    room on a wide screen; powers and status open from the header's Powers button. */
 .strip, #powersBtn { display: none; }
 body.sandbox:not(.simple) #powersBtn { display: inline-block; }
+/* A Sandbox room has no Back: Rooms is its way out, and the Rooms page reaches the menu (register 771). */
+body.sandbox #logo { display: none; }
 body.sandbox #strip { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 body.sandbox #groups, body.sandbox #tools > h2, body.sandbox #palette .ghead { display: none !important; }
 body.sandbox #palette:not(.fly) { display: none !important; }

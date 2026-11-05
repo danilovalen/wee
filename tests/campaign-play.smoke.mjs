@@ -534,9 +534,9 @@ try {
   check('a hold removes an inverted door too (register 683)', /^door:/.test(d5) && /^idoor:/.test(d6) && d7 === '', JSON.stringify([d5, d6, d7]));
   check('a door goes down; a tap swaps it to an inverted door and back; a hold removes it; the tool says so', /^door:/.test(d1) && d2 === 'i' + d1 && d3 === d1 && d4 === '' && /make one an inverted door and back/.test(dHint), JSON.stringify([d1, d2, d3, d4, dHint]));
   await dsb.close();
-  // The start is drawn as the blob (register 593): its gel green fills much of its tile.
-  const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 150 && d[i] < 190 && d[i + 1] > 200 && d[i + 2] > 100 && d[i + 2] < 140) n++; return n / (d.length / 4); });
-  check('the start is drawn as the blob (its gel green fills its tile)', tip > 0.08, String(tip));
+  // The start is drawn as the blob (registers 593, 777): its violet fills much of its tile.
+  const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 2] > 200 && d[i + 2] - d[i + 1] > 60 && d[i] > 140) n++; return n / (d.length / 4); });
+  check('the start is drawn as the blob (its violet fills its tile, register 777)', tip > 0.08, String(tip));
   // Level 15's laser (registers 255, 256): placed firing right, a tap turns it, a hold removes it.
   await nine.click('#campBack'); await nine.click(`.campRow[data-level="${LASER_7.id}"]`); await nine.click('[data-tool="turret"]');
   const gl = await nine.locator('#game').boundingBox(), tl = gl.width / 7;
@@ -570,7 +570,8 @@ try {
   check('a level that names no colours draws its one-way plain', plainGate === '', plainGate);
   const robotIcon = await nine.evaluate(async () => { const { icon } = await import('/src/app/icons.js'), you = icon('start').toDataURL();
     return [...document.querySelectorAll('.campReqs [data-part=start]')].map(c => c.dataset.icon + (c.toDataURL() === you ? ':you' : '')).join(); });
-  check('a goal row names the robot with the robot, not your circle (register 323)', /^robot(,robot)*$/.test(robotIcon), robotIcon);
+  // One blob everywhere (register 777): the robot a goal row names is drawn as the same blob you play.
+  check('a goal row names the robot with the blob (registers 323, 777)', /^robot:you(,robot:you)*$/.test(robotIcon), robotIcon);
   // Two colours per piece (register 316): level 19 offers red+blue as a third dot, only for its door.
   // Level 19: the laser is only pushable (register 341); the chip shows on and fixed, and a placed laser is pushable.
   await nine.click('#campBack'); await nine.click(`.campRow[data-level="${PUSHABLE_LASER.id}"]`); await nine.click('[data-tool="turret"]');

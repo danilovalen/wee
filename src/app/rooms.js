@@ -64,7 +64,7 @@ export function fillCurrent() {
 
 const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only: Export all, under More, keeps a copy.'; };
 
-export function say(msg) { $('roomsSay').textContent = msg; $('infoSay').textContent = msg; }
+export function say(msg) { $('roomsSay').textContent = msg; }
 
 export async function save(asNew) {
   if (!S.room) S.room = { id: null, name: '', note: '', saved: null, edited: false };
@@ -128,7 +128,7 @@ function download(name, data) {
 }
 
 // Back to the room: the pop-ups close, and the Rooms page goes up to the room under it.
-const closeAll = () => { if ($('infoBox').open) $('infoBox').close(); if (current()?.name === 'rooms') back('room'); };
+const closeAll = () => { if (current()?.name === 'rooms') back('room'); };
 
 export function buildRooms(actions) {
   A = actions;
@@ -140,11 +140,12 @@ export function buildRooms(actions) {
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
   exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
   // Rooms from the menu (rooms/start) is the Sandbox's first screen, its way back Menu; from a room, Close (registers 395, 399).
-  place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; $('roomsMenu').hidden = arg !== 'start'; await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
+  place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; $('thisRoom').hidden = arg === 'start'; if (arg !== 'start') { fillCurrent(); $('shareOut').hidden = true; } await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
   place('room', { parent: () => 'menu', enter: enterSandbox, exit: leaveSandbox });
   $('roomsBtn').onclick = () => go('rooms');
   buildTileMenu({ say, fillCurrent, refresh, remember, syncRoomsButton });
-  $('roomTitle').onclick = () => { fillCurrent(); say(''); $('shareOut').hidden = true; $('infoBox').showModal(); };
+  // The room's name opens the Rooms page on this room: its name, note, saving and sharing are there (register 771).
+  $('roomTitle').onclick = () => { say(''); go('rooms'); };
   $('codeBtn').onclick = () => { const open = $('codeRow').hidden; $('codeRow').hidden = !open; $('codeBtn').setAttribute('aria-expanded', String(open)); if (open) $('codeIn').focus(); };
   $('tagFilter').onchange = renderList;
   $('roomSave').onclick = () => save(false);

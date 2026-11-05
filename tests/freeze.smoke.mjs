@@ -30,7 +30,7 @@ try {
   await nav.goto(url('#/room')); await nav.waitForTimeout(600);
   // An entry that says the tab is deeper than it is: history.go(-n) then never answers.
   await nav.evaluate(() => history.replaceState({ ...history.state, n: 5 }, '', location.href));
-  await nav.click('#logo'); await nav.waitForTimeout(1000);
+  await nav.click('#navRooms'); await nav.waitForTimeout(400); await nav.click('#roomsMenu'); await nav.waitForTimeout(1000);
   check('Back from a room still reaches the menu when history never answers', await nav.evaluate(() => document.getElementById('menuBox').open));
   await nav.evaluate(() => document.getElementById('menuCampaign').click()); await nav.waitForTimeout(500);
   check('and every move after it still answers', await nav.evaluate(() => document.getElementById('campBox').open));

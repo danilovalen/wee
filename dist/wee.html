@@ -785,6 +785,8 @@ body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; ali
    room on a wide screen; powers and status open from the header's Powers button. */
 .strip, #powersBtn { display: none; }
 body.sandbox:not(.simple) #powersBtn { display: inline-block; }
+/* A Sandbox room has no Back: Rooms is its way out, and the Rooms page reaches the menu (register 771). */
+body.sandbox #logo { display: none; }
 body.sandbox #strip { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 body.sandbox #groups, body.sandbox #tools > h2, body.sandbox #palette .ghead { display: none !important; }
 body.sandbox #palette:not(.fly) { display: none !important; }
@@ -1387,6 +1389,23 @@ dialog[id].rooms > .roomsHead { position: sticky; top: -16px; z-index: 3; margin
   <dialog id="roomsBox" class="rooms library">
     <div class="roomsHead"><b>Rooms</b><button id="roomsMenu" type="button">Menu</button><form method="dialog" id="roomsClose"><button>Close</button></form></div>
     <p id="roomsWhere" class="hint"></p>
+    <section id="thisRoom" class="thisRoom" hidden>
+      <h3>This room</h3>
+      <label class="field">Name <input id="roomName" type="text" maxlength="60" placeholder="Name this room"></label>
+      <label class="field">Note <textarea id="roomNote" rows="2" maxlength="400" placeholder="What is this room about?"></textarea></label>
+      <div class="row bar">
+        <button id="roomSave" type="button" class="primary">Save</button>
+        <button id="roomSaveAs" type="button">Save as new</button>
+      </div>
+      <h3>Share</h3>
+      <div class="row bar">
+        <button id="copyCode" type="button">Copy code</button>
+        <button id="copyLink" type="button">Copy link</button>
+        <button id="roomDownload" type="button">Download</button>
+      </div>
+      <input id="shareOut" type="text" readonly hidden>
+      <div class="danger row bar"><button id="roomDelete" type="button">Delete this room</button></div>
+    </section>
     <div class="libBarWrap">
       <div class="row bar libBar">
         <button id="roomNew" type="button" class="primary" autofocus>New room</button>
@@ -1420,24 +1439,6 @@ dialog[id].rooms > .roomsHead { position: sticky; top: -16px; z-index: 3; margin
       <form id="tileRename" class="row" hidden><input id="tileName" aria-label="Room name"><button type="submit">Save</button></form>
       <input id="tileCode" readonly hidden aria-label="Room code">
     </div>
-  </dialog>
-  <dialog id="infoBox" class="rooms">
-    <div class="roomsHead"><b>This room</b><form method="dialog"><button>Close</button></form></div>
-    <label class="field">Name <input id="roomName" type="text" maxlength="60" placeholder="Name this room"></label>
-    <label class="field">Note <textarea id="roomNote" rows="2" maxlength="400" placeholder="What is this room about?"></textarea></label>
-    <div class="row bar">
-      <button id="roomSave" type="button" class="primary">Save</button>
-      <button id="roomSaveAs" type="button">Save as new</button>
-    </div>
-    <p id="infoSay" class="hint"></p>
-    <h3>Share</h3>
-    <div class="row bar">
-      <button id="copyCode" type="button">Copy code</button>
-      <button id="copyLink" type="button">Copy link</button>
-      <button id="roomDownload" type="button">Download</button>
-    </div>
-    <input id="shareOut" type="text" readonly hidden>
-    <div class="danger row bar"><button id="roomDelete" type="button">Delete this room</button></div>
   </dialog>
   <dialog id="genBox" class="rooms gen">
     <div class="roomsHead"><b>Generate a room</b><form method="dialog"><button>Close</button></form></div>
@@ -10190,7 +10191,7 @@ function fillCurrent() {
 
 const sayWhere = () => { $('roomsWhere').textContent = where() === 'server' ? 'Saved on the server.' : 'Saved in this browser only: Export all, under More, keeps a copy.'; };
 
-function say(msg) { $('roomsSay').textContent = msg; $('infoSay').textContent = msg; }
+function say(msg) { $('roomsSay').textContent = msg; }
 
 async function save(asNew) {
   if (!S.room) S.room = { id: null, name: '', note: '', saved: null, edited: false };
@@ -10254,7 +10255,7 @@ function download(name, data) {
 }
 
 // Back to the room: the pop-ups close, and the Rooms page goes up to the room under it.
-const closeAll = () => { if ($('infoBox').open) $('infoBox').close(); if (current()?.name === 'rooms') back('room'); };
+const closeAll = () => { if (current()?.name === 'rooms') back('room'); };
 
 function buildRooms(actions) {
   A = actions;
@@ -10266,11 +10267,12 @@ function buildRooms(actions) {
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
   exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
   // Rooms from the menu (rooms/start) is the Sandbox's first screen, its way back Menu; from a room, Close (registers 395, 399).
-  place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; $('roomsMenu').hidden = arg !== 'start'; await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
+  place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; $('thisRoom').hidden = arg === 'start'; if (arg !== 'start') { fillCurrent(); $('shareOut').hidden = true; } await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
   place('room', { parent: () => 'menu', enter: enterSandbox, exit: leaveSandbox });
   $('roomsBtn').onclick = () => go('rooms');
   buildTileMenu({ say, fillCurrent, refresh, remember, syncRoomsButton });
-  $('roomTitle').onclick = () => { fillCurrent(); say(''); $('shareOut').hidden = true; $('infoBox').showModal(); };
+  // The room's name opens the Rooms page on this room: its name, note, saving and sharing are there (register 771).
+  $('roomTitle').onclick = () => { say(''); go('rooms'); };
   $('codeBtn').onclick = () => { const open = $('codeRow').hidden; $('codeRow').hidden = !open; $('codeBtn').setAttribute('aria-expanded', String(open)); if (open) $('codeIn').focus(); };
   $('tagFilter').onchange = renderList;
   $('roomSave').onclick = () => save(false);
@@ -11162,10 +11164,12 @@ const { describe } = m80;
 const { S } = m43;
 const { INK } = m8;
 const { $, touch } = m0;
+const { iconOn } = m2;
 const { LENS_GROUPS, LENS_TIPS, lensOn, isOn, isAuto, cycleLens, lensLine, tileFacts, toggleLens } = m104;
 // The lens chips under the room, one per group, each drawing its own small legend, and the
 // hover line in the status bar: what is on a tile and what the lenses know about it. All copy
 // is draft.
+
 
 
 
@@ -11204,6 +11208,8 @@ function buildChips() {
   const sep = () => Object.assign(document.createElement('span'), { className: 'lensSep' });
   $('lensBar').replaceChildren(...runs.flatMap((r, k) => k ? [sep(), r] : [r]));
   $('redo').after($('lensFold'), $('lensBar'));
+  // On a phone the fold is one icon, so the header still fits its width.
+  iconOn($('lensFold'), 'look', 'Lenses');
   $('lensFold').onclick = () => { const open = !$('lensBar').classList.contains('open'); $('lensBar').classList.toggle('open', open); $('lensFold').setAttribute('aria-expanded', String(open)); };
   $('lensChips').replaceChildren(...LENS_GROUPS.map(gr => {
     const b = Object.assign(document.createElement('button'), { type: 'button', className: 'chip' });
