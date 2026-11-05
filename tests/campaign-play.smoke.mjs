@@ -116,7 +116,7 @@ try {
   await page.click('#campBack'); await page.waitForTimeout(300);
   const lines = await page.$$eval('.campParts', ps => ps.filter(p => { const ys = new Set([...p.querySelectorAll('canvas')].map(c => Math.round(c.getBoundingClientRect().top))); return ys.size > 1; }).length);
   check('every level\'s icons fit on one line', lines === 0, String(lines));
-  const listing = await page.evaluate(() => { const rows = [...document.querySelectorAll('.campRow')]; return { cols: new Set(rows.map(r => Math.round(r.getBoundingClientRect().left / 10))).size, said: rows.filter(r => /shortest path/i.test(r.textContent)).length }; });
+  const listing = await page.evaluate(() => { const rows = [...document.querySelectorAll('.campRow')], items = [...document.querySelectorAll('#campList > li:not(.none)')].filter(l => l.getClientRects().length); return { cols: new Set(items.map(r => Math.round(r.getBoundingClientRect().left / 10))).size, said: rows.filter(r => /shortest path/i.test(r.textContent)).length }; });
   check('the level list lays its levels out two to a row', listing.cols === 2, JSON.stringify(listing));
   check('no level row repeats the 4-move rule', listing.said === 0, JSON.stringify(listing));
   await page.click(`.campRow[data-level="${LISTED[0].id}"]`);

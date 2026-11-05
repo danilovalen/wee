@@ -5,5 +5,8 @@ import { listed } from './rules.js';
 import { CHALLENGES } from '../level/challenges.js';
 
 export const shownName = def => { const i = LEVELS.filter(listed).findIndex(l => l.id === def.id); return i >= 0 ? `Level ${i + 1}` : def.name; };
-// A challenge is numbered by its place in the plan too (register 735), C1, C2, C3 down the list; its id stays.
-export const challengeName = def => `C${CHALLENGES.findIndex(c => c.id === def.id) + 1}`;
+// Each challenge slot holds a placing challenge and a removal one (registers 786, 787): the placing ones are
+// numbered C1, C2, C3 down the plan (735), the removal ones R1, R2, R3 beside them; ids stay.
+export const PLACING = CHALLENGES.filter(c => !c.challenge.remove);
+export const REMOVING = CHALLENGES.filter(c => c.challenge.remove);
+export const challengeName = def => def.challenge.remove ? `R${REMOVING.findIndex(c => c.id === def.id) + 1}` : `C${PLACING.findIndex(c => c.id === def.id) + 1}`;

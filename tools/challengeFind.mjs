@@ -19,6 +19,12 @@ export const SPECS = [
   { id: 'c5', name: 'One way', size: 6, fixed: ['#', '#', '#'], pieces: ['>', '#'], open: 10, want: { forks: 2, trap: true, stops: 7 } },
   // A box to push onto a button that holds the door open (register 696).
   { id: 'c6', name: 'The button', size: 5, fixed: ['#', '#', '#', 'D'], pieces: ['B', 'o'], open: 9, want: { stops: 4 }, needs: 'D' },
+  // Register 762: one after each of Levels 15, 18, 20, 22 and 24, from the pieces those levels teach.
+  { id: 'c7', name: 'Line of fire', size: 6, fixed: ['#', '#', '>'], pieces: ['e', '#'], open: 10, want: { stops: 5 } },
+  { id: 'c8', name: 'The relay', size: 6, fixed: ['#', '#', 'e', 'D'], pieces: ['r', '#'], open: 10, want: { stops: 4 }, needs: 'D' },
+  { id: 'c9', name: 'Lit door', size: 6, fixed: ['#', '#', 'r', 'D'], pieces: ['e', '#'], open: 10, want: { stops: 4 }, needs: 'D' },
+  { id: 'c10', name: 'Over the spikes', size: 6, fixed: ['#', '#', 'x', 'x'], pieces: ['>', '#'], open: 10, want: { stops: 5 } },
+  { id: 'c11', name: 'Crossfire', size: 6, fixed: ['#', 'x', 'r', 'D'], pieces: ['e', '#'], open: 10, want: { stops: 5 }, needs: 'D' },
 ];
 const MIN_PLACEMENTS = 30;
 

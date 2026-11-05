@@ -61,7 +61,7 @@ export function measure(ch) {
 }
 
 // A legend letter's element, for the tools row and the counts.
-const EL = { '#': 'block', B: 'box', t: 'toggle', '>': 'gate', D: 'door', o: 'button', e: 'laser' };
+const EL = { '#': 'block', B: 'box', t: 'toggle', '>': 'gate', D: 'door', o: 'button', e: 'laser', r: 'relay', x: 'spikes' };
 // A challenge as a level the game can open (register 562): its built room, its open tiles, exactly its pieces.
 export function toLevel(ch) {
   const open = [];
@@ -72,17 +72,28 @@ export function toLevel(ch) {
   return { id: ch.id, name: ch.name, challenge: { open }, room, size: [room.w, room.h], palette, steps: { min: ch.min ?? 1 }, rules: [], require: ch.require || [], optional: [] };
 }
 
+// A removal challenge (register 787): every piece of a kind it names can be taken out, and the level keeps
+// exactly the rest; its card says how many of each to take out.
+const KIND = c => ({ '<': '>', '^': '>', v: '>', n: 'e', s: 'e', w: 'e' })[c] || c;
+export function removalLevel(ch) {
+  const open = [], palette = {}, remove = {};
+  ch.rows.forEach((r, y) => [...r].forEach((c, x) => { const k = KIND(c); if (k in ch.remove) { open.push([x, y]); const el = EL[k]; palette[el] = [(palette[el]?.[0] || 0) + 1, (palette[el]?.[1] || 0) + 1]; } }));
+  for (const [k, n] of Object.entries(ch.remove)) { const el = EL[k]; remove[el] = n; palette[el] = [palette[el][0] - n, palette[el][1] - n]; }
+  const room = build(ch, ch.rows);
+  return { id: ch.id, name: ch.name, challenge: { open, remove }, room, size: [room.w, room.h], palette, steps: { min: ch.min ?? 1 }, rules: [], require: ch.require || [], optional: [] };
+}
+
 const LIST = () => JSON.parse(readFileSync(new URL('../campaign/challenges.json', import.meta.url)));
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const arg = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2].split(',') : null;
   if (process.argv.includes('--write')) {
-    writeFileSync('src/level/challenges.js', '// Generated from campaign/challenges.json by tools/challenge.mjs --write. Do not edit by hand.\nexport const CHALLENGES = ' + JSON.stringify(LIST().map(toLevel)) + ';\n');
+    writeFileSync('src/level/challenges.js', '// Generated from campaign/challenges.json by tools/challenge.mjs --write. Do not edit by hand.\nexport const CHALLENGES = ' + JSON.stringify(LIST().map(c => c.remove ? removalLevel(c) : toLevel(c))) + ';\n');
     console.log('src/level/challenges.js written');
   } else {
     // Loaded after this module finishes: challengeShape imports it back.
     import('./challengeShape.mjs').then(({ shape }) => {
-    for (const ch of LIST().filter(c => !arg || arg.includes(String(c.id)))) {
+    for (const ch of LIST().filter(c => !c.remove && (!arg || arg.includes(String(c.id))))) {
       const m = measure(ch);
       const sh = m.wins.length === 1 ? shape(ch, placements(ch).find(pl => rowsWith(ch, pl).join() === m.wins[0].rows.join())) : null;
       console.log(`${ch.id} ${ch.name}: ${m.wins.length === 1 ? 'ONE solution' : m.wins.length + ' solutions'}; ${m.placements} placements` + (sh ? `; ${sh.forks} ways to rest on the star${sh.trap ? ', a trap slot' : ''}${sh.twoJob ? ', a two-job piece' : ''}` : ''));

@@ -611,6 +611,9 @@ button:disabled .lookPic { opacity: .35; }
 .campList li.main:not(:nth-last-child(2))::after { content: ''; position: absolute; left: 24px; top: 100%; width: 8px; height: 12px; background: var(--rule); }
 .campList li.side:not(.none)::before { content: ''; position: absolute; right: 100%; top: 34px; width: 16px; height: 8px; background: var(--rule); }
 .campRow.locked { opacity: .45; }
+/* A challenge slot: its placing and removal challenges side by side, each half the width (register 786). */
+.campList li.side.pair { display: flex; gap: 8px; }
+.campList li.side.pair > .campRow { flex: 1 1 0; min-width: 0; }
 .campShut { display: flex; align-items: center; } .campShut .glyph { width: 16px; height: 16px; }
 .campRow { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; }
 .campParts { display: flex; gap: 4px; }

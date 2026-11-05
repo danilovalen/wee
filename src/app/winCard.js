@@ -33,7 +33,7 @@ export function noteWin(def, before, rec, v, words) {
 // The level after this one in its own list (a challenge's next is the next challenge), or none at the end.
 function next(def) {
   if (def.made) return { label: 'Maker', go: up };
-  const list = def.challenge ? CHALLENGES : LEVELS.filter(listed), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
+  const list = def.challenge ? CHALLENGES.filter(c => !c.challenge.remove === !def.challenge.remove) : LEVELS.filter(listed), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
   return n ? { label: 'Next level', go: () => go('level', n.id) } : null;
 }
 

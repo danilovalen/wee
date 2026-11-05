@@ -66,6 +66,20 @@ function piecesToPlace(def, by) {
   return box;
 }
 
+// A removal challenge's card (register 787): how many of each kind to take out, one icon each, crossed
+// out as each goes.
+function piecesToRemove(def, by) {
+  const box = document.createElement('div'); box.className = 'campPieces out'; box.setAttribute('aria-label', 'Pieces to take out');
+  for (const [el, n] of Object.entries(def.challenge.remove)) {
+    const kind = document.createElement('span'); kind.className = 'campKind';
+    kind.append(Object.assign(document.createElement('b'), { className: 'campCount', textContent: `−${n}×` }));
+    const gone = def.palette[el][1] + n - by[el].length;
+    for (let i = 0; i < n; i++) { const c = word({ el }); if (i < gone) c.classList.add('used'); kind.append(c); }
+    box.append(kind);
+  }
+  return box;
+}
+
 // The level over the room: a goal card with one row per requirement, marked after a run, and
 // the optional goals apart. Its height never changes with a verdict; the verdict's words
 // float over the room instead.
@@ -111,7 +125,7 @@ export function syncBrief() {
   const main = document.createElement('div'); main.className = 'campMain';
   const big = document.createElement('span'); big.className = 'campBigStar' + (ran && v.won ? ' on' : ''); big.innerHTML = glyph('star'); big.setAttribute('role', 'img'); big.setAttribute('aria-label', 'Main star');
   main.append(big, must);
-  if (def.challenge) main.append(piecesToPlace(def, by));
+  if (def.challenge) main.append(def.challenge.remove ? piecesToRemove(def, by) : piecesToPlace(def, by));
   opt.dataset.label = 'Optional goals';
   for (const r of rows) {
     const list = r.optional ? opt : must;

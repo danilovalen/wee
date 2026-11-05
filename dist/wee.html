@@ -626,6 +626,9 @@ button:disabled .lookPic { opacity: .35; }
 .campList li.main:not(:nth-last-child(2))::after { content: ''; position: absolute; left: 24px; top: 100%; width: 8px; height: 12px; background: var(--rule); }
 .campList li.side:not(.none)::before { content: ''; position: absolute; right: 100%; top: 34px; width: 16px; height: 8px; background: var(--rule); }
 .campRow.locked { opacity: .45; }
+/* A challenge slot: its placing and removal challenges side by side, each half the width (register 786). */
+.campList li.side.pair { display: flex; gap: 8px; }
+.campList li.side.pair > .campRow { flex: 1 1 0; min-width: 0; }
 .campShut { display: flex; align-items: center; } .campShut .glyph { width: 16px; height: 16px; }
 .campRow { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; }
 .campParts { display: flex; gap: 4px; }
@@ -5519,14 +5522,24 @@ const nameOf = (el, n) => { const w = ELEMENTS[el].label.toLowerCase(); return n
 const START_ON = 'Nothing can start on a button, a switch or spikes.';
 // Why the room cannot be run yet: each is { msg, at? }. Empty when it can.
 // The maximums a room goes over: each a goal row, missed at Run.
+// A removal challenge says it as taking out (register 787): too many left is "take out N more".
+const out = def => def.challenge && def.challenge.remove;
 function overLimits(def, room) {
   const { by } = placed(def, room);
-  return Object.entries(by).flatMap(([el, list]) => { const max = (def.palette[el] || [0, 0])[1]; return max && list.length > max ? [{ el, msg: `Place at most ${max} ${nameOf(el, max)}.` }] : []; });
+  return Object.entries(by).flatMap(([el, list]) => {
+    const max = (def.palette[el] || [0, 0])[1];
+    if (out(def) && el in out(def)) return list.length > max ? [{ el, msg: `Take out ${list.length - max} more ${nameOf(el, list.length - max)}.` }] : [];
+    return max && list.length > max ? [{ el, msg: `Place at most ${max} ${nameOf(el, max)}.` }] : [];
+  });
 }
 // The minimums a room falls short of: judged at Run like the maximums, never a reason not to run (register 321).
 function underLimits(def, room) {
   const { by } = placed(def, room);
-  return Object.entries(by).flatMap(([el, list]) => { const min = (def.palette[el] || [0, 0])[0]; return list.length < min ? [{ el, msg: `Place at least ${min} ${nameOf(el, min)}.` }] : []; });
+  return Object.entries(by).flatMap(([el, list]) => {
+    const min = (def.palette[el] || [0, 0])[0];
+    if (out(def) && el in out(def)) return list.length < min ? [{ el, msg: `Take out only ${out(def)[el]} ${nameOf(el, out(def)[el])}.` }] : [];
+    return list.length < min ? [{ el, msg: `Place at least ${min} ${nameOf(el, min)}.` }] : [];
+  });
 }
 
 function placementErrors(def, room) {
@@ -5663,7 +5676,7 @@ return { LEVELS };
 const m40 = (() => {
 
 // Generated from campaign/challenges.json by tools/challenge.mjs --write. Do not edit by hand.
-const CHALLENGES = [{"id":"c1","name":"Two blocks","challenge":{"open":[[0,0],[0,1],[2,1],[0,2],[1,2],[3,2],[0,3],[3,3],[4,3],[1,4],[4,4]]},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["","","","wall","","","wall","","","","","","","","","","goal","","","","","","","",""],"start":{"x":1,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"block":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c4","name":"The door","challenge":{"open":[[1,0],[5,0],[1,1],[2,1],[3,2],[1,3],[2,3],[3,3],[4,4]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","","","","","","","","","","door:red","","","","","","","","","goal","","","","","wall","","wall",""],"start":{"x":0,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"toggle":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c2","name":"Three blocks","challenge":{"open":[[2,0],[4,0],[1,1],[2,2],[3,3],[5,3],[0,4],[1,4],[4,4],[2,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","wall","","","","","","","wall","wall","","","","","","","","","","goal","","","","","","","",""],"start":{"x":0,"y":5},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[3,3]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c6","name":"The button","challenge":{"open":[[2,0],[4,0],[2,1],[0,2],[3,2],[0,3],[1,3],[3,4],[4,4]]},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["","","","","","","wall","","","","","","","","","","","door:red","goal","wall","","","wall","",""],"start":{"x":1,"y":2},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"box":[1,1],"button":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c3","name":"A box","challenge":{"open":[[1,0],[1,1],[2,1],[0,2],[3,2],[5,2],[2,3],[2,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","goal","","","","","","","","","wall","","","","wall","","","","","","","","","","","wall","",""],"start":{"x":2,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"box":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c5","name":"One way","challenge":{"open":[[1,0],[2,0],[1,2],[4,2],[2,3],[1,4],[2,4],[3,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["wall","","","","","","","wall","","","","","","","","","","","","goal","","","","","","","","","","wall","","","","","",""],"start":{"x":0,"y":1},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"gate":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]}];
+const CHALLENGES = [{"id":"c1","name":"Two blocks","challenge":{"open":[[0,0],[0,1],[2,1],[0,2],[1,2],[3,2],[0,3],[3,3],[4,3],[1,4],[4,4]]},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["","","","wall","","","wall","","","","","","","","","","goal","","","","","","","",""],"start":{"x":1,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"block":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c4","name":"The door","challenge":{"open":[[1,0],[5,0],[1,1],[2,1],[3,2],[1,3],[2,3],[3,3],[4,4]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","","","","","","","","","","door:red","","","","","","","","","goal","","","","","wall","","wall",""],"start":{"x":0,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"toggle":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c2","name":"Three blocks","challenge":{"open":[[2,0],[4,0],[1,1],[2,2],[3,3],[5,3],[0,4],[1,4],[4,4],[2,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","wall","","","","","","","wall","wall","","","","","","","","","","goal","","","","","","","",""],"start":{"x":0,"y":5},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[3,3]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c6","name":"The button","challenge":{"open":[[2,0],[4,0],[2,1],[0,2],[3,2],[0,3],[1,3],[3,4],[4,4]]},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["","","","","","","wall","","","","","","","","","","","door:red","goal","wall","","","wall","",""],"start":{"x":1,"y":2},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"box":[1,1],"button":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c3","name":"A box","challenge":{"open":[[1,0],[1,1],[2,1],[0,2],[3,2],[5,2],[2,3],[2,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","goal","","","","","","","","","wall","","","","wall","","","","","","","","","","","wall","",""],"start":{"x":2,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"box":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c5","name":"One way","challenge":{"open":[[1,0],[2,0],[1,2],[4,2],[2,3],[1,4],[2,4],[3,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["wall","","","","","","","wall","","","","","","","","","","","","goal","","","","","","","","","","wall","","","","","",""],"start":{"x":0,"y":1},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"gate":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c7","name":"Line of fire","challenge":{"open":[[1,0],[2,0],[3,1],[5,2],[0,3],[0,4],[4,4],[1,5],[3,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","gate:right","","","","wall","","","","","","","wall","","","goal","","","","","","","","","","","","",""],"start":{"x":0,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c8","name":"The relay","challenge":{"open":[[3,0],[4,0],[0,3],[4,3],[5,4],[2,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","","wall","","goal","","","wall","","","","","","","","","","","","","","","","","","door:red","",""],"start":{"x":4,"y":5},"entities":[{"kind":"turret","x":4,"y":4,"turret":{"dirs":["right"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"relay":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c9","name":"Lit door","challenge":{"open":[[3,0],[3,1],[4,1],[1,2],[2,2],[4,2],[4,3],[1,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","sensor:red","","wall","","","","","","","","","","","","","","","door:red","","","","","goal","","","wall","","","","","","","",""],"start":{"x":5,"y":5},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c10","name":"Over the spikes","challenge":{"open":[[1,2],[5,2],[0,3],[2,3],[0,4],[1,4],[5,4],[2,5],[4,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","death","","wall","goal","","wall","death","","","","","","","","","","","","","","","","","","","","","","","","",""],"start":{"x":5,"y":1},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"gate":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c11","name":"Crossfire","challenge":{"open":[[2,0],[2,1],[3,1],[1,2],[4,2],[2,3],[3,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","sensor:red","","","","","","","","","","","","","","","","","door:red","","","","","","","","","wall","","","goal","death"],"start":{"x":2,"y":5},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r1","name":"Too many blocks","challenge":{"open":[[0,0],[1,0],[4,1],[0,2],[2,2],[3,2],[4,3],[2,4],[3,4]],"remove":{"block":2}},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["wall","wall","","","","","","","","wall","wall","","wall","wall","","","","goal","","wall","","","wall","wall",""],"start":{"x":4,"y":4},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"block":[7,7]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r4","name":"Door trouble","challenge":{"open":[[0,0],[3,0],[4,0],[5,1],[4,2],[5,3],[2,4],[5,4],[1,5],[4,5]],"remove":{"block":2,"toggle":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["wall","","","toggle:red","wall","","","","","","","wall","","","","","toggle:red","","goal","","door:red","","","wall","","","wall","","","wall","","wall","","","wall",""],"start":{"x":0,"y":1},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[6,6],"toggle":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r2","name":"Clear the way","challenge":{"open":[[0,1],[1,1],[0,2],[2,2],[3,2],[4,2],[2,3],[3,4],[4,4],[2,5]],"remove":{"block":3}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","wall","wall","","","","","wall","","wall","wall","wall","","","","wall","","","","","","goal","wall","wall","","","","wall","","",""],"start":{"x":5,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[7,7]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r6","name":"One box less","challenge":{"open":[[0,0],[1,1],[0,2],[1,3],[2,3],[3,3],[4,3],[1,4],[3,4]],"remove":{"block":2,"box":1}},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["wall","","button:red","","","","wall","","goal","","wall","","","door:red","","","","wall","wall","wall","","","","wall",""],"start":{"x":1,"y":2},"entities":[{"kind":"box","x":1,"y":3,"dir":1,"mode":"input"},{"kind":"box","x":1,"y":4,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"block":[5,5],"box":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r3","name":"Box clutter","challenge":{"open":[[5,0],[3,1],[2,2],[4,2],[3,3],[4,3],[3,4],[4,4],[5,4],[0,5],[1,5],[4,5]],"remove":{"block":1,"box":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","wall","","","","goal","wall","","wall","","","","","wall","","","","","","wall","","wall","wall","wall","","","",""],"start":{"x":3,"y":0},"entities":[{"kind":"box","x":5,"y":0,"dir":1,"mode":"input"},{"kind":"box","x":4,"y":3,"dir":1,"mode":"input"},{"kind":"box","x":4,"y":4,"dir":1,"mode":"input"},{"kind":"box","x":4,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"box":[3,3],"block":[7,7]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r5","name":"Wrong ways","challenge":{"open":[[4,0],[5,0],[0,1],[1,1],[2,1],[5,1],[3,2],[4,3],[2,4],[4,4],[4,5],[5,5]],"remove":{"block":1,"gate":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","wall","wall","gate:right","gate:down","gate:up","","","gate:up","","","","wall","","","","","","","wall","","goal","","gate:up","","wall","","","","","","wall","wall"],"start":{"x":3,"y":5},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[6,6],"gate":[4,4]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r7","name":"Ceasefire","challenge":{"open":[[3,1],[4,1],[0,2],[1,2],[4,2],[0,3],[5,3],[0,4],[5,4],[5,5]],"remove":{"block":2,"laser":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","wall","","","wall","","","","wall","","wall","","","","","wall","wall","","","","goal","wall","gate:right","","","","","wall"],"start":{"x":5,"y":1},"entities":[{"kind":"turret","x":4,"y":1,"turret":{"dirs":["left"],"mode":"input"}},{"kind":"turret","x":1,"y":2,"turret":{"dirs":["right"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[6,6],"laser":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r8","name":"Spare relay","challenge":{"open":[[2,0],[5,1],[1,3],[2,3],[3,3],[5,3],[1,4],[4,5],[5,5]],"remove":{"block":2,"relay":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","wall","","","","door:red","","","","","wall","","","","","","","goal","wall","wall","wall","","wall","","wall","","","","","","","","","sensor:red","sensor:red"],"start":{"x":4,"y":0},"entities":[{"kind":"turret","x":4,"y":4,"turret":{"dirs":["right"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[5,5],"relay":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r9","name":"One beam","challenge":{"open":[[0,0],[5,0],[4,1],[4,2],[3,3],[4,3],[2,4],[1,5],[5,5]],"remove":{"block":2,"laser":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["wall","","","","","wall","","","","","wall","","","","","","wall","door:red","","","","wall","","","","","wall","sensor:red","goal","","","wall","","","",""],"start":{"x":2,"y":5},"entities":[{"kind":"turret","x":4,"y":3,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":5,"y":5,"turret":{"dirs":["left"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[5,5],"laser":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r10","name":"Spike field","challenge":{"open":[[1,0],[2,0],[5,0],[2,1],[3,1],[4,1],[3,2],[4,2],[4,3],[2,4],[2,5]],"remove":{"block":1,"spikes":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","death","death","","","wall","","gate:down","wall","death","wall","","","","","wall","death","","","","","","wall","","","","death","","","goal","","","wall","","",""],"start":{"x":3,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"spikes":[4,4],"block":[5,5]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r11","name":"Hot floor","challenge":{"open":[[2,0],[4,0],[0,1],[1,2],[2,2],[5,2],[0,3],[1,3],[4,3],[5,3],[0,4],[5,5]],"remove":{"block":1,"spikes":1,"laser":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","sensor:red","death","","death","","","","","","","","wall","","","wall","death","wall","","goal","wall","death","","","","","","door:red","","","","","","wall"],"start":{"x":1,"y":0},"entities":[{"kind":"turret","x":2,"y":0,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":2,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":0,"y":4,"turret":{"dirs":["left"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[2,2],"spikes":[3,3],"block":[4,4]},"steps":{"min":1},"rules":[],"require":[],"optional":[]}];
 return { CHALLENGES };
 })();
 // ---- src/campaign/names.js
@@ -5677,9 +5690,12 @@ const { CHALLENGES } = m40;
 
 
 const shownName = def => { const i = LEVELS.filter(listed).findIndex(l => l.id === def.id); return i >= 0 ? `Level ${i + 1}` : def.name; };
-// A challenge is numbered by its place in the plan too (register 735), C1, C2, C3 down the list; its id stays.
-const challengeName = def => `C${CHALLENGES.findIndex(c => c.id === def.id) + 1}`;
-return { shownName, challengeName };
+// Each challenge slot holds a placing challenge and a removal one (registers 786, 787): the placing ones are
+// numbered C1, C2, C3 down the plan (735), the removal ones R1, R2, R3 beside them; ids stay.
+const PLACING = CHALLENGES.filter(c => !c.challenge.remove);
+const REMOVING = CHALLENGES.filter(c => c.challenge.remove);
+const challengeName = def => def.challenge.remove ? `R${REMOVING.findIndex(c => c.id === def.id) + 1}` : `C${PLACING.findIndex(c => c.id === def.id) + 1}`;
+return { shownName, PLACING, REMOVING, challengeName };
 })();
 // ---- src/editor/history.js
 const m42 = (() => {
@@ -6770,9 +6786,9 @@ return { TEMPLATES };
 // ---- src/campaign/progression.js
 const m54 = (() => {
 const { LEVELS } = m39;
-const { CHALLENGES } = m40;
 const { TEMPLATES } = m53;
 const { listed } = m38;
+const { PLACING, REMOVING } = m41;
 // What the campaign has opened (registers 558, 610, 611). Beating a builder level opens the next
 // builder level, its own side goals and one side room; side rooms alternate, a puzzle after the first
 // builder level, a challenge after the second, and so on, and solving one opens nothing but its star.
@@ -6787,9 +6803,11 @@ const authored = n => { const t = TEMPLATES.find(r => r.name === `Puzzle ${n}` |
 const PUZZLES = Array.from({ length: 12 }, (_, i) => authored(i + 1));
 const builders = () => LEVELS.filter(listed);
 // The side room after the k-th builder level (1-based), or null.
-const sideRoom = k => (k % 2 ? PUZZLES[(k - 1) / 2] : CHALLENGES[k / 2 - 1]) || null;
-// The floor plan: each builder level with the side room it opens.
-const plan = () => builders().map((def, i) => ({ def, side: sideRoom(i + 1) }));
+const sideRoom = k => (k % 2 ? PUZZLES[(k - 1) / 2] : PLACING[k / 2 - 1]) || null;
+// A challenge slot opens two side rooms at once: its placing challenge and its removal twin (register 786).
+const twinRoom = k => (k % 2 ? null : REMOVING[k / 2 - 1]) || null;
+// The floor plan: each builder level with the side room it opens, and that room's twin.
+const plan = () => builders().map((def, i) => ({ def, side: sideRoom(i + 1), twin: twinRoom(i + 1) }));
 
 const beaten = (p, def) => !!(p.levels && p.levels[def.id] && p.levels[def.id].beaten);
 // Whether a level can be played: the builder levels up to AHEAD past the furthest one beaten, so a player
@@ -6799,7 +6817,7 @@ const AHEAD = 3;
 function isOpen(id, p) {
   const b = builders(), i = b.findIndex(d => d.id === id);
   if (i >= 0) return i < AHEAD + b.reduce((f, d, k) => beaten(p, d) ? k + 1 : f, 0);
-  const k = plan().findIndex(r => r.side && r.side.id === id);
+  const k = plan().findIndex(r => (r.side && r.side.id === id) || (r.twin && r.twin.id === id));
   return k < 0 || beaten(p, b[k]);
 }
 // A level's side goals show once it is beaten.
@@ -6816,7 +6834,7 @@ function listOrder(entries, extras) {
   }
   return out;
 }
-return { PUZZLES, builders, sideRoom, plan, AHEAD, isOpen, sideGoalsOpen, listOrder };
+return { PUZZLES, builders, sideRoom, twinRoom, plan, AHEAD, isOpen, sideGoalsOpen, listOrder };
 })();
 // ---- src/app/goalCard.js
 const m55 = (() => {
@@ -6897,6 +6915,20 @@ function piecesToPlace(def, by) {
   return box;
 }
 
+// A removal challenge's card (register 787): how many of each kind to take out, one icon each, crossed
+// out as each goes.
+function piecesToRemove(def, by) {
+  const box = document.createElement('div'); box.className = 'campPieces out'; box.setAttribute('aria-label', 'Pieces to take out');
+  for (const [el, n] of Object.entries(def.challenge.remove)) {
+    const kind = document.createElement('span'); kind.className = 'campKind';
+    kind.append(Object.assign(document.createElement('b'), { className: 'campCount', textContent: `−${n}×` }));
+    const gone = def.palette[el][1] + n - by[el].length;
+    for (let i = 0; i < n; i++) { const c = word({ el }); if (i < gone) c.classList.add('used'); kind.append(c); }
+    box.append(kind);
+  }
+  return box;
+}
+
 // The level over the room: a goal card with one row per requirement, marked after a run, and
 // the optional goals apart. Its height never changes with a verdict; the verdict's words
 // float over the room instead.
@@ -6942,7 +6974,7 @@ function syncBrief() {
   const main = document.createElement('div'); main.className = 'campMain';
   const big = document.createElement('span'); big.className = 'campBigStar' + (ran && v.won ? ' on' : ''); big.innerHTML = glyph('star'); big.setAttribute('role', 'img'); big.setAttribute('aria-label', 'Main star');
   main.append(big, must);
-  if (def.challenge) main.append(piecesToPlace(def, by));
+  if (def.challenge) main.append(def.challenge.remove ? piecesToRemove(def, by) : piecesToPlace(def, by));
   opt.dataset.label = 'Optional goals';
   for (const r of rows) {
     const list = r.optional ? opt : must;
@@ -7814,7 +7846,7 @@ function noteWin(def, before, rec, v, words) {
 // The level after this one in its own list (a challenge's next is the next challenge), or none at the end.
 function next(def) {
   if (def.made) return { label: 'Maker', go: up };
-  const list = def.challenge ? CHALLENGES : LEVELS.filter(listed), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
+  const list = def.challenge ? CHALLENGES.filter(c => !c.challenge.remove === !def.challenge.remove) : LEVELS.filter(listed), i = list.findIndex(l => l.id === def.id), n = i >= 0 ? list[i + 1] : null;
   return n ? { label: 'Next level', go: () => go('level', n.id) } : null;
 }
 
@@ -8223,10 +8255,16 @@ function room(def, p, kind) {
   li.append(b);
   return li;
 }
+// A challenge slot holds its two challenges side by side, each half as wide (register 786).
+function pair(li, twin) {
+  if (!twin) return li;
+  li.classList.add('pair'); li.append(...twin.childNodes);
+  return li;
+}
 // Unlocked for the session, the levels off the plan join it in number order; a hidden one never shows (731).
 function renderList() {
   const p = progress(), rows = [], extras = unlocked() ? LEVELS.filter(d => !d.tutorial && !d.hidden && !listed(d)) : [];
-  for (const { def, side } of listOrder(plan(), extras)) rows.push(room(def, p, 'main'), side ? room(side, p, 'side') : Object.assign(document.createElement('li'), { className: 'side none' }));
+  for (const { def, side, twin } of listOrder(plan(), extras)) rows.push(room(def, p, 'main'), side ? pair(room(side, p, 'side'), twin && room(twin, p, 'side')) : Object.assign(document.createElement('li'), { className: 'side none' }));
   $('campList').replaceChildren(...rows);
 }
 

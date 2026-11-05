@@ -89,14 +89,24 @@ export const nameOf = (el, n) => { const w = ELEMENTS[el].label.toLowerCase(); r
 export const START_ON = 'Nothing can start on a button, a switch or spikes.';
 // Why the room cannot be run yet: each is { msg, at? }. Empty when it can.
 // The maximums a room goes over: each a goal row, missed at Run.
+// A removal challenge says it as taking out (register 787): too many left is "take out N more".
+const out = def => def.challenge && def.challenge.remove;
 export function overLimits(def, room) {
   const { by } = placed(def, room);
-  return Object.entries(by).flatMap(([el, list]) => { const max = (def.palette[el] || [0, 0])[1]; return max && list.length > max ? [{ el, msg: `Place at most ${max} ${nameOf(el, max)}.` }] : []; });
+  return Object.entries(by).flatMap(([el, list]) => {
+    const max = (def.palette[el] || [0, 0])[1];
+    if (out(def) && el in out(def)) return list.length > max ? [{ el, msg: `Take out ${list.length - max} more ${nameOf(el, list.length - max)}.` }] : [];
+    return max && list.length > max ? [{ el, msg: `Place at most ${max} ${nameOf(el, max)}.` }] : [];
+  });
 }
 // The minimums a room falls short of: judged at Run like the maximums, never a reason not to run (register 321).
 export function underLimits(def, room) {
   const { by } = placed(def, room);
-  return Object.entries(by).flatMap(([el, list]) => { const min = (def.palette[el] || [0, 0])[0]; return list.length < min ? [{ el, msg: `Place at least ${min} ${nameOf(el, min)}.` }] : []; });
+  return Object.entries(by).flatMap(([el, list]) => {
+    const min = (def.palette[el] || [0, 0])[0];
+    if (out(def) && el in out(def)) return list.length < min ? [{ el, msg: `Take out only ${out(def)[el]} ${nameOf(el, out(def)[el])}.` }] : [];
+    return list.length < min ? [{ el, msg: `Place at least ${min} ${nameOf(el, min)}.` }] : [];
+  });
 }
 
 export function placementErrors(def, room) {

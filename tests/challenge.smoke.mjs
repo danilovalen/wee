@@ -4,13 +4,14 @@ import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite } from './lib.mjs';
 import { measure } from '../tools/challenge.mjs';
+import { measureRemoval } from '../tools/removalFind.mjs';
 import { readFileSync } from 'node:fs';
 
 const { check, done } = suite('challenge');
 const PORT = 5267;
 const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const ALL = JSON.parse(readFileSync('campaign/challenges.json', 'utf8')), ch = ALL.find(c => c.id === process.env.CHALLENGE) || ALL[0];  // whichever challenge comes first: nothing here depends on its content (register 581)
+const ALL = JSON.parse(readFileSync('campaign/challenges.json', 'utf8')), ch = ALL.find(c => c.id === process.env.CHALLENGE) || ALL.find(c => !c.remove);  // whichever challenge comes first: nothing here depends on its content (register 581)
 const win = measure(ch).wins[0].rows;
 const TOOL = { '#': 'wall', B: 'box', t: 'toggle', '>': 'gate', '<': 'gate', '^': 'gate', v: 'gate' };
 try {
@@ -54,6 +55,21 @@ try {
   // Register 575: a won challenge shows its star on the level list.
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(600);
   check('the level list shows the challenge beaten', await p.$eval(`[data-level="${ch.id}"] .campStar.main`, s => s.classList.contains('on')));
+  // Registers 786, 787: a challenge slot shows its two challenges side by side, each half as wide.
+  const pairs = await p.$$eval('#campList li.side.pair', ls => ls.map(l => { const bs = [...l.querySelectorAll('.campRow')], w = l.getBoundingClientRect().width; return { n: bs.length, half: bs.every(b => b.getBoundingClientRect().width < w * 0.55), ids: bs.map(b => b.dataset.level) }; }));
+  check('each challenge slot shows its placing and removal challenges side by side, each half as wide (register 786)', pairs.length === ALL.filter(c => !c.remove).length && pairs.every(q => q.n === 2 && q.half && /^c/.test(q.ids[0]) && /^r/.test(q.ids[1])), JSON.stringify(pairs.slice(0, 2)));
+  // A removal challenge: the card says how many to take out; taking out the right pieces wins on Run.
+  const rm = ALL.find(c => c.remove), out = measureRemoval(rm).wins[0].tiles;
+  await p.goto(`http://localhost:${PORT}/index.html#/level/${rm.id}`); await p.waitForTimeout(1200);
+  const rcounts = await p.$$eval('#campBrief .campPieces.out .campKind', ks => ks.map(k => [k.querySelector('.campCount').textContent, k.querySelectorAll('.campIcon').length]));
+  check('a removal challenge\'s card says how many of each kind to take out (register 787)', rcounts.length === Object.keys(rm.remove).length && rcounts.every(([t, n]) => t === `−${n}×`), JSON.stringify(rcounts));
+  check('the room as given has its pieces in it', await p.evaluate(() => window.wee.getLevel().cells.filter(c => c === 'wall').length) >= Object.values(rm.remove).reduce((a, b) => a + b, 0));
+  const rg = await p.locator('#game').boundingBox(), rt = rg.width / rm.rows[0].length;
+  for (const [x, y] of out) { await p.click(`[data-tool="${TOOL[rm.rows[y][x]] || 'wall'}"]`); await p.mouse.click(rg.x + rt * (x + .5), rg.y + rt * (y + .5)); await p.waitForTimeout(150); }
+  check('each piece taken out is crossed off on the card', (await p.$$eval('#campBrief .campPieces.out .campIcon', cs => cs.every(c => c.classList.contains('used')))), JSON.stringify(await p.$$eval('#campBrief .campPieces.out .campIcon', cs => cs.map(c => c.className))));
+  await p.tap('#campRun');
+  await p.waitForFunction(() => !window.wee.demoRunning(), null, { timeout: 20000 }); await p.waitForTimeout(300);
+  check('taking out the right pieces wins on Run', /^won in/.test(await p.locator('#campLast').getAttribute('data-said')), await p.locator('#campLast').getAttribute('data-said'));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the challenge smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

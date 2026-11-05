@@ -173,10 +173,16 @@ function room(def, p, kind) {
   li.append(b);
   return li;
 }
+// A challenge slot holds its two challenges side by side, each half as wide (register 786).
+function pair(li, twin) {
+  if (!twin) return li;
+  li.classList.add('pair'); li.append(...twin.childNodes);
+  return li;
+}
 // Unlocked for the session, the levels off the plan join it in number order; a hidden one never shows (731).
 function renderList() {
   const p = progress(), rows = [], extras = unlocked() ? LEVELS.filter(d => !d.tutorial && !d.hidden && !listed(d)) : [];
-  for (const { def, side } of listOrder(plan(), extras)) rows.push(room(def, p, 'main'), side ? room(side, p, 'side') : Object.assign(document.createElement('li'), { className: 'side none' }));
+  for (const { def, side, twin } of listOrder(plan(), extras)) rows.push(room(def, p, 'main'), side ? pair(room(side, p, 'side'), twin && room(twin, p, 'side')) : Object.assign(document.createElement('li'), { className: 'side none' }));
   $('campList').replaceChildren(...rows);
 }
 

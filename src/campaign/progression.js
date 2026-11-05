@@ -2,9 +2,9 @@
 // builder level, its own side goals and one side room; side rooms alternate, a puzzle after the first
 // builder level, a challenge after the second, and so on, and solving one opens nothing but its star.
 import { LEVELS } from '../level/campaign.js';
-import { CHALLENGES } from '../level/challenges.js';
 import { TEMPLATES } from '../level/templates.js';
 import { listed } from './rules.js';
+import { PLACING, REMOVING } from './names.js';
 
 // Authored puzzles (registers 651, 660, 662): the rooms in rooms/ named "Puzzle N", so the Sandbox offers the
 // same rooms as examples. Puzzle N takes the N-th puzzle slot; a slot with no such room stays empty.
@@ -13,9 +13,11 @@ const authored = n => { const t = TEMPLATES.find(r => r.name === `Puzzle ${n}` |
 export const PUZZLES = Array.from({ length: 12 }, (_, i) => authored(i + 1));
 export const builders = () => LEVELS.filter(listed);
 // The side room after the k-th builder level (1-based), or null.
-export const sideRoom = k => (k % 2 ? PUZZLES[(k - 1) / 2] : CHALLENGES[k / 2 - 1]) || null;
-// The floor plan: each builder level with the side room it opens.
-export const plan = () => builders().map((def, i) => ({ def, side: sideRoom(i + 1) }));
+export const sideRoom = k => (k % 2 ? PUZZLES[(k - 1) / 2] : PLACING[k / 2 - 1]) || null;
+// A challenge slot opens two side rooms at once: its placing challenge and its removal twin (register 786).
+export const twinRoom = k => (k % 2 ? null : REMOVING[k / 2 - 1]) || null;
+// The floor plan: each builder level with the side room it opens, and that room's twin.
+export const plan = () => builders().map((def, i) => ({ def, side: sideRoom(i + 1), twin: twinRoom(i + 1) }));
 
 const beaten = (p, def) => !!(p.levels && p.levels[def.id] && p.levels[def.id].beaten);
 // Whether a level can be played: the builder levels up to AHEAD past the furthest one beaten, so a player
@@ -25,7 +27,7 @@ export const AHEAD = 3;
 export function isOpen(id, p) {
   const b = builders(), i = b.findIndex(d => d.id === id);
   if (i >= 0) return i < AHEAD + b.reduce((f, d, k) => beaten(p, d) ? k + 1 : f, 0);
-  const k = plan().findIndex(r => r.side && r.side.id === id);
+  const k = plan().findIndex(r => (r.side && r.side.id === id) || (r.twin && r.twin.id === id));
   return k < 0 || beaten(p, b[k]);
 }
 // A level's side goals show once it is beaten.
