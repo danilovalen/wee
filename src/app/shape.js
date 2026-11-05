@@ -8,6 +8,7 @@ import { NOTES_MAX } from '../solve/design.js';
 import { place, turnDoor, turnSwitch } from '../editor/edit.js';
 import { TOOLS } from '../editor/palette.js';
 import { S } from '../editor/state.js';
+import { choosable } from './offers.js';
 import { $, now } from './dom.js';
 import { CLOCKWISE, CORNERS } from '../rules/base.js';
 
@@ -110,17 +111,11 @@ function pieceName(t, ui) {
 // while the room is still the one the change was found in (register 726).
 const stampOf = l => JSON.stringify(l);
 const applyRoom = (level, from) => dispatchEvent(new CustomEvent('wee:apply', { detail: { level, from } }));
-// A design note that offers a change: its text flashes where, and Apply makes it.
+// A design note that offers a change: chosen, it shows on the room; Apply makes it (registers 745, 746).
 export function offerLine(text, found) {
-  const li = document.createElement('li'), from = stampOf(S.level);
-  if (!found) { li.textContent = text; return li; }
-  const say = Object.assign(document.createElement('button'), { type: 'button', textContent: text });
-  li.append(say);
-  say.onclick = () => found.x != null && flash(found.x, found.y);
-  const apply = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Apply', className: 'apply' });
-  apply.onclick = () => applyRoom(found.level, from);
-  li.append(apply);
-  return li;
+  const from = stampOf(S.level);
+  if (!found) return Object.assign(document.createElement('li'), { textContent: text });
+  return choosable(text, { level: found.level, spots: found.x != null ? [{ x: found.x, y: found.y }] : [], apply: () => applyRoom(found.level, from) });
 }
 
 let offer = null, token = 0;

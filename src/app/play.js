@@ -14,6 +14,7 @@ import { feedDemo } from './check.js';
 import { noteError } from './debug.js';
 import { selectOverlay } from './select.js';
 import { offerGhost } from './shape.js';
+import { previewLevel } from './offers.js';
 import { moveRefusal } from './campaignMove.js';
 import { watchStuck, resetStuck, showDead } from './stuck.js';
 import { lensMarks, lensBusy } from './lenses.js';
@@ -158,7 +159,7 @@ export function render() {
   syncRing();
   const shown = S.replay ? S.replay.frames[S.replay.i].game : S.dead ? S.dead.game : null;
   if (S.mode === 'play') drawPlay(g, shown || S.game, shown ? snapshot(shown) : S.prev, shown ? 1 : Math.min(1, S.acc / TICK_MS), S.fx, t);
-  else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || offerGhost() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
+  else drawEdit(g, previewLevel() || S.level, S.hover, S.fx, t, marks(), selectOverlay() || offerGhost() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
   present();
 }
 

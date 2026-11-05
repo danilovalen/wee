@@ -6,10 +6,11 @@ import { roomMetrics } from '../solve/metrics.js';
 import { metricLines, reuseText, pathReuseText } from './metricLines.js';
 import { reuse } from '../solve/flow.js';
 import { S } from '../editor/state.js';
-import { $, now } from './dom.js';
+import { $ } from './dom.js';
 import { syncWell } from './well.js';
 import { trimRoom } from '../solve/shape.js';
 import { removeBest, offerLine, trimText, removeText } from './shape.js';
+import { choosable } from './offers.js';
 
 const SLICE_MS = 25, MAX = NOTES_MAX;
 const NAME = { boomerang: 'Boomerang', dive: 'Dive', laser: 'Laser', cycle: 'Cycle', swim: 'Swim', armored: 'Armored' };
@@ -28,13 +29,9 @@ export function sliced(it, stamp, done) {
 }
 
 function line(text, spots = []) {
-  const li = document.createElement('li');
-  if (!spots.length) { li.textContent = text; return li; }
-  const b = document.createElement('button');
-  b.type = 'button'; b.textContent = text;
-  b.onclick = () => { for (const s of spots) S.fx.push({ type: 'flash', x: s.x, y: s.y, at: now() }); };
-  li.append(b);
-  return li;
+  if (!spots.length) return Object.assign(document.createElement('li'), { textContent: text });
+  // Chosen, its tiles ring on the room until it is let go (register 745).
+  return choosable(text, { spots });
 }
 
 // The room changed: the notes stay where they are, dimmed, until a Check replaces them, so

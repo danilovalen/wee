@@ -25,12 +25,24 @@ try {
   await page.click('#checkBtn');
   const n = await notes();
   check('after Check the notes offer a trim, said plainly (registers 698, 700)', /Trim to \d+x\d+: the room plays the same\./.test(n) && (await level()).h === 4, n);
-  await page.click('#designList li:has-text("Trim to") .apply');
+  // Registers 745, 746: a line is chosen to preview it, and only the chosen line carries Apply.
+  const trimLi = '#designList li:has-text("Trim to")';
+  check('before a line is chosen, no Apply shows', await page.locator(`${trimLi} .apply`).isHidden());
+  const picture = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(document.getElementById('game').toDataURL())))));
+  const before = await picture();
+  await page.click(trimLi);
+  const pv = await page.evaluate(async () => { const { previewLevel } = await import('/src/app/offers.js'); const l = previewLevel(); return l && l.h; });
+  check('choosing a line previews its change on the room, and shows its Apply', pv !== null && pv < 4 && await picture() !== before && await page.locator(`${trimLi} .apply`).isVisible() && (await level()).h === 4, String(pv));
+  await page.click(trimLi);
+  check('a tap on the chosen line lets it go', await page.locator(`${trimLi} .apply`).isHidden() && await page.evaluate(async () => (await import('/src/app/offers.js')).previewLevel()) === null);
+  await page.click(trimLi);
+  await page.click(`${trimLi} .apply`);
   check('Apply trims the room', (await level()).h < 4, JSON.stringify([(await level()).w, (await level()).h]));
   await page.click('#undo');
   check('and Undo puts it back', (await level()).h === 4);
   // Register 719: an offer is one line, the sentence beside a small Apply, and nothing scrolls sideways.
   await page.click('#checkBtn'); await notes();
+  await page.click('#designList li:has(> .apply)');
   const line = await page.$eval('#designList li:has(> .apply)', li => { const [say, ap] = li.children, lh = parseFloat(getComputedStyle(say).lineHeight) || 16, body = li.closest('.wellBody') || li.parentElement;
     return { oneLine: say.getBoundingClientRect().height < 2 * lh + 12, small: ap.getBoundingClientRect().width < 120, flat: body.scrollWidth <= body.clientWidth + 1 }; });
   check('an offer reads on one line beside a small Apply, and nothing scrolls sideways (register 719)', line.oneLine && line.small && line.flat, JSON.stringify(line));
