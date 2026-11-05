@@ -67,13 +67,13 @@ try {
   // The menu is a screen of its own, not a box over the editor, with the robot playing behind it.
   const menuRect = await page.locator('#menuBox').boundingBox();
   check('the menu fills the whole window', menuRect && menuRect.x === 0 && menuRect.y === 0 && menuRect.width === 1280 && menuRect.height === 800, JSON.stringify(menuRect));
-  const robotAt = () => page.$eval('.msRobot', e => getComputedStyle(e).transform).catch(() => null);
+  const robotAt = () => page.evaluate(async () => { const g = (await import('/src/app/menuScene.js')).menuRoom.game; return g ? `${g.player.x},${g.player.y}` : null; });
   // Sampled over 3 s: the loop rests between slides, so two close samples can match.
   const seenAt = new Set(); for (let i = 0; i < 10; i++) { seenAt.add(await robotAt()); await page.waitForTimeout(300); }
   check('the robot behind the menu is moving', !seenAt.has(null) && seenAt.size > 2, [...seenAt].join(' / '));
-  const deskLay = await page.evaluate(() => [document.querySelector('.msGoal').getBoundingClientRect().bottom, document.getElementById('menuCampaign').getBoundingClientRect().top]);
+  const deskLay = await page.evaluate(async () => [(await import('/src/app/menuScene.js')).menuTileRect(4, 6).bottom, document.getElementById('menuCampaign').getBoundingClientRect().top]);
   check('on a wide window the goal still ends above the buttons', deskLay[0] < deskLay[1], JSON.stringify(deskLay));
-  check('the room behind the menu has its laser, door and switch', await page.$$eval('.msBeam, .msDoor, .msSwitch', es => es.filter(e => e.getBoundingClientRect().width > 0).length) === 3);
+  check('the room behind the menu has its laser, door and switch', await page.evaluate(async () => { const g = (await import('/src/app/menuScene.js')).menuRoom.game; return g.entities.some(e => e.turret) && g.cells.some(c => /^door:/.test(c)) && g.cells.some(c => /^toggle:/.test(c)); }));
   // Register 554: a pushable laser's barrel stays inside its box frame, every way it points.
   const spill = await page.evaluate(async () => { const { drawPiece } = await import('/src/view/pieces.js'); let out = 0;
     for (const d of ['up', 'down', 'left', 'right']) { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
@@ -88,8 +88,9 @@ try {
     for (let i = 0; i < px.length; i += 4) if (Math.abs(px[i] - 0x85) < 8 && Math.abs(px[i + 1] - 0x7f) < 8 && Math.abs(px[i + 2] - 0x6a) < 8) n++;
     return n; });
   check('a pushable laser wears the box\'s frame (registers 336, 607)', frame > 60, String(frame));
-  // Register 553: the menu's pieces are painted by the game's own drawing, so they cannot drift from the room.
-  check('the menu\'s laser, switch (off and on), door, goal, box and blob are the game\'s drawings', await page.$$eval('.msEmitter, .msSwitch .off, .msSwitch .on, .msDoor, .msGoal, .msBox, .msBody', es => es.length === 7 && es.every(e => getComputedStyle(e).backgroundImage.startsWith('url("data:image/png'))));
+  // Registers 553, 782: the menu's room is a real room the game's own renderer draws, frame after frame.
+  const painted = await page.evaluate(async () => { const { menuRoom } = await import('/src/app/menuScene.js'), n = menuRoom.draws; await new Promise(r => setTimeout(r, 300)); const c = document.getElementById('menuRoom'), px = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let ink = 0; for (let i = 3; i < px.length; i += 4) if (px[i]) ink++; return { more: menuRoom.draws - n, ink, of: px.length / 4 }; });
+  check('the menu\'s room is drawn by the game\'s renderer, every frame (register 782)', painted.more > 5 && painted.ink > painted.of / 2, JSON.stringify(painted));
   await page.click('#menuCampaign');
   const rows = await page.$$eval('.campRow', rs => rs.map(r => r.dataset.level));
   check('the level list starts at Level 1: the tutorial is on the menu, not a card (register 521)', rows.length >= 1 && rows[0] === LISTED[0].id && !rows.includes('tutorial'), rows.join());
@@ -172,7 +173,7 @@ try {
   // F1: a tap on the failed row draws a shortest path that missed it on the room.
   // Back in edit first, so the room is compared with itself and not with the robot playing.
   // Run plays live, then offers Replay of that run (register 771).
-  await page.waitForFunction(() => !document.getElementById('campReplay').hidden, null, { timeout: 8000 }).catch(() => {});
+  await page.waitForFunction(() => document.getElementById('campReplay').checkVisibility(), null, { timeout: 8000 }).catch(() => {});
   const offered = await page.locator('#campReplay').isVisible();
   if (offered) await page.click('#campReplay');
   check('after a Run, Replay is offered and opens that run at its start (register 771)', offered && await page.locator('#replayBar').isVisible() && /^Start, \d+ moves?$/.test(await page.textContent('#rpAt')), offered ? await page.textContent('#rpAt') : 'no Replay button');
@@ -428,7 +429,7 @@ try {
   check('a Test stays in play until the player leaves it', await page.evaluate(() => document.body.classList.contains('play')));
   await page.click('#mode');
   // The report: the state as the level was left, and the last taps.
-  await page.click('#campBack'); await page.click('#campMenu'); await page.click('#menuDebug');
+  await page.evaluate(async () => (await import('/src/app/unlock.js')).setDev(true)); await page.click('#campBack'); await page.click('#campMenu'); await page.click('#menuDebug');
   const rep = JSON.parse(await page.evaluate(() => document.getElementById('reportText').value));
   check('Debug shows the level as it was left and the last taps', rep.format === 'wee-debug' && rep.leftLevel && rep.leftLevel.level === '1' && rep.leftLevel.mode === 'edit' && rep.leftLevel.onTop.room === '#game' && rep.events.some(e => e.type === 'pointerdown'), JSON.stringify(rep.leftLevel));
   const dbg = await page.evaluate(() => [document.getElementById('menuDebug').textContent, /chat/i.test(document.body.innerText + document.getElementById('menuDebug').title)]);
@@ -449,7 +450,7 @@ try {
   // On a phone, a palette wider than the screen scrolls by itself and the page stays put.
   const phone = await browser.newPage({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true }); await phone.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; }); await phone.addInitScript(() => { window.__noWinCard = true; });
   await phone.goto('http://localhost:5217/');
-  const phoneLay = await phone.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(); return { goal: r('.msGoal').bottom, door: r('.msDoor').left, btn: r('#menuCampaign').top, logo: r('.menuLogo').height, w: innerWidth }; });
+  const phoneLay = await phone.evaluate(async () => { const { menuTileRect } = await import('/src/app/menuScene.js'); const r = s => document.querySelector(s).getBoundingClientRect(); return { goal: menuTileRect(4, 6).bottom, door: menuTileRect(4, 5).left, btn: r('#menuCampaign').top, logo: r('.menuLogo').height, w: innerWidth }; });
   check('on a phone the menu shows the wordmark, and the goal and door sit above the buttons', phoneLay.logo > 0 && phoneLay.goal < phoneLay.btn && phoneLay.door < phoneLay.w, JSON.stringify(phoneLay));
   await phone.click('#menuCampaign'); await phone.click(`.campRow[data-level="${MOST.id}"]`);
   const fit = await phone.evaluate(() => { const d = document.documentElement, g = document.getElementById('palette'); return { page: [d.scrollWidth, d.clientWidth, d.scrollHeight, d.clientHeight], grid: [g.scrollWidth, g.clientWidth, getComputedStyle(g).overflowX] }; });

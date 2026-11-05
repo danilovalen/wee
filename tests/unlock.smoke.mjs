@@ -1,5 +1,5 @@
-// Unlock everything for this session (registers 589, 606): the menu's corner button shows every level the
-// list hides, puts a badge in the top bar, writes nothing to saved progress, and a reload ends it.
+// Dev mode (registers 589, 606, 780): the menu's corner lock shows every level the list hides and the
+// tester's extras, puts a badge in the top bar, writes nothing to saved progress, and stays on after a reload.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite } from './lib.mjs';
@@ -29,7 +29,11 @@ try {
   check('an unbeaten level shows no side goals yet', await p.$$eval('.campReqs .optional', o => o.length === 0));
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
   await p.evaluate(() => { location.hash = '#/'; }); await p.waitForTimeout(500);
+  const extras = ['#menuDebug', '#reportBtn', '#roomDownload', '#importBtn', '#exportAll'];
+  const shownExtras = () => p.evaluate(ids => ids.filter(id => { const e = document.querySelector(id); return e && getComputedStyle(e).display !== 'none'; }), extras);
+  check('locked, Debug, Copy report, Download, Import and Export all are hidden (register 780)', (await shownExtras()).length === 0, (await shownExtras()).join());
   await p.click('#menuUnlock'); await p.waitForTimeout(150);
+  check('in dev mode they come back', (await shownExtras()).length === extras.length, (await shownExtras()).join());
   check('the corner button says it is on', (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'true');
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
   check('unlocked, the list shows every level unlock opens, and still leaves out the ones marked hidden (register 731)', (ids => hidden.every(id => ids.includes(id) === !LEVELS.find(l => l.id === id).hidden))(await rows()), JSON.stringify(await rows()));
@@ -39,7 +43,11 @@ try {
   check('nothing about it is saved', (await p.evaluate(() => localStorage.getItem('wee.campaign'))) === saved || !/unlock/i.test(await p.evaluate(() => localStorage.getItem('wee.campaign') || '')));
   await p.reload(); await p.waitForTimeout(800);
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
-  check('a reload locks it again', (await rows()).every(id => !hidden.includes(id)) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'false');
+  check('dev mode stays on after a reload, its levels still open (register 780)', (ids => hidden.every(id => ids.includes(id) === !LEVELS.find(l => l.id === id).hidden))(await rows()) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'true');
+  await p.evaluate(() => { location.hash = '#/'; }); await p.waitForTimeout(400);
+  await p.click('#menuUnlock'); await p.waitForTimeout(150); await p.reload(); await p.waitForTimeout(800);
+  await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
+  check('locked again, it stays locked after a reload', (await rows()).every(id => !hidden.includes(id)) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'false' && (await shownExtras()).length === 0);
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the unlock smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

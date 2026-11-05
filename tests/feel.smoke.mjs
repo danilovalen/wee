@@ -17,10 +17,9 @@ try {
 
   // The menu's walls are one mass, drawn as the room draws them: no seam between two side by side (register 648).
   const seam = await p.evaluate(async () => {
-    const url = getComputedStyle(document.querySelector('.msWalls')).backgroundImage.slice(5, -2), img = new Image(); img.src = url; await img.decode();
-    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0);
-    const u = img.width / 6, px = (x, y) => [...g.getImageData(Math.round(x * u), Math.round(y * u), 1, 1).data].slice(0, 3);
-    return { seam: px(1, 5.5), face: px(0.5, 5.5), floor: px(2.5, 2.5), old: document.querySelectorAll('.msWall').length };
+    const { MENU_MARGIN: m } = await import('/src/app/menuScene.js'), c = document.getElementById('menuRoom'), g = c.getContext('2d'), u = c.width / (6 + 2 * m);
+    const px = (x, y) => [...g.getImageData(Math.round((m + x) * u), Math.round((m + y) * u), 1, 1).data].slice(0, 3);
+    return { seam: px(1, 5.5), face: px(0.5, 5.5), floor: px(2.5, 2.5), old: document.querySelectorAll('.msWall, .msWalls').length };
   });
   check('the menu\'s walls join with no seam, like the room\'s', seam.old === 0 && seam.seam.join() === seam.face.join() && seam.face.join() !== seam.floor.join(), JSON.stringify(seam));
   // A pressed button: its lip moves to the top and its icon sinks, its box stays put.

@@ -430,6 +430,7 @@ try {
   check('and the title follows the name', (await page.textContent('#roomTitle')) === 'Smoke room');
   check('and the button no longer says unsaved', !(await page.textContent('#roomsBtn')).includes('\u2022'));
   check('delete sits apart, in its own danger zone', (await page.locator('#thisRoom .danger #roomDelete').count()) === 1);
+  await page.evaluate(async () => (await import('/src/app/unlock.js')).setDev(true)); 
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#roomDownload')]);
   const saved = JSON.parse(readFileSync(await dl.path(), 'utf8'));
   check('Download gives a .wee with its name and note', dl.suggestedFilename() === 'Smoke-room.wee' && saved.name === 'Smoke room' && saved.note === 'checks the panel');

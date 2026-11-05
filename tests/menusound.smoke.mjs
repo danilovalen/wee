@@ -1,6 +1,6 @@
-// The menu's blob makes the game's own sounds (register 778): one launch, land and hit per slide of its loop,
-// the doors as the switch turns, the win at the berry, through the same voices a room plays, and none while
-// the menu is shut.
+// The menu's blob makes the game's own sounds (registers 778, 782): its room is a real one, run by the rules,
+// so each slide launches, lands and hits, the doors sound as the switch turns and the win at the berry, through
+// the same voices a room plays, and none while the menu is shut.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite } from './lib.mjs';
@@ -13,27 +13,22 @@ const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 try {
   await page.goto('http://localhost:5295/');
-  await page.waitForFunction(() => document.querySelector('.msRobot'));
-  const tl = await page.evaluate(async () => (await import('/src/app/menuSound.js')).menuTimeline());
-  const n = v => tl.filter(([, x]) => x === v).length;
-  // The loop slides down, right, down, right, left and down: six slides.
-  check('each of the loop\'s six slides launches, lands and hits, read off its keyframes', n('launch') === 6 && n('land') === 6 && n('hit') === 6, JSON.stringify(tl));
-  check('the doors sound once, as the switch turns on', n('doors') === 1 && tl.find(([, v]) => v === 'doors')[0] > 40 && tl.find(([, v]) => v === 'doors')[0] < 43, JSON.stringify(tl));
-  check('and the win sounds as the last slide reaches the berry', n('win') === 1 && tl[tl.length - 1][1] === 'win' && tl[tl.length - 1][0] > 60, JSON.stringify(tl));
-  // Count what the voices are asked to play, at ten times the speed.
+  await page.waitForFunction(() => document.getElementById('menuRoom'));
+  // Count what the voices are asked to play over one whole loop, then with the menu shut.
   const heard = await page.evaluate(async () => {
-    const { VOICES } = await import('/src/app/sound.js'), got = [];
+    const { VOICES } = await import('/src/app/sound.js'), { menuRoom } = await import('/src/app/menuScene.js'), got = [];
     for (const k of Object.keys(VOICES)) VOICES[k] = () => got.push(k);
-    const r = document.querySelector('.msRobot'); r.style.animationDuration = '1.2s, 12s';
-    r.style.animationName = 'none'; void r.offsetWidth; r.style.animationName = '';
-    await new Promise(res => setTimeout(res, 1300));
+    const start = menuRoom.game;
+    await new Promise(res => { const t0 = performance.now(); const w = () => (menuRoom.game !== start || performance.now() - t0 > 15000) ? res() : setTimeout(w, 100); w(); });
     const shown = got.slice();
     document.getElementById('menuSandbox').click(); await new Promise(res => setTimeout(res, 300));
-    got.length = 0; await new Promise(res => setTimeout(res, 1300));
-    return { shown, shut: got.slice(), open: document.getElementById("menuBox").open, menus: [...document.querySelectorAll("dialog[open]")].map(d => d.id) };
+    got.length = 0; const ticks = menuRoom.ticks; await new Promise(res => setTimeout(res, 2500));
+    return { shown, shut: got.slice(), ran: menuRoom.ticks - ticks };
   });
-  check('on the menu the blob plays the room\'s voices', ['launch', 'land', 'hit', 'doors', 'win'].every(v => heard.shown.includes(v)), JSON.stringify(heard.shown));
-  check('and none while the menu is shut', heard.shut.length === 0, JSON.stringify(heard));
+  const n = v => heard.shown.filter(x => x === v).length;
+  check('on the menu the blob plays the room\'s voices: launch, land, hit, the doors and the win', ['launch', 'land', 'hit', 'doors', 'win'].every(v => heard.shown.includes(v)), JSON.stringify(heard.shown));
+  check('each of the loop\'s six slides launches once, and the win sounds once', n('launch') === 6 && n('win') === 1, JSON.stringify(heard.shown));
+  check('with the menu shut the room stands still and makes no sound', heard.shut.length === 0 && heard.ran === 0, JSON.stringify(heard));
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the menu sound smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

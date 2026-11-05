@@ -77,7 +77,7 @@ try {
   await page.keyboard.press('ArrowRight'); await page.evaluate(() => window.advanceTime(1500));
   check('on a checkpoint with a box pushed away, Reset is offered, since it puts the box back', JSON.parse(await page.evaluate(() => window.renderGameToText())).checkpoint.x === 4 && !(await page.locator('#respawnBtn').isDisabled()), await page.evaluate(() => window.renderGameToText()));
   await boot('playing');
-  check('playing: every control that works on the room being edited is greyed out', await page.$$eval('[data-edit]', bs => bs.length >= 4 && bs.every(b => b.disabled)));
+  check('playing: every control that works on the room being edited is greyed out', await page.$$eval('[data-edit]', bs => ['checkBtn', 'campReset'].every(id => bs.some(b => b.id === id)) && bs.every(b => b.disabled)));
   await boot('editing');
   check('editing: none of them is', await page.$$eval('[data-edit]', bs => bs.every(b => !b.disabled)));
   check('no page errors', !errors.length, errors.join(' | '));
