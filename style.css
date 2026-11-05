@@ -614,6 +614,14 @@ button:disabled .lookPic { opacity: .35; }
 /* A challenge slot: its placing and removal challenges side by side, each half the width (register 786). */
 .campList li.side.pair { display: flex; gap: 8px; }
 .campList li.side.pair > .campRow { flex: 1 1 0; min-width: 0; }
+/* At half width the name and its star share the top line and the pieces get the line below, so a two-digit
+   name, three pieces and the star all fit inside the card (register 788). */
+#campList li.side.pair > .campRow { grid-template: "name stars" auto "parts parts" 1fr / minmax(0, 1fr) auto; align-items: center; padding: 8px; gap: 4px 6px; }
+#campList li.side.pair .campRowHead { display: contents; }
+#campList li.side.pair .campRowHead > b { grid-area: name; overflow: visible; text-overflow: clip; }
+#campList li.side.pair .campParts { grid-area: parts; flex-wrap: nowrap; justify-content: flex-start; align-self: end; }
+#campList li.side.pair .campStars, #campList li.side.pair .campShut { grid-area: stars; align-self: center; }
+#campList li.side.pair .campStar.main { width: 26px; height: 26px; }
 .campShut { display: flex; align-items: center; } .campShut .glyph { width: 16px; height: 16px; }
 .campRow { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; }
 .campParts { display: flex; gap: 4px; }

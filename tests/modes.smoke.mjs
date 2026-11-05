@@ -64,7 +64,7 @@ try {
   await page.evaluate(() => { window.wee.press('right'); }); await page.waitForTimeout(700);
   await page.evaluate(() => { window.wee.press('down'); }); await page.waitForTimeout(900);
   const won = await page.locator('#winText').textContent();
-  check('the win names the fewest moves', /Solved in 2 moves, the fewest there are\./.test(won), won);
+  check('the win says only the count (register 789)', won === 'Solved in 2 moves.', won);
   await page.click('#puzzleBack');
   check('the list keeps your best', /Solved in 2/.test(await page.locator('#puzzleList .campRow small').textContent()));
   // The Level maker: pick elements and goals, build it, it plays like a campaign level, and back.

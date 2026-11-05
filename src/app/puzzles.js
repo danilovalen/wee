@@ -37,6 +37,24 @@ function play(r, inCampaign = false) {
   S.camp = null; S.simple = true; S.level = noPowers(level);
   document.body.classList.add('puzzle', 'simple');
   A.setMode('play'); A.syncPanel(); A.fit();
+  brief();
+}
+
+// A puzzle's card (registers 784, 789), shaped like a campaign level's: its main star for the berry, and its side
+// goal, the fewest moves in one take. A star kept from an earlier win stays filled.
+function brief(run = {}) {
+  const pz = S.puzzle, few = pz && pz.fewest;
+  if (!pz) return;
+  const kept = !!(((progress().levels[pz.id] || {}).goals || {}).fewest);
+  const row = (text, cls, mark) => { const li = document.createElement('li'); li.className = cls; li.title = text; const m = document.createElement('span'); m.className = 'mark'; if (mark) m.innerHTML = glyph(mark); li.append(m, Object.assign(document.createElement('span'), { textContent: text })); return li; };
+  const must = document.createElement('ul'); must.className = 'campReqs campMust';
+  must.append(row('Get the blob to the berry.', run.won ? 'met' : '', run.won ? 'check' : ''));
+  const big = document.createElement('span'); big.className = 'campBigStar' + (run.won ? ' on' : ''); big.innerHTML = glyph('star');
+  const main = document.createElement('div'); main.className = 'campMain'; main.append(big, must);
+  const opt = document.createElement('ul'); opt.className = 'campReqs campOpt'; opt.dataset.label = 'Optional goals';
+  if (few != null) { const li = row(`Win in ${few} moves or fewer, with no undo.`, 'optional' + (kept && pz.campaign ? ' kept' : '') + (run.won ? (run.clean ? ' met' : ' unmet') : ''), 'star'); li.dataset.req = 'fewest'; opt.append(li); }
+  const card = document.createElement('div'); card.className = 'campGoal'; card.append(main, opt);
+  $('puzzleBrief').replaceChildren(card);
 }
 
 export function buildPuzzles(actions) {
@@ -57,10 +75,11 @@ export function buildPuzzles(actions) {
     // A campaign puzzle keeps its win with the campaign, so the level list shows its star.
     // Two stars (registers 784, 785): one for solving it, one for solving it in the fewest moves in one take,
     // each undo counting as one more move.
-    const few = S.puzzle.fewest, undos = S.undos || 0, taken = n + undos, clean = few != null && taken <= few;
+    const few = S.puzzle.fewest, taken = n + (S.undos || 0), clean = few != null && taken <= few;
     if (S.puzzle.campaign) { const pr = progress(), rec = pr.levels[id] ||= {}; rec.beaten = true; rec.moves = Math.min(rec.moves || n, n); if (clean) rec.goals = { ...rec.goals, fewest: true }; write(pr); }
-    const with_ = undos ? `, ${taken} with your ${undos === 1 ? 'undo' : `${undos} undos`}` : '';
-    $('winText').textContent = few == null ? `Solved in ${n} moves.` : clean ? `Solved in ${n} moves, the fewest there are.` : `Solved in ${n} moves${with_}, and it can be done in ${few}.`;
+    // Just the count (register 789); the fewest moves is the card's side goal, met or missed there.
+    $('winText').textContent = `Solved in ${n} ${n === 1 ? 'move' : 'moves'}.`;
+    brief({ won: true, clean });
   });
 }
 

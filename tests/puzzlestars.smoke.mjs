@@ -29,14 +29,17 @@ try {
   await play(moves);
   await page.waitForFunction(() => !document.getElementById('win').hidden, null, { timeout: 10000 });
   const said = await page.textContent('#winText');
-  check('an undo counts as a move: the win says so and gives no fewest-moves star', said === `Solved in ${moves.length} moves, ${moves.length + 1} with your undo, and it can be done in ${moves.length}.`, said);
+  const goal = () => page.$eval('#puzzleBrief [data-req=fewest]', li => ({ text: li.textContent.trim(), cls: li.className }));
+  check('the win says only the count (register 789)', said === `Solved in ${moves.length} moves.`, said);
+  const g1 = await goal();
+  check('the card\'s side goal names the fewest moves, and an undo misses it', g1.text === `Win in ${moves.length} moves or fewer, with no undo.` && /unmet/.test(g1.cls), JSON.stringify(g1));
   await page.evaluate(() => { location.hash = '#/levels'; }); await page.waitForTimeout(500);
   check('the level list shows the puzzle solved, its second star still empty', await page.$eval(`[data-level="${pz.id}"] .campStar.main`, s => s.classList.contains('on')) && !(await star()));
   // The shortest way in one take: both stars.
   await page.goto(`http://localhost:5297/#/puzzle/${pz.id}`); await page.waitForTimeout(800);
   await play(moves);
   await page.waitForFunction(() => !document.getElementById('win').hidden, null, { timeout: 10000 });
-  check('in one take, the fewest moves win says so', /the fewest there are/.test(await page.textContent('#winText')), await page.textContent('#winText'));
+  check('in one take, the side goal is met', /\bmet\b/.test((await goal()).cls) && !/unmet/.test((await goal()).cls), JSON.stringify(await goal()));
   await page.evaluate(() => { location.hash = '#/levels'; }); await page.waitForTimeout(500);
   check('and the puzzle\'s second star is on (register 785)', await star());
   check('no page errors', !errors.length, errors.join(' | '));
