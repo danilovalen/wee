@@ -7,6 +7,8 @@ import { locate, testFile } from './mutantLocate.mjs';
 
 // Each mutant: [file, from, to, test]. tests/mutants.test.mjs fails when one's text is gone (register 608).
 export const M = [
+  // challenges numbered by place (register 735)
+  ['src/app/campaign.js', "def.challenge ? challengeName(def) :", "def.challenge ? def.id.toUpperCase() :", 'levellist'],
   // path reuse, choke points, marks that explain, Checked, tool how-to (registers 727, 730)
   ['src/solve/flow.js', "      if (o.win) { wins = true; break; }", "      if (o.win || o.key) { wins = true; break; }", 'metrics'],
   ['src/app/lenses.js', "u.as === 'wall' ? 'a plain block here would do the same job'", "u.as === 'wall' ? ''", 'designui'],

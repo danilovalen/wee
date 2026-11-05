@@ -6,7 +6,7 @@ import { glyph } from './glyphs.js';
 import { S } from '../editor/state.js';
 import { LEVELS } from '../level/campaign.js';
 import { CHALLENGES } from '../level/challenges.js';
-import { shownName } from '../campaign/names.js';
+import { shownName, challengeName } from '../campaign/names.js';
 import { earnedList, available, owns, affords } from './wallet.js';
 import { PALETTES, SKINS } from '../view/look.js';
 import { play } from './sound.js';
@@ -35,7 +35,7 @@ export function badge(a) {
   b.innerHTML = glyph(a.icon) + `<span class="achSlot">${glyph('star')}</span>`;
   return b;
 }
-const where = id => { const d = [...LEVELS, ...CHALLENGES].find(l => l.id === id); return d ? (d.challenge ? d.id.toUpperCase() : shownName(d)) : ''; };
+const where = id => { const d = [...LEVELS, ...CHALLENGES].find(l => l.id === id); return d ? (d.challenge ? challengeName(d) : shownName(d)) : ''; };
 
 // A star count counts up from nothing as its page opens, ticking as it goes (register 647).
 export function countUp(el, n) {

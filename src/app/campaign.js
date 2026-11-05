@@ -16,7 +16,7 @@ import { S, starterLevel } from '../editor/state.js';
 import { $, portrait, now } from './dom.js';
 import { levelParts } from './levelParts.js';
 import { iconOn, glyph } from './glyphs.js';
-import { shownName } from '../campaign/names.js';
+import { shownName, challengeName } from '../campaign/names.js';
 import { noteWin, bindWin } from './winCard.js';
 import { noteLeaving, copyDebug } from './debug.js';
 import { buildMenuScene } from './menuScene.js';
@@ -163,7 +163,7 @@ function room(def, p, kind) {
   const rec = p.levels[def.id] || {}, li = document.createElement('li'), b = document.createElement('button'), open = allOpen() || isOpen(def.id, p);
   li.className = kind; b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id; b.disabled = !open; b.classList.toggle('locked', !open);
   const name = document.createElement('b');
-  name.textContent = def.challenge ? def.id.toUpperCase() : shownName(def).replace(/^Level /, ''); name.setAttribute('aria-label', shownName(def));
+  name.textContent = def.challenge ? challengeName(def) : shownName(def).replace(/^Level /, ''); name.setAttribute('aria-label', shownName(def));
   // The number and its pieces share one line (register 527).
   const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name, levelParts(def, TOOL));
   const shut = document.createElement('span'); shut.className = 'campShut'; shut.innerHTML = glyph('lock');

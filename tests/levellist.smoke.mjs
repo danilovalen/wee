@@ -24,11 +24,14 @@ try {
         const nr = n && n.getBoundingClientRect(), lh = n ? parseFloat(getComputedStyle(n).lineHeight) || 20 : 20;
         return (nr && nr.height > lh * 1.5) || (p && [...p.children].some(k => { const q = k.getBoundingClientRect(); return q.right > c.right + 0.5 || q.left < c.left - 0.5 || q.bottom > c.bottom + 0.5; })); }).map(b => b.dataset.level);
       const clipped = [...document.querySelectorAll('.progRow button')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent);
-      return { ids, broken, clipped };
+      const labels = [...document.querySelectorAll('#campList .campRow .campRowHead > b, #campList .campRow > b')].map(b => b.textContent.trim());
+      return { ids, broken, clipped, labels };
     });
     const nums = r.ids.filter(id => /^\d+$/.test(id)).map(Number);
     check(`${w}px: no hidden level shows`, !r.ids.some(id => hidden.includes(id)), r.ids.join());
     check(`${w}px: numbered levels run in number order`, nums.length > 10 && nums.every((n, i) => !i || n > nums[i - 1]), nums.join());
+    const seq = k => r.labels.filter(t => t.startsWith(k)).map(t => +t.slice(1));
+    check(`${w}px: challenges read C1, C2, C3... and puzzles P1, P2... down the list (register 735)`, ['C', 'P'].every(k => seq(k).length > 2 && seq(k).every((n, i) => n === i + 1)), r.labels.join());
     check(`${w}px: every card is whole: a name on one line, the pieces inside`, !r.broken.length, r.broken.join());
     check(`${w}px: the progress buttons fit their labels`, !r.clipped.length, r.clipped.join());
     await page.close();
