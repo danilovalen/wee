@@ -770,6 +770,9 @@ body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; ali
    room on a wide screen; powers and status open from the header's Powers button. */
 .strip, #powersBtn { display: none; }
 body.sandbox:not(.simple) #powersBtn { display: inline-block; }
+/* While a run is replayed (register 758) its strip stands in for the play buttons and the end-of-run line. */
+.replayBar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0; }
+.replayBar[hidden], body.replaying #pad, body.replaying #win, body.replaying #stuck { display: none !important; }
 /* A Sandbox room has no Back: Rooms is its way out, and the Rooms page reaches the menu (register 771). */
 body.sandbox #logo { display: none; }
 body.sandbox #strip { display: flex; flex-direction: column; align-items: center; gap: 8px; }

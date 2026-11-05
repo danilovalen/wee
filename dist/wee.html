@@ -785,6 +785,9 @@ body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; ali
    room on a wide screen; powers and status open from the header's Powers button. */
 .strip, #powersBtn { display: none; }
 body.sandbox:not(.simple) #powersBtn { display: inline-block; }
+/* While a run is replayed (register 758) its strip stands in for the play buttons and the end-of-run line. */
+.replayBar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0; }
+.replayBar[hidden], body.replaying #pad, body.replaying #win, body.replaying #stuck { display: none !important; }
 /* A Sandbox room has no Back: Rooms is its way out, and the Rooms page reaches the menu (register 771). */
 body.sandbox #logo { display: none; }
 body.sandbox #strip { display: flex; flex-direction: column; align-items: center; gap: 8px; }
@@ -1233,6 +1236,7 @@ dialog[id].rooms > .roomsHead { position: sticky; top: -16px; z-index: 3; margin
         <button id="playUndo" type="button" title="Undo your last move (Z)">Undo</button>
         <button id="respawnBtn" type="button">Reset</button>
         <button id="reportBtn" type="button">Copy report</button>
+        <button id="replayBtn" type="button" title="Watch this run again, one move at a time">Replay</button>
         <span id="moves" class="moves"></span>
       </div>
       <div id="stuck" class="stuck" hidden>
@@ -1243,6 +1247,17 @@ dialog[id].rooms > .roomsHead { position: sticky; top: -16px; z-index: 3; margin
         <b id="winText"></b>
         <button id="again" type="button">Play again</button>
         <button id="winEdit" type="button">Edit</button>
+        <button id="winReplay" type="button">Replay</button>
+      </div>
+      <div id="replayBar" class="replayBar" role="toolbar" aria-label="Replay" hidden>
+        <button id="rpStart" type="button" aria-label="To the start" title="To the start (Home)">|&lsaquo;</button>
+        <button id="rpBack" type="button" aria-label="One move back" title="One move back (Left)">&lsaquo;</button>
+        <button id="rpPlay" type="button" aria-pressed="false" title="Play or pause (Space)">Play</button>
+        <button id="rpFwd" type="button" aria-label="One move forward" title="One move forward (Right)">&rsaquo;</button>
+        <button id="rpEnd" type="button" aria-label="To the end" title="To the end (End)">&rsaquo;|</button>
+        <span id="rpAt" class="moves"></span>
+        <button id="rpEditHere" type="button" title="Open this position as a new room">Edit from here</button>
+        <button id="rpClose" type="button" title="Back to the run (Escape)">Back</button>
       </div>
       <dialog id="reportBox">
         <textarea id="reportText" rows="8" readonly></textarea>
@@ -1332,7 +1347,7 @@ dialog[id].rooms > .roomsHead { position: sticky; top: -16px; z-index: 3; margin
     <p id="winSay" class="winSay"></p>
     <div id="winStars" class="winStars"></div>
     <ul id="winGoals" class="winGoals"></ul>
-    <div class="row bar"><button id="winNext" type="button" class="primary">Next level</button><button id="winLevels" type="button">Levels</button><button id="winStay" type="button">Stay</button></div>
+    <div class="row bar"><button id="winNext" type="button" class="primary">Next level</button><button id="winLevels" type="button">Levels</button><button id="cardReplay" type="button">Replay</button><button id="winStay" type="button">Stay</button></div>
   </dialog>
   <dialog id="resetBox" class="confirm">
     <p>Reset the room? (You can undo the reset.)</p>
@@ -12335,7 +12350,7 @@ function frame(t) {
 }
 function frameBody(t) {
   const dt = Math.min(250, t - (S.last || t)); S.last = t;
-  if (S.mode === 'play' && !window.__manualClock) {
+  if (S.mode === 'play' && !window.__manualClock && !S.replay) {
     S.acc += dt;
     while (S.acc >= TICK_MS) { tick(); S.acc -= TICK_MS; }
   }
@@ -12353,7 +12368,8 @@ function render() {
   look.avatar = S.camp ? 'robot' : 'you';
   clearView();
   syncRing();
-  if (S.mode === 'play') drawPlay(g, S.dead ? S.dead.game : S.game, S.dead ? snapshot(S.dead.game) : S.prev, S.dead ? 1 : Math.min(1, S.acc / TICK_MS), S.fx, t);
+  const shown = S.replay ? S.replay.frames[S.replay.i].game : S.dead ? S.dead.game : null;
+  if (S.mode === 'play') drawPlay(g, shown || S.game, shown ? snapshot(shown) : S.prev, shown ? 1 : Math.min(1, S.acc / TICK_MS), S.fx, t);
   else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || offerGhost() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
   present();
 }
@@ -12554,8 +12570,128 @@ function bindInput() {
 }
 return { bindInput };
 })();
-// ---- src/gen/ingredients.js
+// ---- src/solve/frames.js
 const m117 = (() => {
+const { createGame, step, cloneGame } = m25;
+const { settled } = m26;
+// A run as a list of positions, one per move (register 758): the keys are played again from the room as
+// play began, and the whole game is kept each time everything comes to rest after a move. The rules are
+// deterministic, so the same keys always give the same frames.
+
+
+function runFrames(level, log, ticks) {
+  const s = createGame(level), out = [{ game: cloneGame(s), tick: 0 }];
+  const at = new Map();
+  for (const { t, k } of log) (at.get(t) || at.set(t, []).get(t)).push(k);
+  let moved = false;
+  for (let t = 0; t < ticks; t++) {
+    const keys = at.get(t) || [];
+    step(s, keys);
+    if (keys.some(k => !/^(power|clock):/.test(k)) || !settled(s)) moved = true;
+    // A move ends once everything is still again; a win ends it too, whatever is still moving.
+    if (moved && (settled(s) || s.won)) { out.push({ game: cloneGame(s), tick: t + 1 }); moved = false; }
+    if (s.won) break;
+  }
+  if (moved) out.push({ game: cloneGame(s), tick: ticks });
+  return out;
+}
+
+// The room as a run stands at one frame (Edit from here, register 758): the blob starts where it is, each
+// piece and pushable tile where it stands, broken blocks and eaten berries gone. Switches and doors start as
+// the room set them.
+function levelAt(level, s) {
+  const out = JSON.parse(JSON.stringify(level)), ground = s.ground || level.cells;
+  out.cells = ground.map((c, i) => s.broken.includes(i) || (c === 'goal' && s.eaten.includes(i)) ? '' : c);
+  for (const t of s.tiles || []) out.cells[t.y * level.w + t.x] = t.cell;
+  if (level.crates) out.crates = (s.tiles || []).map(t => ({ ...level.crates[t.id], x: t.x, y: t.y }));
+  out.entities = s.entities.filter(e => !e.dead).map(e => ({ ...level.entities[e.id - 1], x: e.x, y: e.y }));
+  out.start = { x: s.player.x, y: s.player.y };
+  return out;
+}
+return { runFrames, levelAt };
+})();
+// ---- src/app/replay.js
+const m118 = (() => {
+const { S } = m43;
+const { $ } = m0;
+const { runFrames, levelAt } = m117;
+// Replay (register 758): any run played back one move at a time. The keys are played again from the room
+// as play began, keeping the whole game after each move, so stepping back or forward just shows a kept
+// position. Lenses and the room stay as they were; Back returns to the run; in the Sandbox, Edit from here
+// opens the position on screen as a new room.
+
+
+
+const STEP_MS = 450;
+let deps = null, timer = null;
+const R = () => S.replay;
+
+function show() {
+  const r = R(), n = r.frames.length - 1;
+  $('rpAt').textContent = r.i ? `Move ${r.i} of ${n}` : `Start, ${n} ${n === 1 ? 'move' : 'moves'}`;
+  $('rpStart').disabled = $('rpBack').disabled = r.i === 0;
+  $('rpEnd').disabled = $('rpFwd').disabled = r.i === n;
+  $('rpPlay').textContent = timer ? 'Pause' : 'Play';
+  $('rpPlay').setAttribute('aria-pressed', String(!!timer));
+  S.redraw = true;
+}
+function pause() { clearInterval(timer); timer = null; }
+function replayTo(i) {
+  const r = R(); if (!r) return;
+  r.i = Math.max(0, Math.min(r.frames.length - 1, i));
+  if (r.i === r.frames.length - 1) pause();
+  show();
+}
+// The game the room draws while a replay is open.
+const replayGame = () => R() && R().frames[R().i].game;
+
+function openReplay() {
+  if (!S.played || !S.game) return;
+  pause();
+  S.replay = { frames: runFrames(S.played, S.keylog, S.game.tick), i: 0 };
+  document.body.classList.add('replaying');
+  $('replayBar').hidden = false;
+  $('rpEditHere').hidden = !!(S.camp || S.puzzle);
+  show();
+  $('rpFwd').focus();
+}
+function closeReplay() {
+  if (!R()) return;
+  pause(); S.replay = null;
+  document.body.classList.remove('replaying');
+  $('replayBar').hidden = true;
+  S.redraw = true;
+}
+
+function bindReplay(d) {
+  deps = d;
+  for (const id of ['replayBtn', 'winReplay', 'cardReplay']) if ($(id)) $(id).onclick = () => { if ($('winBox').open) $('winBox').close(); openReplay(); };
+  $('rpStart').onclick = () => { pause(); replayTo(0); };
+  $('rpBack').onclick = () => { pause(); replayTo(R().i - 1); };
+  $('rpFwd').onclick = () => { pause(); replayTo(R().i + 1); };
+  $('rpEnd').onclick = () => { pause(); replayTo(Infinity); };
+  $('rpPlay').onclick = () => {
+    if (timer) { pause(); show(); return; }
+    if (R().i === R().frames.length - 1) R().i = 0;
+    timer = setInterval(() => replayTo(R().i + 1), STEP_MS); show();
+  };
+  $('rpClose').onclick = closeReplay;
+  $('rpEditHere').onclick = () => {
+    const level = levelAt(S.played, replayGame());
+    if (!deps.leaveOk()) return;
+    closeReplay(); deps.setMode('edit'); deps.openRoom(level, {});
+  };
+  // Left and right step, Home and End jump, Space plays, Escape leaves (registers 740, 758).
+  addEventListener('keydown', e => {
+    if (!R() || e.target.closest && e.target.closest('input, textarea')) return;
+    const act = { ArrowLeft: 'rpBack', ArrowRight: 'rpFwd', Home: 'rpStart', End: 'rpEnd', ' ': 'rpPlay', Escape: 'rpClose' }[e.key];
+    if (act) { e.preventDefault(); e.stopImmediatePropagation(); $(act).click(); }
+  }, true);
+}
+return { replayTo, replayGame, openReplay, closeReplay, bindReplay };
+})();
+// ---- src/gen/ingredients.js
+const m119 = (() => {
 const { CLOCKWISE, COLOURS, CORNERS, DIRS, OPPOSITE } = m7;
 // What a generated room can be made of. Each ingredient says which index tags mark it in
 // a room (so Off can be checked), what else it brings along, how to put one in a level, and
@@ -12666,12 +12802,12 @@ const ING = Object.fromEntries(INGREDIENTS.map(g => [g.id, g]));
 return { spot, knock, standIn, variants, INGREDIENTS, ING };
 })();
 // ---- src/gen/score.js
-const m118 = (() => {
+const m120 = (() => {
 const { search, move, stateKey } = m26;
 const { createGame } = m25;
 const { elementCheck, idleElements, NOTES_MAX } = m76;
 const { contains } = m91;
-const { ING, variants } = m117;
+const { ING, variants } = m119;
 // Judging a generated room: solved, par inside the range, every Must-use ingredient changing
 // the answer, nothing set to Off in the room. The score orders the rooms that fail, so the
 // search can climb toward one that fits.
@@ -12757,7 +12893,7 @@ function* judge(level, recipe, max = 3000) {
 return { lockedIn, offFound, missing, TAIL_MAX, dullTail, judge };
 })();
 // ---- src/gen/random.js
-const m119 = (() => {
+const m121 = (() => {
 
 // A seeded random source: one seed always gives the same numbers, so a recipe rebuilds its room.
 function rng(seed) {
@@ -12774,13 +12910,13 @@ function rng(seed) {
 return { rng };
 })();
 // ---- src/gen/generate.js
-const m120 = (() => {
+const m122 = (() => {
 const { CLOCKWISE, CORNERS } = m7;
 const { emptyLevel, wallBorder } = m16;
-const { INGREDIENTS, ING, spot } = m117;
-const { judge, lockedIn } = m118;
+const { INGREDIENTS, ING, spot } = m119;
+const { judge, lockedIn } = m120;
 const { contains } = m91;
-const { rng } = m119;
+const { rng } = m121;
 // Making one room to order: build a walled room holding the asked-for ingredients, judge
 // it with the solver, change one thing at a time while the score goes up, and start over
 // when it stops going up. The same recipe always walks the same path, so it rebuilds the
@@ -12935,10 +13071,10 @@ function generateNow(recipe, opts) {
 return { LIMITS, normalize, recipeLabel, build, mutate, tidy, generate, generateNow };
 })();
 // ---- src/app/generator.js
-const m121 = (() => {
+const m123 = (() => {
 const { noPowers, POWERS_SHOWN } = m7;
-const { INGREDIENTS } = m117;
-const { generate, normalize, recipeLabel, LIMITS } = m120;
+const { INGREDIENTS } = m119;
+const { generate, normalize, recipeLabel, LIMITS } = m122;
 const { stampOf } = m63;
 const { S } = m43;
 const { thumbURL } = m95;
@@ -13150,7 +13286,7 @@ function buildGenerator(actions) {
 return { ingGroup, shelf, start, openInEditor, buildGenerator };
 })();
 // ---- src/app/tutorial.js
-const m122 = (() => {
+const m124 = (() => {
 const { S } = m43;
 const { $ } = m0;
 const { setMode } = m115;
@@ -13290,7 +13426,7 @@ function bindTutorial() {
 return { stop, bindTutorial };
 })();
 // ---- src/app/main.js
-const m123 = (() => {
+const m125 = (() => {
 const { bindUnlock } = m3;
 const { buildLooks } = m59;
 const { buildAchieve } = m58;
@@ -13313,15 +13449,17 @@ const { change } = m98;
 const { bindInput } = m116;
 const { setMode, frame, render, tick, report, copyReport } = m115;
 const { bindCamera } = m101;
-const { buildRooms } = m97;
-const { buildGenerator } = m121;
+const { buildRooms, leaveOk, openRoom } = m97;
+const { bindReplay } = m118;
+const { buildGenerator } = m123;
 const { buildCampaign } = m73;
 const { bindNav, start } = m4;
 const { bindDebug } = m70;
-const { bindTutorial } = m122;
+const { bindTutorial } = m124;
 const { bindGlyphs } = m2;
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
+
 
 
 
@@ -13369,6 +13507,7 @@ buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
+bindReplay({ setMode, leaveOk, openRoom });
 bindGlyphs(); bindTutorial(); bindUnlock(); buildLooks(); buildAchieve(); bindSound();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });

@@ -142,6 +142,7 @@
         <button id="playUndo" type="button" title="Undo your last move (Z)">Undo</button>
         <button id="respawnBtn" type="button">Reset</button>
         <button id="reportBtn" type="button">Copy report</button>
+        <button id="replayBtn" type="button" title="Watch this run again, one move at a time">Replay</button>
         <span id="moves" class="moves"></span>
       </div>
       <div id="stuck" class="stuck" hidden>
@@ -152,6 +153,17 @@
         <b id="winText"></b>
         <button id="again" type="button">Play again</button>
         <button id="winEdit" type="button">Edit</button>
+        <button id="winReplay" type="button">Replay</button>
+      </div>
+      <div id="replayBar" class="replayBar" role="toolbar" aria-label="Replay" hidden>
+        <button id="rpStart" type="button" aria-label="To the start" title="To the start (Home)">|&lsaquo;</button>
+        <button id="rpBack" type="button" aria-label="One move back" title="One move back (Left)">&lsaquo;</button>
+        <button id="rpPlay" type="button" aria-pressed="false" title="Play or pause (Space)">Play</button>
+        <button id="rpFwd" type="button" aria-label="One move forward" title="One move forward (Right)">&rsaquo;</button>
+        <button id="rpEnd" type="button" aria-label="To the end" title="To the end (End)">&rsaquo;|</button>
+        <span id="rpAt" class="moves"></span>
+        <button id="rpEditHere" type="button" title="Open this position as a new room">Edit from here</button>
+        <button id="rpClose" type="button" title="Back to the run (Escape)">Back</button>
       </div>
       <dialog id="reportBox">
         <textarea id="reportText" rows="8" readonly></textarea>
@@ -241,7 +253,7 @@
     <p id="winSay" class="winSay"></p>
     <div id="winStars" class="winStars"></div>
     <ul id="winGoals" class="winGoals"></ul>
-    <div class="row bar"><button id="winNext" type="button" class="primary">Next level</button><button id="winLevels" type="button">Levels</button><button id="winStay" type="button">Stay</button></div>
+    <div class="row bar"><button id="winNext" type="button" class="primary">Next level</button><button id="winLevels" type="button">Levels</button><button id="cardReplay" type="button">Replay</button><button id="winStay" type="button">Stay</button></div>
   </dialog>
   <dialog id="resetBox" class="confirm">
     <p>Reset the room? (You can undo the reset.)</p>

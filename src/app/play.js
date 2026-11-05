@@ -138,7 +138,7 @@ export function frame(t) {
 }
 function frameBody(t) {
   const dt = Math.min(250, t - (S.last || t)); S.last = t;
-  if (S.mode === 'play' && !window.__manualClock) {
+  if (S.mode === 'play' && !window.__manualClock && !S.replay) {
     S.acc += dt;
     while (S.acc >= TICK_MS) { tick(); S.acc -= TICK_MS; }
   }
@@ -156,7 +156,8 @@ export function render() {
   look.avatar = S.camp ? 'robot' : 'you';
   clearView();
   syncRing();
-  if (S.mode === 'play') drawPlay(g, S.dead ? S.dead.game : S.game, S.dead ? snapshot(S.dead.game) : S.prev, S.dead ? 1 : Math.min(1, S.acc / TICK_MS), S.fx, t);
+  const shown = S.replay ? S.replay.frames[S.replay.i].game : S.dead ? S.dead.game : null;
+  if (S.mode === 'play') drawPlay(g, shown || S.game, shown ? snapshot(shown) : S.prev, shown ? 1 : Math.min(1, S.acc / TICK_MS), S.fx, t);
   else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || offerGhost() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
   present();
 }
