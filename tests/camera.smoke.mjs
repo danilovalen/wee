@@ -65,7 +65,7 @@ try {
   const past = await page.evaluate(async () => { const { cam, apply } = await import('/src/app/camera.js'); cam.z = 1.2; apply(); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); const c = document.getElementById('game'); return c.getContext('2d').getImageData(Math.round(c.width / 2), 1, 1, 1).data[3]; });
   check('past the room\'s edges the zoomed view is clear', past === 0, String(past));
   // Register 802: zoomed in and moved to the room's top left corner, the wall ring round the room is drawn.
-  const ringPx = await page.evaluate(async () => { const { cam, apply } = await import('/src/app/camera.js'); cam.z = 3; cam.x = -999; cam.y = -999; apply(); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); const c = document.getElementById('game'); return c.getContext('2d').getImageData(Math.round(c.width * 0.02), Math.round(c.height * 0.02), 1, 1).data[3]; });
+  const ringPx = await page.evaluate(async () => { const { cam, apply } = await import('/src/app/camera.js'); cam.z = 3; cam.x = -999; cam.y = -999; apply(); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); const c = document.getElementById('game'); return cam.x < 0 ? c.getContext('2d').getImageData(Math.round(c.width * 0.02), Math.round(c.height * 0.02), 1, 1).data[3] : -1; });
   check('zoomed in at the room\'s corner, the wall ring round it is drawn (register 802)', ringPx > 200, String(ringPx));
   await page.click('#fitBtn');
   const refit = await page.locator('#game').boundingBox();

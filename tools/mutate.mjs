@@ -1228,7 +1228,7 @@ export const M = [
   ['src/app/campaign.js', "kept && sameFixed(def, kept) && placementErrors", "kept && placementErrors", 'challenge'],
   ['tools/challengeAxes.mjs', "    if (!top.every(c => out(c.t))) break;", "    break;", 'challenges'],
   ['tools/challengeAxes.mjs', "    return placements({ ...ch, rows, pieces: left }).length;", "    return 99;", 'challenges'],
-  ['tools/challengeAxes.mjs', "export const SPOILERS = /block|", "export const SPOILERS = /zzzz|", 'challenges'],
+  ['tools/challengeAxes.mjs', "  if (!a.nameOk) f.push('name spoils');", "", 'challenges'],
   ['tools/challengeAxes.mjs', "    if (!PIECE(c) || c === 'B') return;", "    return;", 'challenges'],
   ['src/view/juice.js', "const big = f.type === 'win', n = big ? 16 : 10, r = T / 3 + (big ? 2 : 1.2) * T * ease(t);", "const big = false, n = 4, r = T / 2 + 10 * ease(t);", 'juice'],
   ['src/view/juice.js', "    if ((f.type === 'eat' || f.type === 'win') && t >= 0 && t < 0.5)", "    if (false)", 'juice'],

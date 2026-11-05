@@ -85,6 +85,13 @@ try {
   check('and a block tapped onto an empty tile is refused', await p.evaluate(() => window.wee.getLevel().cells.filter(c => c === 'wall').length) === walls0);
   await p.locator('[data-tool="erase"]:visible').click();
   for (const [x, y] of out) { await p.mouse.click(rg.x + rt * (x + .5), rg.y + rt * (y + .5)); await p.waitForTimeout(150); }
+  // A tile a piece was taken out of does not take one back either.
+  const [ox, oy] = out[0], back = () => p.evaluate(([x, y]) => { const l = window.wee.getLevel(); return l.cells[y * l.w + x] + l.entities.filter(e => e.x === x && e.y === y).length; }, out[0]);
+  const before = await back();
+  await p.evaluate(async () => { const { S } = await import('/src/editor/state.js'); S.ui.tool = 'wall'; });
+  await p.mouse.click(rg.x + rt * (ox + .5), rg.y + rt * (oy + .5)); await p.waitForTimeout(150);
+  check('and the tile a piece was taken out of takes nothing back', (await back()) === before, `${before} -> ${await back()}`);
+  await p.evaluate(async () => { const { S } = await import('/src/editor/state.js'); S.ui.tool = 'look'; });
   check('each piece taken out is crossed off on the card', (await p.$$eval('#campBrief .campPieces.out .campIcon', cs => cs.every(c => c.classList.contains('used')))), JSON.stringify(await p.$$eval('#campBrief .campPieces.out .campIcon', cs => cs.map(c => c.className))));
   await p.tap('#campRun');
   await p.waitForFunction(() => !window.wee.demoRunning(), null, { timeout: 20000 }); await p.waitForTimeout(300);
