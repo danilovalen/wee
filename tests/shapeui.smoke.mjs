@@ -116,6 +116,23 @@ try {
   await pickTool(page, 'button'); await page.click('#placeBtn');
   const bt = await hint();
   check('Most moves names the piece with its colour (register 764)', /\ba red button\b/.test(bt), bt);
+  // Doors are tried plain and inverted, switches off and on (register 767).
+  check('Most moves tries a door both ways and a switch off and on (register 767)', await page.evaluate(async () => { const { variants } = await import('/src/app/shape.js'); const d = variants({ tool: 'door', colour: 'red' }), t = variants({ tool: 'toggle', colour: 'red' }); return d.length === 2 && d.some(u => u.inverted) && t.length === 2 && t.some(u => u.on); }));
+  // Never a piece a plain block would match, such as a laser aimed into a wall (register 765).
+  const lz = await page.evaluate(async l => {
+    const { placeBest } = await import('/src/app/shape.js'), { place } = await import('/src/editor/edit.js'), { search } = await import('/src/solve/solve.js');
+    const run = it => { for (;;) { const r = it.next(); if (r.done) return r.value; } };
+    const r = run(placeBest(l, { tool: 'turret', aim: ['right'], mode: 'input', start: 'right' }));
+    if (r.none) return { none: true };
+    const w = JSON.parse(JSON.stringify(l)); place(w, { tool: 'wall' }, r.x, r.y, 'place');
+    const b = run(search(w)); return { moves: r.moves, block: b.status === 'solved' ? b.moves.length : null };
+  }, lane);
+  check('Most moves never offers a laser a plain block would match (register 765)', lz.none || lz.moves !== lz.block, JSON.stringify(lz));
+  // Another tool drops the answer that was for the first (register 754).
+  await page.evaluate(l => window.wee.loadLevel(l), lane);
+  await pickTool(page, 'wall'); await page.click('#placeBtn'); await hint();
+  await pickTool(page, 'box');
+  check('picking another tool drops Most moves\' answer and its Apply (register 754)', await page.locator('#placeSay').isHidden() && await page.locator('#shapeAsk').isHidden());
   check('the size is a plain readout', await page.$eval('#sizeBtn', e => e.tagName === 'SPAN'));
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the shape smoke ran to the end', false, err.message); }

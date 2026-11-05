@@ -20,6 +20,8 @@ const members = g => STRIP.find(([id]) => id === g)[2].filter(t => A.offered().i
 const lastOf = g => { const m = members(g), l = S.ui.last && S.ui.last[g]; return m.includes(l) ? l : m[0]; };
 const label = t => TOOLS.find(o => o.id === t).label;
 function setOpen(g) { open = g; A.sync(); }
+// A pick from the flyout always shuts it, the tool already held included, so its options panel shows (744).
+export function shutFlyout() { open = null; }
 
 // actions: offered() (the tool ids this Sandbox has), pick(tool), sync().
 export function buildStrip(actions) {

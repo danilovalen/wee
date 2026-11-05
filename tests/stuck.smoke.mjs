@@ -30,9 +30,9 @@ try {
   check('stuck, the bubble waits a few seconds before it speaks (register 661)', !(await shown()));
   const said = await page.waitForFunction(() => !document.getElementById('stuck').hidden, null, { timeout: 5000 }).then(() => true, () => false);
   check('then a quiet bubble suggests Undo, with its sound', said && /Undo your last move/.test(await page.textContent('#stuck')) && (await page.textContent('#stuckReset')) === 'Undo' && await page.evaluate(() => window.__heard === 1), String(await page.evaluate(() => window.__heard)));
-  await page.click('#stuckReset');
+  await page.click('#stuckText');
   await page.waitForTimeout(200);
-  check('its Undo takes back the last move: the bubble goes and the blob is back', !(await shown()) && await at() === home && (await page.textContent('#moves')) === 'Moves 0', await at());
+  check('a tap anywhere on the bubble, not only its button, takes back the move (register 757), its Undo the last move: the bubble goes and the blob is back', !(await shown()) && await at() === home && (await page.textContent('#moves')) === 'Moves 0', await at());
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(600);
   check('after a move, Undo in the play bar is ready', await page.locator('#playUndo').isEnabled());
   await page.keyboard.press('z'); await page.waitForTimeout(200);
@@ -81,6 +81,18 @@ try {
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(2500);
   check('a room that cannot be won from its start never says you are stuck (register 681)', !(await shown()));
   check('no page errors', !errors.length, errors.join(' | '));
+  // Dying keeps you dead where you died and asks for Undo, as Baba Is You does (register 775).
+  const spikes = room(['#######', '#P...G#', '#######']); spikes.cells[1 * spikes.w + 3] = 'death';
+  await page.keyboard.press('e'); await page.waitForTimeout(200);
+  await page.evaluate(l => window.wee.loadLevel(l), spikes);
+  await page.keyboard.press('e'); await page.waitForTimeout(300);
+  await page.keyboard.press('ArrowRight'); await page.waitForTimeout(900);
+  const dead = await page.evaluate(() => !document.getElementById('stuck').hidden && document.getElementById('stuckText').textContent);
+  check('a death shows at once that you died, and asks for Undo', /died/.test(dead || '') && /undo/i.test(dead || ''), dead);
+  await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(600);
+  check('dead, a move does nothing until Undo or Reset', (await page.textContent('#moves')) === 'Moves 1', await page.textContent('#moves'));
+  await page.click('#stuckReset'); await page.waitForTimeout(300);
+  check('Undo brings you back to before the move that killed you', !(await shown()) && await at() === '1,1' && (await page.textContent('#moves')) === 'Moves 0', await at());
 } catch (err) { check('the stuck smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }
 done();

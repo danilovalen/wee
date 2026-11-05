@@ -12,7 +12,16 @@ const SLICE_MS = 8, WAIT_MS = 2500;
 let job = null, timer = null, start = null;
 
 // keep: an Undo keeps the bubble up until the search finds the goal reachable again (register 688).
-export function resetStuck(keep = false) { job = null; clearTimeout(timer); if (!keep) $('stuck').hidden = true; }
+export function resetStuck(keep = false) { job = null; clearTimeout(timer); if (!keep) { $('stuck').hidden = true; banner(STUCK); } }
+// The whole bubble is the button (757), and with nothing to undo it offers Reset instead.
+const STUCK = 'Stuck? Undo your last move.';
+function banner(text) {
+  const undo = !!(S.undoPlay && S.undoPlay.length);
+  $('stuckText').textContent = undo ? text : text.replace(/Undo your last move\./, 'Reset the room.');
+  $('stuckReset').textContent = undo ? 'Undo' : 'Reset';
+}
+// A death leaves the blob where it died and asks for an Undo, as Baba Is You does (register 775).
+export function showDead() { job = null; clearTimeout(timer); banner('You died, so undo your last move.'); $('stuck').hidden = false; play('stuck'); }
 
 export function watchStuck(game) {
   if (game.won) { resetStuck(); return; }
@@ -32,7 +41,7 @@ export function watchStuck(game) {
       const r = it.next();
       if (r.done) {
         if (r.value !== false) $('stuck').hidden = true;
-        else if ($('stuck').hidden) timer = setTimeout(() => { if (job === me) { $('stuck').hidden = false; play('stuck'); } }, window.__stuckMs ?? WAIT_MS);
+        else if ($('stuck').hidden) timer = setTimeout(() => { if (job === me) { banner(STUCK); $('stuck').hidden = false; play('stuck'); } }, window.__stuckMs ?? WAIT_MS);
         return;
       }
       if (performance.now() > until) break;

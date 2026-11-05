@@ -21,7 +21,7 @@ import { buildKeys } from './keys.js';
 import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
 import { icon } from './icons.js';
-import { buildStrip, syncStrip } from './strip.js';
+import { shutFlyout, buildStrip, syncStrip } from './strip.js';
 
 function syncCtxText() {
   const note = [...document.querySelectorAll('.opt:not([hidden]) .note')].map(n => n.textContent).join(' ');
@@ -65,7 +65,7 @@ export function buildPanels(actions) {
     if (t.campaign) b.dataset.camp = '1';
     b.title = t.label;
     b.append(icon(t.id), Object.assign(document.createElement('span'), { className: 'lbl', textContent: t.label }));
-    b.onclick = () => { S.ui.tool = t.id; syncPanel(); };
+    b.onclick = () => { S.ui.tool = t.id; shutFlyout(); syncPanel(); };
     $('palette').append(b);
   }
   for (const col of [...COLOURS, 'wire']) {

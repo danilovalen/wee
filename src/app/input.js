@@ -110,7 +110,9 @@ export function bindInput() {
   canvas.addEventListener('pointercancel', () => { S.carry = null; lift(); });
   canvas.addEventListener('pointerleave', () => { S.hover = null; });
 
-  $('playUndo').onclick = $('stuckReset').onclick = () => undoMove();
+  // The whole stuck bubble is its button (757): Undo, or Reset when there is nothing to undo.
+  $('playUndo').onclick = () => undoMove();
+  $('stuck').onclick = () => { if (!undoMove()) S.pending.push('respawn'); };
   window.addEventListener('keydown', ev => {
     // Typing in a field is typing, not a shortcut.
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName) && !['checkbox', 'radio', 'button'].includes(ev.target.type)) return;

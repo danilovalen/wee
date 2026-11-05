@@ -24,8 +24,8 @@ try {
   check('a button tool can take a colour', !(await swatch('red').isDisabled()));
   await pickTool(page, 'wall');
   check('a tool with no colour greys the colours instead of hiding them', await swatch('red').isVisible() && await swatch('red').isDisabled());
-  const grey = await swatch('wire').evaluate(b => getComputedStyle(b).outlineStyle);
-  check('grey wears a dashed frame (register 736)', grey === 'dashed', grey);
+  const grey = await swatch('wire').evaluate(b => getComputedStyle(b, '::before').backgroundImage);
+  check('grey wears a dashed frame (register 736)', /repeating-conic-gradient/.test(grey), grey);
   await pickTool(page, 'button');
   check('the plain dot is only for one-ways', await swatch('plain').isDisabled());
   await pickTool(page, 'gate');
@@ -43,6 +43,12 @@ try {
   await swatch('blue').click();
   await page.mouse.click(...at(5, 2)); await page.waitForTimeout(100);
   check('a tap in another colour recolours a button', (await level()).cells[2 * 7 + 5] === 'button:blue', (await level()).cells[2 * 7 + 5]);
+  // Picking the held tool again from its group's flyout opens its options (register 744).
+  await pickTool(page, 'toggle');
+  const grp = await page.evaluate(async () => (await import("/src/editor/palette.js")).stripOf("toggle")[0]);
+  await page.locator(`#strip [data-slot="${grp}"]`).click({ button: 'right' });
+  await page.locator('#palette [data-tool="toggle"]').click(); await page.waitForTimeout(150);
+  check('picking the held tool from its flyout shuts the flyout and shows its options (register 744)', !(await page.$eval('#palette', p => p.classList.contains('fly'))) && await page.locator('#toolPop').isVisible());
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the colours smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

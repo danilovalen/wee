@@ -15,7 +15,7 @@ import { noteError } from './debug.js';
 import { selectOverlay } from './select.js';
 import { offerGhost } from './shape.js';
 import { moveRefusal } from './campaignMove.js';
-import { watchStuck, resetStuck } from './stuck.js';
+import { watchStuck, resetStuck, showDead } from './stuck.js';
 import { lensMarks, lensBusy } from './lenses.js';
 import { syncWell } from './well.js';
 import { syncChips } from './chips.js';
@@ -44,19 +44,23 @@ const counts = k => !/^(power|clock):/.test(k);
 export function undoMove() {
   const last = S.game && !S.demoRunning && S.undoPlay && S.undoPlay.pop();
   if (!last) return false;
-  S.game = last.game; S.keylog.length = last.log; S.prev = snapshot(S.game); S.pending = []; S.acc = 0;
-  $('win').hidden = true; resetStuck(true); $('moves').textContent = `Moves ${S.game.move}`;
+  const wasDead = !!S.dead;
+  S.game = last.game; S.keylog.length = last.log; S.prev = snapshot(S.game); S.pending = []; S.acc = 0; S.dead = null;
+  $('win').hidden = true; resetStuck(!wasDead); $('moves').textContent = `Moves ${S.game.move}`;
   syncEnabled(); S.redraw = true;
   return true;
 }
 
 export function tick() {
   const game = S.game;
+  // Dead, the run stands still until Undo or Reset (register 775).
+  if (S.dead) { if (!S.pending.includes('respawn')) { S.pending = []; return; } S.dead = null; resetStuck(); }
   feedDemo(game);
   if (!S.demoRunning && S.pending.some(counts) && settled(game)) { (S.undoPlay ||= []).push({ game: cloneGame(game), log: S.keylog.length }); if (S.undoPlay.length > KEEP) S.undoPlay.shift(); }
   for (const k of S.pending) S.keylog.push({ t: game.tick, k });
   S.prev = snapshot(game);
   const before = { x: game.player.x, y: game.player.y }, wasDir = game.player.dir, openBefore = JSON.stringify(game.open);
+  const pre = S.demoRunning ? null : cloneGame(game);
   step(game, S.pending);
   S.pending = [];
   const t = now();
@@ -74,7 +78,9 @@ export function tick() {
     if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
     else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
   }
-  watchStuck(game);
+  const died = pre && game.events.find(e => e.type === 'die');
+  if (died) { pre.player = { ...pre.player, x: died.x, y: died.y, dir: null, moved: 0 }; S.dead = { game: pre }; showDead(); }
+  if (!S.dead) watchStuck(game);
   // A Run's robot has played its whole path: say so once, so the level can go back to editing.
   if (S.demoRunning && !(S.demo && S.demo.length) && !S.demoWait && !game.player.dir && !game.entities.some(e => !e.dead && (e.rush || e.slide))) {
     S.demoRunning = false;
@@ -97,7 +103,7 @@ export function setMode(m, keep) {
   $('keys').textContent = keysText();
   $('pad').hidden = m !== 'play';
   $('win').hidden = true;
-  resetStuck();
+  S.dead = null; resetStuck();
   $('moves').textContent = m === 'play' ? 'Moves 0' : '\u00a0';
   if (m === 'play') openSheet('build');
   // On a phone, play takes the whole screen: the room is sized again without the editor.
@@ -150,7 +156,7 @@ export function render() {
   look.avatar = S.camp ? 'robot' : 'you';
   clearView();
   syncRing();
-  if (S.mode === 'play') drawPlay(g, S.game, S.prev, Math.min(1, S.acc / TICK_MS), S.fx, t);
+  if (S.mode === 'play') drawPlay(g, S.dead ? S.dead.game : S.game, S.dead ? snapshot(S.dead.game) : S.prev, S.dead ? 1 : Math.min(1, S.acc / TICK_MS), S.fx, t);
   else drawEdit(g, S.level, S.hover, S.fx, t, marks(), selectOverlay() || offerGhost() || carryOverlay() || (S.trail ? { trail: S.trail } : null));
   present();
 }

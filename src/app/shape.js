@@ -5,7 +5,7 @@
 import { trimRoom } from '../solve/shape.js';
 import { search } from '../solve/solve.js';
 import { NOTES_MAX } from '../solve/design.js';
-import { place } from '../editor/edit.js';
+import { place, turnDoor, turnSwitch } from '../editor/edit.js';
 import { TOOLS } from '../editor/palette.js';
 import { S } from '../editor/state.js';
 import { $, now } from './dom.js';
@@ -24,9 +24,11 @@ const turn = list => [0, 1, 2, 3].map(k => list.map(d => CLOCKWISE[(CLOCKWISE.in
 export function variants(ui) {
   const t = ui.tool, all = t === 'gate' ? turn(ui.pass).map(pass => ({ ...ui, pass })) : t === 'turret' ? turn(ui.aim).map(aim => ({ ...ui, aim }))
     : t === 'tri' ? CORNERS.map(corner => ({ ...ui, corner })) : t === 'spring' ? CLOCKWISE.map(face => ({ ...ui, face }))
-      : ['mover', 'enemy', 'strong'].includes(t) ? [['h', 1], ['h', -1], ['v', 1], ['v', -1]].map(([axis, dir]) => ({ ...ui, axis, dir })) : [ui];
+      : ['mover', 'enemy', 'strong'].includes(t) ? [['h', 1], ['h', -1], ['v', 1], ['v', -1]].map(([axis, dir]) => ({ ...ui, axis, dir }))
+        // A door is tried plain and inverted, a switch off and on (register 767).
+        : t === 'door' ? [{ ...ui, inverted: false }, { ...ui, inverted: true }] : t === 'toggle' ? [{ ...ui, on: false }, { ...ui, on: true }] : [ui];
   const seen = new Set();
-  return all.filter(u => { const k = JSON.stringify([u.pass && CLOCKWISE.filter(d => u.pass.includes(d)), u.aim && CLOCKWISE.filter(d => u.aim.includes(d)), u.corner, u.face, u.axis, u.dir]); return !seen.has(k) && seen.add(k); });
+  return all.filter(u => { const k = JSON.stringify([u.pass && CLOCKWISE.filter(d => u.pass.includes(d)), u.aim && CLOCKWISE.filter(d => u.aim.includes(d)), u.corner, u.face, u.axis, u.dir, u.inverted, u.on]); return !seen.has(k) && seen.add(k); });
 }
 // Which way round, in words, for the sentence.
 const WAY = { up: 'up', right: 'right', down: 'down', left: 'left', nw: 'up and left', ne: 'up and right', sw: 'down and left', se: 'down and right' };
@@ -48,11 +50,21 @@ export function* placeBest(level, ui) {
   for (let y = 0; y < level.h; y++) for (let x = 0; x < level.w; x++) {
     const i = y * level.w + x;
     if (level.cells[i] || level.entities.some(e => e.x === x && e.y === y) || (level.start && level.start.x === x && level.start.y === y)) continue;
+    let asBlock;
     for (const u of set) {
       const l = clone(level);
       if (!place(l, u, x, y, 'place').length) continue;
+      if (u.inverted) turnDoor(l, x, y);
+      if (u.on) turnSwitch(l, x, y);
       const n = yield* movesOf(l);
-      if (n != null && n > (best ? best.moves : base ?? 0)) best = { level: l, moves: n, x, y, ui: u };
+      if (n == null || n <= (best ? best.moves : base ?? 0)) continue;
+      // A laser only counts when its beam does a job: one a plain block on that tile would match, such as a laser
+      // aimed into a wall, is not offered (register 765). A one-way that blocks one side is a one-way's job.
+      if (u.tool === 'turret') {
+        if (asBlock === undefined) { const w = clone(level); place(w, { ...u, tool: 'wall' }, x, y, 'place'); asBlock = yield* movesOf(w); }
+        if (asBlock === n) continue;
+      }
+      best = { level: l, moves: n, x, y, ui: u };
     }
   }
   return best ? { ...best, from: base } : { none: true, from: base };
@@ -82,7 +94,7 @@ const placeText = (t, r, had) => {
   const moves = n => `${n} ${n === 1 ? 'move' : 'moves'}`;
   if (t === 'start') return r.none ? (had ? 'The blob is already where the answer takes the most moves.' : 'Wherever you place the blob, the room stays unsolved.')
     : r.from == null ? `Place the blob at ${r.x}, ${r.y} and the answer takes ${moves(r.moves)}.` : `Move the blob to ${r.x}, ${r.y} and the answer takes ${moves(r.moves)} instead of ${r.from}.`;
-  if (r.none) return `Wherever you place ${pieceName(t, S.ui, true)}${variants(S.ui).length > 1 ? ', facing any way,' : ''} the ${r.from == null ? 'room stays unsolved' : `answer stays ${moves(r.from)}`}.`;
+  if (r.none) return `Wherever you place ${pieceName(t, S.ui)}${t === 'door' ? ', plain or inverted,' : t === 'toggle' ? ', off or on,' : variants(S.ui).length > 1 ? ', facing any way,' : ''} the ${r.from == null ? 'room stays unsolved' : `answer stays ${moves(r.from)}`}.`;
   const way = wayOf(r.ui), what = way ? `${pieceName(t, r.ui)}, ${way},` : pieceName(t, r.ui);
   return r.from == null ? `Place ${what} at ${r.x}, ${r.y} and the answer takes ${moves(r.moves)}.` : `Place ${what} at ${r.x}, ${r.y} and the answer takes ${moves(r.moves)} instead of ${r.from}.`;
 };
@@ -90,7 +102,7 @@ const COLOURED = ['button', 'toggle', 'door', 'idoor', 'sensor'];
 // "a red switch", "a grey button", "a plain one-way", "a block".
 function pieceName(t, ui) {
   const col = COLOURED.includes(t) ? (ui.colour === 'wire' ? 'grey' : ui.colour) : t === 'gate' ? (ui.gateColour === 'wire' ? 'grey' : ui.gateColour || 'plain') : null;
-  const words = [col, name(t)].filter(Boolean).join(' ');
+  const words = [col, t === 'door' && ui.inverted ? 'inverted door' : name(t)].filter(Boolean).join(' ') + (t === 'toggle' && ui.on ? ' that starts on' : '');
   return (/^[aeiou]/.test(words) ? 'an ' : 'a ') + words;
 }
 
@@ -141,7 +153,8 @@ export function buildShape() {
   $('placeBtn').onclick = () => {
     const tool = S.ui.tool;
     const had = !!S.level.start;
-    say(tool === 'start' ? 'Trying the blob on every empty tile...' : `Trying a ${name(tool)} on every empty tile, every way round...`);
+    asked = askKey();
+    say(tool === 'start' ? 'Trying the blob on every empty tile...' : `Trying ${pieceName(tool, S.ui)} on every empty tile, every way round...`);
     run(placeBest(clone(S.level), { ...S.ui }), r => say(placeText(tool, r, had), r.none ? null : r));
   };
   // Apply also sets the tool the way the offer faces, so the next tap places it that way round.
@@ -150,6 +163,9 @@ export function buildShape() {
 }
 
 // Any change to the room drops an offer found in the room before it (register 726).
+// So does picking another tool or setting it another way (754): the answer was for the tool that asked.
+let asked = null;
+const askKey = () => JSON.stringify([S.ui.tool, S.ui.colour, S.ui.gateColour, !!S.ui.crate]);
 export function syncShape() {
-  if (offer && offer.from !== stampOf(S.level)) { token++; say(''); }
+  if ((offer && offer.from !== stampOf(S.level)) || (asked && asked !== askKey())) { token++; asked = null; say(''); }
 }

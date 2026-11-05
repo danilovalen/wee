@@ -1064,6 +1064,5 @@ body.campaign #bestOpt { display: none !important; }
 .stripColours[hidden] { display: none !important; }
 .stripColours { display: flex; flex-direction: column; align-items: center; margin-top: 22px; }
 .stripColours #campColours:not([hidden]) { flex-direction: column; margin: 0; gap: 10px; }
-#campColours [data-camp-colour="plain"]::before { background: none; clip-path: none; border-radius: 50%; border: 2px dashed var(--soft); }
-#campColours [data-camp-colour="wire"]::before { box-shadow: none; }
-#campColours [data-camp-colour="wire"] { outline: 2px dashed var(--ink); outline-offset: -8px; border-radius: 50%; }
+#campColours [data-camp-colour="plain"]::before { background: radial-gradient(circle, var(--panel) 0 62%, transparent 64%), repeating-conic-gradient(var(--soft) 0 22.5deg, transparent 22.5deg 45deg); }
+#campColours [data-camp-colour="wire"]::before { background: radial-gradient(circle, var(--dot) 0 62%, transparent 64%), repeating-conic-gradient(var(--ink) 0 22.5deg, var(--dot) 22.5deg 45deg); }
