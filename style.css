@@ -810,7 +810,7 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 /* The zoom strip sits just under the room's bottom right corner, in the band the resize bars keep, so it never covers a tile (register 781). */
 .zoomBar { position: absolute; right: 0; top: 100%; margin-top: 3px; z-index: 3; display: flex; gap: 1px; }
 .zoomBar > button { height: 24px; min-height: 0; min-width: 30px; padding: 0 6px; margin: 0; line-height: 1; font-size: 13px; box-shadow: none; }
-body.play #campReplay { display: none; }
+body.play #campReplay, #campReplay[hidden] { display: none; }
 .fitBtn[hidden] { display: none; }
 .roomWrap.zoomed .growBar { display: none; }
 

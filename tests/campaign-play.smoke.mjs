@@ -162,6 +162,7 @@ try {
   check('Undo brings the reset room back', undoable && (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === mine);
   await load(['P....', '.....', '.....', '.....', '....G']);
   const before = await box();
+  const offeredEarly = await page.locator('#campReplay').isVisible();
   await page.click('#campRun');
   await page.waitForTimeout(200);
   const lost = await verdict();
@@ -176,7 +177,7 @@ try {
   await page.waitForFunction(() => document.getElementById('campReplay').checkVisibility(), null, { timeout: 8000 }).catch(() => {});
   const offered = await page.locator('#campReplay').isVisible();
   if (offered) await page.click('#campReplay');
-  check('after a Run, Replay is offered and opens that run at its start (register 771)', offered && await page.locator('#replayBar').isVisible() && /^Start, \d+ moves?$/.test(await page.textContent('#rpAt')), offered ? await page.textContent('#rpAt') : 'no Replay button');
+  check('Replay waits for a Run, then is offered and opens that run at its start (register 771)', !offeredEarly && offered && await page.locator('#replayBar').isVisible() && /^Start, \d+ moves?$/.test(await page.textContent('#rpAt')), offered ? await page.textContent('#rpAt') : 'no Replay button');
   if (offered) { await page.click('#rpClose'); await page.evaluate(async () => (await import('/src/app/play.js')).setMode('edit')); }
   await backToEdit();
   await page.waitForTimeout(100);

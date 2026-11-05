@@ -78,6 +78,10 @@ try {
   const desk = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await desk.addInitScript(() => { window.__openAll = true; });
   await desk.goto(`http://localhost:${PORT}/`); await desk.waitForTimeout(400);
   await desk.click('#menuSandbox'); await desk.waitForTimeout(400); await desk.click('#roomNew'); await desk.waitForTimeout(300);
+  await desk.evaluate(() => { const l = window.wee.blank(7, 7); l.start = { x: 0, y: 0 }; window.wee.loadLevel(l); });
+  await desk.click('#zoomIn'); await desk.click('#zoomIn');
+  check('on a wide screen a small room, its tiles already big, still zooms in (register 781)', await desk.evaluate(async () => (await import('/src/app/camera.js')).cam.z > 1.4));
+  await desk.click('#fitBtn');
   await desk.evaluate(() => { const l = window.wee.blank(60, 46); l.start = { x: 0, y: 0 }; window.wee.loadLevel(l); });
   const b = await desk.locator('#game').boundingBox();
   await desk.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
