@@ -55,9 +55,12 @@ export function buildPuzzles(actions) {
     const b = bests(), n = ev.detail.moves, id = S.puzzle.id;
     if (!b[id] || n < b[id]) { b[id] = n; keep(b); }
     // A campaign puzzle keeps its win with the campaign, so the level list shows its star.
-    if (S.puzzle.campaign) { const pr = progress(), rec = pr.levels[id] ||= {}; rec.beaten = true; rec.moves = Math.min(rec.moves || n, n); write(pr); }
-    const few = S.puzzle.fewest;
-    $('winText').textContent = few == null ? `Solved in ${n} moves.` : n === few ? `Solved in ${n} moves, the fewest there are.` : `Solved in ${n} moves, and it can be done in ${few}.`;
+    // Two stars (registers 784, 785): one for solving it, one for solving it in the fewest moves in one take,
+    // each undo counting as one more move.
+    const few = S.puzzle.fewest, undos = S.undos || 0, taken = n + undos, clean = few != null && taken <= few;
+    if (S.puzzle.campaign) { const pr = progress(), rec = pr.levels[id] ||= {}; rec.beaten = true; rec.moves = Math.min(rec.moves || n, n); if (clean) rec.goals = { ...rec.goals, fewest: true }; write(pr); }
+    const with_ = undos ? `, ${taken} with your ${undos === 1 ? 'undo' : `${undos} undos`}` : '';
+    $('winText').textContent = few == null ? `Solved in ${n} moves.` : clean ? `Solved in ${n} moves, the fewest there are.` : `Solved in ${n} moves${with_}, and it can be done in ${few}.`;
   });
 }
 
@@ -68,7 +71,9 @@ export function puzzleRow(def, rec, open, kind) {
   const name = Object.assign(document.createElement('b'), { textContent: def.id.toUpperCase() }); name.setAttribute('aria-label', def.name);
   const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name);
   const stars = document.createElement('span'); stars.className = 'campStars';
-  stars.innerHTML = open ? `<span class="campStar main${rec.beaten ? ' on' : ''}" title="${rec.beaten ? `Solved in ${rec.moves}` : 'Not solved yet'}">${glyph('star')}${rec.beaten ? `<i>${rec.moves}</i>` : ''}</span>` : `<span class="campShut">${glyph('lock')}</span>`;
+  // Its second star is the fewest moves in one take (register 785).
+  const fewest = !!(rec.goals && rec.goals.fewest);
+  stars.innerHTML = open ? `<span class="campStar main${rec.beaten ? ' on' : ''}" title="${rec.beaten ? `Solved in ${rec.moves}` : 'Not solved yet'}">${glyph('star')}${rec.beaten ? `<i>${rec.moves}</i>` : ''}</span><span class="campStar${fewest ? ' on' : ''}" data-goal="fewest" title="${fewest ? 'Solved in the fewest moves, in one take' : 'Solve it in the fewest moves, in one take: each undo counts as a move'}">${glyph('star')}</span>` : `<span class="campShut">${glyph('lock')}</span>`;
   b.append(top, stars); b.onclick = () => go('puzzle', def.id);
   li.append(b); return li;
 }

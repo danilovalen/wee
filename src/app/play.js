@@ -47,6 +47,8 @@ export function undoMove() {
   if (!last) return false;
   const wasDead = !!S.dead;
   S.game = last.game; S.keylog.length = last.log; S.prev = snapshot(S.game); S.pending = []; S.acc = 0; S.dead = null;
+  // Each undo counts as one more move toward a puzzle's fewest-moves star (register 785).
+  S.undos = (S.undos || 0) + 1;
   $('win').hidden = true; resetStuck(!wasDead); $('moves').textContent = `Moves ${S.game.move}`;
   syncEnabled(); S.redraw = true;
   return true;
@@ -116,7 +118,7 @@ export function setMode(m, keep) {
   // Play from here: the same room, starting on the tile you looked at.
   const from = m === 'play' && S.playFrom ? { ...S.level, start: S.playFrom } : S.level;
   S.playFrom = null;
-  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.game = createGame(from); S.freshKey = resetKey(S.game); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; S.undoPlay = []; }
+  if (m === 'play') { S.played = JSON.parse(JSON.stringify(from)); S.keylog = []; S.undos = 0; S.game = createGame(from); S.freshKey = resetKey(S.game); S.prev = snapshot(S.game); S.pending = []; S.acc = 0; S.undoPlay = []; }
   else S.game = null;
   syncEnabled();
 }
