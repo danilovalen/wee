@@ -7,6 +7,13 @@ import { locate, testFile } from './mutantLocate.mjs';
 
 // Each mutant: [file, from, to, test]. tests/mutants.test.mjs fails when one's text is gone (register 608).
 export const M = [
+  // colours under the strip, plain one-ways, grey's frame, tap to recolour (registers 736, 739, 766, 773)
+  ['src/app/strip.js', "  if (under && row.parentNode !== box) box.append(row);", "", 'colours'],
+  ['src/app/panels.js', "const cols = all && S.simple ? [...all, 'plain'] : all", "const cols = all", 'colours'],
+  ['src/app/panels.js', " || (S.simple && !TINTED.includes(ui.tool)); });", "; });", 'colours'],
+  ['style.css', "#campColours [data-camp-colour=\"wire\"] { outline: 2px dashed var(--ink);", "#campColours [data-camp-colour=\"wire\"] { outline: 2px solid var(--ink);", 'colours'],
+  ['src/app/input.js', " && !recolour(structuredClone(S.level), c.x, c.y, S.ui) ? 'remove'", " ? 'remove'", 'colours'],
+  ['src/editor/edit.js', "if (g && ui.tool === 'gate' && (g[2] || null) !== (ui.gateColour || null))", "if (false)", 'colours'],
   // Findings says why it is empty after a Check with no win (register 774)
   ['src/app/check.js', "  if (!S.check.live) notesWhy(NO_NOTES[r.status]);\n", "", 'designui'],
   // what may stand on what, the blob replaced, a box moved onto itself (registers 738, 768, 772)
@@ -57,7 +64,7 @@ export const M = [
   ['src', "beams(room, moves, b => { if (cellOf(room, b.stop).startsWith('gate:')) ok = true; });", "beams(room, moves, b => { if (b.stop) ok = true; });", 'campaign'],
   ['src', "judge: (room, moves) => oneWayLog(room, moves).robotThrough.size > 0,", "judge: () => true,", 'campaign'],
   ['src', "if (lined()) { ui.mount = false;", "if (lined()) { ui.mount = true;", 'campaign-play'],
-  ['src', "change(() => ({ turret: turnLaser, toggle: turnSwitch, door: turnDoor }[tool] || turnGate)(S.level, at.x, at.y));", "change(() => turnGate(S.level, at.x, at.y));", 'campaign-play'],
+  ['src', "change(() => recolour(S.level, at.x, at.y, { ...S.ui, tool }) || ({ turret: turnLaser, toggle: turnSwitch, door: turnDoor }[tool] || turnGate)(S.level, at.x, at.y));", "change(() => recolour(S.level, at.x, at.y, { ...S.ui, tool }) || turnGate(S.level, at.x, at.y));", 'campaign-play'],
   // boxes push boxes (register 278)
   ['src/rules/player.js', "        if (!pushChain(s, nx, ny, t.d)) return 'blocked';", "        return 'blocked';", 'sim'],
   ['src/rules/crates.js', "if (!e && crateAt(s, cx, cy) && pushesTile(s, cx, cy, d))", "if (crateAt(s, cx, cy) && pushesTile(s, cx, cy, d))", 'campaign'],
@@ -89,7 +96,7 @@ export const M = [
   ['src', "if (!own.some(col => cols.includes(col)) || own.some(col => was[col]) === own.some(col => s.open[col])) return;", "if (!own.length) return;", 'sim'],
   // the colour row (register 245)
   ['src', "row.hidden = !cols || cols.length < 2;", "row.hidden = true;", 'campaign-play'],
-  ['src', "ui.gateColour = (S.camp && S.camp.def.colours) || S.simple ? ui.colour : null;", "ui.gateColour = null;", 'campaign-play'],
+  ['src', "ui.gateColour = ((S.camp && S.camp.def.colours) || S.simple) && ui.colour !== 'plain' ? ui.colour : null;", "ui.gateColour = null;", 'campaign-play'],
   ['src', "if (old) { const c = icon(id, col, gate, crateOf(id));", "if (false) { const c = icon(id, col, gate, crateOf(id));", 'campaign-play'],
   ['src', "if (el && colourFits(def, c) && pushingsOf(def, el).includes(crate)) out[el].push(i);", "if (el && pushingsOf(def, el).includes(crate)) out[el].push(i);", 'campaign'],
   ['src', "    if (was[7]) p.levels[11] = was[7];\n", "", 'campaign-play'],
@@ -167,7 +174,7 @@ export const M = [
   ['src', "if (host && ui.mount !== false && (CARRIES_TURRET.includes(host.kind) || host.kind === 'turret')) {", "if (false) {", 'browser'],
   ['src', "b.disabled = on && ui.aim.length === 1;", "b.disabled = false;", 'browser'],
   ['src', "if (ui.mode === 'follow') $('axisOpt').hidden = true;", "", 'browser'],
-  ['src', "S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) ? 'remove' : 'place';", "S.painting = ev.button === 2 ? 'erase' : 'place';", 'browser'],
+  ['src', "S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && !recolour(structuredClone(S.level), c.x, c.y, S.ui) ? 'remove' : 'place';", "S.painting = ev.button === 2 ? 'erase' : 'place';", 'browser'],
   ['src', "if (ui.tool === 'turret' && host && host.kind !== 'turret') { gone.piece = { ...host }; delete host.turret; }", "if (false) {}", 'browser'],
   ['src', "  if (how === 'remove' && !holds(level, x, y, ui.tool, ui.wire)) return out;\n", "", 'browser'],
   ['src', "removePiece(); setCell('tri:' + ui.corner);", "removePiece(); setCell('tri:se');", 'browser'],
@@ -397,7 +404,7 @@ export const M = [
   ['src', "  h.past.push(before);\n  if (h.past.length > LIMIT) h.past.shift();\n  h.future = [];", "  h.past.push(before);\n  if (h.past.length > LIMIT) h.past.shift();", "sim"],
   ['src', "  h.future.push(JSON.stringify(level));\n  return JSON.parse(h.past.pop());", "  return JSON.parse(h.past.pop());", "sim"],
   ['src', "  h.past.push(JSON.stringify(level));\n  return JSON.parse(h.future.pop());", "  return JSON.parse(h.future.pop());", "sim"],
-  ['src', "    begin();\n    S.painting = ev.button === 2", "    S.painting = ev.button === 2", "browser"],
+  ['src', "    begin();\n    // A tap on the tool's own piece", "    // A tap on the tool's own piece", "browser"],
   ['src', "    S.painting = 0; S.swipe = null; selectUp(); end();\n", "    S.painting = 0; S.swipe = null;\n", "browser"],
   ['src', "undoStep(ev.key === 'z' && !ev.shiftKey,", "undoStep(true,", "browser"],
   ['src', "  $('undo').disabled = S.mode !== 'edit' || !S.history.past.length;", "  $('undo').disabled = !S.history.past.length;", "browser"],
@@ -902,10 +909,10 @@ export const M = [
   ['src/rules/life.js', "doorsOf(s, kind + col), ...pairsOf(s, kind, col)]", "doorsOf(s, kind + col)]", 'sim'],
   ['src/rules/life.js', "return cols.includes(col) && !cols.some(k => k !== col && s.open[k]) ? at : [];", "return cols.includes(col) ? at : [];", 'sim'],
   ['src/campaign/robot.js', "const door = (sets.find(cs => !cs.some(c => opened.has(c))) || [null])[0];", "const door = (sets.find(cs => cs.some(c => !opened.has(c))) || [null])[0];", 'campaign'],
-  ['src/app/panels.js', "b.disabled = !!fits && !fits.includes(b.dataset.campColour);", "b.disabled = false;", 'campaign-play'],
+  ['src/app/panels.js', "b.disabled = !!fits && !fits.includes(b.dataset.campColour) || (S.simple", "b.disabled = false || (S.simple", 'campaign-play'],
   ['src/app/panels.js', "  if (fits && !fits.includes(ui.colour)) ui.colour = fits[0];", "", 'campaign-play'],
   ['src/app/panels.js', "const all = [...coloursOf(def), ...new Set(each.filter(c => c.includes('|')))];", "const all = coloursOf(def);", 'campaign-play'],
-  ['src/app/panels.js', "return c && !c.includes(ui.colour) ? c[0] : ui.colour;", "return ui.colour;", 'campaign-play'],
+  ['src/app/panels.js', "return c && !c.includes(ui.colour) ? c[0] : ui.colour === 'plain'", "return false ? c[0] : ui.colour === 'plain'", 'campaign-play'],
   ['src/campaign/goals/lasers.js', "r.slice(7).split('|').some(col => c.slice(5).split('|').includes(col))", "c.slice(5).split('|').includes(r.slice(7))", 'campaign'],
   ['src', "    if (ev.button !== 2 && (door || ((S.camp || S.simple) &&", "    if (ev.button !== 2 && (false || ((S.camp || S.simple) &&", 'campaign-play'],
   ['src', "  (frame.avatar === 'you' ? drawYou : drawRobot)(g, hidden);\n", "  drawYou(g, hidden);\n", 'campaign-play'],

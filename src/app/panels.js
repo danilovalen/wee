@@ -230,9 +230,11 @@ function colourChoices() {
 export const pairInk = col => col.includes('|') ? `linear-gradient(90deg, ${col.split('|').map((c, i) => `${paint(INK[c])} ${i * 50}% ${i * 50 + 50}%`).join(', ')})` : paint(INK[col]);
 function syncColours() {
   placeTools();
-  const ui = S.ui, { all: cols, fits } = colourChoices(), row = $('campColours');
+  const ui = S.ui, { all, fits: f } = colourChoices(), row = $('campColours');
+  // In the Sandbox a one-way may also be plain, one that never turns (773); the plain dot sits last.
+  const cols = all && S.simple ? [...all, 'plain'] : all, fits = f && S.simple && ui.tool === 'gate' ? [...f, 'plain'] : f;
   if (fits && !fits.includes(ui.colour)) ui.colour = fits[0];
-  ui.gateColour = (S.camp && S.camp.def.colours) || S.simple ? ui.colour : null;
+  ui.gateColour = ((S.camp && S.camp.def.colours) || S.simple) && ui.colour !== 'plain' ? ui.colour : null;
   // In a level a laser stands alone, fires one way and turns with its clock: no mounting, no aim list.
   if (lined()) { ui.mount = false; if (ui.aim.length !== 1) ui.aim = ['right']; ui.mode = 'input'; } else ui.mount = true;
   // With the Wire tool, the dots are the three wire colours (register 347).
@@ -255,14 +257,15 @@ function syncColours() {
     row.dataset.cols = cols.join() + look.palette;
     row.replaceChildren(...cols.map(col => {
       const b = document.createElement('button');
-      b.type = 'button'; b.dataset.campColour = col; const name = col.replace('|', ' and '); b.title = name; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', name);
-      b.style.setProperty('--dot', pairInk(col));
+      b.type = 'button'; b.dataset.campColour = col; const name = col === 'plain' ? 'plain, no colour' : col === 'wire' ? 'grey, works only through wires' : col.replace('|', ' and ');
+      b.setAttribute('role', 'radio'); b.setAttribute('aria-label', name);
+      if (col !== 'plain') b.style.setProperty('--dot', pairInk(col));
       b.onclick = () => { S.ui.colour = col; syncPanel(); };
       return b;
     }));
   }
   // A colour the chosen tool cannot take is greyed: level 19's door comes only in red+blue.
-  row.querySelectorAll('[data-camp-colour]').forEach(b => { const on = b.dataset.campColour === ui.colour; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); b.disabled = !!fits && !fits.includes(b.dataset.campColour); });
+  row.querySelectorAll('[data-camp-colour]').forEach(b => { const on = b.dataset.campColour === ui.colour; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); b.disabled = !!fits && !fits.includes(b.dataset.campColour) || (S.simple && !TINTED.includes(ui.tool)); });
   }
   // The Pushable chip (register 336) shows where the level offers a pushable piece; the chosen tool
   // decides whether it may be on, off, or either.
@@ -277,7 +280,7 @@ function syncColours() {
   const tb = document.querySelector('#palette [data-tool="turret"] canvas');
   if (tb && tb.dataset.crate !== String(crateOf('turret'))) { const c = icon('turret', 'red', null, crateOf('turret')); c.dataset.crate = String(crateOf('turret')); tb.replaceWith(c); }
   // Each tool is drawn in the chosen colour, or in its own first one when it cannot take that.
-  const own = id => { const el = ELEMENT_OF[id], c = S.camp && el && S.camp.def.palette[el] ? colouringsOf(S.camp.def, el) : null; return c && !c.includes(ui.colour) ? c[0] : ui.colour; };
+  const own = id => { const el = ELEMENT_OF[id], c = S.camp && el && S.camp.def.palette[el] ? colouringsOf(S.camp.def, el) : null; return c && !c.includes(ui.colour) ? c[0] : ui.colour === 'plain' ? 'red' : ui.colour; };
   const key = TINTED.map(id => own(id) + crateOf(id)).join() + '|' + ui.gateColour;
   if (key === tint) return;
   tint = key;

@@ -42,7 +42,7 @@ export function buildStrip(actions) {
   }
   document.addEventListener('pointerdown', ev => { if (open && !ev.target.closest('#strip, #palette')) setOpen(null); }, true);
   addEventListener('keydown', ev => { if (ev.key === 'Escape' && open) setOpen(null); });
-  addEventListener('resize', () => { if (inSandbox()) placeBar(); place(); });
+  addEventListener('resize', () => { if (inSandbox()) placeBar(); placeColours(); place(); });
 }
 
 // The panel beside the slot (a wide Sandbox), or each part's own place (a phone, and every level).
@@ -54,6 +54,17 @@ function placeBar() {
     if (into && el.parentNode !== into) into.prepend(el);
     else if (!into && el.parentNode === $('toolPop')) { if (id === 'options') $(wide() ? 'ctx' : 'tools').append(el); else el.home.after(el); }
   }
+}
+// The colours sit under the tool strip on a wide Sandbox, always there, as an image editor keeps its
+// colours at the foot of its toolbar (766); elsewhere they go back to their own row.
+function placeColours() {
+  const row = $('campColours'), under = inSandbox() && wide();
+  let box = $('stripColours');
+  if (!box) { box = Object.assign(document.createElement('div'), { id: 'stripColours', className: 'stripColours' }); $('strip').after(box); }
+  row.home ||= row.parentNode.insertBefore(document.createComment('campColours'), row);
+  if (under && row.parentNode !== box) box.append(row);
+  else if (!under && row.parentNode === box) row.home.after(row);
+  box.hidden = !under;
 }
 // The panel hides while the flyout is open, while playing, and when the tool has nothing to set.
 function placePop() {
@@ -82,7 +93,7 @@ function place() {
 export function syncStrip() {
   const on = inSandbox(), pal = $('palette');
   document.body.classList.toggle('sandbox', on);
-  placeBar();
+  placeBar(); placeColours();
   // The panel's blur makes it the frame a fixed child is placed in, so in a Sandbox the flyout lives on the page.
   pal.home ||= pal.parentNode.insertBefore(document.createComment('palette'), pal);
   if (on && pal.parentNode !== document.body) document.body.append(pal);
@@ -102,7 +113,7 @@ export function syncStrip() {
     const key = t + (TINTED.includes(t) ? S.ui.colour : '');
     if (b.dataset.shows !== key) {
       b.dataset.shows = key;
-      b.querySelector('.slotIcon').replaceChildren(icon(t, TINTED.includes(t) && !S.ui.colour.includes('|') && S.ui.colour !== 'wire' ? S.ui.colour : 'red'));
+      b.querySelector('.slotIcon').replaceChildren(icon(t, TINTED.includes(t) && !S.ui.colour.includes('|') && S.ui.colour !== 'plain' ? S.ui.colour : 'red'));
     }
     b.dataset.picks = t;
     b.title = STRIP.find(([id]) => id === g)[1] + ': ' + label(t) + (m.length > 1 ? ', tap for more' : '');

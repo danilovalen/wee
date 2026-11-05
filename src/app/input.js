@@ -1,5 +1,5 @@
 // Pointer and keys: painting in edit mode, swipes and arrows in play mode.
-import { describe, holds, place, turnGate, turnLaser, turnSwitch, turnDoor } from '../editor/edit.js';
+import { describe, holds, place, turnGate, turnLaser, turnSwitch, turnDoor, recolour } from '../editor/edit.js';
 import { S } from '../editor/state.js';
 import { $, canvas, touch, now } from './dom.js';
 import { setMode, aim, undoMove } from './play.js';
@@ -80,7 +80,8 @@ export function bindInput() {
       return;
     }
     begin();
-    S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) ? 'remove' : 'place';
+    // A tap on the tool's own piece removes it, unless it is in another colour: then it takes the picked one (739).
+    S.painting = ev.button === 2 ? 'erase' : holds(S.level, c.x, c.y, S.ui.tool) && !recolour(structuredClone(S.level), c.x, c.y, S.ui) ? 'remove' : 'place';
     canvas.setPointerCapture(ev.pointerId);
     paint(c.x, c.y, S.painting, true);
   });
@@ -93,7 +94,7 @@ export function bindInput() {
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
   const lift = () => {
-    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool } = S.gateHold; S.gateHold = null; change(() => ({ turret: turnLaser, toggle: turnSwitch, door: turnDoor }[tool] || turnGate)(S.level, at.x, at.y)); S.redraw = true; return; }
+    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool } = S.gateHold; S.gateHold = null; change(() => recolour(S.level, at.x, at.y, { ...S.ui, tool }) || ({ turret: turnLaser, toggle: turnSwitch, door: turnDoor }[tool] || turnGate)(S.level, at.x, at.y)); S.redraw = true; return; }
     S.painting = 0; S.swipe = null; selectUp(); end();
   };
   canvas.addEventListener('pointerup', ev => {

@@ -71,6 +71,20 @@ export function swapAt(level, from, to) {
   return put(a, to) && put(b, from) ? l : null;
 }
 
+// A tap on a coloured piece in another colour gives it the picked colour (register 739); true when it did.
+// A one-way takes gateColour, null being a plain one (773); a switch keeps whether it is on.
+export function recolour(level, x, y, ui) {
+  const i = idx(level, x, y), c = level.cells[i] || '';
+  const m = c.match(/^(button|toggle|door|idoor|sensor):([^:]+)(:on)?$/);
+  const mine = m && (ui.tool === 'door' ? /^i?door$/.test(m[1]) : m[1] === ui.tool);
+  if (mine && ui.colour && ui.colour !== m[2] && !ui.colour.includes('|')) {
+    level.cells[i] = `${m[1]}:${ui.colour}${m[3] || ''}`; return true;
+  }
+  const g = c.match(/^gate:([^@]+)(?:@(.+))?$/);
+  if (g && ui.tool === 'gate' && (g[2] || null) !== (ui.gateColour || null)) { level.cells[i] = `gate:${g[1]}${ui.gateColour ? '@' + ui.gateColour : ''}`; return true; }
+  return false;
+}
+
 // Turns a one-way a quarter clockwise, every direction it lets through.
 export function turnGate(level, x, y) {
   const i = idx(level, x, y), [ds, col] = level.cells[i].slice(5).split('@'), dirs = ds.split(',');
@@ -166,6 +180,7 @@ export function place(level, ui, x, y, how) {
     setWire(level, x, y, ui.wire, how === 'place');
     return how === 'place' ? [{ type: 'place', x, y }] : [{ type: 'erase', x, y }];
   }
+  if (how === 'place' && holds(level, x, y, ui.tool) && recolour(level, x, y, ui)) return [{ type: 'place', x, y }];
   if (how === 'place' && holds(level, x, y, ui.tool) && (!CRATE_TOOLS.includes(ui.tool) || crateAt(level, x, y) === !!ui.crate)) return out;
   const t = how === 'erase' ? 'erase' : how === 'remove' ? 'remove' : ui.tool, i = idx(level, x, y), pi = pieceAt(level, x, y);
   const gone = { type: 'erase', x, y };

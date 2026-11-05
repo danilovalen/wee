@@ -1059,3 +1059,11 @@ body.campaign #bestOpt { display: none !important; }
 /* On a phone the tool's how-to reads in plain case after its name, and its options start at the left. */
 .toolName .toolHow { margin-left: 8px; font: 400 12px var(--body-face, inherit); letter-spacing: 0; text-transform: none; }
 @media (max-width: 700px) { body.sandbox #campTop { justify-content: flex-start; } }
+/* The colours under the tool strip on a wide Sandbox (766); the plain dot is a dashed ring (773), and grey
+   wears the dashed frame a grey piece wears with no wire, so it reads as needing one (736). */
+.stripColours[hidden] { display: none !important; }
+.stripColours { display: flex; flex-direction: column; align-items: center; margin-top: 22px; }
+.stripColours #campColours:not([hidden]) { flex-direction: column; margin: 0; gap: 10px; }
+#campColours [data-camp-colour="plain"]::before { background: none; clip-path: none; border-radius: 50%; border: 2px dashed var(--soft); }
+#campColours [data-camp-colour="wire"]::before { box-shadow: none; }
+#campColours [data-camp-colour="wire"] { outline: 2px dashed var(--ink); outline-offset: -8px; border-radius: 50%; }
