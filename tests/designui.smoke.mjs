@@ -80,6 +80,14 @@ try {
   check('after an edit the room is solved again by itself', live, await page.textContent('#checkText'));
   check('and the live check leaves the design notes to Check: still dimmed', await page.$eval('#designBox', e => e.classList.contains('stale')));
   check('no page errors', !errors.length, errors.join(' | '));
+  // A Check with no win says why Findings is empty, rather than asking for a Check (register 774).
+  { const keep = await page.evaluate(() => window.wee.getLevel());
+    await page.evaluate(l => window.wee.loadLevel(l), { ...keep, cells: keep.cells.map(c => c === 'goal' ? 'wall' : c) });
+    await page.waitForTimeout(500); await page.click('#checkBtn');
+    await page.waitForFunction(() => document.getElementById('checkBtn').textContent === 'Checked', null, { timeout: 30000 });
+    const why = await page.textContent('#wellEmpty');
+    check('a Check that finds no win says why there are no notes (register 774)', !/press Check/.test(why) && /berry/.test(why), why);
+  }
 } catch (err) { check('the design smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }
 done();

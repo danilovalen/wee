@@ -7,6 +7,8 @@ import { locate, testFile } from './mutantLocate.mjs';
 
 // Each mutant: [file, from, to, test]. tests/mutants.test.mjs fails when one's text is gone (register 608).
 export const M = [
+  // Findings says why it is empty after a Check with no win (register 774)
+  ['src/app/check.js', "  if (!S.check.live) notesWhy(NO_NOTES[r.status]);\n", "", 'designui'],
   // what may stand on what, the blob replaced, a box moved onto itself (registers 738, 768, 772)
   ['src/level/stand.js', "['', 'water', 'sticky', 'gravel', 'checkpoint']", "['', 'sticky', 'gravel', 'checkpoint']", 'stand'],
   ['src/level/region.js', "&& canStand(cells[st.y * level.w + st.x])", "", 'region'],

@@ -14,11 +14,19 @@ const LIVE_WAIT_MS = 300, LIVE_MAX = 5000;
 // The progress count is rewritten at most this often, so it reads instead of flickering.
 const PROGRESS_MS = 250;
 let liveTimer = null;
+// After a Check that found no win, Findings says why it has no notes instead of asking for a Check (774).
+const NO_NOTES = {
+  unsolvable: 'The blob cannot reach every berry, so there are no notes.',
+  capped: 'The search stopped before it found a win, so there are no notes.',
+  nogoal: 'Place a berry to see design notes.',
+  realtime: 'A room with real-time pieces cannot be checked, so there are no notes.',
+};
+const notesWhy = t => { $('wellEmpty').textContent = t || 'To see design notes, press Check.'; };
 const SAY = {
   solved: r => `Solvable in ${r.moves.length} ${r.moves.length === 1 ? 'move' : 'moves'}.`,
   unsolvable: () => 'No solution: every reachable position was tried.',
   capped: r => `Stopped after ${r.states} positions without finding one.`,
-  nogoal: () => 'Place a Goal to check the room.',
+  nogoal: () => 'Place a berry to check the room.',
   realtime: () => 'Has real-time pieces, so it cannot be checked.',
 };
 
@@ -61,6 +69,7 @@ function finish(r) {
   $('showSolution').disabled = false;
   syncLint();
   syncEnabled();
+  if (!S.check.live) notesWhy(NO_NOTES[r.status]);
   if (r.status === 'solved' && !S.check.live) runDesign(r.moves.length);
 }
 
@@ -69,6 +78,7 @@ export function syncCheck() {
   const stamp = JSON.stringify(S.level);
   if (!S.level.start) { S.check = null; clearDesign(); clearTimeout(liveTimer); $('checkText').textContent = 'To check or play, place the blob.'; $('checkText').dataset.verdict = ''; $('checkText').classList.remove('stale'); $('showSolution').hidden = true; return; }
   if (S.check && S.check.stamp === stamp) return;
+  notesWhy();
   // The room changed: the old verdict stays, dimmed, until the live check replaces it.
   // A room just opened (nothing to undo) is another room: its verdict and notes go.
   if (S.check) {
