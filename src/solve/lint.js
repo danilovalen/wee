@@ -9,18 +9,28 @@ const fixed = (l, x, y) => x < 0 || y < 0 || x >= l.w || y >= l.h || /^(wall|spr
 
 export function lint(level) {
   const out = [], at = i => ({ x: i % level.w, y: Math.floor(i / level.w) });
-  const doors = {}, switches = {};
+  // What a colour drives (doors, inverted doors, coloured one-ways) and what drives it (buttons, switches,
+  // relays), so a red button beside a red one-way is not called useless (register 747). Grey works through
+  // its wires and is left out.
+  const driven = {}, drivers = {}, NAME = { button: 'button', toggle: 'switch', sensor: 'relay' };
   level.cells.forEach((c, i) => {
-    const [kind, col] = c.split(':');
-    if (kind === 'door' || kind === 'idoor') (doors[col] ||= []).push(i);
-    if (kind === 'button' || kind === 'toggle' || kind === 'sensor') (switches[col] ||= []).push(i);
+    const [kind, col] = c.split(':'), gate = kind === 'gate' && c.split('@')[1];
+    if (kind === 'door' || kind === 'idoor') (driven[col] ||= []).push({ i, kind });
+    if (gate) (driven[gate] ||= []).push({ i, kind });
+    if (NAME[kind]) (drivers[col] ||= []).push({ i, kind });
   });
-  for (const col in doors) if (!switches[col]) out.push({ ...at(doors[col][0]), msg: `A ${col} door with no ${col} switch never changes.` });
-  for (const col in switches) if (!doors[col]) out.push({ ...at(switches[col][0]), msg: `A ${col} switch with no ${col} door does nothing.` });
+  for (const col in driven) if (col !== 'wire' && !drivers[col]) {
+    const { i, kind } = driven[col][0], what = kind === 'gate' ? 'one-way' : kind === 'idoor' ? 'inverted door' : 'door';
+    out.push({ ...at(i), msg: `With no ${col} button, switch or relay, the ${col} ${what} never changes.` });
+  }
+  for (const col in drivers) if (col !== 'wire' && !driven[col]) {
+    const { i, kind } = drivers[col][0];
+    out.push({ ...at(i), msg: `With no ${col} door or one-way, the ${col} ${NAME[kind]} doesn't do anything.` });
+  }
   for (const e of level.entities) {
     if (e.turret) for (const d of e.turret.dirs) {
       const [dx, dy] = DIRS[d];
-      if (fixed(level, e.x + dx, e.y + dy)) out.push({ x: e.x, y: e.y, msg: `A turret fires ${d} straight into a block.` });
+      if (fixed(level, e.x + dx, e.y + dy)) out.push({ x: e.x, y: e.y, msg: `Aimed ${d} into a block, the laser's beam never leaves its tile.` });
     }
     if (e.kind !== 'turret' && Object.values(DIRS).every(([dx, dy]) => fixed(level, e.x + dx, e.y + dy)))
       out.push({ x: e.x, y: e.y, msg: 'A piece is walled in on every side.' });

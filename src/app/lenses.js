@@ -154,11 +154,11 @@ export function lensLine(id) {
     case 'passes': return !d ? wait : `Dots: big where you stop (${d.stops.size}), small where you only pass (${d.passes.size}).${part}`;
     case 'moves': return !d ? wait : `Lines: every move from stop to stop, thicker where more positions make it.${part}`;
     case 'danger': return !d ? wait : d.danger.size ? `Frames: ${tiles(d.danger.size)} where a move kills you.${part}` : `Frames: no move kills you.${part}`;
-    case 'traps': return !S.level.cells.includes('goal') ? 'Frames: place a Goal to find traps.' : st && st.traps ? `Frames: ${tiles(st.traps.length)} where the goal is out of reach for good.` : wait;
-    case 'distance': return !d ? wait : !S.level.cells.includes('goal') ? 'Colour: place a Goal to see how far each tile is.' : `Colour: green is near the goal, red is far, grey can no longer win.${part}`;
+    case 'traps': return !S.level.cells.includes('goal') ? 'Frames: place a berry to find traps.' : st && st.traps ? `Frames: ${tiles(st.traps.length)} where the goal is out of reach for good.` : wait;
+    case 'distance': return !d ? wait : !S.level.cells.includes('goal') ? 'Colour: place a berry to see how far each tile is.' : `Colour: green is near the goal, red is far, grey can no longer win.${part}`;
     case 'beams': return !d ? wait : `Colour: red where a laser can ever reach.${part}`;
     case 'pieces': return !d ? wait : `Colour: brown where a box, block or enemy can ever be.${part}`;
-    case 'solution': return !d ? wait : d.solution.length ? `Lines: a shortest way, ${d.solution.length - 1} moves, numbered.${part}` : !S.level.cells.includes('goal') ? 'Lines: place a Goal to see a way.' : 'Lines: no way to the goal.';
+    case 'solution': return !d ? wait : d.solution.length ? `Lines: a shortest way, ${d.solution.length - 1} moves, numbered.${part}` : !S.level.cells.includes('goal') ? 'Lines: place a berry to see a way.' : 'Lines: no way to the goal.';
   }
   return '';
 }

@@ -667,7 +667,7 @@ try {
   check('and once Check finds the new way, the warning goes', !(await page.textContent('#lintList')).includes('saved solution breaks at move'), await page.textContent('#lintList'));
   const lone = room(['#####', '#P.D#', '#####']);
   await page.evaluate(l => window.wee.loadLevel(l), lone);
-  check('a door with no switch is a warning', (await page.textContent('#lintSum')) === '2 warnings' && (await page.textContent('#lintList')).includes('red door with no red switch'), await page.textContent('#lintList'));
+  check('a door with no switch is a warning', (await page.textContent('#lintSum')) === '2 warnings' && (await page.textContent('#lintList')).includes('the red door never changes'), await page.textContent('#lintList'));
   // Warnings live in the well: the status bar's Findings button counts them and opens it.
   // The label follows on the next frame, so wait for it rather than race it.
   await page.waitForFunction(() => document.getElementById('wellBtn').textContent === 'Findings 2', null, { timeout: 3000 }).catch(() => {});

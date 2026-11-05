@@ -7,6 +7,12 @@ import { locate, testFile } from './mutantLocate.mjs';
 
 // Each mutant: [file, from, to, test]. tests/mutants.test.mjs fails when one's text is gone (register 608).
 export const M = [
+  // copy rules and the lint note (registers 743, 747, 748, 753, 764)
+  ['src/solve/lint.js', "the ${col} ${NAME[kind]} doesn't do anything.", "the ${col} switch does nothing.", 'copy'],
+  ['src/solve/lint.js', "    if (gate) (driven[gate] ||= []).push({ i, kind });\n", "", 'lint'],
+  ['src/solve/lint.js', "for (const col in drivers) if (col !== 'wire' && ", "for (const col in drivers) if (", 'lint'],
+  ['src/app/shape.js', ": 'Trim: every row and column is needed.';", ": 'Every row and column is needed.';", 'shapeui'],
+  ['src/app/shape.js', "  const words = [col, name(t)].filter(Boolean).join(' ');", "  const words = name(t);", 'shapeui'],
   // colours under the strip, plain one-ways, grey's frame, tap to recolour (registers 736, 739, 766, 773)
   ['src/app/strip.js', "  if (under && row.parentNode !== box) box.append(row);", "", 'colours'],
   ['src/app/panels.js', "const cols = all && S.simple ? [...all, 'plain'] : all", "const cols = all", 'colours'],
@@ -346,8 +352,8 @@ export const M = [
   ['src', "    if ((x === 0 || y === 0 || x === w - 1 || y === h - 1) && !(level.start && x === level.start.x && y === level.start.y)) cells[i] = 'wall';", "    if (x === 0 || y === 0 || x === w - 1 || y === h - 1) cells[i] = 'wall';", "sim"],
   ['src', "  return { ...level, cells, entities: level.entities.filter(e => !edge(e)),", "  return { ...level, cells,", "sim"],
   ['src', "const fixed = (l, x, y) => x < 0 || y < 0 || x >= l.w || y >= l.h || /^(wall|spring:)/.test(l.cells[y * l.w + x]);", "const fixed = (l, x, y) => x < 0 || y < 0 || x >= l.w || y >= l.h || /^(wall)/.test(l.cells[y * l.w + x]);", "lint"],
-  ['src', "    if (kind === 'door' || kind === 'idoor') (doors[col] ||= []).push(i);", "    if (kind === 'door') (doors[col] ||= []).push(i);", "lint"],
-  ['src', "    if (kind === 'button' || kind === 'toggle' || kind === 'sensor') (switches[col] ||= []).push(i);", "    if (kind === 'button' || kind === 'toggle' || kind === 'receiver') (switches[col] ||= []).push(i);", "lint"],
+  ['src', "    if (kind === 'door' || kind === 'idoor') (driven[col] ||= []).push({ i, kind });", "    if (kind === 'door') (driven[col] ||= []).push({ i, kind });", "lint"],
+  ['src', "NAME = { button: 'button', toggle: 'switch', sensor: 'relay' };", "NAME = { button: 'button', toggle: 'switch' };", "lint"],
   ['src', "    if (e.kind !== 'turret' && Object.values(DIRS)", "    if (Object.values(DIRS)", "lint"],
   ['src', "    if (s.deaths !== deaths) return n + 1;\n", "", "lint"],
   ['src', "  return s.won ? 0 : moves.length;", "  return 0;", "lint"],
@@ -1230,7 +1236,7 @@ export const M = [
   ['src/app/shape.js', "if (n != null && n > (best ? best.moves : base ?? 0)) best = { level: l, moves: n, x, y, ui: u };", "if (n != null && !best) best = { level: l, moves: n, x, y, ui: u };", 'shapeui'],
   ['src/app/shape.js', "  const base = yield* movesOf(level), set = variants(ui);", "  const base = yield* movesOf(level), set = [ui];", 'shapeui'],
   ['src/app/shape.js', "  if (t === 'gate') return `pointing ${ways(ui.pass)}`;", "", 'shapeui'],
-  ['src/app/shape.js', "(had ? 'The blob is already where it takes the most moves.' :", "(false ? '' :", 'shapeui'],
+  ['src/app/shape.js', "(had ? 'The blob is already where the answer takes the most moves.' :", "(false ? '' :", 'shapeui'],
   ['src/app/shape.js', "  $('placeSay').textContent = text; $('placeSay').hidden = !text;", "  $('placeHint').textContent = text;", 'shapeui'],
   ['src/app/shape.js', "if (ui) for (const k of ['pass', 'aim', 'corner', 'face', 'axis', 'dir']) S.ui[k] = ui[k];", "", 'shapeui'],
   ['src/app/shape.js', "  return { paste: { w: 1, h: 1, cells: [cell],", "  return null && { paste: { w: 1, h: 1, cells: [cell],", 'shapeui'],

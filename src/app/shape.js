@@ -55,7 +55,7 @@ export function* placeBest(level, ui) {
       if (n != null && n > (best ? best.moves : base ?? 0)) best = { level: l, moves: n, x, y, ui: u };
     }
   }
-  return best && { ...best, from: base };
+  return best ? { ...best, from: base } : { none: true, from: base };
 }
 
 // Every piece and every tile but the goal, taken out alone.
@@ -74,15 +74,25 @@ export function* removeBest(level) {
 }
 
 // What each search found, as one plain sentence (register 700: say what is true of what is there).
-export const trimText = r => r ? `Trim to ${r.level.w}x${r.level.h}: it plays the same.` : 'Every row and column is needed.';
-export const removeText = r => r ? `Without the ${name(r.what)} at ${r.x}, ${r.y} it takes ${r.moves} moves instead of ${r.from}.` : 'Removing any one piece or tile does not make it longer.';
+export const trimText = r => r ? `Trim to ${r.level.w}x${r.level.h}: the room plays the same.` : 'Trim: every row and column is needed.';
+export const removeText = r => r ? `Take out the ${name(r.what)} at ${r.x}, ${r.y} and the answer takes ${r.moves} moves instead of ${r.from}.` : "Whichever piece or tile you take out, the answer doesn't get longer.";
 // The blob is moved, not added (register 724); a piece that points says which way (728).
+// Condition first, said to the player (registers 700, 753), naming the picked colour (764).
 const placeText = (t, r, had) => {
-  if (t === 'start') return !r ? (had ? 'The blob is already where it takes the most moves.' : 'Placing the blob on any empty tile leaves the room unsolved.')
-    : r.from == null ? `Placing the blob at ${r.x}, ${r.y} makes it ${r.moves} moves.` : `Moving the blob to ${r.x}, ${r.y} makes it ${r.moves} moves instead of ${r.from}.`;
-  const what = [name(t), r && wayOf(r.ui)].filter(Boolean).join(' ');
-  return !r ? `A ${name(t)} on any empty tile, any way round, does not make it longer.` : r.from == null ? `A ${what} at ${r.x}, ${r.y} makes it ${r.moves} moves.` : `A ${what} at ${r.x}, ${r.y} makes it ${r.moves} moves instead of ${r.from}.`;
+  const moves = n => `${n} ${n === 1 ? 'move' : 'moves'}`;
+  if (t === 'start') return r.none ? (had ? 'The blob is already where the answer takes the most moves.' : 'Wherever you place the blob, the room stays unsolved.')
+    : r.from == null ? `Place the blob at ${r.x}, ${r.y} and the answer takes ${moves(r.moves)}.` : `Move the blob to ${r.x}, ${r.y} and the answer takes ${moves(r.moves)} instead of ${r.from}.`;
+  if (r.none) return `Wherever you place ${pieceName(t, S.ui, true)}${variants(S.ui).length > 1 ? ', facing any way,' : ''} the ${r.from == null ? 'room stays unsolved' : `answer stays ${moves(r.from)}`}.`;
+  const way = wayOf(r.ui), what = way ? `${pieceName(t, r.ui)}, ${way},` : pieceName(t, r.ui);
+  return r.from == null ? `Place ${what} at ${r.x}, ${r.y} and the answer takes ${moves(r.moves)}.` : `Place ${what} at ${r.x}, ${r.y} and the answer takes ${moves(r.moves)} instead of ${r.from}.`;
 };
+const COLOURED = ['button', 'toggle', 'door', 'idoor', 'sensor'];
+// "a red switch", "a grey button", "a plain one-way", "a block".
+function pieceName(t, ui) {
+  const col = COLOURED.includes(t) ? (ui.colour === 'wire' ? 'grey' : ui.colour) : t === 'gate' ? (ui.gateColour === 'wire' ? 'grey' : ui.gateColour || 'plain') : null;
+  const words = [col, name(t)].filter(Boolean).join(' ');
+  return (/^[aeiou]/.test(words) ? 'an ' : 'a ') + words;
+}
 
 // Apply hands the new room to the editor, which makes it one undo step and refits (panels.js), and only
 // while the room is still the one the change was found in (register 726).
@@ -132,7 +142,7 @@ export function buildShape() {
     const tool = S.ui.tool;
     const had = !!S.level.start;
     say(tool === 'start' ? 'Trying the blob on every empty tile...' : `Trying a ${name(tool)} on every empty tile, every way round...`);
-    run(placeBest(clone(S.level), { ...S.ui }), r => say(placeText(tool, r, had), r));
+    run(placeBest(clone(S.level), { ...S.ui }), r => say(placeText(tool, r, had), r.none ? null : r));
   };
   // Apply also sets the tool the way the offer faces, so the next tap places it that way round.
   $('shapeYes').onclick = () => { if (!offer) return; const { level, from, ui } = offer; if (ui) for (const k of ['pass', 'aim', 'corner', 'face', 'axis', 'dir']) S.ui[k] = ui[k]; say(''); applyRoom(level, from); };

@@ -66,23 +66,23 @@ export function runDesign(par) {
     sliced(roomMetrics(level), stamp, m => { metricLines(m).forEach(metric);
     sliced(powerCheck(level, MAX), stamp, ps => {
       const idle = ps.filter(p => p.without === par);
-      for (const p of ps) if (p.without !== par) notes.push(line(`Without ${NAME[p.power]}: ${moves(p.without)} instead of ${par}.`));
-      if (idle.length) notes.push(line(`Without ${idle.map(p => NAME[p.power]).join(', ')}: the same.`));
+      for (const p of ps) if (p.without !== par) notes.push(line(`Turn off ${NAME[p.power]} and the answer takes ${moves(p.without)} instead of ${par}.`));
+      if (idle.length) notes.push(line(`Turn off ${idle.map(p => NAME[p.power]).join(', ')} and the answer stays the same.`));
       sliced(elementCheck(level, MAX), stamp, es => {
         const name = e => `${PIECE[e.what] || e.what} at ${e.x}, ${e.y}`;
         const { unused, plain } = idleElements(es, par);
         S.design.unused = [...plain];
         const walls = plain.filter(e => e.as === 'wall'), turrets = plain.filter(e => e.as === 'turret');
-        if (walls.length) offers.push(line(`As a wall, these do the same job: ${walls.map(name).join('; ')}.`, walls));
-        if (turrets.length) offers.push(line(`As a fixed turret, these do the same job: ${turrets.map(name).join('; ')}.`, turrets));
+        if (walls.length) offers.push(line(`Swap these for a block and the answer stays the same: ${walls.map(name).join('; ')}.`, walls));
+        if (turrets.length) offers.push(line(`Swap these for a fixed laser and the answer stays the same: ${turrets.map(name).join('; ')}.`, turrets));
         sliced(wallCheck(level, MAX), stamp, ws => {
         // What the answer does not need is idle, unless it changes where you can get stuck: then it is bait (692).
         sliced(baitCheck(level, [...unused, ...ws.filter(w => w.without === par)], MAX), stamp, ({ idle, bait }) => {
           const pieces = idle.filter(e => e.what !== 'wall'), walls = idle.filter(e => e.what === 'wall');
           S.design.unused.push(...idle); S.redraw = true;
-          if (pieces.length) offers.push(line(`These change nothing: ${pieces.map(name).join('; ')}.`, pieces));
-          if (walls.length) offers.push(line(`These walls change nothing: ${walls.map(w => `${w.x}, ${w.y}`).join('; ')}.`, walls));
-          if (bait.length) offers.push(line(`These leave the answer alone but change where you can get stuck: ${bait.map(name).join('; ')}.`, bait));
+          if (pieces.length) offers.push(line(`Take these out and the answer stays the same: ${pieces.map(name).join('; ')}.`, pieces));
+          if (walls.length) offers.push(line(`Take out these walls and the answer stays the same: ${walls.map(w => `${w.x}, ${w.y}`).join('; ')}.`, walls));
+          if (bait.length) offers.push(line(`Take these out and the answer stays the same, but where you can get stuck changes: ${bait.map(name).join('; ')}.`, bait));
           if (!idle.length && !bait.length && !plain.length) notes.push(line('Each piece, tile and wall changes the answer, and each needs to be what it is.'));
           swap(); $('designBox').dataset.done = '1';
         });

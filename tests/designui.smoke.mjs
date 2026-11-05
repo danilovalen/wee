@@ -24,8 +24,8 @@ try {
   await page.click('#checkBtn');
   await page.waitForFunction(() => !!document.getElementById('designBox').dataset.done, null, { timeout: 60000 });
   const n = await notes();
-  check('a power the room needs says what it saves', n.includes('Without Boomerang: 19 moves instead of 9.'), n);
-  check('the powers that change nothing are named together', n.includes('Without Dive, Laser, Cycle: the same.'), n);
+  check('a power the room needs says what it saves', n.includes('Turn off Boomerang and the answer takes 19 moves instead of 9.'), n);
+  check('the powers that change nothing are named together', n.includes('Turn off Dive, Laser, Cycle and the answer stays the same.'), n);
   // The room's metrics (register 650): ruin, first ruin, places, choices, forced steps, ways to win.
   const want = metricLines(runMetrics(first)).map(l => typeof l === 'string' ? l : l.text);
   const nums = await page.$$eval('#designList .nums > div', ds => Object.fromEntries(ds.map(d => [d.dataset.num, d.querySelector('b').textContent])));
@@ -33,20 +33,20 @@ try {
   check('the other measures wait behind one tap', await page.$$eval('#designList .metric', ls => ls.every(l => !l.offsetParent)));
   await page.click('#moreMeasures');
   check('the room\'s metrics are in the notes, as measured', await page.$$eval('#designList .metric', ls => ls.every(l => !!l.offsetParent)) && want.length >= 8 && want.every(t => n.includes(t)), JSON.stringify(want.filter(t => !n.includes(t))));
-  check('a piece a plain wall could replace is named', n.includes('As a wall, these do the same job: box at 3, 1.'), n);
+  check('a piece a plain wall could replace is named', n.includes('Swap these for a block and the answer stays the same: box at 3, 1.'), n);
   // A mark explains itself where it is (diagnosis 5): Look on that box says what the notes say.
   check('a checked room says Checked on its button', (await page.textContent('#checkBtn')).trim() === 'Checked', await page.textContent('#checkBtn'));
   await pickTool(page, 'look');
   { const b = await page.locator('#game').boundingBox(), lv = await page.evaluate(() => window.wee.getLevel());
     await page.mouse.click(b.x + 3.5 * b.width / lv.w, b.y + 1.5 * b.height / lv.h); }
   check('Look on a piece a wall could replace says so on the spot', (await page.textContent('#placeHint')).includes('a plain block here would do the same job'), await page.textContent('#placeHint'));
-  check('walls the answer does not need are named, each one tested alone (register 686)', /These walls change nothing: \d+, \d+/.test(n), n);
+  check('walls the answer does not need are named, each one tested alone (register 686)', /Take out these walls and the answer stays the same: \d+, \d+/.test(n), n);
   // The status bar counts the six notes.
   const col = await page.evaluate(() => { const w = document.getElementById('well').getBoundingClientRect(), r = document.getElementById('roomArea').getBoundingClientRect(); return { right: w.left >= r.right - 1, tall: w.height > 300 }; });
   check('on a wide screen the notes sit in a column right of the room, never over it (register 730)', await page.locator('#designList').isVisible() && col.right && col.tall, JSON.stringify(col));
   check('the notes do not fold', !(await page.$('#well details')));
   await page.waitForTimeout(100);
-  check('pieces the answer does not need but that change where you get stuck are named as such (register 692)', /These leave the answer alone but change where you can get stuck: \w/.test(n), n);
+  check('pieces the answer does not need but that change where you get stuck are named as such (register 692)', /Take these out and the answer stays the same, but where you can get stuck changes: \w/.test(n), n);
   const notesN = await page.$$eval('#designList li:not(.working):not(.metric):not(.nums):not(.more)', ls => ls.length) + await page.$$eval('#lintBox:not([hidden]) #lintList li', ls => ls.length);
   check('the status bar counts the notes', (await page.textContent('#wellBtn')) === `Findings ${notesN}` && notesN >= 6, await page.textContent('#wellBtn'));
 
@@ -67,7 +67,7 @@ try {
   await page.evaluate(l => window.wee.loadLevel(l), extra);
   await page.click('#checkBtn');
   await page.waitForFunction(() => !document.getElementById('designBox').classList.contains('stale') && !!document.getElementById('designBox').dataset.done, null, { timeout: 60000 });
-  check('a piece the answer does not depend on is named', (await notes()).includes('These change nothing: box at 4, 6.'), await notes());
+  check('a piece the answer does not depend on is named', (await notes()).includes('Take these out and the answer stays the same: box at 4, 6.'), await notes());
   const red = await page.waitForFunction(() => { const c = document.getElementById('game'), g = c.getContext('2d'), k = c.width / window.wee.getLevel().w; for (let v = 2; v < 30; v += 2) { const d = g.getImageData(Math.round(4 * k + 3 * k / 32), Math.round(6 * k + v * k / 32), 1, 1).data; if (d[0] > 200 && d[1] < 120) return true; } return false; }, null, { timeout: 3000 }).then(() => true, () => false);
   check('and framed in red on the map', red);
   // Any edit makes the notes stale: they stay, dimmed, and their marks leave the room.

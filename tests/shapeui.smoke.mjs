@@ -24,7 +24,7 @@ try {
   await page.evaluate(l => window.wee.loadLevel(l), spare);
   await page.click('#checkBtn');
   const n = await notes();
-  check('after Check the notes offer a trim, said plainly (registers 698, 700)', /Trim to \d+x\d+: it plays the same\./.test(n) && (await level()).h === 4, n);
+  check('after Check the notes offer a trim, said plainly (registers 698, 700)', /Trim to \d+x\d+: the room plays the same\./.test(n) && (await level()).h === 4, n);
   await page.click('#designList li:has-text("Trim to") .apply');
   check('Apply trims the room', (await level()).h < 4, JSON.stringify([(await level()).w, (await level()).h]));
   await page.click('#undo');
@@ -45,7 +45,7 @@ try {
   check('Best spot sits with the tool\'s options', await page.locator('#placeBtn').waitFor({ state: 'visible', timeout: 2000 }).then(() => true, () => false));
   await page.click('#placeBtn');
   const p = await hint();
-  const m = p.match(/^A block at (\d+), (\d+) makes it (\d+) moves instead of 1\.$/);
+  const m = p.match(/^Place a block at (\d+), (\d+) and the answer takes (\d+) moves instead of 1\.$/);
   const longest = await page.evaluate(async l => {
     const { search } = await import('/src/solve/solve.js'), { place } = await import('/src/editor/edit.js');
     let best = 0;
@@ -75,7 +75,7 @@ try {
   await pickTool(page, 'start');
   await page.click('#placeBtn');
   const b = await hint();
-  check('Most moves moves the blob where the room is longest, and says it moves (register 724)', /^Moving the blob to \d+, \d+ makes it \d+ moves instead of 1\.$/.test(b), b);
+  check('Most moves moves the blob where the room is longest, and says it moves (register 724)', /^Move the blob to \d+, \d+ and the answer takes \d+ moves instead of 1\.$/.test(b), b);
   await page.click('#shapeNo');
   await pickTool(page, 'wall'); await page.click('#placeBtn'); await hint(); await page.click('#shapeYes');
   // With the blob already where the room is longest, it says so (register 724).
@@ -83,7 +83,7 @@ try {
   await page.evaluate(() => { const l = window.wee.getLevel(); l.cells[1 * l.w + 3] = 'goal'; window.wee.loadLevel(l); });
   await pickTool(page, 'start'); await page.click('#placeBtn');
   const at = await hint();
-  check('the blob already at its longest says so', at === 'The blob is already where it takes the most moves.', at);
+  check('the blob already at its longest says so', at === 'The blob is already where the answer takes the most moves.', at);
   // Register 728: a one-way is tried every way round; the offer names the way and draws it at half strength.
   const way = room(['#######', '#.....#', '#P...G#', '#....##', '#######'], { powers: OFF });
   await page.evaluate(l => window.wee.loadLevel(l), way);
@@ -100,7 +100,7 @@ try {
     }
     return best;
   }, way);
-  const gm = g.match(/^A one-way pointing (up|right|down|left) at (\d+), (\d+) makes it (\d+) moves instead of 1\.$/);
+  const gm = g.match(/^Place a plain one-way, pointing (up|right|down|left), at (\d+), (\d+) and the answer takes (\d+) moves instead of 1\.$/);
   check('set pointing right, Most moves still finds the way round that is longest and names it (register 728)', !!gm && gm[1] !== 'right' && +gm[4] === want && want > 1, g + ' / ' + want);
   const ghost = await page.evaluate(async () => (await import('/src/app/shape.js')).offerGhost());
   check('and draws the offered one-way at half strength where it would go', !!ghost && gm && ghost.x === +gm[2] && ghost.y === +gm[3] && ghost.paste.cells[0].startsWith('gate:' + gm[1]), JSON.stringify(ghost));
@@ -110,7 +110,12 @@ try {
   // Remove one: in the notes; taking that block out shortens it, and nothing else lengthens it.
   await page.click('#checkBtn');
   const r = await notes();
-  check('Remove one, in the notes, says when nothing makes it longer', /Removing any one piece or tile does not make it longer\./.test(r), r);
+  check('Remove one, in the notes, says when nothing makes it longer', /Whichever piece or tile you take out, the answer doesn't get longer\./.test(r), r);
+  check('Trim names itself when nothing can be cut (register 748)', await page.evaluate(async () => (await import('/src/app/shape.js')).trimText(null)) === 'Trim: every row and column is needed.');
+  await page.click('#shapeNo').catch(() => {});
+  await pickTool(page, 'button'); await page.click('#placeBtn');
+  const bt = await hint();
+  check('Most moves names the piece with its colour (register 764)', /\ba red button\b/.test(bt), bt);
   check('the size is a plain readout', await page.$eval('#sizeBtn', e => e.tagName === 'SPAN'));
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the shape smoke ran to the end', false, err.message); }
