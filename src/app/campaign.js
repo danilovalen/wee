@@ -31,6 +31,12 @@ import { puzzleRow } from './puzzles.js';
 const ALWAYS = ['move'];
 let A = null, fitScene = null;
 
+// A challenge saved before it was rebuilt keeps nothing: its fixed tiles must still be the level's.
+const sameFixed = (def, room) => {
+  if (!def.challenge) return true;
+  const r = def.room, open = new Set(def.challenge.open.map(([x, y]) => y * r.w + x)), key = (l, i) => l.cells[i] + '|' + l.entities.filter(e => e.y * l.w + e.x === i).map(e => e.kind + (e.turret ? e.turret.dirs : '')).join();
+  return room.w === r.w && room.h === r.h && r.cells.every((c, i) => open.has(i) || key(r, i) === key(room, i)) && (!r.start || (room.start && room.start.x === r.start.x && room.start.y === r.start.y));
+};
 const levelOf = id => LEVELS.find(l => l.id === id) || CHALLENGES.find(l => l.id === id) || madeLevel(id);
 
 // A room saved before rooms lost their border: a 7x7 framed in walls. Its frame was the
@@ -62,7 +68,7 @@ export function enterLevel(id) {
   const kept = rec && rec.room && unframe(rec.room);
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
   // The tutorial always starts from its own room (register 512).
-  S.level = !def.tutorial && kept && placementErrors(def, kept).every(e => /^(Place at least|Place the |Nothing can start)/.test(e.msg)) ? kept : roomOf(def);
+  S.level = !def.tutorial && kept && sameFixed(def, kept) && placementErrors(def, kept).every(e => /^(Place at least|Place the |Nothing can start)/.test(e.msg)) ? kept : roomOf(def);
   S.history = newHistory();
   S.ui.tool = 'look'; S.ui.colour = coloursOf(def)[0];
   p.last = id; write(p);

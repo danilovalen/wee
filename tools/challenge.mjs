@@ -69,7 +69,7 @@ export function toLevel(ch) {
   const palette = {};
   for (const p of ch.pieces) { const el = EL[p]; palette[el] = [(palette[el]?.[0] || 0) + 1, (palette[el]?.[1] || 0) + 1]; }
   const room = build(ch, rowsWith(ch, []));
-  return { id: ch.id, name: ch.name, challenge: { open }, room, size: [room.w, room.h], palette, steps: { min: ch.min ?? 1 }, rules: [], require: ch.require || [], optional: [] };
+  return { id: ch.id, name: ch.name, ...(ch.waiting ? { waiting: true } : {}), challenge: { open }, room, size: [room.w, room.h], palette, steps: { min: ch.min ?? 1 }, rules: [], require: ch.require || [], optional: [] };
 }
 
 // A removal challenge (register 787): every piece of a kind it names can be taken out, and the level keeps
@@ -80,7 +80,22 @@ export function removalLevel(ch) {
   ch.rows.forEach((r, y) => [...r].forEach((c, x) => { const k = KIND(c); if (k in ch.remove) { open.push([x, y]); const el = EL[k]; palette[el] = [(palette[el]?.[0] || 0) + 1, (palette[el]?.[1] || 0) + 1]; } }));
   for (const [k, n] of Object.entries(ch.remove)) { const el = EL[k]; remove[el] = n; palette[el] = [palette[el][0] - n, palette[el][1] - n]; }
   const room = build(ch, ch.rows);
-  return { id: ch.id, name: ch.name, challenge: { open, remove }, room, size: [room.w, room.h], palette, steps: { min: ch.min ?? 1 }, rules: [], require: ch.require || [], optional: [] };
+  return { id: ch.id, name: ch.name, ...(ch.waiting ? { waiting: true } : {}), challenge: { open, remove }, room, size: [room.w, room.h], palette, steps: { min: ch.min ?? 1 }, rules: [], require: ch.require || [], optional: [] };
+}
+
+// Every way to take out exactly the asked number of each kind: lists of tiles.
+export function choices(rows, remove) {
+  const at = {};
+  rows.forEach((r, y) => [...r].forEach((c, x) => { const k = KIND(c); if (k in remove) (at[k] ||= []).push([x, y]); }));
+  const combos = (list, k, from = 0) => k === 0 ? [[]] : list.slice(from).flatMap((t, i) => combos(list, k - 1, from + i + 1).map(c => [t, ...c]));
+  return Object.entries(remove).reduce((acc, [k, n]) => acc.flatMap(a => combos(at[k] || [], n).map(c => [...a, ...c])), [[]]);
+}
+export const without = (rows, tiles) => rows.map((r, y) => [...r].map((c, x) => tiles.some(([tx, ty]) => tx === x && ty === y) ? '.' : c).join(''));
+
+export function measureRemoval(ch) {
+  const all = choices(ch.rows, ch.remove), wins = [];
+  for (const t of all) { const v = judge(ch, without(ch.rows, t)); if (v.won) wins.push({ tiles: t, length: v.length }); }
+  return { choices: all.length, wins };
 }
 
 const LIST = () => JSON.parse(readFileSync(new URL('../campaign/challenges.json', import.meta.url)));

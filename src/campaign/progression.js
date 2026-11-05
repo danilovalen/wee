@@ -15,9 +15,11 @@ export const builders = () => LEVELS.filter(listed);
 // The side room after the k-th builder level (1-based), or null.
 export const sideRoom = k => (k % 2 ? PUZZLES[(k - 1) / 2] : PLACING[k / 2 - 1]) || null;
 // A challenge slot opens two side rooms at once: its placing challenge and its removal twin (register 786).
-export const twinRoom = k => (k % 2 ? null : REMOVING[k / 2 - 1]) || null;
+// A removal waiting for a room that meets the bar (tools/challengeAxes.mjs) is left out, not shipped weak (805).
+export const twinRoom = k => { const t = k % 2 ? null : REMOVING[k / 2 - 1]; return t && !t.waiting ? t : null; };
 // The floor plan: each builder level with the side room it opens, and that room's twin.
-export const plan = () => builders().map((def, i) => ({ def, side: sideRoom(i + 1), twin: twinRoom(i + 1) }));
+// A placing challenge waiting for a room that meets the bar gives its slot to its removal twin (799).
+export const plan = () => builders().map((def, i) => { const s = sideRoom(i + 1), t = twinRoom(i + 1); return s && s.waiting ? { def, side: t, twin: null } : { def, side: s, twin: t }; });
 
 const beaten = (p, def) => !!(p.levels && p.levels[def.id] && p.levels[def.id].beaten);
 // Whether a level can be played: the builder levels up to AHEAD past the furthest one beaten, so a player

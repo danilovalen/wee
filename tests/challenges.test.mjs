@@ -2,12 +2,13 @@
 // the game's own Run agrees with the checker, and the game reads what campaign/challenges.json says.
 import { readFileSync } from 'node:fs';
 import { measure, placements, rowsWith, toLevel, removalLevel, build, judge } from '../tools/challenge.mjs';
-import { measureRemoval, choices, without } from '../tools/removalFind.mjs';
+import { measureRemoval, choices, without } from '../tools/challenge.mjs';
 import { PLACING, REMOVING } from '../src/campaign/names.js';
 import { plan } from '../src/campaign/progression.js';
 import { CHALLENGES } from '../src/level/challenges.js';
 import { check, overLimits, underLimits } from '../src/campaign/rules.js';
 import { suite } from './lib.mjs';
+import { placingAxes, removalAxes, fails } from '../tools/challengeAxes.mjs';
 
 const { check: ok, done } = suite('challenges');
 const LIST = JSON.parse(readFileSync('campaign/challenges.json', 'utf8'));
@@ -42,6 +43,26 @@ for (const ch of LIST.filter(c => c.remove)) {
 }
 // Every challenge slot opens a placing challenge and its removal twin together (registers 786, 787).
 const slots = plan().filter(r => r.side && r.side.challenge);
-ok('every challenge slot has a placing challenge and a removal twin', slots.length === PLACING.length && slots.every(r => r.twin && r.twin.challenge.remove), `${slots.length} slots`);
+ok('every challenge slot has a placing challenge, and a removal twin unless its removal is waiting (805)', slots.length === PLACING.length && slots.every((r, i) => PLACING[i].waiting ? r.side === REMOVING[i] && !r.twin : r.twin ? r.twin.challenge.remove : REMOVING[i].waiting), `${slots.length} slots`);
 ok('eleven of each', PLACING.length === 11 && REMOVING.length === 11, `${PLACING.length}, ${REMOVING.length}`);
+// The axes every challenge is held to before it ships (registers 797, 799-801, 805): one answer, enough to try,
+// no idle piece, every placed piece needed, depth after the first right piece, nothing read at a glance, and a
+// name that says nothing about the answer.
+const axes = c => c.remove ? removalAxes(c) : placingAxes(c);
+// Slots no room meeting the depth bar has been found for yet: they pass every other axis and wait on 799.
+const SHALLOW = ['c4', 'c5', 'c6', 'c9', 'c10', 'c11'];
+for (const ch of LIST.filter(c => !c.waiting)) {
+  const f = fails(axes(ch)).filter(x => !(SHALLOW.includes(ch.id) && /^residual/.test(x)));
+  ok(`${ch.id} ${ch.name}: passes every axis${SHALLOW.includes(ch.id) ? ' but depth (799, open)' : ''}`, f.length === 0, f.join('; '));
+}
+// A removal waiting for a room that meets the bar is left out of the campaign, not shipped weak (805).
+const twins = plan().map(s => s.twin && s.twin.id).filter(Boolean);
+ok('a waiting removal is in no slot of the campaign', LIST.filter(c => c.waiting).every(c => !twins.includes(c.id)) && LIST.some(c => c.waiting) === LIST.filter(c => c.remove).length > twins.length, JSON.stringify(twins));
+// The levels he turned down still fail, each on what he saw: the axes would catch them again.
+const REJECTED = JSON.parse(readFileSync('tests/fixtures/rejected-challenges.json', 'utf8')), by = id => axes(REJECTED.find(c => c.id === id));
+ok('Lit door (c9) fails on depth after the first right piece (799)', fails(by('c9')).some(f => /^residual/.test(f)), fails(by('c9')).join('; '));
+ok('Spare relay (r8) fails as seen at a glance, and on its name (805, 797)', (f => f.some(x => /^glance/.test(x)) && f.includes('name spoils'))(fails(by('r8'))), fails(by('r8')).join('; '));
+ok('One beam (r9) fails as seen at a glance (800)', fails(by('r9')).some(f => /^glance/.test(f)), fails(by('r9')).join('; '));
+ok('a draft whose lasers aim at nothing and whose relay is never lit fails as dead pieces (800)', fails(by('d9')).some(f => /^dead/.test(f)), fails(by('d9')).join('; '));
+ok('Spike field (r10) fails at a glance and on depth (801)', (f => f.some(x => /^glance/.test(x)) && f.some(x => /^residual/.test(x)))(fails(by('r10'))), fails(by('r10')).join('; '));
 done();

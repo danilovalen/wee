@@ -9,4 +9,6 @@ export const shownName = def => { const i = LEVELS.filter(listed).findIndex(l =>
 // numbered C1, C2, C3 down the plan (735), the removal ones R1, R2, R3 beside them; ids stay.
 export const PLACING = CHALLENGES.filter(c => !c.challenge.remove);
 export const REMOVING = CHALLENGES.filter(c => c.challenge.remove);
-export const challengeName = def => def.challenge.remove ? `R${REMOVING.findIndex(c => c.id === def.id) + 1}` : `C${PLACING.findIndex(c => c.id === def.id) + 1}`;
+// A challenge waiting for a room that meets the bar is not shown, so the numbers skip it and run with no gap.
+const shown = list => list.filter(c => !c.waiting);
+export const challengeName = def => def.challenge.remove ? `R${shown(REMOVING).findIndex(c => c.id === def.id) + 1}` : `C${shown(PLACING).findIndex(c => c.id === def.id) + 1}`;

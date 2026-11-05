@@ -4,7 +4,7 @@ import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
 import { suite } from './lib.mjs';
 import { measure } from '../tools/challenge.mjs';
-import { measureRemoval } from '../tools/removalFind.mjs';
+import { measureRemoval } from '../tools/challenge.mjs';
 import { readFileSync } from 'node:fs';
 
 const { check, done } = suite('challenge');
@@ -67,7 +67,7 @@ try {
   check('the level list shows the challenge beaten', await p.$eval(`[data-level="${ch.id}"] .campStar.main`, s => s.classList.contains('on')));
   // Registers 786, 787: a challenge slot shows its two challenges side by side, each half as wide.
   const pairs = await p.$$eval('#campList li.side.pair', ls => ls.map(l => { const bs = [...l.querySelectorAll('.campRow')], w = l.getBoundingClientRect().width; return { n: bs.length, half: bs.every(b => b.getBoundingClientRect().width < w * 0.55), ids: bs.map(b => b.dataset.level) }; }));
-  check('each challenge slot shows its placing and removal challenges side by side, each half as wide (register 786)', pairs.length === ALL.filter(c => !c.remove).length && pairs.every(q => q.n === 2 && q.half && /^c/.test(q.ids[0]) && /^r/.test(q.ids[1])), JSON.stringify(pairs.slice(0, 2)));
+  check('each challenge slot shows its placing and removal challenges side by side, each half as wide (register 786)', pairs.length === ALL.filter(c => !c.remove).filter((c, i) => !c.waiting && !ALL.filter(r => r.remove)[i].waiting).length && pairs.every(q => q.n === 2 && q.half && /^c/.test(q.ids[0]) && /^r/.test(q.ids[1])), JSON.stringify(pairs.slice(0, 2)));
   // A removal challenge: the card says how many to take out; taking out the right pieces wins on Run.
   const rm = ALL.find(c => c.remove), out = measureRemoval(rm).wins[0].tiles;
   await p.goto(`http://localhost:${PORT}/index.html#/level/${rm.id}`); await p.waitForTimeout(1200);
@@ -89,6 +89,16 @@ try {
   await p.tap('#campRun');
   await p.waitForFunction(() => !window.wee.demoRunning(), null, { timeout: 20000 }); await p.waitForTimeout(300);
   check('taking out the right pieces wins on Run', /^won in/.test(await p.locator('#campLast').getAttribute('data-said')), await p.locator('#campLast').getAttribute('data-said'));
+  // A room saved before the challenge was rebuilt does not come back over the new one.
+  const stale = await p.evaluate(async id => {
+    const { progress, write } = await import('/src/app/progress.js'), { CHALLENGES } = await import('/src/level/challenges.js');
+    const def = CHALLENGES.find(c => c.id === id), room = structuredClone(def.room), open = new Set(def.challenge.open.map(([x, y]) => y * room.w + x));
+    const i = room.cells.findIndex((c, k) => !c && !open.has(k) && !(room.start && room.start.y * room.w + room.start.x === k));
+    room.cells[i] = 'wall'; const pr = progress(); (pr.levels[id] ||= {}).room = room; write(pr);
+    location.hash = '#/levels'; await new Promise(r => setTimeout(r, 400)); location.hash = '#/level/' + id; await new Promise(r => setTimeout(r, 800));
+    return { i, now: window.wee.getLevel().cells[i] };
+  }, ch.id);
+  check('a room saved before a challenge was rebuilt does not reopen over the new one', stale.now === '', JSON.stringify(stale));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the challenge smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }
