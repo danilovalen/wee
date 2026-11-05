@@ -74,6 +74,42 @@ export function* lensData(level, max = MAX_STATES) {
   }
   const solution = [];
   if (win) { solution.push(win.tile); for (let k = win.from; k; k = nodes.get(k).parent) solution.unshift(nodes.get(k).tile); }
+  const through = new Set(passes);
   for (const i of stops) passes.delete(i);
-  return { distance, hopeless: [...seen].filter(t => !distance.has(t)), solution, beams, pieces, passes, stops, moves, danger, capped, positions: nodes.size };
+  const wins = capped ? { stop: new Map(), pass: new Map() } : yield* shortestUse(start, first, toWin, keys, tileOf);
+  return { distance, hopeless: [...seen].filter(t => !distance.has(t)), solution, beams, pieces, passes, through, stops, moves, danger, wins, capped, positions: nodes.size };
+}
+
+// What the shortest wins do with each tile (registers 750, 769): stop.get(tile) and pass.get(tile) are
+// 'required' when every shortest win stops on (or slides through) it and 'optional' when only some do; a
+// tile no shortest win uses is in neither. Moves on a shortest win are replayed once more to know the tiles
+// each crosses, then a tile is required when no shortest win gets round it.
+function* shortestUse(start, first, toWin, keys, tileOf) {
+  const best = toWin.get(first), stop = new Map(), pass = new Map();
+  if (best === undefined) return { stop, pass };
+  const states = new Map([[first, start]]), depth = new Map([[first, 0]]), q = [first], edges = [], out = new Map();
+  let crossed = [];
+  for (let i = 0; i < q.length; i++) {
+    const k = q[i], s = states.get(k), d = depth.get(k);
+    for (const pair of successors(s, keys, true, t => crossed.push(tileOf(t)))) {
+      const c = crossed; crossed = [];
+      if (!pair) continue;
+      const t = pair[1], tk = t.won ? WIN : stateKey(t), rest = t.won ? 0 : toWin.get(tk);
+      if (rest === undefined || d + 1 + rest !== best) continue;
+      const end = tileOf(t), e = { to: tk, end, crossed: new Set(c.filter(x => x !== end && x !== tileOf(s))) };
+      (out.get(k) || out.set(k, []).get(k)).push(edges.push(e) - 1);
+      if (!t.won && !states.has(tk)) { states.set(tk, t); depth.set(tk, d + 1); q.push(tk); }
+    }
+    yield i;
+  }
+  // Can a shortest win get round the tile? A walk from the start that leaves out every move using it.
+  const round = uses => { const seen = new Set([first]), todo = [first];
+    for (let i = 0; i < todo.length; i++) for (const n of out.get(todo[i]) || []) { const e = edges[n]; if (uses(e)) continue; if (e.to === WIN) return true; if (!seen.has(e.to)) { seen.add(e.to); todo.push(e.to); } }
+    return false; };
+  const startTile = tileOf(start);
+  stop.set(startTile, 'required');
+  for (const e of edges) { if (!stop.has(e.end)) stop.set(e.end, null); for (const x of e.crossed) if (!pass.has(x)) pass.set(x, null); }
+  for (const [t, v] of stop) if (v === null) { stop.set(t, round(e => e.end === t) ? 'optional' : 'required'); yield t; }
+  for (const [t] of pass) { pass.set(t, round(e => e.crossed.has(t)) ? 'optional' : 'required'); yield t; }
+  return { stop, pass };
 }

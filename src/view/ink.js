@@ -36,7 +36,7 @@ export const PUFFS = [[0.9, 0, 8], [0.6, 0.6, 6.5], [0.6, -0.6, 6.5], [0.1, 0.9,
 // Pixel shapes (register 621): discs, rings and ellipses filled as whole 2-unit cells, each rounded to
 // the whole pixels of whatever it is drawn on, so nothing round is drawn smooth.
 const CELL = 2;
-function cells(g, list) {
+export function cells(g, list) {
   const m = g.getTransform ? g.getTransform() : null;
   if (!m || m.b || m.c) { for (const [x, y, w, h] of list) g.fillRect(x, y, w, h); return; }
   g.save(); g.setTransform(1, 0, 0, 1, 0, 0);

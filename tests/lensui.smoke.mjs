@@ -28,9 +28,9 @@ try {
   await page.evaluate(() => document.getElementById('roomsBox').close());
   await page.evaluate(l => window.wee.loadLevel(l), lit);
   const floor = await pixel(4, 1);
-  const bar = await page.evaluate(() => { const b = document.getElementById('lensBar'), r = document.getElementById('roomArea').getBoundingClientRect(), q = b.getBoundingClientRect();
-    return { n: b.querySelectorAll('[data-lens-icon]').length, top: Math.abs(q.top - r.top) < 8, tips: [...b.querySelectorAll('[data-lens-icon]')].every(x => x.title.length > 10), on: b.querySelectorAll('.on').length }; });
-  check('nine lens icons sit on the room\'s top edge, all off, each saying what it shows (register 721)', bar.n === 9 && bar.top && bar.tips && bar.on === 0, JSON.stringify(bar));
+  const bar = await page.evaluate(() => { const b = document.getElementById('lensBar'), redo = document.getElementById('redo').getBoundingClientRect(), q = b.getBoundingClientRect();
+    return { n: b.querySelectorAll('[data-lens-icon]').length, header: b.parentElement.tagName, right: q.left >= redo.right, row: Math.abs((q.top + q.bottom) / 2 - (redo.top + redo.bottom) / 2) < 8, seps: b.querySelectorAll('.lensSep').length, tips: [...b.querySelectorAll('[data-lens-icon]')].every(x => x.title.length > 10), on: b.querySelectorAll('.on').length }; });
+  check('nine lens icons sit in the header right of Redo, four groups split by three lines, all off, each saying what it shows (registers 749, 770)', bar.n === 9 && bar.header === 'HEADER' && bar.right && bar.row && bar.seps === 3 && bar.tips && bar.on === 0, JSON.stringify(bar));
   check('the chips row, the Lenses tab and the Lenses button are gone', await page.locator('#lensChips').isHidden() && await page.locator('[data-well=lenses]').isHidden() && await page.locator('#stopsBtn').isHidden());
   await pickTool(page, 'turret');
   check('a tool in hand turns no lens on by itself', await on('colour') === 'off');
@@ -55,9 +55,9 @@ try {
   const arrow = along.find(p => p[0] > 200 && p[1] > 150 && p[2] < 140) || along[0];
   check('and the arrow is drawn', arrow[0] > 200 && arrow[1] > 150 && arrow[2] < 140, JSON.stringify(along));
   // Register 725: each move's number is white on a dark disc, so it reads.
-  const num = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'), cx = 2.5 * t, cy = 1.5 * t, r = 8 * t / 32;
+  const num = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'), cx = 3 * t, cy = 1.5 * t, r = 8 * t / 32;
     let white = 0, dark = 0; for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const d = g.getImageData(Math.round(cx + dx), Math.round(cy + dy), 1, 1).data; if (d[0] > 220 && d[1] > 220 && d[2] > 220) white++; else if (d[0] < 60 && d[1] < 60 && d[2] < 70) dark++; } return { white, dark }; });
-  check('the move\'s number is white on a dark disc (register 725)', num.white > 3 && num.dark > num.white, JSON.stringify(num));
+  check('the move\'s number is white bitmap digits on a dark plate (registers 725, 741)', num.white > 3 && num.dark > num.white, JSON.stringify(num));
   // Register 722: an edit that leaves no way keeps the last line, cut where the room now stops it.
   const cut = await page.evaluate(async () => {
     const { lensMarks } = await import('/src/app/lenses.js'), { S } = await import('/src/editor/state.js'), { change } = await import('/src/app/undo.js');
@@ -78,8 +78,19 @@ try {
   check('near the goal is not the hopeless grey, past the one-way is grey', Math.abs(past[0] - past[1]) < 30 && past[0] > floor[0] + 20 && Math.abs(near[0] - past[0]) + Math.abs(near[2] - past[2]) > 20, JSON.stringify([near, past, floor]));
   await tap('solution'); await tap('distance'); await tap('passes');
   await settle();
-  const big = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'); const at = (x, y, dx) => g.getImageData(Math.round((x + 0.5) * t + dx * t / 32), Math.round((y + 0.5) * t), 1, 1).data[2]; return { stopEdge: at(4, 1, 3), passEdge: at(3, 1, 3), passCentre: at(3, 1, 0) }; }); // blue: high on a sky dot, low on the dark floor
-  check('Passes draws a big dot on a stop and a small one where you slide through', (await legend()).includes('small where you only pass') && big.stopEdge > big.passEdge + 60 && big.passCentre > big.passEdge + 60, JSON.stringify(big));
+  if (await page.$eval('[data-lens-icon=stops]', b => !b.classList.contains('on'))) { await tap('stops'); await settle(); }
+  const big = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'); const at = (x, y, dx) => [...g.getImageData(Math.round((x + 0.5) * t + dx * t / 32), Math.round((y + 0.5) * t), 1, 1).data]; return { stopRing: at(4, 1, 7), stopCentre: at(4, 1, 0), pass: at(3, 1, 0), passOff: at(3, 1, 6) }; });
+  const ice = p => p[2] > 200 && p[1] > 180 && p[0] < 150;
+  // Every shortest win here stops on the blob's tile and slides through the one beside it: both are ice.
+  check('a stop is a ring and a slide-through a dot, both ice where every shortest win uses them (registers 750, 769)', /Dots: .*slide through/.test(await legend()) && ice(big.stopRing) && !ice(big.stopCentre) && ice(big.pass) && !ice(big.passOff), JSON.stringify(big));
+  check('Stops and Passes are on together, each by itself (register 770)', await page.$$eval('[data-group=dots].on', b => b.length) === 2);
+  const sq = room(['#####', '#P..#', '#...#', '#...#', '#####'], { powers: OFF }); sq.cells[3 * 5 + 3] = 'goal';
+  await page.evaluate(l => window.wee.loadLevel(l), sq); await settle();
+  const corner = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round(3.5 * t + 7 * t / 32), Math.round(1.5 * t), 1, 1).data]; });
+  check('a stop only some shortest wins use rings orange (register 750)', corner[0] > 200 && corner[1] > 120 && corner[1] < 180 && corner[2] < 140, JSON.stringify(corner));
+  const focused = await page.evaluate(async () => { const { lensMarks } = await import('/src/app/lenses.js'), { S } = await import('/src/editor/state.js');
+    S.hover = { x: 2, y: 2 }; const m = lensMarks(); S.hover = null; return m.focus; });
+  check('pointing at a tile focuses the line lenses on it (register 752)', focused === 2 * 5 + 2, String(focused));
   await tap('passes'); await tap('moves');
   await settle();
   const mv = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w, g = c.getContext('2d'); let best = 0; for (let dy = -6; dy <= 6; dy++) { const d = g.getImageData(Math.round(2.5 * t), Math.round(1.5 * t + dy * t / 32), 1, 1).data; best = Math.max(best, Math.min(d[1], d[2])); } return best; });
@@ -98,6 +109,21 @@ try {
   await simple.evaluate(() => document.getElementById('roomsBox').close());
   check('the simple Sandbox shows the same nine icons', await simple.locator('#lensBar [data-lens-icon]').count() === 9 && await simple.locator('#lensBar').isVisible());
   await simple.close();
+  // A phone folds the icons into one Lenses button (register 749).
+  const phone = await browser.newPage({ viewport: { width: 390, height: 800 } });
+  await phone.goto('http://localhost:5213/?sandbox=full');
+  await phone.waitForFunction(() => window.wee && window.wee.roomsReady); await phone.evaluate(() => window.wee.roomsReady);
+  await phone.evaluate(() => document.getElementById('roomsBox').close());
+  const folded = await phone.locator('#lensFold').isVisible() && await phone.locator('#lensBar').isHidden();
+  await phone.click('#lensFold');
+  check('on a phone the icons fold into a Lenses button that opens them (register 749)', folded && await phone.locator('#lensBar [data-lens-icon=stops]').isVisible());
+  // A campaign level has no lenses, and draws none even when they were on in the Sandbox (register 760).
+  await phone.close();
+  await page.goto('http://localhost:5213/#/level/1');
+  await page.waitForFunction(() => document.body.classList.contains('campaign'));
+  await page.waitForTimeout(300);
+  const campMarks = await page.evaluate(async () => { const { lensMarks, toggleLens } = await import('/src/app/lenses.js'); toggleLens('passes'); const m = lensMarks(); return Object.keys(m).filter(k => m[k] && k !== 'focus'); });
+  check('a campaign level shows no lens icons and draws no lens, even one turned on (register 760)', await page.locator('#lensFold').isHidden() && await page.locator('#lensBar').isHidden() && !campMarks.length, campMarks.join());
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the lens smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

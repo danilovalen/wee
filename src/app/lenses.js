@@ -26,8 +26,8 @@ export const LENS_TIPS = {
   distance: 'Colour each tile by how many moves it takes to win from there.',
   beams: 'Colour every tile a laser can ever reach.',
   pieces: 'Colour every tile a box, a moving block or an enemy can ever stand on.',
-  stops: 'Dot every tile you can stop on.',
-  passes: 'Dot where you stop (big) and where you only slide through (small).',
+  stops: 'Ring every tile you can stop on: ice if every shortest win stops there, orange if some do.',
+  passes: 'Dot every tile you slide through: ice if every shortest win passes it, orange if some do.',
   solution: 'Draw one shortest way to the goal, its moves numbered.',
   moves: 'Draw every slide from stop to stop, thicker where more positions make it.',
   traps: 'Frame every tile from which the goal is out of reach for good.',
@@ -39,32 +39,49 @@ export const AUTO = { turret: BEAM, sensor: BEAM, box: PIECE, heavy: PIECE, move
 const SEARCHED = ['distance', 'beams', 'pieces', 'solution', 'passes', 'moves', 'danger'];
 
 const L = () => S.lens;
-// What is on in a group: your pick, else what the tool opens, else nothing.
+// Every lens turns on and off by itself, so any can show at once (register 770); the colour lenses paint the
+// same tiles, so one of them at a time.
+export const MULTI = new Set(['dots', 'lines', 'frames']);
+const groupOf = id => LENS_GROUPS.find(g => g.lenses.some(([l]) => l === id));
+const auto = group => L().follow ? (AUTO[S.ui.tool] || {})[group] || null : null;
+export function isOn(id) {
+  const gr = groupOf(id);
+  if (!gr) return false;
+  if (!MULTI.has(gr.id)) return lensOn(gr.id) === id;
+  const v = (L().on || {})[id];
+  return v === undefined ? (L().pick[gr.id] === undefined ? auto(gr.id) === id : L().pick[gr.id] === id) : v;
+}
+// What is on in a group: your pick, else what the tool opens, else nothing; for a group of on/off lenses,
+// the first one on.
 export function lensOn(group) {
+  if (MULTI.has(group)) return LENS_GROUPS.find(g => g.id === group).lenses.map(([id]) => id).find(isOn) || null;
   const pick = L().pick[group];
   if (pick !== undefined) return pick === 'off' ? null : pick;
-  return L().follow ? (AUTO[S.ui.tool] || {})[group] || null : null;
+  return auto(group);
 }
 // Whether a group's lens is the tool's doing rather than your pick.
 export const isAuto = group => L().pick[group] === undefined && !!lensOn(group);
-const onNow = () => L().open && S.mode === 'edit' ? LENS_GROUPS.map(gr => lensOn(gr.id)).filter(Boolean) : [];
+// Lenses are for building: none in a campaign level, a challenge or a puzzle, for now (register 760).
+export const lensesHere = () => L().open && S.mode === 'edit' && !S.camp && !S.puzzle;
+const onNow = () => lensesHere() ? LENS_GROUPS.flatMap(gr => gr.lenses.map(([id]) => id)).filter(isOn) : [];
 
 export function toggleLenses() {
   const l = L();
   l.open = !l.open;
-  // Opening the first time shows what Stops used to: every stop, and the traps among them.
-  if (l.open && !l.opened) { l.opened = true; l.pick.dots = 'stops'; l.pick.frames = 'traps'; }
   // The chips under the room carry the lenses; turning them off closes their tab if it shows.
   if (!l.open && WELL.open && WELL.tab === 'lenses') closeWell();
   syncLenses();
 }
-export function pickLens(group, id) { L().pick[group] = id; syncLenses(); }
+export function pickLens(group, id) {
+  if (MULTI.has(group)) { const on = L().on ||= {}; for (const [l] of groupOf(group === 'dots' ? 'stops' : group === 'lines' ? 'solution' : 'traps').lenses) on[l] = l === id; }
+  L().pick[group] = id; syncLenses();
+}
 export function cycleLens(group) {
   const gr = LENS_GROUPS.find(g => g.id === group), ids = ['off', ...gr.lenses.map(([id]) => id)];
   if (!L().open) toggleLenses();
   pickLens(group, ids[(ids.indexOf(lensOn(group) || 'off') + 1) % ids.length]);
 }
-export function lensesOff() { for (const gr of LENS_GROUPS) L().pick[gr.id] = 'off'; syncLenses(); }
+export function lensesOff() { for (const gr of LENS_GROUPS) L().pick[gr.id] = 'off'; L().on = Object.fromEntries(LENS_GROUPS.flatMap(g => g.lenses.map(([id]) => [id, false]))); syncLenses(); }
 
 // Starts whatever search the lenses on now need and the room does not have yet.
 function ensure() {
@@ -112,16 +129,22 @@ export function lensMarks() {
   ensure();
   const st = fresh(S.stops), ld = fresh(S.lensData), d = ld && ld.d;
   const colour = lensOn('colour'), out = {};
-  if (L().open && S.mode === 'edit') {
+  if (lensesHere()) {
+    // The line lenses narrow to one tile while you point at it, or after a Look tap holds it (register 752).
+    const f = S.ui.tool === 'look' && S.lookTile || S.hover;
+    if (f) out.focus = f.y * S.level.w + f.x;
     if (d && colour === 'distance') out.heat = { distance: d.distance, hopeless: S.level.cells.includes('goal') ? d.hopeless : [] };
     if (d && colour === 'beams') out.heat = { tiles: d.beams, colour: INK.zap };
     if (d && colour === 'pieces') out.heat = { tiles: d.pieces, colour: INK.box };
-    if (st && lensOn('dots') === 'stops') out.dots = st.list || [...(st.out.stops || [])];
-    if (d && lensOn('dots') === 'passes') { out.dots = [...d.stops]; out.small = [...d.passes]; }
-    if (lensOn('lines') === 'solution') Object.assign(out, solutionMarks(d));
-    if (d && lensOn('lines') === 'moves') out.moves = [...d.moves].map(([k, n]) => { const [a, b] = k.split('>').map(Number); return { a, b, n }; }).filter(m => m.a !== m.b);
-    if (d && lensOn('frames') === 'danger') out.crosses = d.danger;
-    if (st && st.traps && lensOn('frames') === 'traps') out.frames = new Set(st.traps);
+    // A ring where you can stop, a dot where you slide through, coloured by what the shortest wins do there:
+    // every one, some, or none (registers 750, 769).
+    const use = (m, i) => (m && m.get(i)) || 'unused';
+    if (isOn('stops')) { const list = d ? [...d.stops] : st ? st.list || [...(st.out.stops || [])] : null; if (list) out.rings = list.map(i => ({ i, use: d ? use(d.wins.stop, i) : null })); }
+    if (d && isOn('passes')) out.passing = [...d.through].map(i => ({ i, use: use(d.wins.pass, i) }));
+    if (isOn('solution')) Object.assign(out, solutionMarks(d));
+    if (d && isOn('moves')) out.moves = [...d.moves].map(([k, n]) => { const [a, b] = k.split('>').map(Number); return { a, b, n }; }).filter(m => m.a !== m.b);
+    if (d && isOn('danger')) out.crosses = d.danger;
+    if (st && st.traps && isOn('traps')) out.frames = new Set(st.traps);
   }
   return out;
 }
@@ -150,8 +173,8 @@ export function lensLine(id) {
   if (['stops', 'traps'].includes(id) && st && st.why || SEARCHED.includes(id) && d === null) return 'Has real-time pieces, so lenses cannot map it.';
   const wait = 'Working it out...';
   switch (id) {
-    case 'stops': return st && st.list ? `Dots: ${tiles(st.list.length)} you can stop on${st.capped ? ', maybe more' : ''}.` : wait;
-    case 'passes': return !d ? wait : `Dots: big where you stop (${d.stops.size}), small where you only pass (${d.passes.size}).${part}`;
+    case 'stops': return !d && !(st && st.list) ? wait : `Rings: ${tiles(d ? d.stops.size : st.list.length)} you can stop on; ice if every shortest win stops there, orange if only some do, grey otherwise.${part}`;
+    case 'passes': return !d ? wait : `Dots: ${tiles(d.through.size)} you slide through; ice if every shortest win passes there, orange if only some do, grey otherwise.${part}`;
     case 'moves': return !d ? wait : `Lines: every move from stop to stop, thicker where more positions make it.${part}`;
     case 'danger': return !d ? wait : d.danger.size ? `Frames: ${tiles(d.danger.size)} where a move kills you.${part}` : `Frames: no move kills you.${part}`;
     case 'traps': return !S.level.cells.includes('goal') ? 'Frames: place a berry to find traps.' : st && st.traps ? `Frames: ${tiles(st.traps.length)} where the goal is out of reach for good.` : wait;
@@ -222,8 +245,9 @@ export function cutOf(level, path) {
 // One lens on or off by itself (register 721). Lenses that draw the same way share a row, so turning one on
 // turns the other off.
 export function toggleLens(id) {
-  const gr = LENS_GROUPS.find(g => g.lenses.some(([l]) => l === id));
+  const gr = groupOf(id);
   L().open = true;
-  L().pick[gr.id] = lensOn(gr.id) === id ? 'off' : id;
+  if (MULTI.has(gr.id)) (L().on ||= {})[id] = !isOn(id);
+  else L().pick[gr.id] = lensOn(gr.id) === id ? 'off' : id;
   syncLenses();
 }

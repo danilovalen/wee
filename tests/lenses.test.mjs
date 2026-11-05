@@ -55,4 +55,12 @@ check('a room with no way to die has no danger', hp.danger.size === 0);
 check('a search past its cap says so', run(lensData(oneWay, 1)).capped === true);
 const rt = room(['#####', '#P.Z#', '#####'], { mode: 'realtime' });
 check('a room with real-time pieces gives no answer', run(lensData(rt)) === null);
+// Two shortest wins, one by each side of a square: the start and the goal are on both, the corners on one each.
+const sq = goal(room(['#####', '#P..#', '#...#', '#...#', '#####'], { powers: OFF }), 3, 3), sw = run(lensData(sq)).wins;
+check('a stop every shortest win uses is required, one some use is optional (register 769)', sw.stop.get(6) === 'required' && sw.stop.get(18) === 'required' && sw.stop.get(8) === 'optional' && sw.stop.get(16) === 'optional', JSON.stringify([...sw.stop]));
+check('and the same for tiles you slide through', [7, 11, 13, 17].every(i => sw.pass.get(i) === 'optional') && sw.pass.size === 4, JSON.stringify([...sw.pass]));
+check('a lone corridor makes every tile on it required', [...run(lensData(oneWay)).wins.pass.values()].every(v => v === 'required') && run(lensData(oneWay)).wins.pass.size === 2);
+// A detour down and back up also wins, in three moves: the tiles only it uses are left out (register 769).
+const detour = goal(room(['#######', '#P....#', '#.....#', '#######'], { powers: OFF }), 5, 1), dw = run(lensData(detour)).wins;
+check('a tile only a longer win uses is neither required nor optional', !dw.stop.has(2 * 7 + 1) && !dw.stop.has(2 * 7 + 5) && dw.stop.get(1 * 7 + 5) === 'required', JSON.stringify([...dw.stop]));
 done();

@@ -60,7 +60,8 @@ export function bindInput() {
     if (S.ui.tool === 'look') {
       $('placeHint').textContent = [describe(S.level, c.x, c.y), ...tileFacts(c.y * S.level.w + c.x)].join(', ');
       // On a phone there is no hover: a Look tap shows what a grey piece reaches (register 352).
-      S.lookTile = c;
+      // A tap holds the line lenses on this tile; a tap on the held tile lets it go again (register 752).
+      S.lookTile = S.lookTile && S.lookTile.x === c.x && S.lookTile.y === c.y ? null : c;
       // You can start a run from any tile you could stand on.
       const cell = S.level.cells[c.y * S.level.w + c.x];
       const open = !/^(wall|spring:|door:|idoor:|death)/.test(cell) && !S.level.entities.some(e => e.x === c.x && e.y === c.y);
