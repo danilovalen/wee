@@ -174,7 +174,7 @@ try {
   // F1: a tap on the failed row draws a shortest path that missed it on the room.
   // Back in edit first, so the room is compared with itself and not with the robot playing.
   // Run plays live, then offers Replay of that run (register 771).
-  await page.waitForFunction(() => document.getElementById('campReplay').checkVisibility(), null, { timeout: 8000 }).catch(() => {});
+  await page.waitForFunction(() => document.getElementById('campReplay').checkVisibility({ visibilityProperty: true }), null, { timeout: 8000 }).catch(() => {});
   const offered = await page.locator('#campReplay').isVisible();
   if (offered) await page.click('#campReplay');
   check('Replay waits for a Run, then is offered and opens that run at its start (register 771)', !offeredEarly && offered && await page.locator('#replayBar').isVisible() && /^Start, \d+ moves?$/.test(await page.textContent('#rpAt')), offered ? await page.textContent('#rpAt') : 'no Replay button');
