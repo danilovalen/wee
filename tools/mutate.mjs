@@ -8,7 +8,7 @@ import { locate, testFile } from './mutantLocate.mjs';
 // Each mutant: [file, from, to, test]. tests/mutants.test.mjs fails when one's text is gone (register 608).
 export const M = [
   // the room always opens simple (register 779)
-  ['src/app/rooms.js', "  if (sandboxOpen) { A.syncPanel(); return; }\n  sandboxOpen = true;", "  if (sandboxOpen) return;\n  sandboxOpen = true;", 'simple'],
+  ['src/app/rooms.js', "  S.simple = !full; document.body.classList.toggle('simple', !full);\n  if (sandboxOpen) { A.syncPanel(); return; }", "  if (sandboxOpen) { A.syncPanel(); return; }\n  S.simple = !full; document.body.classList.toggle('simple', !full);", 'simple'],
   // copy rules and the lint note (registers 743, 747, 748, 753, 764)
   ['src/solve/lint.js', "the ${col} ${NAME[kind]} doesn't do anything.", "the ${col} switch does nothing.", 'copy'],
   ['src/solve/lint.js', "    if (gate) (driven[gate] ||= []).push({ i, kind });\n", "", 'lint'],
