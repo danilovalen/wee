@@ -34,6 +34,8 @@ try {
     check(`${w}px: challenges read C1, C2, C3... and puzzles P1, P2... down the list (register 735)`, ['C', 'P'].every(k => seq(k).length > 2 && seq(k).every((n, i) => n === i + 1)), r.labels.join());
     check(`${w}px: every card is whole: a name on one line, the pieces inside`, !r.broken.length, r.broken.join());
     check(`${w}px: the progress buttons fit their labels`, !r.clipped.length, r.clipped.join());
+    const head = await page.evaluate(() => { const d = document.getElementById('campBox'); d.scrollTop = d.scrollHeight; const h = d.querySelector('.roomsHead').getBoundingClientRect(), m = document.getElementById('campMenu').getBoundingClientRect(); return { top: Math.round(h.top), menu: m.height > 0 && m.top >= 0 && m.bottom <= innerHeight, scrolled: d.scrollTop > 0 }; });
+    check(`${w}px: scrolled to the end, the title and Menu stay at the top (register 763)`, head.scrolled && head.top >= -1 && head.top <= 4 && head.menu, JSON.stringify(head));
     await page.close();
   }
 } catch (err) { check('the level list smoke ran to the end', false, err.message); }

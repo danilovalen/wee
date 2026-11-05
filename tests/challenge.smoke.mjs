@@ -32,6 +32,8 @@ try {
   check('the card writes no goal rows for a challenge', reqs.length === 0, JSON.stringify(reqs));
   const shown = () => p.$$eval('#campBrief .campPieces .campIcon', cs => cs.map(c => c.dataset.part + (c.classList.contains('used') ? '-used' : '')));
   check('the card shows one icon per given piece', (await shown()).length === ch.pieces.length, JSON.stringify(await shown()));
+  const counts = await p.$$eval('#campBrief .campPieces .campKind', ks => ks.map(k => [k.querySelector('.campCount').textContent, k.querySelectorAll('.campIcon').length]));
+  check('each kind says how many, 1x included (register 761)', counts.length > 0 && counts.every(([t, n]) => t === `${n}×`), JSON.stringify(counts));
   // The solution, placed tile by tile; a one-way goes down pointing right and turns a quarter per tap.
   const turns = { '>': 0, v: 1, '<': 2, '^': 3 };
   for (let y = 0; y < win.length; y++) for (let x = 0; x < win[y].length; x++) {

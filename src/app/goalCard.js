@@ -56,8 +56,12 @@ function word(p) {
 // A challenge's given pieces, one icon each; a placed one fades (register 566).
 function piecesToPlace(def, by) {
   const box = document.createElement('div'); box.className = 'campPieces'; box.setAttribute('aria-label', 'Pieces to place');
-  for (const [el, [n]] of Object.entries(def.palette)) for (let i = 0; i < n; i++) {
-    const c = word({ el }); if (i < by[el].length) c.classList.add('used'); box.append(c);
+  // Each kind says how many, 1x included, so "a one-way and a block" reads as one of each (register 761).
+  for (const [el, [n]] of Object.entries(def.palette)) {
+    const kind = document.createElement('span'); kind.className = 'campKind';
+    kind.append(Object.assign(document.createElement('b'), { className: 'campCount', textContent: `${n}×` }));
+    for (let i = 0; i < n; i++) { const c = word({ el }); if (i < by[el].length) c.classList.add('used'); kind.append(c); }
+    box.append(kind);
   }
   return box;
 }

@@ -7,6 +7,9 @@ import { locate, testFile } from './mutantLocate.mjs';
 
 // Each mutant: [file, from, to, test]. tests/mutants.test.mjs fails when one's text is gone (register 608).
 export const M = [
+  // challenge counts; page titles stay put (registers 761, 763)
+  ['src/app/goalCard.js', "textContent: `${n}×` }));", "textContent: '' }));", 'challenge'],
+  ['style.css', "dialog[id].rooms > .roomsHead { position: sticky;", "dialog[id].rooms > .roomsHead { position: static;", 'levellist'],
   // Most moves fixes; stay dead; the bubble is the button (registers 744, 754, 757, 765, 767, 775)
   ['src/app/shape.js', ": t === 'door' ? [{ ...ui, inverted: false }, { ...ui, inverted: true }]", ": t === 'door' ? [ui]", 'shapeui'],
   ['src/app/shape.js', "        if (asBlock === n) continue;\n", "", 'shapeui'],
