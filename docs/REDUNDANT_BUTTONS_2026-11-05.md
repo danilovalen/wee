@@ -49,4 +49,5 @@ thing on a *different* screen is not redundant.
 
 ## Question for the owner
 
-1. On the room title (2): should tapping the name open the Rooms page, or should the name be a plain label?
+1. ~~The room title (2)?~~ **Owner (2026-11-05): tapping the name opens the Rooms page** on the current room;
+   the separate info panel goes.
