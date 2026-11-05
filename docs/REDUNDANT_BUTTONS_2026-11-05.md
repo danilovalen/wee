@@ -51,3 +51,9 @@ thing on a *different* screen is not redundant.
 
 1. ~~The room title (2)?~~ **Owner (2026-11-05): tapping the name opens the Rooms page** on the current room;
    the separate info panel goes.
+2. ~~One way up per page (8)?~~ **Owner (2026-11-05): yes, ← at the top left beside the page's name**, the per-page Menu buttons go.
+3. ~~Share (12)?~~ **Owner (2026-11-05): wait for dev mode (780)**; the file ones are decided with it.
+4. ~~Drop Stay (7)?~~ **Owner (2026-11-05): keep Stay.**
+5. ~~One Undo in play (4)?~~ **Owner (2026-11-05): keep both**; the bubble's tap-to-undo stays.
+6. ~~Show solution and Run (6)?~~ **Owner (2026-11-05): open in Replay**; Run plays live, then offers Replay.
+7. ~~Rooms and Generate (3, 11)?~~ **Owner (2026-11-05): one of each**: Rooms in the header on wide screens and as the tab on phones, Generate only on the Rooms page.
