@@ -1,0 +1,131 @@
+{
+ "format": "wee-level",
+ "version": 1,
+ "name": "Heist",
+ "puzzleSlot": 6,
+ "w": 9,
+ "h": 6,
+ "cells": [
+  "",
+  "",
+  "wall",
+  "",
+  "",
+  "toggle:red:on",
+  "",
+  "",
+  "door:red",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "toggle:red",
+  "",
+  "",
+  "",
+  "door:red",
+  "",
+  "door:red",
+  "goal",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "wall",
+  "wall",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "wall",
+  "wall",
+  "wall",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  ""
+ ],
+ "start": {
+  "x": 0,
+  "y": 2
+ },
+ "entities": [
+  {
+   "kind": "box",
+   "x": 7,
+   "y": 0,
+   "dir": 1,
+   "mode": "input"
+  },
+  {
+   "kind": "turret",
+   "x": 5,
+   "y": 1,
+   "turret": {
+    "dirs": [
+     "down"
+    ],
+    "mode": "input"
+   }
+  },
+  {
+   "kind": "turret",
+   "x": 7,
+   "y": 1,
+   "turret": {
+    "dirs": [
+     "down"
+    ],
+    "mode": "input"
+   }
+  },
+  {
+   "kind": "turret",
+   "x": 3,
+   "y": 5,
+   "turret": {
+    "dirs": [
+     "right"
+    ],
+    "mode": "input"
+   }
+  },
+  {
+   "kind": "turret",
+   "x": 8,
+   "y": 5,
+   "turret": {
+    "dirs": [
+     "left"
+    ],
+    "mode": "input"
+   }
+  }
+ ],
+ "powers": {
+  "boomerang": false,
+  "dive": false,
+  "laser": false,
+  "cycle": false,
+  "swim": false,
+  "light": false,
+  "armored": false
+ },
+ "clock": "tile"
+}

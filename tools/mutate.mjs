@@ -7,6 +7,8 @@ import { locate, testFile } from './mutantLocate.mjs';
 
 // Each mutant: [file, from, to, test]. tests/mutants.test.mjs fails when one's text is gone (register 608).
 export const M = [
+  // puzzles by slot (registers 759, 776)
+  ['src/campaign/progression.js', " || r.level.puzzleSlot === n", "", 'progression'],
   // challenge counts; page titles stay put (registers 761, 763)
   ['src/app/goalCard.js', "textContent: `${n}×` }));", "textContent: '' }));", 'challenge'],
   ['style.css', "dialog[id].rooms > .roomsHead { position: sticky;", "dialog[id].rooms > .roomsHead { position: static;", 'levellist'],

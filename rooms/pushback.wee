@@ -1,0 +1,72 @@
+{
+ "format": "wee-level",
+ "version": 1,
+ "name": "Pushback",
+ "puzzleSlot": 5,
+ "w": 4,
+ "h": 8,
+ "cells": [
+  "wall",
+  "goal",
+  "wall",
+  "wall",
+  "wall",
+  "gate:down@red",
+  "wall",
+  "wall",
+  "button:red",
+  "",
+  "",
+  "wall",
+  "wall",
+  "",
+  "",
+  "",
+  "gate:down@red",
+  "gate:up@red",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "button:red",
+  "",
+  "",
+  "wall",
+  "",
+  "",
+  "wall",
+  "wall"
+ ],
+ "start": {
+  "x": 0,
+  "y": 5
+ },
+ "entities": [
+  {
+   "kind": "box",
+   "x": 1,
+   "y": 3,
+   "dir": 1,
+   "mode": "input"
+  },
+  {
+   "kind": "box",
+   "x": 1,
+   "y": 6,
+   "dir": 1,
+   "mode": "input"
+  }
+ ],
+ "powers": {
+  "boomerang": false,
+  "dive": false,
+  "laser": false,
+  "cycle": false,
+  "swim": false,
+  "light": false,
+  "armored": false
+ },
+ "clock": "tile"
+}

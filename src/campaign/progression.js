@@ -8,7 +8,8 @@ import { listed } from './rules.js';
 
 // Authored puzzles (registers 651, 660, 662): the rooms in rooms/ named "Puzzle N", so the Sandbox offers the
 // same rooms as examples. Puzzle N takes the N-th puzzle slot; a slot with no such room stays empty.
-const authored = n => { const t = TEMPLATES.find(r => r.name === `Puzzle ${n}`); return t ? { id: 'p' + n, name: t.name, puzzle: true, room: t.level } : null; };
+// A room may name its slot instead (puzzleSlot), keeping a name of its own: Pushback is puzzle 5, Heist 6 (759, 776).
+const authored = n => { const t = TEMPLATES.find(r => r.name === `Puzzle ${n}` || r.level.puzzleSlot === n); return t ? { id: 'p' + n, name: t.name, puzzle: true, room: t.level } : null; };
 export const PUZZLES = Array.from({ length: 12 }, (_, i) => authored(i + 1));
 export const builders = () => LEVELS.filter(listed);
 // The side room after the k-th builder level (1-based), or null.

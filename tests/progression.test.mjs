@@ -29,8 +29,11 @@ check('a level off the plan stays open', isOpen('tutorial', none));
   const { allShortest } = await import('../src/campaign/robot.js');
   const { noPowers } = await import('../src/rules/base.js');
   const { splitRoom } = await import('../src/level/room.js');
-  const named = TEMPLATES.filter(t => /^Puzzle \d+$/.test(t.name));
-  check('every room named Puzzle N is a campaign puzzle, and nothing else is', named.length > 0 && named.length === PUZZLES.filter(Boolean).length && named.every(t => PUZZLES[+t.name.slice(7) - 1]?.room === t.level), named.map(t => t.name).join());
+  // A room is a campaign puzzle by its name (Puzzle N) or by its puzzleSlot (Pushback, Heist: registers 759, 776).
+  const slot = t => /^Puzzle \d+$/.test(t.name) ? +t.name.slice(7) : t.level.puzzleSlot;
+  const named = TEMPLATES.filter(t => slot(t));
+  check('every room named Puzzle N or given a puzzle slot is a campaign puzzle, and nothing else is', named.length > 0 && named.length === PUZZLES.filter(Boolean).length && named.every(t => PUZZLES[slot(t) - 1]?.room === t.level), named.map(t => t.name).join());
+  check('Pushback is puzzle 5 and Heist puzzle 6, by their own names', PUZZLES[4]?.name === 'Pushback' && PUZZLES[5]?.name === 'Heist');
   check('Puzzle N opens after the N-th odd builder level', PUZZLES.every((p, i) => !p || sideRoom(2 * i + 1) === p));
   for (const p of PUZZLES.filter(Boolean)) check(`${p.name} is solvable with every power off`, allShortest(noPowers(splitRoom(p.room).level)).status === 'solved');
 }
