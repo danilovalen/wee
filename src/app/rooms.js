@@ -107,10 +107,12 @@ async function fillLibrary() {
 // The Sandbox's two places, the Rooms page and the room under it; leaving keeps unsaved work as a draft.
 let sandboxOpen = false;
 async function enterSandbox() {
-  if (sandboxOpen) return;
-  sandboxOpen = true;
+  // Simple every time the room opens: the Rooms page has no exit of its own, so a way out through it and back
+  // through a level once left the full editor behind (register 779).
   const full = new URLSearchParams(location.search).get('sandbox') === 'full';  // tests only: every way in is the campaign's pieces (register 410)
   S.simple = !full; document.body.classList.toggle('simple', !full);
+  if (sandboxOpen) { A.syncPanel(); return; }
+  sandboxOpen = true;
   await (window.wee.roomsReady = bootRooms()); A.syncPanel();
 }
 const leaveSandbox = next => { if (next === 'room' || next === 'rooms') return; flushDraft(dirty()); sandboxOpen = false; S.simple = false; document.body.classList.remove('simple'); };
