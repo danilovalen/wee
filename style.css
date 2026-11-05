@@ -567,8 +567,11 @@ button:disabled .lookPic { opacity: .35; }
 .lookAchieve li.done { color: var(--ink); --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 .lookAchieve i { display: flex; } .lookAchieve .glyph { width: 16px; height: 16px; }
 .lookAchieve span { font-size: 13px; } .lookAchieve small { color: var(--gold); font-weight: 700; }
-.unlockBadge { display: inline-flex; color: var(--gold); }
-.unlockBadge[hidden] { display: none; }
+/* Dev mode's padlock floats over the top left corner and takes no room, so turning it on moves nothing
+   (register 791); a level does not show it (register 798). */
+.unlockBadge { position: fixed; left: 2px; top: 2px; z-index: 40; display: inline-flex; color: var(--gold); pointer-events: none; opacity: .85; }
+.unlockBadge .glyph { width: 14px; height: 14px; }
+.unlockBadge[hidden], body.campaign .unlockBadge, body.puzzle .unlockBadge { display: none; }
 #menuDebug { background: none; box-shadow: none; height: 44px; font: 13px var(--label-face); color: var(--soft); text-decoration: underline; }
 .menuScene { position: absolute; inset: 0; }
 /* A real room, drawn by the game's renderer one pixel per art pixel and scaled up sharp (register 782). */
@@ -1080,3 +1083,5 @@ body.campaign #bestOpt { display: none !important; }
 dialog[id].rooms > .roomsHead { position: sticky; top: -16px; z-index: 3; margin-top: -16px; padding: 16px 0 8px; background: inherit; }
 /* Dev mode (register 780): locked, a player sees none of the tester's extras. */
 body:not(.dev) #menuDebug, body:not(.dev) #reportBtn, body:not(.dev) #roomDownload, body:not(.dev) #importBtn, body:not(.dev) #exportAll { display: none !important; }
+/* A removal level only takes pieces out (register 804): Look and Erase are its only tools. */
+body.removal [data-tool]:not([data-tool=look]):not([data-tool=erase]) { display: none !important; }

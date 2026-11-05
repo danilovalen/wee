@@ -48,6 +48,16 @@ try {
     return cells.map(([x, y]) => { const d = g.getImageData(Math.round(x * t + t / 2), Math.round(y * t + t * 0.04), 1, 1).data; return d[2] - d[1] > 60 && d[2] - d[0] > 40; });
   }, [ch.rows.flatMap((r, y) => [...r].map((c, x) => c === '+' && win[y][x] !== '.' ? [x, y] : null)).filter(Boolean), ch.rows[0].length]);
   check('each placed piece wears a purple frame', framed.length > 0 && framed.every(Boolean), JSON.stringify(framed));
+  // Register 794: a block placed beside the room's own block joins it as one mass, no seam between them.
+  const seam = await p.evaluate(async () => {
+    const { drawEdit } = await import('/src/view/scene.js'), { T } = await import('/src/view/ink.js'), { emptyLevel } = await import('/src/level/format.js');
+    const l = emptyLevel(3, 3); l.start = null; l.cells[3] = 'wall'; l.cells[4] = 'wall';
+    const c = document.createElement('canvas'); c.width = 3 * T; c.height = 3 * T; const g = c.getContext('2d');
+    drawEdit(g, l, null, [], 0, { open: [[1, 1]] });
+    const px = (x, y) => [...g.getImageData(Math.round(x), Math.round(y), 1, 1).data].slice(0, 3).join();
+    return { seam: px(T - 1.5, T * 1.5), face: px(T * 0.5, T * 1.5) };
+  });
+  check('a placed block beside the room\'s own block joins it, no seam (register 794)', seam.seam === seam.face, JSON.stringify(seam));
   check('a placed piece fades on the card', (await shown()).every(x => x.endsWith('-used')), JSON.stringify(await shown()));
   await p.tap('#campRun');
   await p.waitForFunction(() => !window.wee.demoRunning(), null, { timeout: 20000 }); await p.waitForTimeout(300);
@@ -65,7 +75,16 @@ try {
   check('a removal challenge\'s card says how many of each kind to take out (register 787)', rcounts.length === Object.keys(rm.remove).length && rcounts.every(([t, n]) => t === `−${n}×`), JSON.stringify(rcounts));
   check('the room as given has its pieces in it', await p.evaluate(() => window.wee.getLevel().cells.filter(c => c === 'wall').length) >= Object.values(rm.remove).reduce((a, b) => a + b, 0));
   const rg = await p.locator('#game').boundingBox(), rt = rg.width / rm.rows[0].length;
-  for (const [x, y] of out) { await p.click(`[data-tool="${TOOL[rm.rows[y][x]] || 'wall'}"]`); await p.mouse.click(rg.x + rt * (x + .5), rg.y + rt * (y + .5)); await p.waitForTimeout(150); }
+  // Register 804: a removal level offers only Look and Erase, and refuses a piece placed anywhere, by key or not.
+  const tools = await p.$$eval('[data-tool]', bs => [...new Set(bs.filter(b => b.offsetParent).map(b => b.dataset.tool))].sort().join());
+  check('a removal level offers only Look and Erase (register 804)', tools === 'erase,look', tools);
+  const free = (() => { for (let y = 0; y < rm.rows.length; y++) for (let x = 0; x < rm.rows[0].length; x++) if (rm.rows[y][x] === '.') return [x, y]; })();
+  const walls0 = await p.evaluate(() => window.wee.getLevel().cells.filter(c => c === 'wall').length);
+  await p.evaluate(async () => { const { S } = await import('/src/editor/state.js'); S.ui.tool = 'wall'; });
+  await p.mouse.click(rg.x + rt * (free[0] + .5), rg.y + rt * (free[1] + .5)); await p.waitForTimeout(150);
+  check('and a block tapped onto an empty tile is refused', await p.evaluate(() => window.wee.getLevel().cells.filter(c => c === 'wall').length) === walls0);
+  await p.locator('[data-tool="erase"]:visible').click();
+  for (const [x, y] of out) { await p.mouse.click(rg.x + rt * (x + .5), rg.y + rt * (y + .5)); await p.waitForTimeout(150); }
   check('each piece taken out is crossed off on the card', (await p.$$eval('#campBrief .campPieces.out .campIcon', cs => cs.every(c => c.classList.contains('used')))), JSON.stringify(await p.$$eval('#campBrief .campPieces.out .campIcon', cs => cs.map(c => c.className))));
   await p.tap('#campRun');
   await p.waitForFunction(() => !window.wee.demoRunning(), null, { timeout: 20000 }); await p.waitForTimeout(300);

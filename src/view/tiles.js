@@ -62,8 +62,8 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     const { col } = gateOf(c), on = !!(s && col && s.open[col]), ds = s ? gateDirs(s, c) : gateOf(c).dirs;
     drawSprite(g, 'gate', 0, 0, { colour: ds.join(',') + '|' + (col ? INK[col] : '') + '|' + (on ? 1 : 0) });
   } else if (c.startsWith('sensor:')) {
-    // A glass block a beam goes through (register 374, his G3): solid, framed in its colour, the star at its
-    // centre filled only while a beam crosses it.
+    // A glass block a beam goes through (register 374, his G3): solid, framed in its colour, the circle at its
+    // centre filled only while a beam crosses it (register 792).
     const col = c.slice(7), lit = s && s.lit.has(y * s.w + x);
     drawSprite(g, 'sensor', 0, 0, { colour: INK[col] + '|' + (lit ? 1 : 0) });
   } else if (c === 'goal') {

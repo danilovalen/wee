@@ -1,6 +1,6 @@
 // The campaign: a level's room and palette, the robot's every shortest path, and the verdict
 // on a room you built. Requirements are judged on every shortest path, not just one.
-import { scoreText, underLimits, colouringsOf, stuckText, nameOf, roomOf, placed, placementErrors, overLimits, check, ELEMENTS, areaOf, stepsText, listed } from '../src/campaign/rules.js';
+import { scoreText, underLimits, colouringsOf, STUCK, nameOf, roomOf, placed, placementErrors, overLimits, check, ELEMENTS, areaOf, stepsText, listed } from '../src/campaign/rules.js';
 import { REQUIREMENTS, trailOf } from '../src/campaign/requirements.js';
 import { boxMoves } from '../src/campaign/pushes.js';
 import { allShortest, replayPath } from '../src/campaign/robot.js';
@@ -211,29 +211,11 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('no level asks for a minimum its required goals already need', twice.length === 0, twice.join());
   ok('a goal that needs two of something says so', REQUIREMENTS.twoTogglesOffAtEnd.needs.toggle === 2 && REQUIREMENTS.boxHitsBox.needs.box === 2);
 }
-{ // why the robot cannot finish (copy is a draft)
-  const why = rows => stuckText(room(rows));
-  const at = (r, x, y) => r.at.some(t => t.x === x && t.y === y);
-  // The only way to the goal runs along a laser's beam (register 286).
-  const beam = why(['#######', '#eP..G#', '#######']);
-  ok('a laser in the way is named, and the laser shown', /a laser hits it/.test(beam.why) && at(beam, 1, 1), JSON.stringify(beam));
-  ok('a room with no laser is not blamed on one', !/laser/.test(why(['#######', '#P.#.G#', '#######']).why));
-  // Spikes in the way are not blamed on a laser (register 437).
-  const bare = why(['#######', '#P.x.G#', '#######']);
-  ok('bare spikes in the way are named, and the spikes shown', /bare spikes/.test(bare.why) && !/laser/.test(bare.why) && at(bare, 3, 1), JSON.stringify(bare));
-  const behind = why(['########', '#Pt.D.tG', '########']);
-  ok('a switch behind its own door is named', behind.why === 'The blob cannot reach the berry: the red door never opens, because 1 of its 2 switches never turns on.', behind.why);
-  ok('it points at the door and that switch, not the one that turns on', at(behind, 4, 1) && at(behind, 6, 1) && !at(behind, 2, 1));
-  ok('none of several', why(['#########', '#P.D.t.tG', '#########']).why.endsWith('none of its 2 switches ever turns on.'));
-  ok('a lone button', why(['#######', '#Po.D.G', '#######']).why.endsWith('its button is never pressed.'));
-  ok('a mixed door names only the kind that fails', why(['#######', '#Pot.DG', '#######']).why.endsWith('its button is never pressed.'));
-  ok('a door with no switch', why(['#######', '#P..D.G', '#######']).why.endsWith('because nothing red opens it.'));
-  const apart = why(['#######', '#o.P.o#', '###D###', '###G###', '#######']);
-  ok('switches each held but never together are said apart', apart.why.endsWith('It needs everything red held at once, and that never happens.') && at(apart, 1, 1) && at(apart, 5, 1) && at(apart, 3, 2), apart.why);
-  const walls = why(['######', '#P##.G', '######']);
-  ok('with no door to blame, it says so plainly', walls.why === 'The blob cannot reach the berry from anywhere it can get to.' && walls.at.length === 0);
-  const v = check({ ...level('1'), palette: { block: [0, 30], toggle: [0, 2], door: [0, 1] } }, build(level('1'), ['', '', '', '#######', '#.t..D#', '#....G#']));
-  ok('an unsolvable verdict carries the reason and the tiles', v.ok && !v.won && v.fail.path === null && /door never opens/.test(v.fail.why) && v.fail.at.length > 0, JSON.stringify(v.fail));
+{ // a failed Run says only that the berry cannot be reached: a cause would spoil the solution (registers 793, 795, 796)
+  const pal = { block: [0, 30], toggle: [0, 2], door: [0, 1] };
+  const v = check({ ...level('1'), palette: pal }, build(level('1'), ['', '', '', '#######', '#.t..D#', '#....G#']));
+  ok('an unsolvable verdict says only that the berry cannot be reached, and points at nothing', v.ok && !v.won && v.fail.path === null && v.fail.why === STUCK && v.fail.at.length === 0, JSON.stringify(v.fail));
+  ok('the sentence names no door, laser, spikes or switch', STUCK === 'The blob cannot reach the berry.' && !/door|laser|spike|switch|button|because|from anywhere/.test(STUCK));
 }
 { // level 4: two switches at least, through the door, every switch off at the end
   const d = level('4');

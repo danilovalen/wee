@@ -582,8 +582,11 @@ button:disabled .lookPic { opacity: .35; }
 .lookAchieve li.done { color: var(--ink); --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 .lookAchieve i { display: flex; } .lookAchieve .glyph { width: 16px; height: 16px; }
 .lookAchieve span { font-size: 13px; } .lookAchieve small { color: var(--gold); font-weight: 700; }
-.unlockBadge { display: inline-flex; color: var(--gold); }
-.unlockBadge[hidden] { display: none; }
+/* Dev mode's padlock floats over the top left corner and takes no room, so turning it on moves nothing
+   (register 791); a level does not show it (register 798). */
+.unlockBadge { position: fixed; left: 2px; top: 2px; z-index: 40; display: inline-flex; color: var(--gold); pointer-events: none; opacity: .85; }
+.unlockBadge .glyph { width: 14px; height: 14px; }
+.unlockBadge[hidden], body.campaign .unlockBadge, body.puzzle .unlockBadge { display: none; }
 #menuDebug { background: none; box-shadow: none; height: 44px; font: 13px var(--label-face); color: var(--soft); text-decoration: underline; }
 .menuScene { position: absolute; inset: 0; }
 /* A real room, drawn by the game's renderer one pixel per art pixel and scaled up sharp (register 782). */
@@ -1095,6 +1098,8 @@ body.campaign #bestOpt { display: none !important; }
 dialog[id].rooms > .roomsHead { position: sticky; top: -16px; z-index: 3; margin-top: -16px; padding: 16px 0 8px; background: inherit; }
 /* Dev mode (register 780): locked, a player sees none of the tester's extras. */
 body:not(.dev) #menuDebug, body:not(.dev) #reportBtn, body:not(.dev) #roomDownload, body:not(.dev) #importBtn, body:not(.dev) #exportAll { display: none !important; }
+/* A removal level only takes pieces out (register 804): Look and Erase are its only tools. */
+body.removal [data-tool]:not([data-tool=look]):not([data-tool=erase]) { display: none !important; }
 </style>
 </head>
 <body>
@@ -2259,12 +2264,12 @@ const PIECE_SPRITES = {
     }
     return g;
   },
-  // A glass block a beam goes through, framed in its colour; its star filled while a beam crosses it. key: "hex|lit".
+  // A glass block a beam goes through, framed in its colour; its circle filled while a beam crosses it (register 792). key: "hex|lit".
   sensor(key) {
     const [col, lit] = key.split('|'), g = grid();
     slab(g, 1, 1, 14, 14, mixHex(col, '#fcfcfa', 0.7), null, null);
     box(g, 2, 1, 13, 1, col); box(g, 2, 14, 13, 14, col); box(g, 1, 2, 1, 13, col); box(g, 14, 2, 14, 13, col);
-    const st = ['.......', '...#...', '..###..', '#######', '.#####.', '.##.##.', '#.....#'];
+    const st = ['..###..', '.#####.', '#######', '#######', '#######', '.#####.', '..###..'];
     st.forEach((r, yy) => [...r].forEach((ch, xx) => { if (ch === '#') g[4 + yy][4 + xx] = lit === '1' ? col : mixHex(col, '#fcfcfa', 0.35); }));
     if (lit !== '1') for (let yy = 5; yy <= 9; yy++) for (let xx = 5; xx <= 9; xx++) if (g[yy][xx] === mixHex(col, '#fcfcfa', 0.35) && st[yy - 4][xx - 4] === '#' && [[1,0],[-1,0],[0,1],[0,-1]].every(([a, b]) => st[yy - 4 + b] && st[yy - 4 + b][xx - 4 + a] === '#')) g[yy][xx] = mixHex(col, '#fcfcfa', 0.7);
     return g;
@@ -4140,12 +4145,10 @@ return { MAX_STATES, stateKey, settled, parseMove, move, powerMoves, successors,
 // ---- src/campaign/robot.js
 const m27 = (() => {
 const { createGame, cloneGame } = m25;
-const { entAt, playerAt } = m17;
 const { stateKey, successors, unsearchable, move, MAX_STATES } = m26;
 // The robot: every shortest way to the goal, not just one. A breadth-first search by layers
 // that keeps every parent of a state reached at its first depth, so two equal-length routes
 // into one position both survive, then walks back from each winning move.
-
 
 
 const KEYS = ['up', 'right', 'down', 'left'];
@@ -4218,49 +4221,7 @@ function replayPath(level, moves, see) {
   for (const f of r.frames) see(f);
   return r.end;
 }
-
-// Why the robot cannot finish: every position it can reach, and what never happens there.
-// Returns { capped } when the search ran out, else { door, stuck, apart }: door is the first
-// colour whose doors never open (null if every door opens at some point), stuck the cells of
-// its switches that never hold, apart true when each holds at some point but never all at once.
-function whyStuck(level, { max = MAX_STATES } = {}) {
-  const start = createGame(level), keys = [...KEYS, ...(start.powers.cycle || start.powers.swim ? ['hide'] : [])];
-  const seen = new Set([stateKey(start)]), opened = new Set(), held = new Set();
-  let hit = false;
-  const by = new Set();
-  const note = s => {
-    for (const [c, on] of Object.entries(s.open)) if (on) opened.add(c);
-    s.cells.forEach((c, i) => {
-      const x = i % s.w, y = Math.floor(i / s.w);
-      if (c.startsWith('toggle:') ? s.toggled.includes(i) : c.startsWith('button:') ? playerAt(s, x, y) || !!entAt(s, x, y) : /^sensor:/.test(c) && s.lit.has(i)) held.add(i);
-    });
-  };
-  note(start);
-  let frontier = [start];
-  while (frontier.length) {
-    const next = [];
-    for (const s of frontier) {
-      // The solver drops a move that kills the robot; replaying each tick shows what killed it.
-      if (by.size < 2) for (const k of keys) move(s, k, t => { if (t.deaths > s.deaths) { hit = true; const d = t.events.findLast(e => e.type === 'die'); if (d && d.how) by.add(d.how); } });
-    }
-    for (const s of frontier) for (const pair of successors(s, keys)) {
-      if (!pair || pair[1].won) continue;
-      const t = pair[1], k = stateKey(t);
-      if (seen.has(k)) continue;
-      seen.add(k); note(t); next.push(t);
-      if (seen.size >= max) return { capped: true };
-    }
-    frontier = next;
-  }
-  // A door of two colours is stuck only when neither of them ever opens.
-  const sets = [...new Set(start.cells.filter(c => /^door:/.test(c)).map(c => c.slice(5)))].map(c => c.split('|'));
-  const door = (sets.find(cs => !cs.some(c => opened.has(c))) || [null])[0];
-  if (door === null) return { door, stuck: [], apart: false, hit, by: [...by] };
-  const own = start.cells.flatMap((c, i) => /^(button|toggle|sensor):/.test(c) && c.split(':')[1].split('|').includes(door) ? [i] : []);
-  const stuck = own.filter(i => !held.has(i));
-  return { door, stuck, apart: own.length > 0 && stuck.length === 0, hit, by: [...by] };
-}
-return { shortestPaths, allShortest, replayPath, whyStuck };
+return { shortestPaths, allShortest, replayPath };
 })();
 // ---- src/campaign/goals/helpers.js
 const m28 = (() => {
@@ -5422,7 +5383,7 @@ return { REQUIREMENTS, trailOf };
 // ---- src/campaign/rules.js
 const m38 = (() => {
 const { emptyLevel } = m16;
-const { allShortest, whyStuck } = m27;
+const { allShortest } = m27;
 const { REQUIREMENTS } = m37;
 // A campaign level: the room it gives you, what you may place and how many, and what the
 // robot's shortest paths must do. check() judges a room you built against it. All copy is draft.
@@ -5595,36 +5556,9 @@ function optionalResults(def, v) {
 const areaOf = room => room.w * room.h;
 const tilesOf = (def, room) => Object.values(placed(def, room).by).reduce((n, l) => n + l.length, 0);
 
-// Why the robot cannot reach the goal, in words, with the tiles to point at. Copy is a draft.
-// Per kind: its name, its plural, and how one, several or none of them fail to hold.
-const HOLD = {
-  button: ['button', 'buttons', 'is never pressed', 'are never pressed', 'is ever pressed'],
-  toggle: ['switch', 'switches', 'never turns on', 'never turn on', 'ever turns on'],
-  sensor: ['laser relay', 'laser relays', 'is never lit', 'are never lit', 'is ever lit'],
-};
-function stuckText(room) {
-  const w = whyStuck(room), xy = i => ({ x: i % room.w, y: Math.floor(i / room.w) });
-  if (w.capped) return { why: 'The blob cannot reach the berry, and the room is too big to say why.', at: [] };
-  // A move that ends with the robot hit says so, and shows the lasers (register 286).
-  const lasers = () => room.entities.filter(e => e.turret).map(e => ({ x: e.x, y: e.y }));
-  const spikes = () => room.cells.flatMap((c, i) => c === 'death' ? [xy(i)] : []);
-  if (!w.door && w.hit && (w.by || []).includes('laser')) return { why: 'The blob cannot reach the berry: a laser hits it on the way.', at: lasers() };
-  if (!w.door && w.hit && (w.by || []).includes('spikes')) return { why: 'The blob cannot reach the berry: it would have to step on bare spikes.', at: spikes() };
-  if (!w.door) return { why: 'The blob cannot reach the berry from anywhere it can get to.', at: [] };
-  const has = c => c.split(':')[1].split('|').includes(w.door);
-  const doors = room.cells.flatMap((c, i) => c.startsWith('door:') && has(c) ? [xy(i)] : []);
-  const own = room.cells.flatMap((c, i) => /^(button|toggle|sensor):/.test(c) && has(c) ? [i] : []);
-  const head = `The blob cannot reach the berry: the ${w.door} door never opens`;
-  if (!own.length) return { why: `${head}, because nothing ${w.door} opens it.`, at: doors };
-  if (w.apart) return { why: `${head}. It needs everything ${w.door} held at once, and that never happens.`, at: [...doors, ...own.map(xy)] };
-  // Said per kind, so a door held by a button and a switch names the one that fails.
-  const kindOf = i => room.cells[i].split(':')[0], kinds = [...new Set(w.stuck.map(kindOf))];
-  const which = kinds.map(k => {
-    const [one, many, is, are, none] = HOLD[k], n = w.stuck.filter(i => kindOf(i) === k).length, all = own.filter(i => kindOf(i) === k).length;
-    return all === 1 ? `its ${one} ${is}` : n === all ? `none of its ${all} ${many} ${none}` : `${n} of its ${all} ${many} ${n === 1 ? is : are}`;
-  }).join(' and ');
-  return { why: `${head}, because ${which}.`, at: [...doors, ...w.stuck.map(xy)] };
-}
+// A failed Run says only that the berry cannot be reached: naming the door that never opens or the laser in
+// the way hands over the solution (registers 793, 795, 796).
+const STUCK = 'The blob cannot reach the berry.';
 
 // The whole verdict. { ok: false, errors } when the room cannot run; otherwise
 // { ok: true, won, length, paths, fail: { path, why } | null, area, optional: [{ id, text, met }] }.
@@ -5632,7 +5566,7 @@ function check(def, room, opts) {
   const errors = placementErrors(def, room);
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
-  if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, ...stuckText(room) } };
+  if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, why: STUCK, at: [] } };
   if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'To let the blob search this room, make it smaller.' } };
   const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room), tiles: tilesOf(def, room) };
   if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the blob to check.` } };
@@ -5655,7 +5589,7 @@ function check(def, room, opts) {
   const optional = optionalResults(def, base);
   return { ...base, won: true, fail: null, path: r.paths[0], optional, met: optional.filter(o => o.met).length };
 }
-return { ELEMENTS, coloursOf, listed, colouringsOf, pushingsOf, roomOf, placed, nameOf, START_ON, overLimits, underLimits, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, optionalGoals, scoreText, optionalResults, areaOf, tilesOf, stuckText, check };
+return { ELEMENTS, coloursOf, listed, colouringsOf, pushingsOf, roomOf, placed, nameOf, START_ON, overLimits, underLimits, placementErrors, MIN_MOVES, bounds, stepsText, bestText, rangeShort, optionalGoals, scoreText, optionalResults, areaOf, tilesOf, STUCK, check };
 })();
 // ---- src/level/campaign.js
 const m39 = (() => {
@@ -5915,8 +5849,8 @@ function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     const { col } = gateOf(c), on = !!(s && col && s.open[col]), ds = s ? gateDirs(s, c) : gateOf(c).dirs;
     drawSprite(g, 'gate', 0, 0, { colour: ds.join(',') + '|' + (col ? INK[col] : '') + '|' + (on ? 1 : 0) });
   } else if (c.startsWith('sensor:')) {
-    // A glass block a beam goes through (register 374, his G3): solid, framed in its colour, the star at its
-    // centre filled only while a beam crosses it.
+    // A glass block a beam goes through (register 374, his G3): solid, framed in its colour, the circle at its
+    // centre filled only while a beam crosses it (register 792).
     const col = c.slice(7), lit = s && s.lit.has(y * s.w + x);
     drawSprite(g, 'sensor', 0, 0, { colour: INK[col] + '|' + (lit ? 1 : 0) });
   } else if (c === 'goal') {
@@ -6332,7 +6266,7 @@ const { DIRS } = m7;
 
 
 const P = 2, snap = v => Math.round(v / P) * P;
-const JUICE_MS = { eat: 320, place: 220, erase: 320, land: 260, hit: 90, launch: 90 };
+const JUICE_MS = { eat: 520, win: 900, place: 220, erase: 320, land: 260, hit: 90, launch: 90 };
 const ease = t => 1 - (1 - t) * (1 - t);
 // Under reduced motion nothing here moves.
 const still = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -6344,9 +6278,20 @@ function drawJuice(g, fx, now) {
     const ms = JUICE_MS[f.type], t = ms ? (now - f.at) / ms : 1;
     if (t < 0 || t >= 1) continue;
     const cx = f.x * T + T / 2, cy = f.y * T + T / 2;
-    // An eaten berry (register 702) bursts like a placed piece, in the berry's cyan.
-    if (f.type === 'place' || f.type === 'eat') {
-      g.fillStyle = f.type === 'eat' ? '#78dce8' : '#fcfcfa'; g.globalAlpha = 1 - t;
+    // An eaten berry flashes its tile and bursts in a ring of cyan sparks; the last one, which wins, bursts
+    // twice as far in gold and cyan (registers 702, 790).
+    if (f.type === 'eat' || f.type === 'win') {
+      const big = f.type === 'win', n = big ? 16 : 10, r = T / 3 + (big ? 2 : 1.2) * T * ease(t);
+      if (t < 0.3) { g.fillStyle = '#ffffff'; g.globalAlpha = 0.6 * (1 - t / 0.3); g.fillRect(f.x * T + P, f.y * T + P, T - 2 * P, T - 2 * P); }
+      g.globalAlpha = 1 - t;
+      for (let i = 0; i < n; i++) {
+        const a = i / n * Math.PI * 2;
+        g.fillStyle = big && i % 2 ? '#ffd866' : '#78dce8';
+        dot(g, cx + Math.cos(a) * r - P, cy + Math.sin(a) * r - P, P * (t < 0.5 ? 2 : 1));
+        if (big) dot(g, cx + Math.cos(a + Math.PI / n) * r * 0.6 - P, cy + Math.sin(a + Math.PI / n) * r * 0.6 - P);
+      }
+    } else if (f.type === 'place') {
+      g.fillStyle = '#fcfcfa'; g.globalAlpha = 1 - t;
       for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) dot(g, cx + sx * (T / 2 + 10 * ease(t)) - P, cy + sy * (T / 2 + 10 * ease(t)) - P, P * (t < 0.5 ? 2 : 1));
     } else if (f.type === 'erase') {
       g.fillStyle = '#939293'; g.globalAlpha = 1 - t;
@@ -6367,6 +6312,11 @@ function drawJuice(g, fx, now) {
 // The blob stretches along its slide as it sets off and squashes against what stops it: [along, across].
 function squashOf(fx, now) {
   if (still()) return null;
+  // Eating a berry, the blob gulps: it swells and settles, more for the last one (register 790).
+  for (const f of fx) {
+    const t = (now - f.at) / (JUICE_MS[f.type] || 1);
+    if ((f.type === 'eat' || f.type === 'win') && t >= 0 && t < 0.5) { const k = 1 + (f.type === 'win' ? 0.3 : 0.18) * Math.sin(t * 2 * Math.PI); return { dir: 'up', along: k, across: k }; }
+  }
   for (const f of fx) {
     const ms = JUICE_MS[f.type], t = (now - f.at) / ms;
     if (!(t >= 0 && t < 1) || !DIRS[f.dir]) continue;
@@ -6436,14 +6386,14 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   if (open) { g.strokeStyle = 'rgba(171,157,242,.55)'; g.lineWidth = 1.5; g.setLineDash([4, 3]); for (const [x, y] of open) pxStroke(g, x * T + 3.5, y * T + 3.5, T - 7, T - 7, 2); g.setLineDash([]); }
   // A placed piece pops in, a frame too big, then settles (register 647).
   const pop = (x, y, f = fx.find(f => f.type === 'place' && f.x === x && f.y === y), t = f ? Math.min(1, (now - f.at) / 180) : 1) => t >= 1 ? 1 : t < 0.55 ? 0.6 + 0.55 * ease(t / 0.55) : 1.15 - 0.15 * ease((t - 0.55) / 0.45);
-  // A block the player placed on a challenge never melts into the room's own blocks (registers 565, 576).
-  const mineAt = open ? new Set(open.map(([x, y]) => y * level.w + x)) : new Set();
-  const crated = crateSet(level), massed = crated.size || mineAt.size ? level.cells.map((c, i) => crated.has(i) || mineAt.has(i) ? '' : c) : level.cells;
+  // A block the player placed on a challenge joins the room's own blocks as one mass; its purple frame says
+  // it was placed (registers 565, 576, 794).
+  const crated = crateSet(level), massed = crated.size ? level.cells.map((c, i) => crated.has(i) ? '' : c) : level.cells;
   drawMasses(g, massed, level.w, level.h, (x, y) => pop(x, y) < 1);
   level.cells.forEach((c, i) => {
     const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
     if (crated.has(i)) drawCrated(g, c, x, y, null, k);
-    else if (!inMass(c) || k < 1 || mineAt.has(i)) drawCell(g, c, x, y, null, k);
+    else if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);
     if (isGrey(c)) drawTrim(g, x, y, wireColoursAt(level.wires, x, y));
     else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
   });
@@ -8319,6 +8269,7 @@ function enterLevel(id) {
   p.last = id; write(p);
   document.body.classList.add('campaign'); document.body.classList.remove('simple'); S.simple = false;
   document.body.classList.toggle('challenge', !!def.challenge);
+  document.body.classList.toggle('removal', !!(def.challenge && def.challenge.remove));
   // In a level, undo, redo and Reset sit with the tools, so the top bar keeps only Levels, Run and Test (plan step 2).
   $('campTop').prepend(Object.assign($('campHistory') || document.createElement('span'), { id: 'campHistory', className: 'campHistory' }));
   $('campHistory').dataset.join = '';
@@ -8333,7 +8284,7 @@ function leaveLevel() {
   S.camp = null; S.trail = null;
   // A level's goals leave with it (register 667).
   $('campBrief').replaceChildren(); $('campVerdict').hidden = true; forgetRun();
-  document.body.classList.remove('campaign', 'challenge');
+  document.body.classList.remove('campaign', 'challenge', 'removal');
   $('campTest').after($('undo'), $('redo'), $('campReset'));
   // The sandbox never inherits a campaign room.
   S.level = starterLevel(portrait()); S.history = newHistory();
@@ -10809,7 +10760,7 @@ const { S } = m43;
 const { $ } = m0;
 // The room's outskirts (register 672): one tile of wall all round the room, outside it, so a slide always
 // ends against something drawn. It is its own canvas behind the room's, so the room keeps every tile and
-// its own coordinates; a zoomed view, which may not show the room's edges, draws none. The ring knows the
+// its own coordinates; zoomed in, the view draws it instead (`drawRingIn`). The ring knows the
 // room's own blocks, so a block on the room's edge joins it as one mass (register 682); the room itself is
 // then cleared, so the ring draws nothing over it.
 
@@ -10818,17 +10769,20 @@ const { $ } = m0;
 
 
 let drawn = '';
+// As the room draws them: a crate stands alone; a block placed on a challenge joins the ring (register 794).
+const cellsOf = level => ringCells(level, new Set((level.crates || []).map(c => c.y * level.w + c.x)));
+// Zoomed in, the ring is drawn in the view itself, one tile out from the room, before the room (register 802).
+function drawRingIn(g, level) {
+  if (!$('roomWrap').classList.contains('zoomed')) return;
+  g.save(); g.translate(-T, -T); drawMasses(g, cellsOf(level), level.w + 2, level.h + 2); g.restore();
+}
 function syncRing() {
   const ring = $('ring'), game = $('game'), level = S.level;
   const zoomed = $('roomWrap').classList.contains('zoomed');
   const tile = game.getBoundingClientRect().width / level.w;
   ring.hidden = zoomed || !(tile > 0);
   if (ring.hidden) { drawn = ''; return; }
-  const w = level.w + 2, h = level.h + 2, dpr = window.devicePixelRatio || 1;
-  // As the room draws them: a crate and a block placed on a challenge's open tile stand alone.
-  const open = S.camp && S.camp.def.challenge ? S.camp.def.challenge.open : [];
-  const crates = new Set([...(level.crates || []), ...open.map(([x, y]) => ({ x, y }))].map(c => c.y * level.w + c.x));
-  const cells = ringCells(level, crates);
+  const w = level.w + 2, h = level.h + 2, dpr = window.devicePixelRatio || 1, cells = cellsOf(level);
   const key = [w, h, cells.join('|'), tile, dpr, look.palette, JSON.stringify(look.skins), game.offsetLeft, game.offsetTop].join();
   if (key === drawn) return;
   drawn = key;
@@ -10839,7 +10793,7 @@ function syncRing() {
   drawMasses(g, cells, w, h);
   g.clearRect(T, T, level.w * T, level.h * T);
 }
-return { syncRing };
+return { drawRingIn, syncRing };
 })();
 // ---- src/app/camera.js
 const m104 = (() => {
@@ -10871,10 +10825,11 @@ const scale = () => cam.fit * cam.z;  // CSS px per room px
 const isZoomed = () => cam.z > 1.001;
 // The view's box in CSS px: the fitted room, or zoomed in, the whole area the room may use.
 function box() { const { W, H } = size(); return isZoomed() ? { w: Math.max(avail.w, W * cam.fit), h: Math.max(avail.h, H * cam.fit) } : { w: W * cam.fit, h: H * cam.fit }; }
-// Along each side the view stays on the room, or centres it where the room is the smaller.
+// Along each side the view stays on the room and the ring of wall one tile round it (register 802), or
+// centres it where the room is the smaller.
 function clampXY() {
-  const { W, H } = size(), b = box(), k = scale();
-  const one = (c, R, v) => R >= v ? Math.min(R - v, Math.max(0, c)) : (R - v) / 2;
+  const { W, H } = size(), b = box(), k = scale(), m = isZoomed() ? T : 0;
+  const one = (c, R, v) => R >= v ? Math.min(R - v + m, Math.max(-m, c)) : (R - v) / 2;
   cam.x = one(cam.x, W, b.w / k); cam.y = one(cam.y, H, b.h / k);
 }
 
@@ -10956,6 +10911,9 @@ function bindCamera() {
   // Capture, so a pinch starts before the editor treats its first finger as a tap.
   canvas.addEventListener('pointerdown', ev => {
     if (ev.pointerType !== 'touch') return;
+    // A first finger means none other is down: a finger whose lift never reached the canvas is forgotten,
+    // or every later tap reads as a pinch and edits nothing (register 803).
+    if (ev.isPrimary) { fingers.clear(); pinch = null; S.pinch = false; }
     fingers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     if (fingers.size !== 2) return;
     // The first finger's stroke, if it began one, is taken back: two fingers are the camera's.
@@ -10976,8 +10934,7 @@ function bindCamera() {
     apply({ at: pinch.at, cx: t.mx, cy: t.my });
   }, true);
   const up = ev => { fingers.delete(ev.pointerId); if (fingers.size < 2) { pinch = null; if (!fingers.size) S.pinch = false; } };
-  canvas.addEventListener('pointerup', up, true);
-  canvas.addEventListener('pointercancel', up, true);
+  for (const t of ['pointerup', 'pointercancel']) addEventListener(t, up, true);
   canvas.addEventListener('wheel', ev => {
     ev.preventDefault();
     // The plain wheel zooms (register 781); Shift and the wheel, or a sideways scroll, pan.
@@ -12482,9 +12439,13 @@ function newError(level, next) {
 // something is fine while building; Run says so.
 // A challenge takes pieces only on its open tiles; everything else in it is fixed (register 562).
 const fixedAt = (x, y) => S.camp && S.camp.def.challenge && !S.camp.def.challenge.open.some(([ox, oy]) => ox === x && oy === y);
+// A removal level only takes pieces out: nothing is placed or moved to another tile (register 804).
+const removing = () => !!(S.camp && S.camp.def.challenge && S.camp.def.challenge.remove);
+const TAKE_OUT = 'In this level you only take pieces out.';
 function refusal(level, ui, x, y, how) {
   if (!S.camp) return null;
   if (fixedAt(x, y)) return 'Only the marked tiles take pieces.';
+  if (removing() && how === 'place' && ui.tool !== 'erase') return TAKE_OUT;
   const e = newPlacementError(level, placed(level, ui, x, y, how));
   // The robot's start is never removed, so a tile placed under it cannot take its place.
   if (e && e.msg === START_ON && level.start && level.start.x === x && level.start.y === y) return tipOf('Place the blob.');
@@ -12517,6 +12478,7 @@ const tipOf = msg => msg === 'Place the berry.' ? 'To move the berry, use Move.'
 
 // Why Move cannot carry a thing from one tile to another, or null when it can.
 function moveRefusal(level, from, to) {
+  if (removing()) return TAKE_OUT;
   if (fixedAt(from.x, from.y) || fixedAt(to.x, to.y)) return 'Only the marked tiles take pieces.';
   const all = tries(level, from, to);
   if (!all.length) return 'Cannot go there.';
@@ -12631,7 +12593,7 @@ const { boilOn } = m12;
 const { stateKey, settled } = m26;
 const { respawn } = m18;
 const { syncEnabled } = m91;
-const { syncRing } = m103;
+const { syncRing, drawRingIn } = m103;
 const { enterPlay, leavePlay, follow, clearView } = m104;
 // Play mode: switching modes, the tick loop, drawing each frame, and the copied report.
 
@@ -12792,6 +12754,7 @@ function render() {
   soundFx(S.fx);
   look.avatar = S.camp ? 'robot' : 'you';
   clearView();
+  drawRingIn(g, S.level);
   syncRing();
   const shown = S.replay ? S.replay.frames[S.replay.i].game : S.dead ? S.dead.game : null;
   if (S.mode === 'play') drawPlay(g, shown || S.game, shown ? snapshot(shown) : S.prev, shown ? 1 : Math.min(1, S.acc / TICK_MS), S.fx, t);

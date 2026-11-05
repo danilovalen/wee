@@ -54,12 +54,12 @@ export const PIECE_SPRITES = {
     }
     return g;
   },
-  // A glass block a beam goes through, framed in its colour; its star filled while a beam crosses it. key: "hex|lit".
+  // A glass block a beam goes through, framed in its colour; its circle filled while a beam crosses it (register 792). key: "hex|lit".
   sensor(key) {
     const [col, lit] = key.split('|'), g = grid();
     slab(g, 1, 1, 14, 14, mixHex(col, '#fcfcfa', 0.7), null, null);
     box(g, 2, 1, 13, 1, col); box(g, 2, 14, 13, 14, col); box(g, 1, 2, 1, 13, col); box(g, 14, 2, 14, 13, col);
-    const st = ['.......', '...#...', '..###..', '#######', '.#####.', '.##.##.', '#.....#'];
+    const st = ['..###..', '.#####.', '#######', '#######', '#######', '.#####.', '..###..'];
     st.forEach((r, yy) => [...r].forEach((ch, xx) => { if (ch === '#') g[4 + yy][4 + xx] = lit === '1' ? col : mixHex(col, '#fcfcfa', 0.35); }));
     if (lit !== '1') for (let yy = 5; yy <= 9; yy++) for (let xx = 5; xx <= 9; xx++) if (g[yy][xx] === mixHex(col, '#fcfcfa', 0.35) && st[yy - 4][xx - 4] === '#' && [[1,0],[-1,0],[0,1],[0,-1]].every(([a, b]) => st[yy - 4 + b] && st[yy - 4 + b][xx - 4 + a] === '#')) g[yy][xx] = mixHex(col, '#fcfcfa', 0.7);
     return g;

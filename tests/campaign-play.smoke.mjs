@@ -324,12 +324,10 @@ try {
   await page.click('#campRun');
   await page.waitForTimeout(150);
   const stuck = await verdict();
-  check('a run that cannot finish says why', /red door never opens, because its switch never turns on/.test(stuck), stuck);
-  const flashes = await page.waitForFunction(() => window.wee.fxTypes().filter(t => t === 'flash').length === 2, null, { timeout: 2000 }).then(() => true, () => false);
-  check('and flashes the tiles that stop it', flashes);
+  check('a run that cannot finish says only that, naming no cause (registers 793, 795)', stuck === 'The blob cannot reach the berry.', stuck);
   await page.waitForTimeout(1000);
   await page.click('#campVerdictText');
-  check('tapping the verdict flashes them again', (await page.evaluate(() => window.wee.fxTypes())).filter(t => t === 'flash').length === 2);
+  check('and flashes no tile that would point at the cause', (await page.evaluate(() => window.wee.fxTypes())).filter(t => t === 'flash').length === 0);
   // Level 2's row says collides, with the door drawn.
   if (HITS_DOOR) {
   await page.click('#campBack'); await page.click(`.campRow[data-level="${HITS_DOOR.id}"]`);

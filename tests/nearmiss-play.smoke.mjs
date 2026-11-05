@@ -38,8 +38,8 @@ try {
   // A red door with nothing red to open it, between the blob and the berry.
   const door = await play('2', { 4: 'door:red', 5: 'goal', 6: 'wall' });
   check('a door that never opens: the blob tries instead of refusing', door.ran);
-  check('it bumps toward the berry, and the door flashes', door.fx.includes('bump') && door.fx.includes('flash'), JSON.stringify(door.fx));
-  check('the sentence still says why', /door never opens/.test(await p.textContent('#campVerdictText')), await p.textContent('#campVerdictText'));
+  check('it bumps toward the berry, and no tile flashes to point at the cause (register 795)', door.fx.includes('bump') && !door.fx.includes('flash'), JSON.stringify(door.fx));
+  check('the sentence says only that the berry cannot be reached', (await p.textContent('#campVerdictText')) === 'The blob cannot reach the berry.', await p.textContent('#campVerdictText'));
   // Bare spikes in the only way to the berry: the blob runs into them.
   const spikes = await play('21', { 3: 'death', 5: 'goal', 6: 'wall' });
   check('spikes in the way: the blob runs into them and dies on screen', spikes.ran && spikes.fx.includes('die') && !spikes.fx.includes('bump'), JSON.stringify(spikes.fx));

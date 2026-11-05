@@ -34,14 +34,14 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   if (open) { g.strokeStyle = 'rgba(171,157,242,.55)'; g.lineWidth = 1.5; g.setLineDash([4, 3]); for (const [x, y] of open) pxStroke(g, x * T + 3.5, y * T + 3.5, T - 7, T - 7, 2); g.setLineDash([]); }
   // A placed piece pops in, a frame too big, then settles (register 647).
   const pop = (x, y, f = fx.find(f => f.type === 'place' && f.x === x && f.y === y), t = f ? Math.min(1, (now - f.at) / 180) : 1) => t >= 1 ? 1 : t < 0.55 ? 0.6 + 0.55 * ease(t / 0.55) : 1.15 - 0.15 * ease((t - 0.55) / 0.45);
-  // A block the player placed on a challenge never melts into the room's own blocks (registers 565, 576).
-  const mineAt = open ? new Set(open.map(([x, y]) => y * level.w + x)) : new Set();
-  const crated = crateSet(level), massed = crated.size || mineAt.size ? level.cells.map((c, i) => crated.has(i) || mineAt.has(i) ? '' : c) : level.cells;
+  // A block the player placed on a challenge joins the room's own blocks as one mass; its purple frame says
+  // it was placed (registers 565, 576, 794).
+  const crated = crateSet(level), massed = crated.size ? level.cells.map((c, i) => crated.has(i) ? '' : c) : level.cells;
   drawMasses(g, massed, level.w, level.h, (x, y) => pop(x, y) < 1);
   level.cells.forEach((c, i) => {
     const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
     if (crated.has(i)) drawCrated(g, c, x, y, null, k);
-    else if (!inMass(c) || k < 1 || mineAt.has(i)) drawCell(g, c, x, y, null, k);
+    else if (!inMass(c) || k < 1) drawCell(g, c, x, y, null, k);
     if (isGrey(c)) drawTrim(g, x, y, wireColoursAt(level.wires, x, y));
     else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
   });

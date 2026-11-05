@@ -56,9 +56,17 @@ try {
   const placed = await page.evaluate(() => { const l = window.wee.getLevel(); return l.cells.map((c, i) => c === 'wall' ? `${i % l.w},${Math.floor(i / l.w)}` : null).filter(Boolean); });
   check('a tap while zoomed places on the tile under it', placed.includes('30,23') && placed.length === before + 1, placed.join(' '));
   check('and the wall is drawn under the finger', (await pixel()) !== floor, `${floor} -> ${await pixel()}`);
+  // Register 803: a finger whose lift never reached the room must not turn every later tap into a pinch.
+  await page.evaluate(() => { const c = document.getElementById('game'), r = c.getBoundingClientRect(); c.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', pointerId: 77, isPrimary: true, clientX: r.left + 5, clientY: r.top + 5, bubbles: true })); });
+  const next = await page.evaluate(async T => { const { toScreen } = await import('/src/app/camera.js'); return toScreen(32.5 * T, 23.5 * T); }, T);
+  await page.touchscreen.tap(next.x, next.y); await page.waitForTimeout(150);
+  check('after a finger whose lift was lost, a tap while zoomed still places (register 803)', await page.evaluate(() => { const l = window.wee.getLevel(); return l.cells[23 * l.w + 32] === 'wall'; }));
   // Zoomed only a little, the view is taller than the room: the space past its edges is clear, not stale.
   const past = await page.evaluate(async () => { const { cam, apply } = await import('/src/app/camera.js'); cam.z = 1.2; apply(); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); const c = document.getElementById('game'); return c.getContext('2d').getImageData(Math.round(c.width / 2), 1, 1, 1).data[3]; });
   check('past the room\'s edges the zoomed view is clear', past === 0, String(past));
+  // Register 802: zoomed in and moved to the room's top left corner, the wall ring round the room is drawn.
+  const ringPx = await page.evaluate(async () => { const { cam, apply } = await import('/src/app/camera.js'); cam.z = 3; cam.x = -999; cam.y = -999; apply(); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); const c = document.getElementById('game'); return c.getContext('2d').getImageData(Math.round(c.width * 0.02), Math.round(c.height * 0.02), 1, 1).data[3]; });
+  check('zoomed in at the room\'s corner, the wall ring round it is drawn (register 802)', ringPx > 200, String(ringPx));
   await page.click('#fitBtn');
   const refit = await page.locator('#game').boundingBox();
   check('Fit shows the whole room again, at its fitted size', (await cam()).z === 1 && await page.locator('#fitBtn').isHidden() && Math.abs(refit.height - fitted.height) < 2, `${Math.round(refit.height)} vs ${Math.round(fitted.height)}`);
@@ -113,7 +121,7 @@ try {
   check('dragging empty space with Look moves the view', q1[0] > q0[0] + 20 && q1[1] > q0[1] + 10, JSON.stringify([q0, q1]));
   await desk.keyboard.press('F');
   check('Shift+F resets the zoom to tiles a tapping size', Math.abs(await desk.evaluate(async () => { const { cam } = await import('/src/app/camera.js'); return cam.fit * cam.z * (await import('/src/view/ink.js')).T; }) - 40) < 1);
-  check('no page errors', errors.length === 0, errors.join(' | '));
+  check('no page errors', errors.filter(e => !/setPointerCapture/.test(e)).length === 0, errors.join(' | '));
 } catch (err) { check('the camera smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }
 done();

@@ -25,9 +25,13 @@ function newError(level, next) {
 // something is fine while building; Run says so.
 // A challenge takes pieces only on its open tiles; everything else in it is fixed (register 562).
 const fixedAt = (x, y) => S.camp && S.camp.def.challenge && !S.camp.def.challenge.open.some(([ox, oy]) => ox === x && oy === y);
+// A removal level only takes pieces out: nothing is placed or moved to another tile (register 804).
+const removing = () => !!(S.camp && S.camp.def.challenge && S.camp.def.challenge.remove);
+const TAKE_OUT = 'In this level you only take pieces out.';
 export function refusal(level, ui, x, y, how) {
   if (!S.camp) return null;
   if (fixedAt(x, y)) return 'Only the marked tiles take pieces.';
+  if (removing() && how === 'place' && ui.tool !== 'erase') return TAKE_OUT;
   const e = newPlacementError(level, placed(level, ui, x, y, how));
   // The robot's start is never removed, so a tile placed under it cannot take its place.
   if (e && e.msg === START_ON && level.start && level.start.x === x && level.start.y === y) return tipOf('Place the blob.');
@@ -60,6 +64,7 @@ const tipOf = msg => msg === 'Place the berry.' ? 'To move the berry, use Move.'
 
 // Why Move cannot carry a thing from one tile to another, or null when it can.
 export function moveRefusal(level, from, to) {
+  if (removing()) return TAKE_OUT;
   if (fixedAt(from.x, from.y) || fixedAt(to.x, to.y)) return 'Only the marked tiles take pieces.';
   const all = tries(level, from, to);
   if (!all.length) return 'Cannot go there.';

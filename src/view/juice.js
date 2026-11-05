@@ -5,7 +5,7 @@ import { T, INK } from './ink.js';
 import { DIRS } from '../rules/base.js';
 
 const P = 2, snap = v => Math.round(v / P) * P;
-export const JUICE_MS = { eat: 320, place: 220, erase: 320, land: 260, hit: 90, launch: 90 };
+export const JUICE_MS = { eat: 520, win: 900, place: 220, erase: 320, land: 260, hit: 90, launch: 90 };
 const ease = t => 1 - (1 - t) * (1 - t);
 // Under reduced motion nothing here moves.
 const still = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -17,9 +17,20 @@ export function drawJuice(g, fx, now) {
     const ms = JUICE_MS[f.type], t = ms ? (now - f.at) / ms : 1;
     if (t < 0 || t >= 1) continue;
     const cx = f.x * T + T / 2, cy = f.y * T + T / 2;
-    // An eaten berry (register 702) bursts like a placed piece, in the berry's cyan.
-    if (f.type === 'place' || f.type === 'eat') {
-      g.fillStyle = f.type === 'eat' ? '#78dce8' : '#fcfcfa'; g.globalAlpha = 1 - t;
+    // An eaten berry flashes its tile and bursts in a ring of cyan sparks; the last one, which wins, bursts
+    // twice as far in gold and cyan (registers 702, 790).
+    if (f.type === 'eat' || f.type === 'win') {
+      const big = f.type === 'win', n = big ? 16 : 10, r = T / 3 + (big ? 2 : 1.2) * T * ease(t);
+      if (t < 0.3) { g.fillStyle = '#ffffff'; g.globalAlpha = 0.6 * (1 - t / 0.3); g.fillRect(f.x * T + P, f.y * T + P, T - 2 * P, T - 2 * P); }
+      g.globalAlpha = 1 - t;
+      for (let i = 0; i < n; i++) {
+        const a = i / n * Math.PI * 2;
+        g.fillStyle = big && i % 2 ? '#ffd866' : '#78dce8';
+        dot(g, cx + Math.cos(a) * r - P, cy + Math.sin(a) * r - P, P * (t < 0.5 ? 2 : 1));
+        if (big) dot(g, cx + Math.cos(a + Math.PI / n) * r * 0.6 - P, cy + Math.sin(a + Math.PI / n) * r * 0.6 - P);
+      }
+    } else if (f.type === 'place') {
+      g.fillStyle = '#fcfcfa'; g.globalAlpha = 1 - t;
       for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) dot(g, cx + sx * (T / 2 + 10 * ease(t)) - P, cy + sy * (T / 2 + 10 * ease(t)) - P, P * (t < 0.5 ? 2 : 1));
     } else if (f.type === 'erase') {
       g.fillStyle = '#939293'; g.globalAlpha = 1 - t;
@@ -40,6 +51,11 @@ export function drawJuice(g, fx, now) {
 // The blob stretches along its slide as it sets off and squashes against what stops it: [along, across].
 export function squashOf(fx, now) {
   if (still()) return null;
+  // Eating a berry, the blob gulps: it swells and settles, more for the last one (register 790).
+  for (const f of fx) {
+    const t = (now - f.at) / (JUICE_MS[f.type] || 1);
+    if ((f.type === 'eat' || f.type === 'win') && t >= 0 && t < 0.5) { const k = 1 + (f.type === 'win' ? 0.3 : 0.18) * Math.sin(t * 2 * Math.PI); return { dir: 'up', along: k, across: k }; }
+  }
   for (const f of fx) {
     const ms = JUICE_MS[f.type], t = (now - f.at) / ms;
     if (!(t >= 0 && t < 1) || !DIRS[f.dir]) continue;

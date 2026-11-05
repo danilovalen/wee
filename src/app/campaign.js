@@ -68,6 +68,7 @@ export function enterLevel(id) {
   p.last = id; write(p);
   document.body.classList.add('campaign'); document.body.classList.remove('simple'); S.simple = false;
   document.body.classList.toggle('challenge', !!def.challenge);
+  document.body.classList.toggle('removal', !!(def.challenge && def.challenge.remove));
   // In a level, undo, redo and Reset sit with the tools, so the top bar keeps only Levels, Run and Test (plan step 2).
   $('campTop').prepend(Object.assign($('campHistory') || document.createElement('span'), { id: 'campHistory', className: 'campHistory' }));
   $('campHistory').dataset.join = '';
@@ -82,7 +83,7 @@ function leaveLevel() {
   S.camp = null; S.trail = null;
   // A level's goals leave with it (register 667).
   $('campBrief').replaceChildren(); $('campVerdict').hidden = true; forgetRun();
-  document.body.classList.remove('campaign', 'challenge');
+  document.body.classList.remove('campaign', 'challenge', 'removal');
   $('campTest').after($('undo'), $('redo'), $('campReset'));
   // The sandbox never inherits a campaign room.
   S.level = starterLevel(portrait()); S.history = newHistory();

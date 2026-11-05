@@ -23,10 +23,11 @@ const scale = () => cam.fit * cam.z;  // CSS px per room px
 const isZoomed = () => cam.z > 1.001;
 // The view's box in CSS px: the fitted room, or zoomed in, the whole area the room may use.
 function box() { const { W, H } = size(); return isZoomed() ? { w: Math.max(avail.w, W * cam.fit), h: Math.max(avail.h, H * cam.fit) } : { w: W * cam.fit, h: H * cam.fit }; }
-// Along each side the view stays on the room, or centres it where the room is the smaller.
+// Along each side the view stays on the room and the ring of wall one tile round it (register 802), or
+// centres it where the room is the smaller.
 function clampXY() {
-  const { W, H } = size(), b = box(), k = scale();
-  const one = (c, R, v) => R >= v ? Math.min(R - v, Math.max(0, c)) : (R - v) / 2;
+  const { W, H } = size(), b = box(), k = scale(), m = isZoomed() ? T : 0;
+  const one = (c, R, v) => R >= v ? Math.min(R - v + m, Math.max(-m, c)) : (R - v) / 2;
   cam.x = one(cam.x, W, b.w / k); cam.y = one(cam.y, H, b.h / k);
 }
 
@@ -108,6 +109,9 @@ export function bindCamera() {
   // Capture, so a pinch starts before the editor treats its first finger as a tap.
   canvas.addEventListener('pointerdown', ev => {
     if (ev.pointerType !== 'touch') return;
+    // A first finger means none other is down: a finger whose lift never reached the canvas is forgotten,
+    // or every later tap reads as a pinch and edits nothing (register 803).
+    if (ev.isPrimary) { fingers.clear(); pinch = null; S.pinch = false; }
     fingers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     if (fingers.size !== 2) return;
     // The first finger's stroke, if it began one, is taken back: two fingers are the camera's.
@@ -128,8 +132,7 @@ export function bindCamera() {
     apply({ at: pinch.at, cx: t.mx, cy: t.my });
   }, true);
   const up = ev => { fingers.delete(ev.pointerId); if (fingers.size < 2) { pinch = null; if (!fingers.size) S.pinch = false; } };
-  canvas.addEventListener('pointerup', up, true);
-  canvas.addEventListener('pointercancel', up, true);
+  for (const t of ['pointerup', 'pointercancel']) addEventListener(t, up, true);
   canvas.addEventListener('wheel', ev => {
     ev.preventDefault();
     // The plain wheel zooms (register 781); Shift and the wheel, or a sideways scroll, pan.

@@ -39,7 +39,16 @@ try {
   check('unlocked, the list shows every level unlock opens, and still leaves out the ones marked hidden (register 731)', (ids => hidden.every(id => ids.includes(id) === !LEVELS.find(l => l.id === id).hidden))(await rows()), JSON.stringify(await rows()));
   check('unlocked, no room is shut', await p.$$eval('#campList .campRow', bs => bs.every(b => !b.disabled)));
   await p.click(`#campList [data-level="${(await rows())[0]}"]`); await p.waitForTimeout(500);
-  check('a padlock badge shows in the top bar while it is on', await p.locator('#unlockBadge').isVisible());
+  check('a level does not show the padlock (register 798)', await p.locator('#unlockBadge').isHidden());
+  // In the Sandbox it shows, floating over the corner: the header's buttons keep their boxes either way (register 791).
+  const heads = () => p.$$eval('header > *', es => es.filter(e => e.id !== 'unlockBadge' && e.getBoundingClientRect().width).map(e => { const r = e.getBoundingClientRect(); return `${e.id}:${Math.round(r.x)},${Math.round(r.y)}`; }).join());
+  await p.evaluate(() => { location.hash = '#/rooms/start'; }); await p.waitForTimeout(500);
+  await p.click('#roomNew'); await p.waitForTimeout(500);
+  const on = await heads(), shown = await p.locator('#unlockBadge').isVisible();
+  await p.evaluate(async () => (await import('/src/app/unlock.js')).setDev(false)); await p.waitForTimeout(150);
+  const off = await heads();
+  await p.evaluate(async () => (await import('/src/app/unlock.js')).setDev(true)); await p.waitForTimeout(150);
+  check('in the Sandbox the padlock shows, and turning dev mode on or off moves no header button (register 791)', shown && on === off, `${on} / ${off}`);
   check('nothing about it is saved', (await p.evaluate(() => localStorage.getItem('wee.campaign'))) === saved || !/unlock/i.test(await p.evaluate(() => localStorage.getItem('wee.campaign') || '')));
   await p.reload(); await p.waitForTimeout(800);
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
