@@ -2,10 +2,10 @@
 // with the current tool. Returns what changed so the caller can animate it.
 import { CLOCKWISE, CARRIES_TURRET } from '../rules/base.js';
 import { CRATED } from '../level/format.js';
+import { canStand } from '../level/stand.js';
 import { TOOLS, WIRE_NAME, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } from './palette.js';
 
 const idx = (level, x, y) => y * level.w + x;
-const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');
 const pieceAt = (level, x, y) => level.entities.findIndex(e => e.x === x && e.y === y);
 // Pushable tiles (register 336): level.crates lists them as {x, y}, and they move with their tile.
 export const CRATE_TOOLS = ['sensor', 'gate', 'door', 'idoor'];
@@ -20,7 +20,7 @@ function setCrate(level, x, y, on) {
 // Moves whatever stands on one tile to another: the start, a piece, or a tile's contents.
 // Onto a tile that holds something, the two swap. Returns the new level, or null when
 // either would end up where it cannot stand.
-const UNDER = c => c === '' || c.startsWith('toggle:') || c.startsWith('button:');
+const UNDER = canStand;
 export function moveAt(level, from, to) {
   return moveOnto(level, from, to) || swapAt(level, from, to);
 }
@@ -59,6 +59,7 @@ export function swapAt(level, from, to) {
   if (!a || !b) return null;
   const put = (t, p) => {
     const i = idx(l, p.x, p.y);
+    if ((t.start || t.piece) && !canStand(l.cells[i])) return false;
     if (t.start) l.start = { x: p.x, y: p.y };
     else if (t.piece) l.entities.push({ ...t.piece, x: p.x, y: p.y });
     else if (l.cells[i]) return false;
@@ -171,6 +172,8 @@ export function place(level, ui, x, y, how) {
   const removePiece = () => { if (pi >= 0) { gone.piece = level.entities[pi]; level.entities.splice(pi, 1); } };
   const setCell = c => { if (level.cells[i] !== c) { if (level.cells[i]) gone.cell = level.cells[i]; level.cells[i] = c; } };
   const isStart = !!level.start && level.start.x === x && level.start.y === y;
+  // Placing on the blob takes it off, unless the blob can stand on what goes there (768, 772).
+  const dropStart = () => { if (isStart) { gone.start = true; level.start = null; } };
   if (t === 'erase') {
     // Erase takes the top thing first: the blob (register 705), a piece, then a tile, then the wires under them.
     if (isStart) { gone.start = true; level.start = null; } else if (pi >= 0) removePiece(); else if (level.cells[i]) setCell(''); else for (const r of wiresAt(level, x, y)) setWire(level, x, y, r.w, false);
@@ -181,31 +184,26 @@ export function place(level, ui, x, y, how) {
     else if (['wall', 'crack', 'checkpoint', 'button', 'toggle', 'door', 'idoor', 'tri', 'sensor', 'gate', 'spring', 'death', 'water', 'sticky', 'gravel', 'goal'].includes(ui.tool)) setCell('');
     else removePiece();
   } else if (t === 'spring' || t === 'death') {
-    if (isStart) return out;
-    removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
+    dropStart(); removePiece(); setCell(t === 'death' ? 'death' : 'spring:' + ui.face);
   } else if (t === 'water' || t === 'sticky' || t === 'gravel' || t === 'goal') {
-    if (isStart) return out;
+    if (!canStand(t)) { dropStart(); removePiece(); }
     setCell(t);
   } else if (t === 'gate') {
-    if (isStart) return out;
-    removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(',') + (ui.gateColour ? '@' + ui.gateColour : ''));
+    dropStart(); removePiece(); setCell('gate:' + CLOCKWISE.filter(d => ui.pass.includes(d)).join(',') + (ui.gateColour ? '@' + ui.gateColour : ''));
   } else if (t === 'tri') {
-    if (isStart) return out;
-    removePiece(); setCell('tri:' + ui.corner);
+    dropStart(); removePiece(); setCell('tri:' + ui.corner);
   } else if (t === 'start') {
-    if (level.cells[i] === 'wall' || level.cells[i] === 'crack' || isDoor(level.cells[i])) setCell('');
+    if (!canStand(level.cells[i])) setCell('');
     removePiece();
     level.start = { x, y };
   } else if (t === 'wall' || t === 'crack') {
-    if (isStart) return out;
-    removePiece(); setCell(t);
+    dropStart(); removePiece(); setCell(t);
   } else if (t === 'checkpoint' || t === 'button' || t === 'toggle' || t === 'door' || t === 'idoor' || t === 'sensor') {
     const solid = t === 'door' || t === 'idoor' || t === 'sensor';
-    if (solid && isStart) return out;
-    if (solid) removePiece();
+    if (solid) { dropStart(); removePiece(); }
     setCell(t === 'checkpoint' ? 'checkpoint' : t + ':' + ui.colour);
   } else if (t === 'turret') {
-    if (isStart) return out;
+    dropStart();
     const dirs = CLOCKWISE.filter(d => ui.aim.includes(d));
     const turret = { dirs, mode: ui.mode, ...(dirs.includes(ui.start) && ui.start !== dirs[0] ? { start: ui.start } : {}) };
     const host = pi >= 0 ? level.entities[pi] : null;
@@ -214,15 +212,15 @@ export function place(level, ui, x, y, how) {
       host.turret = turret;
     } else {
       removePiece();
-      if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
+      if (!canStand(level.cells[i])) setCell('');
       level.entities.push({ kind: 'turret', x, y, ...(ui.crate ? { crate: true } : {}), turret });
     }
   } else {
-    if (isStart) return out;
+    dropStart();
     const want = { kind: t, x, y, ...(t === 'mover' || t === 'enemy' || t === 'strong' ? { axis: ui.axis, dir: ui.dir, mode: ui.mode } : {}) };
     if (pi >= 0 && JSON.stringify(level.entities[pi]) === JSON.stringify(want)) return out;
     removePiece();
-    if (level.cells[i] === 'wall' || isDoor(level.cells[i])) setCell('');
+    if (!canStand(level.cells[i])) setCell('');
     level.entities.push(want);
   }
   const c = level.cells[i];

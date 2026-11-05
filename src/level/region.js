@@ -1,6 +1,7 @@
 // Regions: copy a box of the room, clear it, rotate a copy, and paste it back. Pure:
-// each takes a level or a clip and returns a new one. The start never moves.
+// each takes a level or a clip and returns a new one.
 import { CLOCKWISE } from '../rules/base.js';
+import { canStand } from './stand.js';
 
 const cw = d => CLOCKWISE[(CLOCKWISE.indexOf(d) + 1) % 4];
 const CORNER_CW = { nw: 'ne', ne: 'se', se: 'sw', sw: 'nw' };
@@ -46,16 +47,17 @@ export function rotateClip(clip) {
   return { w: h, h: w, cells, entities: clip.entities.map(e => turnPiece(e, h)) };
 }
 
-// Stamps a clip with its top-left at (x, y). What falls outside the room is dropped; a
-// piece in the clip replaces one already there; the start's tile stays free.
+// Stamps a clip with its top-left at (x, y). What falls outside the room is dropped; a piece in the
+// clip replaces one already there, and the blob goes when what lands on it cannot have it on top (768).
 export function pasteRegion(level, clip, x, y) {
-  const cells = [...level.cells], isStart = (cx, cy) => !!level.start && cx === level.start.x && cy === level.start.y;
+  const cells = [...level.cells];
   const inside = (cx, cy) => cx >= 0 && cy >= 0 && cx < level.w && cy < level.h;
   for (let j = 0; j < clip.h; j++) for (let i = 0; i < clip.w; i++) {
     const cx = x + i, cy = y + j;
-    if (inside(cx, cy) && !(isStart(cx, cy) && clip.cells[j * clip.w + i])) cells[cy * level.w + cx] = clip.cells[j * clip.w + i];
+    if (inside(cx, cy)) cells[cy * level.w + cx] = clip.cells[j * clip.w + i];
   }
-  const placed = clip.entities.map(e => ({ ...JSON.parse(JSON.stringify(e)), x: e.x + x, y: e.y + y })).filter(e => inside(e.x, e.y) && !isStart(e.x, e.y));
-  const taken = new Set(placed.map(e => e.x + ',' + e.y));
-  return { ...level, cells, entities: [...level.entities.filter(e => !taken.has(e.x + ',' + e.y)), ...placed] };
+  const placed = clip.entities.map(e => ({ ...JSON.parse(JSON.stringify(e)), x: e.x + x, y: e.y + y })).filter(e => inside(e.x, e.y));
+  const taken = new Set(placed.map(e => e.x + ',' + e.y)), st = level.start;
+  const keep = !!st && !taken.has(st.x + ',' + st.y) && canStand(cells[st.y * level.w + st.x]);
+  return { ...level, cells, start: keep ? st : null, entities: [...level.entities.filter(e => !taken.has(e.x + ',' + e.y)), ...placed] };
 }

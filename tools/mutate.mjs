@@ -7,6 +7,13 @@ import { locate, testFile } from './mutantLocate.mjs';
 
 // Each mutant: [file, from, to, test]. tests/mutants.test.mjs fails when one's text is gone (register 608).
 export const M = [
+  // what may stand on what, the blob replaced, a box moved onto itself (registers 738, 768, 772)
+  ['src/level/stand.js', "['', 'water', 'sticky', 'gravel', 'checkpoint']", "['', 'sticky', 'gravel', 'checkpoint']", 'stand'],
+  ['src/level/region.js', "&& canStand(cells[st.y * level.w + st.x])", "", 'region'],
+  ['src/app/select.js', "    if (to && to.x >= 0", "    if (false && to.x >= 0", 'browser'],
+  ['src/editor/edit.js', "    removePiece();\n    if (!canStand(level.cells[i])) setCell('');\n    level.entities.push(want);", "    removePiece();\n    if (level.cells[i] === 'wall') setCell('');\n    level.entities.push(want);", 'stand'],
+  ['src/editor/edit.js', "  } else {\n    dropStart();\n    const want", "  } else {\n    if (isStart) return out;\n    const want", 'stand'],
+  ['src/editor/edit.js', "    if (!canStand(t)) { dropStart(); removePiece(); }\n", "", 'stand'],
   // challenges numbered by place (register 735)
   ['src/app/campaign.js', "def.challenge ? challengeName(def) :", "def.challenge ? def.id.toUpperCase() :", 'levellist'],
   // path reuse, choke points, marks that explain, Checked, tool how-to (registers 727, 730)
@@ -208,7 +215,7 @@ export const M = [
   ['src', "  if (harm && shockHarms(s, s.shocked, 'turret')) hitYou = true;\n", "", 'sim'],
   ['src/rules/beams.js', "  if (shockHarms(s, pools, 'laser')) die(s, 'laser');\n", "", 'sim'],
   ['src', "if (c === 'death' || c === 'water' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;", "if (c === 'death' || c === 'sticky' || c === 'gravel' || c === 'goal') return true;", 'sim'],
-  ['src', "} else if (t === 'water' || t === 'sticky' || t === 'gravel' || t === 'goal') {\n    if (isStart) return out;\n    setCell(t);", "} else if (false) {", 'browser'],
+  ['src', "  } else if (t === 'water' || t === 'sticky' || t === 'gravel' || t === 'goal') {\n    if (!canStand(t)) { dropStart(); removePiece(); }\n    setCell(t);", "  } else if (false) {", 'browser'],
   ['src', "b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp;", "b.hidden = only ? !only.includes(b.dataset.tool) : !!b.dataset.camp;", 'phone'],
   ['src', "$('hideBtn').hidden = !tap.length; ", "", 'phone'],
   ['src', "$('hideBtn').textContent = tap.join(' / ');", "$('hideBtn').textContent = 'Hide / Swim';", 'phone'],
@@ -305,11 +312,11 @@ export const M = [
   ['src', "  if (kind === 'tri') return 'tri:' + CORNER_CW[v];", "  if (kind === 'tri') return c;", "region"],
   ['src', "    t.dir = e.axis === 'h' ? (e.dir || 1) : -(e.dir || 1);", "    t.dir = e.dir || 1;", "region"],
   ['src', "  if (e.turret) t.turret = { ...e.turret, dirs: CLOCKWISE.filter(d => e.turret.dirs.map(cw).includes(d)), ...(e.turret.start ? { start: cw(e.turret.start) } : {}) };\n", "", "region"],
-  ['src', "    if (inside(cx, cy) && !(isStart(cx, cy) && clip.cells[j * clip.w + i])) cells[cy * level.w + cx] = clip.cells[j * clip.w + i];", "    if (inside(cx, cy)) cells[cy * level.w + cx] = clip.cells[j * clip.w + i];", "region"],
-  ['src', "  return { ...level, cells, entities: [...level.entities.filter(e => !taken.has(e.x + ',' + e.y)), ...placed] };", "  return { ...level, cells, entities: [...level.entities, ...placed] };", "region"],
+  ['src/level/region.js', "    if (inside(cx, cy)) cells[cy * level.w + cx] = clip.cells[j * clip.w + i];", "    if (inside(cx, cy) && clip.cells[j * clip.w + i]) cells[cy * level.w + cx] = clip.cells[j * clip.w + i];", "region"],
+  ['src/level/region.js', "entities: [...level.entities.filter(e => !taken.has(e.x + ',' + e.y)), ...placed] };", "entities: [...level.entities, ...placed] };", "region"],
   ['src', "  const entities = level.entities.filter(e => inR(r, e.x, e.y)).map(e => ({ ...JSON.parse(JSON.stringify(e)), x: e.x - r.x0, y: e.y - r.y0 }));", "  const entities = level.entities.filter(e => inR(r, e.x, e.y)).map(e => Object.assign(e, { x: e.x - r.x0, y: e.y - r.y0 }));", "region"],
   ['src', "  if (S.paste) { change(() => { S.level = pasteRegion(S.level, S.paste, c.x, c.y); }); A.syncPanel(); return; }", "  if (S.paste) return;", "browser"],
-  ['src', "  change(() => { S.level = pasteRegion(clearRegion(S.level, r), turned, r.x0, r.y0); });", "  change(() => { S.level = pasteRegion(S.level, turned, r.x0, r.y0); });", "browser"],
+  ['src/app/select.js', "    S.level = pasteRegion(clearRegion(to ? { ...S.level, start: null } : S.level, r), turned, r.x0, r.y0);", "    S.level = pasteRegion(S.level, turned, r.x0, r.y0);", "browser"],
   ['src', "    if (S.ui.tool === 'select') { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }", "    if (false) { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }", "browser"],
   ['src', "    if (S.mode === 'edit' && selectKey(ev)) return;\n", "", "browser"],
   ['src', "  code = code.trim().replace(/^.*#room=/, '');", "  code = code.trim();", "code"],
@@ -435,7 +442,6 @@ export const M = [
   ['src', "if (want !== !!s.open[col]) {", "if (!want && s.open[col]) {", 'sim'],
   ['src', "      const kind = want ? 'idoor:' : 'door:', doors", "      const kind = want ? 'idoor:' : 'idoor:', doors", 'sim'],
   ['src', "(kind === 'button' || kind === 'toggle' || kind === 'door' || kind === 'idoor')", "(kind === 'button' || kind === 'toggle' || kind === 'door')", 'sim'],
-  ['src', "const isDoor = c => c.startsWith('door:') || c.startsWith('idoor:');", "const isDoor = c => c.startsWith('door:');", 'sim'],
   ['src', "const solid = t === 'door' || t === 'idoor' || t === 'sensor';", "const solid = t === 'door' || t === 'sensor';", 'sim'],
   ['src', "    else if (kind === 'idoor') parts.push(`${cname(v)} inverted door`);\n", "", 'sim'],
   ['src', "tool === 'tri' || tool === 'sensor' || tool === 'gate') return", "tool === 'tri' || tool === 'gate') return", 'browser'],
@@ -488,7 +494,6 @@ export const M = [
   ['src', "if (S.sel && inside(norm(S.sel), c)) { S.moving", "if (false) { S.moving", 'browser'],
   ['src', "S.swipe = null; selectUp(); end();", "S.swipe = null; end();", 'browser'],
   ['src', "S.level = pasteRegion(clearRegion(S.level, r), m.clip, x0, y0);", "S.level = pasteRegion(S.level, m.clip, x0, y0);", 'browser'],
-  ['src', "    if (carried && to.x >= 0", "    if (false && to.x >= 0", 'browser'],
   ['src', "      if (pair) for (const i of crossed) passes.add(i);", "      for (const i of crossed) passes.add(i);", 'lenses'],
   ['src', "  for (const i of stops) passes.delete(i);\n", "", 'lenses'],
   ['src', "step(t, [k]); if (onTick) onTick(t);", "step(t, [k]);", 'lenses'],

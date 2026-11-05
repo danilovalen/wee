@@ -17,7 +17,11 @@ check('paste puts the copy at its top-left', p.cells[2 * 6 + 3] === 'button:red'
 const off = pasteRegion(cl, copyRegion(l, r), 5, 2);
 check('what falls outside the room is dropped', off.cells.length === cl.cells.length && off.entities.every(e => e.x < 6 && e.y < 4));
 const onStart = pasteRegion(l, { w: 1, h: 1, cells: ['wall'], entities: [] }, 1, 1);
-check('the start tile stays free', onStart.cells[7] === '');
+check('a wall pasted on the blob takes its place (register 768)', onStart.cells[7] === 'wall' && onStart.start === null);
+const blank = pasteRegion(l, { w: 1, h: 1, cells: [''], entities: [] }, 2, 2);
+check('a pasted empty tile clears what was there', blank.cells[2 * 6 + 2] === '');
+const onFloor = pasteRegion(l, { w: 1, h: 1, cells: ['button:red'], entities: [] }, 1, 1);
+check('a button pasted under the blob keeps it (register 772)', onFloor.cells[7] === 'button:red' && !!onFloor.start);
 const replace = pasteRegion(l, { w: 1, h: 1, cells: [''], entities: [{ kind: 'heavy', x: 0, y: 0 }] }, 3, 1);
 check('a pasted piece replaces the one there', replace.entities.length === 1 && replace.entities[0].kind === 'heavy');
 

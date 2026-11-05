@@ -46,13 +46,11 @@ export function selectUp() {
   if (!dx && !dy) return;
   const r = m.from, x0 = r.x0 + dx, y0 = r.y0 + dy;
   change(() => {
-    const st = S.level.start, carried = !!st && inside(r, st);
+    // The blob rides along when it was inside the box, to where it was carried if that is still in the room;
+    // what lands on its old tile replaces it there (738).
+    const st = S.level.start, carried = !!st && inside(r, st), to = carried && { x: st.x + dx, y: st.y + dy };
     S.level = pasteRegion(clearRegion(S.level, r), m.clip, x0, y0);
-    // The start rides along when it was inside the box and lands inside the room.
-    const to = { x: st.x + dx, y: st.y + dy };
-    if (carried && to.x >= 0 && to.y >= 0 && to.x < S.level.w && to.y < S.level.h) {
-      S.level = { ...S.level, start: to, entities: S.level.entities.filter(e => e.x !== to.x || e.y !== to.y) };
-    }
+    if (to && to.x >= 0 && to.y >= 0 && to.x < S.level.w && to.y < S.level.h) S.level = { ...S.level, start: to };
   });
   S.sel = { x0, y0, x1: x0 + m.clip.w - 1, y1: y0 + m.clip.h - 1 };
   A.syncPanel();
@@ -79,8 +77,13 @@ function del() {
 function rotate() {
   if (S.paste) { S.paste = rotateClip(S.paste); return; }
   if (!S.sel) return;
-  const r = norm(S.sel), turned = rotateClip(copyRegion(S.level, r));
-  change(() => { S.level = pasteRegion(clearRegion(S.level, r), turned, r.x0, r.y0); });
+  const r = norm(S.sel), turned = rotateClip(copyRegion(S.level, r)), st = S.level.start, h = r.y1 - r.y0 + 1;
+  // The blob turns with the box, as its tile does.
+  const to = st && inside(r, st) && { x: r.x0 + (h - 1 - (st.y - r.y0)), y: r.y0 + (st.x - r.x0) };
+  change(() => {
+    S.level = pasteRegion(clearRegion(to ? { ...S.level, start: null } : S.level, r), turned, r.x0, r.y0);
+    if (to) S.level = { ...S.level, start: to };
+  });
   S.sel = { x0: r.x0, y0: r.y0, x1: r.x0 + turned.w - 1, y1: r.y0 + turned.h - 1 };
   A.syncPanel();
 }

@@ -331,6 +331,17 @@ try {
   lv8 = (await text()).level;
   check('the start rides along when it is inside the box', lv8.start.x === st8.x + 1 && lv8.start.y === st8.y, JSON.stringify([st8, lv8.start]));
   await page.keyboard.press('Control+z');
+  // Moving a box onto itself keeps everything (register 738): the blob and a one-way under it, moved up one,
+  // leave the one-way where the blob was, not lost under it.
+  { const ov = room(['########', '#......#', '#.P....#', '#......#', '#......#', '########']); ov.cells[3 * 8 + 2] = 'gate:down';
+    await page.evaluate(l => window.wee.loadLevel(l), ov); await page.keyboard.press('Escape');
+    let p1 = at8(2, 2), p2 = at8(2, 3);
+    await page.mouse.move(p1.x, p1.y); await page.mouse.down(); await page.mouse.move(p2.x, p2.y, { steps: 4 }); await page.mouse.up();
+    p1 = at8(2, 3); p2 = at8(2, 2);
+    await page.mouse.move(p1.x, p1.y); await page.mouse.down(); await page.mouse.move(p2.x, p2.y, { steps: 4 }); await page.mouse.up();
+    const lo = (await text()).level;
+    check('a box moved onto itself keeps the blob and the one-way (register 738)', lo.start && lo.start.x === 2 && lo.start.y === 1 && lo.cells[2 * 8 + 2] === 'gate:down', JSON.stringify([lo.start, lo.cells[2 * 8 + 2], lo.cells[3 * 8 + 2]]));
+    await page.keyboard.press('Escape'); }
   await page.keyboard.press('Escape');
   await page.evaluate(l => window.wee.loadLevel(l), JSON.parse(JSON.stringify(roomBeforePanel)));
   // the Look tool: Show stops marks the tiles you can stop on; Play from here starts there
