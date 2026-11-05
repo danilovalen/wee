@@ -82,7 +82,6 @@ const first = JSON.parse(readFileSync('tests/fixtures/first-room-v1.wee', 'utf8'
 await page.evaluate(l => window.wee.loadLevel(l), first);
 await measure('Check his first room', async () => { await page.click('#checkBtn'); await page.waitForFunction(() => document.getElementById('checkText').textContent.startsWith('Solvable')); });
 await page.click('[data-tool=look]');
-await measure('Show stops, his first room', async () => { await page.click('#stopsBtn'); await page.waitForFunction(() => document.getElementById('placeHint').textContent.includes('stop on')); });
 
 console.log(`CPU throttle ${THROTTLE}x, 390x844 @3x\n`);
 console.log('action'.padEnd(40), 'ms'.padStart(8), 'long'.padStart(6), 'worst'.padStart(7), 'writes'.padStart(8));

@@ -4,10 +4,12 @@
 // opens the position on screen as a new room.
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
-import { runFrames, levelAt } from '../solve/frames.js';
+import { runFrames, levelAt, movesLog } from '../solve/frames.js';
 
 const STEP_MS = 450;
-let deps = null, timer = null;
+let deps = null, timer = null, lastRun = null;
+// The room changed since the last Run: its replay no longer matches what is on screen.
+export function forgetRun() { lastRun = null; if ($('campReplay')) $('campReplay').hidden = true; }
 const R = () => S.replay;
 
 function show() {
@@ -29,10 +31,11 @@ export function replayTo(i) {
 // The game the room draws while a replay is open.
 export const replayGame = () => R() && R().frames[R().i].game;
 
-export function openReplay() {
+export function openReplay(run) {
   if (!S.played || !S.game) return;
   pause();
-  S.replay = { frames: runFrames(S.played, S.keylog, S.game.tick), i: 0 };
+  const { level, log, ticks } = run || { level: S.played, log: S.keylog, ticks: S.game.tick };
+  S.replay = { frames: runFrames(level, log, ticks), i: 0 };
   document.body.classList.add('replaying');
   $('replayBar').hidden = false;
   $('rpEditHere').hidden = !!(S.camp || S.puzzle);
@@ -50,6 +53,22 @@ export function closeReplay() {
 export function bindReplay(d) {
   deps = d;
   for (const id of ['replayBtn', 'winReplay', 'cardReplay']) if ($(id)) $(id).onclick = () => { if ($('winBox').open) $('winBox').close(); openReplay(); };
+  // Show solution opens the found answer in Replay, to step through at your own pace (register 771).
+  $('showSolution').onclick = () => {
+    const moves = S.check?.result?.moves; if (!moves) return;
+    deps.setMode('play'); openReplay({ level: S.played, ...movesLog(S.played, moves) });
+  };
+  // A Run plays live, then offers Replay for as long as the room stays as it ran (register 771).
+  addEventListener('wee:demoDone', () => {
+    if (!S.camp || !S.played || !S.game) return;
+    lastRun = { level: S.played, log: [...S.keylog], ticks: S.game.tick, stamp: JSON.stringify(S.level) };
+    $('campReplay').hidden = false;
+  });
+  $('campReplay').onclick = () => {
+    if (!lastRun || lastRun.stamp !== JSON.stringify(S.level)) { $('campReplay').hidden = true; return; }
+    const run = lastRun;
+    deps.setMode('play'); openReplay(run);
+  };
   $('rpStart').onclick = () => { pause(); replayTo(0); };
   $('rpBack').onclick = () => { pause(); replayTo(R().i - 1); };
   $('rpFwd').onclick = () => { pause(); replayTo(R().i + 1); };

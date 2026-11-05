@@ -171,6 +171,12 @@ try {
   check('the robot plays the failing path', await page.evaluate(() => document.getElementById('mode').dataset.label === 'Edit'), await page.locator('#mode').textContent());
   // F1: a tap on the failed row draws a shortest path that missed it on the room.
   // Back in edit first, so the room is compared with itself and not with the robot playing.
+  // Run plays live, then offers Replay of that run (register 771).
+  await page.waitForFunction(() => !document.getElementById('campReplay').hidden, null, { timeout: 8000 }).catch(() => {});
+  const offered = await page.locator('#campReplay').isVisible();
+  if (offered) await page.click('#campReplay');
+  check('after a Run, Replay is offered and opens that run at its start (register 771)', offered && await page.locator('#replayBar').isVisible() && /^Start, \d+ moves?$/.test(await page.textContent('#rpAt')), offered ? await page.textContent('#rpAt') : 'no Replay button');
+  if (offered) { await page.click('#rpClose'); await page.evaluate(async () => (await import('/src/app/play.js')).setMode('edit')); }
   await backToEdit();
   await page.waitForTimeout(100);
   // The pixel under the first move's number (the middle of the first move), before and after.
@@ -488,7 +494,7 @@ try {
   check('the puzzle plays by hand with no powers, its way back named Levels', await pz.evaluate(() => document.body.classList.contains('puzzle') && document.body.classList.contains('play') && !Object.values(window.wee.getLevel().powers).some(Boolean)) && (await pz.textContent('#puzzleBack')) === 'Levels');
   const way = await pz.evaluate(async () => (await import('/src/campaign/robot.js')).allShortest(window.wee.getLevel()).paths[0]);
   for (const k of way) { await pz.evaluate(k => window.wee.press(k), k); await pz.waitForTimeout(1200); }
-  check('solving it in the fewest moves says so', /fewest there are/.test(await pz.textContent('#winText')), await pz.textContent('#winText'));
+  check('solving it in the fewest moves meets its side goal on the card', (await pz.textContent('#winText')) === `Solved in ${way.length} moves.` && await pz.locator('#puzzleBrief [data-req=fewest].met').count() === 1, await pz.textContent('#winText'));
   await pz.click('#puzzleBack'); await pz.waitForTimeout(500);
   const pzWon = await pz.evaluate(id => { const s = document.querySelector(`.campRow[data-level="${id}"] .campStar`); return location.hash + ' ' + (s && s.classList.contains('on') ? s.textContent : 'off'); }, slot.id);
   check('back on the list, the puzzle wears its star with your moves', pzWon === `#/levels ${way.length}`, pzWon);

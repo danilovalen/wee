@@ -19,6 +19,7 @@ try {
   await page.waitForFunction(() => window.wee && window.wee.roomsReady);
   await page.evaluate(() => window.wee.roomsReady);
   check('wee starts on the library, full screen', await page.evaluate(() => { const r = document.getElementById('roomsBox').getBoundingClientRect(); return document.getElementById('roomsBox').open && r.width >= innerWidth - 1 && r.height >= innerHeight - 1; }));
+  check('the way up of a page sits at its top left, before its name (register 771)', (await page.$eval('#roomsBox .roomsHead', h => { const up = h.querySelector('.upBtn'); if (!up || up.offsetWidth === 0) return 'no way up'; const ux = up.getBoundingClientRect().left; return [...h.children].filter(c => c !== up && c.getBoundingClientRect().width > 0).every(c => c.getBoundingClientRect().left > ux) ? 'ok' : 'not first'; })) === 'ok');
   await page.click('#roomsBox .roomsHead form button');
   // These checks were written against the old starter room; a new room is 7x7 now (register 430).
   await page.evaluate(() => window.wee.loadLevel(window.wee.blank(12, 14)));
@@ -59,6 +60,7 @@ try {
   const ringIn = await page.evaluate(() => { const q = document.getElementById('ring').getBoundingClientRect(); return !document.getElementById('ring').hidden && q.left >= 0 && q.right <= innerWidth; });
   check('the wall round the room fits on the screen', ringIn);
   check('the editor is one screen with icon tools, the tool named above them, and bottom tabs', one.down <= 0 && !one.label && one.wide <= 50 && one.name === 'Look' && one.nav && !one.powers, JSON.stringify(one));
+  check('on a phone, Rooms is one bottom tab and never also in the header (register 771)', await page.locator('#navRooms').isVisible() && await page.locator('#roomsBtn').isHidden());
   check('there is no Powers tab while powers are hidden (register 653)', await page.locator('[data-sheet=powers]').isHidden());
   await page.click('[data-sheet=room]');
   check('Room swaps it for the world moves (the size is set with the grips, register 707)', await page.locator('#sheetRoom [name=clock]').first().isVisible() && !(await page.locator('#powerList').isVisible()));

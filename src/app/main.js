@@ -22,6 +22,7 @@ import { change } from './undo.js';
 import { bindInput } from './input.js';
 import { setMode, frame, render, tick, report, copyReport } from './play.js';
 import { bindCamera } from './camera.js';
+import { bindZoom } from './zoom.js';
 import { buildRooms, leaveOk, openRoom } from './rooms.js';
 import { bindReplay } from './replay.js';
 import { buildGenerator } from './generator.js';
@@ -57,7 +58,7 @@ buildMaker();
 buildCampaign({ setMode, syncPanel, fit });
 bindNav();
 bindInput();
-bindCamera();
+bindCamera(); bindZoom();
 syncPanel();
 addEventListener('resize', fit);
 // A new palette or skin repaints the panels' icons and the room (registers 612, 613).

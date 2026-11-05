@@ -12,7 +12,7 @@ import { setFit, apply } from './camera.js';
 const HOMES = new Map();
 const home = el => { if (!HOMES.has(el)) HOMES.set(el, { parent: el.parentElement, next: el.nextElementSibling }); return HOMES.get(el); };
 let sheeted;
-const SHEETED = () => sheeted || (sheeted = [[$('powers'), $('sheetPowers')], [$('worldMoves'), $('sheetRoom')], [$('stopsBtn'), $('sheetRoom')], [$('genBtn'), $('sheetRoom')]]);
+const SHEETED = () => sheeted || (sheeted = [[$('powers'), $('sheetPowers')], [$('worldMoves'), $('sheetRoom')]]);
 
 function place(wide) {
   const after = (el, ref) => { if (ref.nextElementSibling !== el) ref.after(el); };

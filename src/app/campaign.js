@@ -20,6 +20,7 @@ import { shownName, challengeName } from '../campaign/names.js';
 import { noteWin, bindWin } from './winCard.js';
 import { noteLeaving, copyDebug } from './debug.js';
 import { buildMenuScene } from './menuScene.js';
+import { forgetRun } from './replay.js';
 import { madeLevel } from './made.js';
 import { progress, write, firstTime } from './progress.js';
 import { TOOL, words, syncBrief, clearTrail, flashStuck, bindGoalCard } from './goalCard.js';
@@ -57,7 +58,7 @@ export function enterLevel(id) {
   const def = levelOf(id);
   if (!def) return false;
   const p = progress(), rec = p.levels[id];
-  S.camp = { def, verdict: null }; S.trail = null; iconOn($('campBack'), 'levels', def.made ? 'Maker' : 'Levels');
+  S.camp = { def, verdict: null }; S.trail = null; forgetRun(); iconOn($('campBack'), 'levels', def.made ? 'Maker' : 'Levels');
   const kept = rec && rec.room && unframe(rec.room);
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
   // The tutorial always starts from its own room (register 512).
@@ -80,7 +81,7 @@ function leaveLevel() {
   save();
   S.camp = null; S.trail = null;
   // A level's goals leave with it (register 667).
-  $('campBrief').replaceChildren(); $('campVerdict').hidden = true;
+  $('campBrief').replaceChildren(); $('campVerdict').hidden = true; forgetRun();
   document.body.classList.remove('campaign', 'challenge');
   $('campTest').after($('undo'), $('redo'), $('campReset'));
   // The sandbox never inherits a campaign room.
@@ -210,7 +211,7 @@ export function buildCampaign(actions) {
   $('roomsMenu').onclick = () => back('menu');
   $('campBack').onclick = up;
   $('menuDebug').onclick = copyDebug;
-  $('campRun').onclick = () => { S.camp.testing = false; run(); };
+  $('campRun').onclick = () => { S.camp.testing = false; forgetRun(); run(); };
   // Test: the room played by hand, the robot not involved; nothing is judged or saved.
   $('campTest').onclick = () => { if (!S.camp) return; clearTrail(); $('campVerdict').hidden = true; S.camp.verdictGone = true; S.camp.testing = true; A.setMode('play'); };
   // After a Run the robot has shown its path: back to editing, so a tap on the room places again.

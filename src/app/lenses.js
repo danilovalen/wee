@@ -200,7 +200,6 @@ function legend() {
 
 export function syncLenses() {
   const l = L(), show = l.open && S.mode === 'edit';
-  $('stopsBtn').setAttribute('aria-pressed', String(l.open)); $('stopsBtn').classList.toggle('on', l.open);
   $('lensBox').hidden = !show;
   $('lensFollow').checked = l.follow;
   document.querySelectorAll('[data-lens-group]').forEach(b => b.classList.toggle('on', (lensOn(b.dataset.lensGroup) || 'off') === b.dataset.lens));
@@ -222,8 +221,6 @@ export function buildLenses() {
     return row;
   }));
   $('lensFollow').onchange = e => { L().follow = e.target.checked; syncLenses(); };
-  // The Lenses tab turns them on in place: the header's button is not there in every mode (register 690).
-  $('stopsBtn').onclick = $('lensOff').onclick = toggleLenses;
 }
 
 // The Solution line: the new answer when ready; until then the last one, dimmed (register 720); and when an

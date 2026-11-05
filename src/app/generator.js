@@ -189,7 +189,8 @@ export function buildGenerator(actions) {
   $('genKeep').onchange = () => fillForm(recipeFromForm());
   $('genTime').value = saved ? saved.seconds : 15;
   const open = () => { if (current()?.name === 'rooms') back('room'); showOffered(); if ($('genKeep').checked) fillForm(recipeFromForm()); renderShelf(); show(shown); say(''); $('genBox').showModal(); };
-  $('roomGen').onclick = $('genBtn').onclick = open;
+  // Generate lives on the Rooms page only (register 771).
+  $('roomGen').onclick = open;
   $('genReroll').onclick = () => { $('genSeed').value = newSeed(); };
   const seconds = () => Math.max(5, Math.min(60, +$('genTime').value || 15));
   $('genGo').onclick = () => { const r = recipeFromForm(); fillForm(r); start(r, seconds()); };

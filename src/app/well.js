@@ -48,7 +48,6 @@ export function syncWell() {
   document.querySelectorAll('[data-well]').forEach(b => { const on = b.dataset.well === WELL.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
   document.querySelectorAll('#well [data-pane]').forEach(p => { p.hidden = p.dataset.pane !== WELL.tab; });
   $('wellEmpty').hidden = n > 0;
-  $('lensOff').hidden = !$('lensBox').hidden;
 }
 
 export function buildWell() {

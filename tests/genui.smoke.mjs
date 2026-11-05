@@ -139,7 +139,7 @@ try {
   // Complete this room: the room on screen is kept, and only what it lacks is added.
   await page.keyboard.press('Escape');
   const mine = await page.evaluate(() => { const rows = ['########', '#P.....#', '#..#...#', '#......#', '#......#', '#......#', '#......#', '########']; const l = window.wee.blank(8, 8); rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '#') l.cells[y * 8 + x] = 'wall'; })); l.cells[6 * 8 + 6] = 'goal'; l.entities.push({ kind: 'box', x: 4, y: 3 }); l.start = { x: 1, y: 1 }; window.wee.loadLevel(l); return JSON.parse(JSON.stringify(window.wee.getLevel())); });
-  await page.evaluate(() => document.getElementById('genBtn').click());
+  await openPanel();
   await page.check('#genKeep');
   check('completing the room on screen shows its size and locks Width and Height', await page.inputValue('#genW') === '8' && await page.inputValue('#genH') === '8' && await page.isDisabled('#genW') && await page.isDisabled('#genH') && await page.inputValue('#genIng select[data-id=box]') !== '', [await page.inputValue('#genW'), await page.inputValue('#genH'), await page.isDisabled('#genW'), await page.inputValue('#genIng select[data-id=box]')].join());
   await page.evaluate(() => { document.querySelector('.genIngBox').open = true; });

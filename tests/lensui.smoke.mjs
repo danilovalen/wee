@@ -31,7 +31,7 @@ try {
   const bar = await page.evaluate(() => { const b = document.getElementById('lensBar'), redo = document.getElementById('redo').getBoundingClientRect(), q = b.getBoundingClientRect();
     return { n: b.querySelectorAll('[data-lens-icon]').length, header: b.parentElement.tagName, right: q.left >= redo.right, row: Math.abs((q.top + q.bottom) / 2 - (redo.top + redo.bottom) / 2) < 8, seps: b.querySelectorAll('.lensSep').length, tips: [...b.querySelectorAll('[data-lens-icon]')].every(x => x.title.length > 10), on: b.querySelectorAll('.on').length }; });
   check('ten lens icons sit in the header right of Redo, four groups split by three lines, all off, each saying what it shows (registers 749, 755, 770)', bar.n === 10 && bar.header === 'HEADER' && bar.right && bar.row && bar.seps === 3 && bar.tips && bar.on === 0, JSON.stringify(bar));
-  check('the chips row, the Lenses tab and the Lenses button are gone', await page.locator('#lensChips').isHidden() && await page.locator('[data-well=lenses]').isHidden() && await page.locator('#stopsBtn').isHidden());
+  check('the chips row is hidden, and the old Lenses tab, Lenses button and Show lenses button are gone (register 771)', await page.locator('#lensChips').isHidden() && await page.locator('[data-well=lenses], #stopsBtn, #lensOff').count() === 0);
   await pickTool(page, 'turret');
   check('a tool in hand turns no lens on by itself', await on('colour') === 'off');
   await tap('beams'); await settle();

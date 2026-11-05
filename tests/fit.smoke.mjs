@@ -91,9 +91,9 @@ try {
     await settle();
     check(`${w}x${h}: play mode: the play buttons sit in the status bar, the lens icons go, and nothing is cut`, await page.locator('#lensBar').isHidden() && !(await over()) && !(await cutOff()).length && await page.evaluate(() => document.getElementById('pad').parentElement.id === 'statusBar' && !!document.getElementById('pad').offsetParent), JSON.stringify(await cutOff()));
     await page.click('#mode');
-    await page.click('#genBtn');
+    await page.click('#roomsBtn'); await page.click('#roomGen');
     await page.locator('.genIngBox summary').click();
-    check(`${w}x${h}: the Generator opens from the header and fits without scrolling`, await page.locator('#genBox').isVisible() && await page.evaluate(() => { const d = document.getElementById('genBox'); return d.scrollHeight <= d.clientHeight; }));
+    check(`${w}x${h}: the Generator opens from the Rooms page and fits without scrolling`, await page.locator('#genBox').isVisible() && await page.evaluate(() => { const d = document.getElementById('genBox'); return d.scrollHeight <= d.clientHeight; }));
     await page.close();
   }
   // Below about 700 px of height a column may scroll on its own, but nothing may be cut off.

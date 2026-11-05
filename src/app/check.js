@@ -1,5 +1,5 @@
 // Check: runs the solver a slice at a time so the page stays responsive, and shows the
-// answer. Show solution plays the found moves in play mode, one each time you come to rest.
+// answer. Show solution opens the found answer in Replay.
 import { search, parseMove } from '../solve/solve.js';
 import { lint, brokenAt } from '../solve/lint.js';
 import { now } from './dom.js';

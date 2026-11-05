@@ -29,10 +29,11 @@ try {
   await page.goto(`http://localhost:${PORT}/`); await page.waitForTimeout(400);
   await page.click('#menuSandbox'); await page.waitForTimeout(400); await page.click('#roomNew'); await page.waitForTimeout(300);
   await pickTool(page, 'wall');
-  // A small room fits with tiles big enough to tap: no zoom.
+  // Any room zooms, a small one too (register 781).
   await page.evaluate(() => { const l = window.wee.blank(7, 7); l.start = { x: 0, y: 0 }; window.wee.loadLevel(l); });
   await pinch();
-  check('a small room does not zoom', (await cam()).z === 1 && await page.locator('#fitBtn').isHidden(), JSON.stringify(await cam()));
+  check('a small room zooms too, and Fit then shows (register 781)', (await cam()).z > 1.2 && await page.locator('#fitBtn').isVisible(), JSON.stringify(await cam()));
+  await page.click('#fitBtn');
   await page.evaluate(() => { const l = window.wee.blank(60, 46); l.start = { x: 0, y: 0 }; window.wee.loadLevel(l); });
   await page.waitForTimeout(100);
   const before = await walls();
@@ -82,6 +83,32 @@ try {
   await desk.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
   await desk.keyboard.down('Control'); await desk.mouse.wheel(0, -400); await desk.keyboard.up('Control'); await desk.waitForTimeout(100);
   check('on a computer Ctrl and the wheel zoom in', await desk.evaluate(async () => (await import('/src/app/camera.js')).cam.z > 1.5));
+  // Register 781: the plain wheel, the buttons and the keys zoom; arrows and a drag on empty space pan.
+  const z = () => desk.evaluate(async () => (await import('/src/app/camera.js')).cam.z);
+  const xy = () => desk.evaluate(async () => { const { cam } = await import('/src/app/camera.js'); return [cam.x, cam.y]; });
+  await desk.click('#fitBtn');
+  await desk.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await desk.mouse.wheel(0, -300); await desk.waitForTimeout(100);
+  check('the plain wheel zooms in', await z() > 1.5, String(await z()));
+  await desk.click('#fitBtn');
+  await desk.click('#zoomIn'); const z1 = await z(); await desk.click('#zoomIn'); const z2 = await z(); await desk.click('#zoomOut'); const z3 = await z();
+  check('the + button zooms in and − zooms back out', z1 > 1.1 && z2 > z1 && Math.abs(z3 - z1) < 0.01, [z1, z2, z3].join());
+  await desk.click('#game', { position: { x: 5, y: 5 } }).catch(() => {});
+  await desk.keyboard.press('Escape'); await desk.locator('#game').focus().catch(() => {});
+  await desk.keyboard.press('f'); const zf = await z();
+  await desk.keyboard.press('+'); const zk = await z(); await desk.keyboard.press('-'); const zm = await z();
+  check('F fits, + and − zoom from the keyboard', zf === 1 && zk > 1.1 && zm < zk, [zf, zk, zm].join());
+  await desk.keyboard.press('+'); await desk.keyboard.press('+'); await desk.keyboard.press('+');
+  await desk.evaluate(async () => { const { cam, apply } = await import('/src/app/camera.js'); cam.x = 200; cam.y = 200; apply(); });
+  const p0 = await xy(); await desk.keyboard.press('ArrowRight'); const p1 = await xy();
+  check('an arrow key moves the view while editing zoomed in', p1[0] > p0[0] && p1[1] === p0[1], JSON.stringify([p0, p1]));
+  await desk.evaluate(() => { window.__openAll = true; }); await desk.click('[data-tool=look]').catch(() => {});
+  const blob = await desk.evaluate(async () => { const { toScreen } = await import('/src/app/camera.js'); const T = (await import('/src/view/ink.js')).T; return toScreen(20.5 * T, 20.5 * T); });
+  const q0 = await xy();
+  await desk.mouse.move(blob.x, blob.y); await desk.mouse.down(); await desk.mouse.move(blob.x - 60, blob.y - 40, { steps: 6 }); await desk.mouse.up();
+  const q1 = await xy();
+  check('dragging empty space with Look moves the view', q1[0] > q0[0] + 20 && q1[1] > q0[1] + 10, JSON.stringify([q0, q1]));
+  await desk.keyboard.press('F');
+  check('Shift+F resets the zoom to tiles a tapping size', Math.abs(await desk.evaluate(async () => { const { cam } = await import('/src/app/camera.js'); return cam.fit * cam.z * (await import('/src/view/ink.js')).T; }) - 40) < 1);
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the camera smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

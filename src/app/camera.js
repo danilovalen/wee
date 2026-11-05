@@ -1,6 +1,5 @@
-// The camera (register 408). A room whose tiles, fitted to the screen, are too small to tap zooms:
-// a pinch or Ctrl and the wheel zooms around the fingers or the pointer, two fingers or the wheel pan,
-// and Fit shows the whole room again. One finger keeps editing and playing. While playing zoomed in,
+// The camera (register 408). Any room zooms (register 781): a pinch or the wheel zooms around the
+// fingers or the pointer, two fingers or Shift and the wheel pan, and Fit shows the whole room again. One finger keeps editing and playing. While playing zoomed in,
 // the view follows the mover, still while they stay in the middle and sliding only as they near an edge.
 // Zoomed in, the view fills the room's whole area, not the fitted room's shape (register 414).
 import { T } from '../view/ink.js';
@@ -8,7 +7,8 @@ import { S } from '../editor/state.js';
 import { $, canvas, g, buffer, shown } from './dom.js';
 import { syncRing } from './ring.js';
 
-const MIN_TILE = 28, MAX_TILE = 56;
+// Zoomed all the way in, a tile is at least MAX_TILE px, or ZOOM_MAX times its fitted size.
+const MAX_TILE = 56, ZOOM_MAX = 4;
 // The middle of the view the mover may cross without the view moving, as a share of each side.
 const SLACK = 0.25;
 // cam.fit: the fitted scale (CSS px per room px); z: how far in, 1 being fitted; x, y: the view's
@@ -16,9 +16,8 @@ const SLACK = 0.25;
 export const cam = { fit: 1, z: 1, x: 0, y: 0, held: false };
 let editView = null, lastAt = null, avail = { w: 0, h: 0 };
 
-export const zoomable = () => cam.fit * T < MIN_TILE;
 const size = () => ({ W: S.level.w * T, H: S.level.h * T });
-const maxZ = () => Math.max(1, MAX_TILE / (cam.fit * T));
+const maxZ = () => Math.max(ZOOM_MAX, MAX_TILE / (cam.fit * T));
 
 const scale = () => cam.fit * cam.z;  // CSS px per room px
 const isZoomed = () => cam.z > 1.001;
@@ -34,7 +33,7 @@ function clampXY() {
 // Sizes the canvas to the view and sets the drawing transform. anchor: a room point to keep under
 // a screen point, worked out after the canvas takes its new size.
 export function apply(anchor) {
-  cam.z = zoomable() ? Math.min(maxZ(), Math.max(1, cam.z)) : 1;
+  cam.z = Math.min(maxZ(), Math.max(1, cam.z));
   const b = box(), dpr = window.devicePixelRatio || 1;
   // Setting a canvas size clears it, even to the same size, so only a real change is written.
   const cw = Math.round(b.w * dpr), ch = Math.round(b.h * dpr), w = Math.round(b.w) + 'px', h = Math.round(b.h) + 'px';
@@ -68,7 +67,7 @@ export function setFit(z, w, h) { cam.fit = z; avail = { w, h }; }
 export function clearView() { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, buffer.width, buffer.height); g.restore(); }
 
 // A point on the screen as room px, and back.
-const perRoom = () => canvas.getBoundingClientRect().width / box().w * scale();  // screen px per room px
+export const perRoom = () => canvas.getBoundingClientRect().width / box().w * scale();  // screen px per room px
 export function toRoom(cx, cy) {
   const r = canvas.getBoundingClientRect(), k = perRoom();
   return { x: cam.x + (cx - r.left) / k, y: cam.y + (cy - r.top) / k };
@@ -79,7 +78,7 @@ export function toScreen(x, y) {
 }
 
 // Zoom to z keeping the room point under (cx, cy) where it is.
-function zoomTo(z, cx, cy) { const at = toRoom(cx, cy); cam.z = z; apply({ at, cx, cy }); }
+export function zoomTo(z, cx, cy) { const at = toRoom(cx, cy); cam.z = z; apply({ at, cx, cy }); }
 
 export function fitView() { cam.z = 1; cam.x = cam.y = 0; apply(); }
 
@@ -110,7 +109,7 @@ export function bindCamera() {
   canvas.addEventListener('pointerdown', ev => {
     if (ev.pointerType !== 'touch') return;
     fingers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-    if (fingers.size !== 2 || !zoomable()) return;
+    if (fingers.size !== 2) return;
     // The first finger's stroke, if it began one, is taken back: two fingers are the camera's.
     if (S.before !== null && S.before !== undefined) { S.level = JSON.parse(S.before); S.before = null; }
     if (S.gateHold) { clearTimeout(S.gateHold.timer); S.gateHold = null; }
@@ -132,9 +131,10 @@ export function bindCamera() {
   canvas.addEventListener('pointerup', up, true);
   canvas.addEventListener('pointercancel', up, true);
   canvas.addEventListener('wheel', ev => {
-    if (!zoomable()) return;
     ev.preventDefault();
-    if (ev.ctrlKey || ev.metaKey) { zoomTo(cam.z * Math.exp(-ev.deltaY * 0.01), ev.clientX, ev.clientY); return; }
+    // The plain wheel zooms (register 781); Shift and the wheel, or a sideways scroll, pan.
+    if (!ev.shiftKey && Math.abs(ev.deltaY) >= Math.abs(ev.deltaX)) { zoomTo(cam.z * Math.exp(-ev.deltaY * 0.004), ev.clientX, ev.clientY); return; }
+    if (ev.shiftKey && !ev.deltaX) { cam.x += ev.deltaY / perRoom(); cam.held = true; apply(); return; }
     const per = 1 / perRoom();
     cam.x += ev.deltaX * per; cam.y += ev.deltaY * per; cam.held = true;
     apply();

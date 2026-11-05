@@ -405,11 +405,14 @@ try {
   // the Rooms panel: name and save the room, find it in the list, come back to it
   const wallsBefore = (await text()).level.cells.filter(c => c === 'wall').length;
   check('an unnamed room reads as unsaved', (await page.textContent('#roomsBtn')).includes('\u2022'));
+  check('on a wide screen, Rooms is one header button and never also a bottom tab (register 771)', await page.locator('#roomsBtn').isVisible() && await page.locator('#navRooms').isHidden());
   await page.click('#roomsBtn');
   check('the panel says where rooms are kept', (await page.textContent('#roomsWhere')).includes('this browser'));
+  check('on a wide screen, the way up of a page sits at its top left, before its name (register 771)', (await page.$eval('#roomsBox .roomsHead', h => { const up = h.querySelector('.upBtn'); if (!up || up.offsetWidth === 0) return 'no way up'; const ux = up.getBoundingClientRect().left; return [...h.children].filter(c => c !== up && c.getBoundingClientRect().width > 0).every(c => c.getBoundingClientRect().left > ux) ? 'ok' : 'not first'; })) === 'ok');
   check('an empty library hides its filter and explored count', await page.locator('#libTools').isHidden());
   check('the library holds no templates of its own', (await page.locator('#roomsBox #templateList').count()) === 0);
-  check('Rooms has one bar: New room first and marked, then More, and no Generate (registers 399, 404)', (await page.$$eval('#roomsBox .libBar > button', bs => bs.filter(b => b.getBoundingClientRect().width > 0).map(b => b.textContent + (b.classList.contains('primary') ? '*' : '')).join())) === 'New room*,More');
+  const bar = await page.$$eval('#roomsBox .libBar > button', bs => bs.filter(b => b.getBoundingClientRect().width > 0).map(b => (b.textContent || b.title) + (b.classList.contains('primary') ? '*' : '')).join());
+  check('Rooms has one bar: New room first and marked, then More, and Generate lives here now (registers 399, 404, 771)', /^New room\*,.*More/.test(bar) && await page.locator('#roomGen').isVisible(), bar);
   check('New room has no page of its own and there are no templates', (await page.locator('#newBox').count()) === 0 && (await page.locator('#templateList').count()) === 0);
   const asks = []; page.once('dialog', d => { asks.push(d.message()); d.dismiss(); });
   await page.click('#roomNew');
@@ -609,28 +612,26 @@ try {
   await page.keyboard.press('Control+z');
   await page.click('#checkBtn');
   await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')));
+  const replayWon = () => page.evaluate(async () => { const { S } = await import('/src/editor/state.js'); const r = S.replay; return !!r && r.frames[r.frames.length - 1].game.won; });
   await page.click('#showSolution');
-  await page.evaluate(() => window.advanceTime(1200));
-  check('Show solution plays it to the win', await page.locator('#win').isVisible());
-  await page.click('#winEdit');
+  check('Show solution opens the answer in Replay, at its start, ending on the win (register 771)', await page.locator('#replayBar').isVisible() && (await page.textContent('#rpAt')) === 'Start, 1 move' && await replayWon(), await page.textContent('#rpAt'));
+  await page.click('#rpClose'); await page.evaluate(async () => (await import('/src/app/play.js')).setMode('edit'));
   // a two-move solution waits for the first slide to end before the second
   const turnRoom = room(['#####', '#P..#', '###.#', '###.#', '#####']); turnRoom.cells[3 * 5 + 3] = 'goal';
   await page.evaluate(l => window.wee.loadLevel(l), turnRoom);
   await page.click('#checkBtn');
   await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')));
   await page.click('#showSolution');
-  await page.evaluate(() => window.advanceTime(3000));
-  check('a two-move solution plays to the win', await page.locator('#win').isVisible() && (await page.textContent('#winText')) === 'Solved in 2 moves.', await page.textContent('#winText'));
-  await page.click('#winEdit');
+  check('a two-move solution replays as two moves to the win', (await page.textContent('#rpAt')) === 'Start, 2 moves' && await replayWon(), await page.textContent('#rpAt'));
+  await page.click('#rpClose'); await page.evaluate(async () => (await import('/src/app/play.js')).setMode('edit'));
   // a solution with a dive plays its mid-slide key on the right tick
   const diveRoom = room(['#######', '#P.H..#', '#######']); diveRoom.cells[11] = 'goal';
   await page.evaluate(l => window.wee.loadLevel(l), diveRoom);
   await page.click('#checkBtn');
   await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')));
   await page.click('#showSolution');
-  await page.evaluate(() => window.advanceTime(3000));
-  check('Show solution plays a dive to the win', await page.locator('#win').isVisible(), await page.textContent('#checkText'));
-  await page.click('#winEdit');
+  check('Show solution replays a dive, its mid-slide key on the right tick, to the win', await replayWon(), await page.textContent('#rpAt'));
+  await page.click('#rpClose'); await page.evaluate(async () => (await import('/src/app/play.js')).setMode('edit'));
   await page.evaluate(l => window.wee.loadLevel(l), turnRoom);
   await page.click('#checkBtn');
   await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')));

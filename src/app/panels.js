@@ -124,7 +124,6 @@ export function buildPanels(actions) {
   $('powersBtn').onclick = () => { document.body.classList.toggle('powersOpen'); $('powersBtn').classList.toggle('on', document.body.classList.contains('powersOpen')); };
   buildLenses();
   $('playHere').onclick = () => { if (!S.lookAt) return; S.playFrom = S.lookAt; setMode('play'); };
-  $('showSolution').onclick = () => { const moves = S.check?.result?.moves; if (!moves) return; setMode('play'); S.demo = [...moves]; };
   const after = () => { syncPanel(); fit(); };
   addEventListener('wee:apply', e => { if (JSON.stringify(S.level) !== e.detail.from) return; change(() => { S.level = e.detail.level; }); after(); });
   $('undo').onclick = () => undoStep(true, after);

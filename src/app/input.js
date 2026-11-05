@@ -13,6 +13,7 @@ import { toolForKey, bareKey, showKeys } from './keys.js';
 import { TOOLS } from '../editor/palette.js';
 import { refusal, moveRefusal, moveIn, refuse, replacing } from './campaignMove.js';
 import { toRoom } from './camera.js';
+import { zoomKey } from './zoom.js';
 import { T } from '../view/ink.js';
 
 function cellFromEvent(ev) {
@@ -129,6 +130,7 @@ export function bindInput() {
       save(false).then(ok => { if (!ok) $('roomsBtn').click(); });
       return;
     }
+    if (zoomKey(ev)) { ev.preventDefault(); return; }
     if (S.mode === 'edit' && bareKey(ev)) { ev.preventDefault(); return; }
     if (ev.key === '?' && !ev.ctrlKey && !ev.metaKey) { showKeys(); ev.preventDefault(); return; }
     const tool = S.mode === 'edit' ? toolForKey(ev) : null;

@@ -12,6 +12,7 @@ const LIST = [
   ['Tools', Object.entries(TOOL_KEYS).map(([t, k]) => [k, name(t)])],
   ['Lenses', [['1 to 4', 'Next lens in Colour, Dots, Lines or Frames'], ['0', 'Every lens off']]],
   ['Select', [['Ctrl+C', 'Copy'], ['Ctrl+X', 'Cut'], ['Ctrl+V', 'Paste'], ['Delete', 'Delete'], ['R', 'Rotate'], ['Escape', 'Let go']]],
+  ['View', [['+ and −', 'Zoom in and out'], ['F', 'Show the whole room'], ['Shift+F', 'Reset the zoom'], ['Arrows', 'Move the view while editing zoomed in'], ['Wheel', 'Zoom; Shift and the wheel move the view']]],
   ['Playing', [['Arrows', 'Slide'], ['R', 'Reset the room'], ['E', 'Back to editing']]],
 ];
 

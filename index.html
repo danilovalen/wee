@@ -20,6 +20,7 @@
     <button id="puzzleBack" type="button" class="puzzle-only">Puzzles</button>
     <button id="mode" type="button" title="E" data-alone>Play</button>
     <button id="campRun" type="button" class="camp-only primary">Run</button>
+    <button id="campReplay" type="button" class="camp-only" hidden title="Watch the last Run again, one move at a time">Replay</button>
     <button id="campTest" type="button" class="camp-only" title="Play your room yourself; only Run beats the level.">Test</button>
     <span id="campLast" class="campLast camp-only"></span>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
@@ -28,8 +29,6 @@
     <div id="lensBar" class="lensBar" role="toolbar" aria-label="Lenses" hidden></div>
     <button id="campReset" type="button" class="camp-only" data-edit data-alone>Reset</button>
     <button id="checkBtn" type="button" data-edit>Check</button>
-    <button id="stopsBtn" type="button" data-edit aria-pressed="false" title="Lenses over the room (colour, dots, lines and frames): keys 1 to 4 cycle them and 0 turns them off.">Lenses</button>
-    <button id="genBtn" type="button" data-edit title="Generate a room">Generate</button>
     <span class="spacer"></span>
     <button id="powersBtn" type="button" class="sandbox-only" title="How the world moves">World</button>
     <button id="keysBtn" type="button" title="Every key (?)" aria-label="Every key">?</button>
@@ -130,7 +129,7 @@
       <div id="campVerdict" class="campVerdict camp-only" role="status" hidden><span id="campVerdictText"></span></div>
       <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="ring" class="ring" aria-hidden="true"></canvas><canvas id="game"></canvas>
         <div id="campTip" class="campTip" role="status" hidden></div>
-        <button id="fitBtn" class="fitBtn" type="button" hidden title="Show the whole room">Fit</button>
+        <div id="zoomBar" class="zoomBar"><button id="zoomOut" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button><button id="zoomIn" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button><button id="zoomReset" type="button" title="Reset the zoom (Shift+F)" aria-label="Reset the zoom">1:1</button><button id="fitBtn" class="fitBtn" type="button" hidden title="Show the whole room (F)">Fit</button></div>
         <div class="growBar" data-bar="top"><button type="button" class="grip" data-grip="top" aria-label="Drag to add or remove rows at the top" title="Drag to add or remove rows at the top"><i></i></button></div>
         <div class="growBar" data-bar="left"><button type="button" class="grip" data-grip="left" aria-label="Drag to add or remove columns on the left" title="Drag to add or remove columns on the left"><i></i></button></div>
         <div class="growBar" data-bar="right"><button type="button" class="grip" data-grip="right" aria-label="Drag to add or remove columns on the right" title="Drag to add or remove columns on the right"><i></i></button></div>
@@ -173,7 +172,6 @@
       <div id="well" class="well" hidden>
         <div class="wellTabs" role="tablist">
           <button type="button" role="tab" data-well="findings">Findings</button>
-          <button type="button" role="tab" data-well="lenses">Lenses</button>
           <span class="spacer"></span>
           <button id="wellClose" type="button" aria-label="Close">&times;</button>
         </div>
@@ -184,7 +182,6 @@
             <div id="designBox" class="lint design" hidden><ul id="designList"></ul></div>
           </div>
           <div data-pane="lenses">
-            <button id="lensOff" type="button">Show lenses</button>
             <div id="lensBox" class="lensBox" hidden>
               <div id="lensRows"></div>
               <label class="lensFollow"><input type="checkbox" id="lensFollow" checked> Follow the tool</label>
@@ -261,7 +258,7 @@
     <div class="row bar"><button id="resetYes" type="button" class="primary">Reset</button><button id="resetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="makerBox" class="rooms maker">
-    <div class="roomsHead"><b>Level maker</b><button id="makerMenu" type="button">Menu</button></div>
+    <div class="roomsHead"><button id="makerMenu" type="button" class="upBtn">Menu</button><b>Level maker</b></div>
     <ul id="madeList" class="campList"></ul>
     <h3>Rules</h3>
     <p class="hint">Pick what the room may hold and what the robot must do, then build it and Run it like a campaign level.</p>
@@ -276,26 +273,26 @@
     <div class="row bar"><button id="makerBuild" type="button" class="primary">Build it</button><button id="makerNew" type="button">New</button><button id="makerDelete" type="button" hidden>Delete</button></div>
   </dialog>
   <dialog id="lookBox" class="rooms looks">
-    <div class="roomsHead"><b>Looks</b><button id="lookStars" type="button" class="lookStars" aria-label="Stars to spend; tap for Achievements"></button><button id="lookMenu" type="button">Menu</button></div>
+    <div class="roomsHead"><button id="lookMenu" type="button" class="upBtn">Menu</button><b>Looks</b><button id="lookStars" type="button" class="lookStars" aria-label="Stars to spend; tap for Achievements"></button></div>
     <p class="hint">Spend stars from levels, side goals and achievements on palettes and skins.</p>
     <h3>Palette</h3><div id="lookPalettes" class="lookGrid"></div>
     <h3>Skins</h3><div id="lookSkins" class="lookSkins"></div>
     <h3>Feel</h3><div class="lookFeel"><button id="feelSound" type="button">Sound</button><button id="feelBoil" type="button">Wobble</button></div>
   </dialog>
   <dialog id="achBox" class="rooms achieve">
-    <div class="roomsHead"><b>Achievements</b><span id="achCount" class="lookStars"></span><button id="achMenu" type="button">Menu</button></div>
+    <div class="roomsHead"><button id="achMenu" type="button" class="upBtn">Menu</button><b>Achievements</b><span id="achCount" class="lookStars"></span></div>
     <p class="achDone"><span id="achDone"></span><i id="achBar" class="achBar"></i></p>
     <ul id="achList" class="achList"></ul>
   </dialog>
   <div id="toast" class="toast" role="status" hidden></div>
   <div id="wipe" class="wipe" popover="manual" aria-hidden="true"></div>
   <dialog id="puzzleBox" class="rooms">
-    <div class="roomsHead"><b>Puzzles</b><button id="puzzleMenu" type="button">Menu</button></div>
+    <div class="roomsHead"><button id="puzzleMenu" type="button" class="upBtn">Menu</button><b>Puzzles</b></div>
     <p id="puzzleNone" class="hint">To add a puzzle, open Rooms in the Sandbox, hold a room and choose Add to Puzzles.</p>
     <ul id="puzzleList" class="campList"></ul>
   </dialog>
   <dialog id="campBox" class="rooms">
-    <div class="roomsHead"><b>Campaign</b><button id="campMenu" type="button">Menu</button></div>
+    <div class="roomsHead"><button id="campMenu" type="button" class="upBtn">Menu</button><b>Campaign</b></div>
     <ul id="campList" class="campList"></ul>
     <div class="row bar progRow"><button id="progCopy" type="button" aria-label="Copy progress">Copy<span class="wideOnly"> progress</span></button><button id="progLoad" type="button" aria-label="Load progress">Load<span class="wideOnly"> progress</span></button><button id="progReset" type="button" aria-label="Reset progress">Reset<span class="wideOnly"> progress</span></button></div>
   </dialog>
@@ -309,7 +306,7 @@
     <div class="row bar"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
   <dialog id="roomsBox" class="rooms library">
-    <div class="roomsHead"><b>Rooms</b><button id="roomsMenu" type="button">Menu</button><form method="dialog" id="roomsClose"><button>Close</button></form></div>
+    <div class="roomsHead"><button id="roomsMenu" type="button" class="upBtn">Menu</button><b>Rooms</b><form method="dialog" id="roomsClose"><button>Close</button></form></div>
     <p id="roomsWhere" class="hint"></p>
     <section id="thisRoom" class="thisRoom" hidden>
       <h3>This room</h3>
@@ -331,7 +328,7 @@
     <div class="libBarWrap">
       <div class="row bar libBar">
         <button id="roomNew" type="button" class="primary" autofocus>New room</button>
-        <button id="roomGen" type="button" hidden>Generate</button>
+        <button id="roomGen" type="button" title="Generate a room">Generate</button>
         <button id="moreBtn" type="button" aria-haspopup="menu" aria-expanded="false">More</button>
       </div>
       <div id="moreMenu" class="tileMenu moreMenu" role="menu" hidden>
