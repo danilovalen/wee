@@ -5,7 +5,7 @@ import { DIGITS } from './digits.js';
 
 const centre = (i, w) => [(i % w) * T + T / 2, Math.floor(i / w) * T + T / 2];
 // What a ring or a dot says about the shortest wins: every one uses this tile, some do, or none do.
-export const USE = { required: '#78dce8', optional: '#fc9867', unused: '#939293' };
+export const USE = { required: '#78dce8', optional: '#fc9867', unused: '#727072' };
 const FAINT = '#403e41';
 
 // heat: { distance: Map, hopeless: [] } or { tiles: Set, colour }.
@@ -55,7 +55,7 @@ function pxHead(g, x, y, a, s = 8) {
 // A number in 3x5 bitmap digits, each pixel one 2-unit cell, on a dark plate with a light rim (741).
 export function pxNumber(g, n, cx, cy) {
   const s = String(n), wd = s.length * 8 - 2, x0 = Math.round((cx - wd / 2) / 2) * 2, y0 = Math.round((cy - 5) / 2) * 2;
-  g.fillStyle = '#fcfcfa'; cells(g, [[x0 - 4, y0 - 4, wd + 8, 18]]);
+  g.fillStyle = '#e8eef6'; cells(g, [[x0 - 4, y0 - 4, wd + 8, 18]]);
   g.fillStyle = '#19181a'; cells(g, [[x0 - 2, y0 - 2, wd + 4, 14]]);
   g.fillStyle = '#fcfcfa';
   const px = [];
@@ -90,7 +90,7 @@ export function drawLensMarks(g, w, { rings, passing, lines, moves, frames, cros
     const x = (i % w) * T, y = Math.floor(i / w) * T;
     if (breaks) { g.fillStyle = '#ff6188'; pxLine(g, x + 9, y + 9, x + T - 9, y + T - 9, 4); pxLine(g, x + T - 9, y + 9, x + 9, y + T - 9, 4); }
     else if (d) pxNumber(g, (d > 0 ? '+' : '-') + Math.abs(d), x + T / 2, y + T / 2);
-    else if (same) { g.fillStyle = '#939293'; pxDisc(g, x + T / 2, y + T / 2, 2); }
+    else if (same) { g.fillStyle = '#e8eef6'; pxDisc(g, x + T / 2, y + T / 2, 2); }
   }
   if (passing) for (const { i, use } of passing) { const [x, y] = centre(i, w); g.fillStyle = USE[use] || INK.player; pxDisc(g, x, y, 3); }
   if (rings) for (const { i, use } of rings) { const [x, y] = centre(i, w); g.strokeStyle = USE[use] || INK.player; pxRing(g, x, y, 7, 2); }

@@ -21,7 +21,7 @@ export function drawJuice(g, fx, now) {
     // twice as far in gold and cyan (registers 702, 790).
     if (f.type === 'eat' || f.type === 'win') {
       const big = f.type === 'win', n = big ? 16 : 10, r = T / 3 + (big ? 2 : 1.2) * T * ease(t);
-      if (t < 0.3) { g.fillStyle = '#fcfcfa'; g.globalAlpha = 0.6 * (1 - t / 0.3); g.fillRect(f.x * T + P, f.y * T + P, T - 2 * P, T - 2 * P); }
+      if (t < 0.3) { g.fillStyle = '#e8eef6'; g.globalAlpha = 0.6 * (1 - t / 0.3); g.fillRect(f.x * T + P, f.y * T + P, T - 2 * P, T - 2 * P); }
       g.globalAlpha = 1 - t;
       for (let i = 0; i < n; i++) {
         const a = i / n * Math.PI * 2;
@@ -30,7 +30,7 @@ export function drawJuice(g, fx, now) {
         if (big) dot(g, cx + Math.cos(a + Math.PI / n) * r * 0.6 - P, cy + Math.sin(a + Math.PI / n) * r * 0.6 - P);
       }
     } else if (f.type === 'place') {
-      g.fillStyle = '#fcfcfa'; g.globalAlpha = 1 - t;
+      g.fillStyle = '#e8eef6'; g.globalAlpha = 1 - t;
       for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) dot(g, cx + sx * (T / 2 + 10 * ease(t)) - P, cy + sy * (T / 2 + 10 * ease(t)) - P, P * (t < 0.5 ? 2 : 1));
     } else if (f.type === 'erase') {
       g.fillStyle = '#939293'; g.globalAlpha = 1 - t;
@@ -38,10 +38,10 @@ export function drawJuice(g, fx, now) {
     } else if (f.type === 'land' && DIRS[f.dir]) {
       // Dust at the side it hit, spreading along that wall.
       const [dx, dy] = DIRS[f.dir], ex = cx + dx * (T / 2 - 4), ey = cy + dy * (T / 2 - 4);
-      g.fillStyle = '#939293'; g.globalAlpha = 0.8 * (1 - t);
+      g.fillStyle = '#e8eef6'; g.globalAlpha = 0.8 * (1 - t);
       for (const s of [-1, 1]) dot(g, ex + dy * s * (6 + 8 * ease(t)) - dx * 4 * t - P, ey + dx * s * (6 + 8 * ease(t)) - dy * 4 * t - P);
     } else if (f.type === 'hit') {
-      g.fillStyle = '#fcfcfa'; g.globalAlpha = 0.55 * (1 - t);
+      g.fillStyle = '#e8eef6'; g.globalAlpha = 0.55 * (1 - t);
       g.fillRect(f.x * T + P, f.y * T + P, T - 2 * P, T - 2 * P);
     }
   }

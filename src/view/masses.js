@@ -43,7 +43,7 @@ const LOOK = {
   gravel: { face: INK.gravel, lite: [INK.gravelHi, null], dark: [INK.gravelDot, null] },
   water: { face: INK.water, lite: [INK.waterHi, null], dark: null },
   sticky: { face: INK.goo, lite: [null, null], dark: [INK.gooDark, INK.gooDark] },
-  death: { face: INK.deathBg, lite: ['#8f2a45', null], dark: ['#19181a', null] },
+  death: { face: INK.deathBg, lite: ['#ff6188', null], dark: ['#403e41', null] },
 };
 function drawPixelMass(g, at, w, h, kind) {
   const L = LOOK[kind], open = (x, y) => at(x, y) !== kind;
@@ -66,8 +66,8 @@ function decorate(g, at, w, h, kind) {
   const cellsOf = f => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (at(x, y) === kind) f(x * T, y * T, x, y); };
   const px = (X, Y, x, y, c) => { g.fillStyle = c; g.fillRect(X + x * PX, Y + y * PX, PX, PX); };
   if (kind === 'gravel') cellsOf((X, Y) => { for (const [x, y] of [[3, 3], [9, 2], [12, 6], [5, 8], [10, 10], [3, 12], [8, 13]]) { px(X, Y, x, y, INK.gravelDot); px(X, Y, x + 1, y, INK.gravelHi); } });
-  else if (kind === 'sticky') cellsOf((X, Y) => { px(X, Y, 5, 6, '#fcfcfa'); px(X, Y, 10, 8, '#fcfcfa'); });
-  else if (kind === 'death') cellsOf((X, Y) => { for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { px(X, Y, cx, cy - 2, INK.deathSpike); for (const dx of [-1, 0]) { px(X, Y, cx + dx, cy - 1, INK.deathSpike); px(X, Y, cx + dx, cy, INK.deathSpike); } for (const dx of [-2, -1, 0, 1]) px(X, Y, cx + dx, cy + 1, INK.deathSpike); px(X, Y, cx, cy - 1, '#fcfcfa'); } });
+  else if (kind === 'sticky') cellsOf((X, Y) => { px(X, Y, 5, 6, '#e8eef6'); px(X, Y, 10, 8, '#e8eef6'); });
+  else if (kind === 'death') cellsOf((X, Y) => { for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { px(X, Y, cx, cy - 2, INK.deathSpike); for (const dx of [-1, 0]) { px(X, Y, cx + dx, cy - 1, INK.deathSpike); px(X, Y, cx + dx, cy, INK.deathSpike); } for (const dx of [-2, -1, 0, 1]) px(X, Y, cx + dx, cy + 1, INK.deathSpike); px(X, Y, cx, cy - 1, '#e8eef6'); } });
   else if (kind === 'water') {
     // Waves run across the whole pool, not tile by tile.
     const k = (frame.clock / 900) % 1; g.globalAlpha = 0.55;

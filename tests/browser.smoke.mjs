@@ -752,7 +752,8 @@ try {
   const [seam, corner, face] = [await red(2, 1.6), await red(5.03, 2.03), await red(5.5, 2.6)];
   check('walls side by side are one mass, a lone wall rounds its corners', Math.abs(seam - face) < 12 && Math.abs(corner - face) > 30, JSON.stringify({ seam, corner, face }));
   const grav = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round((3 + 15 / 32) * t), Math.round((3 + 12 / 32) * t), 1, 1).data]; });
-  check('gravel is drawn in its sand colour', Math.abs(grav[0] - 220) < 12 && Math.abs(grav[1] - 184) < 12 && Math.abs(grav[2] - 143) < 12, JSON.stringify(grav));
+  // Gravel is the tan yellow shade since the twenty colours (register 811).
+  check('gravel is drawn in its sand colour', Math.abs(grav[0] - 176) < 12 && Math.abs(grav[1] - 138) < 12 && Math.abs(grav[2] - 92) < 12, JSON.stringify(grav));
 
   // A breakable block wears dark cracks; broken by a dive, it is floor for the rest of the run.
   const kr = room(['#######', '#P.k..#', '#######']); kr.powers.dive = true;

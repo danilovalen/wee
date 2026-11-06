@@ -1063,11 +1063,11 @@ export const M = [
   ['src/app/levelParts.js', "    const crate = pushingsOf(def, el).every(Boolean);", "    const crate = false;", 'campaign-play'],
   ['src/campaign/rules.js', "/^(button|toggle):|^death$/", "/^(button|toggle):/", 'campaign'],
   // Row 607: the Sandbox pieces as pixel sprites.
-  ['src/view/pixel.js', "export const W = { face: '#5b595c', light: '#939293', dark: '#403e41', crack: '#403e41' };", "export const W = { face: '#5b595c', light: '#939293', dark: '#403e41', crack: '#5b595c' };", 'browser'],
+  ['src/view/pixel.js', "export const W = { face: '#5b595c', light: '#727072', dark: '#403e41', crack: '#403e41' };", "export const W = { face: '#5b595c', light: '#727072', dark: '#403e41', crack: '#5b595c' };", 'browser'],
   ['src/view/tiles.js', "drawSprite(g, 'sensor', 0, 0, { colour: INK[col] + '|' + (lit ? 1 : 0) });", "drawSprite(g, 'sensor', 0, 0, { colour: INK[col] + '|1' });", 'browser'],
   ['src/view/pieceSprites.js', "    const n = +k; if (n >= 1)", "    const n = 2; if (n >= 1)", 'browser'],
   ['src/view/pieces.js', "    if (e.crate) drawSprite(g, 'crateFrame', 0, 0);", "", 'campaign-play'],
-  ['src/view/sprites.js', "body = lit ? INK.zap : '#939293'", "body = lit ? INK.beam : '#939293'", 'sim'],
+  ['src/view/sprites.js', "body = lit ? INK.zap : '#727072'", "body = lit ? INK.beam : '#727072'", 'sim'],
   // Rows 558, 609-611, 616: the floor plan's locks.
   ['src/campaign/progression.js', "export const sideRoom = k => (k % 2 ? PUZZLES[(k - 1) / 2] : PLACING[k / 2 - 1]) || null;", "export const sideRoom = k => PLACING[k - 1] || null;", 'progression'],
   ['src/campaign/progression.js', "return t && !t.waiting ? t : null; };", "return t || null; };", 'challenges'],
@@ -1083,7 +1083,10 @@ export const M = [
   ['src/app/campaign.js', "b.disabled = !open;", "b.disabled = false;", 'unlock'],
   // Rows 618-621: pixel discs, the room's pixel buffer, palette contrast.
   ['src/app/play.js', "  present();\n}", "}", 'browser'],
-  ['src/view/look.js', "colors: ['#081820', '#081820', '#346856', '#346856', '#88c070',", "colors: ['#081820', '#081820', '#346856', '#346856', '#88c070', '#88c070',", 'palettes'],
+  ['src/view/look.js', "colors: ['#081820', '#081820', '#081820', '#346856',", "colors: ['#081820', '#081820', '#081820', '#081820', '#346856',", 'palettes'],
+  ['src/view/pieceSprites.js', "'#ff6188', '#e8eef6', '#8f2a45')", "'#ff6188', '#e8eef6', '#5a9a2b')", 'palettes'],
+  ['src/view/look.js', "'#b9b0a0', '#fbf9f4', '#3d3c45'", "'#b9b0a0', '#9a9284', '#3d3c45'", 'palettes'],
+  ['src/view/look.js', "return p.colors[closest([body + 1, body, SLOTS.indexOf('hi')], c)];", "return p.colors[closest([...GREY, ...BODY], c)];", 'palettes'],
   ['src/view/look.js', "'#ff9ec4', '#b8608a', '#ffbe98'", "'#b8608a', '#ff9ec4', '#ffbe98'", 'palettes'],
   ['src/view/look.js', "const SLOT_OF = Object.fromEntries(NEON.map((h, i) => [h, i]));", "const SLOT_OF = Object.fromEntries(NEON.map((h, i) => [h, (i + 1) % NEON.length]));", 'palettes'],
   ['src/view/ink.js', "  puff: '#78dce8',", "  puff: '#9fd8ff',", 'palettes'],

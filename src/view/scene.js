@@ -108,7 +108,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const mid = p => [p.x * T + T / 2, p.y * T + T / 2];
     g.lineCap = 'square'; g.lineJoin = 'miter';
     for (const spots of over.trail.boxes) {
-      g.strokeStyle = '#857f6a'; g.lineWidth = 3; g.setLineDash([6, 5]); g.beginPath();
+      g.strokeStyle = '#c4643a'; g.lineWidth = 3; g.setLineDash([6, 5]); g.beginPath();
       spots.forEach((p, i) => (i ? g.lineTo : g.moveTo).call(g, ...mid(p))); g.stroke(); g.setLineDash([]);
     }
     const r = over.trail.robot;
@@ -118,7 +118,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     for (let i = 1; i < r.length; i++) {
       const [ax, ay] = mid(r[i - 1]), [bx, by] = mid(r[i]), x = (ax + bx) / 2, y = (ay + by) / 2;
       g.fillStyle = INK.mark; pxDisc(g, x, y, T * 0.2);
-      g.fillStyle = '#fcfcfa'; g.fillText(String(i), x, y + 1);
+      g.fillStyle = '#e8eef6'; g.fillText(String(i), x, y + 1);
     }
   }
   if (over && over.sel) {

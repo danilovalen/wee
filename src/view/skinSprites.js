@@ -5,21 +5,21 @@ import { grid, ellipse, box, line, turn, slab, steps, mixHex, W } from './pixel.
 export const SKIN_SPRITES = {
   // Berry: a cyan cherry pair on one stalk.
   berryAlt() {
-    const g = grid(); ellipse(g, 5, 11, 3.6, 3.6, '#5a9a2b'); ellipse(g, 11, 11.5, 3.6, 3.6, '#5a9a2b');
-    ellipse(g, 4.8, 10.8, 2.8, 2.8, '#78dce8'); ellipse(g, 10.8, 11.3, 2.8, 2.8, '#78dce8'); g[10][4] = '#fcfcfa'; g[10][10] = '#fcfcfa';
+    const g = grid(); ellipse(g, 5, 11, 3.6, 3.6, '#3f9aa6'); ellipse(g, 11, 11.5, 3.6, 3.6, '#3f9aa6');
+    ellipse(g, 4.8, 10.8, 2.8, 2.8, '#78dce8'); ellipse(g, 10.8, 11.3, 2.8, 2.8, '#78dce8'); g[10][4] = '#e8eef6'; g[10][10] = '#e8eef6';
     line(g, 5, 7, 8, 2, '#5a9a2b'); line(g, 11, 8, 8, 2, '#5a9a2b'); box(g, 8, 1, 10, 2, '#5a9a2b');
     return g;
   },
   // Block: lab tiles, a slab split into four with grout lines.
   wallFaceAlt() {
-    const g = grid(); slab(g, 0, 0, 15, 15, '#939293', '#939293', '#403e41');
-    box(g, 1, 7, 14, 8, '#5b595c'); box(g, 7, 1, 8, 14, '#5b595c'); g[2][2] = '#939293'; g[2][10] = '#939293'; g[10][2] = '#939293'; g[10][10] = '#939293';
+    const g = grid(); slab(g, 0, 0, 15, 15, '#727072', '#939293', '#403e41');
+    box(g, 1, 7, 14, 8, '#5b595c'); box(g, 7, 1, 8, 14, '#5b595c'); g[2][2] = '#e8eef6'; g[2][10] = '#e8eef6'; g[10][2] = '#e8eef6'; g[10][10] = '#e8eef6';
     return g;
   },
   // Box: a steel crate with corner plates and a stripe.
   boxAlt() {
-    const g = grid(); slab(g, 0, 0, 15, 15, '#857f6a', '#939293', '#5b595c');
-    for (const [x, y] of [[1, 1], [12, 1], [1, 12], [12, 12]]) box(g, x, y, x + 2, y + 2, '#5b595c');
+    const g = grid(); slab(g, 0, 0, 15, 15, '#939293', '#e8eef6', '#403e41');
+    for (const [x, y] of [[1, 1], [12, 1], [1, 12], [12, 12]]) box(g, x, y, x + 2, y + 2, '#403e41');
     box(g, 1, 6, 14, 9, '#ffd866'); for (let x = 1; x <= 14; x += 4) box(g, x, 6, x + 1, 9, '#19181a');
     return g;
   },
@@ -37,12 +37,12 @@ export const SKIN_SPRITES = {
   // Switch: a lever on a plate, leaning left while off and right while on.
   switchOffAlt(col) {
     const { c, d } = steps(col), g = grid(); box(g, 3, 11, 12, 13, d); box(g, 4, 11, 11, 11, c);
-    line(g, 8, 10, 4, 4, c); box(g, 3, 3, 4, 4, '#fcfcfa');
+    line(g, 8, 10, 4, 4, c); box(g, 3, 3, 4, 4, '#e8eef6');
     return g;
   },
   switchOnAlt(col) {
     const { c, d } = steps(col), g = grid(); box(g, 3, 11, 12, 13, d); box(g, 4, 11, 11, 11, c);
-    line(g, 8, 10, 12, 4, c); box(g, 11, 3, 12, 4, '#fcfcfa'); box(g, 6, 12, 9, 12, '#fcfcfa');
+    line(g, 8, 10, 12, 4, c); box(g, 11, 3, 12, 4, '#e8eef6'); box(g, 6, 12, 9, 12, '#e8eef6');
     return g;
   },
   // Button: a square pad, flush with the floor while pressed.
@@ -60,7 +60,7 @@ export const SKIN_SPRITES = {
     const turn = { right: (x, y) => [x, y], down: (x, y) => [15 - y, x], left: (x, y) => [15 - x, 15 - y], up: (x, y) => [y, 15 - x] };
     ellipse(g, 8, 8, 3, 3, '#5b595c');
     for (const d of dirs.split(',')) {
-      const lit = d === next, ring = lit ? '#857f6a' : '#403e41', lens = lit ? INK.zap : '#939293';
+      const lit = d === next, ring = lit ? '#c4643a' : '#403e41', lens = lit ? INK.zap : '#727072';
       const put = (x, y, c) => { const [X, Y] = turn[d](x, y); g[Y][X] = c; };
       for (let x = 10; x <= 12; x++) { put(x, 7, '#403e41'); put(x, 8, '#403e41'); }
       for (let y = 5; y <= 10; y++) { put(13, y, ring); put(15, y, ring); } put(14, 5, ring); put(14, 10, ring);

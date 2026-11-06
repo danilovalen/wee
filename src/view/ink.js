@@ -9,16 +9,16 @@ export const T = 32;
 export const INK = {
   puff: '#78dce8',
   goo: '#a9dc76', gooDark: '#5a9a2b', idoor: '#403e41', goal: '#ffd866',
-  water: '#78dce8', waterHi: '#fcfcfa', shock: '#ffd866',
-  armor: '#939293',
-  floor: '#2d2a2e', grid: '#2d2a2e', wall: '#5b595c', wallTop: '#939293', crack: '#403e41',
+  water: '#78dce8', waterHi: '#e8eef6', shock: '#ffd866',
+  armor: '#e8eef6',
+  floor: '#2d2a2e', grid: '#19181a', wall: '#5b595c', wallTop: '#727072', crack: '#403e41',
   player: '#ab9df2', start: '#ab9df2', robotDark: '#4b3fd6', robotTip: '#ff6188', robotVisor: '#19181a', robotEye: '#78dce8', shadow: 'rgba(0,0,0,0.35)',
-  mover: '#78dce8', moverEdge: '#fcfcfa', enemy: '#ff6188', strong: '#ff6188', strongEdge: '#ff6188', beam: '#ff6188', zap: '#fc9867', zapCore: '#fcfcfa', barrel: '#ab9df2', box: '#857f6a', boxEdge: '#5b595c',
-  heavy: '#ab9df2', heavyEdge: '#4b3fd6', bomb: '#403e41', bombHi: '#939293', fuse: '#857f6a', spark: '#fc9867', blast: '#fc9867', rivet: '#fcfcfa', flag: '#ffd866', laser: '#ff6188',
+  mover: '#78dce8', moverEdge: '#e8eef6', enemy: '#ff6188', strong: '#ff6188', strongEdge: '#e8eef6', beam: '#ff6188', zap: '#fc9867', zapCore: '#e8eef6', barrel: '#ab9df2', box: '#939293', boxEdge: '#403e41',
+  heavy: '#ab9df2', heavyEdge: '#4b3fd6', bomb: '#403e41', bombHi: '#939293', fuse: '#b08a5c', spark: '#fc9867', blast: '#fc9867', rivet: '#e8eef6', flag: '#ffd866', laser: '#ff6188',
   red: '#ff6188', blue: '#78dce8', yellow: '#ffd866', green: '#a9dc76',
   // Grey pieces read wires (register 347); the wires' own three colours are none of the doors'.
-  wire: '#939293', teal: '#5a9a2b', violet: '#4b3fd6', charcoal: '#403e41',
-  mark: '#939293', deathBg: '#8f2a45', deathSpike: '#ff6188', gateBg: '#403e41', gateArrow: '#a9dc76', unlit: '#5b595c', spring: '#ffd866', gravel: '#857f6a', gravelDot: '#857f6a', gravelHi: '#fcfcfa',
+  wire: '#939293', teal: '#3f9aa6', violet: '#4b3fd6', charcoal: '#403e41',
+  mark: '#939293', deathBg: '#8f2a45', deathSpike: '#e8eef6', gateBg: '#403e41', gateArrow: '#a9dc76', unlit: '#5b595c', spring: '#ffd866', gravel: '#b08a5c', gravelDot: '#5b595c', gravelHi: '#e8eef6',
 };
 
 export const ease = t => 1 - Math.pow(1 - t, 3);

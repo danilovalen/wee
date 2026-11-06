@@ -83,13 +83,13 @@ Read by `tests/manga.test.mjs`. `name | value`, one per row, values verbatim.
 
 | token | value |
 |---|---|
-| `--paper` | `#221f22` |
+| `--paper` | `#19181a` |
 | `--panel` | `#2d2a2e` |
 | `--rule` | `#403e41` |
 | `--ink` | `#fcfcfa` |
 | `--soft` | `#939293` |
 | `--accent` | `#ab9df2` |
-| `--on-accent` | `#221f22` |
+| `--on-accent` | `#19181a` |
 | `--field` | `rgba(255,255,255,0.06)` |
 | `--field-rule` | `rgba(255,255,255,0.12)` |
 | `--sticker` | `#19181a` |
@@ -108,13 +108,23 @@ Read by `tests/manga.test.mjs`. `name | value`, one per row, values verbatim.
 | `--mid` | `#5b595c` |
 | `--lite` | `#727072` |
 | `--gold` | `#ffd866` |
-| `--gold-ink` | `#c9a63a` |
+| `--gold-ink` | `#b08a5c` |
 | `--good` | `#a9dc76` |
 | `--bad` | `#ff6188` |
 | `--cyan` | `#78dce8` |
 | `--orange` | `#fc9867` |
-| `--kept` | `#3a3528` |
+| `--kept` | `#403e41` |
 | `--shade` | `#19181a` |
 | `--text-face` | `'Departure', monospace` |
 | `--label-face` | `'Departure', monospace` |
 | `--wee-face` | `'Departure', monospace` |
+
+## Twenty colours (registers 810, 811)
+
+Everything the game draws is one of twenty colours, `NEON` in `src/view/look.js`, named by job in `SLOTS`:
+eight greys (`void`, `floor`, `deep`, `wall`, `mid`, `top`, `hi`, `text`) and six colours, each with a
+darker shade of its own hue (`red`, `orange`, `yellow`, `green`, `blue`, `violet`). `hi` lights a bevel and
+the whites of the eyes; `text` is only for words, so a light palette can make its text dark without
+darkening every highlight. A palette is twenty colours in slot order. `tests/palettes.test.mjs` holds the
+source to the twenty, the page CSS to its tokens, and every bevel to light over face over shade, with the
+shade a grey or its own colour's.

@@ -1,10 +1,11 @@
 // Every palette keeps its things apart (register 620): text reads on the page, a wall stands off the floor,
 // and the blob, the berry and a door stand off the walls and the floor. Measured as WCAG contrast ratios.
-// Sixteen colours (register 810): the source writes only the sixteen slot colours, every palette has sixteen,
+// Sixteen colours (register 810): the source writes only the twenty slot colours, every palette has twenty,
 // and no shade comes out lighter than what it shades (808).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { suite } from './lib.mjs';
 import { PALETTES, NEON, SLOTS, SHADES, paint } from '../src/view/look.js';
+import { mixHex } from '../src/view/pixel.js';
 
 const { check, done } = suite('palettes');
 const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
@@ -16,12 +17,12 @@ for (const p of PALETTES) {
   const c = Object.fromEntries(Object.entries(ROLE).map(([k, v]) => [k, paint(v, p)]));
   const low = [['text', 'paper', 4.5], ['wall', 'floor', 1.5], ...['blob', 'berry', 'door'].flatMap(f => [[f, 'floor', 1.5], [f, 'wall', 1.3]])].filter(([a, b, min]) => ratio(c[a], c[b]) < min);
   check(`${p.name} keeps its things apart`, !low.length, low.map(([a, b]) => `${a} ${c[a]} on ${b} ${c[b]}: ${ratio(c[a], c[b]).toFixed(2)}`).join('; '));
-  check(`${p.name} has sixteen colours, one per slot`, p.colors.length === SLOTS.length && p.colors.every(h => /^#[0-9a-f]{6}$/.test(h)), String(p.colors.length));
+  check(`${p.name} has twenty colours, one per slot`, p.colors.length === SLOTS.length && p.colors.every(h => /^#[0-9a-f]{6}$/.test(h)), String(p.colors.length));
   const lit = SHADES.filter(([s, b]) => L(p.colors[SLOTS.indexOf(s)]) > L(p.colors[SLOTS.indexOf(b)]));
   check(`${p.name} keeps every shade no lighter than what it shades`, !lit.length, lit.map(([s, b]) => `${s} over ${b}`).join(', '));
   check(`${p.name} paints each slot colour as its own`, NEON.every((h, i) => paint(h, p) === p.colors[i]));
 }
-// Every colour the source writes is one of the sixteen; the palettes themselves live in look.js.
+// Every colour the source writes is one of the twenty; the palettes themselves live in look.js.
 const files = [];
 const walk = d => { for (const f of readdirSync(d)) { const p = `${d}/${f}`; if (statSync(p).isDirectory()) walk(p); else if (/\.(js|css|html)$/.test(f)) files.push(p); } };
 walk(new URL('../src', import.meta.url).pathname);
@@ -31,13 +32,35 @@ for (const f of files.filter(f => !f.endsWith('src/view/look.js'))) for (const m
   const h = m[0].length === 4 ? '#' + [...m[0].slice(1)].map(x => x + x).join('') : m[0].toLowerCase();
   if (!NEON.includes(h)) off.push(`${m[0]} in ${f.split('/').slice(-2).join('/')}`);
 }
-check('the source writes only the sixteen slot colours (810)', !off.length, off.slice(0, 8).join(', '));
+check('the source writes only the twenty slot colours (810, 811)', !off.length, off.slice(0, 8).join(', '));
 // The page's own CSS is recoloured through its tokens only, so a colour written as rgb() there is never recoloured:
 // only black and white, the same on every palette, may be (the menu's fade stayed the neon page's dark).
 const css = ['style.css', 'index.html'].flatMap(f => [...readFileSync(new URL('../' + f, import.meta.url), 'utf8').matchAll(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/g)].map(m => `${m[1]},${m[2]},${m[3]}`)).filter(c => c !== '0,0,0' && c !== '255,255,255');
-check('the page writes no fixed colour as rgb(), only black or white (810)', !css.length, css.join(' | '));
+check('the page writes no fixed colour as rgb(), only black or white (810, 811)', !css.length, css.join(' | '));
 // And a colour code there sits only in a token's own definition, which applyPalette recolours (the logo stayed neon).
 const sheet = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
 const loose = [...sheet.matchAll(/#[0-9a-fA-F]{3,6}\b/g)].filter(m => !/--[\w-]+\s*:\s*$/.test(sheet.slice(Math.max(0, m.index - 40), m.index))).map(m => `${m[0]} at line ${sheet.slice(0, m.index).split('\n').length}`);
-check('the page writes colour codes only in its tokens (810)', !loose.length, loose.slice(0, 6).join(', '));
+check('the page writes colour codes only in its tokens (810, 811)', !loose.length, loose.slice(0, 6).join(', '));
+// Every bevel in the sprites (register 811): on every palette its light is lighter than its face and its face lighter
+// than its shade, and the shade is a grey or the face's own shade, never another colour's (a green rim on a red).
+const GREYS = SLOTS.slice(0, 8), own = f => f.endsWith('Shade') ? f : f + 'Shade';
+const bevels = [];
+for (const f of files) for (const m of readFileSync(f, 'utf8').matchAll(/slab\(g(?:, [^,]+){4}, '(#[0-9a-f]{6})', '(#[0-9a-f]{6})', '(#[0-9a-f]{6})'\)|W = \{ face: '(#[0-9a-f]{6})', light: '(#[0-9a-f]{6})', dark: '(#[0-9a-f]{6})'/g)) {
+  const [face, light, dark] = m[1] ? [m[1], m[2], m[3]] : [m[4], m[5], m[6]];
+  bevels.push({ at: f.split('/').pop(), face: SLOTS[NEON.indexOf(face)], light: SLOTS[NEON.indexOf(light)], dark: SLOTS[NEON.indexOf(dark)] });
+}
+check('the sprites hold bevels to measure', bevels.length >= 6, String(bevels.length));
+const offHue = bevels.filter(b => !GREYS.includes(b.dark) && b.dark !== own(b.face) && b.dark !== own(b.light));
+check('a bevel\'s shade is a grey or its own colour\'s shade (811)', !offHue.length, offHue.map(b => `${b.at}: ${b.face} shaded ${b.dark}`).join(', '));
+for (const p of PALETTES) {
+  const c = slot => p.colors[SLOTS.indexOf(slot)], flat = bevels.filter(b => !(L(c(b.light)) >= L(c(b.face)) && L(c(b.face)) >= L(c(b.dark))));
+  check(`${p.name} keeps every bevel light over face over shade (811)`, !flat.length, flat.map(b => `${b.at}: ${b.light}/${b.face}/${b.dark}`).join(', '));
+}
+// A colour mixed at run time keeps its hue (811): a body darkened or lightened the way a door's rail and glint are
+// lands on its own shade, its body or a grey on every palette, never on another colour's.
+const HUES = ['red', 'orange', 'yellow', 'green', 'blue', 'violet'];
+for (const p of PALETTES.filter(p => p.colors !== NEON)) {
+  const stray = HUES.flatMap(h => [[h, S.void], [h, S.hi], [h, S.text]]).filter(([h, to]) => { const got = paint(mixHex(S[h], to, 0.45), p), ok = [h, h + 'Shade', ...GREYS].map(k => p.colors[SLOTS.indexOf(k)]); return !ok.includes(got); }).map(([h, to]) => `${h} toward ${to}`);
+  check(`${p.name} keeps a darkened colour in its own hue (811)`, !stray.length, stray.join(', '));
+}
 done();

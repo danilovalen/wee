@@ -9,9 +9,9 @@ import { PIECE_SPRITES } from './pieceSprites.js';
 import { SKIN_SPRITES } from './skinSprites.js';
 
 const C = {
-  blobH: '#fcfcfa', blobM: '#a9dc76', blob: '#a9dc76', blobS: '#5a9a2b', blobD: '#5a9a2b', eye: '#19181a', white: '#fcfcfa',
-  berryH: '#fcfcfa', berry: '#78dce8', berryS: '#5a9a2b', berryD: '#5a9a2b', leaf: '#5a9a2b',
-  boxL: '#939293', box: '#857f6a', boxD: '#5b595c',
+  blobH: '#e8eef6', blobM: '#a9dc76', blob: '#a9dc76', blobS: '#5a9a2b', blobD: '#5a9a2b', eye: '#19181a', white: '#e8eef6',
+  berryH: '#e8eef6', berry: '#78dce8', berryS: '#3f9aa6', berryD: '#3f9aa6', leaf: '#5a9a2b',
+  boxL: '#e8eef6', box: '#939293', boxD: '#403e41',
 };
 
 const BUILD = {
@@ -64,13 +64,13 @@ Object.assign(BUILD, {
   switchOff(col) {
     const { c, d } = steps(col), g = grid();
     box(g, 3, 5, 12, 10, c); box(g, 4, 6, 11, 9, d); g[5][3] = null; g[5][12] = null; g[10][3] = null; g[10][12] = null;
-    box(g, 4, 6, 6, 9, c); box(g, 5, 6, 5, 6, mixHex(col, '#fcfcfa', 0.45));
+    box(g, 4, 6, 6, 9, c); box(g, 5, 6, 5, 6, mixHex(col, '#e8eef6', 0.45));
     return g;
   },
   switchOn(col) {
     const { c, d } = steps(col), g = grid();
     box(g, 3, 5, 12, 10, c); g[5][3] = null; g[5][12] = null; g[10][3] = null; g[10][12] = null;
-    box(g, 9, 6, 11, 9, '#fcfcfa'); g[9][11] = d;
+    box(g, 9, 6, 11, 9, '#e8eef6'); g[9][11] = d;
     return g;
   },
   // A floor button: a faint ring and a cap, sunk lower while pressed.
@@ -90,7 +90,7 @@ Object.assign(BUILD, {
     const [dirs, next] = key.split('|'), g = grid();
     const turn = { right: (x, y) => [x, y], down: (x, y) => [15 - y, x], left: (x, y) => [15 - x, 15 - y], up: (x, y) => [y, 15 - x] };
     for (const d of dirs.split(',')) {
-      const lit = d === next, body = lit ? INK.zap : '#939293', edge = lit ? '#857f6a' : '#403e41', tip = lit ? INK.zapCore : '#939293';
+      const lit = d === next, body = lit ? INK.zap : '#727072', edge = lit ? '#c4643a' : '#403e41', tip = lit ? INK.zapCore : '#939293';
       const put = (x, y, c) => { const [X, Y] = turn[d](x, y); g[Y][X] = c; };
       for (let x = 6; x <= 15; x++) { put(x, 6, edge); put(x, 9, edge); put(x, 7, body); put(x, 8, body); }
       put(6, 7, edge); put(6, 8, edge); put(14, 7, tip); put(15, 7, tip); put(14, 8, tip); put(15, 8, tip);

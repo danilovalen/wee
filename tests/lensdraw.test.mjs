@@ -20,7 +20,7 @@ drawLensMarks(a.g, W, { lines: [at(1, 1), at(5, 1), at(5, 4)], moves: [{ a: at(1
 check('every mark is whole rectangles on whole pixels, no smooth path, no text (registers 741, 742)', !a.rects.smooth && !a.rects.text && a.rects.every(r => Number.isInteger(r.x) && Number.isInteger(r.y)));
 check('and nothing is see-through (register 742)', a.rects.every(r => r.a === 1 && !/rgba|hsla/.test(r.c)));
 check('each move carries its number on a plate', plates(a.rects).length === 2);
-check('a ring and a dot take the colour of how the wins use them', a.rects.some(r => r.c === '#fc9867') && a.rects.some(r => r.c === '#939293'));
+check('a ring and a dot take the colour of how the wins use them', a.rects.some(r => r.c === '#fc9867') && a.rects.some(r => r.c === '#727072'));
 
 // There and back along one row: the two numbers would sit on the same spot.
 const b = canvas();

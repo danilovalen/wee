@@ -23,7 +23,7 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
   } else if (tool === 'look' || tool === 'move' || tool === 'erase') {
     // The tool row's own icons are the HUD's pixel icons (register 602 S3), 2 units per pixel.
     // Whole canvas pixels, centred, so no edge is smoothed (register 643).
-    x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#939293';
+    x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#e8eef6';
     pixelBitmap(tool).forEach((row, py) => row.forEach((v, px) => { if (v) x.fillRect(4 + px * 2, 4 + py * 2, 2, 2); }));
   } else if (tool === 'start' || tool === 'robot') {
     // The campaign's goal rows name the robot, which plays them (register 323); a room's start is you.
