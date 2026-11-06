@@ -23,7 +23,7 @@ export const SPECS = [
   { id: 'r8', name: 'Grotto', size: 6, fixed: ['D', 'e'], many: { '#': 7, r: 2 }, remove: { '#': 2, r: 1 }, moves: 4 },
   { id: 'r9', name: 'Delta', size: 6, fixed: ['D', 'r'], many: { '#': 7, e: 2 }, remove: { '#': 2, e: 1 }, moves: 4 },
   { id: 'r10', name: 'Ridge', size: 6, fixed: [], many: { '#': 7, x: 4 }, remove: { '#': 2, x: 2 }, moves: 5 },
-  { id: 'r11', name: 'Basin', size: 6, fixed: ['D', 'r'], many: { '#': 6, x: 3, e: 2 }, remove: { '#': 2, x: 1, e: 1 }, moves: 5 },
+  { id: 'r11', name: 'Basin', size: 6, fixed: ['D', 'r'], many: { '#': 6, x: 3, e: 2 }, remove: { '#': 2, x: 1, e: 1 }, moves: 5, aim: true },
 ];
 const MIN_CHOICES = 30;
 // The number of ways to choose is the product, over kinds, of (pieces of that kind) choose (to take out).
@@ -36,15 +36,35 @@ function arena(spec) {
   const piece = c => { const w = TURNS[c]; return w ? w[Math.floor(rand() * w.length)] : c; };
   put('P'); put('G');
   for (const c of spec.fixed) put(c);
-  for (const [c, k] of Object.entries(spec.many)) for (let i = 0; i < k - (spec.remove[c] || 0); i++) put(piece(c));
+  const left = { ...spec.many };
+  // aim: one kept laser lights the relay down a clear line, and kept spikes sit on that beam, where a wall
+  // would cut it; scattered at random they almost always do nothing a wall would not (register 805).
+  if (spec.aim && !aim(g, n, left)) return null;
+  for (const [c, k] of Object.entries(left)) for (let i = 0; i < k - (spec.remove[c] || 0); i++) put(piece(c));
   const keep = g.map(r => r.join(''));
   for (const [c, k] of Object.entries(spec.remove)) for (let i = 0; i < k; i++) put(piece(c));
   return { keep, rows: g.map(r => r.join('')) };
 }
+const STEP = { n: [0, -1], e: [1, 0], s: [0, 1], w: [-1, 0] };
+function aim(g, n, left) {
+  let rx, ry; g.forEach((r, y) => r.forEach((c, x) => { if (c === 'r') [rx, ry] = [x, y]; }));
+  const d = 'nesw'[Math.floor(rand() * 4)], [dx, dy] = STEP[d], line = [];
+  for (let k = 1; ; k++) {
+    const x = rx - dx * k, y = ry - dy * k;
+    if (x < 0 || y < 0 || x >= n || y >= n || g[y][x] !== '.') break;
+    line.push([x, y]);
+  }
+  if (line.length < 2) return false;
+  const at = 1 + Math.floor(rand() * (line.length - 1)), [lx, ly] = line[at];
+  g[ly][lx] = d; left.e--;
+  for (const [x, y] of line.slice(0, at).sort(() => rand() - 0.5).slice(0, Math.min(left.x - 1, at))) { g[y][x] = 'x'; left.x--; }
+  return true;
+}
 export function find(spec, seconds) {
   let best = null;
   for (const t0 = Date.now(); Date.now() - t0 < seconds * 1000;) {
-    const { keep, rows } = arena(spec), ch = { id: spec.id, name: spec.name, rows, remove: spec.remove, require: [], min: 1 };
+    const a = arena(spec); if (!a) continue;
+    const { keep, rows } = a, ch = { id: spec.id, name: spec.name, rows, remove: spec.remove, require: [], min: 1 };
     const kept = judge(ch, keep);
     if (!kept.won || kept.length < spec.moves || judge(ch, ch.rows).reach) continue;
     // Every kept piece but a block must do more than a block would: a wall in its place changes the win.
