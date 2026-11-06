@@ -2,10 +2,10 @@
 // robot's reach, exactly one placement of all the given pieces gets it there, no move count. Each
 // challenge asks for its own mix of what makes it more than a forced chain (tools/challengeShape.mjs).
 // Usage: node tools/challengeFind.mjs [--seed S] [--only c1,c2] [--seconds N]
-import { measure, judge, rowsWith, build } from './challenge.mjs';
+import { measure, judge, rowsWith, build, placements } from './challenge.mjs';
 import { allShortest, replayPath } from '../src/campaign/robot.js';
 import { shape, trim } from './challengeShape.mjs';
-import { placingAxes, fails } from './challengeAxes.mjs';
+import { placingAxes, fails, BAR } from './challengeAxes.mjs';
 
 const arg = k => process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : null;
 let seed = +arg('--seed') || 7;
@@ -22,7 +22,7 @@ export const SPECS = [
   // A box to push onto a button that holds the door open (register 696).
   { id: 'c6', name: 'Flint', size: 5, fixed: ['#', '#', '#', 'D'], pieces: ['B', 'o', '#'], open: 15, want: {}, needs: 'D' },
   // Register 762: one after each of Levels 15, 18, 20, 22 and 24, from the pieces those levels teach.
-  { id: 'c7', name: 'Cove', size: 6, fixed: ['#', '#', '>', 'B'], pieces: ['e', '#', '#'], open: 10, want: {} },
+  { id: 'c7', name: 'Cove', size: 6, fixed: ['#', '#', '>', 'B'], pieces: ['e', '#'], open: 17, want: {}, refine: { steps: 60, best: true } },
   { id: 'c8', name: 'Reed', size: 6, fixed: ['#', '#', 'e', 'D'], pieces: ['r', '#', '#'], open: 12, want: { stops: 4 }, needs: 'D' },
   { id: 'c9', name: 'Slate', size: 6, fixed: ['#', '#', 'r', 'D'], pieces: ['e', '#', '#'], open: 10, want: {}, needs: 'D' },
   { id: 'c10', name: 'Drift', size: 6, fixed: ['#', '#', 'x', 'x'], pieces: ['>', '#', '#'], open: 10, want: {} },
@@ -53,6 +53,8 @@ function arena(spec) {
   // And a piece that is not a block must do more than a block would: a wall in its place changes the win.
   const base = judge(lv, g.map(r => r.join('')));
   for (const [[x, y], w] of sol) if (w !== '#' && (v => v.won && v.length === base.length)(judge(lv, g.map((r, yy) => r.map((c, xx) => xx === x && yy === y ? '#' : c).join(''))))) return null;
+  // A piece that turns must be turned the right way: any other way loses.
+  for (const [[x, y], w] of sol) for (const t of TURN[KIND(w)] || []) if (t !== w && judge(lv, g.map((r, yy) => r.map((c, xx) => xx === x && yy === y ? t : c).join(''))).won) return null;
   for (const [[x, y]] of sol) g[y][x] = '+';
   for (let i = sol.length; i < spec.open; i++) put('+');
   return { rows: g.map(r => r.join('')), sol };
@@ -67,23 +69,29 @@ const crossed = (ch, rows) => {
   return out;
 };
 const setAt = (rows, x, y, c) => rows.map((r, yy) => yy === y ? r.slice(0, x) + c + r.slice(x + 1) : r);
-export const __refine = (ch, sol) => refine(ch, sol);
-function refine(ch, sol) {
+const KIND = w => ({ '<': '>', '^': '>', v: '>', n: 'e', s: 'e', w: 'e' })[w] || w;
+// Depth after any one right piece is in (the residual axis); closing a slot must not take it under the bar.
+const deep = (ch, sol) => Math.min(...sol.map(([[x, y], w]) => {
+  const left = [...ch.pieces]; left.splice(left.indexOf(KIND(w)), 1);
+  return placements({ ...ch, rows: setAt(ch.rows, x, y, w), pieces: left }).length;
+})) >= BAR.residualPlacing;
+export const __refine = (ch, sol, opt) => refine(ch, sol, opt);
+// opt.best: take the try that leaves fewest answers, not the first that leaves fewer, for a room that starts with dozens.
+function refine(ch, sol, opt = {}) {
   let m = measure(ch);
   const mine = new Set(sol.map(([[x, y]]) => `${x},${y}`)), path = crossed(ch, rowsWith(ch, sol));
   const ok = next => judge(next, rowsWith(next, sol)).won && !judge(next, rowsWith(next, [])).reach;
-  for (let k = 0; k < 24 && m.wins.length > 1; k++) {
+  for (let k = 0; k < (opt.steps || 24) && m.wins.length > 1; k++) {
     const target = rowsWith(ch, sol).join(), alt = m.wins.filter(w => w.rows.join() !== target)[Math.floor(rand() * (m.wins.length - 1))];
     const tries = [];
-    const slots = ch.rows.join('').split('+').length - 1;
-    if (slots > sol.length + 4) ch.rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '+' && alt.rows[y][x] !== '.' && !mine.has(`${x},${y}`)) tries.push(setAt(ch.rows, x, y, '.')); }));
+    ch.rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '+' && alt.rows[y][x] !== '.' && !mine.has(`${x},${y}`)) { const rows = setAt(ch.rows, x, y, '.'); if (deep({ ...ch, rows }, sol)) tries.push(rows); } }));
     for (const xy of crossed(ch, alt.rows)) { const [x, y] = xy.split(',').map(Number); if (ch.rows[y][x] === '.' && !path.has(xy)) tries.push(setAt(ch.rows, x, y, '#')); }
     let better = null;
     for (const rows of tries.sort(() => rand() - 0.5).slice(0, 16)) {
       const next = { ...ch, rows };
       if (!ok(next)) continue;
       const m2 = measure(next);
-      if (m2.wins.length >= 1 && m2.wins.length < m.wins.length) { better = [next, m2]; break; }
+      if (m2.wins.length >= 1 && m2.wins.length < (better ? better[1] : m).wins.length) { better = [next, m2]; if (!opt.best) break; }
     }
     if (!better) break;
     [ch, m] = better;
@@ -100,7 +108,7 @@ export function find(spec, seconds) {
     if (!a) continue;
     let ch = { id: spec.id, name: spec.name, rows: a.rows, pieces: spec.pieces, require: [], min: 1 }, m;
     if (judge(ch, rowsWith(ch, [])).reach) continue;
-    [ch, m] = a.sol ? refine(ch, a.sol) : [ch, measure(ch)];
+    [ch, m] = a.sol ? refine(ch, a.sol, spec.refine) : [ch, measure(ch)];
     if (m.wins.length !== 1) continue;
     const sol = placementOf(ch, m.wins[0].rows);
     // needs: a door the answer must pass open; with it a wall for good, the placement must not win.
