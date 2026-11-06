@@ -71,9 +71,14 @@ try {
   // Sampled over 3 s: the loop rests between slides, so two close samples can match.
   const seenAt = new Set(); for (let i = 0; i < 10; i++) { seenAt.add(await robotAt()); await page.waitForTimeout(300); }
   check('the robot behind the menu is moving', !seenAt.has(null) && seenAt.size > 2, [...seenAt].join(' / '));
-  const deskLay = await page.evaluate(async () => [(await import('/src/app/menuScene.js')).menuTileRect(4, 6).bottom, document.getElementById('menuCampaign').getBoundingClientRect().top]);
+  const deskLay = await page.evaluate(async () => [(await import('/src/app/menuScene.js')).menuTileRect(2, 6).bottom, document.getElementById('menuCampaign').getBoundingClientRect().top]);
   check('on a wide window the goal still ends above the buttons', deskLay[0] < deskLay[1], JSON.stringify(deskLay));
   check('the room behind the menu has its laser, door and switch', await page.evaluate(async () => { const g = (await import('/src/app/menuScene.js')).menuRoom.game; return g.entities.some(e => e.turret) && g.cells.some(c => /^door:/.test(c)) && g.cells.some(c => /^toggle:/.test(c)); }));
+  // Register 820: the blob pushes the box against the laser, goes through the open door and eats the berry.
+  const run = await page.evaluate(async () => { const { menuRoom } = await import('/src/app/menuScene.js'); const t0 = performance.now();
+    while (performance.now() - t0 < 20000) { const g = menuRoom.game; if (g && g.won) { const b = g.entities.find(e => e.kind === 'box'); return { won: true, box: b && [b.x, b.y], at: [g.player.x, g.player.y], deaths: g.deaths }; } await new Promise(r => setTimeout(r, 30)); }
+    return { won: false }; });
+  check('the menu run wins: the box ends against the laser and the blob on the berry past the door (register 820)', run.won && String(run.box) === '1,3' && String(run.at) === '2,6' && !run.deaths, JSON.stringify(run));
   // Register 554: a pushable laser's barrel stays inside its box frame, every way it points.
   const spill = await page.evaluate(async () => { const { drawPiece } = await import('/src/view/pieces.js'); let out = 0;
     for (const d of ['up', 'down', 'left', 'right']) { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
@@ -451,7 +456,7 @@ try {
   // On a phone, a palette wider than the screen scrolls by itself and the page stays put.
   const phone = await browser.newPage({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true }); await phone.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; }); await phone.addInitScript(() => { window.__noWinCard = true; });
   await phone.goto('http://localhost:5217/');
-  const phoneLay = await phone.evaluate(async () => { const { menuTileRect } = await import('/src/app/menuScene.js'); const r = s => document.querySelector(s).getBoundingClientRect(); return { goal: menuTileRect(4, 6).bottom, door: menuTileRect(4, 5).left, btn: r('#menuCampaign').top, logo: r('.menuLogo').height, w: innerWidth }; });
+  const phoneLay = await phone.evaluate(async () => { const { menuTileRect } = await import('/src/app/menuScene.js'); const r = s => document.querySelector(s).getBoundingClientRect(); return { goal: menuTileRect(2, 6).bottom, door: menuTileRect(4, 5).left, btn: r('#menuCampaign').top, logo: r('.menuLogo').height, w: innerWidth }; });
   check('on a phone the menu shows the wordmark, and the goal and door sit above the buttons', phoneLay.logo > 0 && phoneLay.goal < phoneLay.btn && phoneLay.door < phoneLay.w, JSON.stringify(phoneLay));
   await phone.click('#menuCampaign'); await phone.click(`.campRow[data-level="${MOST.id}"]`);
   const fit = await phone.evaluate(() => { const d = document.documentElement, g = document.getElementById('palette'); return { page: [d.scrollWidth, d.clientWidth, d.scrollHeight, d.clientHeight], grid: [g.scrollWidth, g.clientWidth, getComputedStyle(g).overflowX] }; });

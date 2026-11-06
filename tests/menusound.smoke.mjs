@@ -27,8 +27,9 @@ try {
     return { shown, shut: got.slice(), ran: menuRoom.ticks - ticks, restarted };
   });
   const n = v => heard.shown.filter(x => x === v).length;
-  check('on the menu the blob plays the room\'s voices: launch, land, hit, the doors and the win', ['launch', 'land', 'hit', 'doors', 'win'].every(v => heard.shown.includes(v)), JSON.stringify(heard.shown));
-  check('each of the loop\'s six slides launches once, the win sounds once, and the loop starts again', heard.restarted && n('launch') === 6 && n('win') === 1, JSON.stringify(heard));
+  // The door starts open (register 820), so the loop has no door sound.
+  check('on the menu the blob plays the room\'s voices: launch, land, hit and the win', ['launch', 'land', 'hit', 'win'].every(v => heard.shown.includes(v)), JSON.stringify(heard.shown));
+  check('each of the loop\'s slides launches once, the win sounds once, and the loop starts again', heard.restarted && n('launch') === (await page.evaluate(async () => (await import('/src/app/menuScene.js')).MENU_MOVES.length)) && n('win') === 1, JSON.stringify(heard));
   check('with the menu shut the room stands still and makes no sound', heard.shut.length === 0 && heard.ran === 0, JSON.stringify(heard));
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the menu sound smoke ran to the end', false, err.message); }

@@ -1,6 +1,6 @@
 // The main menu's background (register 782): a small real room the blob plays on a loop, run by the game's
 // own rules and drawn by its own renderer, so a new palette, skin or sound reaches it with nothing to copy.
-// The box blocks the laser, the blob bumps the closed door, steps on the switch and goes through to the berry.
+// The blob turns round the box and pushes it against the laser, then goes through the open door to the berry.
 // It runs only while the menu is on screen.
 import { emptyLevel } from '../level/format.js';
 import { createGame, step } from '../rules/game.js';
@@ -17,14 +17,16 @@ import { soundFx } from './sound.js';
 // M: tiles of floor drawn round the room on every side, so a wide screen shows more floor, not an island.
 export const MENU_MARGIN = 12;
 const W = 6, H = 8, M = MENU_MARGIN, C = 52, PX = 2, PAUSE_MS = 700, HOLD_MS = 1600;
-const WALLS = [[5, 2], [3, 4], [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [3, 6], [5, 6], [4, 7], [0, 7]];
-// Down pushes the box into the laser's row, right to the block, down into the closed door, right onto the
-// switch, left back, and down through the open door onto the berry.
-export const MENU_MOVES = ['down', 'right', 'down', 'right', 'left', 'down'];
+// The bottom is solid but for the blob's way down (register 821): no stray empty cells.
+const WALLS = [[5, 2], [0, 4], [1, 4], [3, 4], [4, 4], [5, 4], [0, 5], [1, 5], [3, 5], [4, 5], [5, 5],
+  [0, 6], [1, 6], [3, 6], [4, 6], [5, 6], [0, 7], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7]];
+// Down pushes the box into the laser's row, right and down turn round it, left pushes it against the laser so
+// it blocks the beam, and down goes through the door the switch holds open onto the berry (register 820).
+export const MENU_MOVES = ['down', 'right', 'down', 'left', 'down'];
 export function menuLevel() {
   const l = emptyLevel(W, H);
   for (const [x, y] of WALLS) l.cells[y * W + x] = 'wall';
-  l.cells[4 * W + 5] = 'toggle:red'; l.cells[5 * W + 4] = 'door:red'; l.cells[6 * W + 4] = 'goal';
+  l.cells[2 * W + 0] = 'toggle:red:on'; l.cells[5 * W + 2] = 'door:red'; l.cells[6 * W + 2] = 'goal';
   l.start = { x: 3, y: 0 };
   l.powers = { boomerang: false, dive: false, laser: false, cycle: false };
   l.entities = [{ kind: 'box', x: 3, y: 1 }, { kind: 'turret', x: 0, y: 3, turret: { dirs: ['right'], mode: 'input' } }];

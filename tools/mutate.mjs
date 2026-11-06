@@ -1216,6 +1216,7 @@ export const M = [
   ['src/campaign/progression.js', "export const PUZZLES = Array.from({ length: 12 }, (_, i) => authored(i + 1));", "export const PUZZLES = [];", 'progression'],
   ['src/app/rooms.js', "const EXAMPLES = () => [...(unlocked() ? ['Hex counter'] : []), ...PUZZLES.filter(Boolean).map(p => p.name)];", "const EXAMPLES = () => [...(unlocked() ? ['Hex counter'] : [])];", 'modes'],
   ['src/app/rooms.js', "const EXAMPLES = () => [...(unlocked() ? ['Hex counter'] : []), ", "const EXAMPLES = () => ['Hex counter', ", 'modes'],
+  ['src/app/menuScene.js', "export const MENU_MOVES = ['down', 'right', 'down', 'left', 'down'];", "export const MENU_MOVES = ['down', 'right', 'down', 'down'];", 'campaign-play'],
   ['src/app/snow.js', "    if (!darkPage()) { requestAnimationFrame(draw); return; }\n", "", 'looks'],
   ['style.css', "body.tutorial .zoomBar { display: none; }", "", 'tutorial'],
   ['style.css', "text-overflow: clip; font-size: 13px; }", "text-overflow: clip; }", 'levellist'],
