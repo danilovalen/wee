@@ -50,7 +50,7 @@ ok('eleven of each', PLACING.length === 11 && REMOVING.length === 11, `${PLACING
 // name that says nothing about the answer.
 const axes = c => c.remove ? removalAxes(c) : placingAxes(c);
 // Slots no room meeting the depth bar has been found for yet: they pass every other axis and wait on 799.
-const SHALLOW = ['c4', 'c5', 'c6', 'c9', 'c10', 'c11'];
+const SHALLOW = ['c9', 'c10', 'c11'];
 for (const ch of LIST.filter(c => !c.waiting)) {
   const f = fails(axes(ch)).filter(x => !(SHALLOW.includes(ch.id) && /^residual/.test(x)));
   ok(`${ch.id} ${ch.name}: passes every axis${SHALLOW.includes(ch.id) ? ' but depth (799, open)' : ''}`, f.length === 0, f.join('; '));

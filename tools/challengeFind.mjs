@@ -2,7 +2,8 @@
 // robot's reach, exactly one placement of all the given pieces gets it there, no move count. Each
 // challenge asks for its own mix of what makes it more than a forced chain (tools/challengeShape.mjs).
 // Usage: node tools/challengeFind.mjs [--seed S] [--only c1,c2] [--seconds N]
-import { measure, judge, rowsWith } from './challenge.mjs';
+import { measure, judge, rowsWith, build } from './challenge.mjs';
+import { allShortest, replayPath } from '../src/campaign/robot.js';
 import { shape, trim } from './challengeShape.mjs';
 import { placingAxes, fails } from './challengeAxes.mjs';
 
@@ -16,16 +17,16 @@ export const SPECS = [
   { id: 'c1', name: 'Moss', size: 5, fixed: ['#', '#'], pieces: ['#', '#', '#'], open: 12, want: { forks: 2, trap: true } },
   { id: 'c2', name: 'Tide', size: 6, fixed: ['#', '#', '#'], pieces: ['#', '#', '#'], open: 10, want: { forks: 2, stops: 6 } },
   { id: 'c3', name: 'Ash', size: 6, fixed: ['#', '#', '#'], pieces: ['B', '#', '#'], open: 11, want: { stops: 7, trap: true } },
-  { id: 'c4', name: 'Fern', size: 6, fixed: ['#', '#', 'D'], pieces: ['t', '#', '#'], open: 12, want: { stops: 6 } },
-  { id: 'c5', name: 'Dune', size: 6, fixed: ['#', '#', '#'], pieces: ['>', '#', '#'], open: 12, want: { forks: 2, trap: true, stops: 7 } },
+  { id: 'c4', name: 'Fern', size: 6, fixed: ['#', '#', 'D'], pieces: ['t', '#', '#'], open: 15, want: {} },
+  { id: 'c5', name: 'Dune', size: 6, fixed: ['#', '#', '#'], pieces: ['>', '#', '#'], open: 15, want: {} },
   // A box to push onto a button that holds the door open (register 696).
-  { id: 'c6', name: 'Flint', size: 5, fixed: ['#', '#', '#', 'D'], pieces: ['B', 'o', '#'], open: 11, want: { stops: 4 }, needs: 'D' },
+  { id: 'c6', name: 'Flint', size: 5, fixed: ['#', '#', '#', 'D'], pieces: ['B', 'o', '#'], open: 15, want: {}, needs: 'D' },
   // Register 762: one after each of Levels 15, 18, 20, 22 and 24, from the pieces those levels teach.
-  { id: 'c7', name: 'Cove', size: 6, fixed: ['#', '#', '>'], pieces: ['e', '#'], open: 10, want: { stops: 3 } },
+  { id: 'c7', name: 'Cove', size: 6, fixed: ['#', '#', '>'], pieces: ['e', '#', '#'], open: 15, want: {} },
   { id: 'c8', name: 'Reed', size: 6, fixed: ['#', '#', 'e', 'D'], pieces: ['r', '#', '#'], open: 12, want: { stops: 4 }, needs: 'D' },
-  { id: 'c9', name: 'Slate', size: 6, fixed: ['#', '#', 'r', 'D'], pieces: ['e', '#', '#'], open: 12, want: { stops: 4 }, needs: 'D' },
-  { id: 'c10', name: 'Drift', size: 6, fixed: ['#', '#', 'x', 'x'], pieces: ['>', '#'], open: 10, want: { stops: 5 } },
-  { id: 'c11', name: 'Hollow', size: 6, fixed: ['#', 'x', 'r', 'D'], pieces: ['e', '#', '#'], open: 12, want: { stops: 5 }, needs: 'D' },
+  { id: 'c9', name: 'Slate', size: 6, fixed: ['#', '#', 'r', 'D'], pieces: ['e', '#', '#'], open: 15, want: {}, needs: 'D' },
+  { id: 'c10', name: 'Drift', size: 6, fixed: ['#', '#', 'x', 'x'], pieces: ['>', '#', '#'], open: 15, want: {} },
+  { id: 'c11', name: 'Hollow', size: 6, fixed: ['#', 'x', 'r', 'D'], pieces: ['e', '#', '#'], open: 15, want: {}, needs: 'D' },
 ];
 const MIN_PLACEMENTS = 30;
 
@@ -51,19 +52,32 @@ function arena(spec) {
   return { rows: g.map(r => r.join('')), sol };
 }
 
-// While other placements win too, a block on an empty tile that breaks some of them and keeps the intended one.
+// While other placements win too, it takes them on one at a time (register 799): first it closes a slot the other
+// answer uses and the intended one does not; failing that, a block goes on a tile the other answer's path crosses
+// and the intended one's does not. Each step must keep the intended answer winning and leave fewer answers.
+const crossed = (ch, rows) => {
+  const r = build(ch, rows), res = allShortest(r), out = new Set();
+  if (res.status === 'solved') for (const p of res.paths.slice(0, 12)) replayPath(r, p, s => out.add(`${s.player.x},${s.player.y}`));
+  return out;
+};
+const setAt = (rows, x, y, c) => rows.map((r, yy) => yy === y ? r.slice(0, x) + c + r.slice(x + 1) : r);
 export const __refine = (ch, sol) => refine(ch, sol);
 function refine(ch, sol) {
   let m = measure(ch);
-  for (let k = 0; k < 12 && m.wins.length > 1; k++) {
-    const empty = [];
-    ch.rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '.') empty.push([x, y]); }));
+  const mine = new Set(sol.map(([[x, y]]) => `${x},${y}`)), path = crossed(ch, rowsWith(ch, sol));
+  const ok = next => judge(next, rowsWith(next, sol)).won && !judge(next, rowsWith(next, [])).reach;
+  for (let k = 0; k < 24 && m.wins.length > 1; k++) {
+    const target = rowsWith(ch, sol).join(), alt = m.wins.filter(w => w.rows.join() !== target)[Math.floor(rand() * (m.wins.length - 1))];
+    const tries = [];
+    const slots = ch.rows.join('').split('+').length - 1;
+    if (slots > sol.length + 4) ch.rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '+' && alt.rows[y][x] !== '.' && !mine.has(`${x},${y}`)) tries.push(setAt(ch.rows, x, y, '.')); }));
+    for (const xy of crossed(ch, alt.rows)) { const [x, y] = xy.split(',').map(Number); if (ch.rows[y][x] === '.' && !path.has(xy)) tries.push(setAt(ch.rows, x, y, '#')); }
     let better = null;
-    for (let t = 0; t < 8 && !better; t++) {
-      const [x, y] = empty[Math.floor(rand() * empty.length)], next = { ...ch, rows: ch.rows.map((r, yy) => yy === y ? r.slice(0, x) + '#' + r.slice(x + 1) : r) };
-      if (!judge(next, rowsWith(next, sol)).won || judge(next, rowsWith(next, [])).reach) continue;
+    for (const rows of tries.sort(() => rand() - 0.5).slice(0, 16)) {
+      const next = { ...ch, rows };
+      if (!ok(next)) continue;
       const m2 = measure(next);
-      if (m2.wins.length >= 1 && m2.wins.length < m.wins.length) better = [next, m2];
+      if (m2.wins.length >= 1 && m2.wins.length < m.wins.length) { better = [next, m2]; break; }
     }
     if (!better) break;
     [ch, m] = better;
@@ -87,7 +101,8 @@ export function find(spec, seconds) {
     if (spec.needs && judge(ch, rowsWith(ch, sol).map(r => r.split(spec.needs).join('#'))).won) continue;
     const sh = shape(ch, sol);
     if (!fits(spec.want, sh)) continue;
-    ch = { ...ch, rows: trim(ch, sol) }; m = measure(ch);
+    // A room built from a win has had its slots pruned by refine(): trimming again leaves too few to try.
+    if (!a.sol) { ch = { ...ch, rows: trim(ch, sol) }; m = measure(ch); }
     const slots = ch.rows.join('').split('+').length - 1;
     if (m.wins.length !== 1 || m.placements < MIN_PLACEMENTS || slots < spec.pieces.length + 3) continue;
     // The axes every shipped challenge passes (tools/challengeAxes.mjs): nothing idle, nothing loose, depth

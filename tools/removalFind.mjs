@@ -18,12 +18,12 @@ export const SPECS = [
   { id: 'r2', name: 'Meadow', size: 6, fixed: [], many: { '#': 10 }, remove: { '#': 3 }, moves: 5 },
   { id: 'r6', name: 'Canyon', size: 5, fixed: ['D'], many: { '#': 7, B: 2, o: 1 }, remove: { '#': 2, B: 1 }, moves: 4 },
   { id: 'r3', name: 'Glade', size: 6, fixed: [], many: { '#': 8, B: 4 }, remove: { '#': 2, B: 1 }, moves: 5 },
-  { id: 'r5', name: 'Summit', size: 6, fixed: [], many: { '#': 8, '>': 5 }, remove: { '#': 2, '>': 1 }, moves: 5 },
+  { id: 'r5', name: 'Summit', size: 6, fixed: [], many: { '#': 8, '>': 4 }, remove: { '#': 2, '>': 2 }, moves: 5 },
   { id: 'r7', name: 'Marsh', size: 6, fixed: [], many: { '#': 8, e: 2, '>': 1 }, remove: { '#': 2, e: 1 }, moves: 5 },
   { id: 'r8', name: 'Grotto', size: 6, fixed: ['D', 'e'], many: { '#': 7, r: 2 }, remove: { '#': 2, r: 1 }, moves: 4 },
   { id: 'r9', name: 'Delta', size: 6, fixed: ['D', 'r'], many: { '#': 7, e: 2 }, remove: { '#': 2, e: 1 }, moves: 4 },
-  { id: 'r10', name: 'Ridge', size: 6, fixed: [], many: { '#': 7, x: 5, '>': 1 }, remove: { '#': 2, x: 1 }, moves: 5 },
-  { id: 'r11', name: 'Basin', size: 6, fixed: ['D', 'r'], many: { '#': 5, x: 4, e: 3 }, remove: { '#': 1, x: 1, e: 1 }, moves: 5 },
+  { id: 'r10', name: 'Ridge', size: 6, fixed: [], many: { '#': 7, x: 4 }, remove: { '#': 2, x: 2 }, moves: 5 },
+  { id: 'r11', name: 'Basin', size: 6, fixed: ['D', 'r'], many: { '#': 6, x: 3, e: 2 }, remove: { '#': 2, x: 1, e: 1 }, moves: 5 },
 ];
 const MIN_CHOICES = 30;
 // The number of ways to choose is the product, over kinds, of (pieces of that kind) choose (to take out).
