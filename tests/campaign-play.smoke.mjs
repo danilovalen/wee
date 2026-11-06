@@ -82,10 +82,12 @@ try {
       for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const k = (y * 32 + x) * 4; if (px[k] > 230 && px[k + 1] > 60 && px[k + 1] < 110 && px[k + 2] < 60 && (x < 4 || x > 27 || y < 4 || y > 27)) out++; } }
     return out; });
   check('a pushable laser\'s barrel stays inside its box frame (register 554)', spill === 0, String(spill));
-  const frame = await page.evaluate(async () => { const { drawPiece } = await import('/src/view/pieces.js'); const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
+  const frame = await page.evaluate(async () => { const { drawPiece } = await import('/src/view/pieces.js'); const { INK } = await import('/src/view/ink.js'); const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
     drawPiece(g, { kind: 'turret', crate: true, turret: { dirs: ['right'], mode: 'input' } }, 0, 0);
+    // The box's own colour, whatever slot it takes (register 811).
+    const [br, bg, bb] = [1, 3, 5].map(i => parseInt(INK.box.slice(i, i + 2), 16));
     const px = g.getImageData(0, 0, 32, 32).data; let n = 0;
-    for (let i = 0; i < px.length; i += 4) if (Math.abs(px[i] - 0x85) < 8 && Math.abs(px[i + 1] - 0x7f) < 8 && Math.abs(px[i + 2] - 0x6a) < 8) n++;
+    for (let i = 0; i < px.length; i += 4) if (Math.abs(px[i] - br) < 8 && Math.abs(px[i + 1] - bg) < 8 && Math.abs(px[i + 2] - bb) < 8) n++;
     return n; });
   check('a pushable laser wears the box\'s frame (registers 336, 607)', frame > 60, String(frame));
   // Registers 553, 782: the menu's room is a real room the game's own renderer draws, frame after frame.
