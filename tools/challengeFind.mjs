@@ -22,11 +22,11 @@ export const SPECS = [
   // A box to push onto a button that holds the door open (register 696).
   { id: 'c6', name: 'Flint', size: 5, fixed: ['#', '#', '#', 'D'], pieces: ['B', 'o', '#'], open: 15, want: {}, needs: 'D' },
   // Register 762: one after each of Levels 15, 18, 20, 22 and 24, from the pieces those levels teach.
-  { id: 'c7', name: 'Cove', size: 6, fixed: ['#', '#', '>'], pieces: ['e', '#', '#'], open: 15, want: {} },
+  { id: 'c7', name: 'Cove', size: 6, fixed: ['#', '#', '>'], pieces: ['e', '#', '#'], open: 10, want: {} },
   { id: 'c8', name: 'Reed', size: 6, fixed: ['#', '#', 'e', 'D'], pieces: ['r', '#', '#'], open: 12, want: { stops: 4 }, needs: 'D' },
-  { id: 'c9', name: 'Slate', size: 6, fixed: ['#', '#', 'r', 'D'], pieces: ['e', '#', '#'], open: 15, want: {}, needs: 'D' },
-  { id: 'c10', name: 'Drift', size: 6, fixed: ['#', '#', 'x', 'x'], pieces: ['>', '#', '#'], open: 15, want: {} },
-  { id: 'c11', name: 'Hollow', size: 6, fixed: ['#', 'x', 'r', 'D'], pieces: ['e', '#', '#'], open: 15, want: {}, needs: 'D' },
+  { id: 'c9', name: 'Slate', size: 6, fixed: ['#', '#', 'r', 'D'], pieces: ['e', '#', '#'], open: 10, want: {}, needs: 'D' },
+  { id: 'c10', name: 'Drift', size: 6, fixed: ['#', '#', 'x', 'x'], pieces: ['>', '#', '#'], open: 10, want: {} },
+  { id: 'c11', name: 'Hollow', size: 6, fixed: ['#', 'x', 'r', 'D'], pieces: ['e', '#', '#'], open: 10, want: {}, needs: 'D' },
 ];
 const MIN_PLACEMENTS = 30;
 
@@ -47,6 +47,9 @@ function arena(spec) {
   if (process.argv.includes('--random')) { for (let i = 0; i < spec.open; i++) put('+'); return { rows: g.map(r => r.join('')), sol: null }; }
   const sol = spec.pieces.map(p => { const w = TURN[p] ? TURN[p][Math.floor(rand() * 4)] : p; return [put(w), w]; });
   if (!judge({ pieces: spec.pieces, require: [], min: 1 }, g.map(r => r.join(''))).won) return null;
+  // Every answer piece must be needed: a piece the win can do without lets it sit in any slot, one answer per slot.
+  const lv = { pieces: spec.pieces, require: [], min: 1 };
+  for (const [[x, y]] of sol) if (judge(lv, g.map((r, yy) => r.map((c, xx) => xx === x && yy === y ? '.' : c).join(''))).won) return null;
   for (const [[x, y]] of sol) g[y][x] = '+';
   for (let i = sol.length; i < spec.open; i++) put('+');
   return { rows: g.map(r => r.join('')), sol };

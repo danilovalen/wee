@@ -47,6 +47,8 @@ export function find(spec, seconds) {
     const { keep, rows } = arena(spec), ch = { id: spec.id, name: spec.name, rows, remove: spec.remove, require: [], min: 1 };
     const kept = judge(ch, keep);
     if (!kept.won || kept.length < spec.moves || judge(ch, ch.rows).reach) continue;
+    // Every kept piece but a block must do more than a block would: a wall in its place changes the win.
+    if (keep.some((r, y) => [...r].some((c, x) => !'.#+PGB'.includes(c) && (v => v.won && v.length === kept.length)(judge(ch, keep.map((rr, yy) => yy === y ? rr.slice(0, x) + '#' + rr.slice(x + 1) : rr)))))) continue;
     const m = measureRemoval(ch);
     if (m.choices < MIN_CHOICES || m.wins.length !== 1 || m.wins[0].length < spec.moves) continue;
     // The axes every shipped removal passes (tools/challengeAxes.mjs): nothing idle, depth after the first right

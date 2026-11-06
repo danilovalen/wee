@@ -49,11 +49,9 @@ ok('eleven of each', PLACING.length === 11 && REMOVING.length === 11, `${PLACING
 // no idle piece, every placed piece needed, depth after the first right piece, nothing read at a glance, and a
 // name that says nothing about the answer.
 const axes = c => c.remove ? removalAxes(c) : placingAxes(c);
-// Slots no room meeting the depth bar has been found for yet: they pass every other axis and wait on 799.
-const SHALLOW = ['c9', 'c10', 'c11'];
 for (const ch of LIST.filter(c => !c.waiting)) {
-  const f = fails(axes(ch)).filter(x => !(SHALLOW.includes(ch.id) && /^residual/.test(x)));
-  ok(`${ch.id} ${ch.name}: passes every axis${SHALLOW.includes(ch.id) ? ' but depth (799, open)' : ''}`, f.length === 0, f.join('; '));
+  const f = fails(axes(ch));
+  ok(`${ch.id} ${ch.name}: passes every axis`, f.length === 0, f.join('; '));
 }
 // A removal waiting for a room that meets the bar is left out of the campaign, not shipped weak (805).
 const twins = plan().map(s => s.twin && s.twin.id).filter(Boolean);
