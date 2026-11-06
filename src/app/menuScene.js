@@ -40,7 +40,8 @@ export function buildMenuScene(host) {
   const cv = host.firstElementChild, g = cv.getContext('2d');
   cv.width = (W + 2 * M) * T / PX; cv.height = (H + 2 * M) * T / PX;
   let game, prev, queue, rest, acc = 0, last = 0, won = 0, fx = [];
-  const ring = ringCells(menuLevel(), new Set());
+  // No top row: the logo sits there (register 819); the sides and the bottom close the room as a level's ring does.
+  const ring = ringCells(menuLevel(), new Set()).map((c, i) => i < W + 2 ? '' : c);
   const reset = () => { game = createGame(menuLevel()); prev = snap(game); queue = [...MENU_MOVES]; rest = 0; won = 0; fx = []; menuRoom.game = game; };
   reset();
   const shown = () => host.closest('dialog').open && !document.hidden;

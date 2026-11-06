@@ -15,9 +15,9 @@
   <style>
 :root {
   color-scheme: only dark;
-  --paper: #221f22; --panel: #2d2a2e; --rule: #403e41; --ink: #fcfcfa; --soft: #939293; --accent: #ab9df2; --on-accent: #221f22; --field: rgba(255,255,255,0.06); --field-rule: rgba(255,255,255,0.12); --sticker: #19181a; --inset-rim: rgba(0,0,0,0.3); --btn-mix: 60%; --selectable: #ab9df2; --r-s: 0px; --r-m: 0px; --r-l: 0px; --r-pill: 0px; --sticker-rest: 0px; --sticker-hover: 0px; --sticker-press: 0px; --ice: #78dce8;
+  --paper: #19181a; --panel: #2d2a2e; --rule: color-mix(in srgb, var(--ink) 15%, var(--paper)); --ink: #fcfcfa; --soft: color-mix(in srgb, var(--ink) 55%, var(--paper)); --accent: #ab9df2; --on-accent: #19181a; --field: rgba(255,255,255,0.06); --field-rule: rgba(255,255,255,0.12); --sticker: #19181a; --inset-rim: rgba(0,0,0,0.3); --btn-mix: 60%; --selectable: #ab9df2; --r-s: 0px; --r-m: 0px; --r-l: 0px; --r-pill: 0px; --sticker-rest: 0px; --sticker-hover: 0px; --sticker-press: 0px; --ice: #78dce8;
   /* The neon lab palette (register 602, docs/lab-neon-sketch.html): greys for what sits, one neon per job. */
-  --mid: #5b595c; --lite: #727072; --gold: #ffd866; --gold-ink: #c9a63a; --good: #a9dc76; --bad: #ff6188; --cyan: #78dce8; --orange: #fc9867; --kept: #3a3528; --shade: #19181a; --frost: 78%;
+  --mid: #5b595c; --lite: #727072; --gold: #ffd866; --gold-ink: #b08a5c; --good: #a9dc76; --bad: #ff6188; --cyan: #78dce8; --orange: #fc9867; --kept: #403e41; --shade: #19181a; --frost: 78%;
   --text-face: 'Departure', monospace; --label-face: 'Departure', monospace; --wee-face: 'Departure', monospace;
   /* The names the older rules use, mapped onto the tokens. */
   --bg: var(--paper); --text: var(--ink); --dim: var(--soft); --line: var(--rule); --radius: var(--r-m);
@@ -42,7 +42,7 @@ html, body { overscroll-behavior: none; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 var(--body); }
 header { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0; }
 /* Drift: a thin, spaced wordmark with a sheen passing over it. */
-.logo { font: 700 22px var(--wee-face); letter-spacing: .04em; margin-right: 8px; background: linear-gradient(100deg, var(--accent) 40%, #ddd6ff 50%, var(--accent) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
+.logo { font: 700 22px var(--wee-face); letter-spacing: .04em; margin-right: 8px; background: linear-gradient(100deg, var(--accent) 40%, var(--ink) 50%, var(--accent) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
 /* The header's logo is the way to the menu (register 359): a button that still looks like the logo. */
 /* Back, where the logo was (register 665); a level and a puzzle have their own way back. */
 body.campaign #logo, body.puzzle #logo { display: none; }
@@ -55,7 +55,7 @@ button {
   --frame: var(--rule); --fill: color-mix(in srgb, var(--panel) var(--btn-mix), var(--rule));
   font: inherit; color: var(--text); border: 0; border-radius: 0; padding: 6px 12px; cursor: pointer;
   /* The lip: a dark band inside the frame along the bottom; pressed, it moves to the top and the icon sinks 2 px. */
-  background: linear-gradient(var(--lip, color-mix(in srgb, var(--fill) 70%, #000)) 0 0) left 2px var(--lip-y, bottom 2px) / calc(100% - 4px) 2px no-repeat,
+  background: linear-gradient(var(--lip, color-mix(in srgb, var(--fill) 70%, black)) 0 0) left 2px var(--lip-y, bottom 2px) / calc(100% - 4px) 2px no-repeat,
     linear-gradient(var(--frame) 0 0) left 2px top 2px / 2px 2px no-repeat, linear-gradient(var(--frame) 0 0) right 2px top 2px / 2px 2px no-repeat,
     linear-gradient(var(--frame) 0 0) left 2px bottom 2px / 2px 2px no-repeat, linear-gradient(var(--frame) 0 0) right 2px bottom 2px / 2px 2px no-repeat, var(--fill);
   box-shadow: inset 0 0 0 2px var(--frame);
@@ -183,7 +183,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 }
 
 .rooms { width: min(560px, 100vw - 16px); max-height: calc(100vh - 16px); background: var(--panel); color: inherit; border: 0; border-radius: var(--r-l); padding: 14px; }
-.rooms::backdrop { background: #0008; }
+.rooms::backdrop { background: rgba(0,0,0,.53); }
 /* A page covers the game whole, so a room swapped in behind it never shows through (register 517). */
 #campBox::backdrop, #puzzleBox::backdrop, #makerBox::backdrop, #roomsBox::backdrop { background: var(--paper); }
 .roomsHead { display: flex; justify-content: space-between; align-items: center; font-size: 1.1em; }
@@ -290,7 +290,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 }
 @media (max-width: 700px) {
   /* A phone: the well is a sheet over the bottom of the screen. */
-  .well { position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); max-height: 55vh; z-index: 30; box-shadow: 0 -8px 24px rgba(40,44,60,.18); }
+  .well { position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); max-height: 55vh; z-index: 30; box-shadow: 0 -8px 24px rgba(0,0,0,.18); }
   .statusBar { max-width: none; }
 }
 @media (min-width: 701px) {
@@ -341,7 +341,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 /* The room's size: on each side an ear joined to the room, a green half that adds a line (arrow out)
    and a red half that cuts one (arrow in) (registers 318, 320). Tap only. Never over a tile (register
    298); they sit 14px from the screen's edge, his call over the back-swipe margin (register 239). */
-.roomWrap { position: relative; line-height: 0; --ear: 18px; --ear-long: 32px; --add-bg: rgba(169,220,118,.16); --add-ink: var(--good); --cut-bg: rgba(255,97,136,.16); --cut-ink: var(--bad); }
+.roomWrap { position: relative; line-height: 0; --ear: 18px; --ear-long: 32px; --add-bg: color-mix(in srgb, var(--good) 16%, transparent); --add-ink: var(--good); --cut-bg: color-mix(in srgb, var(--bad) 16%, transparent); --cut-ink: var(--bad); }
 .growBar { position: absolute; display: flex; z-index: 2; }
 .growBar[data-bar=top] { bottom: 100%; left: 50%; translate: -50% 0; }
 .growBar[data-bar=bottom] { top: 100%; left: 50%; translate: -50% 0; }
@@ -420,7 +420,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   /* A level's top row is a bit shorter, so the room gets the height (register 523). */
   body.campaign header { padding-top: 6px; padding-bottom: 6px; }
   body.campaign header button { min-height: 38px; padding-top: 4px; padding-bottom: 4px; }
-  #mode { --fill: var(--accent); --frame: #ddd6ff; color: var(--on-accent); }
+  #mode { --fill: var(--accent); --frame: var(--ink); color: var(--on-accent); }
   main { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: stretch; padding: 0 10px; gap: 4px; }
   #stage { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; }
   .roomArea { flex: 1; min-height: 0; align-items: center; padding: 0; }
@@ -452,7 +452,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   .phoneNav button { flex: 1; display: grid; justify-items: center; gap: 1px; padding: 6px 0 7px; background: none; box-shadow: none; border-radius: 0; font-size: 11.5px; color: var(--dim); }
   .phoneNav button i { font-style: normal; font-size: 18px; line-height: 1.1; font-family: Arial, sans-serif; }
   .phoneNav button.on { color: var(--accent); box-shadow: none; }
-  .sheet:not([hidden]) { display: block; position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); z-index: 35; max-height: 70dvh; overflow-y: auto; background: var(--panel); border-radius: var(--r-l) var(--r-l) 0 0; box-shadow: 0 -8px 24px rgba(40,44,60,.18); padding: 8px 14px 14px; }
+  .sheet:not([hidden]) { display: block; position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); z-index: 35; max-height: 70dvh; overflow-y: auto; background: var(--panel); border-radius: var(--r-l) var(--r-l) 0 0; box-shadow: 0 -8px 24px rgba(0,0,0,.18); padding: 8px 14px 14px; }
   .sheet .grab { width: 40px; height: 4px; border-radius: var(--r-pill); background: var(--sticker); margin: 0 auto 8px; }
   .sheetPane[hidden] { display: none; }
   .sheet #powers { display: block; padding: 0; background: none; box-shadow: none; }
@@ -478,7 +478,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
 .tiles .roomRow b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .libBar { margin-top: 10px; }
 #libTools[hidden], #codeRow[hidden] { display: none; }
-.rooms button.primary { --fill: var(--accent); --frame: #ddd6ff; color: var(--on-accent); }
+.rooms button.primary { --fill: var(--accent); --frame: var(--ink); color: var(--on-accent); }
 .rooms .danger { margin-top: 16px; padding-top: 10px; box-shadow: inset 0 1px 0 var(--rule); }
 .rooms .danger button { color: var(--bad); }
 #shareOut[hidden] { display: none; }
@@ -512,7 +512,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
    the choices at the bottom. */
 .menu { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; padding: 0; border-radius: 0; overflow: hidden; background: var(--paper); color: var(--ink); text-align: center; }
 .menu::backdrop { background: var(--paper); }
-.menu::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(34,31,34,.15) 0%, rgba(34,31,34,.1) 50%, rgba(34,31,34,.94) 76%); }
+.menu::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, color-mix(in srgb, var(--paper) 15%, transparent) 0%, color-mix(in srgb, var(--paper) 10%, transparent) 50%, color-mix(in srgb, var(--paper) 94%, transparent) 76%); }
 .menu .menuLogo { display: block; position: absolute; z-index: 1; left: 0; right: 0; top: 24px; font-size: 64px; margin: 0; }
 .menuList { position: absolute; z-index: 1; left: 50%; bottom: max(40px, env(safe-area-inset-bottom)); width: min(300px, 100vw - 64px); transform: translateX(-50%); display: grid; gap: 12px; }
 .menuList button { font: 800 20px var(--label-face); height: 56px; }
@@ -521,7 +521,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .menuSec h2 { grid-column: 1 / -1; margin: 0; font: 800 15px var(--label-face); }
 .menuSec button { height: 48px; font-size: 16px; }
 @media (min-width: 701px) { .menuList { width: min(320px, 100vw - 64px); } }  /* one box, centred under the title (register 678) */
-.menuList button.primary { --fill: var(--accent); --frame: #ddd6ff; color: var(--on-accent); }
+.menuList button.primary { --fill: var(--accent); --frame: var(--ink); color: var(--on-accent); }
 /* The session's unlock-all switch, top right (register 589); its badge in the top bar while on. */
 .menuCorner { position: absolute; z-index: 2; top: 12px; right: 12px; width: 44px; height: 44px; padding: 10px; display: flex; align-items: center; justify-content: center; }
 .menuCorner .glyph, .unlockBadge .glyph { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -538,7 +538,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .lookStars .glyph { width: 16px; height: 16px; --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
 .lookGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
 .lookGrid button { display: grid; justify-items: start; gap: 4px; padding: 8px 10px; text-align: left; }
-.lookSwatch { display: flex; gap: 2px; } .lookSwatch i { width: 16px; height: 16px; display: block; }
+.lookSwatch { display: grid; grid-template-columns: repeat(8, 12px); gap: 2px; } .lookSwatch i { width: 12px; height: 12px; display: block; }
 .lookCost { display: inline-flex; align-items: center; gap: 2px; font: 700 12px var(--label-face); color: var(--soft); }
 .lookCost .glyph { width: 16px; height: 16px; }
 .lookFeel { display: flex; gap: 8px; }
@@ -548,7 +548,8 @@ button.lookStars { border: 0; background: none; padding: 4px 6px; height: auto; 
 .lookSkin { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 6px; padding: 6px 8px; background: var(--field); }
 .lookSkin button { display: grid; justify-items: center; gap: 2px; padding: 4px; }
 .lookPic { width: 32px; height: 32px; image-rendering: pixelated; display: block; }
-button:disabled .lookPic { opacity: .35; }
+/* A look you cannot buy yet shows its real colours; its lock and price say it is shut (register 819). */
+#lookPalettes button:disabled, .lookSkin button:disabled { opacity: 1; } #lookPalettes button:disabled b { color: var(--soft); }
 /* Achievements (registers 637, 639): a badge per achievement with the star slot it fills. */
 .achDone { display: grid; gap: 6px; margin: 0 0 10px; color: var(--soft); font-size: 13px; }
 .achBar { display: block; height: 8px; background: var(--rule); }
@@ -601,13 +602,13 @@ button:disabled .lookPic { opacity: .35; }
 /* A challenge slot: its placing and removal challenges side by side, each half the width (register 786). */
 .campList li.side.pair { display: flex; gap: 8px; }
 .campList li.side.pair > .campRow { flex: 1 1 0; min-width: 0; }
-/* At half width the name and its star share the top line and the pieces get the line below, so a two-digit
-   name, three pieces and the star all fit inside the card (register 788). */
-#campList li.side.pair > .campRow { grid-template: "name stars" auto "parts parts" 1fr / minmax(0, 1fr) auto; align-items: center; padding: 8px; gap: 4px 6px; }
+/* At half width the name has the top line to itself ("Remove 10", register 819) and the pieces share the line
+   below with the star or the lock, so the name, three pieces and the star all fit inside the card (788). */
+#campList li.side.pair > .campRow { grid-template: "name name" auto "parts stars" 1fr / minmax(0, 1fr) auto; align-items: center; padding: 8px 6px; gap: 4px 6px; }
 #campList li.side.pair .campRowHead { display: contents; }
-#campList li.side.pair .campRowHead > b { grid-area: name; overflow: visible; text-overflow: clip; }
+#campList li.side.pair .campRowHead > b { grid-area: name; overflow: visible; text-overflow: clip; font-size: 13px; }
 #campList li.side.pair .campParts { grid-area: parts; flex-wrap: nowrap; justify-content: flex-start; align-self: end; }
-#campList li.side.pair .campStars, #campList li.side.pair .campShut { grid-area: stars; align-self: center; }
+#campList li.side.pair .campStars, #campList li.side.pair .campShut { grid-area: stars; align-self: end; }
 #campList li.side.pair .campStar.main { width: 26px; height: 26px; }
 .campShut { display: flex; align-items: center; } .campShut .glyph { width: 16px; height: 16px; }
 .campRow { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; }
@@ -616,7 +617,7 @@ button:disabled .lookPic { opacity: .35; }
 .campRowHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .campDots { display: inline-flex; gap: 3px; }
 .campDots i { width: 10px; height: 10px; clip-path: var(--disc-10); }
-.campRow.sel { outline: 2px solid var(--accent, #6b5cff); }
+.campRow.sel { outline: 2px solid var(--accent); }
 #campList .campRow { height: 76px; grid-template-rows: auto 1fr; align-content: start; overflow: hidden; }  /* number and pieces on one line (register 527) */
 .tutBox { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40; max-width: 520px; margin: 0 auto; background: var(--panel); color: var(--ink); box-shadow: inset 0 0 0 2px var(--accent); border-radius: var(--r-l); padding: 10px 12px; display: grid; gap: 4px; box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
 .tutBox[hidden], .tutTile[hidden] { display: none; }
@@ -644,7 +645,7 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 .campStar.main { width: 32px; height: 32px; }
 .campStar svg { display: block; width: 100%; height: 100%; --glyph-o: var(--soft); --glyph-i: transparent; }
 .campStar.on svg { --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
-.campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: #5a3f00; }
+.campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: var(--gold-ink); }
 .campStar.main i { font-size: 11px; }
 .campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
 .campGoal { padding: 8px 10px; border-radius: var(--r-s); background: var(--field); }
@@ -661,17 +662,17 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 /* A goal's mark is a pixel ring, filled once the run is judged (register 621). */
 .campReqs .mark { flex: none; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; box-sizing: border-box; color: var(--dim); position: relative; isolation: isolate; }
 .campReqs .mark::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--dim); clip-path: var(--ring-20); }
-.campReqs .met .mark { color: var(--good); } .campReqs .met .mark::before { background: rgba(169,220,118,.18); clip-path: var(--disc-20); }
-.campReqs .unmet .mark { color: var(--bad); } .campReqs .unmet .mark::before { background: rgba(255,97,136,.18); clip-path: var(--disc-20); }
+.campReqs .met .mark { color: var(--good); } .campReqs .met .mark::before { background: color-mix(in srgb, var(--good) 18%, transparent); clip-path: var(--disc-20); }
+.campReqs .unmet .mark { color: var(--bad); } .campReqs .unmet .mark::before { background: color-mix(in srgb, var(--bad) 18%, transparent); clip-path: var(--disc-20); }
 .campReqs .optional { color: var(--dim); font-weight: 600; }
 .campReqs li.points { cursor: pointer; }
 .campReqs li.points .words { text-decoration: underline dotted; text-underline-offset: 3px; }
-.campReqs li.shown { border-radius: var(--r-s); box-shadow: 0 0 0 2px var(--accent, #6b5cff); }
+.campReqs li.shown { border-radius: var(--r-s); box-shadow: 0 0 0 2px var(--accent); }
 .campIcon { width: 18px; height: 18px; vertical-align: -4px; }
 body.campaign .roomArea { position: relative; }
 /* The run's verdict: a band of its own under the goal card, two lines tall whether it shows or not, so
    it never covers the room and nothing moves when it comes or goes. */
-.campVerdict { width: 100%; max-width: 640px; box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px; display: flex; align-items: center; padding: 6px 12px; border-radius: var(--r-s); background: var(--shade); color: #fff; font-size: 0.9em; font-weight: 700; line-height: 1.35; overflow: hidden; }
+.campVerdict { width: 100%; max-width: 640px; box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px; display: flex; align-items: center; padding: 6px 12px; border-radius: var(--r-s); background: var(--shade); color: var(--ink); font-size: 0.9em; font-weight: 700; line-height: 1.35; overflow: hidden; }
 body.campaign #campVerdict { display: flex; }
 /* It floats over the top of the goals card rather than keeping a band of its own, which went to the room (register 523). */
 body.campaign #campVerdict { position: absolute; top: 0; left: 50%; translate: -50% 0; z-index: 6; margin: 0; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
@@ -682,7 +683,7 @@ body.campaign #campVerdict[hidden] { visibility: hidden; }
 .campVerdict.points > span { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
 .campTip[hidden] { display: none !important; }
 body:not(.campaign) #campVerdict { display: none !important; }
-.campTip { position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 4px)); padding: 5px 9px; border-radius: var(--r-s); background: var(--shade); color: #fff; font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
+.campTip { position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 4px)); padding: 5px 9px; border-radius: var(--r-s); background: var(--shade); color: var(--ink); font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
 [data-tool] { position: relative; }
 body.campaign [data-tool][hidden], body.campaign #powers, body.campaign #placeHint, body.campaign #ctx { display: none !important; }
 body:not(.campaign):not(.simple) [data-camp] { display: none !important; }
@@ -715,7 +716,7 @@ canvas[data-icon] { image-rendering: pixelated; }
 .confirm { width: min(340px, 100vw - 32px); background: var(--panel); color: inherit; border: 0; border-radius: var(--r-l); padding: 16px; }
 .confirm p { margin: 0 0 14px; line-height: 1.4; }
 .confirm .row { display: flex; gap: 8px; }
-.confirm::backdrop { background: rgba(40, 44, 60, .35); }
+.confirm::backdrop { background: rgba(0,0,0,.35); }
 .confirm textarea { width: 100%; box-sizing: border-box; margin: 0 0 12px; font: 12px monospace; word-break: break-all; }
 .progRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 
@@ -760,7 +761,7 @@ body.campaign #campReset { order: 6; margin-left: auto; }
 
 /* The Pushable chip (register 336): at the end of the tools row; on, what you place is pushable. */
 body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 6px; border-radius: var(--r-pill); font-size: 13px; }
-#campCrate.on { background: rgba(252,152,103,.18); box-shadow: inset 0 0 0 2px var(--orange), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); color: var(--orange); }
+#campCrate.on { background: color-mix(in srgb, var(--orange) 18%, transparent); box-shadow: inset 0 0 0 2px var(--orange), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); color: var(--orange); }
 #campCrate:disabled { opacity: .5; }
 
 /* The Sandbox's tool strip (registers 381-384): one slot per group, the group's tools in a flyout
@@ -827,6 +828,8 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 /* The camera (register 408): Fit while zoomed in; the resize bars wait until the whole room shows. */
 /* The zoom strip sits just under the room's bottom right corner, in the band the resize bars keep, so it never covers a tile (register 781). */
 .zoomBar { position: absolute; right: 0; top: 100%; margin-top: 3px; z-index: 3; display: flex; gap: 1px; }
+/* The tutorial's small rooms need no zoom, and the bar is one more thing to read before the first slide (register 819). */
+body.tutorial .zoomBar { display: none; }
 .zoomBar > button { height: 24px; min-height: 0; min-width: 30px; padding: 0 6px; margin: 0; line-height: 1; font-size: 13px; box-shadow: none; }
 /* Replay keeps its slot while it waits, so Run and Test never shift when it shows (registers 679, 771). */
 body.play #campReplay, #campReplay[hidden] { visibility: hidden; pointer-events: none; }
@@ -835,7 +838,7 @@ body.play #campReplay, #campReplay[hidden] { visibility: hidden; pointer-events:
 
 /* The win cards (registers 415, 416): a sheet from the bottom, the room above it still in view. */
 .winCard { width: min(420px, 100vw - 24px); margin: auto auto 12px; padding: 18px 18px 16px; border: 0; border-radius: var(--r-l); background: var(--panel); color: inherit; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); overflow: visible; }
-.winCard::backdrop { background: rgba(40, 44, 60, .18); }
+.winCard::backdrop { background: rgba(0,0,0,.18); }
 .winCard[open] { animation: winUp .28s cubic-bezier(.2, .8, .3, 1); }
 @keyframes winUp { from { transform: translateY(40px); opacity: 0; } }
 .winTitle { margin: 0; font: 800 22px var(--label-face); }
@@ -855,10 +858,10 @@ body.play #campReplay, #campReplay[hidden] { visibility: hidden; pointer-events:
 .winGoals i { font-style: normal; color: var(--sticker); display: inline-flex; --glyph-o: var(--sticker); --glyph-i: transparent; }
 .winGoals i .glyph { width: 16px; height: 16px; }
 .winGoals li.on i { color: var(--gold); --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
-.winCard .primary { --fill: var(--accent); --frame: #ddd6ff; color: var(--on-accent); }
+.winCard .primary { --fill: var(--accent); --frame: var(--ink); color: var(--on-accent); }
 .winCard .bar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
 .winCard .bar > [hidden] { display: none; }
-.winCard.gold { background: linear-gradient(180deg, rgba(255,216,102,.16), var(--panel) 65%); }
+.winCard.gold { background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 16%, transparent), var(--panel) 65%); }
 .winCard.gold .winTitle { color: var(--gold); }
 .burst { position: absolute; left: 50%; top: 30%; color: var(--gold); --glyph-o: var(--gold-ink); --glyph-i: var(--gold); pointer-events: none; animation: burst 1.1s ease-out forwards; }
 .burst .glyph { width: 16px; height: 16px; }
@@ -903,7 +906,7 @@ body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; m
 .growBar[data-bar=bottom] .grip i { box-shadow: 0 5px 0 var(--mid); }
 .growBar[data-bar=left] .grip i, .growBar[data-bar=right] .grip i { width: 3px; height: 22px; box-shadow: -5px 0 0 var(--mid); }
 .growBar[data-bar=right] .grip i { box-shadow: 5px 0 0 var(--mid); }
-.grip.held { background: rgba(171,157,242,.35); }
+.grip.held { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 .grip.held i { background: var(--accent); }
 
 .campMark { display: inline-flex; vertical-align: -3px; } .campMark .glyph { width: 16px; height: 16px; stroke-width: 2.2; }
@@ -936,7 +939,7 @@ header .campLast b { font-size: 15px; }
 
 /* Register 547: the main star's box, and each side goal as a chip with its own star. */
 .campGoal { background: none; padding: 0; display: grid; gap: 6px; }
-.campMain { display: flex; gap: 8px; align-items: flex-start; background: rgba(255,216,102,.07); box-shadow: inset 0 0 0 2px var(--gold-ink); border-radius: var(--r-m); padding: 6px 8px; }
+.campMain { display: flex; gap: 8px; align-items: flex-start; background: color-mix(in srgb, var(--gold) 7%, transparent); box-shadow: inset 0 0 0 2px var(--gold-ink); border-radius: var(--r-m); padding: 6px 8px; }
 .campBigStar { flex: none; width: 30px; height: 30px; }
 .campBigStar .glyph { width: 32px; height: 32px; fill: var(--panel); stroke: var(--gold-ink); stroke-width: 1.6; --glyph-i: var(--panel); --glyph-o: var(--gold-ink); }
 .campBigStar.on .glyph { fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
@@ -1038,7 +1041,7 @@ body.campaign #bestOpt { display: none !important; }
 
 /* Findings (register 730): the four numbers big, the other measures behind one tap; nothing folds. */
 #designList .nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 6px 0; }
-#designList .nums > div { display: grid; justify-items: center; padding: 6px 4px; border-radius: var(--r-s); background: color-mix(in srgb, var(--panel) 70%, #000); }
+#designList .nums > div { display: grid; justify-items: center; padding: 6px 4px; border-radius: var(--r-s); background: color-mix(in srgb, var(--panel) 70%, black); }
 #designList .nums b { font-size: 22px; line-height: 1.1; }
 #designList .nums small { font-size: 10.5px; color: var(--dim); text-align: center; }
 #designList .more button { width: auto; }
@@ -1398,6 +1401,10 @@ body.removal [data-tool]:not([data-tool=look]):not([data-tool=erase]) { display:
     <p>To keep your wins, rooms and goals, copy your progress before you reset every level.</p>
     <div class="row bar"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
+  <dialog id="devBox" class="confirm">
+    <p>This unlocks everything on the game. Are you sure?</p>
+    <div class="row bar"><button id="devYes" type="button" class="primary">Unlock</button><button id="devNo" type="button">Cancel</button></div>
+  </dialog>
   <dialog id="roomsBox" class="rooms library">
     <div class="roomsHead"><button id="roomsMenu" type="button" class="upBtn">Menu</button><b>Rooms</b><form method="dialog" id="roomsClose"><button>Close</button></form></div>
     <p id="roomsWhere" class="hint"></p>
@@ -1697,7 +1704,10 @@ function setDev(v) {
 
 function bindUnlock() {
   sync();
-  $('menuUnlock').onclick = () => setDev(!on);
+  // Turning it on asks first (register 818): a tester's tap would otherwise skip the whole progression.
+  $('menuUnlock').onclick = () => on ? setDev(false) : $('devBox').showModal();
+  $('devYes').onclick = () => { $('devBox').close(); setDev(true); };
+  $('devNo').onclick = () => $('devBox').close();
 }
 return { unlocked, allOpen, setDev, bindUnlock };
 })();
@@ -1846,20 +1856,31 @@ const m5 = (() => {
 // everything at once: each colour the game paints is mapped onto the palette as it is set on a canvas,
 // and the page's CSS tokens are mapped the same way. The neon lab look (602) is the identity.
 
-// The neon lab's greys from darkest to lightest: a grey is mapped by its rank here, so a palette with
-// fewer greys keeps their order (floor under walls under text).
-const NEON_GREYS = ['#19181a', '#221f22', '#2d2a2e', '#363337', '#403e41', '#4d4b4e', '#5b595c', '#666466', '#727072', '#939293', '#c1c0c0', '#fcfcfa'];
+// Twenty colours by job (registers 810, 811): eight greys for the room (hi lights a bevel, text is for words), six colours each with a darker shade of
+// its own hue. Everything the game draws uses one of these, as the neon lab paints them; a palette is twenty
+// colours in this order, so a colour is looked up by its slot and never matched.
+const SLOTS = ['void', 'floor', 'deep', 'wall', 'mid', 'top', 'hi', 'text', 'red', 'redShade', 'orange', 'orangeShade', 'yellow', 'yellowShade', 'green', 'greenShade', 'blue', 'blueShade', 'violet', 'violetShade'];
+const NEON = ['#19181a', '#2d2a2e', '#403e41', '#5b595c', '#727072', '#939293', '#e8eef6', '#fcfcfa', '#ff6188', '#8f2a45', '#fc9867', '#c4643a', '#ffd866', '#b08a5c', '#a9dc76', '#5a9a2b', '#78dce8', '#3f9aa6', '#ab9df2', '#4b3fd6'];
+// Each pair is [darker, lighter]: the wall greys step up, and a shade is never lighter than its colour (808, 811).
+const SHADES = [['deep', 'wall'], ['wall', 'mid'], ['mid', 'top'], ['top', 'hi'], ['redShade', 'red'], ['orangeShade', 'orange'], ['yellowShade', 'yellow'], ['greenShade', 'green'], ['blueShade', 'blue'], ['violetShade', 'violet']];
 
-// greys: dark to light, in the order the neon greys map onto them (a light palette lists its paper
-// first). hues: where a saturated colour goes, the nearest one; without hues it is mapped by its lightness.
 const PALETTES = [
-  { id: 'neon', name: 'Neon lab', cost: 0 },
-  // Four greens far enough apart to read (register 620); the handheld's own two lightest were nearly one colour.
-  { id: 'gameboy', name: 'Pocket', cost: 2, greys: ['#081820', '#346856', '#88c070', '#e0f8d0'] },
-  { id: 'pico8', name: 'Fantasy', cost: 4, greys: ['#000000', '#1d2b53', '#5f574f', '#c2c3c7', '#fff1e8'], hues: ['#7e2553', '#008751', '#ab5236', '#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8', '#ffccaa'] },
-  { id: 'cga', name: 'CGA', cost: 7, greys: ['#000000', '#555555', '#aaaaaa', '#ffffff'], hues: ['#0000aa', '#00aa00', '#00aaaa', '#aa0000', '#aa00aa', '#aa5500', '#5555ff', '#55ff55', '#55ffff', '#ff5555', '#ff55ff', '#ffff55'] },
-  { id: 'c64', name: 'Breadbin', cost: 10, greys: ['#000000', '#352879', '#626262', '#898989', '#ffffff'], hues: ['#9f4e44', '#cb7e75', '#6d5412', '#a1683c', '#c9d487', '#9ae29b', '#5cab5e', '#6abfc6', '#887ecb', '#50459b', '#a057a3'] },
-  { id: 'paper', name: 'Paper', cost: 14, greys: ['#f3efe6', '#e9e3d6', '#b9b0a0', '#5d574f', '#77706a', '#3d3c45'], hues: ['#ef6f5e', '#3bb3a6', '#f2b843', '#5a8bd6', '#8cbf63', '#9a7fd1', '#e7709d'] },
+  // Daylight (register 814): the main palette, after wee's first light look: a pale room, light walls with dark
+  // edges, dark text, and pieces dark enough to stand off both the floor and the walls.
+  { id: 'day', name: 'Daylight', cost: 0, colors: ['#e6e9ee', '#f4f6f9', '#5b6070', '#a9b0bf', '#b9bfcb', '#c9ced8', '#ffffff', '#2a2730', '#f0435f', '#b3304a', '#ff8a3d', '#c96a1e', '#e89a00', '#a8740a', '#3cc47e', '#23905a', '#3d8ef0', '#2f6cc0', '#7b6cff', '#4b3fd6'] },
+  // Neon lab takes the place Pocket had (registers 812, 813): its four greens hid the button and wire colours.
+  { id: 'neon', name: 'Neon lab', cost: 2, colors: NEON },
+  // Grue (register 815): Pocket's green and blue-green as the room and the page, every piece in full colour.
+  { id: 'grue', name: 'Grue', cost: 3, colors: ['#081820', '#0f2a2c', '#1c3f3c', '#346856', '#4a7e66', '#6a9e6c', '#e0f8d0', '#e0f8d0', '#ff6b6b', '#b03a46', '#ffa04d', '#c46a22', '#ffd84d', '#b8902a', '#b8f05a', '#6aa82a', '#5ad8ff', '#2a8fb8', '#c08cff', '#7a4fc8'] },
+  { id: 'pico8', name: 'Fantasy', cost: 4, colors: ['#000000', '#1d2b53', '#000000', '#5f574f', '#83769c', '#83769c', '#fff1e8', '#fff1e8', '#ff004d', '#7e2553', '#ffa300', '#ab5236', '#ffec27', '#ab5236', '#00e436', '#008751', '#29adff', '#1d2b53', '#ff77a8', '#7e2553'] },
+  // Sorbet (809): pastel ice-cream colours on a deep plum room.
+  { id: 'sorbet', name: 'Sorbet', cost: 5, colors: ['#1c1626', '#2a2238', '#3e3352', '#5c4f73', '#75678e', '#8f82a8', '#f6eeff', '#fff6fb', '#ff9ec4', '#b8608a', '#ffbe98', '#c27a52', '#ffe79a', '#c2a24a', '#a8efb8', '#5fae73', '#97e3e8', '#4fa4ab', '#d0b3ff', '#8f6fc6'] },
+  { id: 'cga', name: 'CGA', cost: 7, colors: ['#000000', '#0000aa', '#000000', '#555555', '#555555', '#aaaaaa', '#ffffff', '#ffffff', '#ff5555', '#aa0000', '#aa5500', '#555555', '#ffff55', '#aa5500', '#55ff55', '#00aa00', '#55ffff', '#00aaaa', '#ff55ff', '#aa00aa'] },
+  // Lemonade (809): a light palette, lemon paper with candy pieces; void is the page, the walls darker than the floor.
+  { id: 'lemonade', name: 'Lemonade', cost: 8, colors: ['#fffbe8', '#fff2c2', '#6e5b38', '#8a7448', '#a68f5c', '#c9b072', '#fffdf2', '#4a3b26', '#ff6f61', '#c24a3d', '#ffb347', '#c97a2a', '#ffcf3f', '#a87f2a', '#7fd17a', '#4f9a4c', '#5cc4d6', '#2f8ea0', '#a58cf0', '#6f58c0'] },
+  { id: 'c64', name: 'Breadbin', cost: 10, colors: ['#000000', '#352879', '#000000', '#626262', '#777777', '#898989', '#ffffff', '#ffffff', '#cb7e75', '#9f4e44', '#a1683c', '#6d5412', '#c9d487', '#6d5412', '#9ae29b', '#5cab5e', '#6abfc6', '#50459b', '#887ecb', '#50459b'] },
+  // A light palette: the paper is the page, ink the text.
+  { id: 'paper', name: 'Paper', cost: 14, colors: ['#f3efe6', '#e9e3d6', '#5d574f', '#77706a', '#948c80', '#b9b0a0', '#fbf9f4', '#3d3c45', '#ef6f5e', '#a8443a', '#f2a05a', '#b0662a', '#f2b843', '#9a7a52', '#8cbf63', '#5c8f3a', '#5a8bd6', '#34588f', '#9a7fd1', '#5f4b9a'] },
 ];
 
 // The objects that have an alternate skin, each with the sprites it swaps and its cost.
@@ -1875,8 +1896,10 @@ const SKINS = [
 ];
 
 const KEY = 'wee.look';
-const look = { palette: 'neon', skins: {} };
+const look = { palette: 'day', skins: {} };
 try { Object.assign(look, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { /* storage off */ }
+// Smokes that measure drawn pixels against the neon inks draw in Neon lab (register 814 made Daylight the default).
+if (globalThis.__neonLook) look.palette = 'neon';
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(look)); } catch { /* storage off */ } };
 
 // The sprite to draw for a name: its alternate when that object wears its other skin.
@@ -1885,30 +1908,34 @@ const skinned = name => (ALT[name] && look.skins[ALT[name]] ? name + 'Alt' : nam
 const altSkin = id => !!look.skins[id];
 
 const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
-const lum = ([r, g, b]) => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-const dist = (a, b) => { const m = (a[0] + b[0]) / 2, d = a.map((v, i) => v - b[i]); return (2 + m / 256) * d[0] ** 2 + 4 * d[1] ** 2 + (2 + (255 - m) / 256) * d[2] ** 2; };
-const NEON_LUM = NEON_GREYS.map(h => lum(rgb(h)));
-
+const SLOT_OF = Object.fromEntries(NEON.map((h, i) => [h, i]));
+// A slot colour takes the palette's own. A colour mixed at run time (a door's rail, a light's glow) keeps its hue
+// (811): a grey picks the grey nearest in lightness; a colour picks its family by hue, then the step nearest in
+// lightness among that colour's shade, the colour and the highlight. A red's rail or glint never turns another hue.
+const L = c => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+const hueOf = c => { const mx = Math.max(...c), mn = Math.min(...c), d = mx - mn; if (!d) return 0; const h = mx === c[0] ? ((c[1] - c[2]) / d) % 6 : mx === c[1] ? (c[2] - c[0]) / d + 2 : (c[0] - c[1]) / d + 4; return (h * 60 + 360) % 360; };
+const gap = (a, b) => { const d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); };
+const GREY = SLOTS.slice(0, 8).map((_, i) => i), BODY = ['red', 'orange', 'yellow', 'green', 'blue', 'violet'].map(k => SLOTS.indexOf(k));
+const closest = (list, c) => list.reduce((bi, i) => Math.abs(L(rgb(NEON[i])) - L(c)) < Math.abs(L(rgb(NEON[bi])) - L(c)) ? i : bi, list[0]);
 function mapHex(hex, p) {
-  const c = rgb(hex), sat = (Math.max(...c) - Math.min(...c)) / 255;
-  if (p.hues && sat > 0.22) return p.hues.reduce((best, h) => dist(rgb(h), c) < dist(rgb(best), c) ? h : best);
-  // Without hues, a coloured thing is a figure: the lightest shade, or the next for its darker half, so it
-  // never melts into the walls (register 620).
-  if (!p.hues && sat > 0.22) return p.greys[p.greys.length - (lum(c) >= 0.45 ? 1 : 2)];
-  // A grey (or any colour on a palette without hues) takes the rank of the neon grey nearest in lightness.
-  const l = lum(c), rank = NEON_LUM.reduce((bi, v, i) => Math.abs(v - l) < Math.abs(NEON_LUM[bi] - l) ? i : bi, 0);
-  return p.greys[Math.round(rank * (p.greys.length - 1) / (NEON_GREYS.length - 1))];
+  if (hex in SLOT_OF) return p.colors[SLOT_OF[hex]];
+  const c = rgb(hex);
+  if (Math.max(...c) - Math.min(...c) < 40) return p.colors[closest(GREY, c)];
+  const body = BODY.reduce((bi, i) => gap(hueOf(rgb(NEON[i])), hueOf(c)) < gap(hueOf(rgb(NEON[bi])), hueOf(c)) ? i : bi, BODY[0]);
+  return p.colors[closest([body + 1, body, SLOTS.indexOf('hi')], c)];
 }
 const cache = new Map();
 // Any CSS colour string a canvas or a token takes: #rgb, #rrggbb or rgb()/rgba(); anything else passes.
 function paint(v, p = current()) {
-  if (!p || !p.greys || typeof v !== 'string') return v;
+  if (!p || p.colors === NEON || typeof v !== 'string') return v;
   const k = p.id + v;
   if (cache.has(k)) return cache.get(k);
   let out = v, m;
   if (/^#[0-9a-f]{6}$/i.test(v)) out = mapHex(v.toLowerCase(), p);
   else if (/^#[0-9a-f]{3}$/i.test(v)) out = mapHex('#' + [...v.slice(1)].map(x => x + x).join('').toLowerCase(), p);
   else if ((m = v.match(/^rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/))) {
+    // A black shadow stays black on every palette: on a light one the darkest slot is the page.
+    if (+m[1] === 0 && +m[2] === 0 && +m[3] === 0) { cache.set(k, v); return v; }
     const h = mapHex('#' + [m[1], m[2], m[3]].map(x => Math.round(+x).toString(16).padStart(2, '0')).join(''), p);
     out = m[4] === undefined ? h : `rgba(${rgb(h).join(', ')}, ${m[4]})`;
   }
@@ -1916,6 +1943,8 @@ function paint(v, p = current()) {
   return out;
 }
 const current = () => PALETTES.find(p => p.id === look.palette) || PALETTES[0];
+// Pocket is gone (812): a save that wore it wears the main palette.
+if (!PALETTES.some(p => p.id === look.palette)) look.palette = PALETTES[0].id;
 
 // Every colour set on any canvas passes through paint(): one hook, so no drawing needs to know.
 const proto = typeof CanvasRenderingContext2D !== 'undefined' ? CanvasRenderingContext2D.prototype : null;
@@ -1925,21 +1954,22 @@ if (proto) for (const prop of ['fillStyle', 'strokeStyle', 'shadowColor']) {
 }
 
 // The page's colour tokens, mapped the same way; their neon values are read once, before any is set.
-const TOKENS = ['--paper', '--panel', '--rule', '--ink', '--soft', '--accent', '--on-accent', '--sticker', '--selectable', '--ice', '--mid', '--lite', '--gold', '--gold-ink', '--good', '--bad', '--cyan', '--orange', '--kept', '--shade', '--field', '--field-rule', '--inset-rim'];
+// --rule and --soft are mixes of --ink and --paper (register 819), so they follow those two and are not set here.
+const TOKENS = ['--paper', '--panel', '--ink', '--accent', '--on-accent', '--sticker', '--selectable', '--ice', '--mid', '--lite', '--gold', '--gold-ink', '--good', '--bad', '--cyan', '--orange', '--kept', '--shade', '--field', '--field-rule', '--inset-rim'];
 let base = null;
 function applyPalette() {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   if (!base) { const cs = getComputedStyle(root); base = Object.fromEntries(TOKENS.map(t => [t, cs.getPropertyValue(t).trim()])); }
   const p = current();
-  for (const t of TOKENS) { if (p.greys && base[t]) root.style.setProperty(t, paint(base[t], p)); else root.style.removeProperty(t); }
+  for (const t of TOKENS) { if (p.colors !== NEON && base[t]) root.style.setProperty(t, paint(base[t], p)); else root.style.removeProperty(t); }
   root.dataset.palette = p.id;
 }
 
 function setPalette(id) { look.palette = id; save(); applyPalette(); dispatchEvent(new CustomEvent('wee:look')); }
 function setBoil(v) { look.boil = v; save(); dispatchEvent(new CustomEvent('wee:look')); }
 function setSkin(id, alt) { if (alt) look.skins[id] = true; else delete look.skins[id]; save(); dispatchEvent(new CustomEvent('wee:look')); }
-return { PALETTES, SKINS, look, skinned, altSkin, paint, current, applyPalette, setPalette, setBoil, setSkin };
+return { SLOTS, NEON, SHADES, PALETTES, SKINS, look, skinned, altSkin, paint, current, applyPalette, setPalette, setBoil, setSkin };
 })();
 // ---- src/app/sound.js
 const m6 = (() => {
@@ -2090,18 +2120,18 @@ const T = 32;
 
 // Fog (docs/MANGA_THEME.md): a neutral gray room, and every thing in it its own saturated pastel.
 const INK = {
-  puff: '#9fd8ff',
-  goo: '#9be15d', gooDark: '#5a9a2b', idoor: '#33363f', goal: '#ffd866',
-  water: '#5aa9ff', waterHi: '#c2e2ff', shock: '#fff3a8',
-  armor: '#b9c7e6',
-  floor: '#2d2a2e', grid: '#363337', wall: '#5b595c', wallTop: '#727072', crack: '#403e41',
-  player: '#ab9df2', start: '#ab9df2', robotDark: '#4b3fd6', robotTip: '#ff6b81', robotVisor: '#2a2440', robotEye: '#7ef0ff', shadow: 'rgba(0,0,0,0.35)',
-  mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff6188', zap: '#fc9867', zapCore: '#ffe3d0', barrel: '#8f86d9', box: '#857f6a', boxEdge: '#5e5a4a',
-  heavy: '#9b8cff', heavyEdge: '#5b4fc8', bomb: '#3d4256', bombHi: '#7d8399', fuse: '#b08a5c', spark: '#ff9a3d', blast: '#ff8a3d', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
+  puff: '#78dce8',
+  goo: '#a9dc76', gooDark: '#5a9a2b', idoor: '#403e41', goal: '#ffd866',
+  water: '#78dce8', waterHi: '#e8eef6', shock: '#ffd866',
+  armor: '#e8eef6',
+  floor: '#2d2a2e', grid: '#19181a', wall: '#5b595c', wallTop: '#727072', crack: '#403e41',
+  player: '#ab9df2', start: '#ab9df2', robotDark: '#4b3fd6', robotTip: '#ff6188', robotVisor: '#19181a', robotEye: '#78dce8', shadow: 'rgba(0,0,0,0.35)',
+  mover: '#78dce8', moverEdge: '#e8eef6', enemy: '#ff6188', strong: '#ff6188', strongEdge: '#e8eef6', beam: '#ff6188', zap: '#fc9867', zapCore: '#e8eef6', barrel: '#ab9df2', box: '#939293', boxEdge: '#403e41',
+  heavy: '#ab9df2', heavyEdge: '#4b3fd6', bomb: '#403e41', bombHi: '#939293', fuse: '#b08a5c', spark: '#fc9867', blast: '#fc9867', rivet: '#e8eef6', flag: '#ffd866', laser: '#ff6188',
   red: '#ff6188', blue: '#78dce8', yellow: '#ffd866', green: '#a9dc76',
   // Grey pieces read wires (register 347); the wires' own three colours are none of the doors'.
-  wire: '#8f97a8', teal: '#0d9488', violet: '#7c3aed', charcoal: '#3f3f46',
-  mark: '#939293', deathBg: '#5c2a3a', deathSpike: '#ffb0c0', gateBg: '#403e41', gateArrow: '#a9dc76', unlit: '#5b595c', spring: '#ffc23d', gravel: '#dcb88f', gravelDot: '#a98058', gravelHi: '#f4e1c6',
+  wire: '#939293', teal: '#3f9aa6', violet: '#4b3fd6', charcoal: '#403e41',
+  mark: '#939293', deathBg: '#8f2a45', deathSpike: '#e8eef6', gateBg: '#403e41', gateArrow: '#a9dc76', unlit: '#5b595c', spring: '#ffd866', gravel: '#b08a5c', gravelDot: '#5b595c', gravelHi: '#e8eef6',
 };
 
 const ease = t => 1 - Math.pow(1 - t, 3);
@@ -2188,7 +2218,7 @@ function line(g, x0, y0, x1, y1, c) {
 }
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const mixHex = (a, b, t) => '#' + hex(a).map((v, i) => Math.round(v + (hex(b)[i] - v) * t).toString(16).padStart(2, '0')).join('');
-const steps = col => ({ c: col, d: mixHex(col, '#221f22', 0.45), l: mixHex(col, '#fcfcfa', 0.45) });
+const steps = col => ({ c: col, d: mixHex(col, '#19181a', 0.45), l: mixHex(col, '#e8eef6', 0.45) });
 // A grid turned to face a direction, drawn facing right.
 const turn = (g, d) => {
   const out = grid(), f = { right: (x, y) => [x, y], down: (x, y) => [15 - y, x], left: (x, y) => [15 - x, 15 - y], up: (x, y) => [y, 15 - x] }[d];
@@ -2202,7 +2232,7 @@ function slab(g, x0, y0, x1, y1, face, light, dark) {
   if (dark) { box(g, x0 + 1, y1, x1 - 1, y1, dark); box(g, x1, y0 + 1, x1, y1 - 1, dark); }
   for (const [x, y] of [[x0, y0], [x1, y0], [x0, y1], [x1, y1]]) g[y][x] = null;
 }
-const W = { face: '#5b595c', light: '#727072', dark: '#4d4b4e', crack: '#403e41' };
+const W = { face: '#5b595c', light: '#727072', dark: '#403e41', crack: '#403e41' };
 return { N, PX, grid, inside, ellipse, box, line, hex, mixHex, steps, turn, slab, W };
 })();
 // ---- src/view/pieceSprites.js
@@ -2225,18 +2255,18 @@ const PIECE_SPRITES = {
   // A green puddle with two bubbles.
   sticky() {
     const g = grid(); ellipse(g, 8, 8.5, 6.5, 4.8, '#5a9a2b'); ellipse(g, 4.5, 6.5, 2.6, 2.1, '#5a9a2b'); ellipse(g, 11.5, 10.5, 2.6, 2.1, '#5a9a2b');
-    ellipse(g, 8, 8, 5, 3.6, '#9be15d'); g[7][6] = '#e6f8d0'; g[9][10] = '#e6f8d0'; return g;
+    ellipse(g, 8, 8, 5, 3.6, '#a9dc76'); g[7][6] = '#e8eef6'; g[9][10] = '#e8eef6'; return g;
   },
   // Gravel: a sandy slab with grit.
   gravel() {
-    const g = grid(); slab(g, 0, 0, 15, 15, '#dcb88f', null, null);
-    for (const [x, y] of [[3, 3], [9, 2], [13, 5], [5, 8], [11, 9], [2, 12], [8, 13], [13, 13], [7, 5]]) { g[y][x] = '#a98058'; if (x + 1 < 15) g[y][x + 1] = '#f4e1c6'; }
+    const g = grid(); slab(g, 0, 0, 15, 15, '#b08a5c', null, null);
+    for (const [x, y] of [[3, 3], [9, 2], [13, 5], [5, 8], [11, 9], [2, 12], [8, 13], [13, 13], [7, 5]]) { g[y][x] = '#5b595c'; if (x + 1 < 15) g[y][x + 1] = '#e8eef6'; }
     return g;
   },
   // Spikes on a dark red slab.
   death() {
-    const g = grid(); slab(g, 0, 0, 15, 15, '#5c2a3a', '#7a3a4f', '#3f1c28');
-    for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { g[cy - 2][cx] = '#ffb0c0'; box(g, cx - 1, cy - 1, cx, cy, '#ffb0c0'); box(g, cx - 2, cy + 1, cx + 1, cy + 1, '#ffb0c0'); g[cy - 1][cx] = '#fcfcfa'; }
+    const g = grid(); slab(g, 0, 0, 15, 15, '#8f2a45', '#ff6188', '#403e41');
+    for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { g[cy - 2][cx] = '#e8eef6'; box(g, cx - 1, cy - 1, cx, cy, '#e8eef6'); box(g, cx - 2, cy + 1, cx + 1, cy + 1, '#e8eef6'); g[cy - 1][cx] = '#e8eef6'; }
     return g;
   },
   // A spring: a coil and a plate on the side it faces. key: "right" or "right|bare".
@@ -2267,17 +2297,17 @@ const PIECE_SPRITES = {
   // A glass block a beam goes through, framed in its colour; its circle filled while a beam crosses it (register 792). key: "hex|lit".
   sensor(key) {
     const [col, lit] = key.split('|'), g = grid();
-    slab(g, 1, 1, 14, 14, mixHex(col, '#fcfcfa', 0.7), null, null);
+    slab(g, 1, 1, 14, 14, mixHex(col, '#e8eef6', 0.7), null, null);
     box(g, 2, 1, 13, 1, col); box(g, 2, 14, 13, 14, col); box(g, 1, 2, 1, 13, col); box(g, 14, 2, 14, 13, col);
     const st = ['..###..', '.#####.', '#######', '#######', '#######', '.#####.', '..###..'];
-    st.forEach((r, yy) => [...r].forEach((ch, xx) => { if (ch === '#') g[4 + yy][4 + xx] = lit === '1' ? col : mixHex(col, '#fcfcfa', 0.35); }));
-    if (lit !== '1') for (let yy = 5; yy <= 9; yy++) for (let xx = 5; xx <= 9; xx++) if (g[yy][xx] === mixHex(col, '#fcfcfa', 0.35) && st[yy - 4][xx - 4] === '#' && [[1,0],[-1,0],[0,1],[0,-1]].every(([a, b]) => st[yy - 4 + b] && st[yy - 4 + b][xx - 4 + a] === '#')) g[yy][xx] = mixHex(col, '#fcfcfa', 0.7);
+    st.forEach((r, yy) => [...r].forEach((ch, xx) => { if (ch === '#') g[4 + yy][4 + xx] = lit === '1' ? col : mixHex(col, '#e8eef6', 0.35); }));
+    if (lit !== '1') for (let yy = 5; yy <= 9; yy++) for (let xx = 5; xx <= 9; xx++) if (g[yy][xx] === mixHex(col, '#e8eef6', 0.35) && st[yy - 4][xx - 4] === '#' && [[1,0],[-1,0],[0,1],[0,-1]].every(([a, b]) => st[yy - 4 + b] && st[yy - 4 + b][xx - 4 + a] === '#')) g[yy][xx] = mixHex(col, '#e8eef6', 0.7);
     return g;
   },
   // A checkpoint flag, bright once it is the one you would return to. key: "1" when active.
   checkpoint(active) {
-    const g = grid(), f = active === '1' ? '#ffd866' : '#6b6150';
-    box(g, 5, 3, 5, 13, '#c1c0c0'); box(g, 4, 13, 7, 13, '#939293');
+    const g = grid(), f = active === '1' ? '#ffd866' : '#5b595c';
+    box(g, 5, 3, 5, 13, '#e8eef6'); box(g, 4, 13, 7, 13, '#939293');
     box(g, 6, 3, 9, 7, f); box(g, 10, 4, 11, 6, f); g[5][12] = f;
     return g;
   },
@@ -2288,7 +2318,7 @@ const PIECE_SPRITES = {
       for (let i = 1; i < 15; i++) if (i % 4 < 2) { g[1][i] = col; g[14][i] = col; g[i][1] = col; g[i][14] = col; }
       box(g, 5, 7, 10, 8, col);
     } else {
-      slab(g, 1, 1, 14, 14, '#33363f', null, null);
+      slab(g, 1, 1, 14, 14, '#403e41', null, null);
       box(g, 2, 1, 13, 1, col); box(g, 2, 14, 13, 14, col); box(g, 1, 2, 1, 13, col); box(g, 14, 2, 14, 13, col);
       for (const x of [4, 7, 10]) box(g, x, 3, x + 1, 12, col);
     }
@@ -2296,7 +2326,7 @@ const PIECE_SPRITES = {
   },
   // A mover: a teal slab with an arrow each way it slides. key: "h" or "v".
   mover(axis) {
-    const g = grid(); slab(g, 1, 1, 14, 14, '#3fd8c4', '#b4f7ee', '#2a9c8d');
+    const g = grid(); slab(g, 1, 1, 14, 14, '#78dce8', '#e8eef6', '#3f9aa6');
     const c = grid(), ink = '#2d2a2e';
     for (let i = 0; i < 3; i++) { box(c, 3 + i, 7 - i, 3 + i, 8 + i, ink); box(c, 12 - i, 7 - i, 12 - i, 8 + i, ink); }
     const t = axis === 'v' ? turn(c, 'down') : c; t.forEach((row, y) => row.forEach((v, x) => { if (v) g[y][x] = v; }));
@@ -2307,42 +2337,42 @@ const PIECE_SPRITES = {
     const [axis, dir] = key.split('|'), g = grid();
     for (let y = 1; y <= 14; y++) { const w = y <= 7.5 ? y - 1 : 14 - y; box(g, 7 - w, y, 8 + w, y, '#ff6188'); }
     const dx = axis === 'h' ? +dir : 0, dy = axis === 'v' ? +dir : 0;
-    for (const ex of [5, 9]) { box(g, ex, 6, ex + 1, 8, '#fcfcfa'); g[7 + dy][ex + (dx > 0 ? 1 : 0)] = '#221f22'; }
+    for (const ex of [5, 9]) { box(g, ex, 6, ex + 1, 8, '#e8eef6'); g[7 + dy][ex + (dx > 0 ? 1 : 0)] = '#19181a'; }
     return g;
   },
   // A strong enemy: a crimson block with horns and yellow eyes. key: "h|1".
   strong(key) {
     const [axis, dir] = key.split('|'), g = grid();
-    slab(g, 1, 2, 14, 15, '#d6456a', '#ffb0c0', '#8f2a45');
-    box(g, 2, 0, 3, 1, '#ffb0c0'); box(g, 12, 0, 13, 1, '#ffb0c0');
+    slab(g, 1, 2, 14, 15, '#ff6188', '#e8eef6', '#8f2a45');
+    box(g, 2, 0, 3, 1, '#e8eef6'); box(g, 12, 0, 13, 1, '#e8eef6');
     const dx = axis === 'h' ? +dir : 0, dy = axis === 'v' ? +dir : 0;
     for (const ex of [4, 9]) box(g, ex + dx, 7 + dy, ex + 2 + dx, 8 + dy, '#ffd866');
     return g;
   },
   // A heavy block: violet steel with four rivets.
   heavy() {
-    const g = grid(); slab(g, 1, 1, 14, 14, '#9b8cff', '#c9c0ff', '#5b4fc8');
-    for (const [x, y] of [[3, 3], [12, 3], [3, 12], [12, 12]]) g[y][x] = '#e2ddff';
+    const g = grid(); slab(g, 1, 1, 14, 14, '#ab9df2', '#e8eef6', '#4b3fd6');
+    for (const [x, y] of [[3, 3], [12, 3], [3, 12], [12, 12]]) g[y][x] = '#e8eef6';
     return g;
   },
   // A bomb: a round body, a cap and a fuse of k lengths (2, 1 or 0).
   bomb(k) {
     const g = grid();
-    if (k === 'hot') { ellipse(g, 8, 9.5, 5.6, 5.6, '#ff5a28'); return g; }
-    ellipse(g, 8, 9.5, 5.6, 5.6, '#3d4256'); box(g, 5, 6, 6, 7, '#7d8399'); box(g, 7, 3, 9, 4, '#3d4256');
+    if (k === 'hot') { ellipse(g, 8, 9.5, 5.6, 5.6, '#fc9867'); return g; }
+    ellipse(g, 8, 9.5, 5.6, 5.6, '#403e41'); box(g, 5, 6, 6, 7, '#939293'); box(g, 7, 3, 9, 4, '#403e41');
     const n = +k; if (n >= 1) { g[2][10] = '#b08a5c'; g[1][11] = '#b08a5c'; } if (n >= 2) { g[1][12] = '#b08a5c'; g[1][13] = '#b08a5c'; }
     return g;
   },
   // The blob, everywhere (registers 302, 777): a round violet body with two eyes, about 20 units across.
   blob() {
     const g = grid(); ellipse(g, 8, 8, 5.3, 5.3, '#4b3fd6'); ellipse(g, 8, 8, 4.4, 4.4, '#ab9df2');
-    g[5][6] = '#ddd6ff'; box(g, 6, 7, 6, 7, '#7ef0ff'); box(g, 9, 7, 9, 7, '#7ef0ff');
+    g[5][6] = '#e8eef6'; box(g, 6, 7, 6, 7, '#78dce8'); box(g, 9, 7, 9, 7, '#78dce8');
     return g;
   },
   // A pushable laser's crate frame.
   crateFrame() {
-    const g = grid(); for (let i = 2; i <= 13; i++) { g[1][i] = '#857f6a'; g[14][i] = '#857f6a'; g[i][1] = '#857f6a'; g[i][14] = '#857f6a'; }
-    g[2][2] = '#857f6a'; g[2][13] = '#857f6a'; g[13][2] = '#857f6a'; g[13][13] = '#857f6a';
+    const g = grid(); for (let i = 2; i <= 13; i++) { g[1][i] = '#939293'; g[14][i] = '#939293'; g[i][1] = '#939293'; g[i][14] = '#939293'; }
+    g[2][2] = '#939293'; g[2][13] = '#939293'; g[13][2] = '#939293'; g[13][13] = '#939293';
     return g;
   },
 };
@@ -2359,21 +2389,21 @@ const SKIN_SPRITES = {
   // Berry: a cyan cherry pair on one stalk.
   berryAlt() {
     const g = grid(); ellipse(g, 5, 11, 3.6, 3.6, '#3f9aa6'); ellipse(g, 11, 11.5, 3.6, 3.6, '#3f9aa6');
-    ellipse(g, 4.8, 10.8, 2.8, 2.8, '#78dce8'); ellipse(g, 10.8, 11.3, 2.8, 2.8, '#78dce8'); g[10][4] = '#c9f4fa'; g[10][10] = '#c9f4fa';
-    line(g, 5, 7, 8, 2, '#6f9e45'); line(g, 11, 8, 8, 2, '#6f9e45'); box(g, 8, 1, 10, 2, '#6f9e45');
+    ellipse(g, 4.8, 10.8, 2.8, 2.8, '#78dce8'); ellipse(g, 10.8, 11.3, 2.8, 2.8, '#78dce8'); g[10][4] = '#e8eef6'; g[10][10] = '#e8eef6';
+    line(g, 5, 7, 8, 2, '#5a9a2b'); line(g, 11, 8, 8, 2, '#5a9a2b'); box(g, 8, 1, 10, 2, '#5a9a2b');
     return g;
   },
   // Block: lab tiles, a slab split into four with grout lines.
   wallFaceAlt() {
-    const g = grid(); slab(g, 0, 0, 15, 15, '#727072', '#939293', '#4d4b4e');
-    box(g, 1, 7, 14, 8, '#5b595c'); box(g, 7, 1, 8, 14, '#5b595c'); g[2][2] = '#c1c0c0'; g[2][10] = '#c1c0c0'; g[10][2] = '#c1c0c0'; g[10][10] = '#c1c0c0';
+    const g = grid(); slab(g, 0, 0, 15, 15, '#727072', '#939293', '#403e41');
+    box(g, 1, 7, 14, 8, '#5b595c'); box(g, 7, 1, 8, 14, '#5b595c'); g[2][2] = '#e8eef6'; g[2][10] = '#e8eef6'; g[10][2] = '#e8eef6'; g[10][10] = '#e8eef6';
     return g;
   },
   // Box: a steel crate with corner plates and a stripe.
   boxAlt() {
-    const g = grid(); slab(g, 0, 0, 15, 15, '#857f6a', '#a59f85', '#5e5a4a');
-    for (const [x, y] of [[1, 1], [12, 1], [1, 12], [12, 12]]) box(g, x, y, x + 2, y + 2, '#5e5a4a');
-    box(g, 1, 6, 14, 9, '#ffd866'); for (let x = 1; x <= 14; x += 4) box(g, x, 6, x + 1, 9, '#221f22');
+    const g = grid(); slab(g, 0, 0, 15, 15, '#939293', '#e8eef6', '#403e41');
+    for (const [x, y] of [[1, 1], [12, 1], [1, 12], [12, 12]]) box(g, x, y, x + 2, y + 2, '#403e41');
+    box(g, 1, 6, 14, 9, '#ffd866'); for (let x = 1; x <= 14; x += 4) box(g, x, 6, x + 1, 9, '#19181a');
     return g;
   },
   // Door: a shutter of horizontal slats; open, its rails only.
@@ -2390,12 +2420,12 @@ const SKIN_SPRITES = {
   // Switch: a lever on a plate, leaning left while off and right while on.
   switchOffAlt(col) {
     const { c, d } = steps(col), g = grid(); box(g, 3, 11, 12, 13, d); box(g, 4, 11, 11, 11, c);
-    line(g, 8, 10, 4, 4, c); box(g, 3, 3, 4, 4, '#fcfcfa');
+    line(g, 8, 10, 4, 4, c); box(g, 3, 3, 4, 4, '#e8eef6');
     return g;
   },
   switchOnAlt(col) {
     const { c, d } = steps(col), g = grid(); box(g, 3, 11, 12, 13, d); box(g, 4, 11, 11, 11, c);
-    line(g, 8, 10, 12, 4, c); box(g, 11, 3, 12, 4, '#fcfcfa'); box(g, 6, 12, 9, 12, '#fcfcfa');
+    line(g, 8, 10, 12, 4, c); box(g, 11, 3, 12, 4, '#e8eef6'); box(g, 6, 12, 9, 12, '#e8eef6');
     return g;
   },
   // Button: a square pad, flush with the floor while pressed.
@@ -2440,9 +2470,9 @@ const { SKIN_SPRITES } = m11;
 
 
 const C = {
-  blobH: '#e6f8d0', blobM: '#c3eb9a', blob: '#a9dc76', blobS: '#6f9e45', blobD: '#4f7432', eye: '#221f22', white: '#fcfcfa',
-  berryH: '#c9f4fa', berry: '#78dce8', berryS: '#3f9aa6', berryD: '#2b6f78', leaf: '#6f9e45',
-  boxL: '#a59f85', box: '#857f6a', boxD: '#5e5a4a',
+  blobH: '#e8eef6', blobM: '#a9dc76', blob: '#a9dc76', blobS: '#5a9a2b', blobD: '#5a9a2b', eye: '#19181a', white: '#e8eef6',
+  berryH: '#e8eef6', berry: '#78dce8', berryS: '#3f9aa6', berryD: '#3f9aa6', leaf: '#5a9a2b',
+  boxL: '#e8eef6', box: '#939293', boxD: '#403e41',
 };
 
 const BUILD = {
@@ -2495,13 +2525,13 @@ Object.assign(BUILD, {
   switchOff(col) {
     const { c, d } = steps(col), g = grid();
     box(g, 3, 5, 12, 10, c); box(g, 4, 6, 11, 9, d); g[5][3] = null; g[5][12] = null; g[10][3] = null; g[10][12] = null;
-    box(g, 4, 6, 6, 9, c); box(g, 5, 6, 5, 6, mixHex(col, '#fcfcfa', 0.45));
+    box(g, 4, 6, 6, 9, c); box(g, 5, 6, 5, 6, mixHex(col, '#e8eef6', 0.45));
     return g;
   },
   switchOn(col) {
     const { c, d } = steps(col), g = grid();
     box(g, 3, 5, 12, 10, c); g[5][3] = null; g[5][12] = null; g[10][3] = null; g[10][12] = null;
-    box(g, 9, 6, 11, 9, '#fcfcfa'); g[9][11] = d;
+    box(g, 9, 6, 11, 9, '#e8eef6'); g[9][11] = d;
     return g;
   },
   // A floor button: a faint ring and a cap, sunk lower while pressed.
@@ -5602,7 +5632,7 @@ return { LEVELS };
 const m40 = (() => {
 
 // Generated from campaign/challenges.json by tools/challenge.mjs --write. Do not edit by hand.
-const CHALLENGES = [{"id":"c1","name":"Moss","challenge":{"open":[[0,0],[1,1],[2,1],[4,1],[1,2],[2,2],[3,2],[4,3],[1,4],[2,4],[3,4]]},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["","","","","","wall","","","goal","","","","","","","","","","","","","","","","wall"],"start":{"x":0,"y":2},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"block":[3,3]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c4","name":"Fern","challenge":{"open":[[1,0],[5,0],[1,1],[2,1],[3,2],[1,3],[2,3],[3,3],[4,4]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","","","","","","","","","","door:red","","","","","","","","","goal","","","","","wall","","wall",""],"start":{"x":0,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"toggle":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c2","name":"Tide","challenge":{"open":[[3,0],[3,1],[0,2],[3,2],[1,3],[0,4],[4,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","wall","","","","","","wall","","","","","","wall","","","","","","","","","","","goal","","","","","","","","","",""],"start":{"x":3,"y":5},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[3,3]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c6","name":"Flint","challenge":{"open":[[2,0],[4,0],[2,1],[0,2],[3,2],[0,3],[1,3],[3,4],[4,4]]},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["","","","","","","wall","","","","","","","","","","","door:red","goal","wall","","","wall","",""],"start":{"x":1,"y":2},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"box":[1,1],"button":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c3","name":"Ash","challenge":{"open":[[0,0],[2,0],[0,1],[2,1],[5,1],[0,2],[1,2],[4,2],[1,3],[4,3],[3,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","wall","","","","","","","","wall","","","","","","","","","","","goal","","wall","","","","","","",""],"start":{"x":2,"y":3},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"box":[1,1],"block":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c5","name":"Dune","challenge":{"open":[[1,0],[2,0],[1,2],[4,2],[2,3],[1,4],[2,4],[3,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["wall","","","","","","","wall","","","","","","","","","","","","goal","","","","","","","","","","wall","","","","","",""],"start":{"x":0,"y":1},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"gate":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c7","name":"Cove","waiting":true,"challenge":{"open":[[1,0],[2,0],[3,1],[5,2],[0,3],[0,4],[4,4],[1,5],[3,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","gate:right","","","","wall","","","","","","","wall","","","goal","","","","","","","","","","","","",""],"start":{"x":0,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c8","name":"Reed","challenge":{"open":[[0,1],[3,1],[5,1],[0,2],[3,2],[4,2],[3,3],[2,4],[3,4],[1,5],[5,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","wall","","","","","","door:red","","","","","","","","","","","","goal","","","","","","","wall","","",""],"start":{"x":0,"y":3},"entities":[{"kind":"turret","x":4,"y":1,"turret":{"dirs":["right"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"relay":[1,1],"block":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c9","name":"Slate","challenge":{"open":[[3,0],[3,1],[4,1],[1,2],[2,2],[4,2],[4,3],[1,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","sensor:red","","wall","","","","","","","","","","","","","","","door:red","","","","","goal","","","wall","","","","","","","",""],"start":{"x":5,"y":5},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c10","name":"Drift","challenge":{"open":[[4,0],[5,0],[0,1],[1,2],[2,3],[3,3],[1,4],[0,5],[1,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","goal","","","","death","wall","","","","","","","","","","","","","","wall","","","","","","","death","",""],"start":{"x":2,"y":2},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"gate":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c11","name":"Hollow","challenge":{"open":[[2,0],[2,1],[3,1],[1,2],[4,2],[2,3],[3,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","sensor:red","","","","","","","","","","","","","","","","","door:red","","","","","","","","","wall","","","goal","death"],"start":{"x":2,"y":5},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r1","name":"Orchard","challenge":{"open":[[0,0],[1,0],[3,0],[3,2],[1,3],[2,3],[3,3],[4,3],[1,4],[2,4]],"remove":{"block":3}},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["wall","wall","","wall","","","","","goal","","","","","wall","","","wall","wall","wall","wall","","wall","wall","",""],"start":{"x":1,"y":1},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"block":[7,7]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r4","name":"Harbor","challenge":{"open":[[2,0],[3,0],[5,0],[0,1],[4,1],[2,2],[5,4],[2,5],[4,5],[5,5]],"remove":{"block":2,"toggle":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","door:red","wall","wall","","toggle:red","wall","","","","wall","","","","wall","","","","","","","","","","","","goal","","","wall","","","wall","","wall","toggle:red"],"start":{"x":0,"y":3},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[6,6],"toggle":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r2","name":"Meadow","challenge":{"open":[[2,0],[4,0],[1,1],[2,2],[3,2],[1,3],[1,4],[4,4],[2,5],[4,5]],"remove":{"block":3}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","wall","","wall","","","wall","","","","","","","wall","wall","","goal","","wall","","","","","","wall","","","wall","","","","wall","","wall",""],"start":{"x":5,"y":1},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[7,7]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r6","name":"Canyon","challenge":{"open":[[0,0],[1,1],[0,2],[1,3],[2,3],[3,3],[4,3],[1,4],[3,4]],"remove":{"block":2,"box":1}},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["wall","","button:red","","","","wall","","goal","","wall","","","door:red","","","","wall","wall","wall","","","","wall",""],"start":{"x":1,"y":2},"entities":[{"kind":"box","x":1,"y":3,"dir":1,"mode":"input"},{"kind":"box","x":1,"y":4,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"block":[5,5],"box":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r3","name":"Glade","challenge":{"open":[[3,1],[4,2],[5,2],[1,3],[5,3],[1,4],[2,4],[3,4],[4,4],[1,5],[3,5],[5,5]],"remove":{"block":2,"box":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","goal","","wall","","","","","","","","wall","","","","","","","","wall","wall","wall","wall","","","wall","","wall","",""],"start":{"x":2,"y":2},"entities":[{"kind":"box","x":4,"y":2,"dir":1,"mode":"input"},{"kind":"box","x":1,"y":3,"dir":1,"mode":"input"},{"kind":"box","x":5,"y":3,"dir":1,"mode":"input"},{"kind":"box","x":5,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[6,6],"box":[3,3]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r5","name":"Summit","waiting":true,"challenge":{"open":[[4,0],[5,0],[0,1],[1,1],[2,1],[5,1],[3,2],[4,3],[2,4],[4,4],[4,5],[5,5]],"remove":{"block":1,"gate":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","wall","wall","gate:right","gate:down","gate:up","","","gate:up","","","","wall","","","","","","","wall","","goal","","gate:up","","wall","","","","","","wall","wall"],"start":{"x":3,"y":5},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[6,6],"gate":[4,4]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r7","name":"Marsh","challenge":{"open":[[0,0],[2,0],[1,1],[4,1],[5,1],[0,2],[4,2],[1,4],[3,4],[5,4]],"remove":{"block":2,"laser":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["wall","","wall","","","","","","","","wall","wall","wall","","","","wall","","","","","","","gate:right","","wall","","wall","goal","","","","","","",""],"start":{"x":4,"y":0},"entities":[{"kind":"turret","x":1,"y":1,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":5,"y":4,"turret":{"dirs":["left"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[6,6],"laser":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r8","name":"Grotto","challenge":{"open":[[2,0],[2,1],[4,1],[0,2],[3,2],[2,3],[1,4],[3,4],[2,5]],"remove":{"block":2,"relay":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","wall","","","","","","wall","goal","wall","","wall","","","sensor:red","","","","","wall","","","","","wall","","sensor:red","","","","door:red","wall","","",""],"start":{"x":4,"y":5},"entities":[{"kind":"turret","x":2,"y":4,"turret":{"dirs":["right"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[5,5],"relay":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r9","name":"Delta","challenge":{"open":[[5,0],[0,1],[4,1],[5,1],[0,2],[3,3],[1,4],[5,4],[1,5]],"remove":{"block":2,"laser":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","door:red","","","wall","","","","wall","wall","wall","","","","","","","goal","","wall","","","","wall","","","","","","wall","","","","sensor:red"],"start":{"x":4,"y":0},"entities":[{"kind":"turret","x":5,"y":0,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":5,"y":4,"turret":{"dirs":["up"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[1,1],"block":[5,5]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r10","name":"Ridge","waiting":true,"challenge":{"open":[[1,0],[2,0],[5,0],[2,1],[3,1],[4,1],[3,2],[4,2],[4,3],[2,4],[2,5]],"remove":{"block":1,"spikes":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","death","death","","","wall","","gate:down","wall","death","wall","","","","","wall","death","","","","","","wall","","","","death","","","goal","","","wall","","",""],"start":{"x":3,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"spikes":[4,4],"block":[5,5]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r11","name":"Basin","waiting":true,"challenge":{"open":[[2,0],[4,0],[0,1],[1,2],[2,2],[5,2],[0,3],[1,3],[4,3],[5,3],[0,4],[5,5]],"remove":{"block":1,"spikes":1,"laser":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","sensor:red","death","","death","","","","","","","","wall","","","wall","death","wall","","goal","wall","death","","","","","","door:red","","","","","","wall"],"start":{"x":1,"y":0},"entities":[{"kind":"turret","x":2,"y":0,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":1,"y":2,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":0,"y":4,"turret":{"dirs":["left"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[2,2],"spikes":[3,3],"block":[4,4]},"steps":{"min":1},"rules":[],"require":[],"optional":[]}];
+const CHALLENGES = [{"id":"c1","name":"Moss","challenge":{"open":[[0,0],[1,1],[2,1],[4,1],[1,2],[2,2],[3,2],[4,3],[1,4],[2,4],[3,4]]},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["","","","","","wall","","","goal","","","","","","","","","","","","","","","","wall"],"start":{"x":0,"y":2},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"block":[3,3]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c4","name":"Fern","challenge":{"open":[[4,1],[5,1],[2,2],[4,2],[3,4],[4,4],[4,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","","","","","","","","","","","","wall","","door:red","goal","","wall","","","","","","","wall","","",""],"start":{"x":2,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"toggle":[1,1],"block":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c2","name":"Tide","challenge":{"open":[[3,0],[3,1],[0,2],[3,2],[1,3],[0,4],[4,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","wall","","","","","","wall","","","","","","wall","","","","","","","","","","","goal","","","","","","","","","",""],"start":{"x":3,"y":5},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[3,3]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c6","name":"Flint","challenge":{"open":[[0,0],[2,0],[1,1],[1,2],[2,2],[3,2],[1,3],[3,3],[0,4],[1,4],[2,4],[4,4]]},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["","","","","","wall","","","door:red","goal","","","","","","wall","","wall","","wall","","","","",""],"start":{"x":4,"y":2},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"box":[1,1],"button":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c3","name":"Ash","challenge":{"open":[[0,0],[2,0],[0,1],[2,1],[5,1],[0,2],[1,2],[4,2],[1,3],[4,3],[3,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","wall","","","","","","","","wall","","","","","","","","","","","goal","","wall","","","","","","",""],"start":{"x":2,"y":3},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"box":[1,1],"block":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c5","name":"Dune","challenge":{"open":[[3,1],[5,1],[0,2],[1,2],[4,2],[5,2],[1,3],[1,4],[2,4],[3,4],[0,5],[1,5],[4,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","wall","","","","","wall","","","","","","","wall","","","","","","","","goal","","","","","","","","","","","","",""],"start":{"x":5,"y":3},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"gate":[1,1],"block":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c7","name":"Cove","challenge":{"open":[[1,0],[2,0],[3,0],[4,0],[0,1],[1,1],[4,1],[0,2],[1,2],[2,2],[5,2],[1,3],[0,4],[4,4],[4,5],[5,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","gate:right","","","","","","goal","","","","","","door:red","","","","wall","","","","","sensor:red","","","","",""],"start":{"x":0,"y":3},"entities":[{"kind":"box","x":0,"y":0,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[1,1],"block":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c8","name":"Reed","challenge":{"open":[[0,1],[3,1],[5,1],[0,2],[3,2],[4,2],[3,3],[2,4],[3,4],[1,5],[5,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","wall","","","","","","door:red","","","","","","","","","","","","goal","","","","","","","wall","","",""],"start":{"x":0,"y":3},"entities":[{"kind":"turret","x":4,"y":1,"turret":{"dirs":["right"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"relay":[1,1],"block":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c9","name":"Slate","challenge":{"open":[[0,0],[1,0],[1,1],[3,1],[1,2],[2,2],[5,2],[1,4],[3,4],[5,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","","","","","","","","","","","wall","","door:red","wall","","","","","","","sensor:red","","wall","","goal","",""],"start":{"x":2,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[1,1],"block":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c10","name":"Drift","challenge":{"open":[[1,0],[1,1],[5,1],[1,2],[4,2],[0,3],[1,3],[2,3],[0,5],[4,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","","","","","","death","","","","","","","","","","","","","","death","","","","","","wall","goal","","wall"],"start":{"x":0,"y":0},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"gate":[1,1],"block":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"c11","name":"Hollow","challenge":{"open":[[4,0],[1,1],[3,1],[4,1],[5,2],[0,3],[4,3],[1,4],[2,5],[4,5]]},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","wall","","","","","","","","door:red","","","","","","","","","","","","goal","wall","","","death","","","sensor:red","",""],"start":{"x":1,"y":3},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[1,1],"block":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r1","name":"Orchard","challenge":{"open":[[0,0],[1,0],[3,0],[3,2],[1,3],[2,3],[3,3],[4,3],[1,4],[2,4]],"remove":{"block":3}},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["wall","wall","","wall","","","","","goal","","","","","wall","","","wall","wall","wall","wall","","wall","wall","",""],"start":{"x":1,"y":1},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"block":[7,7]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r4","name":"Harbor","challenge":{"open":[[2,0],[3,0],[5,0],[0,1],[4,1],[2,2],[5,4],[2,5],[4,5],[5,5]],"remove":{"block":2,"toggle":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","door:red","wall","wall","","toggle:red","wall","","","","wall","","","","wall","","","","","","","","","","","","goal","","","wall","","","wall","","wall","toggle:red"],"start":{"x":0,"y":3},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[6,6],"toggle":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r2","name":"Meadow","challenge":{"open":[[2,0],[4,0],[1,1],[2,2],[3,2],[1,3],[1,4],[4,4],[2,5],[4,5]],"remove":{"block":3}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","wall","","wall","","","wall","","","","","","","wall","wall","","goal","","wall","","","","","","wall","","","wall","","","","wall","","wall",""],"start":{"x":5,"y":1},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[7,7]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r6","name":"Canyon","challenge":{"open":[[0,0],[1,1],[0,2],[1,3],[2,3],[3,3],[4,3],[1,4],[3,4]],"remove":{"block":2,"box":1}},"room":{"format":"wee-level","version":1,"w":5,"h":5,"cells":["wall","","button:red","","","","wall","","goal","","wall","","","door:red","","","","wall","wall","wall","","","","wall",""],"start":{"x":1,"y":2},"entities":[{"kind":"box","x":1,"y":3,"dir":1,"mode":"input"},{"kind":"box","x":1,"y":4,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[5,5],"palette":{"block":[5,5],"box":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r3","name":"Glade","challenge":{"open":[[3,1],[4,2],[5,2],[1,3],[5,3],[1,4],[2,4],[3,4],[4,4],[1,5],[3,5],[5,5]],"remove":{"block":2,"box":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","","","","","goal","","wall","","","","","","","","wall","","","","","","","","wall","wall","wall","wall","","","wall","","wall","",""],"start":{"x":2,"y":2},"entities":[{"kind":"box","x":4,"y":2,"dir":1,"mode":"input"},{"kind":"box","x":1,"y":3,"dir":1,"mode":"input"},{"kind":"box","x":5,"y":3,"dir":1,"mode":"input"},{"kind":"box","x":5,"y":5,"dir":1,"mode":"input"}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[6,6],"box":[3,3]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r5","name":"Summit","challenge":{"open":[[2,0],[3,1],[1,2],[4,2],[5,2],[0,4],[2,4],[3,4],[5,4],[1,5],[2,5],[4,5]],"remove":{"block":2,"gate":2}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","wall","","","","","","","gate:up","","","","gate:up","","","wall","gate:left","","","","","","","wall","","wall","wall","goal","wall","","wall","wall","","gate:right",""],"start":{"x":5,"y":5},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[6,6],"gate":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r7","name":"Marsh","challenge":{"open":[[0,0],[2,0],[1,1],[4,1],[5,1],[0,2],[4,2],[1,4],[3,4],[5,4]],"remove":{"block":2,"laser":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["wall","","wall","","","","","","","","wall","wall","wall","","","","wall","","","","","","","gate:right","","wall","","wall","goal","","","","","","",""],"start":{"x":4,"y":0},"entities":[{"kind":"turret","x":1,"y":1,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":5,"y":4,"turret":{"dirs":["left"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[6,6],"laser":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r8","name":"Grotto","challenge":{"open":[[2,0],[2,1],[4,1],[0,2],[3,2],[2,3],[1,4],[3,4],[2,5]],"remove":{"block":2,"relay":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","wall","","","","","","wall","goal","wall","","wall","","","sensor:red","","","","","wall","","","","","wall","","sensor:red","","","","door:red","wall","","",""],"start":{"x":4,"y":5},"entities":[{"kind":"turret","x":2,"y":4,"turret":{"dirs":["right"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[5,5],"relay":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r9","name":"Delta","challenge":{"open":[[5,0],[0,1],[4,1],[5,1],[0,2],[3,3],[1,4],[5,4],[1,5]],"remove":{"block":2,"laser":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","","door:red","","","wall","","","","wall","wall","wall","","","","","","","goal","","wall","","","","wall","","","","","","wall","","","","sensor:red"],"start":{"x":4,"y":0},"entities":[{"kind":"turret","x":5,"y":0,"turret":{"dirs":["down"],"mode":"input"}},{"kind":"turret","x":5,"y":4,"turret":{"dirs":["up"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"laser":[1,1],"block":[5,5]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r10","name":"Ridge","challenge":{"open":[[1,1],[3,1],[4,1],[2,2],[3,2],[0,3],[1,3],[3,3],[2,4],[3,4],[2,5]],"remove":{"block":2,"spikes":2}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","","goal","","","","","wall","","wall","death","","","","death","wall","","","death","death","","wall","","","","","wall","wall","","","","","wall","","",""],"start":{"x":4,"y":3},"entities":[],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"block":[5,5],"spikes":[2,2]},"steps":{"min":1},"rules":[],"require":[],"optional":[]},{"id":"r11","name":"Basin","challenge":{"open":[[1,0],[4,0],[0,1],[3,1],[4,1],[0,2],[3,2],[4,2],[0,3],[1,3],[4,3]],"remove":{"block":2,"spikes":1,"laser":1}},"room":{"format":"wee-level","version":1,"w":6,"h":6,"cells":["","death","","","wall","","","","","wall","","","wall","goal","","wall","death","","wall","wall","","","death","","door:red","","","","sensor:red","","","","","","",""],"start":{"x":5,"y":5},"entities":[{"kind":"turret","x":0,"y":1,"turret":{"dirs":["right"],"mode":"input"}},{"kind":"turret","x":4,"y":1,"turret":{"dirs":["down"],"mode":"input"}}],"powers":{"boomerang":false,"dive":false,"laser":false,"cycle":false,"swim":false,"light":false,"armored":false},"clock":"tile"},"size":[6,6],"palette":{"spikes":[2,2],"block":[4,4],"laser":[1,1]},"steps":{"min":1},"rules":[],"require":[],"optional":[]}];
 return { CHALLENGES };
 })();
 // ---- src/campaign/names.js
@@ -5622,7 +5652,8 @@ const PLACING = CHALLENGES.filter(c => !c.challenge.remove);
 const REMOVING = CHALLENGES.filter(c => c.challenge.remove);
 // A challenge waiting for a room that meets the bar is not shown, so the numbers skip it and run with no gap.
 const shown = list => list.filter(c => !c.waiting);
-const challengeName = def => def.challenge.remove ? `R${shown(REMOVING).findIndex(c => c.id === def.id) + 1}` : `C${shown(PLACING).findIndex(c => c.id === def.id) + 1}`;
+// Named for what the player does (register 819): P1, C1, R1 told a new player nothing.
+const challengeName = def => def.challenge.remove ? `Remove ${shown(REMOVING).findIndex(c => c.id === def.id) + 1}` : `Place ${shown(PLACING).findIndex(c => c.id === def.id) + 1}`;
 return { shownName, PLACING, REMOVING, challengeName };
 })();
 // ---- src/editor/history.js
@@ -5941,13 +5972,13 @@ function quarter(kindAt, kind, x, y, dx, dy) {
 // A wall cell in pixels (2 units each): the face, a two-step bevel on each side that does not join
 // another wall (light above and left, dark below and right), and a two-step stair cut from each outer
 // corner. Sides that join draw nothing, so a mass has no seams.
-const PX = 2, SHADE = { lite2: '#666466', dark2: '#4d4b4e' };
+const PX = 2, SHADE = { lite2: '#5b595c', dark2: '#403e41' };
 // Each other mass's face and its bevels (null: no bevel on that side).
 const LOOK = {
   gravel: { face: INK.gravel, lite: [INK.gravelHi, null], dark: [INK.gravelDot, null] },
   water: { face: INK.water, lite: [INK.waterHi, null], dark: null },
   sticky: { face: INK.goo, lite: [null, null], dark: [INK.gooDark, INK.gooDark] },
-  death: { face: INK.deathBg, lite: ['#7a3a4f', null], dark: ['#3f1c28', null] },
+  death: { face: INK.deathBg, lite: ['#ff6188', null], dark: ['#403e41', null] },
 };
 function drawPixelMass(g, at, w, h, kind) {
   const L = LOOK[kind], open = (x, y) => at(x, y) !== kind;
@@ -5970,8 +6001,8 @@ function decorate(g, at, w, h, kind) {
   const cellsOf = f => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (at(x, y) === kind) f(x * T, y * T, x, y); };
   const px = (X, Y, x, y, c) => { g.fillStyle = c; g.fillRect(X + x * PX, Y + y * PX, PX, PX); };
   if (kind === 'gravel') cellsOf((X, Y) => { for (const [x, y] of [[3, 3], [9, 2], [12, 6], [5, 8], [10, 10], [3, 12], [8, 13]]) { px(X, Y, x, y, INK.gravelDot); px(X, Y, x + 1, y, INK.gravelHi); } });
-  else if (kind === 'sticky') cellsOf((X, Y) => { px(X, Y, 5, 6, '#e6f8d0'); px(X, Y, 10, 8, '#e6f8d0'); });
-  else if (kind === 'death') cellsOf((X, Y) => { for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { px(X, Y, cx, cy - 2, INK.deathSpike); for (const dx of [-1, 0]) { px(X, Y, cx + dx, cy - 1, INK.deathSpike); px(X, Y, cx + dx, cy, INK.deathSpike); } for (const dx of [-2, -1, 0, 1]) px(X, Y, cx + dx, cy + 1, INK.deathSpike); px(X, Y, cx, cy - 1, '#fcfcfa'); } });
+  else if (kind === 'sticky') cellsOf((X, Y) => { px(X, Y, 5, 6, '#e8eef6'); px(X, Y, 10, 8, '#e8eef6'); });
+  else if (kind === 'death') cellsOf((X, Y) => { for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { px(X, Y, cx, cy - 2, INK.deathSpike); for (const dx of [-1, 0]) { px(X, Y, cx + dx, cy - 1, INK.deathSpike); px(X, Y, cx + dx, cy, INK.deathSpike); } for (const dx of [-2, -1, 0, 1]) px(X, Y, cx + dx, cy + 1, INK.deathSpike); px(X, Y, cx, cy - 1, '#e8eef6'); } });
   else if (kind === 'water') {
     // Waves run across the whole pool, not tile by tile.
     const k = (frame.clock / 900) % 1; g.globalAlpha = 0.55;
@@ -6072,7 +6103,7 @@ const { DIGITS } = m47;
 const centre = (i, w) => [(i % w) * T + T / 2, Math.floor(i / w) * T + T / 2];
 // What a ring or a dot says about the shortest wins: every one uses this tile, some do, or none do.
 const USE = { required: '#78dce8', optional: '#fc9867', unused: '#727072' };
-const FAINT = '#4a4752';
+const FAINT = '#403e41';
 
 // heat: { distance: Map, hopeless: [] } or { tiles: Set, colour }.
 function drawHeat(g, w, heat) {
@@ -6121,9 +6152,9 @@ function pxHead(g, x, y, a, s = 8) {
 // A number in 3x5 bitmap digits, each pixel one 2-unit cell, on a dark plate with a light rim (741).
 function pxNumber(g, n, cx, cy) {
   const s = String(n), wd = s.length * 8 - 2, x0 = Math.round((cx - wd / 2) / 2) * 2, y0 = Math.round((cy - 5) / 2) * 2;
-  g.fillStyle = '#f4f1ea'; cells(g, [[x0 - 4, y0 - 4, wd + 8, 18]]);
-  g.fillStyle = '#1d1b24'; cells(g, [[x0 - 2, y0 - 2, wd + 4, 14]]);
-  g.fillStyle = '#ffffff';
+  g.fillStyle = '#e8eef6'; cells(g, [[x0 - 4, y0 - 4, wd + 8, 18]]);
+  g.fillStyle = '#19181a'; cells(g, [[x0 - 2, y0 - 2, wd + 4, 14]]);
+  g.fillStyle = '#fcfcfa';
   const px = [];
   [...s].forEach((ch, k) => DIGITS[ch].forEach((row, y) => [...row].forEach((on, x) => { if (on === '1') px.push([x0 + k * 8 + x * 2, y0 + y * 2, 2, 2]); })));
   cells(g, px);
@@ -6154,9 +6185,9 @@ function labelSpots(path, w) {
 function drawLensMarks(g, w, { rings, passing, lines, moves, frames, crosses, stale, cutAt, stopper, focus, deltas } = {}) {
   if (deltas) for (const { i, breaks, same, d } of deltas) {
     const x = (i % w) * T, y = Math.floor(i / w) * T;
-    if (breaks) { g.fillStyle = '#ff4d6d'; pxLine(g, x + 9, y + 9, x + T - 9, y + T - 9, 4); pxLine(g, x + T - 9, y + 9, x + 9, y + T - 9, 4); }
+    if (breaks) { g.fillStyle = '#ff6188'; pxLine(g, x + 9, y + 9, x + T - 9, y + T - 9, 4); pxLine(g, x + T - 9, y + 9, x + 9, y + T - 9, 4); }
     else if (d) pxNumber(g, (d > 0 ? '+' : '-') + Math.abs(d), x + T / 2, y + T / 2);
-    else if (same) { g.fillStyle = '#c1c0c0'; pxDisc(g, x + T / 2, y + T / 2, 2); }
+    else if (same) { g.fillStyle = '#e8eef6'; pxDisc(g, x + T / 2, y + T / 2, 2); }
   }
   if (passing) for (const { i, use } of passing) { const [x, y] = centre(i, w); g.fillStyle = USE[use] || INK.player; pxDisc(g, x, y, 3); }
   if (rings) for (const { i, use } of rings) { const [x, y] = centre(i, w); g.strokeStyle = USE[use] || INK.player; pxRing(g, x, y, 7, 2); }
@@ -6181,19 +6212,19 @@ function drawLensMarks(g, w, { rings, passing, lines, moves, frames, crosses, st
     for (let n = 1; n <= last; n++) {
       const on = touches(lines[n - 1], lines[n], focus, w);
       const [ax, ay] = centre(lines[n - 1], w), [bx, by] = centre(lines[n], w), a = Math.atan2(by - ay, bx - ax);
-      g.fillStyle = old ? '#9a97a3' : on ? INK.goal : FAINT;
+      g.fillStyle = old ? '#939293' : on ? INK.goal : FAINT;
       pxLine(g, ax, ay, bx - Math.cos(a) * 8, by - Math.sin(a) * 8, 2, old ? 2 : 0);
       pxHead(g, bx, by, a, 8);
     }
     for (let n = 1; n <= last; n++) if (touches(lines[n - 1], lines[n], focus, w)) pxNumber(g, n, ...spots[n - 1]);
     if (stopper != null && stopper >= 0) {
       const x = (stopper % w) * T, y = Math.floor(stopper / w) * T;
-      g.fillStyle = '#ff4d6d';
+      g.fillStyle = '#ff6188';
       pxLine(g, x + 9, y + 9, x + T - 9, y + T - 9, 4); pxLine(g, x + T - 9, y + 9, x + 9, y + T - 9, 4);
     }
   }
   if (crosses) {
-    g.strokeStyle = '#ff9f43'; g.fillStyle = '#ff9f43';
+    g.strokeStyle = '#fc9867'; g.fillStyle = '#fc9867';
     for (const i of crosses) {
       const x = (i % w) * T, y = Math.floor(i / w) * T;
       pxStroke(g, x + 2, y + 2, T - 4, T - 4);
@@ -6237,7 +6268,7 @@ const GREY = /^[a-z]+:(wire|wnone|w\d+(\|w\d+)*)$/;
 const isGrey = c => GREY.test(c);
 const wireColoursAt = (wires, x, y) => (wires || []).filter(r => r.x === x && r.y === y).map(r => r.w);
 function drawTrim(g, x, y, cols) {
-  g.save(); g.lineWidth = cols.length ? 2.5 : 2; g.strokeStyle = cols.length ? INK[cols[0]] : '#6b7280';
+  g.save(); g.lineWidth = cols.length ? 2.5 : 2; g.strokeStyle = cols.length ? INK[cols[0]] : '#5b595c';
   if (!cols.length) g.setLineDash([4, 3]);
   if (cols.length) pxFrame(g, x * T + 2, y * T + 2, T - 4, T - 4); else g.strokeRect(x * T + 3, y * T + 3, T - 6, T - 6);
   g.restore();
@@ -6284,7 +6315,7 @@ function drawJuice(g, fx, now) {
     // twice as far in gold and cyan (registers 702, 790).
     if (f.type === 'eat' || f.type === 'win') {
       const big = f.type === 'win', n = big ? 16 : 10, r = T / 3 + (big ? 2 : 1.2) * T * ease(t);
-      if (t < 0.3) { g.fillStyle = '#ffffff'; g.globalAlpha = 0.6 * (1 - t / 0.3); g.fillRect(f.x * T + P, f.y * T + P, T - 2 * P, T - 2 * P); }
+      if (t < 0.3) { g.fillStyle = '#e8eef6'; g.globalAlpha = 0.6 * (1 - t / 0.3); g.fillRect(f.x * T + P, f.y * T + P, T - 2 * P, T - 2 * P); }
       g.globalAlpha = 1 - t;
       for (let i = 0; i < n; i++) {
         const a = i / n * Math.PI * 2;
@@ -6293,7 +6324,7 @@ function drawJuice(g, fx, now) {
         if (big) dot(g, cx + Math.cos(a + Math.PI / n) * r * 0.6 - P, cy + Math.sin(a + Math.PI / n) * r * 0.6 - P);
       }
     } else if (f.type === 'place') {
-      g.fillStyle = '#fcfcfa'; g.globalAlpha = 1 - t;
+      g.fillStyle = '#e8eef6'; g.globalAlpha = 1 - t;
       for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) dot(g, cx + sx * (T / 2 + 10 * ease(t)) - P, cy + sy * (T / 2 + 10 * ease(t)) - P, P * (t < 0.5 ? 2 : 1));
     } else if (f.type === 'erase') {
       g.fillStyle = '#939293'; g.globalAlpha = 1 - t;
@@ -6301,10 +6332,10 @@ function drawJuice(g, fx, now) {
     } else if (f.type === 'land' && DIRS[f.dir]) {
       // Dust at the side it hit, spreading along that wall.
       const [dx, dy] = DIRS[f.dir], ex = cx + dx * (T / 2 - 4), ey = cy + dy * (T / 2 - 4);
-      g.fillStyle = '#c1c0c0'; g.globalAlpha = 0.8 * (1 - t);
+      g.fillStyle = '#e8eef6'; g.globalAlpha = 0.8 * (1 - t);
       for (const s of [-1, 1]) dot(g, ex + dy * s * (6 + 8 * ease(t)) - dx * 4 * t - P, ey + dx * s * (6 + 8 * ease(t)) - dy * 4 * t - P);
     } else if (f.type === 'hit') {
-      g.fillStyle = '#ffffff'; g.globalAlpha = 0.55 * (1 - t);
+      g.fillStyle = '#e8eef6'; g.globalAlpha = 0.55 * (1 - t);
       g.fillRect(f.x * T + P, f.y * T + P, T - 2 * P, T - 2 * P);
     }
   }
@@ -6462,7 +6493,7 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     const mid = p => [p.x * T + T / 2, p.y * T + T / 2];
     g.lineCap = 'square'; g.lineJoin = 'miter';
     for (const spots of over.trail.boxes) {
-      g.strokeStyle = '#c8701d'; g.lineWidth = 3; g.setLineDash([6, 5]); g.beginPath();
+      g.strokeStyle = '#c4643a'; g.lineWidth = 3; g.setLineDash([6, 5]); g.beginPath();
       spots.forEach((p, i) => (i ? g.lineTo : g.moveTo).call(g, ...mid(p))); g.stroke(); g.setLineDash([]);
     }
     const r = over.trail.robot;
@@ -6472,7 +6503,7 @@ function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     for (let i = 1; i < r.length; i++) {
       const [ax, ay] = mid(r[i - 1]), [bx, by] = mid(r[i]), x = (ax + bx) / 2, y = (ay + by) / 2;
       g.fillStyle = INK.mark; pxDisc(g, x, y, T * 0.2);
-      g.fillStyle = '#fff'; g.fillText(String(i), x, y + 1);
+      g.fillStyle = '#e8eef6'; g.fillText(String(i), x, y + 1);
     }
   }
   if (over && over.sel) {
@@ -6680,11 +6711,11 @@ function icon(tool, colour = 'red', gateColour = null, crate = false) {
     // Three wires in their lanes, one bending, as the Wire tool (register 347).
     for (const [col, o] of [['teal', -6], ['violet', 0], ['charcoal', 6]]) { x.fillStyle = INK[col]; x.fillRect(4, 14 + o, 14 + o, 4); x.fillRect(14 + o, 14 + o, 4, 14 - o); }
   } else if (tool === 'select') {
-    x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
+    x.strokeStyle = '#5b595c'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
   } else if (tool === 'look' || tool === 'move' || tool === 'erase') {
     // The tool row's own icons are the HUD's pixel icons (register 602 S3), 2 units per pixel.
     // Whole canvas pixels, centred, so no edge is smoothed (register 643).
-    x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#c1c0c0';
+    x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#e8eef6';
     pixelBitmap(tool).forEach((row, py) => row.forEach((v, px) => { if (v) x.fillRect(4 + px * 2, 4 + py * 2, 2, 2); }));
   } else if (tool === 'start' || tool === 'robot') {
     // The campaign's goal rows name the robot, which plays them (register 323); a room's start is you.
@@ -6704,7 +6735,7 @@ function icon(tool, colour = 'red', gateColour = null, crate = false) {
   else if (tool === 'follow') {
     // A mover that copies you: the mover, and in this icon only two chevrons for "the same way" (registers 615, 624).
     drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);
-    x.fillStyle = '#221f22'; x.fillRect(18, 2, 12, 10); x.fillStyle = '#fcfcfa';
+    x.fillStyle = '#19181a'; x.fillRect(18, 2, 12, 10); x.fillStyle = '#fcfcfa';
     for (const [cx, cy] of [[20, 4], [22, 6], [20, 8], [24, 4], [26, 6], [24, 8]]) x.fillRect(cx, cy, 2, 2);
   }
   else drawPiece(x, { kind: tool, axis: 'h', dir: 1, mode: 'input' }, 0, 0);
@@ -7034,7 +7065,8 @@ const { achievements } = m56;
 
 
 const TAUGHT = Object.values(TOOL);
-const owned = (p = progress()) => p.owned || [];
+// Pocket was sold for two stars and is gone (registers 812, 813): who bought it owns Neon lab, which took its place.
+const owned = (p = progress()) => (p.owned || []).map(k => k === 'palette:gameboy' ? 'palette:neon' : k);
 const spent = (p = progress()) => p.spent || 0;
 const earnedList = (p = progress()) => achievements(p.levels || {}, usedPieces(), TAUGHT, { feats: p.feats || {}, peak: p.peak || {}, spent: spent(p) });
 // Every star the campaign has given: one per beaten level, one per side goal met, and each achievement's.
@@ -7191,7 +7223,7 @@ const { $ } = m0;
 const { place, go, back, current } = m4;
 const { glyph } = m2;
 const { unlocked } = m3;
-const { PALETTES, SKINS, look, paint, setPalette, setSkin, setBoil } = m5;
+const { PALETTES, SKINS, look, setPalette, setSkin, setBoil } = m5;
 const { soundOn, setSound } = m6;
 const { drawSprite } = m12;
 const { INK, T } = m8;
@@ -7240,8 +7272,8 @@ function render() {
     b.type = 'button'; b.dataset.palette = p.id; b.classList.toggle('on', look.palette === p.id);
     const mine = state(b, key, p.cost);
     const sw = document.createElement('span'); sw.className = 'lookSwatch';
-    // The palette's own colours for the floor, a wall, the blob, the berry and a door.
-    sw.append(...['#221f22', '#5b595c', '#a9dc76', '#78dce8', '#ff6188'].map(h => Object.assign(document.createElement('i'), { style: `background:${p.greys ? paint(h, p) : h}` })));
+    // All sixteen of the palette's colours, in slot order (registers 807, 810).
+    sw.append(...p.colors.map(h => Object.assign(document.createElement('i'), { style: `background:${h}` })));
     b.append(sw, Object.assign(document.createElement('b'), { textContent: p.name }), ...(mine ? [] : [price(p.cost)]));
     b.setAttribute('aria-pressed', String(look.palette === p.id));
     b.onclick = () => { if (owns(key, p.cost) || buy(key, p.cost)) setPalette(p.id); render(); };
@@ -7567,7 +7599,7 @@ function buildPuzzles(actions) {
 function puzzleRow(def, rec, open, kind) {
   const li = document.createElement('li'), b = document.createElement('button');
   li.className = kind; b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id; b.disabled = !open; b.classList.toggle('locked', !open);
-  const name = Object.assign(document.createElement('b'), { textContent: def.id.toUpperCase() }); name.setAttribute('aria-label', def.name);
+  const name = Object.assign(document.createElement('b'), { textContent: 'Puzzle ' + def.id.slice(1) }); name.setAttribute('aria-label', def.name);
   const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name);
   const stars = document.createElement('span'); stars.className = 'campStars';
   // Its second star is the fewest moves in one take (register 785).
@@ -7925,6 +7957,7 @@ const { createGame, step } = m25;
 const { TICK_MS } = m7;
 const { drawPlay } = m51;
 const { drawFloor } = m45;
+const { drawMasses, ringCells } = m46;
 const { frame } = m8;
 const { motionFx } = m50;
 const { T } = m8;
@@ -7934,6 +7967,7 @@ const { soundFx } = m6;
 // own rules and drawn by its own renderer, so a new palette, skin or sound reaches it with nothing to copy.
 // The box blocks the laser, the blob bumps the closed door, steps on the switch and goes through to the berry.
 // It runs only while the menu is on screen.
+
 
 
 
@@ -7970,6 +8004,8 @@ function buildMenuScene(host) {
   const cv = host.firstElementChild, g = cv.getContext('2d');
   cv.width = (W + 2 * M) * T / PX; cv.height = (H + 2 * M) * T / PX;
   let game, prev, queue, rest, acc = 0, last = 0, won = 0, fx = [];
+  // No top row: the logo sits there (register 819); the sides and the bottom close the room as a level's ring does.
+  const ring = ringCells(menuLevel(), new Set()).map((c, i) => i < W + 2 ? '' : c);
   const reset = () => { game = createGame(menuLevel()); prev = snap(game); queue = [...MENU_MOVES]; rest = 0; won = 0; fx = []; menuRoom.game = game; };
   reset();
   const shown = () => host.closest('dialog').open && !document.hidden;
@@ -7989,6 +8025,8 @@ function buildMenuScene(host) {
     const avatar = frame.avatar; frame.avatar = 'robot';
     g.setTransform(1 / PX, 0, 0, 1 / PX, 0, 0); drawFloor(g, W + 2 * M, H + 2 * M);
     g.translate(M * T, M * T);
+    // The wall ring every level has (registers 672, 816): one tile out, joining the room's edge walls.
+    g.save(); g.translate(-T, -T); drawMasses(g, ring, W + 2, H + 2); g.restore();
     drawPlay(g, game, prev, Math.min(1, acc / TICK_MS), fx, t);
     frame.avatar = avatar; menuRoom.draws++;
   };
@@ -8527,9 +8565,10 @@ return { toCode, fromCode, buildProgress };
 })();
 // ---- src/app/snow.js
 const m76 = (() => {
-
+const { current } = m5;
 // Drift: snow behind the shell. It falls slowly, and when the player starts a slide it rushes the
 // same way for a moment, then settles. Still under reduced motion.
+
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FLAKES = 60, GUST = 1.2, SETTLE = 0.94;
 let wind = { x: 0, y: 0 }, flakes = [];
@@ -8542,6 +8581,8 @@ function gust(dir) {
 }
 const windNow = () => ({ ...wind });
 
+// On a light page the flakes read as specks of dirt (register 819), so they fall only on a dark one.
+const darkPage = () => { const h = current().colors[0]; return 0.299 * parseInt(h.slice(1, 3), 16) + 0.587 * parseInt(h.slice(3, 5), 16) + 0.114 * parseInt(h.slice(5, 7), 16) < 128; };
 function startSnow(cv) {
   const g = cv.getContext('2d');
   flakes = Array.from({ length: FLAKES }, () => ({ x: Math.random(), y: Math.random(), r: 0.4 + Math.random() * 1.6, fall: 0.0003 + Math.random() * 0.0008, sway: Math.random() * 6 }));
@@ -8553,6 +8594,7 @@ function startSnow(cv) {
     const w = innerWidth, h = innerHeight;
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     g.clearRect(0, 0, w, h);
+    if (!darkPage()) { requestAnimationFrame(draw); return; }
     g.fillStyle = 'rgba(110,120,150,.32)';
     for (const f of flakes) {
       if (!reduce) {
@@ -10379,6 +10421,7 @@ const { S } = m43;
 const { list, put, remove, where, newId, detect } = m62;
 const { uses } = m94;
 const { $ } = m0;
+const { unlocked } = m3;
 const { readDraft, noteChange, flushDraft, clearDraft } = m95;
 const { buildTileMenu } = m96;
 const { place, go, current, back } = m4;
@@ -10386,6 +10429,7 @@ const { buildMore } = m97;
 const { renderList: drawList, row } = m99;
 // The Rooms panel: the room being edited (name, note, save), the saved rooms, the
 // templates, and moving rooms in and out as files.
+
 
 
 
@@ -10518,12 +10562,13 @@ const closeAll = () => { if (current()?.name === 'rooms') back('room'); };
 function buildRooms(actions) {
   A = actions;
   // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
-  // The hex counter, then every campaign puzzle, so a puzzle can be opened and changed here (register 662).
-  const EXAMPLES = ['Hex counter', ...PUZZLES.filter(Boolean).map(p => p.name)];
+  // Every campaign puzzle, so a puzzle can be opened and changed here (register 662); the 60x46 hex counter is a
+  // test room, listed in dev mode only (register 819).
+  const EXAMPLES = () => [...(unlocked() ? ['Hex counter'] : []), ...PUZZLES.filter(Boolean).map(p => p.name)];
   const templateRows = (list = TEMPLATES, kind = 'Template') => list.map(t => { const { level } = splitRoom(t.level);
     return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: kind === 'Example' ? t.name : '', fixture: kind !== 'Example' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
-  exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
+  exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES().includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
   // Rooms from the menu (rooms/start) is the Sandbox's first screen, its way back Menu; from a room, Close (registers 395, 399).
   place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; $('thisRoom').hidden = arg === 'start'; if (arg !== 'start') { fillCurrent(); $('shareOut').hidden = true; } await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
   place('room', { parent: () => 'menu', enter: enterSandbox, exit: leaveSandbox });
@@ -11590,7 +11635,7 @@ const MARK = {
   solution: ARROW(INK.goal, 2.2),
   moves: `<g opacity=".7">${ARROW(INK.player, 1.2)}</g>`,
   traps: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="${INK.beam}" stroke-width="1.8"/>`,
-  danger: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="#ff9f43" stroke-width="1.8"/><path d="M10 3l6 6M16 3l-6 6" stroke="#ff9f43" stroke-width="1.6"/>`,
+  danger: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="#fc9867" stroke-width="1.8"/><path d="M10 3l6 6M16 3l-6 6" stroke="#fc9867" stroke-width="1.6"/>`,
 };
 const NAME = Object.fromEntries(LENS_GROUPS.flatMap(g => g.lenses));
 

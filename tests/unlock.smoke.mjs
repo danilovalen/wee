@@ -32,7 +32,12 @@ try {
   const extras = ['#menuDebug', '#reportBtn', '#roomDownload', '#importBtn', '#exportAll'];
   const shownExtras = () => p.evaluate(ids => ids.filter(id => { const e = document.querySelector(id); return e && getComputedStyle(e).display !== 'none'; }), extras);
   check('locked, Debug, Copy report, Download, Import and Export all are hidden (register 780)', (await shownExtras()).length === 0, (await shownExtras()).join());
+  // Turning it on asks first (register 818); Cancel leaves it off.
   await p.click('#menuUnlock'); await p.waitForTimeout(150);
+  check('turning dev mode on asks first', await p.isVisible('#devBox') && /unlocks everything/.test(await p.textContent('#devBox')) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'false');
+  await p.click('#devNo'); await p.waitForTimeout(150);
+  check('Cancel leaves it off', !(await p.isVisible('#devBox')) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'false');
+  await p.click('#menuUnlock'); await p.click('#devYes'); await p.waitForTimeout(150);
   check('in dev mode they come back', (await shownExtras()).length === extras.length, (await shownExtras()).join());
   check('the corner button says it is on', (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'true');
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);

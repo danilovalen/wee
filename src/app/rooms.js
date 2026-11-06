@@ -11,6 +11,7 @@ import { S } from '../editor/state.js';
 import { list, put, remove, where, newId, detect } from './store.js';
 import { uses } from '../solve/tags.js';
 import { $ } from './dom.js';
+import { unlocked } from './unlock.js';
 import { readDraft, noteChange, flushDraft, clearDraft } from './draft.js';
 import { buildTileMenu } from './tilemenu.js';
 import { place, go, current, back } from './nav.js';
@@ -133,12 +134,13 @@ const closeAll = () => { if (current()?.name === 'rooms') back('room'); };
 export function buildRooms(actions) {
   A = actions;
   // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
-  // The hex counter, then every campaign puzzle, so a puzzle can be opened and changed here (register 662).
-  const EXAMPLES = ['Hex counter', ...PUZZLES.filter(Boolean).map(p => p.name)];
+  // Every campaign puzzle, so a puzzle can be opened and changed here (register 662); the 60x46 hex counter is a
+  // test room, listed in dev mode only (register 819).
+  const EXAMPLES = () => [...(unlocked() ? ['Hex counter'] : []), ...PUZZLES.filter(Boolean).map(p => p.name)];
   const templateRows = (list = TEMPLATES, kind = 'Template') => list.map(t => { const { level } = splitRoom(t.level);
     return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: kind === 'Example' ? t.name : '', fixture: kind !== 'Example' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();
-  exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES.includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
+  exampleRows = () => templateRows(TEMPLATES.filter(t => EXAMPLES().includes(t.name)), 'Example').map(li => { li.classList.add('example'); return li; });
   // Rooms from the menu (rooms/start) is the Sandbox's first screen, its way back Menu; from a room, Close (registers 395, 399).
   place('rooms', { page: 'roomsBox', parent: arg => arg === 'start' ? 'menu' : 'room', enter: async arg => { $('roomsClose').hidden = arg === 'start'; $('thisRoom').hidden = arg === 'start'; if (arg !== 'start') { fillCurrent(); $('shareOut').hidden = true; } await enterSandbox(); await fillLibrary(); }, exit: leaveSandbox });
   place('room', { parent: () => 'menu', enter: enterSandbox, exit: leaveSandbox });

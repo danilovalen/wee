@@ -11,4 +11,5 @@ export const PLACING = CHALLENGES.filter(c => !c.challenge.remove);
 export const REMOVING = CHALLENGES.filter(c => c.challenge.remove);
 // A challenge waiting for a room that meets the bar is not shown, so the numbers skip it and run with no gap.
 const shown = list => list.filter(c => !c.waiting);
-export const challengeName = def => def.challenge.remove ? `R${shown(REMOVING).findIndex(c => c.id === def.id) + 1}` : `C${shown(PLACING).findIndex(c => c.id === def.id) + 1}`;
+// Named for what the player does (register 819): P1, C1, R1 told a new player nothing.
+export const challengeName = def => def.challenge.remove ? `Remove ${shown(REMOVING).findIndex(c => c.id === def.id) + 1}` : `Place ${shown(PLACING).findIndex(c => c.id === def.id) + 1}`;

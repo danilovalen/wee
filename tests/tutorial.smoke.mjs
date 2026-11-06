@@ -24,6 +24,7 @@ try {
   await p.click('#menuCampaign'); await p.waitForTimeout(1000);
   check('a first-time player opening Campaign lands in the tutorial', (await p.evaluate(() => location.hash)) === '#/level/tutorial' && await p.locator('#tutBox').isVisible());
   check('only the bubble, the room and Levels/Edit show: no goals card, undo, Reset or tool row (register 519)', await p.evaluate(() => ['campBrief', 'undo', 'redo', 'campReset', 'campTools'].every(id => { const e = document.getElementById(id), s = getComputedStyle(e); return s.visibility === 'hidden' || s.display === 'none' || e.getBoundingClientRect().height === 0; })));
+  check('the first tutorial room shows no zoom buttons (register 819)', await p.evaluate(() => [...document.querySelectorAll('.zoomBar')].every(e => !e.getClientRects().length || getComputedStyle(e).visibility === 'hidden')));
   check('the bubble sits above the room, not over it', await p.evaluate(() => document.getElementById('tutBox').getBoundingClientRect().bottom <= document.getElementById('game').getBoundingClientRect().top));
   check('step 1 opens ready to slide, the tools never flashing first', /Swipe across the room/.test(await say(p)) && await p.evaluate(() => document.body.classList.contains('play') && !window.__seen.tools));
   await p.mouse.click(5, 5); await p.waitForTimeout(300);

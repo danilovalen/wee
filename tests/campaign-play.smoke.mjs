@@ -491,7 +491,7 @@ try {
   pz.on('pageerror', e => errors.push(e.message));
   await pz.goto('http://localhost:5217/#/levels'); await pz.waitForTimeout(600);
   const slot = await pz.evaluate(async () => { const { plan, PUZZLES } = await import('/src/campaign/progression.js'); const first = PUZZLES.find(Boolean), k = plan().findIndex(r => r.side === first); const row = document.querySelector(`.campRow[data-level="${first.id}"]`); return { id: first.id, k, side: !!row && row.closest('li').classList.contains('side'), name: row && row.textContent }; });
-  check('a puzzle sits in the side room after an odd builder level, named P and its number', slot.k >= 0 && slot.k % 2 === 0 && slot.side && /^P\d/.test(slot.name), JSON.stringify(slot));
+  check('a puzzle sits in the side room after an odd builder level, named Puzzle and its number', slot.k >= 0 && slot.k % 2 === 0 && slot.side && /^Puzzle \d/.test(slot.name), JSON.stringify(slot));
   await pz.click(`.campRow[data-level="${slot.id}"]`); await pz.waitForTimeout(600);
   check('the puzzle plays by hand with no powers, its way back named Levels', await pz.evaluate(() => document.body.classList.contains('puzzle') && document.body.classList.contains('play') && !Object.values(window.wee.getLevel().powers).some(Boolean)) && (await pz.textContent('#puzzleBack')) === 'Levels');
   const way = await pz.evaluate(async () => (await import('/src/campaign/robot.js')).allShortest(window.wee.getLevel()).paths[0]);

@@ -15,7 +15,7 @@ try {
     const page = await browser.newPage({ viewport: { width: w, height: h }, ...(w < 500 ? { isMobile: true, hasTouch: true } : {}) });
     await page.addInitScript(() => { window.__noTutorial = true; });
     await page.goto('http://localhost:5284/'); await page.waitForTimeout(400);
-    await page.click('#menuUnlock'); await page.waitForTimeout(100);
+    await page.click('#menuUnlock'); await page.click('#devYes'); await page.waitForTimeout(100);
     await page.evaluate(() => { location.hash = '#/levels'; }); await page.waitForTimeout(500);
     const r = await page.evaluate(() => {
       const rows = [...document.querySelectorAll('#campList li.main .campRow')];
@@ -40,8 +40,8 @@ try {
     const nums = r.ids.filter(id => /^\d+$/.test(id)).map(Number);
     check(`${w}px: no hidden level shows`, !r.ids.some(id => hidden.includes(id)), r.ids.join());
     check(`${w}px: numbered levels run in number order`, nums.length > 10 && nums.every((n, i) => !i || n > nums[i - 1]), nums.join());
-    const seq = k => r.labels.filter(t => t.startsWith(k)).map(t => +t.slice(1));
-    check(`${w}px: challenges read C1, C2, C3... and puzzles P1, P2... down the list (register 735)`, ['C', 'P'].every(k => seq(k).length > 2 && seq(k).every((n, i) => n === i + 1)), r.labels.join());
+    const seq = k => r.labels.filter(t => t.startsWith(k + ' ')).map(t => +t.slice(k.length + 1));
+    check(`${w}px: placing and removal challenges and puzzles each count 1, 2, 3... down the list (registers 735, 819)`, ['Place', 'Remove', 'Puzzle'].every(k => seq(k).length > 2 && seq(k).every((n, i) => n === i + 1)), r.labels.join());
     check(`${w}px: every card is whole: a name on one line, the pieces inside`, !r.broken.length, r.broken.join());
     check(`${w}px: every card, two to a slot included, keeps its whole name, its pieces on one line and its star inside (register 788)`, !r.cut.length, r.cut.join(' | '));
     check(`${w}px: the progress buttons fit their labels`, !r.clipped.length, r.clipped.join());

@@ -13,7 +13,7 @@ export const SHADES = [['deep', 'wall'], ['wall', 'mid'], ['mid', 'top'], ['top'
 export const PALETTES = [
   // Daylight (register 814): the main palette, after wee's first light look: a pale room, light walls with dark
   // edges, dark text, and pieces dark enough to stand off both the floor and the walls.
-  { id: 'day', name: 'Daylight', cost: 0, colors: ['#e6e9ee', '#f4f6f9', '#5b6070', '#c3c9d5', '#d0d5df', '#dde1e8', '#ffffff', '#2a2730', '#ff5a73', '#c2405a', '#ff8a3d', '#c96a1e', '#e89a00', '#a8740a', '#3cc47e', '#23905a', '#3d8ef0', '#2f6cc0', '#7b6cff', '#4b3fd6'] },
+  { id: 'day', name: 'Daylight', cost: 0, colors: ['#e6e9ee', '#f4f6f9', '#5b6070', '#a9b0bf', '#b9bfcb', '#c9ced8', '#ffffff', '#2a2730', '#f0435f', '#b3304a', '#ff8a3d', '#c96a1e', '#e89a00', '#a8740a', '#3cc47e', '#23905a', '#3d8ef0', '#2f6cc0', '#7b6cff', '#4b3fd6'] },
   // Neon lab takes the place Pocket had (registers 812, 813): its four greens hid the button and wire colours.
   { id: 'neon', name: 'Neon lab', cost: 2, colors: NEON },
   // Grue (register 815): Pocket's green and blue-green as the room and the page, every piece in full colour.
@@ -100,7 +100,8 @@ if (proto) for (const prop of ['fillStyle', 'strokeStyle', 'shadowColor']) {
 }
 
 // The page's colour tokens, mapped the same way; their neon values are read once, before any is set.
-const TOKENS = ['--paper', '--panel', '--rule', '--ink', '--soft', '--accent', '--on-accent', '--sticker', '--selectable', '--ice', '--mid', '--lite', '--gold', '--gold-ink', '--good', '--bad', '--cyan', '--orange', '--kept', '--shade', '--field', '--field-rule', '--inset-rim'];
+// --rule and --soft are mixes of --ink and --paper (register 819), so they follow those two and are not set here.
+const TOKENS = ['--paper', '--panel', '--ink', '--accent', '--on-accent', '--sticker', '--selectable', '--ice', '--mid', '--lite', '--gold', '--gold-ink', '--good', '--bad', '--cyan', '--orange', '--kept', '--shade', '--field', '--field-rule', '--inset-rim'];
 let base = null;
 export function applyPalette() {
   if (typeof document === 'undefined') return;

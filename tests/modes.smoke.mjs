@@ -35,9 +35,9 @@ try {
   // Registers 357 and 358: the Rooms page lists the example rooms and has a way back to the menu.
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await page.waitForTimeout(300);
   const examples = await page.$$eval('#roomList li', ls => ls.map(l => l.textContent).filter(t => t.includes('Example')).join('|'));
-  // The examples are the hex counter and every campaign puzzle, from the same rooms (registers 659, 662).
+  // The examples are every campaign puzzle, from the same rooms (registers 659, 662); the hex counter is dev only (819).
   const puzzleNames = await page.evaluate(async () => (await import('/src/campaign/progression.js')).PUZZLES.filter(Boolean).map(p => p.name));
-  check('the Rooms page lists the hex counter and every campaign puzzle as examples, and no box room', /Hex counter/.test(examples) && puzzleNames.length > 0 && puzzleNames.every(n => examples.includes(n)) && !/Box into box/.test(examples) && examples.split('|').length === 1 + puzzleNames.length, examples);
+  check('the Rooms page lists every campaign puzzle as examples, no box room, and no hex counter outside dev mode (register 819)', !/Hex counter/.test(examples) && puzzleNames.length > 0 && puzzleNames.every(n => examples.includes(n)) && !/Box into box/.test(examples) && examples.split('|').length === puzzleNames.length, examples);
   // Opened from the room, Rooms has Close; its first screen, from the menu, has Menu (register 399).
   // Back goes up a place: from the Rooms page to the room, then to the menu (register 665).
   await page.evaluate(() => document.getElementById('logo').click()); await page.waitForTimeout(400); await page.evaluate(() => document.getElementById('logo').click()); await page.click('#menuSandbox'); await page.waitForTimeout(400);

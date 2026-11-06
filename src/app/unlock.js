@@ -31,5 +31,8 @@ export function setDev(v) {
 
 export function bindUnlock() {
   sync();
-  $('menuUnlock').onclick = () => setDev(!on);
+  // Turning it on asks first (register 818): a tester's tap would otherwise skip the whole progression.
+  $('menuUnlock').onclick = () => on ? setDev(false) : $('devBox').showModal();
+  $('devYes').onclick = () => { $('devBox').close(); setDev(true); };
+  $('devNo').onclick = () => $('devBox').close();
 }

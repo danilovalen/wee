@@ -87,7 +87,7 @@ export function buildPuzzles(actions) {
 export function puzzleRow(def, rec, open, kind) {
   const li = document.createElement('li'), b = document.createElement('button');
   li.className = kind; b.type = 'button'; b.className = 'campRow'; b.dataset.level = def.id; b.disabled = !open; b.classList.toggle('locked', !open);
-  const name = Object.assign(document.createElement('b'), { textContent: def.id.toUpperCase() }); name.setAttribute('aria-label', def.name);
+  const name = Object.assign(document.createElement('b'), { textContent: 'Puzzle ' + def.id.slice(1) }); name.setAttribute('aria-label', def.name);
   const top = document.createElement('span'); top.className = 'campRowHead'; top.append(name);
   const stars = document.createElement('span'); stars.className = 'campStars';
   // Its second star is the fewest moves in one take (register 785).

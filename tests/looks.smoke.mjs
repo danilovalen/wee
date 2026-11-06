@@ -16,6 +16,8 @@ try {
   const errors = []; p.on('pageerror', e => errors.push(e.message));
   await p.addInitScript(() => { window.__noTutorial = true; });
   await p.goto(`http://localhost:${PORT}/index.html`); await p.waitForTimeout(800);
+  // Snow on a light page reads as specks of dirt (register 819), so Daylight, the default, draws none.
+  check('Daylight, the default look, drifts no snow over the page', await p.evaluate(() => { const c = document.getElementById('snow'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; for (let i = 3; i < d.length; i += 4) if (d[i]) return false; return c.width > 0; }));
   await p.click('#menuLooks'); await p.waitForTimeout(300);
   const hues = await p.evaluate(async () => {
     const { drawSprite } = await import('/src/view/sprites.js');
@@ -96,6 +98,7 @@ try {
   if (!(await p.$('[data-palette=neon]')) || !(await p.isVisible('[data-palette=neon]'))) { await p.click('#menuLooks'); await p.waitForTimeout(300); }
   check('a save that bought Pocket owns Neon lab', await p.$eval('[data-palette=neon]', b => b.dataset.owned === 'true'));
   check('a save that wore Pocket opens on the first palette', await p.evaluate(() => document.documentElement.dataset.palette) === PALETTES[0].id);
+  check('and the Looks page marks the first palette as the one worn', await p.$$eval('#lookPalettes button.on', bs => bs.map(b => b.dataset.palette).join()) === PALETTES[0].id);
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the looks smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

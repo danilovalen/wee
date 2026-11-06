@@ -85,9 +85,9 @@ Read by `tests/manga.test.mjs`. `name | value`, one per row, values verbatim.
 |---|---|
 | `--paper` | `#19181a` |
 | `--panel` | `#2d2a2e` |
-| `--rule` | `#403e41` |
+| `--rule` | `color-mix(in srgb, var(--ink) 15%, var(--paper))` |
 | `--ink` | `#fcfcfa` |
-| `--soft` | `#939293` |
+| `--soft` | `color-mix(in srgb, var(--ink) 55%, var(--paper))` |
 | `--accent` | `#ab9df2` |
 | `--on-accent` | `#19181a` |
 | `--field` | `rgba(255,255,255,0.06)` |
