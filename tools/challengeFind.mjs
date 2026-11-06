@@ -22,7 +22,7 @@ export const SPECS = [
   // A box to push onto a button that holds the door open (register 696).
   { id: 'c6', name: 'Flint', size: 5, fixed: ['#', '#', '#', 'D'], pieces: ['B', 'o', '#'], open: 15, want: {}, needs: 'D' },
   // Register 762: one after each of Levels 15, 18, 20, 22 and 24, from the pieces those levels teach.
-  { id: 'c7', name: 'Cove', size: 6, fixed: ['#', '#', '>', 'B'], pieces: ['e', '#'], open: 17, want: {}, refine: { steps: 60, best: true } },
+  { id: 'c7', name: 'Cove', size: 6, fixed: ['#', '>', 'B', 'r', 'D'], pieces: ['e', '#'], open: 17, want: {}, needs: 'D', refine: { steps: 60, best: true } },
   { id: 'c8', name: 'Reed', size: 6, fixed: ['#', '#', 'e', 'D'], pieces: ['r', '#', '#'], open: 12, want: { stops: 4 }, needs: 'D' },
   { id: 'c9', name: 'Slate', size: 6, fixed: ['#', '#', 'r', 'D'], pieces: ['e', '#', '#'], open: 10, want: {}, needs: 'D' },
   { id: 'c10', name: 'Drift', size: 6, fixed: ['#', '#', 'x', 'x'], pieces: ['>', '#', '#'], open: 10, want: {} },
