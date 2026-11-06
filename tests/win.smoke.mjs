@@ -10,7 +10,7 @@ const { check, done } = suite('win');
 const PORT = 5253;
 const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const page = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true });
+const page = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true }); await page.addInitScript(() => { window.__neonLook = true; });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 const ROOM = KNOWN.small['1'];

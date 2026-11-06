@@ -14,7 +14,7 @@ const FIRST_W = JSON.parse(readFileSync('rooms/first-room.wee', 'utf8')).w;
 const PORT = 5199;
 const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, acceptDownloads: true });
+const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, acceptDownloads: true }); await page.addInitScript(() => { window.__neonLook = true; });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 mkdirSync('shots', { recursive: true });
@@ -500,7 +500,7 @@ try {
   await page.fill('#codeIn', 'nonsense');
   await page.click('#openCode');
   check('a bad code says so', (await page.textContent('#roomsSay')).includes('Not a wee room code'));
-  const linkPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const linkPage = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await linkPage.addInitScript(() => { window.__neonLook = true; });
   await linkPage.goto(`http://localhost:${PORT}/#room=${code}`);
   await linkPage.waitForFunction(() => window.wee && window.wee.roomsReady);
   await linkPage.evaluate(() => window.wee.roomsReady);
@@ -729,7 +729,7 @@ try {
   const listed = await page.evaluate(() => { const list = document.getElementById('keysList').textContent; return [...document.querySelectorAll('[data-tool] kbd')].every(k => list.includes(k.textContent)) && document.querySelectorAll('[data-tool] kbd').length >= 10; });
   check('? opens a list holding every tool key', await page.locator('#keysBox').isVisible() && listed);
   await page.keyboard.press('Escape');
-  const sp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const sp = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await sp.addInitScript(() => { window.__neonLook = true; });
   sp.on('pageerror', e => errors.push(e.message));
   await sp.goto(`http://localhost:${PORT + 1}/?sandbox=full`);
   await sp.waitForFunction(() => window.wee && window.wee.roomsReady);

@@ -8,7 +8,7 @@ import { room, suite, pickTool } from './lib.mjs';
 const { check, done } = suite('lens-ui');
 const server = await serve(5213);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+const page = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await page.addInitScript(() => { window.__neonLook = true; });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 const OFF = { boomerang: false, dive: false, laser: false, cycle: false };
@@ -128,14 +128,14 @@ try {
   await tap('whatif');
   check('key 0 turns every lens off', !(await legend()).trim() && await page.locator('#lensBar .on').count() === 0);
   // The simple Sandbox has the same icons.
-  const simple = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const simple = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await simple.addInitScript(() => { window.__neonLook = true; });
   await simple.goto('http://localhost:5213/?sandbox');
   await simple.waitForFunction(() => window.wee && window.wee.roomsReady); await simple.evaluate(() => window.wee.roomsReady);
   await simple.evaluate(() => document.getElementById('roomsBox').close());
   check('the simple Sandbox shows the same ten icons', await simple.locator('#lensBar [data-lens-icon]').count() === 10 && await simple.locator('#lensBar').isVisible());
   await simple.close();
   // A phone folds the icons into one Lenses button (register 749).
-  const phone = await browser.newPage({ viewport: { width: 390, height: 800 } });
+  const phone = await browser.newPage({ viewport: { width: 390, height: 800 } }); await phone.addInitScript(() => { window.__neonLook = true; });
   await phone.goto('http://localhost:5213/?sandbox=full');
   await phone.waitForFunction(() => window.wee && window.wee.roomsReady); await phone.evaluate(() => window.wee.roomsReady);
   await phone.evaluate(() => document.getElementById('roomsBox').close());

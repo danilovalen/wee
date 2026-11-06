@@ -9,7 +9,7 @@ const { check, done } = suite('wires');
 const PORT = 5229;
 const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const page = await browser.newPage({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, hasTouch: true }); await page.addInitScript(() => { window.__openAll = true; });
+const page = await browser.newPage({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, hasTouch: true }); await page.addInitScript(() => { window.__neonLook = true; }); await page.addInitScript(() => { window.__openAll = true; });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 try {
