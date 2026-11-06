@@ -45,12 +45,13 @@ try {
     await page.click('#menuCampaign'); await page.waitForTimeout(300); await see('the level list');
     await page.click('#campMenu'); await page.waitForTimeout(300);
     // The Rooms page with the room open now, unsaved, and only the examples below it: the case that collided.
+    // Out of dev mode the examples are the campaign puzzles alone; Hex counter is dev only (register 819).
     await page.click('#menuSandbox'); await page.waitForTimeout(400);
     await page.click('#roomNew'); await page.waitForTimeout(300);
     // An edit by hand, so the room shows on the Rooms page as unsaved.
     await pickTool(page, 'wall'); const g = await page.locator('#game').boundingBox(); await page.mouse.click(g.x + g.width / 2, g.y + g.height / 2); await page.waitForTimeout(200);
     await page.evaluate(() => document.getElementById('roomsBtn').click()); await page.waitForTimeout(500);
-    check(`${label}: the Rooms page shows the unsaved room above the examples`, await page.locator('#openNow .roomRow').count() === 1 && await page.locator('#roomList .example .roomRow').count() === await page.evaluate(async () => 1 + (await import('/src/campaign/progression.js')).PUZZLES.filter(Boolean).length));
+    check(`${label}: the Rooms page shows the unsaved room above the examples`, await page.locator('#openNow .roomRow').count() === 1 && await page.locator('#roomList .example .roomRow').count() === await page.evaluate(async () => (await import('/src/campaign/progression.js')).PUZZLES.filter(Boolean).length));
     await see('the Rooms page');
     await page.click('#moreBtn'); await page.waitForTimeout(150); await see('the Rooms page with More open');
     await page.keyboard.press('Escape'); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
