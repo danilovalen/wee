@@ -7,7 +7,8 @@ import { TOOL } from './goalCard.js';
 import { achievements } from '../campaign/achievements.js';
 
 const TAUGHT = Object.values(TOOL);
-export const owned = (p = progress()) => p.owned || [];
+// Pocket was sold for two stars and is gone (registers 812, 813): who bought it owns Neon lab, which took its place.
+export const owned = (p = progress()) => (p.owned || []).map(k => k === 'palette:gameboy' ? 'palette:neon' : k);
 export const spent = (p = progress()) => p.spent || 0;
 export const earnedList = (p = progress()) => achievements(p.levels || {}, usedPieces(), TAUGHT, { feats: p.feats || {}, peak: p.peak || {}, spent: spent(p) });
 // Every star the campaign has given: one per beaten level, one per side goal met, and each achievement's.

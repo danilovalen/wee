@@ -28,7 +28,7 @@ try {
   check('the blob is violet and Hero\'s other skin is the green gel drop (register 777)', hues.blob[2] > hues.blob[1] + 40 && hues.alt[1] > hues.alt[2] + 40 && hues.robot.join() === hues.blob.join(), JSON.stringify(hues));
   check('the menu\'s corner opens Looks', await p.$eval('#lookBox', d => d.open));
   const shut = await p.$$eval('#lookPalettes [data-palette]', bs => bs.map(b => [b.dataset.palette, b.disabled]));
-  check('with no stars only the first palette is open', shut.length === PALETTES.length && shut.every(([id, off]) => off === (id !== 'neon')), JSON.stringify(shut));
+  check('with no stars only the first palette is open', shut.length === PALETTES.length && shut.every(([id, off]) => off === (id !== 'day')), JSON.stringify(shut));
   // A piece the campaign teaches opens in the Sandbox once placed in a level; one it never teaches is open (register 558).
   const kit = await p.evaluate(async () => { const k = await import('/src/app/known.js'); const before = k.known('box', ['box']); k.markUsed(['box']); const after = k.known('box', ['box']); return { before, after, other: k.known('wire', ['box']) }; });
   check('a campaign piece opens in the Sandbox only once used', !kit.before && kit.after && kit.other, JSON.stringify(kit));
@@ -55,18 +55,18 @@ try {
   check('a skin can be bought once the stars cover its cost', skinsOpen.join() === SKINS.filter(x => x.cost <= 4).map(x => x.id).join(), skinsOpen.join());
   check('each look you can buy wears a dot, one you own or cannot afford does not (register 640)', await p.$$eval('#lookPalettes [data-palette]', bs => bs.every(b => b.classList.contains('dot') === (!b.disabled && b.dataset.owned === 'false'))));
 
-  // Buying spends (register 638): the Pocket palette costs its price, once, and is worn.
-  const cost = PALETTES.find(x => x.id === 'gameboy').cost;
-  await p.click('[data-palette=gameboy]'); await p.waitForTimeout(200);
-  check('buying a palette spends its stars and wears it', (await p.textContent('#lookStars')).trim() === String(4 - cost) && await p.evaluate(() => document.documentElement.dataset.palette) === 'gameboy', await p.textContent('#lookStars'));
-  await p.click('[data-palette=neon]'); await p.click('[data-palette=gameboy]'); await p.waitForTimeout(200);
+  // Buying spends (register 638): Neon lab, in Pocket's old place (813), costs its price, once, and is worn.
+  const cost = PALETTES.find(x => x.id === 'neon').cost;
+  await p.click('[data-palette=neon]'); await p.waitForTimeout(200);
+  check('buying a palette spends its stars and wears it', (await p.textContent('#lookStars')).trim() === String(4 - cost) && await p.evaluate(() => document.documentElement.dataset.palette) === 'neon', await p.textContent('#lookStars'));
+  await p.click('[data-palette=day]'); await p.click('[data-palette=neon]'); await p.waitForTimeout(200);
   check('wearing it again costs nothing', (await p.textContent('#lookStars')).trim() === String(4 - cost));
   const dear = PALETTES.filter(x => x.cost > 4 - cost && x.cost <= 4).map(x => x.id);
   check('a look the stars covered before buying is shut once they no longer do', await p.$$eval('#lookPalettes [data-palette]', (bs, ids) => ids.every(id => bs.find(b => b.dataset.palette === id).disabled), dear), dear.join());
 
-  const gb = PALETTES.find(x => x.id === 'gameboy').colors;
+  const gb = PALETTES.find(x => x.id === 'neon').colors;
   const paper = hex(await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--paper')));
-  check('the Pocket palette recolours the page\'s tokens', gb.includes(paper), paper);
+  check('Neon lab recolours the page\'s tokens', gb.includes(paper), paper);
   const icon = await p.evaluate(() => { const c = document.querySelector('canvas[data-icon=wall]'); const d = c.getContext('2d').getImageData(c.width / 2, c.height / 2, 1, 1).data; return '#' + [...d].slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join(''); });
   check('and the icons already on the page', gb.includes(icon), icon);
   const pic = await p.evaluate(() => { const c = document.createElement('canvas'); c.width = c.height = 4; const g = c.getContext('2d'); g.fillStyle = '#ff6188'; g.fillRect(0, 0, 4, 4); return '#' + [...g.getImageData(1, 1, 1, 1).data].slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join(''); });
@@ -84,11 +84,18 @@ try {
   check('the skin was bought with stars', (await p.textContent('#lookStars')).trim() === String(4 - cost - SKINS.find(x => x.id === 'hero').cost));
   // Kept across a reload.
   await p.reload(); await p.waitForTimeout(600);
-  check('the palette is kept', await p.evaluate(() => document.documentElement.dataset.palette) === 'gameboy');
+  check('the palette is kept', await p.evaluate(() => document.documentElement.dataset.palette) === 'neon');
   check('the skin is kept', await p.$eval('[data-skin=hero] [data-alt=true]', b => b.classList.contains('on')));
   // Back to the first palette: the tokens are the stylesheet's own again.
-  await p.click('[data-palette=neon]'); await p.waitForTimeout(200);
-  check('the first palette restores the neon tokens', hex(await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--paper'))) === '#19181a');
+  await p.click('[data-palette=day]'); await p.waitForTimeout(200);
+  check('the first palette restores its own tokens', hex(await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--paper'))) === PALETTES[0].colors[0]);
+  // Pocket is gone (registers 812, 813): a save that bought it owns Neon lab, which took its place, and one that wore it
+  // opens on the first palette.
+  await p.evaluate(() => { localStorage.setItem('wee.campaign', JSON.stringify({ v: 4, last: null, levels: {}, owned: ['palette:gameboy'], spent: 2 })); localStorage.setItem('wee.look', JSON.stringify({ palette: 'gameboy', skins: {} })); });
+  await p.reload(); await p.waitForTimeout(600);
+  if (!(await p.$('[data-palette=neon]')) || !(await p.isVisible('[data-palette=neon]'))) { await p.click('#menuLooks'); await p.waitForTimeout(300); }
+  check('a save that bought Pocket owns Neon lab', await p.$eval('[data-palette=neon]', b => b.dataset.owned === 'true'));
+  check('a save that wore Pocket opens on the first palette', await p.evaluate(() => document.documentElement.dataset.palette) === PALETTES[0].id);
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the looks smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

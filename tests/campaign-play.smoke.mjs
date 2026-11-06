@@ -25,7 +25,7 @@ const MAXED = LEVELS.find(l => l.palette.box && l.palette.box[1] != null), TWO_C
 const { check, done } = suite('campaign-play');
 const server = await serve(5217);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const page = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await page.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; }); await page.addInitScript(() => { window.__noWinCard = true; });
+const page = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await page.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; window.__neonLook = true; }); await page.addInitScript(() => { window.__noWinCard = true; });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 const visibleTools = () => page.$$eval('[data-tool]', bs => bs.filter(b => !b.hidden).map(b => b.dataset.tool));
@@ -502,7 +502,7 @@ try {
   check('back on the list, the puzzle wears its star with your moves', pzWon === `#/levels ${way.length}`, pzWon);
   await pz.close();
   // Level 9: a one-way is placed pointing right, and a tap on it with its tool turns it; the robot is drawn as a robot.
-  const nine = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await nine.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; }); await nine.addInitScript(() => { window.__noWinCard = true; });
+  const nine = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await nine.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; window.__neonLook = true; }); await nine.addInitScript(() => { window.__noWinCard = true; });
   nine.on('pageerror', e => errors.push(e.message));
   await nine.goto('http://localhost:5217/');
   await nine.click('#menuCampaign'); await nine.click(`.campRow[data-level="${PLAIN_GATE.id}"]`); await nine.click('[data-tool="gate"]');

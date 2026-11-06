@@ -1083,7 +1083,9 @@ export const M = [
   ['src/app/campaign.js', "b.disabled = !open;", "b.disabled = false;", 'unlock'],
   // Rows 618-621: pixel discs, the room's pixel buffer, palette contrast.
   ['src/app/play.js', "  present();\n}", "}", 'browser'],
-  ['src/view/look.js', "colors: ['#081820', '#081820', '#081820', '#346856',", "colors: ['#081820', '#081820', '#081820', '#081820', '#346856',", 'palettes'],
+  ['src/view/look.js', "colors: ['#081820', '#0f2a2c', '#1c3f3c', '#346856',", "colors: ['#081820', '#0f2a2c', '#4a7e66', '#346856',", 'palettes'],
+  ['src/app/wallet.js', ".map(k => k === 'palette:gameboy' ? 'palette:neon' : k)", "", 'looks'],
+  ['src/view/look.js', "if (!PALETTES.some(p => p.id === look.palette)) look.palette = PALETTES[0].id;", "", 'looks'],
   ['src/view/pieceSprites.js', "'#ff6188', '#e8eef6', '#8f2a45')", "'#ff6188', '#e8eef6', '#5a9a2b')", 'palettes'],
   ['src/view/look.js', "'#b9b0a0', '#fbf9f4', '#3d3c45'", "'#b9b0a0', '#9a9284', '#3d3c45'", 'palettes'],
   ['src/view/look.js', "return p.colors[closest([body + 1, body, SLOTS.indexOf('hi')], c)];", "return p.colors[closest([...GREY, ...BODY], c)];", 'palettes'],

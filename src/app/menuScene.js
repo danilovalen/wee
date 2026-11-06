@@ -7,6 +7,7 @@ import { createGame, step } from '../rules/game.js';
 import { TICK_MS } from '../rules/base.js';
 import { drawPlay } from '../view/scene.js';
 import { drawFloor } from '../view/tiles.js';
+import { drawMasses, ringCells } from '../view/masses.js';
 import { frame } from '../view/ink.js';
 import { motionFx } from '../view/juice.js';
 import { T } from '../view/ink.js';
@@ -39,6 +40,7 @@ export function buildMenuScene(host) {
   const cv = host.firstElementChild, g = cv.getContext('2d');
   cv.width = (W + 2 * M) * T / PX; cv.height = (H + 2 * M) * T / PX;
   let game, prev, queue, rest, acc = 0, last = 0, won = 0, fx = [];
+  const ring = ringCells(menuLevel(), new Set());
   const reset = () => { game = createGame(menuLevel()); prev = snap(game); queue = [...MENU_MOVES]; rest = 0; won = 0; fx = []; menuRoom.game = game; };
   reset();
   const shown = () => host.closest('dialog').open && !document.hidden;
@@ -58,6 +60,8 @@ export function buildMenuScene(host) {
     const avatar = frame.avatar; frame.avatar = 'robot';
     g.setTransform(1 / PX, 0, 0, 1 / PX, 0, 0); drawFloor(g, W + 2 * M, H + 2 * M);
     g.translate(M * T, M * T);
+    // The wall ring every level has (registers 672, 816): one tile out, joining the room's edge walls.
+    g.save(); g.translate(-T, -T); drawMasses(g, ring, W + 2, H + 2); g.restore();
     drawPlay(g, game, prev, Math.min(1, acc / TICK_MS), fx, t);
     frame.avatar = avatar; menuRoom.draws++;
   };

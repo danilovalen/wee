@@ -11,9 +11,13 @@ export const NEON = ['#19181a', '#2d2a2e', '#403e41', '#5b595c', '#727072', '#93
 export const SHADES = [['deep', 'wall'], ['wall', 'mid'], ['mid', 'top'], ['top', 'hi'], ['redShade', 'red'], ['orangeShade', 'orange'], ['yellowShade', 'yellow'], ['greenShade', 'green'], ['blueShade', 'blue'], ['violetShade', 'violet']];
 
 export const PALETTES = [
-  { id: 'neon', name: 'Neon lab', cost: 0, colors: NEON },
-  // Four greens far enough apart to read (register 620), each slot taking the one its job needs.
-  { id: 'gameboy', name: 'Pocket', cost: 2, colors: ['#081820', '#081820', '#081820', '#346856', '#346856', '#88c070', '#e0f8d0', '#e0f8d0', '#e0f8d0', '#346856', '#e0f8d0', '#346856', '#e0f8d0', '#346856', '#88c070', '#346856', '#e0f8d0', '#346856', '#e0f8d0', '#346856'] },
+  // Daylight (register 814): the main palette, after wee's first light look: a pale room, light walls with dark
+  // edges, dark text, and pieces dark enough to stand off both the floor and the walls.
+  { id: 'day', name: 'Daylight', cost: 0, colors: ['#e6e9ee', '#f4f6f9', '#5b6070', '#c3c9d5', '#d0d5df', '#dde1e8', '#ffffff', '#2a2730', '#ff5a73', '#c2405a', '#ff8a3d', '#c96a1e', '#e89a00', '#a8740a', '#3cc47e', '#23905a', '#3d8ef0', '#2f6cc0', '#7b6cff', '#4b3fd6'] },
+  // Neon lab takes the place Pocket had (registers 812, 813): its four greens hid the button and wire colours.
+  { id: 'neon', name: 'Neon lab', cost: 2, colors: NEON },
+  // Grue (register 815): Pocket's green and blue-green as the room and the page, every piece in full colour.
+  { id: 'grue', name: 'Grue', cost: 3, colors: ['#081820', '#0f2a2c', '#1c3f3c', '#346856', '#4a7e66', '#6a9e6c', '#e0f8d0', '#e0f8d0', '#ff6b6b', '#b03a46', '#ffa04d', '#c46a22', '#ffd84d', '#b8902a', '#b8f05a', '#6aa82a', '#5ad8ff', '#2a8fb8', '#c08cff', '#7a4fc8'] },
   { id: 'pico8', name: 'Fantasy', cost: 4, colors: ['#000000', '#1d2b53', '#000000', '#5f574f', '#83769c', '#83769c', '#fff1e8', '#fff1e8', '#ff004d', '#7e2553', '#ffa300', '#ab5236', '#ffec27', '#ab5236', '#00e436', '#008751', '#29adff', '#1d2b53', '#ff77a8', '#7e2553'] },
   // Sorbet (809): pastel ice-cream colours on a deep plum room.
   { id: 'sorbet', name: 'Sorbet', cost: 5, colors: ['#1c1626', '#2a2238', '#3e3352', '#5c4f73', '#75678e', '#8f82a8', '#f6eeff', '#fff6fb', '#ff9ec4', '#b8608a', '#ffbe98', '#c27a52', '#ffe79a', '#c2a24a', '#a8efb8', '#5fae73', '#97e3e8', '#4fa4ab', '#d0b3ff', '#8f6fc6'] },
@@ -38,8 +42,10 @@ export const SKINS = [
 ];
 
 const KEY = 'wee.look';
-export const look = { palette: 'neon', skins: {} };
+export const look = { palette: 'day', skins: {} };
 try { Object.assign(look, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { /* storage off */ }
+// Smokes that measure drawn pixels against the neon inks draw in Neon lab (register 814 made Daylight the default).
+if (globalThis.__neonLook) look.palette = 'neon';
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(look)); } catch { /* storage off */ } };
 
 // The sprite to draw for a name: its alternate when that object wears its other skin.
@@ -83,6 +89,8 @@ export function paint(v, p = current()) {
   return out;
 }
 export const current = () => PALETTES.find(p => p.id === look.palette) || PALETTES[0];
+// Pocket is gone (812): a save that wore it wears the main palette.
+if (!PALETTES.some(p => p.id === look.palette)) look.palette = PALETTES[0].id;
 
 // Every colour set on any canvas passes through paint(): one hook, so no drawing needs to know.
 const proto = typeof CanvasRenderingContext2D !== 'undefined' ? CanvasRenderingContext2D.prototype : null;
