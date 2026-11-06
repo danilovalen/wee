@@ -4,7 +4,7 @@ import { $ } from './dom.js';
 import { place, go, back, current } from './nav.js';
 import { glyph } from './glyphs.js';
 import { unlocked } from './unlock.js';
-import { PALETTES, SKINS, look, paint, setPalette, setSkin, setBoil } from '../view/look.js';
+import { PALETTES, SKINS, look, setPalette, setSkin, setBoil } from '../view/look.js';
 import { soundOn, setSound } from './sound.js';
 import { drawSprite } from '../view/sprites.js';
 import { INK, T } from '../view/ink.js';
@@ -42,8 +42,8 @@ function render() {
     b.type = 'button'; b.dataset.palette = p.id; b.classList.toggle('on', look.palette === p.id);
     const mine = state(b, key, p.cost);
     const sw = document.createElement('span'); sw.className = 'lookSwatch';
-    // The palette's own colours for the floor, a wall, the blob, the berry and a door.
-    sw.append(...['#221f22', '#5b595c', '#a9dc76', '#78dce8', '#ff6188'].map(h => Object.assign(document.createElement('i'), { style: `background:${p.greys ? paint(h, p) : h}` })));
+    // All sixteen of the palette's colours, in slot order (registers 807, 810).
+    sw.append(...p.colors.map(h => Object.assign(document.createElement('i'), { style: `background:${h}` })));
     b.append(sw, Object.assign(document.createElement('b'), { textContent: p.name }), ...(mine ? [] : [price(p.cost)]));
     b.setAttribute('aria-pressed', String(look.palette === p.id));
     b.onclick = () => { if (owns(key, p.cost) || buy(key, p.cost)) setPalette(p.id); render(); };

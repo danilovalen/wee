@@ -2,20 +2,26 @@
 // everything at once: each colour the game paints is mapped onto the palette as it is set on a canvas,
 // and the page's CSS tokens are mapped the same way. The neon lab look (602) is the identity.
 
-// The neon lab's greys from darkest to lightest: a grey is mapped by its rank here, so a palette with
-// fewer greys keeps their order (floor under walls under text).
-const NEON_GREYS = ['#19181a', '#221f22', '#2d2a2e', '#363337', '#403e41', '#4d4b4e', '#5b595c', '#666466', '#727072', '#939293', '#c1c0c0', '#fcfcfa'];
+// Sixteen colours by job (register 810): everything the game draws uses one of these, as the neon lab paints them.
+// A palette is sixteen colours in this order, so a colour is looked up by its slot and never matched.
+export const SLOTS = ['void', 'floor', 'wallShade', 'wall', 'wallTop', 'text', 'red', 'redShade', 'orange', 'yellow', 'brown', 'green', 'greenShade', 'blue', 'violet', 'violetShade'];
+export const NEON = ['#19181a', '#2d2a2e', '#403e41', '#5b595c', '#939293', '#fcfcfa', '#ff6188', '#8f2a45', '#fc9867', '#ffd866', '#857f6a', '#a9dc76', '#5a9a2b', '#78dce8', '#ab9df2', '#4b3fd6'];
+// The shades each body leans on: a shade is never lighter than what it shades (808).
+export const SHADES = [['wallShade', 'wall'], ['wall', 'wallTop'], ['redShade', 'red'], ['brown', 'orange'], ['brown', 'yellow'], ['greenShade', 'green'], ['violetShade', 'violet'], ['violetShade', 'blue']];
 
-// greys: dark to light, in the order the neon greys map onto them (a light palette lists its paper
-// first). hues: where a saturated colour goes, the nearest one; without hues it is mapped by its lightness.
 export const PALETTES = [
-  { id: 'neon', name: 'Neon lab', cost: 0 },
-  // Four greens far enough apart to read (register 620); the handheld's own two lightest were nearly one colour.
-  { id: 'gameboy', name: 'Pocket', cost: 2, greys: ['#081820', '#346856', '#88c070', '#e0f8d0'] },
-  { id: 'pico8', name: 'Fantasy', cost: 4, greys: ['#000000', '#1d2b53', '#5f574f', '#c2c3c7', '#fff1e8'], hues: ['#7e2553', '#008751', '#ab5236', '#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8', '#ffccaa'] },
-  { id: 'cga', name: 'CGA', cost: 7, greys: ['#000000', '#555555', '#aaaaaa', '#ffffff'], hues: ['#0000aa', '#00aa00', '#00aaaa', '#aa0000', '#aa00aa', '#aa5500', '#5555ff', '#55ff55', '#55ffff', '#ff5555', '#ff55ff', '#ffff55'] },
-  { id: 'c64', name: 'Breadbin', cost: 10, greys: ['#000000', '#352879', '#626262', '#898989', '#ffffff'], hues: ['#9f4e44', '#cb7e75', '#6d5412', '#a1683c', '#c9d487', '#9ae29b', '#5cab5e', '#6abfc6', '#887ecb', '#50459b', '#a057a3'] },
-  { id: 'paper', name: 'Paper', cost: 14, greys: ['#f3efe6', '#e9e3d6', '#b9b0a0', '#5d574f', '#77706a', '#3d3c45'], hues: ['#ef6f5e', '#3bb3a6', '#f2b843', '#5a8bd6', '#8cbf63', '#9a7fd1', '#e7709d'] },
+  { id: 'neon', name: 'Neon lab', cost: 0, colors: NEON },
+  // Four greens far enough apart to read (register 620), each slot taking the one its job needs.
+  { id: 'gameboy', name: 'Pocket', cost: 2, colors: ['#081820', '#081820', '#346856', '#346856', '#88c070', '#e0f8d0', '#e0f8d0', '#346856', '#e0f8d0', '#e0f8d0', '#346856', '#88c070', '#346856', '#e0f8d0', '#e0f8d0', '#346856'] },
+  { id: 'pico8', name: 'Fantasy', cost: 4, colors: ['#000000', '#1d2b53', '#000000', '#5f574f', '#83769c', '#fff1e8', '#ff004d', '#7e2553', '#ffa300', '#ffec27', '#ab5236', '#00e436', '#008751', '#29adff', '#ff77a8', '#7e2553'] },
+  // Sorbet (809): pastel ice-cream colours on a deep plum room.
+  { id: 'sorbet', name: 'Sorbet', cost: 5, colors: ['#1c1626', '#2a2238', '#3e3352', '#5c4f73', '#8f82a8', '#fff6fb', '#ff9ec4', '#b8608a', '#ffbe98', '#ffe79a', '#c2a24a', '#a8efb8', '#5fae73', '#97e3e8', '#d0b3ff', '#8f6fc6'] },
+  { id: 'cga', name: 'CGA', cost: 7, colors: ['#000000', '#0000aa', '#000000', '#555555', '#aaaaaa', '#ffffff', '#ff5555', '#aa0000', '#aa5500', '#ffff55', '#555555', '#55ff55', '#00aa00', '#55ffff', '#ff55ff', '#aa00aa'] },
+  // Lemonade (809): a light palette, lemon paper with candy pieces; void is the page, the walls stay darker than the floor.
+  { id: 'lemonade', name: 'Lemonade', cost: 8, colors: ['#fffbe8', '#fff2c2', '#6e5b38', '#8a7448', '#c9b072', '#4a3b26', '#ff8a5c', '#c9573a', '#ffb347', '#ffcf3f', '#a87f2a', '#7fd17a', '#4f9a4c', '#5cc4d6', '#a58cf0', '#6f58c0'] },
+  { id: 'c64', name: 'Breadbin', cost: 10, colors: ['#000000', '#352879', '#000000', '#626262', '#898989', '#ffffff', '#cb7e75', '#9f4e44', '#a1683c', '#c9d487', '#6d5412', '#9ae29b', '#5cab5e', '#6abfc6', '#887ecb', '#50459b'] },
+  // A light palette: the paper is the page, ink the text.
+  { id: 'paper', name: 'Paper', cost: 14, colors: ['#f3efe6', '#e9e3d6', '#5d574f', '#77706a', '#b9b0a0', '#3d3c45', '#ef6f5e', '#a8443a', '#f2b843', '#f2d36b', '#9a7a52', '#8cbf63', '#5c8f3a', '#5a8bd6', '#9a7fd1', '#5f4b9a'] },
 ];
 
 // The objects that have an alternate skin, each with the sprites it swaps and its cost.
@@ -42,29 +48,25 @@ export const altSkin = id => !!look.skins[id];
 
 const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const lum = ([r, g, b]) => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-const dist = (a, b) => { const m = (a[0] + b[0]) / 2, d = a.map((v, i) => v - b[i]); return (2 + m / 256) * d[0] ** 2 + 4 * d[1] ** 2 + (2 + (255 - m) / 256) * d[2] ** 2; };
-const NEON_LUM = NEON_GREYS.map(h => lum(rgb(h)));
-
+const SLOT_OF = Object.fromEntries(NEON.map((h, i) => [h, i]));
+// A slot colour takes the palette's own; a colour off the sixteen (a shadow's rgba) takes the slot nearest in lightness.
 function mapHex(hex, p) {
-  const c = rgb(hex), sat = (Math.max(...c) - Math.min(...c)) / 255;
-  if (p.hues && sat > 0.22) return p.hues.reduce((best, h) => dist(rgb(h), c) < dist(rgb(best), c) ? h : best);
-  // Without hues, a coloured thing is a figure: the lightest shade, or the next for its darker half, so it
-  // never melts into the walls (register 620).
-  if (!p.hues && sat > 0.22) return p.greys[p.greys.length - (lum(c) >= 0.45 ? 1 : 2)];
-  // A grey (or any colour on a palette without hues) takes the rank of the neon grey nearest in lightness.
-  const l = lum(c), rank = NEON_LUM.reduce((bi, v, i) => Math.abs(v - l) < Math.abs(NEON_LUM[bi] - l) ? i : bi, 0);
-  return p.greys[Math.round(rank * (p.greys.length - 1) / (NEON_GREYS.length - 1))];
+  if (hex in SLOT_OF) return p.colors[SLOT_OF[hex]];
+  const l = lum(rgb(hex)), i = NEON.reduce((bi, h, k) => Math.abs(lum(rgb(h)) - l) < Math.abs(lum(rgb(NEON[bi])) - l) ? k : bi, 0);
+  return p.colors[i];
 }
 const cache = new Map();
 // Any CSS colour string a canvas or a token takes: #rgb, #rrggbb or rgb()/rgba(); anything else passes.
 export function paint(v, p = current()) {
-  if (!p || !p.greys || typeof v !== 'string') return v;
+  if (!p || p.colors === NEON || typeof v !== 'string') return v;
   const k = p.id + v;
   if (cache.has(k)) return cache.get(k);
   let out = v, m;
   if (/^#[0-9a-f]{6}$/i.test(v)) out = mapHex(v.toLowerCase(), p);
   else if (/^#[0-9a-f]{3}$/i.test(v)) out = mapHex('#' + [...v.slice(1)].map(x => x + x).join('').toLowerCase(), p);
   else if ((m = v.match(/^rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$/))) {
+    // A black shadow stays black on every palette: on a light one the darkest slot is the page.
+    if (+m[1] === 0 && +m[2] === 0 && +m[3] === 0) { cache.set(k, v); return v; }
     const h = mapHex('#' + [m[1], m[2], m[3]].map(x => Math.round(+x).toString(16).padStart(2, '0')).join(''), p);
     out = m[4] === undefined ? h : `rgba(${rgb(h).join(', ')}, ${m[4]})`;
   }
@@ -88,7 +90,7 @@ export function applyPalette() {
   const root = document.documentElement;
   if (!base) { const cs = getComputedStyle(root); base = Object.fromEntries(TOKENS.map(t => [t, cs.getPropertyValue(t).trim()])); }
   const p = current();
-  for (const t of TOKENS) { if (p.greys && base[t]) root.style.setProperty(t, paint(base[t], p)); else root.style.removeProperty(t); }
+  for (const t of TOKENS) { if (p.colors !== NEON && base[t]) root.style.setProperty(t, paint(base[t], p)); else root.style.removeProperty(t); }
   root.dataset.palette = p.id;
 }
 

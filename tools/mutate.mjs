@@ -683,7 +683,7 @@ export const M = [
   // Generator ingredients: icons, palette sections, powers apart (register 117)
   ['style.css', ".genSec[data-section=Powers] .genItems { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }", "", 'genui'],
   ['src/app/generator.js', "const ING_GROUP = { follow: 'pieces', mounted: 'pieces', idoor: 'switches' };", "const ING_GROUP = {};", 'genui'],
-  ['src/app/icons.js', "    x.fillStyle = '#221f22'; x.fillRect(18, 2, 12, 10); x.fillStyle = '#fcfcfa';\n    for (const [cx, cy] of [[20, 4], [22, 6], [20, 8], [24, 4], [26, 6], [24, 8]]) x.fillRect(cx, cy, 2, 2);", "", 'genui'],
+  ['src/app/icons.js', "    x.fillStyle = '#19181a'; x.fillRect(18, 2, 12, 10); x.fillStyle = '#fcfcfa';\n    for (const [cx, cy] of [[20, 4], [22, 6], [20, 8], [24, 4], [26, 6], [24, 8]]) x.fillRect(cx, cy, 2, 2);", "", 'genui'],
   ['src/app/generator.js', "    else label.append(icon(ING_ICON[g.id] || g.id, ING_COLOUR[g.id]));", "    else label.append(icon(ING_ICON[g.id] || g.id));", 'genui'],
   // Flicker (register 119)
   ['src/app/check.js', "    else { $('checkText').classList.add('stale'); $('showSolution').disabled = true; }", "    else { $('checkText').textContent = ''; }", 'flicker'],
@@ -899,7 +899,7 @@ export const M = [
   ['src/rules/crates.js', "cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from];", "cells[to] = cells[from];", 'sim'],
   // Register 352: grey pieces wear their wire; Look and hover show what one reaches.
   ['src/view/scene.js', "    if (isGrey(c)) drawTrim(g, x, y, wireColoursAt(level.wires, x, y));\n", "", 'wires'],
-  ['src/view/wires.js', "g.strokeStyle = cols.length ? INK[cols[0]] : '#6b7280';", "g.strokeStyle = '#6b7280';", 'wires'],
+  ['src/view/wires.js', "g.strokeStyle = cols.length ? INK[cols[0]] : '#5b595c';", "g.strokeStyle = '#5b595c';", 'wires'],
   ['src/view/scene.js', "  if (reach && reach.x < level.w && reach.y < level.h) drawReach(g, level, reach, netsOf(level));\n", "", 'wires'],
   ['src/app/input.js', "      S.lookTile = S.lookTile && S.lookTile.x === c.x && S.lookTile.y === c.y ? null : c;\n", "", 'wires'],
   // Register 353: catchers are gone; an old room's catcher loads as a relay.
@@ -1063,11 +1063,11 @@ export const M = [
   ['src/app/levelParts.js', "    const crate = pushingsOf(def, el).every(Boolean);", "    const crate = false;", 'campaign-play'],
   ['src/campaign/rules.js', "/^(button|toggle):|^death$/", "/^(button|toggle):/", 'campaign'],
   // Row 607: the Sandbox pieces as pixel sprites.
-  ['src/view/pixel.js', "export const W = { face: '#5b595c', light: '#727072', dark: '#4d4b4e', crack: '#403e41' };", "export const W = { face: '#5b595c', light: '#727072', dark: '#4d4b4e', crack: '#5b595c' };", 'browser'],
+  ['src/view/pixel.js', "export const W = { face: '#5b595c', light: '#939293', dark: '#403e41', crack: '#403e41' };", "export const W = { face: '#5b595c', light: '#939293', dark: '#403e41', crack: '#5b595c' };", 'browser'],
   ['src/view/tiles.js', "drawSprite(g, 'sensor', 0, 0, { colour: INK[col] + '|' + (lit ? 1 : 0) });", "drawSprite(g, 'sensor', 0, 0, { colour: INK[col] + '|1' });", 'browser'],
   ['src/view/pieceSprites.js', "    const n = +k; if (n >= 1)", "    const n = 2; if (n >= 1)", 'browser'],
   ['src/view/pieces.js', "    if (e.crate) drawSprite(g, 'crateFrame', 0, 0);", "", 'campaign-play'],
-  ['src/view/sprites.js', "body = lit ? INK.zap : '#727072'", "body = lit ? INK.beam : '#727072'", 'sim'],
+  ['src/view/sprites.js', "body = lit ? INK.zap : '#939293'", "body = lit ? INK.beam : '#939293'", 'sim'],
   // Rows 558, 609-611, 616: the floor plan's locks.
   ['src/campaign/progression.js', "export const sideRoom = k => (k % 2 ? PUZZLES[(k - 1) / 2] : PLACING[k / 2 - 1]) || null;", "export const sideRoom = k => PLACING[k - 1] || null;", 'progression'],
   ['src/campaign/progression.js', "return t && !t.waiting ? t : null; };", "return t || null; };", 'challenges'],
@@ -1083,8 +1083,13 @@ export const M = [
   ['src/app/campaign.js', "b.disabled = !open;", "b.disabled = false;", 'unlock'],
   // Rows 618-621: pixel discs, the room's pixel buffer, palette contrast.
   ['src/app/play.js', "  present();\n}", "}", 'browser'],
-  ['src/view/look.js', "greys: ['#081820', '#346856', '#88c070', '#e0f8d0']", "greys: ['#0f380f', '#306230', '#8bac0f', '#9bbc0f']", 'palettes'],
-  ['src/view/look.js', "  if (!p.hues && sat > 0.22) return p.greys[p.greys.length - (lum(c) >= 0.45 ? 1 : 2)];", "", 'palettes'],
+  ['src/view/look.js', "colors: ['#081820', '#081820', '#346856', '#346856', '#88c070',", "colors: ['#081820', '#081820', '#346856', '#346856', '#88c070', '#88c070',", 'palettes'],
+  ['src/view/look.js', "'#ff9ec4', '#b8608a', '#ffbe98'", "'#b8608a', '#ff9ec4', '#ffbe98'", 'palettes'],
+  ['src/view/look.js', "const SLOT_OF = Object.fromEntries(NEON.map((h, i) => [h, i]));", "const SLOT_OF = Object.fromEntries(NEON.map((h, i) => [h, (i + 1) % NEON.length]));", 'palettes'],
+  ['src/view/ink.js', "  puff: '#78dce8',", "  puff: '#9fd8ff',", 'palettes'],
+  ['style.css', "color-mix(in srgb, var(--paper) 94%, transparent)", "rgba(34,31,34,.94)", 'palettes'],
+  ['style.css', ".campRow.sel { outline: 2px solid var(--accent); }", ".campRow.sel { outline: 2px solid #4b3fd6; }", 'palettes'],
+  ['src/view/look.js', "colors: ['#000000', '#1d2b53', '#000000', '#5f574f', '#83769c',", "colors: ['#000000', '#1d2b53', '#000000', '#83769c', '#83769c',", 'palettes'],
   ['style.css', ".campReqs .mark::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--dim); clip-path: var(--ring-20); }", ".campReqs .mark::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--dim); border-radius: 50%; }", 'pixelart'],
   ['src/view/pieces.js', "    drawSprite(g, 'wallFace', 0, 0);\n    if (e.crate)", "    if (e.crate)", 'sim'],
   // Row 623: pieces open on first use; achievements give stars.
@@ -1166,7 +1171,7 @@ export const M = [
   ['src/view/look.js', "export const skinned = name => (ALT[name] && look.skins[ALT[name]] ? name + 'Alt' : name);", "export const skinned = name => name;", 'looks'],
   ['src/view/look.js', "const save = () => { try { localStorage.setItem(KEY, JSON.stringify(look)); }", "const save = () => { try { 0; }", 'looks'],
   ['src/app/main.js', "addEventListener('wee:look', () => { repaintIcons(); syncPanel();", "addEventListener('wee:look', () => { syncPanel();", 'looks'],
-  ['src/view/look.js', "if (p.greys && base[t]) root.style.setProperty(t, paint(base[t], p)); else root.style.removeProperty(t);", "if (p.greys && base[t]) root.style.setProperty(t, paint(base[t], p));", 'looks'],
+  ['src/view/look.js', "if (p.colors !== NEON && base[t]) root.style.setProperty(t, paint(base[t], p)); else root.style.removeProperty(t);", "if (p.colors !== NEON && base[t]) root.style.setProperty(t, paint(base[t], p));", 'looks'],
   // Rows 565-583: challenge view and win card.
   ['src/view/scene.js', "g.strokeStyle = 'rgba(171,157,242,.95)'; g.lineWidth = 2.5;", "g.strokeStyle = 'rgba(0,0,0,0)'; g.lineWidth = 2.5;", 'challenge'],
   ['src/app/goalCard.js', "if (i < by[el].length) c.classList.add('used');", "", 'challenge'],
@@ -1266,14 +1271,14 @@ export const M = [
   ['src/app/lenses.js', "  if (d === undefined) return { lines: prev.solution, stale: true };", "  if (d === undefined) return {};", 'lensui'],
   ['src/app/lenses.js', "  return { lines: prev.solution, ...cutOf(S.level, prev.solution) };", "  return {};", 'lensui'],
   ['src/app/lenses.js', "stopper: at + dy * w + dx };", "stopper: at };", 'lensui'],
-  ['src/view/lenses.js', "g.fillStyle = '#1d1b24'; cells(g, [[x0 - 2, y0 - 2, wd + 4, 14]]);", "g.fillStyle = '#888'; cells(g, [[x0 - 2, y0 - 2, wd + 4, 14]]);", 'lensui'],
+  ['src/view/lenses.js', "g.fillStyle = '#19181a'; cells(g, [[x0 - 2, y0 - 2, wd + 4, 14]]);", "g.fillStyle = '#888'; cells(g, [[x0 - 2, y0 - 2, wd + 4, 14]]);", 'lensui'],
   ['src/view/lenses.js', "if (on === '1') px.push(", "if (on === '0') px.push(", 'lensdraw'],
   ['src/view/lenses.js', "  if (rings) for (const { i, use } of rings)", "  if (rings) for (const { i, use } of [])", 'lensui'],
   ['src/view/lenses.js', "g.strokeStyle = USE[use] || INK.player;", "g.strokeStyle = USE.required;", 'lensdraw'],
   ['src/view/lenses.js', "    if (!at) { const [x, y] = spots[0]", "    at = null; if (!at) { const [x, y] = spots[0]", 'lensdraw'],
   ['src/view/lenses.js', "const last = cutAt != null ? Math.min(cutAt, lines.length - 1) : lines.length - 1", "const last = lines.length - 1", 'lensdraw'],
   ['src/view/lenses.js', "pxLine(g, ax, ay, bx - Math.cos(a) * 8, by - Math.sin(a) * 8, 2, old ? 2 : 0);", "pxLine(g, ax, ay, bx - Math.cos(a) * 8, by - Math.sin(a) * 8, 2, 0);", 'lensdraw'],
-  ['src/view/lenses.js', "g.fillStyle = old ? '#9a97a3' : on ? INK.goal : FAINT;", "g.fillStyle = on ? INK.goal : FAINT;", 'lensdraw'],
+  ['src/view/lenses.js', "g.fillStyle = old ? '#939293' : on ? INK.goal : FAINT;", "g.fillStyle = on ? INK.goal : FAINT;", 'lensdraw'],
   ['src/view/lenses.js', "for (let n = 1; n <= last; n++) if (touches(lines[n - 1], lines[n], focus, w)) pxNumber", "for (let n = 1; n <= last; n++) if (true) pxNumber", 'lensdraw'],
   ['src/view/lenses.js', "  if (a === f || b === f) return true;", "", 'lensdraw'],
   ['src/view/lenses.js', "fy > Math.min(ay, by) && fy < Math.max(ay, by)", "fy >= 0", 'lensdraw'],

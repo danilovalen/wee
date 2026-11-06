@@ -5,8 +5,8 @@ import { DIGITS } from './digits.js';
 
 const centre = (i, w) => [(i % w) * T + T / 2, Math.floor(i / w) * T + T / 2];
 // What a ring or a dot says about the shortest wins: every one uses this tile, some do, or none do.
-export const USE = { required: '#78dce8', optional: '#fc9867', unused: '#727072' };
-const FAINT = '#4a4752';
+export const USE = { required: '#78dce8', optional: '#fc9867', unused: '#939293' };
+const FAINT = '#403e41';
 
 // heat: { distance: Map, hopeless: [] } or { tiles: Set, colour }.
 export function drawHeat(g, w, heat) {
@@ -55,9 +55,9 @@ function pxHead(g, x, y, a, s = 8) {
 // A number in 3x5 bitmap digits, each pixel one 2-unit cell, on a dark plate with a light rim (741).
 export function pxNumber(g, n, cx, cy) {
   const s = String(n), wd = s.length * 8 - 2, x0 = Math.round((cx - wd / 2) / 2) * 2, y0 = Math.round((cy - 5) / 2) * 2;
-  g.fillStyle = '#f4f1ea'; cells(g, [[x0 - 4, y0 - 4, wd + 8, 18]]);
-  g.fillStyle = '#1d1b24'; cells(g, [[x0 - 2, y0 - 2, wd + 4, 14]]);
-  g.fillStyle = '#ffffff';
+  g.fillStyle = '#fcfcfa'; cells(g, [[x0 - 4, y0 - 4, wd + 8, 18]]);
+  g.fillStyle = '#19181a'; cells(g, [[x0 - 2, y0 - 2, wd + 4, 14]]);
+  g.fillStyle = '#fcfcfa';
   const px = [];
   [...s].forEach((ch, k) => DIGITS[ch].forEach((row, y) => [...row].forEach((on, x) => { if (on === '1') px.push([x0 + k * 8 + x * 2, y0 + y * 2, 2, 2]); })));
   cells(g, px);
@@ -88,9 +88,9 @@ function labelSpots(path, w) {
 export function drawLensMarks(g, w, { rings, passing, lines, moves, frames, crosses, stale, cutAt, stopper, focus, deltas } = {}) {
   if (deltas) for (const { i, breaks, same, d } of deltas) {
     const x = (i % w) * T, y = Math.floor(i / w) * T;
-    if (breaks) { g.fillStyle = '#ff4d6d'; pxLine(g, x + 9, y + 9, x + T - 9, y + T - 9, 4); pxLine(g, x + T - 9, y + 9, x + 9, y + T - 9, 4); }
+    if (breaks) { g.fillStyle = '#ff6188'; pxLine(g, x + 9, y + 9, x + T - 9, y + T - 9, 4); pxLine(g, x + T - 9, y + 9, x + 9, y + T - 9, 4); }
     else if (d) pxNumber(g, (d > 0 ? '+' : '-') + Math.abs(d), x + T / 2, y + T / 2);
-    else if (same) { g.fillStyle = '#c1c0c0'; pxDisc(g, x + T / 2, y + T / 2, 2); }
+    else if (same) { g.fillStyle = '#939293'; pxDisc(g, x + T / 2, y + T / 2, 2); }
   }
   if (passing) for (const { i, use } of passing) { const [x, y] = centre(i, w); g.fillStyle = USE[use] || INK.player; pxDisc(g, x, y, 3); }
   if (rings) for (const { i, use } of rings) { const [x, y] = centre(i, w); g.strokeStyle = USE[use] || INK.player; pxRing(g, x, y, 7, 2); }
@@ -115,19 +115,19 @@ export function drawLensMarks(g, w, { rings, passing, lines, moves, frames, cros
     for (let n = 1; n <= last; n++) {
       const on = touches(lines[n - 1], lines[n], focus, w);
       const [ax, ay] = centre(lines[n - 1], w), [bx, by] = centre(lines[n], w), a = Math.atan2(by - ay, bx - ax);
-      g.fillStyle = old ? '#9a97a3' : on ? INK.goal : FAINT;
+      g.fillStyle = old ? '#939293' : on ? INK.goal : FAINT;
       pxLine(g, ax, ay, bx - Math.cos(a) * 8, by - Math.sin(a) * 8, 2, old ? 2 : 0);
       pxHead(g, bx, by, a, 8);
     }
     for (let n = 1; n <= last; n++) if (touches(lines[n - 1], lines[n], focus, w)) pxNumber(g, n, ...spots[n - 1]);
     if (stopper != null && stopper >= 0) {
       const x = (stopper % w) * T, y = Math.floor(stopper / w) * T;
-      g.fillStyle = '#ff4d6d';
+      g.fillStyle = '#ff6188';
       pxLine(g, x + 9, y + 9, x + T - 9, y + T - 9, 4); pxLine(g, x + T - 9, y + 9, x + 9, y + T - 9, 4);
     }
   }
   if (crosses) {
-    g.strokeStyle = '#ff9f43'; g.fillStyle = '#ff9f43';
+    g.strokeStyle = '#fc9867'; g.fillStyle = '#fc9867';
     for (const i of crosses) {
       const x = (i % w) * T, y = Math.floor(i / w) * T;
       pxStroke(g, x + 2, y + 2, T - 4, T - 4);

@@ -7,18 +7,18 @@ export const T = 32;
 
 // Fog (docs/MANGA_THEME.md): a neutral gray room, and every thing in it its own saturated pastel.
 export const INK = {
-  puff: '#9fd8ff',
-  goo: '#9be15d', gooDark: '#5a9a2b', idoor: '#33363f', goal: '#ffd866',
-  water: '#5aa9ff', waterHi: '#c2e2ff', shock: '#fff3a8',
-  armor: '#b9c7e6',
-  floor: '#2d2a2e', grid: '#363337', wall: '#5b595c', wallTop: '#727072', crack: '#403e41',
-  player: '#ab9df2', start: '#ab9df2', robotDark: '#4b3fd6', robotTip: '#ff6b81', robotVisor: '#2a2440', robotEye: '#7ef0ff', shadow: 'rgba(0,0,0,0.35)',
-  mover: '#3fd8c4', moverEdge: '#b4f7ee', enemy: '#ff6b81', strong: '#d6456a', strongEdge: '#ffb0c0', beam: '#ff6188', zap: '#fc9867', zapCore: '#ffe3d0', barrel: '#8f86d9', box: '#857f6a', boxEdge: '#5e5a4a',
-  heavy: '#9b8cff', heavyEdge: '#5b4fc8', bomb: '#3d4256', bombHi: '#7d8399', fuse: '#b08a5c', spark: '#ff9a3d', blast: '#ff8a3d', rivet: '#e2ddff', flag: '#ffd84d', laser: '#ff7ad9',
+  puff: '#78dce8',
+  goo: '#a9dc76', gooDark: '#5a9a2b', idoor: '#403e41', goal: '#ffd866',
+  water: '#78dce8', waterHi: '#fcfcfa', shock: '#ffd866',
+  armor: '#939293',
+  floor: '#2d2a2e', grid: '#2d2a2e', wall: '#5b595c', wallTop: '#939293', crack: '#403e41',
+  player: '#ab9df2', start: '#ab9df2', robotDark: '#4b3fd6', robotTip: '#ff6188', robotVisor: '#19181a', robotEye: '#78dce8', shadow: 'rgba(0,0,0,0.35)',
+  mover: '#78dce8', moverEdge: '#fcfcfa', enemy: '#ff6188', strong: '#ff6188', strongEdge: '#ff6188', beam: '#ff6188', zap: '#fc9867', zapCore: '#fcfcfa', barrel: '#ab9df2', box: '#857f6a', boxEdge: '#5b595c',
+  heavy: '#ab9df2', heavyEdge: '#4b3fd6', bomb: '#403e41', bombHi: '#939293', fuse: '#857f6a', spark: '#fc9867', blast: '#fc9867', rivet: '#fcfcfa', flag: '#ffd866', laser: '#ff6188',
   red: '#ff6188', blue: '#78dce8', yellow: '#ffd866', green: '#a9dc76',
   // Grey pieces read wires (register 347); the wires' own three colours are none of the doors'.
-  wire: '#8f97a8', teal: '#0d9488', violet: '#7c3aed', charcoal: '#3f3f46',
-  mark: '#939293', deathBg: '#5c2a3a', deathSpike: '#ffb0c0', gateBg: '#403e41', gateArrow: '#a9dc76', unlit: '#5b595c', spring: '#ffc23d', gravel: '#dcb88f', gravelDot: '#a98058', gravelHi: '#f4e1c6',
+  wire: '#939293', teal: '#5a9a2b', violet: '#4b3fd6', charcoal: '#403e41',
+  mark: '#939293', deathBg: '#8f2a45', deathSpike: '#ff6188', gateBg: '#403e41', gateArrow: '#a9dc76', unlit: '#5b595c', spring: '#ffd866', gravel: '#857f6a', gravelDot: '#857f6a', gravelHi: '#fcfcfa',
 };
 
 export const ease = t => 1 - Math.pow(1 - t, 3);

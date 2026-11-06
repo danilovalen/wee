@@ -26,7 +26,7 @@ const GREY = /^[a-z]+:(wire|wnone|w\d+(\|w\d+)*)$/;
 export const isGrey = c => GREY.test(c);
 export const wireColoursAt = (wires, x, y) => (wires || []).filter(r => r.x === x && r.y === y).map(r => r.w);
 export function drawTrim(g, x, y, cols) {
-  g.save(); g.lineWidth = cols.length ? 2.5 : 2; g.strokeStyle = cols.length ? INK[cols[0]] : '#6b7280';
+  g.save(); g.lineWidth = cols.length ? 2.5 : 2; g.strokeStyle = cols.length ? INK[cols[0]] : '#5b595c';
   if (!cols.length) g.setLineDash([4, 3]);
   if (cols.length) pxFrame(g, x * T + 2, y * T + 2, T - 4, T - 4); else g.strokeRect(x * T + 3, y * T + 3, T - 6, T - 6);
   g.restore();

@@ -15,18 +15,18 @@ export const PIECE_SPRITES = {
   // A green puddle with two bubbles.
   sticky() {
     const g = grid(); ellipse(g, 8, 8.5, 6.5, 4.8, '#5a9a2b'); ellipse(g, 4.5, 6.5, 2.6, 2.1, '#5a9a2b'); ellipse(g, 11.5, 10.5, 2.6, 2.1, '#5a9a2b');
-    ellipse(g, 8, 8, 5, 3.6, '#9be15d'); g[7][6] = '#e6f8d0'; g[9][10] = '#e6f8d0'; return g;
+    ellipse(g, 8, 8, 5, 3.6, '#a9dc76'); g[7][6] = '#fcfcfa'; g[9][10] = '#fcfcfa'; return g;
   },
   // Gravel: a sandy slab with grit.
   gravel() {
-    const g = grid(); slab(g, 0, 0, 15, 15, '#dcb88f', null, null);
-    for (const [x, y] of [[3, 3], [9, 2], [13, 5], [5, 8], [11, 9], [2, 12], [8, 13], [13, 13], [7, 5]]) { g[y][x] = '#a98058'; if (x + 1 < 15) g[y][x + 1] = '#f4e1c6'; }
+    const g = grid(); slab(g, 0, 0, 15, 15, '#857f6a', null, null);
+    for (const [x, y] of [[3, 3], [9, 2], [13, 5], [5, 8], [11, 9], [2, 12], [8, 13], [13, 13], [7, 5]]) { g[y][x] = '#857f6a'; if (x + 1 < 15) g[y][x + 1] = '#fcfcfa'; }
     return g;
   },
   // Spikes on a dark red slab.
   death() {
-    const g = grid(); slab(g, 0, 0, 15, 15, '#5c2a3a', '#7a3a4f', '#3f1c28');
-    for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { g[cy - 2][cx] = '#ffb0c0'; box(g, cx - 1, cy - 1, cx, cy, '#ffb0c0'); box(g, cx - 2, cy + 1, cx + 1, cy + 1, '#ffb0c0'); g[cy - 1][cx] = '#fcfcfa'; }
+    const g = grid(); slab(g, 0, 0, 15, 15, '#8f2a45', '#8f2a45', '#19181a');
+    for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { g[cy - 2][cx] = '#ff6188'; box(g, cx - 1, cy - 1, cx, cy, '#ff6188'); box(g, cx - 2, cy + 1, cx + 1, cy + 1, '#ff6188'); g[cy - 1][cx] = '#fcfcfa'; }
     return g;
   },
   // A spring: a coil and a plate on the side it faces. key: "right" or "right|bare".
@@ -66,8 +66,8 @@ export const PIECE_SPRITES = {
   },
   // A checkpoint flag, bright once it is the one you would return to. key: "1" when active.
   checkpoint(active) {
-    const g = grid(), f = active === '1' ? '#ffd866' : '#6b6150';
-    box(g, 5, 3, 5, 13, '#c1c0c0'); box(g, 4, 13, 7, 13, '#939293');
+    const g = grid(), f = active === '1' ? '#ffd866' : '#857f6a';
+    box(g, 5, 3, 5, 13, '#939293'); box(g, 4, 13, 7, 13, '#939293');
     box(g, 6, 3, 9, 7, f); box(g, 10, 4, 11, 6, f); g[5][12] = f;
     return g;
   },
@@ -78,7 +78,7 @@ export const PIECE_SPRITES = {
       for (let i = 1; i < 15; i++) if (i % 4 < 2) { g[1][i] = col; g[14][i] = col; g[i][1] = col; g[i][14] = col; }
       box(g, 5, 7, 10, 8, col);
     } else {
-      slab(g, 1, 1, 14, 14, '#33363f', null, null);
+      slab(g, 1, 1, 14, 14, '#403e41', null, null);
       box(g, 2, 1, 13, 1, col); box(g, 2, 14, 13, 14, col); box(g, 1, 2, 1, 13, col); box(g, 14, 2, 14, 13, col);
       for (const x of [4, 7, 10]) box(g, x, 3, x + 1, 12, col);
     }
@@ -86,7 +86,7 @@ export const PIECE_SPRITES = {
   },
   // A mover: a teal slab with an arrow each way it slides. key: "h" or "v".
   mover(axis) {
-    const g = grid(); slab(g, 1, 1, 14, 14, '#3fd8c4', '#b4f7ee', '#2a9c8d');
+    const g = grid(); slab(g, 1, 1, 14, 14, '#78dce8', '#fcfcfa', '#5a9a2b');
     const c = grid(), ink = '#2d2a2e';
     for (let i = 0; i < 3; i++) { box(c, 3 + i, 7 - i, 3 + i, 8 + i, ink); box(c, 12 - i, 7 - i, 12 - i, 8 + i, ink); }
     const t = axis === 'v' ? turn(c, 'down') : c; t.forEach((row, y) => row.forEach((v, x) => { if (v) g[y][x] = v; }));
@@ -97,36 +97,36 @@ export const PIECE_SPRITES = {
     const [axis, dir] = key.split('|'), g = grid();
     for (let y = 1; y <= 14; y++) { const w = y <= 7.5 ? y - 1 : 14 - y; box(g, 7 - w, y, 8 + w, y, '#ff6188'); }
     const dx = axis === 'h' ? +dir : 0, dy = axis === 'v' ? +dir : 0;
-    for (const ex of [5, 9]) { box(g, ex, 6, ex + 1, 8, '#fcfcfa'); g[7 + dy][ex + (dx > 0 ? 1 : 0)] = '#221f22'; }
+    for (const ex of [5, 9]) { box(g, ex, 6, ex + 1, 8, '#fcfcfa'); g[7 + dy][ex + (dx > 0 ? 1 : 0)] = '#19181a'; }
     return g;
   },
   // A strong enemy: a crimson block with horns and yellow eyes. key: "h|1".
   strong(key) {
     const [axis, dir] = key.split('|'), g = grid();
-    slab(g, 1, 2, 14, 15, '#d6456a', '#ffb0c0', '#8f2a45');
-    box(g, 2, 0, 3, 1, '#ffb0c0'); box(g, 12, 0, 13, 1, '#ffb0c0');
+    slab(g, 1, 2, 14, 15, '#ff6188', '#ff6188', '#8f2a45');
+    box(g, 2, 0, 3, 1, '#ff6188'); box(g, 12, 0, 13, 1, '#ff6188');
     const dx = axis === 'h' ? +dir : 0, dy = axis === 'v' ? +dir : 0;
     for (const ex of [4, 9]) box(g, ex + dx, 7 + dy, ex + 2 + dx, 8 + dy, '#ffd866');
     return g;
   },
   // A heavy block: violet steel with four rivets.
   heavy() {
-    const g = grid(); slab(g, 1, 1, 14, 14, '#9b8cff', '#c9c0ff', '#5b4fc8');
-    for (const [x, y] of [[3, 3], [12, 3], [3, 12], [12, 12]]) g[y][x] = '#e2ddff';
+    const g = grid(); slab(g, 1, 1, 14, 14, '#ab9df2', '#ab9df2', '#4b3fd6');
+    for (const [x, y] of [[3, 3], [12, 3], [3, 12], [12, 12]]) g[y][x] = '#fcfcfa';
     return g;
   },
   // A bomb: a round body, a cap and a fuse of k lengths (2, 1 or 0).
   bomb(k) {
     const g = grid();
-    if (k === 'hot') { ellipse(g, 8, 9.5, 5.6, 5.6, '#ff5a28'); return g; }
-    ellipse(g, 8, 9.5, 5.6, 5.6, '#3d4256'); box(g, 5, 6, 6, 7, '#7d8399'); box(g, 7, 3, 9, 4, '#3d4256');
-    const n = +k; if (n >= 1) { g[2][10] = '#b08a5c'; g[1][11] = '#b08a5c'; } if (n >= 2) { g[1][12] = '#b08a5c'; g[1][13] = '#b08a5c'; }
+    if (k === 'hot') { ellipse(g, 8, 9.5, 5.6, 5.6, '#fc9867'); return g; }
+    ellipse(g, 8, 9.5, 5.6, 5.6, '#403e41'); box(g, 5, 6, 6, 7, '#939293'); box(g, 7, 3, 9, 4, '#403e41');
+    const n = +k; if (n >= 1) { g[2][10] = '#857f6a'; g[1][11] = '#857f6a'; } if (n >= 2) { g[1][12] = '#857f6a'; g[1][13] = '#857f6a'; }
     return g;
   },
   // The blob, everywhere (registers 302, 777): a round violet body with two eyes, about 20 units across.
   blob() {
     const g = grid(); ellipse(g, 8, 8, 5.3, 5.3, '#4b3fd6'); ellipse(g, 8, 8, 4.4, 4.4, '#ab9df2');
-    g[5][6] = '#ddd6ff'; box(g, 6, 7, 6, 7, '#7ef0ff'); box(g, 9, 7, 9, 7, '#7ef0ff');
+    g[5][6] = '#fcfcfa'; box(g, 6, 7, 6, 7, '#78dce8'); box(g, 9, 7, 9, 7, '#78dce8');
     return g;
   },
   // A pushable laser's crate frame.

@@ -21,7 +21,7 @@ export const MARK = {
   solution: ARROW(INK.goal, 2.2),
   moves: `<g opacity=".7">${ARROW(INK.player, 1.2)}</g>`,
   traps: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="${INK.beam}" stroke-width="1.8"/>`,
-  danger: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="#ff9f43" stroke-width="1.8"/><path d="M10 3l6 6M16 3l-6 6" stroke="#ff9f43" stroke-width="1.6"/>`,
+  danger: `<rect x="8" y="1" width="10" height="10" fill="none" stroke="#fc9867" stroke-width="1.8"/><path d="M10 3l6 6M16 3l-6 6" stroke="#fc9867" stroke-width="1.6"/>`,
 };
 const NAME = Object.fromEntries(LENS_GROUPS.flatMap(g => g.lenses));
 

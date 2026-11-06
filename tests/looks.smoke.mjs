@@ -64,7 +64,7 @@ try {
   const dear = PALETTES.filter(x => x.cost > 4 - cost && x.cost <= 4).map(x => x.id);
   check('a look the stars covered before buying is shut once they no longer do', await p.$$eval('#lookPalettes [data-palette]', (bs, ids) => ids.every(id => bs.find(b => b.dataset.palette === id).disabled), dear), dear.join());
 
-  const gb = PALETTES.find(x => x.id === 'gameboy').greys;
+  const gb = PALETTES.find(x => x.id === 'gameboy').colors;
   const paper = hex(await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--paper')));
   check('the Pocket palette recolours the page\'s tokens', gb.includes(paper), paper);
   const icon = await p.evaluate(() => { const c = document.querySelector('canvas[data-icon=wall]'); const d = c.getContext('2d').getImageData(c.width / 2, c.height / 2, 1, 1).data; return '#' + [...d].slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join(''); });
@@ -88,7 +88,7 @@ try {
   check('the skin is kept', await p.$eval('[data-skin=hero] [data-alt=true]', b => b.classList.contains('on')));
   // Back to the first palette: the tokens are the stylesheet's own again.
   await p.click('[data-palette=neon]'); await p.waitForTimeout(200);
-  check('the first palette restores the neon tokens', hex(await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--paper'))) === '#221f22');
+  check('the first palette restores the neon tokens', hex(await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--paper'))) === '#19181a');
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the looks smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

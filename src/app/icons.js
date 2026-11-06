@@ -19,11 +19,11 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
     // Three wires in their lanes, one bending, as the Wire tool (register 347).
     for (const [col, o] of [['teal', -6], ['violet', 0], ['charcoal', 6]]) { x.fillStyle = INK[col]; x.fillRect(4, 14 + o, 14 + o, 4); x.fillRect(14 + o, 14 + o, 4, 14 - o); }
   } else if (tool === 'select') {
-    x.strokeStyle = '#6f6876'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
+    x.strokeStyle = '#5b595c'; x.lineWidth = 2; x.setLineDash([4, 3]); x.strokeRect(6, 6, 20, 20); x.setLineDash([]);
   } else if (tool === 'look' || tool === 'move' || tool === 'erase') {
     // The tool row's own icons are the HUD's pixel icons (register 602 S3), 2 units per pixel.
     // Whole canvas pixels, centred, so no edge is smoothed (register 643).
-    x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#c1c0c0';
+    x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#939293';
     pixelBitmap(tool).forEach((row, py) => row.forEach((v, px) => { if (v) x.fillRect(4 + px * 2, 4 + py * 2, 2, 2); }));
   } else if (tool === 'start' || tool === 'robot') {
     // The campaign's goal rows name the robot, which plays them (register 323); a room's start is you.
@@ -43,7 +43,7 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
   else if (tool === 'follow') {
     // A mover that copies you: the mover, and in this icon only two chevrons for "the same way" (registers 615, 624).
     drawPiece(x, { kind: 'mover', axis: 'h', dir: 1, mode: 'follow' }, 0, 0);
-    x.fillStyle = '#221f22'; x.fillRect(18, 2, 12, 10); x.fillStyle = '#fcfcfa';
+    x.fillStyle = '#19181a'; x.fillRect(18, 2, 12, 10); x.fillStyle = '#fcfcfa';
     for (const [cx, cy] of [[20, 4], [22, 6], [20, 8], [24, 4], [26, 6], [24, 8]]) x.fillRect(cx, cy, 2, 2);
   }
   else drawPiece(x, { kind: tool, axis: 'h', dir: 1, mode: 'input' }, 0, 0);
