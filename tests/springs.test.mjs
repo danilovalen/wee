@@ -55,6 +55,20 @@ const at = (o, x, y) => o.x === x && o.y === y;
   check('a bomb caught in a closing door goes off (register 823)', s.entities.find(e => e.id === 99).dead && seen.some(e => e.type === 'blast') && !s.deaths, JSON.stringify(seen.map(e => e.type)));
 }
 
+{ // Register 825: a pushable tile is a box wherever a box can be launched or broken.
+  const go = move(createGame(room(['########', '#6r....#', '#......#', '#P.....#', '########'], { crates: [[2, 1]] })), 'right');
+  check('a spring launches a pushable tile sliding, as it would a box (register 825)', go.crates.has(1 * 8 + 6) && go.cells[1 * 8 + 6] === 'sensor:red' && go.cells[1 * 8 + 2] === '', JSON.stringify([...go.crates]));
+  // The move lasts until the tile stops too, so a short slide of yours still sees it to the end.
+  const short = move(createGame(room(['##########', '#6r......#', '#........#', '#P.#.....#', '##########'], { crates: [[2, 1]] })), 'right');
+  check('a move ends only once a launched tile has stopped as well', short.crates.has(1 * 10 + 8) && !short.sprung.length, JSON.stringify([[...short.crates], short.sprung]));
+  const stuck = move(createGame(room(['#######', '#6r#..#', '#.....#', '#P....#', '#######'], { crates: [[2, 1]] })), 'right');
+  check('and crushes one it cannot move', stuck.crates.size === 0 && stuck.cells[1 * 7 + 2] === '', JSON.stringify([...stuck.crates]));
+  const heavy = move(createGame(room(['#########', '#6H..r..#', '#.......#', '#P......#', '#########'], { crates: [[5, 1]] })), 'right');
+  check('a sliding heavy box breaks a pushable tile it runs into', heavy.crates.size === 0 && heavy.entities[0].x === 7, JSON.stringify([heavy.entities[0].x, [...heavy.crates]]));
+  const blast = move(createGame(room(['#######', '#6O#..#', '#.r...#', '#.....#', '#.....#', '#P....#', '#######'], { crates: [[2, 2]] })), 'right');
+  check('a blast breaks a pushable tile beside the bomb', blast.crates.size === 0 && !blast.deaths, JSON.stringify([[...blast.crates], blast.deaths]));
+}
+
 // Register 824: the simple Sandbox offers the spring, so it can be tried out.
 check('the simple Sandbox offers the spring (register 824)', /export const SIMPLE = \[[^\]]*'spring'/.test(readFileSync(new URL('../src/app/panels.js', import.meta.url), 'utf8')));
 

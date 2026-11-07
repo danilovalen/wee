@@ -7,6 +7,10 @@ import { land } from './life.js';
 import { rewire } from './wires.js';
 
 export const crateAt = (s, x, y) => inb(s, x, y) && s.crates.has(y * s.w + x);
+// Where a tile lands like a box (register 505): on floor, on spikes it covers, or into an open doorway.
+const landsTile = (s, x, y) => inb(s, x, y) && !crateAt(s, x, y) && (cellAt(s, x, y) === '' || cellAt(s, x, y) === 'death' || (/^i?door:/.test(cellAt(s, x, y)) && !solidCell(s, x, y)));
+// ...and with nothing standing there, for a tile moving on its own.
+export const tileFits = (s, x, y) => landsTile(s, x, y) && !entAt(s, x, y) && !playerAt(s, x, y);
 
 // A relay is always pushed; a door or inverted door only while closed (open, you walk through);
 // a one-way only along its arrow.
@@ -38,7 +42,7 @@ export function pushChain(s, x, y, d) {
     // (a box train, register 278), a row with a tile in it goes straight.
     if (last.e) { const t = pushTo(s, last.x, last.y, d, wades(last.e)); if (!t || ((t.x !== cx || t.y !== cy) && !list.every(o => o.e))) return false; last.to = t; }
     // A tile lands like a box (register 505): on floor, on spikes it covers, or into an open doorway.
-    else if (crateAt(s, cx, cy) || !(cellAt(s, cx, cy) === '' || cellAt(s, cx, cy) === 'death' || (/^i?door:/.test(cellAt(s, cx, cy)) && !solidCell(s, cx, cy)))) return false;
+    else if (!landsTile(s, cx, cy)) return false;
     break;
   }
   const cells = [...s.cells], crates = new Set(s.crates), tiles = s.tiles.map(t => ({ ...t }));
@@ -58,4 +62,18 @@ export function pushChain(s, x, y, d) {
     if (o.e) land(s, o.e, o.to || { x: o.x + dx, y: o.y + dy, d });
   }
   return true;
+}
+
+// A tile a spring launched slides a tile per tick, like a box, until it cannot land (register 825).
+export function slideTiles(s) {
+  for (const { id } of s.tiles.filter(t => t.slide)) {
+    const t = s.tiles.find(o => o.id === id), [dx, dy] = DIRS[t.slide];
+    if (!tileFits(s, t.x + dx, t.y + dy)) { s.tiles = s.tiles.map(o => o.id === id ? { ...o, slide: null } : o); continue; }
+    const from = t.y * s.w + t.x, to = from + dy * s.w + dx, cells = [...s.cells], crates = new Set(s.crates);
+    cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from]; cells[from] = s.ground[from];
+    crates.delete(from); crates.add(to);
+    s.cells = cells; s.crates = crates;
+    s.tiles = s.tiles.map(o => o.id === id ? { ...o, x: o.x + dx, y: o.y + dy, cell: cells[to] } : o);
+    s.events.push({ type: 'tilePush', id, x: t.x, y: t.y, d: t.slide, by: 'spring' });
+  }
 }

@@ -100,17 +100,21 @@ export function refreshDoors(s) {
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
 }
 
-// A closing door destroys a pushable tile standing in it, as it does a box (register 505); the
-// tile's own door is not in its doorway, so a pushable door is never crushed by itself.
-function crushTile(s, [x, y]) {
+// A pushable tile breaks wherever a box would (register 825): a closing door, a blast, a sliding
+// heavy box, a spring it cannot move. It leaves the ground it covered.
+export function breakTile(s, x, y, how) {
   const i = y * s.w + x;
-  if (!s.crates.has(i) || !/^i?door:/.test(s.ground[i] || '')) return;
+  if (!s.crates.has(i)) return false;
   const t = s.tiles.find(t => t.x === x && t.y === y);
   s.cells = s.cells.map((c, j) => j === i ? s.ground[i] : c);
   s.crates = new Set([...s.crates].filter(j => j !== i));
   s.tiles = s.tiles.filter(o => o !== t);
-  s.events.push({ type: 'kill', id: t && t.id, how: 'door', tile: true });
+  s.events.push({ type: 'kill', id: t && t.id, how, tile: true });
+  return true;
 }
+// A closing door breaks the tile in its doorway (register 505); a pushable door's own door is not in
+// its doorway, so it is never crushed by itself.
+function crushTile(s, [x, y]) { if (/^i?door:/.test(s.ground[y * s.w + x] || '')) breakTile(s, x, y, 'door'); }
 
 // A one-way of a colour that just turned launches what stands on it along its new arrow, sliding
 // on until something stops it (register 253), as if it had kept moving that way.
@@ -164,6 +168,7 @@ function blast(s, e) {
   for (let y = e.y - 1; y <= e.y + 1; y++) for (let x = e.x - 1; x <= e.x + 1; x++) {
     if (!inb(s, x, y)) continue;
     if (cellAt(s, x, y) === 'crack' && !s.broken.includes(y * s.w + x)) smash(s, { x, y, crack: true });
+    breakTile(s, x, y, 'blast');
     if (playerAt(s, x, y) && !s.powers.armored) you = true;
     for (const o of s.entities) {
       if (o.dead || o.x !== x || o.y !== y) continue;

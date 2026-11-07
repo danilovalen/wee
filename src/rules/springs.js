@@ -2,10 +2,11 @@
 // stopped. What it faces when it fires is launched its way; what cannot go that way is crushed.
 import { DIRS, HOLDS_DOOR, breaks, wades } from './base.js';
 import { entAt, fling, inb, playerAt, stepTo } from './grid.js';
-import { die, kill } from './life.js';
+import { breakTile, die, kill } from './life.js';
+import { tileFits } from './crates.js';
 
 // Nothing moving: no slide, no rush, the blob still and not hidden. A move ends here.
-export const calm = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => !e.dead && (e.rush || e.slide));
+export const calm = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => !e.dead && (e.rush || e.slide)) && !(s.tiles && s.tiles.some(t => t.slide));
 
 // The cells never change during a run, so where the springs are is worked out once.
 const SPRINGS = new WeakMap();
@@ -32,6 +33,14 @@ export function fireSprings(s) {
 // piece or an armored blob that cannot move jams it (it stays armed), and anything else stuck is crushed.
 function push(s, { d, x, y }) {
   const p = s.player, you = playerAt(s, x, y), e = entAt(s, x, y);
+  const tile = !you && !e && s.tiles.find(t => t.x === x && t.y === y);
+  // A pushable tile is a box here (register 825): launched sliding if it can go, broken if not.
+  if (tile) {
+    if (tile.slide === d) return false;
+    if (tileFits(s, x + DIRS[d][0], y + DIRS[d][1])) { s.tiles = s.tiles.map(o => o === tile ? { ...o, slide: d } : o); s.events.push({ type: 'spring', x, y, d }); }
+    else breakTile(s, x, y, 'spring');
+    return true;
+  }
   if (!you && !e) return false;
   const n = s.events.length;
   fling(s, x, y, d, 'spring');

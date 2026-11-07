@@ -6,6 +6,7 @@ import { cellAt, inWater } from './grid.js';
 import { explode, flipToggles, freshPieces, refreshDoors, startOn } from './life.js';
 import { rushOnce, slidePiece } from './pieces.js';
 import { fireSprings } from './springs.js';
+import { slideTiles } from './crates.js';
 import { input, slideOnce, unhide } from './player.js';
 import { checkStuck } from './sticky.js';
 import { checkGlue, partnerOf } from './glue.js';
@@ -56,6 +57,7 @@ export function step(s, inputs = []) {
   // Pieces already sliding move first, so a piece a spring launched gets away
   // before you reach it.
   for (const e of s.entities) if (!e.dead && e.slide) slidePiece(s, e);
+  slideTiles(s);
   for (const e of s.entities) if (!e.dead && e.rush && !e.slide) rushOnce(s, e);
   // In water you move a tile every other tick.
   if (s.player.dir) {

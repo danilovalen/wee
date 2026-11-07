@@ -27,11 +27,12 @@ try {
   await page.click('#roomNew'); await page.waitForTimeout(300);
   check('the Sandbox paints only its own groups (the strip bug of register 411)', (await page.evaluate(() => [...document.querySelectorAll('#strip .slot')].filter(s => s.getBoundingClientRect().width > 0).length)) === 7);
   check('the Sandbox offers red, blue, wire and plain (773), and no red+blue (register 407)', (await page.evaluate(() => { document.querySelector('#strip [data-slot=doors]').click(); return [...document.querySelectorAll('[data-camp-colour]')].map(b => b.dataset.campColour).join(); })) === 'red,blue,wire,plain');
-  check('the Sandbox builds with the campaign\'s elements and tools only', (await shown()) === 'box,button,death,door,erase,gate,goal,look,move,select,sensor,start,toggle,turret,wall,wire', await shown());
+  // Plus the spring, offered to try out before any level teaches it (register 824).
+  check('the Sandbox builds with the campaign\'s elements and tools, and the spring', (await shown()) === 'box,button,death,door,erase,gate,goal,look,move,select,sensor,spring,start,toggle,turret,wall,wire', await shown());
   check('the Sandbox offers red, blue, grey and plain, and no powers', await page.evaluate(() => document.querySelectorAll('[data-camp-colour]').length === 4 && !!document.querySelector('[data-camp-colour=plain]') && getComputedStyle(document.querySelector('[data-sheet=powers]')).display === 'none'));
   // Register 379: the Sandbox's generator offers only what the Sandbox can place, and no powers.
   const ing = await page.evaluate(() => { document.getElementById('roomGen').click(); const on = [...document.querySelectorAll('#genIng select')].filter(s => s.offsetParent).map(s => s.dataset.id); document.getElementById('genBox').close(); return on; });
-  check('the Sandbox\'s generator offers only its own pieces', ing.length > 0 && ing.includes('box') && !['enemy', 'water', 'mover', 'dive', 'laser', 'spring'].some(id => ing.includes(id)), ing.join());
+  check('the Sandbox\'s generator offers only its own pieces', ing.length > 0 && ing.includes('box') && !['enemy', 'water', 'mover', 'dive', 'laser'].some(id => ing.includes(id)), ing.join());
   // Registers 357 and 358: the Rooms page lists the example rooms and has a way back to the menu.
   await page.evaluate(() => document.getElementById('roomsBtn').click()); await page.waitForTimeout(300);
   const examples = await page.$$eval('#roomList li', ls => ls.map(l => l.textContent).filter(t => t.includes('Example')).join('|'));

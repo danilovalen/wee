@@ -3128,17 +3128,21 @@ function refreshDoors(s) {
   if (squashed) { s.events.push({ type: 'squash', x: s.player.x, y: s.player.y }); die(s); }
 }
 
-// A closing door destroys a pushable tile standing in it, as it does a box (register 505); the
-// tile's own door is not in its doorway, so a pushable door is never crushed by itself.
-function crushTile(s, [x, y]) {
+// A pushable tile breaks wherever a box would (register 825): a closing door, a blast, a sliding
+// heavy box, a spring it cannot move. It leaves the ground it covered.
+function breakTile(s, x, y, how) {
   const i = y * s.w + x;
-  if (!s.crates.has(i) || !/^i?door:/.test(s.ground[i] || '')) return;
+  if (!s.crates.has(i)) return false;
   const t = s.tiles.find(t => t.x === x && t.y === y);
   s.cells = s.cells.map((c, j) => j === i ? s.ground[i] : c);
   s.crates = new Set([...s.crates].filter(j => j !== i));
   s.tiles = s.tiles.filter(o => o !== t);
-  s.events.push({ type: 'kill', id: t && t.id, how: 'door', tile: true });
+  s.events.push({ type: 'kill', id: t && t.id, how, tile: true });
+  return true;
 }
+// A closing door breaks the tile in its doorway (register 505); a pushable door's own door is not in
+// its doorway, so it is never crushed by itself.
+function crushTile(s, [x, y]) { if (/^i?door:/.test(s.ground[y * s.w + x] || '')) breakTile(s, x, y, 'door'); }
 
 // A one-way of a colour that just turned launches what stands on it along its new arrow, sliding
 // on until something stops it (register 253), as if it had kept moving that way.
@@ -3192,6 +3196,7 @@ function blast(s, e) {
   for (let y = e.y - 1; y <= e.y + 1; y++) for (let x = e.x - 1; x <= e.x + 1; x++) {
     if (!inb(s, x, y)) continue;
     if (cellAt(s, x, y) === 'crack' && !s.broken.includes(y * s.w + x)) smash(s, { x, y, crack: true });
+    breakTile(s, x, y, 'blast');
     if (playerAt(s, x, y) && !s.powers.armored) you = true;
     for (const o of s.entities) {
       if (o.dead || o.x !== x || o.y !== y) continue;
@@ -3229,7 +3234,7 @@ function land(s, e, t) {
   if (c === 'water') { e.sticky = false; if (e.fuse != null) { e.fuse = null; s.events.push({ type: 'fizzle', id: e.id }); } }
   return true;
 }
-return { startAim, freshPieces, switchesOf, startOn, flipToggles, refreshDoors, respawn, smash, light, explode, die, kill, covers, land };
+return { startAim, freshPieces, switchesOf, startOn, flipToggles, refreshDoors, breakTile, respawn, smash, light, explode, die, kill, covers, land };
 })();
 // ---- src/rules/beams.js
 const m19 = (() => {
@@ -3323,8 +3328,94 @@ function computeBeams(s, harm) {
 }
 return { trace, laserHit, laser, shockPools, shockHarms, aimOf, inBeam, turnTurrets, computeBeams };
 })();
-// ---- src/rules/sticky.js
+// ---- src/rules/crates.js
 const m20 = (() => {
+const { DIRS, PUSHED, wades } = m7;
+const { cellAt, entAt, gateAt, gateDirs, inb, playerAt, pushTo, solidCell } = m17;
+const { land } = m18;
+const { rewire } = m15;
+// Pushable tiles (register 336): a relay, a one-way, a door or an inverted door in a box's frame.
+// The level lists them as crates: [{x, y}]; a run keeps them as tile indices in s.crates. Pushing
+// replaces s.cells and s.crates, never edits them, so a copy of a run can share both.
+
+
+
+
+const crateAt = (s, x, y) => inb(s, x, y) && s.crates.has(y * s.w + x);
+// Where a tile lands like a box (register 505): on floor, on spikes it covers, or into an open doorway.
+const landsTile = (s, x, y) => inb(s, x, y) && !crateAt(s, x, y) && (cellAt(s, x, y) === '' || cellAt(s, x, y) === 'death' || (/^i?door:/.test(cellAt(s, x, y)) && !solidCell(s, x, y)));
+// ...and with nothing standing there, for a tile moving on its own.
+const tileFits = (s, x, y) => landsTile(s, x, y) && !entAt(s, x, y) && !playerAt(s, x, y);
+
+// A relay is always pushed; a door or inverted door only while closed (open, you walk through);
+// a one-way only along its arrow.
+function pushesTile(s, x, y, d) {
+  const c = cellAt(s, x, y);
+  if (c.startsWith('sensor:')) return true;
+  if (c.startsWith('door:') || c.startsWith('idoor:')) return solidCell(s, x, y);
+  if (c.startsWith('gate:')) return gateDirs(s, c).includes(d);
+  return false;
+}
+
+// Pushes the row starting at (x, y) one tile d: pushable tiles and pushed pieces go as one train.
+// A tile lands on bare floor or on spikes, which it covers (registers 449, 453). Returns false, moving nothing, when the front cannot go.
+function pushChain(s, x, y, d) {
+  const [dx, dy] = DIRS[d], list = [];
+  for (let cx = x, cy = y; ; cx += dx, cy += dy) {
+    if (!inb(s, cx, cy) || playerAt(s, cx, cy)) return false;
+    const e = entAt(s, cx, cy);
+    // A piece standing on a pushable tile is pushed off it alone (register 455).
+    if (!e && crateAt(s, cx, cy) && pushesTile(s, cx, cy, d)) { list.push({ x: cx, y: cy }); continue; }
+    if (e) {
+      const g = gateAt(s, cx, cy);
+      if (!PUSHED(e) || e.glue || (g && !g.includes(d))) return false;
+      list.push({ e, x: cx, y: cy }); continue;
+    }
+    const last = list.at(-1);
+    if (!last) return false;
+    // The front piece lands where it would alone; only a row of pieces alone lets a triangle turn it
+    // (a box train, register 278), a row with a tile in it goes straight.
+    if (last.e) { const t = pushTo(s, last.x, last.y, d, wades(last.e)); if (!t || ((t.x !== cx || t.y !== cy) && !list.every(o => o.e))) return false; last.to = t; }
+    // A tile lands like a box (register 505): on floor, on spikes it covers, or into an open doorway.
+    else if (!landsTile(s, cx, cy)) return false;
+    break;
+  }
+  const cells = [...s.cells], crates = new Set(s.crates), tiles = s.tiles.map(t => ({ ...t }));
+  for (let i = list.length - 1; i >= 0; i--) {
+    const o = list[i];
+    if (o.e) continue;
+    const from = o.y * s.w + o.x, to = from + dy * s.w + dx;
+    cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from]; cells[from] = s.ground[from];
+    crates.delete(from); crates.add(to);
+    const t = tiles.find(t => t.y * s.w + t.x === from); t.x += dx; t.y += dy; t.cell = cells[to];
+    // by: a box earlier in the row pushed this tile, not the robot.
+    s.events.push({ type: 'tilePush', id: t.id, x: o.x, y: o.y, d, by: list.slice(0, i).some(p => p.e && p.e.kind === 'box') ? 'box' : 'robot' });
+  }
+  s.cells = cells; s.crates = crates; s.tiles = tiles;
+  for (let i = list.length - 1; i >= 0; i--) {
+    const o = list[i];
+    if (o.e) land(s, o.e, o.to || { x: o.x + dx, y: o.y + dy, d });
+  }
+  return true;
+}
+
+// A tile a spring launched slides a tile per tick, like a box, until it cannot land (register 825).
+function slideTiles(s) {
+  for (const { id } of s.tiles.filter(t => t.slide)) {
+    const t = s.tiles.find(o => o.id === id), [dx, dy] = DIRS[t.slide];
+    if (!tileFits(s, t.x + dx, t.y + dy)) { s.tiles = s.tiles.map(o => o.id === id ? { ...o, slide: null } : o); continue; }
+    const from = t.y * s.w + t.x, to = from + dy * s.w + dx, cells = [...s.cells], crates = new Set(s.crates);
+    cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from]; cells[from] = s.ground[from];
+    crates.delete(from); crates.add(to);
+    s.cells = cells; s.crates = crates;
+    s.tiles = s.tiles.map(o => o.id === id ? { ...o, x: o.x + dx, y: o.y + dy, cell: cells[to] } : o);
+    s.events.push({ type: 'tilePush', id, x: t.x, y: t.y, d: t.slide, by: 'spring' });
+  }
+}
+return { crateAt, tileFits, pushesTile, pushChain, slideTiles };
+})();
+// ---- src/rules/sticky.js
+const m21 = (() => {
 const { LIGHT } = m7;
 const { cellAt, shift } = m17;
 const { die, land } = m18;
@@ -3383,7 +3474,7 @@ function checkStuck(s) {
 return { stuckTo, STICKS, stick, unstick, entered, carry, drag, checkStuck };
 })();
 // ---- src/rules/glue.js
-const m21 = (() => {
+const m22 = (() => {
 const { wades } = m7;
 const { entAt, playerAt, shift } = m17;
 const { land } = m18;
@@ -3443,14 +3534,16 @@ function checkGlue(s) {
 return { partnerOf, meet, unglue, lead, follow, partnerAt, checkGlue };
 })();
 // ---- src/rules/pieces.js
-const m22 = (() => {
-const { ENEMY, MOVES, PUSHED, breaks, wades } = m7;
+const m23 = (() => {
+const { DIRS, ENEMY, MOVES, PUSHED, breaks, wades } = m7;
 const { turnTurrets } = m19;
 const { crushes, entAt, onGravel, playerAt, pushTo, stepTo } = m17;
-const { die, kill, land, light, refreshDoors, smash } = m18;
-const { carry, entered, stick, stuckTo } = m20;
-const { follow, lead, meet, partnerAt, partnerOf } = m21;
+const { breakTile, die, kill, land, light, refreshDoors, smash } = m18;
+const { crateAt } = m20;
+const { carry, entered, stick, stuckTo } = m21;
+const { follow, lead, meet, partnerAt, partnerOf } = m22;
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
+
 
 
 
@@ -3545,6 +3638,8 @@ const CRUSHABLE = ['enemy', 'strong', 'box', 'bomb'];
 // tile per tick until something stops it. A heavy box squashes enemies, light boxes and you; an
 // enemy that reaches you kills you; anything else just stops.
 function slidePiece(s, e) {
+  // A heavy box breaks a pushable tile it runs into, as it breaks a box (register 825).
+  if (e.kind === 'heavy') { const [dx, dy] = DIRS[e.slide]; if (crateAt(s, e.x + dx, e.y + dy)) breakTile(s, e.x + dx, e.y + dy, 'squash'); }
   const t = stepTo(s, e.x, e.y, e.slide, wades(e), breaks(e));
   if (!t) { e.slide = null; return; }
   smash(s, t);
@@ -3579,17 +3674,19 @@ function slidePiece(s, e) {
 return { burnFuses, hideCycle, rushOnce, launch, worldStep, patrolDir, moveMover, slidePiece };
 })();
 // ---- src/rules/springs.js
-const m23 = (() => {
+const m24 = (() => {
 const { DIRS, HOLDS_DOOR, breaks, wades } = m7;
 const { entAt, fling, inb, playerAt, stepTo } = m17;
-const { die, kill } = m18;
+const { breakTile, die, kill } = m18;
+const { tileFits } = m20;
 // Springs (register 822): a spring pushes one thing per move, then stays out until everything has
 // stopped. What it faces when it fires is launched its way; what cannot go that way is crushed.
 
 
 
+
 // Nothing moving: no slide, no rush, the blob still and not hidden. A move ends here.
-const calm = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => !e.dead && (e.rush || e.slide));
+const calm = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => !e.dead && (e.rush || e.slide)) && !(s.tiles && s.tiles.some(t => t.slide));
 
 // The cells never change during a run, so where the springs are is worked out once.
 const SPRINGS = new WeakMap();
@@ -3616,6 +3713,14 @@ function fireSprings(s) {
 // piece or an armored blob that cannot move jams it (it stays armed), and anything else stuck is crushed.
 function push(s, { d, x, y }) {
   const p = s.player, you = playerAt(s, x, y), e = entAt(s, x, y);
+  const tile = !you && !e && s.tiles.find(t => t.x === x && t.y === y);
+  // A pushable tile is a box here (register 825): launched sliding if it can go, broken if not.
+  if (tile) {
+    if (tile.slide === d) return false;
+    if (tileFits(s, x + DIRS[d][0], y + DIRS[d][1])) { s.tiles = s.tiles.map(o => o === tile ? { ...o, slide: d } : o); s.events.push({ type: 'spring', x, y, d }); }
+    else breakTile(s, x, y, 'spring');
+    return true;
+  }
   if (!you && !e) return false;
   const n = s.events.length;
   fling(s, x, y, d, 'spring');
@@ -3630,84 +3735,16 @@ function push(s, { d, x, y }) {
 }
 return { calm, springsOf, fireSprings };
 })();
-// ---- src/rules/crates.js
-const m24 = (() => {
-const { DIRS, PUSHED, wades } = m7;
-const { cellAt, entAt, gateAt, gateDirs, inb, playerAt, pushTo, solidCell } = m17;
-const { land } = m18;
-const { rewire } = m15;
-// Pushable tiles (register 336): a relay, a one-way, a door or an inverted door in a box's frame.
-// The level lists them as crates: [{x, y}]; a run keeps them as tile indices in s.crates. Pushing
-// replaces s.cells and s.crates, never edits them, so a copy of a run can share both.
-
-
-
-
-const crateAt = (s, x, y) => inb(s, x, y) && s.crates.has(y * s.w + x);
-
-// A relay is always pushed; a door or inverted door only while closed (open, you walk through);
-// a one-way only along its arrow.
-function pushesTile(s, x, y, d) {
-  const c = cellAt(s, x, y);
-  if (c.startsWith('sensor:')) return true;
-  if (c.startsWith('door:') || c.startsWith('idoor:')) return solidCell(s, x, y);
-  if (c.startsWith('gate:')) return gateDirs(s, c).includes(d);
-  return false;
-}
-
-// Pushes the row starting at (x, y) one tile d: pushable tiles and pushed pieces go as one train.
-// A tile lands on bare floor or on spikes, which it covers (registers 449, 453). Returns false, moving nothing, when the front cannot go.
-function pushChain(s, x, y, d) {
-  const [dx, dy] = DIRS[d], list = [];
-  for (let cx = x, cy = y; ; cx += dx, cy += dy) {
-    if (!inb(s, cx, cy) || playerAt(s, cx, cy)) return false;
-    const e = entAt(s, cx, cy);
-    // A piece standing on a pushable tile is pushed off it alone (register 455).
-    if (!e && crateAt(s, cx, cy) && pushesTile(s, cx, cy, d)) { list.push({ x: cx, y: cy }); continue; }
-    if (e) {
-      const g = gateAt(s, cx, cy);
-      if (!PUSHED(e) || e.glue || (g && !g.includes(d))) return false;
-      list.push({ e, x: cx, y: cy }); continue;
-    }
-    const last = list.at(-1);
-    if (!last) return false;
-    // The front piece lands where it would alone; only a row of pieces alone lets a triangle turn it
-    // (a box train, register 278), a row with a tile in it goes straight.
-    if (last.e) { const t = pushTo(s, last.x, last.y, d, wades(last.e)); if (!t || ((t.x !== cx || t.y !== cy) && !list.every(o => o.e))) return false; last.to = t; }
-    // A tile lands like a box (register 505): on floor, on spikes it covers, or into an open doorway.
-    else if (crateAt(s, cx, cy) || !(cellAt(s, cx, cy) === '' || cellAt(s, cx, cy) === 'death' || (/^i?door:/.test(cellAt(s, cx, cy)) && !solidCell(s, cx, cy)))) return false;
-    break;
-  }
-  const cells = [...s.cells], crates = new Set(s.crates), tiles = s.tiles.map(t => ({ ...t }));
-  for (let i = list.length - 1; i >= 0; i--) {
-    const o = list[i];
-    if (o.e) continue;
-    const from = o.y * s.w + o.x, to = from + dy * s.w + dx;
-    cells[to] = s.wireAt ? rewire(cells[from], s.wireAt[to]) : cells[from]; cells[from] = s.ground[from];
-    crates.delete(from); crates.add(to);
-    const t = tiles.find(t => t.y * s.w + t.x === from); t.x += dx; t.y += dy; t.cell = cells[to];
-    // by: a box earlier in the row pushed this tile, not the robot.
-    s.events.push({ type: 'tilePush', id: t.id, x: o.x, y: o.y, d, by: list.slice(0, i).some(p => p.e && p.e.kind === 'box') ? 'box' : 'robot' });
-  }
-  s.cells = cells; s.crates = crates; s.tiles = tiles;
-  for (let i = list.length - 1; i >= 0; i--) {
-    const o = list[i];
-    if (o.e) land(s, o.e, o.to || { x: o.x + dx, y: o.y + dy, d });
-  }
-  return true;
-}
-return { crateAt, pushesTile, pushChain };
-})();
 // ---- src/rules/player.js
 const m25 = (() => {
 const { DIRS, ENEMY, HIDE_TICKS, OPPOSITE, POWERS, PUSHED, wades } = m7;
 const { inBeam, laser, turnTurrets } = m19;
 const { cellAt, crushes, entAt, facing, gateAt, inWater, onGravel, pushTo, shift, solidCell, stepTo } = m17;
-const { crateAt, pushChain, pushesTile } = m24;
+const { crateAt, pushChain, pushesTile } = m20;
 const { die, kill, land, light, refreshDoors, respawn, smash } = m18;
-const { burnFuses, hideCycle, worldStep } = m22;
-const { STICKS, drag, entered, stick, stuckTo, unstick } = m20;
-const { follow, lead, meet, partnerAt } = m21;
+const { burnFuses, hideCycle, worldStep } = m23;
+const { STICKS, drag, entered, stick, stuckTo, unstick } = m21;
+const { follow, lead, meet, partnerAt } = m22;
 // You: one slide step at a time, dive, hide, and what each key does.
 
 
@@ -3877,14 +3914,16 @@ const { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } = m7;
 const { aimOf, computeBeams, turnTurrets } = m19;
 const { cellAt, inWater } = m17;
 const { explode, flipToggles, freshPieces, refreshDoors, startOn } = m18;
-const { rushOnce, slidePiece } = m22;
-const { fireSprings } = m23;
+const { rushOnce, slidePiece } = m23;
+const { fireSprings } = m24;
+const { slideTiles } = m20;
 const { input, slideOnce, unhide } = m25;
-const { checkStuck } = m20;
-const { checkGlue, partnerOf } = m21;
+const { checkStuck } = m21;
+const { checkGlue, partnerOf } = m22;
 const { netsOf, wireCells } = m15;
 // A run: the state, one tick of it, its text reading, and replaying a key log.
 // Pure and deterministic: no DOM, no clock, no randomness.
+
 
 
 
@@ -3940,6 +3979,7 @@ function step(s, inputs = []) {
   // Pieces already sliding move first, so a piece a spring launched gets away
   // before you reach it.
   for (const e of s.entities) if (!e.dead && e.slide) slidePiece(s, e);
+  slideTiles(s);
   for (const e of s.entities) if (!e.dead && e.rush && !e.slide) rushOnce(s, e);
   // In water you move a tile every other tick.
   if (s.player.dir) {
@@ -4009,7 +4049,7 @@ return { createGame, cloneGame, step, gameText, replay };
 const m27 = (() => {
 const { createGame, step, cloneGame } = m26;
 const { MOVES, OPPOSITE } = m7;
-const { calm } = m23;
+const { calm } = m24;
 // The solver: a breadth-first search over the room's states, one move of yours per
 // edge, using the real rules. A move is a slide you start from rest (or a hide), run
 // until you and every piece have stopped. Mid-slide powers (Boomerang, Dive, Laser)

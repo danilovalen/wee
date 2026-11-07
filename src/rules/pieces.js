@@ -1,8 +1,9 @@
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
-import { ENEMY, MOVES, PUSHED, breaks, wades } from './base.js';
+import { DIRS, ENEMY, MOVES, PUSHED, breaks, wades } from './base.js';
 import { turnTurrets } from './beams.js';
 import { crushes, entAt, onGravel, playerAt, pushTo, stepTo } from './grid.js';
-import { die, kill, land, light, refreshDoors, smash } from './life.js';
+import { breakTile, die, kill, land, light, refreshDoors, smash } from './life.js';
+import { crateAt } from './crates.js';
 import { carry, entered, stick, stuckTo } from './sticky.js';
 import { follow, lead, meet, partnerAt, partnerOf } from './glue.js';
 
@@ -94,6 +95,8 @@ const CRUSHABLE = ['enemy', 'strong', 'box', 'bomb'];
 // tile per tick until something stops it. A heavy box squashes enemies, light boxes and you; an
 // enemy that reaches you kills you; anything else just stops.
 export function slidePiece(s, e) {
+  // A heavy box breaks a pushable tile it runs into, as it breaks a box (register 825).
+  if (e.kind === 'heavy') { const [dx, dy] = DIRS[e.slide]; if (crateAt(s, e.x + dx, e.y + dy)) breakTile(s, e.x + dx, e.y + dy, 'squash'); }
   const t = stepTo(s, e.x, e.y, e.slide, wades(e), breaks(e));
   if (!t) { e.slide = null; return; }
   smash(s, t);
