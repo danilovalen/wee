@@ -25,8 +25,9 @@ export function stateKey(s) {
   return k;
 }
 
-import { calm as settled } from '../rules/springs.js';
-export { settled };
+import { calm } from '../rules/springs.js';
+// A move ends when nothing moves (register 822 shares it with the springs).
+export const settled = calm;
 
 // One move from state s: a fresh copy, the key, then ticks until everything stops.
 // Null when the move changes nothing, kills you, or never settles.
