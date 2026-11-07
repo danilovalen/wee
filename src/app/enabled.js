@@ -28,7 +28,8 @@ export function syncEnabled() {
   // press would redo the same work and redraw the same words.
   const stamp = level.start && S.check && !S.check.live ? JSON.stringify(level) : null;
   const done = !!stamp && S.check.stamp === stamp;
-  $('checkBtn').disabled = !level.start || done;
+  // With no berry there is nothing to check; the line under the room says to place one (register 830).
+  $('checkBtn').disabled = !level.start || !level.cells.includes('goal') || done;
   // Greyed because the notes are up to date, it says so (register 730).
   $('checkBtn').textContent = done ? 'Checked' : 'Check';
 }

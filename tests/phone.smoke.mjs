@@ -32,7 +32,7 @@ try {
   await page.click('#roomTitle'); await page.fill('#roomName', 'Held'); await page.click('#roomSave');
   await page.waitForFunction(() => document.getElementById('roomTitle').textContent === 'Held');
   await page.keyboard.press('Escape');
-  await page.click('#navRooms');
+  await page.click('#roomTitle');
   await page.waitForFunction(() => document.querySelectorAll('#roomList li:not(.example) .roomRow').length === 1);
   const hold = async ms => page.$eval('#roomList li:not(.example) .roomRow', async (b, ms) => {
     const at = b.getBoundingClientRect(), o = { pointerType: 'touch', bubbles: true, clientX: at.x + 20, clientY: at.y + 20 };
@@ -60,16 +60,15 @@ try {
   const ringIn = await page.evaluate(() => { const q = document.getElementById('ring').getBoundingClientRect(); return !document.getElementById('ring').hidden && q.left >= 0 && q.right <= innerWidth; });
   check('the wall round the room fits on the screen', ringIn);
   check('the editor is one screen with icon tools, the tool named above them, and bottom tabs', one.down <= 0 && !one.label && one.wide <= 50 && one.name === 'Look' && one.nav && !one.powers, JSON.stringify(one));
-  check('on a phone, Rooms is one bottom tab and never also in the header (register 771)', await page.locator('#navRooms').isVisible() && await page.locator('#roomsBtn').isHidden());
+  // Register 831: the bottom bar is Play, Check, Notes and Room; the rooms list opens from the room's name.
+  check('on a phone the bottom bar is Play, Check, Notes and Room, and Play and Check leave the header (register 831)', (await page.$$eval('#phoneNav button:not([hidden])', bs => bs.map(b => [...b.childNodes].filter(n => n.nodeName !== 'I').map(n => n.textContent).join('').trim()).join())) === 'Play,Check,Notes,Room' && await page.locator('header #mode').isHidden() && await page.locator('header #checkBtn').isHidden() && await page.locator('#roomsBtn').isHidden(), await page.$$eval('#phoneNav button:not([hidden])', bs => bs.map(b => b.textContent.trim()).join()));
   check('there is no Powers tab while powers are hidden (register 653)', await page.locator('[data-sheet=powers]').isHidden());
   await page.click('[data-sheet=room]');
   check('Room swaps it for the world moves (the size is set with the grips, register 707)', await page.locator('#sheetRoom [name=clock]').first().isVisible() && !(await page.locator('#powerList').isVisible()));
-  await page.click('[data-sheet=build]');
-  check('Build puts the sheet away', await page.locator('#sheet').isHidden());
-  await page.click('[data-sheet=room]'); await page.click('#checkBtn');
-  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-  check('Check opens its findings in place of a sheet', await page.locator('#sheet').isHidden() && await page.locator('#well').isVisible());
-  await page.click('#wellClose');
+  await page.click('[data-sheet=room]');
+  check('a second tap on Room puts the sheet away', await page.locator('#sheet').isHidden());
+  // Register 830: with no berry there is nothing to check, so Check is greyed and nothing opens over the tools.
+  check('with no berry, Check is greyed and no drawer covers the tools (register 830)', await page.locator('#navCheck').isDisabled() && await page.locator('#well').isHidden(), JSON.stringify(await page.evaluate(() => [document.getElementById('navCheck').disabled, document.getElementById('well').hidden, document.getElementById('checkText').textContent])));
   check('the room fits inside its area', layout.room <= layout.stage + 0.5, JSON.stringify(layout));
   // The side pairs take 36px each side (register 318), so this wide room's tiles are smaller than 28px now.
   check('a tile is big enough to tap', layout.tile >= 22, layout.tile.toFixed(1));
@@ -116,7 +115,7 @@ try {
   await page.screenshot({ path: 'shots/phone-edit.png' });
 
   await pick('water');
-  await page.click('#mode');
+  await page.click('#navPlay');
   await page.evaluate(() => { window.__manualClock = true; });
   // A room has no powers for now (register 653), so the test turns Cycle on to see its button.
   await page.evaluate(() => window.wee.setPower('cycle', true));
@@ -168,7 +167,7 @@ try {
   const cutPad = await page.evaluate(() => [...document.querySelectorAll('#pad button')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent));
   check('the play buttons fit their labels', cutPad.length === 0, cutPad.join(', '));
   await page.screenshot({ path: 'shots/phone-play.png' });
-  await page.click('#mode');
+  await page.click('#navPlay');
   check('back in edit, Look is picked, its Edit slot showing it', await page.locator('[data-tool=look]').evaluate(b => b.classList.contains('on')) && await page.locator('#strip [data-slot=edit]').evaluate(b => b.classList.contains('on') && b.dataset.shows === 'look'));
   // A small room's tiles are big, so its wall needs room left for it, beyond the grips' margin.
   await page.evaluate(() => { window.wee.setMode('edit'); window.wee.loadLevel(window.wee.blank(4, 4)); });

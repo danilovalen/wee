@@ -39,14 +39,14 @@ try {
   check('a room with a goal redraws slowly, for its pulse', amb >= 3 && amb <= 15, `${amb} draws in 1 s`);
 
   // the Rooms panel with 100 rooms, about three months of one a day
-  let w = await worst(async () => { await page.click('#navRooms'); await page.waitForFunction(() => document.querySelectorAll('#roomList li:not(.example) .roomRow').length === 100); });
+  let w = await worst(async () => { await page.click('#roomTitle'); await page.waitForFunction(() => document.querySelectorAll('#roomList li:not(.example) .roomRow').length === 100); });
   check(`opening Rooms with 100 rooms never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
   await page.keyboard.press('Escape');
   await page.click('#roomTitle');
   await page.fill('#roomName', 'Perf');
   w = await worst(async () => { await page.click('#roomSave'); await page.waitForFunction(() => document.getElementById('roomsSay').textContent.startsWith('Saved')); });
   await page.keyboard.press('Escape');
-  await page.click('#navRooms');
+  await page.click('#roomTitle');
   check(`saving with 100 rooms never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
   w = await worst(() => page.selectOption('#tagFilter', 'piece:box'));
   check(`the mechanism filter never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
@@ -59,7 +59,7 @@ try {
   await page.keyboard.press('Escape');
 
   // Check and Show stops on his room
-  w = await worst(async () => { await page.click('#checkBtn'); await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')), null, { timeout: 60000 }); });
+  w = await worst(async () => { await page.click('#navCheck'); await page.waitForFunction(() => (e => !e.classList.contains('stale') && e.textContent.startsWith('Solvable'))(document.getElementById('checkText')), null, { timeout: 60000 }); });
   check(`Check never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
   if (await page.locator('#wellClose').isVisible()) await page.click('#wellClose');
   await pickTool(page, 'look');
@@ -70,7 +70,7 @@ try {
   check(`and never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
 
   // a generator run: turret rooms are the slowest to judge
-  await page.click('#navRooms'); await page.evaluate(() => document.getElementById('roomGen').click());
+  await page.click('#roomTitle'); await page.evaluate(() => document.getElementById('roomGen').click());
   await page.locator('.genIngBox summary').click();
   for (const id of ['sensor', 'box', 'enemy']) await page.selectOption(`#genIng select[data-id=${id}]`, 'must');
   for (const [id, v] of [['genW', 12], ['genH', 12], ['genMin', 8], ['genMax', 14], ['genSeed', 4], ['genTime', 5]]) await page.fill('#' + id, String(v));
@@ -88,7 +88,7 @@ try {
     return l;
   });
   await page.evaluate(l => window.wee.loadLevel(l), big);
-  w = await worst(async () => { await page.click('#checkBtn'); await page.waitForFunction(() => !document.getElementById('checkText').textContent.startsWith('Checking'), null, { timeout: 120000 }); });
+  w = await worst(async () => { await page.click('#navCheck'); await page.waitForFunction(() => !document.getElementById('checkText').textContent.startsWith('Checking'), null, { timeout: 120000 }); });
   check(`Check on a 40x30 room never freezes over ${CEILING_MS} ms`, w < CEILING_MS, `${w} ms`);
 } catch (err) {
   check('the perf smoke ran to the end', false, err.message);

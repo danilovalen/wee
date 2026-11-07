@@ -406,7 +406,7 @@ try {
   // the Rooms panel: name and save the room, find it in the list, come back to it
   const wallsBefore = (await text()).level.cells.filter(c => c === 'wall').length;
   check('an unnamed room reads as unsaved', (await page.textContent('#roomsBtn')).includes('\u2022'));
-  check('on a wide screen, Rooms is one header button and never also a bottom tab (register 771)', await page.locator('#roomsBtn').isVisible() && await page.locator('#navRooms').isHidden());
+  check('on a wide screen, Rooms is one header button and there is no bottom bar (registers 771, 831)', await page.locator('#roomsBtn').isVisible() && await page.locator('#phoneNav').isHidden());
   await page.click('#roomsBtn');
   check('the panel says where rooms are kept', (await page.textContent('#roomsWhere')).includes('this browser'));
   check('on a wide screen, the way up of a page sits at its top left, before its name (register 771)', (await page.$eval('#roomsBox .roomsHead', h => { const up = h.querySelector('.upBtn'); if (!up || up.offsetWidth === 0) return 'no way up'; const ux = up.getBoundingClientRect().left; return [...h.children].filter(c => c !== up && c.getBoundingClientRect().width > 0).every(c => c.getBoundingClientRect().left > ux) ? 'ok' : 'not first'; })) === 'ok');

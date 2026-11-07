@@ -450,7 +450,8 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   #tools .hint { margin: 0 0 4px; font-size: 12.5px; }
   .phoneNav { display: flex; flex: none; background: var(--panel); box-shadow: 0 -1px 0 var(--rule); padding-bottom: env(safe-area-inset-bottom, 0px); }
   .phoneNav button { flex: 1; display: grid; justify-items: center; gap: 1px; padding: 6px 0 7px; background: none; box-shadow: none; border-radius: 0; font-size: 11.5px; color: var(--dim); }
-  .phoneNav button i { font-style: normal; font-size: 18px; line-height: 1.1; font-family: Arial, sans-serif; }
+  .phoneNav button i { font-style: normal; font-size: 18px; line-height: 1.1; font-family: Arial, sans-serif; display: grid; place-items: center; height: 21px; }
+  .phoneNav button i svg { width: 20px; height: 20px; }
   .phoneNav button.on { color: var(--accent); box-shadow: none; }
   .sheet:not([hidden]) { display: block; position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); z-index: 35; max-height: 70dvh; overflow-y: auto; background: var(--panel); border-radius: var(--r-l) var(--r-l) 0 0; box-shadow: 0 -8px 24px rgba(0,0,0,.18); padding: 8px 14px 14px; }
   .sheet .grab { width: 40px; height: 4px; border-radius: var(--r-pill); background: var(--sticker); margin: 0 auto 8px; }
@@ -462,7 +463,7 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   .sheet .power.show { grid-column: 1 / -1; }
   .sheet .power.show small { display: block; }
   .sheet .roomBody { margin-bottom: 8px; }
-  body.play .phoneNav, body.play .sheet { display: none !important; }
+  body.play .sheet { display: none !important; }
 }
 
 /* Rooms as pages (register 107): a library of tiles, New room, and This room from the header. */
@@ -985,13 +986,20 @@ body.challenge .growBar { display: none !important; }
 @media (max-width: 700px) {
   body.play:not(.campaign) #tools, body.play:not(.campaign) #powers:not([hidden]), body.play:not(.campaign) #lensChips:not([hidden]), body.play:not(.campaign) #statusBar { display: revert; visibility: hidden; }
   body.sandbox .toolName { flex: none; height: 26px; overflow: hidden; }
+  /* As tall as the tallest tool's rows, so a tool change moves nothing: three option rows in the full Sandbox,
+     one in the simple one (168px measured, register 831). */
   body.sandbox #tools { height: 256px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
+  body.sandbox.simple #tools { height: 172px; }
+  /* An open flyout rises over the colour and options rows, so they step aside, as on a wide screen. */
+  body.sandbox:has(#palette.fly) :is(#options, #campTop) { visibility: hidden; }
   body.sandbox #strip { margin-top: auto; }
   .statusBar { height: 34px; box-sizing: border-box; }
   #wellBtn:disabled { display: revert; visibility: hidden; }
 }
 @media (max-width: 700px) {
-  body.play:not(.campaign) #phoneNav { display: flex !important; visibility: hidden; }
+  /* The bottom bar stays while you play: its Play button is how you stop (register 831). */
+  body:not(.campaign) header #mode, body:not(.campaign) header #checkBtn, body:not(.campaign) .statusBar #wellBtn { display: none !important; }
+  .phoneNav button:disabled { opacity: .4; }
   body.play:not(.campaign) #pad { position: fixed; left: 20px; right: 20px; width: auto; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); margin: 0; max-width: none; z-index: 5; flex-wrap: wrap; }
   body.play:not(.campaign) #pad .moves { flex: 1 0 100%; text-align: center; }
 }
@@ -1313,10 +1321,11 @@ body.removal [data-tool]:not([data-tool=look]):not([data-tool=erase]) { display:
     <div id="sheetPowers" class="sheetPane" data-pane="powers"></div>
   </div>
   <nav id="phoneNav" class="phoneNav">
-    <button type="button" data-sheet="build" class="on"><i>&#9998;</i>Build</button>
+    <button type="button" id="navPlay"><i>&#9654;</i><span>Play</span></button>
+    <button type="button" id="navCheck"><i>&#10003;</i><span>Check</span></button>
+    <button type="button" id="navNotes"><i>&#9776;</i><span>Notes</span></button>
     <button type="button" data-sheet="room"><i>&#9638;</i>Room</button>
     <button type="button" data-sheet="powers" hidden><i>&#9889;</i>Powers</button>
-    <button type="button" id="navRooms"><i>&#9776;</i>Rooms</button>
   </nav>
   <dialog id="keysBox" class="rooms keys">
     <div class="roomsHead"><b>Keys</b><form method="dialog"><button>Close</button></form></div>
@@ -10027,7 +10036,8 @@ function syncEnabled() {
   // press would redo the same work and redraw the same words.
   const stamp = level.start && S.check && !S.check.live ? JSON.stringify(level) : null;
   const done = !!stamp && S.check.stamp === stamp;
-  $('checkBtn').disabled = !level.start || done;
+  // With no berry there is nothing to check; the line under the room says to place one (register 830).
+  $('checkBtn').disabled = !level.start || !level.cells.includes('goal') || done;
   // Greyed because the notes are up to date, it says so (register 730).
   $('checkBtn').textContent = done ? 'Checked' : 'Check';
 }
@@ -11871,8 +11881,9 @@ return { buildReset };
 const m113 = (() => {
 const { $ } = m0;
 const { closeWell } = m90;
-// A phone's bottom tabs: Build shows the tools, Room and Powers slide a sheet up over them,
-// Rooms opens the rooms list. One sheet at a time; Build, Escape or play closes it.
+// A phone's bottom bar (register 831): Play, Check and Notes stand in for the header's buttons, within a
+// thumb's reach; Room and Powers slide a sheet up over the tools, and a second tap puts it away. The rooms
+// list opens from the room's name. One sheet at a time; Escape or play closes it.
 
 
 function openSheet(name) {
@@ -11885,7 +11896,18 @@ function openSheet(name) {
 
 function buildSheets() {
   document.querySelectorAll('[data-sheet]').forEach(b => b.onclick = () => openSheet($('sheet').hidden || !b.classList.contains('on') ? b.dataset.sheet : 'build'));
-  $('navRooms').onclick = () => $('roomsBtn').click();
+  // Each mirrors the header button it stands for: its words, greyed or not, pressed or not.
+  for (const [nav, src] of [['navPlay', 'mode'], ['navCheck', 'checkBtn'], ['navNotes', 'wellBtn']]) {
+    const b = $(nav), from = $(src), sync = () => {
+      const words = from.dataset.label || from.textContent;
+      b.querySelector('span').textContent = nav === 'navNotes' ? words.replace('Findings', 'Notes') : words;
+      if (from.dataset.icon) b.querySelector('i').innerHTML = from.innerHTML;
+      b.disabled = from.disabled; b.classList.toggle('on', from.classList.contains('on'));
+    };
+    b.onclick = () => from.click();
+    new MutationObserver(sync).observe(from, { attributes: true, childList: true, characterData: true, subtree: true });
+    sync();
+  }
   addEventListener('keydown', ev => { if (ev.key === 'Escape') openSheet('build'); });
   // A tapped power shows what it does, under its name; the rest stay one line.
   $('powers').addEventListener('click', ev => {
@@ -12422,7 +12444,8 @@ function buildPanels(actions) {
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
   // The well floats over the room, so Check can open it on the findings and nothing moves (register 689).
-  $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
+  // On a phone the notes wait behind Notes, which counts them, rather than covering the tools (register 830).
+  $('checkBtn').onclick = () => { runCheck(); if (innerWidth > 700) openWell('findings'); };
   buildWell();
   buildChips();
   buildSize({ after: () => { syncPanel(); fit(); } });

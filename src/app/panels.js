@@ -112,7 +112,8 @@ export function buildPanels(actions) {
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
   // The well floats over the room, so Check can open it on the findings and nothing moves (register 689).
-  $('checkBtn').onclick = () => { runCheck(); openWell('findings'); };
+  // On a phone the notes wait behind Notes, which counts them, rather than covering the tools (register 830).
+  $('checkBtn').onclick = () => { runCheck(); if (innerWidth > 700) openWell('findings'); };
   buildWell();
   buildChips();
   buildSize({ after: () => { syncPanel(); fit(); } });

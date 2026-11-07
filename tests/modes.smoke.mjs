@@ -37,6 +37,14 @@ try {
   await page.mouse.click(gb.x + (sx + 0.5) * tw, gb.y + (sy + 0.5) * tw); const sp1 = await cellNow();
   await page.mouse.click(gb.x + (sx + 0.5) * tw, gb.y + (sy + 0.5) * tw); await page.waitForTimeout(700); const sp2 = await cellNow();
   check('a tap on a placed spring turns it a quarter, like a one-way (register 826)', /^spring:/.test(sp1 || '') && /^spring:/.test(sp2 || '') && sp1 !== sp2, JSON.stringify([sp1, sp2]));
+  // Register 831: the simple Sandbox's tools panel is as tall as its tallest tool needs (one option row), not the full Sandbox's three.
+  const toolsH = await page.evaluate(() => Math.round(document.getElementById('tools').getBoundingClientRect().height));
+  check('on a phone the simple Sandbox\'s tools take no more height than one option row needs (register 831)', toolsH <= 180, String(toolsH));
+  // Registers 830, 831: on a phone Check sits in the bottom bar, and its notes wait behind Notes rather than covering the tools.
+  await page.evaluate(() => { const l = window.wee.getLevel(); l.cells[0] = 'goal'; l.start = { x: 3, y: 3 }; window.wee.loadLevel(l); }); await page.waitForTimeout(200);
+  await page.click('#navCheck'); await page.waitForTimeout(2500);
+  const after = await page.evaluate(() => ({ well: document.getElementById('well').hidden, tools: getComputedStyle(document.getElementById('strip')).visibility, notes: document.querySelector('#navNotes span').textContent, check: document.querySelector('#navCheck span').textContent }));
+  check('a Check from the bottom bar leaves the tools uncovered, and Notes counts what it found (registers 830, 831)', after.well && after.tools === 'visible' && /^Notes \d+$/.test(after.notes) && after.check === 'Checked', JSON.stringify(after));
   // Register 379: the Sandbox's generator offers only what the Sandbox can place, and no powers.
   const ing = await page.evaluate(() => { document.getElementById('roomGen').click(); const on = [...document.querySelectorAll('#genIng select')].filter(s => s.offsetParent).map(s => s.dataset.id); document.getElementById('genBox').close(); return on; });
   check('the Sandbox\'s generator offers only its own pieces', ing.length > 0 && ing.includes('box') && !['enemy', 'water', 'mover', 'dive', 'laser'].some(id => ing.includes(id)), ing.join());

@@ -16,12 +16,12 @@ try {
   check('nothing scrolls sideways', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.evaluate(() => window.wee.roomsReady);
   await page.evaluate(() => document.getElementById('roomsBox').close());
-  await page.click('#navRooms');
+  await page.click('#roomTitle');
   check('from a file, rooms are kept in this browser', (await page.textContent('#roomsWhere')).includes('this browser'));
   await page.evaluate(n => window.wee.openTemplate(n), 'Sample');
   const lv = await page.evaluate(() => window.wee.getLevel());
   check('the Sample template loads the sample room', lv.entities.length > 5 && lv.w === 20, `${lv.w}x${lv.h}`);
-  await page.click('#mode');
+  await page.click('#navPlay');
   await page.evaluate(() => { window.__manualClock = true; });
   const box = await page.locator('#game').boundingBox();
   await page.mouse.move(box.x + 100, box.y + 60); await page.mouse.down();
