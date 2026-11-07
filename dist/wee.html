@@ -12321,7 +12321,7 @@ const { $, canvas, touch, DEFAULT_HINT } = m0;
 const { change, step: undoStep, syncUndo } = m102;
 const { runCheck, syncCheck, syncLint } = m93;
 const { buildLenses, syncLenses } = m110;
-const { buildWell, openWell } = m90;
+const { buildWell } = m90;
 const { buildChips } = m111;
 const { buildReset } = m112;
 const { buildSize } = m103;
@@ -12444,8 +12444,8 @@ function buildPanels(actions) {
   $('reportBtn').onclick = copyReport;
   $('again').onclick = () => setMode('play');
   // The well floats over the room, so Check can open it on the findings and nothing moves (register 689).
-  // On a phone the notes wait behind Notes, which counts them, rather than covering the tools (register 830).
-  $('checkBtn').onclick = () => { runCheck(); if (innerWidth > 700) openWell('findings'); };
+  // The notes wait behind Notes (a phone) or show in their column (a wide screen); Check never covers the tools (830).
+  $('checkBtn').onclick = () => runCheck();
   buildWell();
   buildChips();
   buildSize({ after: () => { syncPanel(); fit(); } });
