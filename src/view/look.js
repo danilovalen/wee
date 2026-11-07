@@ -38,6 +38,7 @@ export const SKINS = [
   { id: 'door', name: 'Door', cost: 6, sprites: ['doorShut', 'doorOpen'] },
   { id: 'switch', name: 'Switch', cost: 8, sprites: ['switchOff', 'switchOn'] },
   { id: 'button', name: 'Button', cost: 9, sprites: ['buttonUp', 'buttonDown'] },
+  { id: 'spring', name: 'Spring', cost: 10, sprites: ['spring', 'springArm'] },
   { id: 'laser', name: 'Laser', cost: 12, sprites: ['laser'] },
 ];
 

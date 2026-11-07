@@ -12,7 +12,7 @@ import { available, owns, affords, buy } from './wallet.js';
 import { sawLooks, countUp } from './achieve.js';
 
 // A sprite drawn exactly as named onto a small canvas, in the palette p.
-const SAMPLE = { blob: [], berry: [], wallFace: [], box: [], doorShut: [INK.red], switchOff: [INK.red], buttonUp: [INK.red], laser: ['right|right'] };
+const SAMPLE = { blob: [], berry: [], wallFace: [], box: [], doorShut: [INK.red], switchOff: [INK.red], buttonUp: [INK.red], spring: ['right|'], laser: ['right|right'] };
 function preview(name, alt) {
   const c = document.createElement('canvas'); c.width = c.height = T * 2; c.className = 'lookPic';
   const g = c.getContext('2d'); g.scale(2, 2); g.fillStyle = INK.floor; g.fillRect(0, 0, T, T);

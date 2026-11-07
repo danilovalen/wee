@@ -2,6 +2,22 @@
 import { INK } from './ink.js';
 import { grid, ellipse, box, line, turn, slab, steps, mixHex, W } from './pixel.js';
 
+// The spring's other skin (register 829): a boxing glove that punches out on a scissor arm.
+const GLOVE = { body: '#ff6188', shade: '#8f2a45', hi: '#e8eef6', cuff: '#e8eef6', arm: '#727072', pin: '#e8eef6' };
+// A glove facing right whose cuff starts at column x.
+function glove(c, x) {
+  box(c, x, 5, x + 1, 10, GLOVE.cuff);
+  box(c, x + 2, 4, x + 5, 11, GLOVE.body); box(c, x + 3, 3, x + 4, 12, GLOVE.body);
+  box(c, x + 5, 5, x + 5, 10, GLOVE.shade); box(c, x + 3, 12, x + 4, 12, GLOVE.shade);
+  box(c, x + 1, 8, x + 2, 10, GLOVE.body); box(c, x + 1, 10, x + 2, 10, GLOVE.shade);
+  c[5][x + 3] = GLOVE.hi; c[6][x + 3] = GLOVE.hi;
+}
+// A folding scissor arm from column x0 to x1, one cross every five columns, pinned at each crossing.
+function scissor(c, x0, x1) {
+  for (let x = x0; x < x1; x += 5) { line(c, x, 4, Math.min(x + 5, x1), 11, GLOVE.arm); line(c, x, 11, Math.min(x + 5, x1), 4, GLOVE.arm); }
+  for (let x = x0 + 2; x < x1; x += 5) c[7][x + (x + 1 < x1 ? 1 : 0)] = GLOVE.pin;
+}
+
 export const SKIN_SPRITES = {
   // Berry: a cyan cherry pair on one stalk.
   berryAlt() {
@@ -68,4 +84,14 @@ export const SKIN_SPRITES = {
     }
     return g;
   },
+  // Spring: a boxing glove in the block's pocket; out, it punches across the tile in front on a scissor arm.
+  springAlt(key) {
+    const [d, bare, out] = key.split('|'), g = grid(), c = grid();
+    if (bare !== 'bare') slab(g, 0, 0, 15, 15, W.face, W.light, W.dark);
+    box(c, 8, 3, 15, 12, W.dark);
+    if (out === 'out') scissor(c, 9, 15); else glove(c, 9);
+    const t = turn(c, d); t.forEach((row, yy) => row.forEach((v, xx) => { if (v) g[yy][xx] = v; }));
+    return g;
+  },
+  springArmAlt(d) { const c = grid(); scissor(c, 0, 9); glove(c, 9); return turn(c, d); },
 };

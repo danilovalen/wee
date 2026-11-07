@@ -71,8 +71,12 @@ try {
   const springOut = await p.evaluate(async () => { const { drawCell } = await import('/src/view/tiles.js'); const px = st => { const c = document.createElement('canvas'); c.width = c.height = 64; drawCell(c.getContext('2d'), 'spring:right', 0, 0, st); return c.getContext('2d').getImageData(0, 0, 64, 64).data.join(); };
     // The plate out fills the tile it faces (register 828): pixels land right of the spring's own tile.
     const { T } = await import('/src/view/ink.js'), arm = (() => { const c = document.createElement('canvas'); c.width = 2 * T; c.height = T; const g = c.getContext('2d'); drawCell(g, 'spring:right', 0, 0, { w: 2, h: 1, sprung: [0], open: {} }); const d = g.getImageData(T, 0, T, T).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n; })();
-    return { differ: px(null) !== px({ w: 1, h: 1, sprung: [0], open: {} }), arm }; });
+    // Register 829: the Spring skin (a boxing glove) changes the spring at rest and its arm out.
+    const L = await import('/src/view/look.js'), wide = () => { const c = document.createElement('canvas'); c.width = 2 * T; c.height = T; drawCell(c.getContext('2d'), 'spring:right', 0, 0, { w: 2, h: 1, sprung: [0], open: {} }); return c.getContext('2d').getImageData(T, 0, T, T).data.join(); };
+    const plain = [px(null), wide()]; L.look.skins.spring = true; const glove = [px(null), wide()]; delete L.look.skins.spring;
+    return { differ: px(null) !== px({ w: 1, h: 1, sprung: [0], open: {} }), arm, skin: plain[0] !== glove[0] && plain[1] !== glove[1] }; });
   check('an active spring is drawn out, its plate filling the tile in front (registers 822, 828)', springOut.differ && springOut.arm > 20, JSON.stringify(springOut));
+  check('the Spring skin draws a different spring, at rest and out (register 829)', springOut.skin, JSON.stringify(springOut));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the pixel art smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }
