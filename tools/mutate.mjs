@@ -58,7 +58,7 @@ export const M = [
   // tiles as pieces, the robot on a stuck one-way, win cards after a reset (registers 460, 461, 459)
   ['src/rules/crates.js', "cells[from] = s.ground[from];", "cells[from] = '';", 'campaign'],
   ['src/rules/life.js', "        crushTile(s, d);\n", "", 'sim'],
-  ['src/rules/crates.js', "|| (/^i?door:/.test(cellAt(s, cx, cy)) && !solidCell(s, cx, cy))", "", 'sim'],
+  ['src/rules/crates.js', " || (/^i?door:/.test(cellAt(s, x, y)) && !solidCell(s, x, y)));", ");", 'sim'],
   ['src/campaign/goals/helpers.js', "export const boxIds = room => idsOf(room, e => e.kind === 'box');", "export const boxIds = room => room.entities.filter(e => e.kind === 'box').map(e => e.id);", 'campaign'],
   ['src/app/campaign.js', "  b.append(top, open ? stars(def, rec,", "  b.append(top, false ? stars(def, rec,", 'campaign-play'],
   ['src/app/play.js', "  requestAnimationFrame(frame);\n  try { frameBody(t); } catch (e) { noteError(e); }", "  frameBody(t);\n  requestAnimationFrame(frame);", 'freeze'],
@@ -870,7 +870,7 @@ export const M = [
   ['src/rules/crates.js', "  if (c.startsWith('sensor:')) return true;\n", "", 'sim'],
   ['src/rules/crates.js', "return solidCell(s, x, y);", "return true;", 'sim'],
   ['src/rules/crates.js', "return gateDirs(s, c).includes(d);", "return true;", 'sim'],
-  ['src/rules/crates.js', "else if (crateAt(s, cx, cy) || !(cellAt(s, cx, cy) === ''", "else if (crateAt(s, cx, cy) || !(true", 'sim'],
+  ['src/rules/crates.js', "!crateAt(s, x, y) && (cellAt(s, x, y) === ''", "!crateAt(s, x, y) && (true", 'sim'],
   ['src/rules/crates.js', "if (!e && crateAt(s, cx, cy) && pushesTile(s, cx, cy, d)) { list.push", "if (!e && crateAt(s, cx, cy) && pushesTile(s, cx, cy, d) && !list.length) { list.push", 'sim'],
   ['src/rules/life.js', "  s.cells = s.originCells; s.crates = s.originCrates; s.tiles = s.originTiles;\n", "", 'sim'],
   ['src/solve/solve.js', "  if (s.crates.size) for (const i of [...s.crates].sort((a, b) => a - b)) k += '|c' + i + s.cells[i];\n", "", 'sim'],
