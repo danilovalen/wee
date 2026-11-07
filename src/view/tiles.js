@@ -53,8 +53,9 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
   } else if (c === 'death') {
     drawSprite(g, 'death', 0, 0);
   } else if (c.startsWith('spring:')) {
-    // A coil and a plate on the side it faces.
-    drawSprite(g, 'spring', 0, 0, { colour: c.slice(7) + (bare ? '|bare' : '') });
+    // A coil and a plate on the side it faces, pushed out while the spring is spent.
+    const out = s && s.sprung && s.sprung.includes(y * s.w + x);
+    drawSprite(g, 'spring', 0, 0, { colour: c.slice(7) + '|' + (bare ? 'bare' : '') + (out ? '|out' : '') });
   } else if (c.startsWith('gate:')) {
     // Rails along the sides it blocks, and a chevron for each way it lets through. A coloured one
     // draws its chevrons in its colour, and while that colour is pressed it lights up: tinted, ringed

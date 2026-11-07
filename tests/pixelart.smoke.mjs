@@ -67,6 +67,10 @@ try {
   await p.waitForTimeout(300);
   const drawn = await p.evaluate(() => [...new Set(window.__round)]);
   check('no canvas draws anything round (arcs, ellipses, curves, rounded rectangles)', drawn.length === 0, drawn.join());
+  // Register 822: a spring that has pushed this move is drawn out, its plate at the edge.
+  const springOut = await p.evaluate(async () => { const { drawCell } = await import('/src/view/tiles.js'); const px = st => { const c = document.createElement('canvas'); c.width = c.height = 64; drawCell(c.getContext('2d'), 'spring:right', 0, 0, st); return c.getContext('2d').getImageData(0, 0, 64, 64).data.join(); };
+    return { differ: px(null) !== px({ w: 1, h: 1, sprung: [0], open: {} }) }; });
+  check('an active spring is drawn out, unlike a resting one (register 822)', springOut.differ, JSON.stringify(springOut));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the pixel art smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

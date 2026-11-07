@@ -4,7 +4,8 @@ import { COLOURS, MOVES, NEEDS, POWERS, RT_PERIOD } from './base.js';
 import { aimOf, computeBeams, turnTurrets } from './beams.js';
 import { cellAt, inWater } from './grid.js';
 import { explode, flipToggles, freshPieces, refreshDoors, startOn } from './life.js';
-import { fireSprings, rushOnce, slidePiece } from './pieces.js';
+import { rushOnce, slidePiece } from './pieces.js';
+import { fireSprings } from './springs.js';
 import { input, slideOnce, unhide } from './player.js';
 import { checkStuck } from './sticky.js';
 import { checkGlue, partnerOf } from './glue.js';
@@ -26,7 +27,7 @@ export function createGame(level) {
     // the ground, which keeps what lies under them (spikes come back when a tile leaves).
     tiles: (l.crates || []).map((c, id) => ({ id, x: c.x, y: c.y, cell: l.cells[c.y * l.w + c.x] })),
     ground: l.cells.map((c, i) => (l.crates || []).some(k => k.y * l.w + k.x === i) ? '' : c),
-    berries: l.cells.filter(c => c === 'goal').length, eaten: [], open: {}, broken: [], toggled: startOn(l.cells), onToggle: {}, lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
+    berries: l.cells.filter(c => c === 'goal').length, eaten: [], open: {}, broken: [], toggled: startOn(l.cells), onToggle: {}, sprung: [], lit: new Set(), shocked: new Set(), beams: [], tick: 0, worldSteps: 0, move: 0, deaths: 0, won: false, events: [],
   };
   s.originCrates = s.crates; s.originTiles = s.tiles;
   computeBeams(s, false);
@@ -36,7 +37,7 @@ export function createGame(level) {
 }
 
 // A copy of a run to try a move on. What a run never changes is shared (the cells, the
-// room as it started, the start); the checkpoint, broken blocks, toggles, beams, lit and shocked are replaced,
+// room as it started, the start); the checkpoint, broken blocks, toggles, sprung springs, beams, lit and shocked are replaced,
 // never edited in place, so they are shared too. Everything a tick can edit is copied.
 export function cloneGame(s) {
   const p = s.player;

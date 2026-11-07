@@ -1,7 +1,7 @@
 // Pieces that move by themselves: patrols, sliding pieces, springs, and the world step.
-import { DIRS, ENEMY, MOVES, PUSHED, breaks, wades } from './base.js';
+import { ENEMY, MOVES, PUSHED, breaks, wades } from './base.js';
 import { turnTurrets } from './beams.js';
-import { crushes, entAt, fling, inb, onGravel, playerAt, pushTo, stepTo } from './grid.js';
+import { crushes, entAt, onGravel, playerAt, pushTo, stepTo } from './grid.js';
 import { die, kill, land, light, refreshDoors, smash } from './life.js';
 import { carry, entered, stick, stuckTo } from './sticky.js';
 import { follow, lead, meet, partnerAt, partnerOf } from './glue.js';
@@ -124,21 +124,4 @@ export function slidePiece(s, e) {
   if (!ahead) follow(s, e, mx, my);
   if (playerAt(s, t.x, t.y)) die(s);
   else if (ridden && stuckTo(s) === e) carry(s, mx, my);
-}
-
-// A spring launches whatever stands on the tile its face looks at, when that piece
-// can move on that way.
-// The cells never change during a run, so where the springs are is worked out once.
-const SPRINGS = new WeakMap();
-export function springsOf(s) {
-  let list = SPRINGS.get(s.cells);
-  if (!list) {
-    list = [];
-    s.cells.forEach((c, i) => { if (c.startsWith('spring:')) { const d = c.slice(7); list.push({ d, x: i % s.w + DIRS[d][0], y: Math.floor(i / s.w) + DIRS[d][1] }); } });
-    SPRINGS.set(s.cells, list);
-  }
-  return list;
-}
-export function fireSprings(s) {
-  for (const { d, x, y } of springsOf(s)) if (inb(s, x, y)) fling(s, x, y, d, 'spring');
 }

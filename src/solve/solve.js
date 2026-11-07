@@ -25,7 +25,8 @@ export function stateKey(s) {
   return k;
 }
 
-export const settled = s => !s.player.dir && !s.player.hidden && !s.entities.some(e => !e.dead && (e.rush || e.slide));
+import { calm as settled } from '../rules/springs.js';
+export { settled };
 
 // One move from state s: a fresh copy, the key, then ticks until everything stops.
 // Null when the move changes nothing, kills you, or never settles.

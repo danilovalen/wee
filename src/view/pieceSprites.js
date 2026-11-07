@@ -29,13 +29,14 @@ export const PIECE_SPRITES = {
     for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { g[cy - 2][cx] = '#e8eef6'; box(g, cx - 1, cy - 1, cx, cy, '#e8eef6'); box(g, cx - 2, cy + 1, cx + 1, cy + 1, '#e8eef6'); g[cy - 1][cx] = '#e8eef6'; }
     return g;
   },
-  // A spring: a coil and a plate on the side it faces. key: "right" or "right|bare".
+  // A spring: a coil and a plate on the side it faces; out (stretched, plate at the edge) once it has
+  // pushed this move (register 822). key: "right", "right|bare", "right||out".
   spring(key) {
-    const [d, bare] = key.split('|'), g = grid(), y = '#ffd866';
+    const [d, bare, out] = key.split('|'), g = grid(), y = '#ffd866';
     if (bare !== 'bare') slab(g, 0, 0, 15, 15, W.face, W.light, W.dark);
     const c = grid();
-    for (let i = 0; i < 4; i++) { line(c, 3 + i * 2, 4, 4 + i * 2, 11, y); }
-    box(c, 3, 7, 11, 8, y); box(c, 12, 2, 13, 13, y);
+    if (out === 'out') { for (let i = 0; i < 4; i++) line(c, 3 + i * 3, 4, 5 + i * 3, 11, y); box(c, 3, 7, 13, 8, y); box(c, 14, 1, 15, 14, y); }
+    else { for (let i = 0; i < 4; i++) line(c, 3 + i * 2, 4, 4 + i * 2, 11, y); box(c, 3, 7, 11, 8, y); box(c, 12, 2, 13, 13, y); }
     const t = turn(c, d); t.forEach((row, yy) => row.forEach((v, xx) => { if (v) g[yy][xx] = v; }));
     return g;
   },

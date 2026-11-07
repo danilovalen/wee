@@ -202,7 +202,7 @@ let tint = '';
 // In a level, Look, Erase and Move start the colours' line; in a Sandbox they stay in the palette, for the strip.
 const LINE = ['look', 'erase', 'move'];
 // The simple Sandbox (register 302) builds with the campaign's elements and tools, in two colours.
-export const SIMPLE = ['look', 'select', 'erase', 'move', 'start', 'goal', 'wall', 'death', 'box', 'button', 'toggle', 'door', 'sensor', 'gate', 'turret', 'wire'];
+export const SIMPLE = ['look', 'select', 'erase', 'move', 'start', 'goal', 'wall', 'death', 'spring', 'box', 'button', 'toggle', 'door', 'sensor', 'gate', 'turret', 'wire'];
 const lined = () => !!(S.camp || S.simple);
 function placeTools() {
   const box = $('campTools');

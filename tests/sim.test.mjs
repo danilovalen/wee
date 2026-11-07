@@ -527,7 +527,8 @@ const LONG = ['##########', '#..P....##', '##########'];
   const b = slide(createGame(room(['#######', '#.....#', '#.....#', '#PB...#', '#..8..#', '#######'])), 'right');
   for (let i = 0; i < 6; i++) step(b);
   check('a pushed box gets launched', at(b.entities[0], 3, 1), JSON.stringify(b.entities[0]));
-  check('and you, stepping in front after it, get launched behind it', at(b.player, 3, 2), JSON.stringify(b.player));
+  // One push per move (register 822): the spring is spent on the box, so you slide on past it.
+  check('and you, coming after it in the same move, slide past the spent spring', at(b.player, 5, 3), JSON.stringify(b.player));
   const e = createGame(room(['#######', '#P....#', '#.....#', '#.Z...#', '#..8..#', '#######']));
   worldStep(e, 'right');
   for (let i = 0; i < 6; i++) step(e);
@@ -539,7 +540,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   const w = createGame(room(['#####', '#...#', '#.P.#', '#.8.#', '#####']));
   w.cells[1 * 5 + 2] = 'wall';
   step(w);
-  check('it does not launch into a wall', w.player.dir === null);
+  check('it does not fire while nothing moves', w.player.dir === null && !w.deaths);
   const v = slide(createGame(room(['#######', '#P..8.#', '#######'])), 'right');
   check('a spring is solid from its sides', at(v.player, 3, 1), JSON.stringify(v.player));
   const l = createGame(room(['########', '#e.....#', '#P.8...#', '########']));
@@ -1417,7 +1418,8 @@ const LONG = ['##########', '#..P....##', '##########'];
   const we = createGame(room(['########', '#P.....#', '#Z..k..#', '########']));
   settle(worldStep(we, 'right'));
   check('a weak enemy stops against it', at(we.entities[0], 3, 2) && !we.broken.length, JSON.stringify(we.entities[0]));
-  const sp = run((s => { step(s); return s; })(createGame(room(['#######', '#6Hk..#', '#P....#', '#######']))));
+  // A piece resting in front is launched on your next move (register 822).
+  const sp = run((s => { step(s, ['right']); return s; })(createGame(room(['#######', '#6Hk..#', '#P....#', '#######']))));
   check('a spring launches a heavy box into it, and the box breaks it', kAt(sp, 3, 1) && sp.entities[0].x === 5, JSON.stringify([sp.entities[0], sp.broken]));
   const t = createGame(room(['########', '#e.k..P#', '########'])); step(t);
   check('a turret beam stops at it and does not break it', !t.deaths && !t.broken.length && t.beams[0].path.at(-1)[0] === 2, JSON.stringify([t.deaths, t.beams[0]?.path]));
