@@ -2,6 +2,17 @@
 import { INK } from './ink.js';
 import { grid, ellipse, box, line, turn, slab, steps, mixHex, W } from './pixel.js';
 
+const SPRING = { body: '#ffd866', shade: '#b08a5c', hi: '#e8eef6' };
+// A coil from column x0 to x1 across rows 4-11, one zigzag every gap columns.
+function coil(c, x0, x1, gap) {
+  for (let x = x0, up = true; x < x1; x += gap, up = !up) line(c, x, up ? 4 : 11, Math.min(x + gap, x1), up ? 11 : 4, SPRING.body);
+  box(c, x0, 7, x1, 8, SPRING.shade);
+}
+// A raised plate three columns wide from column x, lit on its left, shaded on its right.
+function plate(c, x) {
+  box(c, x, 1, x + 2, 14, SPRING.body); box(c, x, 1, x, 14, SPRING.hi); box(c, x + 2, 1, x + 2, 14, SPRING.shade);
+}
+
 export const PIECE_SPRITES = {
   // One wall block on its own (the palette's icon, and under a crack or a spring).
   wallFace() { const g = grid(); slab(g, 0, 0, 15, 15, W.face, W.light, W.dark); return g; },
@@ -29,16 +40,22 @@ export const PIECE_SPRITES = {
     for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { g[cy - 2][cx] = '#e8eef6'; box(g, cx - 1, cy - 1, cx, cy, '#e8eef6'); box(g, cx - 2, cy + 1, cx + 1, cy + 1, '#e8eef6'); g[cy - 1][cx] = '#e8eef6'; }
     return g;
   },
-  // A spring: a coil and a plate on the side it faces; out (stretched, plate at the edge) once it has
-  // pushed this move (register 822). key: "right", "right|bare", "right||out".
+  // A spring (registers 827, 828): a pocket in the block on the side it faces, a coil in it and a raised
+  // plate at its mouth. Out, the pocket is empty and the coil leaves it; springArm draws the rest on the
+  // tile in front. key: "right", "right|bare", "right||out". Drawn facing right, then turned.
   spring(key) {
-    const [d, bare, out] = key.split('|'), g = grid(), y = '#ffd866';
+    const [d, bare, out] = key.split('|'), g = grid(), c = grid();
     if (bare !== 'bare') slab(g, 0, 0, 15, 15, W.face, W.light, W.dark);
-    const c = grid();
-    if (out === 'out') { for (let i = 0; i < 4; i++) line(c, 3 + i * 3, 4, 5 + i * 3, 11, y); box(c, 3, 7, 13, 8, y); box(c, 14, 1, 15, 14, y); }
-    else { for (let i = 0; i < 4; i++) line(c, 3 + i * 2, 4, 4 + i * 2, 11, y); box(c, 3, 7, 11, 8, y); box(c, 12, 2, 13, 13, y); }
+    box(c, 8, 3, 15, 12, W.dark);
+    if (out === 'out') coil(c, 8, 15, 2);
+    else { coil(c, 8, 12, 1); plate(c, 13); }
     const t = turn(c, d); t.forEach((row, yy) => row.forEach((v, xx) => { if (v) g[yy][xx] = v; }));
     return g;
+  },
+  // An active spring's coil stretched across the tile it faces, its plate at the far side (register 828).
+  springArm(d) {
+    const c = grid(); coil(c, 0, 12, 2); plate(c, 13);
+    return turn(c, d);
   },
   // A one-way gate: rails on the sides it blocks, a chevron for each way through. key: "dirs|colour|on".
   gate(key) {

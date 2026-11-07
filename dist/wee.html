@@ -2242,6 +2242,17 @@ const { grid, ellipse, box, line, turn, slab, steps, mixHex, W } = m9;
 // The Sandbox's pieces as pixel sprites (register 607).
 
 
+const SPRING = { body: '#ffd866', shade: '#b08a5c', hi: '#e8eef6' };
+// A coil from column x0 to x1 across rows 4-11, one zigzag every gap columns.
+function coil(c, x0, x1, gap) {
+  for (let x = x0, up = true; x < x1; x += gap, up = !up) line(c, x, up ? 4 : 11, Math.min(x + gap, x1), up ? 11 : 4, SPRING.body);
+  box(c, x0, 7, x1, 8, SPRING.shade);
+}
+// A raised plate three columns wide from column x, lit on its left, shaded on its right.
+function plate(c, x) {
+  box(c, x, 1, x + 2, 14, SPRING.body); box(c, x, 1, x, 14, SPRING.hi); box(c, x + 2, 1, x + 2, 14, SPRING.shade);
+}
+
 const PIECE_SPRITES = {
   // One wall block on its own (the palette's icon, and under a crack or a spring).
   wallFace() { const g = grid(); slab(g, 0, 0, 15, 15, W.face, W.light, W.dark); return g; },
@@ -2269,16 +2280,22 @@ const PIECE_SPRITES = {
     for (const [cx, cy] of [[4, 4], [11, 4], [8, 8], [4, 11], [11, 11]]) { g[cy - 2][cx] = '#e8eef6'; box(g, cx - 1, cy - 1, cx, cy, '#e8eef6'); box(g, cx - 2, cy + 1, cx + 1, cy + 1, '#e8eef6'); g[cy - 1][cx] = '#e8eef6'; }
     return g;
   },
-  // A spring: a coil and a plate on the side it faces; out (stretched, plate at the edge) once it has
-  // pushed this move (register 822). key: "right", "right|bare", "right||out".
+  // A spring (registers 827, 828): a pocket in the block on the side it faces, a coil in it and a raised
+  // plate at its mouth. Out, the pocket is empty and the coil leaves it; springArm draws the rest on the
+  // tile in front. key: "right", "right|bare", "right||out". Drawn facing right, then turned.
   spring(key) {
-    const [d, bare, out] = key.split('|'), g = grid(), y = '#ffd866';
+    const [d, bare, out] = key.split('|'), g = grid(), c = grid();
     if (bare !== 'bare') slab(g, 0, 0, 15, 15, W.face, W.light, W.dark);
-    const c = grid();
-    if (out === 'out') { for (let i = 0; i < 4; i++) line(c, 3 + i * 3, 4, 5 + i * 3, 11, y); box(c, 3, 7, 13, 8, y); box(c, 14, 1, 15, 14, y); }
-    else { for (let i = 0; i < 4; i++) line(c, 3 + i * 2, 4, 4 + i * 2, 11, y); box(c, 3, 7, 11, 8, y); box(c, 12, 2, 13, 13, y); }
+    box(c, 8, 3, 15, 12, W.dark);
+    if (out === 'out') coil(c, 8, 15, 2);
+    else { coil(c, 8, 12, 1); plate(c, 13); }
     const t = turn(c, d); t.forEach((row, yy) => row.forEach((v, xx) => { if (v) g[yy][xx] = v; }));
     return g;
+  },
+  // An active spring's coil stretched across the tile it faces, its plate at the far side (register 828).
+  springArm(d) {
+    const c = grid(); coil(c, 0, 12, 2); plate(c, 13);
+    return turn(c, d);
   },
   // A one-way gate: rails on the sides it blocks, a chevron for each way through. key: "dirs|colour|on".
   gate(key) {
@@ -2938,6 +2955,8 @@ function solidCell(s, x, y, beam = false) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
   if (c === 'wall' || c.startsWith('spring:')) return true;
+  // An active spring's plate fills the tile it faces until it draws back (register 828); a beam passes it.
+  if (!beam && s.sprung && s.sprung.some(i => { const d = DIRS[s.cells[i].slice(7)]; return i % s.w + d[0] === x && Math.floor(i / s.w) + d[1] === y; })) return true;
   if (c.startsWith('sensor:')) return !beam;
   if (c === 'crack') return !s.broken.includes(y * s.w + x);
   if (c.startsWith('door:')) return !c.slice(5).split('|').some(col => s.open[col]);
@@ -5900,7 +5919,9 @@ const { INK, T, frame, pxTri } = m8;
 const { drawSprite } = m12;
 const { drawnColour } = m15;
 const { gateOf, gateDirs } = m17;
+const { DIRS } = m7;
 // Tiles: floor, walls and every cell type, drawn in place.
+
 
 
 
@@ -5957,6 +5978,8 @@ function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     // A coil and a plate on the side it faces, pushed out while the spring is spent.
     const out = s && s.sprung && s.sprung.includes(y * s.w + x);
     drawSprite(g, 'spring', 0, 0, { colour: c.slice(7) + '|' + (bare ? 'bare' : '') + (out ? '|out' : '') });
+    // Out, its plate fills the tile it faces (register 828).
+    if (out) { const [dx, dy] = DIRS[c.slice(7)]; drawSprite(g, 'springArm', dx * T, dy * T, { colour: c.slice(7) }); }
   } else if (c.startsWith('gate:')) {
     // Rails along the sides it blocks, and a chevron for each way it lets through. A coloured one
     // draws its chevrons in its colour, and while that colour is pressed it lights up: tinted, ringed
@@ -9061,6 +9084,12 @@ function turnGate(level, x, y) {
   level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',') + (col ? '@' + col : '');
 }
 
+// Turns a spring a quarter clockwise, the way it faces (register 826).
+function turnSpring(level, x, y) {
+  const i = idx(level, x, y), d = level.cells[i].slice(7);
+  if (level.cells[i].startsWith('spring:')) level.cells[i] = 'spring:' + CLOCKWISE[(CLOCKWISE.indexOf(d) + 1) % 4];
+}
+
 // Turns a door into an inverted door of its colour, and back (register 675).
 function turnDoor(level, x, y) {
   const i = idx(level, x, y), c = level.cells[i];
@@ -9214,7 +9243,7 @@ function place(level, ui, x, y, how) {
   if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
   return out;
 }
-return { CRATE_TOOLS, crateAt, moveAt, swapAt, recolour, turnGate, turnDoor, turnSwitch, turnLaser, wiresAt, holds, describe, place };
+return { CRATE_TOOLS, crateAt, moveAt, swapAt, recolour, turnGate, turnSpring, turnDoor, turnSwitch, turnLaser, wiresAt, holds, describe, place };
 })();
 // ---- src/app/offers.js
 const m83 = (() => {
@@ -12409,7 +12438,7 @@ function syncPanel() {
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   // In a level the one-way says how it is turned and taken away (register 234); draft copy.
   // The tool's name as a label, and how to use it in plain case beside it, not shouted (register 730).
-  const how = (S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1 })[ui.tool] ? (ui.tool === 'toggle' ? 'To switch one on or off, tap it, and to remove it, hold it.' : 'To turn one, tap it, and to remove it, hold it.') : ui.tool === 'door' ? 'To make one an inverted door and back, tap it, and to remove it, hold it.' : '';
+  const how = (S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1, spring: 1 })[ui.tool] ? (ui.tool === 'toggle' ? 'To switch one on or off, tap it, and to remove it, hold it.' : 'To turn one, tap it, and to remove it, hold it.') : ui.tool === 'door' ? 'To make one an inverted door and back, tap it, and to remove it, hold it.' : '';
   $('toolName').replaceChildren(TOOLS.find(t => t.id === ui.tool).label, ...(how ? [Object.assign(document.createElement('span'), { className: 'toolHow', textContent: how })] : []));
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });
   // The tap button says only what the tap does with the powers on.
@@ -12996,7 +13025,7 @@ return { zoomBy, zoomReset, panBy, zoomKey, bindZoom };
 })();
 // ---- src/app/input.js
 const m123 = (() => {
-const { describe, holds, place, turnGate, turnLaser, turnSwitch, turnDoor, recolour } = m82;
+const { describe, holds, place, turnGate, turnLaser, turnSpring, turnSwitch, turnDoor, recolour } = m82;
 const { S } = m44;
 const { $, canvas, touch, now } = m0;
 const { setMode, aim, undoMove } = m121;
@@ -13086,10 +13115,10 @@ function bindInput() {
     if (S.ui.tool === 'select') { canvas.setPointerCapture(ev.pointerId); S.hover = c; selectDown(c); return; }
     // Move: press on a thing, release on the tile it goes to; the outline shows where.
     if (S.ui.tool === 'move') { canvas.setPointerCapture(ev.pointerId); S.carry = c; S.hover = c; return; }
-    // In a level, the one-way, laser or switch tool on its own piece: a tap turns it, a hold removes it (registers 234, 255, 668).
+    // In a level, the one-way, laser, switch or spring tool on its own piece: a tap turns it, a hold removes it (registers 234, 255, 668, 826).
     // The door tool on a placed door cycles it between a door and an inverted door, everywhere (registers 675, 676).
     const door = S.ui.tool === 'door' && /^i?door:/.test(S.level.cells[c.y * S.level.w + c.x] || '');
-    if (ev.button !== 2 && (door || ((S.camp || S.simple) && (S.ui.tool === 'gate' || S.ui.tool === 'turret' || S.ui.tool === 'toggle') && holds(S.level, c.x, c.y, S.ui.tool)))) {
+    if (ev.button !== 2 && (door || ((S.camp || S.simple) && (S.ui.tool === 'gate' || S.ui.tool === 'turret' || S.ui.tool === 'toggle' || S.ui.tool === 'spring') && holds(S.level, c.x, c.y, S.ui.tool)))) {
       const at = c, tool = S.ui.tool;
       S.gateHold = { at, tool, timer: setTimeout(() => { S.gateHold = null; change(() => place(S.level, { ...S.ui, tool }, at.x, at.y, 'remove')); S.fx.push({ type: 'erase', x: at.x, y: at.y, at: now() }); S.redraw = true; }, GATE_HOLD_MS) };
       return;
@@ -13109,7 +13138,7 @@ function bindInput() {
     if (S.painting && c && S.ui.tool !== 'start') paint(c.x, c.y, S.painting);
   });
   const lift = () => {
-    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool } = S.gateHold; S.gateHold = null; change(() => recolour(S.level, at.x, at.y, { ...S.ui, tool }) || ({ turret: turnLaser, toggle: turnSwitch, door: turnDoor }[tool] || turnGate)(S.level, at.x, at.y)); S.redraw = true; return; }
+    if (S.gateHold) { clearTimeout(S.gateHold.timer); const { at, tool } = S.gateHold; S.gateHold = null; change(() => recolour(S.level, at.x, at.y, { ...S.ui, tool }) || ({ turret: turnLaser, toggle: turnSwitch, door: turnDoor, spring: turnSpring }[tool] || turnGate)(S.level, at.x, at.y)); S.redraw = true; return; }
     S.painting = 0; S.swipe = null; selectUp(); end();
   };
   canvas.addEventListener('pointerup', ev => {

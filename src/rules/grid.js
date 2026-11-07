@@ -14,6 +14,8 @@ export function solidCell(s, x, y, beam = false) {
   if (!inb(s, x, y)) return true;
   const c = cellAt(s, x, y);
   if (c === 'wall' || c.startsWith('spring:')) return true;
+  // An active spring's plate fills the tile it faces until it draws back (register 828); a beam passes it.
+  if (!beam && s.sprung && s.sprung.some(i => { const d = DIRS[s.cells[i].slice(7)]; return i % s.w + d[0] === x && Math.floor(i / s.w) + d[1] === y; })) return true;
   if (c.startsWith('sensor:')) return !beam;
   if (c === 'crack') return !s.broken.includes(y * s.w + x);
   if (c.startsWith('door:')) return !c.slice(5).split('|').some(col => s.open[col]);

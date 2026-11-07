@@ -3,6 +3,7 @@ import { INK, T, frame, pxTri } from './ink.js';
 import { drawSprite } from './sprites.js';
 import { drawnColour } from '../rules/wires.js';
 import { gateOf, gateDirs } from '../rules/grid.js';
+import { DIRS } from '../rules/base.js';
 
 // bare: a block in the wall mass, so only what sits on it is drawn.
 
@@ -56,6 +57,8 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     // A coil and a plate on the side it faces, pushed out while the spring is spent.
     const out = s && s.sprung && s.sprung.includes(y * s.w + x);
     drawSprite(g, 'spring', 0, 0, { colour: c.slice(7) + '|' + (bare ? 'bare' : '') + (out ? '|out' : '') });
+    // Out, its plate fills the tile it faces (register 828).
+    if (out) { const [dx, dy] = DIRS[c.slice(7)]; drawSprite(g, 'springArm', dx * T, dy * T, { colour: c.slice(7) }); }
   } else if (c.startsWith('gate:')) {
     // Rails along the sides it blocks, and a chevron for each way it lets through. A coloured one
     // draws its chevrons in its colour, and while that colour is pressed it lights up: tinted, ringed

@@ -30,6 +30,13 @@ try {
   // Plus the spring, offered to try out before any level teaches it (register 824).
   check('the Sandbox builds with the campaign\'s elements and tools, and the spring', (await shown()) === 'box,button,death,door,erase,gate,goal,look,move,select,sensor,spring,start,toggle,turret,wall,wire', await shown());
   check('the Sandbox offers red, blue, grey and plain, and no powers', await page.evaluate(() => document.querySelectorAll('[data-camp-colour]').length === 4 && !!document.querySelector('[data-camp-colour=plain]') && getComputedStyle(document.querySelector('[data-sheet=powers]')).display === 'none'));
+  // Register 826: in the Sandbox a tap turns a spring a quarter, as it does a one-way.
+  await pickTool(page, 'spring');
+  const gb = await page.locator('#game').boundingBox(), lv = await page.evaluate(() => window.wee.getLevel()), tw = gb.width / lv.w, sx = 1, sy = 1;
+  const cellNow = () => page.evaluate(([x, y]) => { const l = window.wee.getLevel(); return l.cells[y * l.w + x]; }, [sx, sy]);
+  await page.mouse.click(gb.x + (sx + 0.5) * tw, gb.y + (sy + 0.5) * tw); const sp1 = await cellNow();
+  await page.mouse.click(gb.x + (sx + 0.5) * tw, gb.y + (sy + 0.5) * tw); await page.waitForTimeout(700); const sp2 = await cellNow();
+  check('a tap on a placed spring turns it a quarter, like a one-way (register 826)', /^spring:/.test(sp1 || '') && /^spring:/.test(sp2 || '') && sp1 !== sp2, JSON.stringify([sp1, sp2]));
   // Register 379: the Sandbox's generator offers only what the Sandbox can place, and no powers.
   const ing = await page.evaluate(() => { document.getElementById('roomGen').click(); const on = [...document.querySelectorAll('#genIng select')].filter(s => s.offsetParent).map(s => s.dataset.id); document.getElementById('genBox').close(); return on; });
   check('the Sandbox\'s generator offers only its own pieces', ing.length > 0 && ing.includes('box') && !['enemy', 'water', 'mover', 'dive', 'laser'].some(id => ing.includes(id)), ing.join());

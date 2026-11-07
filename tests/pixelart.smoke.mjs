@@ -69,8 +69,10 @@ try {
   check('no canvas draws anything round (arcs, ellipses, curves, rounded rectangles)', drawn.length === 0, drawn.join());
   // Register 822: a spring that has pushed this move is drawn out, its plate at the edge.
   const springOut = await p.evaluate(async () => { const { drawCell } = await import('/src/view/tiles.js'); const px = st => { const c = document.createElement('canvas'); c.width = c.height = 64; drawCell(c.getContext('2d'), 'spring:right', 0, 0, st); return c.getContext('2d').getImageData(0, 0, 64, 64).data.join(); };
-    return { differ: px(null) !== px({ w: 1, h: 1, sprung: [0], open: {} }) }; });
-  check('an active spring is drawn out, unlike a resting one (register 822)', springOut.differ, JSON.stringify(springOut));
+    // The plate out fills the tile it faces (register 828): pixels land right of the spring's own tile.
+    const { T } = await import('/src/view/ink.js'), arm = (() => { const c = document.createElement('canvas'); c.width = 2 * T; c.height = T; const g = c.getContext('2d'); drawCell(g, 'spring:right', 0, 0, { w: 2, h: 1, sprung: [0], open: {} }); const d = g.getImageData(T, 0, T, T).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n; })();
+    return { differ: px(null) !== px({ w: 1, h: 1, sprung: [0], open: {} }), arm }; });
+  check('an active spring is drawn out, its plate filling the tile in front (registers 822, 828)', springOut.differ && springOut.arm > 20, JSON.stringify(springOut));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (err) { check('the pixel art smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

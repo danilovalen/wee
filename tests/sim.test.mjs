@@ -527,8 +527,8 @@ const LONG = ['##########', '#..P....##', '##########'];
   const b = slide(createGame(room(['#######', '#.....#', '#.....#', '#PB...#', '#..8..#', '#######'])), 'right');
   for (let i = 0; i < 6; i++) step(b);
   check('a pushed box gets launched', at(b.entities[0], 3, 1), JSON.stringify(b.entities[0]));
-  // One push per move (register 822): the spring is spent on the box, so you slide on past it.
-  check('and you, coming after it in the same move, slide past the spent spring', at(b.player, 5, 3), JSON.stringify(b.player));
+  // One push per move (register 822): the spring is spent on the box, and its plate, out, stops you short (828).
+  check('and you, coming after it in the same move, stop against its plate', at(b.player, 2, 3), JSON.stringify(b.player));
   const e = createGame(room(['#######', '#P....#', '#.....#', '#.Z...#', '#..8..#', '#######']));
   worldStep(e, 'right');
   for (let i = 0; i < 6; i++) step(e);

@@ -91,6 +91,12 @@ export function turnGate(level, x, y) {
   level.cells[i] = 'gate:' + CLOCKWISE.filter(d => dirs.includes(CLOCKWISE[(CLOCKWISE.indexOf(d) + 3) % 4])).join(',') + (col ? '@' + col : '');
 }
 
+// Turns a spring a quarter clockwise, the way it faces (register 826).
+export function turnSpring(level, x, y) {
+  const i = idx(level, x, y), d = level.cells[i].slice(7);
+  if (level.cells[i].startsWith('spring:')) level.cells[i] = 'spring:' + CLOCKWISE[(CLOCKWISE.indexOf(d) + 1) % 4];
+}
+
 // Turns a door into an inverted door of its colour, and back (register 675).
 export function turnDoor(level, x, y) {
   const i = idx(level, x, y), c = level.cells[i];
