@@ -14,6 +14,8 @@ const G = {
   next: '<path d="M5 12h12"/><path d="M13 7l5 5-5 5"/>',
   skip: '<path d="M6 6l7 6-7 6z" fill="currentColor"/><path d="M17 6v12"/>',
   fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  // A piece in a box's frame: what you place comes out pushable (register 833).
+  crate: '<rect x="3.5" y="3.5" width="17" height="17" rx="1"/><rect x="8.5" y="8.5" width="7" height="7" rx="1" fill="currentColor"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   cross: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
   flag: '<path d="M6 21V4"/><path d="M6 4.5h11l-2.5 4 2.5 4H6" fill="currentColor" fill-opacity=".25"/>',
@@ -35,6 +37,7 @@ export function iconOn(el, key, label) {
 export function bindGlyphs() {
   const $ = id => document.getElementById(id);
   iconOn($('campBack'), 'levels', 'Levels'); iconOn($('campRun'), 'run', 'Run'); iconOn($('campTest'), 'test', 'Test: play it yourself');
+  iconOn($('campCrate'), 'crate', 'Pushable');
   iconOn($('undo'), 'undo', 'Undo'); iconOn($('redo'), 'redo', 'Redo'); iconOn($('campReset'), 'reset', 'Clear the room');
   // Every page's one way up is a ← at its top left, beside its name (register 771).
   for (const id of ['campMenu', 'puzzleMenu', 'makerMenu', 'roomsMenu', 'lookMenu', 'achMenu']) iconOn($(id), 'back', 'Back to the menu');

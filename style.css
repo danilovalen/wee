@@ -974,7 +974,15 @@ body.challenge .growBar { display: none !important; }
   /* As tall as the tallest tool's rows, so a tool change moves nothing: three option rows in the full Sandbox,
      one in the simple one (168px measured, register 831). */
   body.sandbox #tools { height: 256px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
-  body.sandbox.simple #tools { height: 172px; }
+  /* Three rows that never grow (register 832): the tool's name with what a tap read on the right, the colours
+     and the tool's options side by side, then the strip; options too wide for their row scroll sideways. */
+  body.sandbox.simple #tools { height: 140px; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 22px 46px 46px; grid-template-areas: "name hint" "top opts" "strip strip"; column-gap: 8px; row-gap: 6px; align-items: center; }
+  body.sandbox.simple #toolName { grid-area: name; margin: 0; height: auto; }
+  body.sandbox.simple #tools #placeHint { grid-area: hint; display: block; margin: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+  body.sandbox.simple #campTop { grid-area: top; margin: 0; }
+  body.sandbox.simple #tools #options { grid-area: opts; justify-self: end; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  body.sandbox.simple #tools #options .opt { flex-wrap: nowrap; margin: 0; }
+  body.sandbox.simple #strip { grid-area: strip; margin: 0; }
   /* An open flyout rises over the colour and options rows, so they step aside, as on a wide screen. */
   body.sandbox:has(#palette.fly) :is(#options, #campTop) { visibility: hidden; }
   body.sandbox #strip { margin-top: auto; }

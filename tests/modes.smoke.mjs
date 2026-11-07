@@ -37,6 +37,20 @@ try {
   await page.mouse.click(gb.x + (sx + 0.5) * tw, gb.y + (sy + 0.5) * tw); const sp1 = await cellNow();
   await page.mouse.click(gb.x + (sx + 0.5) * tw, gb.y + (sy + 0.5) * tw); await page.waitForTimeout(700); const sp2 = await cellNow();
   check('a tap on a placed spring turns it a quarter, like a one-way (register 826)', /^spring:/.test(sp1 || '') && /^spring:/.test(sp2 || '') && sp1 !== sp2, JSON.stringify([sp1, sp2]));
+  // Register 832: whatever the tool, and with a tap's note on show, the strip stays whole above the bottom bar.
+  const under = [];
+  for (const t of ['look', 'wall', 'select', 'turret', 'toggle', 'gate', 'spring', 'box', 'door', 'goal']) {
+    await pickTool(page, t); await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+    if (t === 'look') { const g = await page.locator('#game').boundingBox(); await page.mouse.click(g.x + g.width / 2, g.y + g.height / 2); await page.waitForTimeout(150); }
+    // Rows, not pixels, since a phone's type is taller than this browser's: a tap's note shares the name's line and
+    // the tool's options share the colours' row, so the panel is three rows on every screen.
+    const m = await page.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(), s = r('strip'), n = r('phoneNav'), tl = r('tools'), mid = e => (e.top + e.bottom) / 2;
+      const opts = [...document.querySelectorAll('#options .opt')].find(o => o.offsetParent), hint = document.getElementById('placeHint');
+      return { strip: Math.round(s.bottom), room: Math.round(Math.min(n.top, tl.bottom)), hintRow: !hint.offsetParent || !hint.textContent || Math.abs(mid(hint.getBoundingClientRect()) - mid(r('toolName'))) < 8, optsRow: !opts || Math.abs(mid(opts.getBoundingClientRect()) - mid(r('campTop'))) < 8 }; });
+    if (m.strip > m.room + 0.5 || !m.hintRow || !m.optsRow) under.push(`${t}: ${JSON.stringify(m)}`);
+  }
+  check('every tool\'s strip stays whole above the bottom bar, a tap\'s note included (register 832)', !under.length, under.join(' | '));
+  check('Pushable is an icon, its word kept as its name (register 833)', await page.evaluate(() => { const b = document.getElementById('campCrate'); return !!b.querySelector('svg, canvas') && b.textContent.trim() === '' && b.getAttribute('aria-label') === 'Pushable'; }));
   // Register 831: the simple Sandbox's tools panel is as tall as its tallest tool needs (one option row), not the full Sandbox's three.
   const toolsH = await page.evaluate(() => Math.round(document.getElementById('tools').getBoundingClientRect().height));
   check('on a phone the simple Sandbox\'s tools take no more height than one option row needs (register 831)', toolsH <= 180, String(toolsH));
