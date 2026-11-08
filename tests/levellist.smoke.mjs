@@ -15,7 +15,7 @@ try {
     const page = await browser.newPage({ viewport: { width: w, height: h }, ...(w < 500 ? { isMobile: true, hasTouch: true } : {}) });
     await page.addInitScript(() => { window.__noTutorial = true; });
     await page.goto('http://localhost:5284/'); await page.waitForTimeout(400);
-    await page.click('#menuUnlock'); await page.click('#devYes'); await page.waitForTimeout(100);
+    await page.click('#menuUnlock'); await page.click('#devYes'); await page.waitForLoadState('load'); await page.waitForTimeout(900);
     await page.evaluate(() => { location.hash = '#/levels'; }); await page.waitForTimeout(500);
     const r = await page.evaluate(() => {
       const rows = [...document.querySelectorAll('#campList li.main .campRow')];

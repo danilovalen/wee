@@ -37,7 +37,8 @@ try {
   check('turning dev mode on asks first', await p.isVisible('#devBox') && /unlocks everything/.test(await p.textContent('#devBox')) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'false');
   await p.click('#devNo'); await p.waitForTimeout(150);
   check('Cancel leaves it off', !(await p.isVisible('#devBox')) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'false');
-  await p.click('#menuUnlock'); await p.click('#devYes'); await p.waitForTimeout(150);
+  const beforeDev = await p.evaluate(() => localStorage.getItem('wee.campaign'));
+  await p.click('#menuUnlock'); await p.click('#devYes'); await p.waitForLoadState('load'); await p.waitForTimeout(900);
   check('in dev mode they come back', (await shownExtras()).length === extras.length, (await shownExtras()).join());
   check('the corner button says it is on', (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'true');
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
@@ -59,7 +60,10 @@ try {
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
   check('dev mode stays on after a reload, its levels still open (register 780)', (ids => hidden.every(id => ids.includes(id) === !LEVELS.find(l => l.id === id).hidden))(await rows()) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'true');
   await p.evaluate(() => { location.hash = '#/'; }); await p.waitForTimeout(400);
-  await p.click('#menuUnlock'); await p.waitForTimeout(150); await p.reload(); await p.waitForTimeout(800);
+  // Register 835: whatever was won with every level open, locking again brings back what you had.
+  await p.evaluate(() => localStorage.setItem('wee.campaign', '{"v":4,"last":null,"levels":{"won-in-dev":{"won":true}},"owned":[],"spent":0}'));
+  await p.click('#menuUnlock'); await p.waitForLoadState('load'); await p.waitForTimeout(900); await p.reload(); await p.waitForTimeout(800);
+  check('locking again brings back the progress you had, not what was won unlocked (register 835)', (await p.evaluate(() => localStorage.getItem('wee.campaign'))) === beforeDev, String(await p.evaluate(() => localStorage.getItem('wee.campaign'))).slice(0, 80));
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
   check('locked again, it stays locked after a reload', (await rows()).every(id => !hidden.includes(id)) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'false' && (await shownExtras()).length === 0);
   check('no page errors', errors.length === 0, errors.join(' | '));

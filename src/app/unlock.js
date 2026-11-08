@@ -4,6 +4,7 @@
 // sits in the top bar while it is on so a screenshot never passes for real progress.
 import { $ } from './dom.js';
 import { glyph } from './glyphs.js';
+import { setDevSlot } from './slots.js';
 
 const KEY = 'wee.dev';
 let on = false;
@@ -32,7 +33,8 @@ export function setDev(v) {
 export function bindUnlock() {
   sync();
   // Turning it on asks first (register 818): a tester's tap would otherwise skip the whole progression.
-  $('menuUnlock').onclick = () => on ? setDev(false) : $('devBox').showModal();
-  $('devYes').onclick = () => { $('devBox').close(); setDev(true); };
+  // On and off are saves of their own (register 835): locking again brings back what you had unlocked.
+  $('menuUnlock').onclick = () => on ? setDevSlot(false) : $('devBox').showModal();
+  $('devYes').onclick = () => { $('devBox').close(); setDevSlot(true); };
   $('devNo').onclick = () => $('devBox').close();
 }
