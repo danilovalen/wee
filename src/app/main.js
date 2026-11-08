@@ -1,6 +1,7 @@
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
 import { bindUnlock } from './unlock.js';
+import { bindSlots } from './slots.js';
 import { buildLooks } from './looks.js';
 import { buildAchieve } from './achieve.js';
 import { bindSound } from './sound.js';
@@ -51,7 +52,7 @@ buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
 bindReplay({ setMode, leaveOk, openRoom });
-bindGlyphs(); bindTutorial(); bindUnlock(); buildLooks(); buildAchieve(); bindSound();
+bindGlyphs(); bindTutorial(); bindUnlock(); bindSlots(); buildLooks(); buildAchieve(); bindSound();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });
 buildMaker();

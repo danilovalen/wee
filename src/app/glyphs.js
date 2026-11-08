@@ -14,6 +14,8 @@ const G = {
   next: '<path d="M5 12h12"/><path d="M13 7l5 5-5 5"/>',
   skip: '<path d="M6 6l7 6-7 6z" fill="currentColor"/><path d="M17 6v12"/>',
   fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  // A person: who is playing (register 834).
+  player: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5"/>',
   // A piece in a box's frame: what you place comes out pushable (register 833).
   crate: '<rect x="3.5" y="3.5" width="17" height="17" rx="1"/><rect x="8.5" y="8.5" width="7" height="7" rx="1" fill="currentColor"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',

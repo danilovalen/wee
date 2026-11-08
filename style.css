@@ -515,6 +515,12 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .menuCorner.left { right: auto; left: 12px; }
 .menuCorner.left2 { right: auto; left: 66px; }
 .menuCorner.right2 { right: 66px; }
+.menuCorner.right3 { right: 120px; }
+/* Who's playing (register 834): one row per save, the one in use marked. */
+.slotList { display: grid; gap: 8px; margin: 0 0 14px; }
+.slotRow { display: grid; justify-items: start; gap: 2px; text-align: left; padding: 10px 12px; }
+.slotRow small { color: var(--soft); }
+.slotRow.on { box-shadow: inset 0 0 0 2px var(--accent); }
 /* Something new behind a button (registers 628, 640): a pixel dot in its corner. */
 .lookGrid button, .lookSkin button { position: relative; }
 .dot::after { content: ''; position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: var(--bad); pointer-events: none; }
