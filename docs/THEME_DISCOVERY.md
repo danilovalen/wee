@@ -118,10 +118,59 @@ Ranked by how much each decides.
   rules (outline, bands, voice, motion numbers) and the copy. What may not: the CSS and the pixel runs.
 - **Cost.** About 60 sprites plus skins, every dialog, a second face, new effects. Staged, not one pass.
 
+## Part D: a moment for every component (register 842)
+
+Owner, 2026-11-10: *"Don't hyperfocus only on the spring. It was one detailed example. Other components of
+the game must be as specific as that ... Invest in this type of eye candy."*
+
+Each row is one thing in the room, what it does on screen today (read from `scene.js`, `juice.js`,
+`pieceSprites.js` and the events the rules emit), and the moment it should own. "Cute" is how it sits at
+rest; "cruel" is what happens. Every proposal stays inside whole art pixels and has a still form for reduced
+motion. Proposals, not decisions.
+
+| thing | today | at rest (cute) | its moment (cruel) |
+|---|---|---|---|
+| **Blob** | squash on stop, dust, ghosts behind a slide, a ring on death | blinks; looks the way it will slide; looks at the nearest danger; breathes | every death is its own: see the death rows. Flinches one frame before any of them |
+| **Berry** | cyan spark ring when eaten, gold on the last | a leaf that bobs; a shine that crosses it | a bite first (two frames, a chunk gone), then gone; juice drops stay on the floor tile |
+| **Block (wall)** | 1-frame white flash and a 1 px knock when hit | still: it is the lab | a dent mark where the blob hit hardest; dust from the top edge |
+| **Box** | slides, flashes when hit | a taped lab crate, label slightly crooked | lands with a thud and a corner chip; crushed in a door it folds flat and stays as a flat sheet |
+| **Heavy box** | breaks a crate ahead | sags under its own weight | cracks the floor tile it stops on (mark stays); the screen dips 1 px on its stop only |
+| **Pushable tile (crate frame)** | breaks where a box would | a frame that rattles one pixel as things pass | splinters into four planks that slide to the walls and stay |
+| **Door** | opens and shuts; crushes | a shutter with a warning stripe | slams: a hit-stop, then the crushed thing is a thin smear on the jamb; the blob crushed leaves its eyes on the floor, blinking, for a beat |
+| **Inverted door** | same, opposite | same, stripe inverted | same |
+| **Button** | up and down sprite | a dome that wobbles when something passes beside it | pressed by a box: a satisfying click and a spark; pressed by the blob: the blob flattens a little over it |
+| **Switch** | on and off sprite | a lever with a tiny lamp | thrown: the lamp pops, the lever overshoots and settles (2 frames) |
+| **One-way** | arrow tile; launches when turned | arrows crawl in its direction | blocked the wrong way: the blob's face presses flat against it for a frame, like glass |
+| **Laser** | a beam; kills | the emitter hums, the beam flickers one pixel wide to two | the blob is cut to an outline that holds a frame, then falls as ash; a scorch stays where it stood |
+| **Relay** | lights when a beam passes | a lens that follows the beam's side | lit: a ring pulse down the wire to what it drives |
+| **Spikes** | kills; a box covers them | tips glint in turn, left to right | the blob pops like a balloon: a short burst, the skin drifts down; a box landing on them is skewered and stays |
+| **Bomb** | blast, shake 3 px 180 ms | a fuse spark; it sweats when something slides at it | the one big shake; a scorch ring stays; walls beside it keep soot; the blob caught in it is a silhouette on the wall behind |
+| **Spring** | pushes; plate occupies the front tile while active | coiled, twitching | the slam: hit-stop, shake along its axis, the blob a splat on the far wall that stays for the level; a box slammed leaves a dent |
+| **Sticky** | glue and unglue events | a puddle with a slow bubble | strings stretch between it and what leaves, then snap |
+| **Gravel** | slows or stops | loose stones | stones scatter and settle in new places each time |
+| **Cracked floor** | breaks | a hairline that grows each pass | falls away in pieces; what was on it drops out of sight with its eyes last |
+| **Water (swim, dive)** | events only | a surface line that laps | a splash ring; the blob surfaces with a spit of water |
+| **Checkpoint** | saved | a small flag at half mast | raised with a jingle; lowered again on a death |
+| **Mover and enemies** | walk, kill | a patrol with a bored look | caught: it does not gloat, it files a note (a tick appears above it) |
+| **Strong piece** | jams a spring or door | flexes one frame now and then | holds a closing door open and shakes with the effort |
+| **Win** | star burst on the card | the berry waits | the room's splats are counted on the win card: an incident report |
+
+**Death causes the rules already tell apart** (`life.js`): spring launch, door, spikes, blast, the death
+tile. A laser and a fall are events of their own. So seven distinct deaths are available without a rule
+change; each needs a 2 to 4 frame animation and a mark that stays.
+
+**What stays in the room** (owner's pick: until you leave the level): splats, scorches, dents, smears,
+planks, juice. They are decoration only, drawn under the pieces, never change a rule, and are capped (the
+oldest fade) so a long session cannot fill the floor. Undo keeps them: the room remembers.
+
+**Cost, roughly:** about 25 things x (idle 2 to 3 frames + moment 3 to 5 frames + a stain) is on the order of
+200 small frames, drawn in code as today, plus about 12 new sounds. This is larger than the screens.
+
 ## Decisions needed before a plan (asked one at a time)
 
-1. Palettes: is the new look the default palette with the other eight kept, or do all nine get re-authored?
-2. How far the splat goes: stays on the wall for the level, for the session, or only until reset.
-3. Whose voice the screens speak in: the lab's, the blob's, or each on its own screens.
-4. Whether to sketch three looks side by side before any build (the usual route here).
-5. Whether this lands before or after the Godot move.
+Answered 2026-11-10: **timing**: sketch, plan properly, then build in the current game; **palettes**:
+re-author all nine; **splats and other marks**: stay until you leave the level.
+
+
+1. Whose voice the screens speak in: the lab's, the blob's, or each on its own screens.
+2. Whether to sketch three looks side by side before any build (the usual route here).

@@ -998,7 +998,7 @@ export const M = [
   ['src/campaign/rules.js', "/^(button|toggle):|^death$/.test(room.cells", "/^(button):|^death$/.test(room.cells", 'campaign'],
   ['src', ".every(e => !(end.cells[e.y * room.w + e.x] || '').startsWith('button:'));", ".length >= 0;", 'campaign'],
   ['style.css', "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }", "display: grid; gap: 12px 16px; }", 'campaign-play'],
-  ['src/app/campaign.js', "star(rec.beaten ? best.win ?? '' : null, true, 'Win')", "star(best.win ?? '', true, 'Win')", 'campaign-play'],
+  ['src/app/campaign.js', "star(rec.beaten ? best.win ?? '' : null, true, 'Win', pts.win)", "star(best.win ?? '', true, 'Win', pts.win)", 'campaign-play'],
   ['src', "    dispatchEvent(new Event('wee:demoDone'));", "", 'campaign-play'],
   ['src', "exit: () => { noteLeaving(); leaveLevel(); }", "exit: () => { leaveLevel(); }", 'campaign-play'],
   ['src/app/nav.js', "  $('logo').onclick = () => up();", "", 'nav'],
@@ -1195,7 +1195,7 @@ export const M = [
   ['src/app/goalCard.js', "optional: true, kept: !!kept[o.id] });", "optional: true, kept: false });", 'win'],
   ['style.css', ".px:where(.glyph) { width: 24px;", ".glyph.px { width: 24px;", 'tutorial'],
   ['src/app/tutorial.js', "  $('tutPic').hidden = !s.pic;", "  $('tutPic').hidden = true;", 'tutorial'],
-  ['src/app/campaign.js', "  const side = optionalGoals(def);", "  const side = sideOpen ? optionalGoals(def) : [];", 'tutorial'],
+  ['src/app/campaign.js', "  const side = optionalGoals(def), pts", "  const side = sideOpen ? optionalGoals(def) : [], pts", 'tutorial'],
   ['src/view/pieces.js', "drawSprite(g, 'blob', -T / 2, -T / 2, { outline: hidden });", "", 'campaign-play'],
   ['src/app/unlock.js', "export const unlocked = () => on;", "export const unlocked = () => false;", 'unlock'],
   // Row 608: no mutant goes stale.
