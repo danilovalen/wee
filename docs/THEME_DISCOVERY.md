@@ -186,11 +186,21 @@ What that binds in the plan:
   end), and every pair of rule colours differs by a set amount. `tests/palettes.test.mjs` already checks
   shades; it grows.
 
+## Voice (register 844, decided)
+
+Owner, 2026-11-10: *"The game voice is not from the blob, but from 'the lab'. Unless it's the album
+(achievements) then it's from the blob, more cutesy and sometimes resentful."*
+
+- **The lab** speaks everywhere: the clipboard, signs, buttons, the win card, dialogs.
+- **The blob** speaks only in its album (Achievements): cutesy, and sometimes resentful. He calls it an album.
+- Still to settle in the plan: how the lab's lines live with the house copy rules (condition first, one
+  sentence, no retro-explaining), and sample lines for him to approve before any ship. No invented copy
+  goes in unapproved.
+
 ## Decisions needed before a plan (asked one at a time)
 
 Answered 2026-11-10: **timing**: sketch, plan properly, then build in the current game; **palettes**:
 re-author all nine; **splats and other marks**: stay until you leave the level.
 
 
-1. Whose voice the screens speak in: the lab's, the blob's, or each on its own screens.
-2. Whether to sketch three looks side by side before any build (the usual route here).
+1. Whether to sketch three looks side by side before any build (the usual route here).
