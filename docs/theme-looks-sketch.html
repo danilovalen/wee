@@ -1,0 +1,180 @@
+<title>wee theme looks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Patrick+Hand&family=Pixelify+Sans:wght@400;600&family=Inter:wght@400;600&display=swap">
+<style>
+/* Layout: a specimen sheet. One column per look; each column stacks the same four specimens so rows compare across. */
+:root {
+  --bg: #efeef2; --fg: #24212b; --dim: #6a6676; --card: #ffffff; --rule: #d9d6e0; --accent: #5a4bd6;
+  --text: 'Inter', system-ui, sans-serif; --pixel: 'Pixelify Sans', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #17151c; --fg: #f1eef7; --dim: #a39fb0; --card: #221f29; --rule: #37333f; --accent: #a99cff; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #17151c; --fg: #f1eef7; --dim: #a39fb0; --card: #221f29; --rule: #37333f; --accent: #a99cff; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.5 var(--text); padding-block: 20px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+main { max-width: 1180px; margin: 0 auto; display: grid; gap: 22px; }
+h1 { font: 600 26px/1.15 var(--pixel); margin: 0; text-wrap: balance; }
+h2 { font: 600 19px/1.2 var(--pixel); margin: 0; }
+p { margin: 0; max-width: 68ch; }
+.dim { color: var(--dim); }
+.looks { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+.look { background: var(--card); border: 1px solid var(--rule); padding: 14px; display: grid; gap: 14px; min-width: 0; }
+.look > header { display: grid; gap: 4px; }
+.tag { font: 600 12px var(--pixel); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.spec { display: grid; gap: 6px; }
+.spec > small { font: 600 11px var(--pixel); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+ul.diff { margin: 0; padding-left: 18px; color: var(--dim); font-size: 13.5px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 12px var(--pixel); letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.scroll { overflow-x: auto; }
+.note { border-left: 3px solid var(--accent); padding-left: 12px; }
+
+/* The specimens. Each look sets its own colours on .stage: these are the thing being judged, so they do not follow the page theme. */
+.stage { --line: #1d1626; --paper: #fff; --ink: #1d1626; --room: #dfe9f2; --hand: 'Gaegu', cursive; --w: 0; padding: 12px; background: var(--room); display: grid; gap: 12px; justify-items: center; }
+.stage canvas { image-rendering: pixelated; max-width: 100%; height: auto; display: block; }
+.wob { filter: url(#w0); }
+@media (prefers-reduced-motion: no-preference) { .wob { animation: boil .45s steps(1) infinite; } .wob.b2 { animation-delay: -.15s; } .wob.b3 { animation-delay: -.3s; } }
+@keyframes boil { 0% { filter: url(#w0); } 33% { filter: url(#w1); } 66% { filter: url(#w2); } }
+.stage[data-wob="0"] .wob { filter: none; animation: none; }
+.frame { border: 2px solid var(--line); box-shadow: inset 0 0 0 2px var(--tint, #0003); background: var(--paper); color: var(--ink); }
+.clip { width: 100%; max-width: 300px; position: relative; padding: 26px 14px 12px; font: 400 15px/1.35 var(--body, var(--pixel)); }
+.clip::before { content: ""; position: absolute; left: 50%; top: -8px; width: 76px; height: 22px; transform: translateX(-50%); background: var(--metal, #9aa3b5); border: 2px solid var(--line); box-shadow: inset 0 0 0 2px var(--metal2, #c9cfdb); }
+.clip h3 { margin: 0 0 6px; font: 700 20px/1 var(--hand); display: flex; justify-content: space-between; gap: 8px; }
+.clip ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.clip li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; }
+.box { width: 14px; height: 14px; border: 2px solid var(--line); margin-top: 3px; position: relative; background: var(--paper); }
+.done .box::after { content: ""; position: absolute; left: 1px; top: -6px; width: 6px; height: 13px; border: solid var(--tick, #d63a5a); border-width: 0 3px 3px 0; transform: rotate(40deg); }
+.done span { text-decoration: line-through; text-decoration-color: var(--tick, #d63a5a); }
+.margin { font: 400 15px/1.2 var(--hand); color: var(--tick, #d63a5a); transform: rotate(-2deg); justify-self: end; }
+.album { width: 100%; max-width: 300px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--page, #f6ecd4); }
+.photo { background: #fff; border: 2px solid var(--line); padding: 5px 5px 0; position: relative; transform: rotate(var(--r, -2deg)); display: grid; gap: 2px; }
+.photo::before { content: ""; position: absolute; left: 50%; top: -9px; width: 40px; height: 14px; transform: translateX(-50%) rotate(-3deg); background: var(--tape, #ffe27acc); border: 1px solid #0002; }
+.photo canvas { width: 100%; }
+.photo p { font: 400 14px/1.15 var(--hand); color: #2a2330; padding: 2px 2px 6px; }
+.photo.empty { background: none; border-style: dashed; min-height: 64px; place-items: center; grid-column: 1 / -1; }
+.photo.empty::before { display: none; }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.btn { font: 600 15px var(--btnface, var(--pixel)); padding: 8px 16px; background: var(--b, #7b6cff); color: var(--bt, #fff); border: 2px solid var(--line); box-shadow: inset 0 0 0 2px var(--b2, #4b3fd6), 0 3px 0 var(--line); }
+.btn.alt { --b: var(--paper); --b2: var(--tint2, #cfd6e2); --bt: var(--ink); }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="w0"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="1" seed="1"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
+    <filter id="w1"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="1" seed="7"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
+    <filter id="w2"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="1" seed="13"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
+  </defs>
+</svg>
+
+<main>
+  <header style="display:grid;gap:8px">
+    <span class="tag">wee · register 841 · sketch, nothing built</span>
+    <h1>Three looks for the lab</h1>
+    <p>The same four things in each: a room after a spring slam, the level's clipboard, a page of the blob's album, and two buttons. Pick one, or name the parts to mix. The words on the clipboard and in the album are drafts to show the two voices; none is approved copy.</p>
+    <p class="dim">The interface edges wobble between three drawings. The room holds still on purpose: a grid someone has to read should not move. With reduced motion on, nothing wobbles.</p>
+  </header>
+
+  <section class="looks" id="looks"></section>
+
+  <section style="display:grid;gap:10px">
+    <h2>What differs</h2>
+    <div class="scroll"><table>
+      <tr><th></th><th>A · Crayon</th><th>B · Ink</th><th>C · Sticker</th></tr>
+      <tr><td>Leans on</td><td>Yoshi's Island</td><td>Binding of Isaac</td><td>The game as it is, pushed</td></tr>
+      <tr><td>Outer line</td><td>Dark tint of each fill, never black</td><td>One near-black plum for everything</td><td>One near-black, perfectly even</td></tr>
+      <tr><td>Inner line</td><td>A second, lighter tint</td><td>Dark tint of the fill</td><td>A white keyline, like a cut sticker</td></tr>
+      <tr><td>Line quality</td><td>Broken and lumpy, cells dropped</td><td>Mostly whole, a little lumpy</td><td>Clean</td></tr>
+      <tr><td>Room</td><td>Pastel, hatched floor</td><td>Muted, so pieces shout</td><td>Bright and flat</td></tr>
+      <tr><td>Wobble on the interface</td><td>Strong</td><td>Medium</td><td>None; things bounce when used</td></tr>
+      <tr><td>Headings</td><td>Hand scrawl</td><td>Hand scrawl</td><td>Pixel face, as today</td></tr>
+      <tr><td>Redraw cost</td><td>Highest: every sprite lumpy and tinted per palette</td><td>Middle: one line colour, shapes loosened</td><td>Lowest: today's sprites plus a keyline</td></tr>
+      <tr><td>Risk</td><td>Small pieces get soft on a phone</td><td>Can turn grim if the room goes too dark</td><td>Least cynical; reads as plain cute</td></tr>
+    </table></div>
+    <p class="note dim">The pixel face here is a stand-in for the game's own. Colours are one palette per look; all nine palettes get the chosen rule later.</p>
+  </section>
+</main>
+
+<script>
+// Sprites are masks on a 16x16 grid; the outline is computed, so one rule draws every piece.
+const N = 16, C = 3;
+const disc = (cx, cy, rx, ry, lump = 0) => (x, y) => { const a = Math.atan2(y - cy, x - cx); const k = 1 + lump * Math.sin(a * 3 + 1); return ((x + .5 - cx) / (rx * k)) ** 2 + ((y + .5 - cy) / (ry * k)) ** 2 <= 1; };
+const rect = (x0, y0, x1, y1) => (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+const any = (...f) => (x, y) => f.some(g => g(x, y));
+const SHAPES = {
+  blob: any(disc(8, 9, 5.6, 5, .06), rect(3, 10, 12, 13)),
+  berry: any(disc(8, 9.5, 5, 4.8, .04), rect(8, 2, 9, 4), rect(10, 3, 12, 4)),
+  box: rect(2, 2, 13, 13),
+  wall: rect(0, 0, 15, 15),
+  spring: any(rect(1, 3, 4, 12), rect(5, 5, 6, 10), rect(7, 4, 8, 11), rect(9, 5, 10, 10), rect(11, 2, 13, 13)),
+  splat: any(disc(11, 8, 4, 6.5, .22), disc(7, 3, 1.6, 1.6), disc(6, 12, 2, 1.6), disc(3, 8, 1.3, 1.3), disc(8, 7, 2.2, 1.4)),
+  eyes: (x, y) => false,
+};
+let seed = 1; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const mix = (a, b, t) => { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); const A = p(a), B = p(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+function sprite(g, ox, oy, name, fill, L, opt = {}) {
+  const m = SHAPES[name], at = (x, y) => x >= 0 && y >= 0 && x < N && y < N && m(x, y);
+  const px = (x, y, c) => { g.fillStyle = c; g.fillRect(ox + x * C, oy + y * C, C, C); };
+  const outer = L.outer === 'tint' ? mix(fill, '#1a1020', .62) : L.outer, inner = L.inner === 'white' ? '#ffffff' : mix(fill, '#1a1020', L.inner === 'tint2' ? .22 : .34);
+  seed = (opt.seed || 5) * 97 + name.length;
+  for (let y = -1; y <= N; y++) for (let x = -1; x <= N; x++) {
+    const here = at(x, y), edge = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + dx, y + dy) !== here);
+    if (!here) { if (edge && !opt.noOuter && rnd() >= L.drop) px(x, y, outer); continue; }
+    px(x, y, edge ? inner : fill);
+  }
+  if (!opt.flat) { g.fillStyle = mix(fill, '#ffffff', .55); g.fillRect(ox + 5 * C, oy + 4 * C, 2 * C, C); if (name !== 'spring') g.fillRect(ox + 4 * C, oy + 5 * C, C, 2 * C); }
+  if (opt.eyes) for (const ex of opt.eyes) { g.fillStyle = '#fff'; g.fillRect(ox + ex[0] * C, oy + ex[1] * C, 2 * C, 3 * C); g.fillStyle = L.outer === 'tint' ? '#2a1c3a' : L.outer; g.fillRect(ox + (ex[0] + (opt.look || 0)) * C + (opt.look ? 0 : C), oy + (ex[1] + 1) * C, C, 2 * C); }
+}
+function room(cv, L) {
+  const T = N * C, W = 6, H = 5; cv.width = W * T; cv.height = H * T; const g = cv.getContext('2d');
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    g.fillStyle = (x + y) % 2 ? L.floor : L.floor2; g.fillRect(x * T, y * T, T, T);
+    if (L.hatch) { g.fillStyle = L.hatch; for (let i = 2; i < 46; i += 9) g.fillRect(x * T + i, y * T + ((i * 5 + x * 7) % 40) + 2, 6, 2); }
+  }
+  for (let x = 0; x < W; x++) sprite(g, x * T, 0, 'wall', L.wall, L, { seed: x + 1, flat: true });
+  for (let y = 1; y < H; y++) sprite(g, 5 * T, y * T, 'wall', L.wall, L, { seed: y + 9, flat: true });
+  sprite(g, 0, 2 * T, 'spring', L.spring, L, { seed: 3 });
+  // What the slam left: the blob as a splat on the far wall, eyes still there, drops on the floor.
+  sprite(g, 4 * T + 10, 2 * T, 'splat', L.blob, L, { seed: 4, flat: true, eyes: [[9, 5], [12, 6]] });
+  g.fillStyle = L.blob; for (const [x, y, s] of [[3.2, 2.2, 2], [2.4, 2.75, 1], [3.6, 2.9, 1], [1.6, 2.4, 1]]) g.fillRect(Math.round(x * T / C) * C, Math.round(y * T / C) * C, s * C, s * C);
+  sprite(g, 2 * T, 3 * T + 6, 'box', L.box, L, { seed: 6 });
+  g.fillStyle = mix(L.box, '#1a1020', .4); g.fillRect(2 * T + 4 * C, 3 * T + 6 + 7 * C, 8 * C, C); g.fillRect(2 * T + 7 * C, 3 * T + 6 + 4 * C, C, 8 * C);
+  sprite(g, 4 * T - 6, 3 * T + 8, 'berry', L.berry, L, { seed: 8 });
+  sprite(g, 1 * T + 10, 1 * T + 4, 'blob', L.blob, L, { seed: 2, eyes: [[5, 7], [9, 7]], look: 1 });
+}
+function photo(cv, L, what) {
+  const T = N * C; cv.width = T * 2; cv.height = T * 1.5; const g = cv.getContext('2d');
+  g.fillStyle = L.floor; g.fillRect(0, 0, cv.width, cv.height);
+  if (what === 'splat') { sprite(g, T, 0, 'wall', L.wall, L, { seed: 2, flat: true }); sprite(g, T, T, 'wall', L.wall, L, { seed: 3, flat: true }); sprite(g, 18, 10, 'splat', L.blob, L, { seed: 4, flat: true, eyes: [[9, 5], [12, 6]] }); }
+  else { sprite(g, 6, 12, 'blob', L.blob, L, { seed: 2, eyes: [[5, 7], [9, 7]], look: 1 }); sprite(g, T + 2, 14, 'berry', L.berry, L, { seed: 8 }); }
+}
+const LOOKS = [
+  { id: 'A', name: 'Crayon', sub: 'Soft, lumpy, drawn by hand. The line is a darker shade of whatever it surrounds.',
+    L: { outer: 'tint', inner: 'tint2', drop: .14, floor: '#f6f1df', floor2: '#f1ead2', hatch: '#e6dcbc', wall: '#b9c7e8', blob: '#8fd9a0', berry: '#ff9f6b', box: '#f3cf7a', spring: '#f59bb8' },
+    css: '--room:#f6f1df;--line:#5b4a3a;--paper:#fffdf4;--ink:#4a3b30;--tint:#e9dcc0;--tint2:#e9dcc0;--tick:#e0577a;--page:#f3e3c2;--b:#8ec5ff;--b2:#5a94d6;--bt:#243a5c;--metal:#b9c7e8;--metal2:#dbe3f6;--body:"Patrick Hand",cursive;--btnface:"Gaegu",cursive', wob: 1, diff: ['Outlines are tints, never black', 'Cells dropped so the line breaks', 'Crayon hatch on the floor'] },
+  { id: 'B', name: 'Ink', sub: 'A heavy dark line around everything, a muted room, and pieces in full colour.',
+    L: { outer: '#1d1626', inner: 'tint', drop: .04, floor: '#cfc8c2', floor2: '#c6beb8', hatch: null, wall: '#7d7387', blob: '#7be08a', berry: '#ff7a3d', box: '#f2b632', spring: '#ff5d8f' },
+    css: '--room:#cfc8c2;--line:#1d1626;--paper:#f7f1e3;--ink:#1d1626;--tint:#d8cdb4;--tint2:#d8cdb4;--tick:#e0244e;--page:#e9dcc0;--b:#7b6cff;--b2:#4b3fd6;--bt:#fff;--metal:#8d93a6;--metal2:#c3c8d6', wob: 1, diff: ['One near-black line for every piece and panel', 'Room stays grey so colour means something', 'The double border is strongest here'] },
+  { id: 'C', name: 'Sticker', sub: 'Bright, flat and crisp. A white keyline inside a dark edge, like something cut out and stuck on.',
+    L: { outer: '#1b1830', inner: 'white', drop: 0, floor: '#e3f1ff', floor2: '#d6e9fd', hatch: null, wall: '#8aa2e8', blob: '#5fe38b', berry: '#ff8a3d', box: '#ffd23f', spring: '#ff5fa2' },
+    css: '--room:#e3f1ff;--line:#1b1830;--paper:#ffffff;--ink:#1b1830;--tint:#ffffff;--tint2:#d6e2f5;--tick:#ff3d7f;--page:#fff6d6;--b:#5fe38b;--b2:#ffffff;--bt:#1b1830;--metal:#8aa2e8;--metal2:#ffffff;--hand:"Pixelify Sans",monospace', wob: 0, diff: ['Closest to the game today', 'Nothing wobbles; things bounce when used', 'Keeps one pixel face'] },
+];
+const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
+for (const k of LOOKS) {
+  const art = el('article', 'look');
+  art.append(el('header', '', `<span class="tag">Look ${k.id}</span><h2>${k.name}</h2><p class="dim">${k.sub}</p>`));
+  const stage = el('div', 'stage'); stage.style.cssText = k.css; stage.dataset.wob = k.wob;
+  const r = el('canvas'); r.setAttribute('role', 'img'); r.setAttribute('aria-label', `Look ${k.id}: a room where a spring has slammed the blob into the wall`); room(r, k.L);
+  const s1 = el('div', 'spec'); s1.append(el('small', '', 'The room, after a slam'), r);
+  const clip = el('div', 'frame clip wob', `<h3><span>Test 12</span><span>Subject: Blob</span></h3><ol><li class="done"><i class="box"></i><span>Subject reaches the berry.</span></li><li><i class="box"></i><span>Place 4 things or fewer.</span></li><li><i class="box"></i><span>Push a box through an open door.</span></li></ol><p class="margin">optional: subject stays in one piece</p>`);
+  const s2 = el('div', 'spec'); s2.append(el('small', '', 'Objectives: the clipboard (the lab speaks)'), clip);
+  const alb = el('div', 'frame album wob b2');
+  const p1 = el('div', 'photo'), c1 = el('canvas'); photo(c1, k.L, 'meet'); p1.append(c1, el('p', '', 'My first berry!! Best day.'));
+  const p2 = el('div', 'photo'), c2 = el('canvas'); photo(c2, k.L, 'splat'); p2.style.setProperty('--r', '2deg'); p2.append(c2, el('p', '', 'They said the spring was safe.'));
+  const p3 = el('div', 'photo empty', '<p>not yet</p>'); p3.style.setProperty('--r', '0deg');
+  alb.append(p1, p2, p3);
+  const s3 = el('div', 'spec'); s3.append(el('small', '', 'Achievements: the album (the blob speaks)'), alb);
+  const s4 = el('div', 'spec'); s4.append(el('small', '', 'Buttons'), el('div', 'btns', '<span class="btn wob b3">Run test</span><span class="btn alt wob">Undo</span>'));
+  stage.append(s1, s2, s3, s4);
+  art.append(stage, el('ul', 'diff', k.diff.map(d => `<li>${d}</li>`).join('')));
+  document.getElementById('looks').append(art);
+}
+</script>
