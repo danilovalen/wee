@@ -166,6 +166,26 @@ oldest fade) so a long session cannot fill the floor. Undo keeps them: the room 
 **Cost, roughly:** about 25 things x (idle 2 to 3 frames + moment 3 to 5 frames + a stain) is on the order of
 200 small frames, drawn in code as today, plus about 12 new sounds. This is larger than the screens.
 
+## Palettes, after the owner's answers (register 843)
+
+Owner, 2026-11-10: re-author all nine, and *"Themes will still exist. And we may start shuffling colors
+around a bit more instead of just saturation, value and slight hue changes."*
+
+What that binds in the plan:
+
+- **A palette may give a job a different hue**, not only a different shade: the blob green in one, pink in
+  another; doors cyan here, orange there. Today's twenty slots are named by hue (`red`, `blue`, `violet`),
+  which reads as a promise the plan should drop: slots become jobs (`hero`, `fruit`, `signal A`, `danger`).
+- **Nothing may name a thing by its colour**, in copy, in a goal icon or in a test. "The red door" becomes
+  the door's own mark. The campaign's colour names (`red`, `blue` for wires) need a second look.
+- **Inside one palette the rule colours must still be told apart**, by more than hue: each also carries a
+  shape or mark, so a shuffled or colour-blind view still reads.
+- **The outline rule is per palette**: the outer line is that palette's darkest; the inner line a dark tint
+  of whatever the fill is there. One rule, nine results.
+- **A gate per palette**: the three value bands hold (room lightest or darkest, pieces mid, line at the far
+  end), and every pair of rule colours differs by a set amount. `tests/palettes.test.mjs` already checks
+  shades; it grows.
+
 ## Decisions needed before a plan (asked one at a time)
 
 Answered 2026-11-10: **timing**: sketch, plan properly, then build in the current game; **palettes**:
