@@ -3,11 +3,13 @@
 import { builders } from './progression.js';
 import { CHALLENGES } from '../level/challenges.js';
 import { optionalGoals } from './rules.js';
+import { SCORE_STEPS } from './score.js';
 
 const beaten = (levels, id) => !!(levels[id] && levels[id].beaten);
 const allSide = (levels, def) => optionalGoals(def).length > 0 && optionalGoals(def).every(o => levels[def.id] && levels[def.id].goals && levels[def.id].goals[o.id]);
 // taught: the tools the campaign has a piece for. extra: feats (achievement id to the level it was earned
-// on), peak (the best count toward a goal so far) and spent (stars spent on Looks), registers 629-639.
+// on), peak (the best count toward a goal so far), spent (stars spent on Looks), registers 629-639, and
+// score (the global score, register 839).
 export const SPEND = 10;
 export const LONG = 12;
 export const SMALL = 5;
@@ -17,7 +19,7 @@ export const SIDE = 4;
 export const ONE_SHOT_FROM = 11;
 export function achievements(levels, used, taught, extra = {}) {
   const b = builders(), won = b.filter(d => beaten(levels, d.id)).length, half = Math.ceil(b.length / 2);
-  const feats = extra.feats || {}, peak = extra.peak || {}, spent = extra.spent || 0;
+  const feats = extra.feats || {}, peak = extra.peak || {}, spent = extra.spent || 0, score = extra.score || 0;
   const feat = (id, icon, name, text, of, at) => ({ id, icon, name, text, stars: 1, done: id in feats, where: feats[id] ?? null, ...(of ? { of, at: Math.min(of, at || 0) } : {}) });
   return [
     { id: 'first', icon: 'ach-first', name: 'First berry', text: 'Beat Level 1.', stars: 1, done: b.length > 0 && beaten(levels, b[0].id) },
@@ -34,6 +36,7 @@ export function achievements(levels, used, taught, extra = {}) {
     feat('guardrails', 'ach-guardrails', 'Guardrails', `Win in ${SAFE} moves or more in a room where no move can lose.`),
     feat('deadly', 'ach-deadly', 'Deadly', `Win in ${SAFE} moves or more in a room where every other move loses.`),
     feat('silver', 'ach-silver', 'Silver bullet', `Meet ${SIDE} side goals in one win.`, SIDE, peak.silver),
+    ...SCORE_STEPS.map((n, i) => ({ id: 'score' + n, icon: 'ach-score' + n, name: `Score ${n}`, text: `Reach a global score of ${n}.`, stars: i < 2 ? 1 : 2, done: score >= n, of: n, at: Math.min(n, score) })),
   ];
 }
 export const achievementStars = (levels, used, taught, extra) => achievements(levels, used, taught, extra).reduce((n, a) => n + (a.done ? a.stars : 0), 0);

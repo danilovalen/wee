@@ -5,8 +5,10 @@
 // and reloads. Sound stays shared.
 import { $ } from './dom.js';
 import { glyph } from './glyphs.js';
+import { topScores, postScore } from './board.js';
+import { progress } from './progress.js';
 
-const SLOT = 'wee.slot', BACK = 'wee.slot.back', STASH = 'wee.stash.', SHARED = ['wee.sound'];
+const SLOT = 'wee.slot', BACK = 'wee.slot.back', STASH = 'wee.stash.', SHARED = ['wee.sound', 'wee.board'];
 export const SLOTS = [
   { id: 'me', name: 'Me', note: 'Your own progress.' },
   { id: 'guest', name: 'Guest', note: 'Starts from nothing, every time.' },
@@ -46,6 +48,8 @@ export function setDevSlot(on) {
 }
 
 export function bindSlots() {
+  // A save that scored before the board existed takes its line on the first load.
+  if (slotNow() !== 'all' && Object.values(progress().levels).some(r => r && r.beaten)) postScore(progress(), slotNow());
   const b = $('menuSlot'), now = SLOTS.find(s => s.id === slotNow()) || { id: 'all', name: 'every level open' };
   b.innerHTML = glyph('player');
   const label = (now.id === 'all' ? 'Playing with every level open' : 'Playing as ' + now.name) + ': tap to switch';
@@ -59,6 +63,10 @@ export function bindSlots() {
       row.onclick = () => { $('slotBox').close(); switchSlot(s.id); };
       return row;
     }));
+    // The best scores saved on this device (register 839), a guest named by the day it started.
+    const day = t => new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    $('slotBoard').replaceChildren(...topScores().map(r => Object.assign(document.createElement('li'), { textContent: `${r.slot === 'me' ? 'Me' : `Guest, ${day(parseInt(r.id.split(':')[1]) || r.at)}`}: ${r.score}` })));
+    $('slotBoardBox').hidden = !$('slotBoard').children.length;
     $('slotBox').showModal();
   };
   $('slotNo').onclick = () => $('slotBox').close();

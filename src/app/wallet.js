@@ -5,12 +5,13 @@ import { usedPieces } from './known.js';
 import { allOpen } from './unlock.js';
 import { TOOL } from './goalCard.js';
 import { achievements } from '../campaign/achievements.js';
+import { globalScore } from '../campaign/score.js';
 
 const TAUGHT = Object.values(TOOL);
 // Pocket was sold for two stars and is gone (registers 812, 813): who bought it owns Neon lab, which took its place.
 export const owned = (p = progress()) => (p.owned || []).map(k => k === 'palette:gameboy' ? 'palette:neon' : k);
 export const spent = (p = progress()) => p.spent || 0;
-export const earnedList = (p = progress()) => achievements(p.levels || {}, usedPieces(), TAUGHT, { feats: p.feats || {}, peak: p.peak || {}, spent: spent(p) });
+export const earnedList = (p = progress()) => achievements(p.levels || {}, usedPieces(), TAUGHT, { feats: p.feats || {}, peak: p.peak || {}, spent: spent(p), score: globalScore(p.levels) });
 // Every star the campaign has given: one per beaten level, one per side goal met, and each achievement's.
 export const earned = (p = progress()) => Object.values(p.levels || {}).reduce((n, r) => n + (r && r.beaten ? 1 : 0) + Object.values((r && r.goals) || {}).filter(Boolean).length, 0) + earnedList(p).reduce((n, a) => n + (a.done ? a.stars : 0), 0);
 export const available = (p = progress()) => earned(p) - spent(p);

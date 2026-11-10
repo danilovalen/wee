@@ -294,7 +294,7 @@
     <ul id="puzzleList" class="campList"></ul>
   </dialog>
   <dialog id="campBox" class="rooms">
-    <div class="roomsHead"><button id="campMenu" type="button" class="upBtn">Menu</button><b>Campaign</b></div>
+    <div class="roomsHead"><button id="campMenu" type="button" class="upBtn">Menu</button><b>Campaign</b><span id="campScore" class="campTotal" title="Each star is worth 20 points, less the fewest tiles you placed to earn it."></span></div>
     <ul id="campList" class="campList"></ul>
     <div class="row bar progRow"><button id="progCopy" type="button" aria-label="Copy progress">Copy<span class="wideOnly"> progress</span></button><button id="progLoad" type="button" aria-label="Load progress">Load<span class="wideOnly"> progress</span></button><button id="progReset" type="button" aria-label="Reset progress">Reset<span class="wideOnly"> progress</span></button></div>
   </dialog>
@@ -307,7 +307,7 @@
     <p>To keep your wins, rooms and goals, copy your progress before you reset every level.</p>
     <div class="row bar"><button id="progResetYes" type="button" class="primary">Reset</button><button id="progResetNo" type="button">Cancel</button></div>
   </dialog>
-  <dialog id="slotBox" class="confirm"><p><b>Who's playing?</b></p><div id="slotList" class="slotList"></div><div class="row bar"><button id="slotNo" type="button">Cancel</button></div></dialog>
+  <dialog id="slotBox" class="confirm"><p><b>Who's playing?</b></p><div id="slotList" class="slotList"></div><div id="slotBoardBox" class="slotBoard" hidden><b>Best scores</b><ol id="slotBoard"></ol></div><div class="row bar"><button id="slotNo" type="button">Cancel</button></div></dialog>
   <dialog id="devBox" class="confirm">
     <p>This unlocks everything on the game.</p><p>Are you sure?</p>
     <div class="row bar"><button id="devYes" type="button" class="primary">Unlock</button><button id="devNo" type="button">Cancel</button></div>

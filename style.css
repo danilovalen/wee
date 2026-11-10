@@ -518,6 +518,8 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .menuCorner.right3 { right: 120px; }
 /* Who's playing (register 834): one row per save, the one in use marked. */
 .slotList { display: grid; gap: 8px; margin: 0 0 14px; }
+.slotBoard { margin: 10px 0 0; font: 600 14px var(--label-face); }
+.slotBoard ol { margin: 4px 0 0; padding-left: 22px; }
 .slotRow { display: grid; justify-items: start; gap: 2px; text-align: left; padding: 10px 12px; }
 .slotRow small { color: var(--soft); }
 .slotRow.on { box-shadow: inset 0 0 0 2px var(--accent); }
@@ -526,6 +528,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .dot::after { content: ''; position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: var(--bad); pointer-events: none; }
 /* Looks (registers 612, 613): palettes as swatch buttons, skins as a pair of previews per object. */
 .looks h3 { margin: 12px 0 6px; font: 800 13px var(--label-face); color: var(--soft); text-transform: uppercase; letter-spacing: .06em; }
+.campTotal { margin-left: auto; margin-right: 8px; font: 800 15px var(--label-face); color: var(--gold); white-space: nowrap; }
 .lookStars { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; margin-right: 8px; font: 800 15px var(--label-face); color: var(--gold); }
 .lookStars .glyph { width: 16px; height: 16px; --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
 .lookGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }

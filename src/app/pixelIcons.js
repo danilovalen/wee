@@ -1,6 +1,8 @@
 // The HUD's pixel icons (registers 599, 602): 16x16 bitmaps on the same 2-unit pixel as the room's
 // sprites, one stroke weight (2 pixels), drawn as SVG rectangles in the button's ink. A star has an outline
 // and an inside, so the card can draw it empty or filled.
+import { SCORE_STEPS } from '../campaign/score.js';
+
 const N = 16;
 const grid = () => Array.from({ length: N }, () => Array(N).fill(0));
 function box(g, x0, y0, x1, y1, v = 1) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (x >= 0 && y >= 0 && x < N && y < N) g[y][x] = v; }
@@ -74,6 +76,8 @@ const ICON = {
   'ach-guardrails'() { const g = grid(); box(g, 0, 3, 15, 5); box(g, 0, 9, 15, 11); for (const x of [1, 7, 13]) box(g, x, 1, x + 1, 15); return g; },
   'ach-deadly'() { const g = grid(); for (let y = 0; y < 11; y++) for (let x = 0; x < N; x++) if (Math.hypot((x + 0.5 - 8) / 7, (y + 0.5 - 6.5) / 6) <= 1) g[y][x] = 1; box(g, 4, 11, 11, 14); box(g, 4, 5, 6, 8, 0); box(g, 9, 5, 11, 8, 0); box(g, 7, 9, 8, 10, 0); box(g, 6, 13, 6, 14, 0); box(g, 9, 13, 9, 14, 0); return g; },
   'ach-silver'() { const g = grid(); box(g, 5, 7, 10, 15); box(g, 6, 4, 9, 6); box(g, 7, 1, 8, 3); box(g, 4, 13, 11, 15); box(g, 7, 8, 8, 12, 0); return g; },
+  // The global score's steps (register 839): a bar chart with one more bar for each step.
+  ...Object.fromEntries(SCORE_STEPS.map((n, i) => [`ach-score${n}`, () => { const g = grid(); box(g, 0, 14, 15, 15); for (let b = 0; b <= i; b++) box(g, 13 - b * 3, 12 - (i - b) * 3, 15 - b * 3, 13); return g; }])),
   // Four arrows from the middle, heads small enough that it never reads as a blob.
   move() { const g = grid(); box(g, 7, 2, 8, 13); box(g, 2, 7, 13, 8); for (const [x, y, dx, dy] of [[7, 1, 0, 1], [7, 14, 0, -1], [1, 7, 1, 0], [14, 7, -1, 0]]) { box(g, x - (dy ? 1 : 0), y - (dx ? 1 : 0), x + (dy ? 2 : 0), y + (dx ? 2 : 0)); box(g, x - (dy ? 2 : 0) + dx * 1, y - (dx ? 2 : 0) + dy * 1, x + (dy ? 3 : 0) + dx * 1, y + (dx ? 3 : 0) + dy * 1); } return g; },
 };

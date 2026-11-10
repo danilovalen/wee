@@ -237,6 +237,13 @@ try {
   const rec1 = await page.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')).levels['1']);
   const metIds = Object.keys(rec1.goals || {}).filter(id => rec1.goals[id]);
   check('the save keeps a fewest-tiles count for each side goal a win met', metIds.length > 0 && metIds.every(id => Number.isInteger(rec1.best[id])), JSON.stringify(rec1));
+  // The global score (register 839): the list's header, each star's points, the device's board and the times.
+  const want = 20 - rec1.best.win + metIds.reduce((n, id) => n + Math.max(1, 20 - rec1.best[id]), 0);
+  check('the list header shows the global score, 20 a star less its fewest tiles', (await page.textContent('#campScore')) === `Score ${want}`, `${await page.textContent('#campScore')} vs ${want}`);
+  check('a beaten star says its points', (await page.getAttribute('.campRow[data-level="1"] .campStar.main', 'title')) === `Win, ${20 - rec1.best.win} points.`);
+  const keptScore = await page.evaluate(() => ({ board: JSON.parse(localStorage.getItem('wee.board') || '[]'), clock: JSON.parse(localStorage.getItem('wee.campaign')).clock }));
+  check('a win posts the score to the device board as Me', keptScore.board.length === 1 && keptScore.board[0].id === "me" && keptScore.board[0].score === want, JSON.stringify(keptScore.board));
+  check('a win keeps when each star was first earned and the time spent, for a later speedrun', rec1.at && rec1.at.win > Date.UTC(2026, 0) && metIds.every(id => rec1.at[id] >= rec1.at.win) && keptScore.clock && keptScore.clock.ms > 0 && keptScore.clock.started > 0, JSON.stringify({ at: rec1.at, clock: keptScore.clock }));
   // A one-way in the list wears a colour only in a level that names its colours (register 241).
   const gateIcons = await page.evaluate(ids => ids.map(id => document.querySelector(`.campRow[data-level="${id}"] [data-part="gate"]`)?.toDataURL()), [ONE_COLOUR_GATE.id, PLAIN_GATE.id]);
   check('the list draws a one-colour level\'s one-way in its colour, a plain level\'s without one', gateIcons.every(Boolean) && gateIcons[0] !== gateIcons[1], ONE_COLOUR_GATE.id + ' vs ' + PLAIN_GATE.id);

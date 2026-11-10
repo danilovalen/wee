@@ -41,6 +41,12 @@ try {
   await p.click('#menuUnlock'); await p.waitForLoadState('load'); await p.waitForTimeout(500);
   s = await store();
   check('a guest who peeks with the lock comes back to their own progress', s.slot === 'guest' && !!s.camp && s.camp.includes('"3"'), JSON.stringify(s));
+  // The device board (register 839): Me's line and a guest's, highest first, the dev save never on it.
+  await p.evaluate(() => localStorage.setItem('wee.board', JSON.stringify([{ id: 'me', slot: 'me', score: 40, at: 1 }, { id: 'guest:1794000000000-ab', slot: 'guest', score: 90, at: 2 }])));
+  const lines = await p.evaluate(() => { document.getElementById('menuSlot').click(); const out = [...document.querySelectorAll('#slotBoard li')].map(l => l.textContent); document.getElementById('slotBox').close(); return out; });
+  check('Who\'s playing lists the best scores on this device, highest first', lines.length === 2 && /^Guest, .+: 90$/.test(lines[0]) && lines[1] === 'Me: 40', JSON.stringify(lines));
+  await pick('me');
+  check('the board outlives a switch of player', (await p.evaluate(() => localStorage.getItem('wee.board') || '')).includes('"guest:1794000000000-ab"'));
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the slots smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

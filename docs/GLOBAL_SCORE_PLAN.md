@@ -56,3 +56,19 @@ leaderboard, some Speedrun methods, and some achievements for it."
 3. ~~Achievement thresholds~~: answered, fixed numbers.
 
 All three answered; build order is steps 1, 2, 3, 6, 4, with 5 riding along on step 1.
+
+## Built (2026-11-10, register 840, "Go all.")
+
+- `src/campaign/score.js`: the rule; `src/app/board.js`: the device board and the clock. Gate:
+  `tests/score.test.mjs`, plus checks in `campaign-play.smoke` (a real win posts, shows and keeps its times)
+  and `slots.smoke` (the board in Who's playing, kept across a switch).
+- Shown: `Score N` in the Campaign list's header; each earned star's hover says its points. The menu has
+  no score of its own: Who's playing lists the best scores on this device.
+- Times kept in the save, nothing on screen: `levels[id].at[star]` (first earned) and `clock.started` /
+  `clock.ms` (time from a level's opening to each Run, a gap over 5 minutes counted as 5).
+- **Ceilings measured** (`node tools/minWalls.mjs --all --stars --orders 10`): 119 of the 131 stars have a
+  known winning room, worth 1730 points at their fewest; 12 stars have no known room yet (level 1 touch
+  a block four times, 4 through four doors, 10 two boxes, 12, 13, 15, 17, 18, 19, 20, 22, 24 one side goal
+  each). The best known score is about 1730 to 1970, so **2000 could not be reached**: the last step is
+  **1750** instead. Steps: 250, 500, 1000, 1500, 1750; the first two pay 1 star, the rest 2.
+- Not built: an online board (planned for the Godot move), any speedrun screen.

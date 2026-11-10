@@ -23,6 +23,9 @@ import { buildMenuScene } from './menuScene.js';
 import { forgetRun } from './replay.js';
 import { madeLevel } from './made.js';
 import { progress, write, firstTime } from './progress.js';
+import { postScore, tick } from './board.js';
+import { slotNow } from './slots.js';
+import { globalScore, levelStars } from '../campaign/score.js';
 import { TOOL, words, syncBrief, clearTrail, flashStuck, bindGoalCard } from './goalCard.js';
 import { place, go, back, up } from './nav.js';
 import { puzzleRow } from './puzzles.js';
@@ -64,7 +67,7 @@ export function enterLevel(id) {
   const def = levelOf(id);
   if (!def) return false;
   const p = progress(), rec = p.levels[id];
-  S.camp = { def, verdict: null }; S.trail = null; forgetRun(); iconOn($('campBack'), 'levels', def.made ? 'Maker' : 'Levels');
+  S.camp = { def, verdict: null, tick: Date.now() }; S.trail = null; forgetRun(); iconOn($('campBack'), 'levels', def.made ? 'Maker' : 'Levels');
   const kept = rec && rec.room && unframe(rec.room);
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
   // The tutorial always starts from its own room (register 512).
@@ -118,7 +121,11 @@ export function run() {
     low('win', v.tiles);
     for (const o of v.optional) if (o.met) low(o.id, v.tiles);
     rec.beaten = true; rec.room = S.level;
-    write(p);
+    // When each star was first earned and the time in levels, for a later speedrun (register 839).
+    const when = Date.now(), at = rec.at ||= {};
+    for (const id of ['win', ...v.optional.filter(o => o.met).map(o => o.id)]) at[id] ??= when;
+    S.camp.tick = tick(p, S.camp.tick, when);
+    write(p); postScore(p, slotNow());
     // Beating a level opens its pieces in the Sandbox's editor (registers 558, 626): the ones it offers and the ones in the room.
     markUsed([...new Set([...Object.keys(def.palette || {}), ...Object.entries(placed(def, S.level).by).filter(([, l]) => l.length).map(([el]) => el)])].map(el => TOOL[el]).filter(Boolean));
     noteWin(def, before, rec, v, words);
@@ -145,11 +152,11 @@ export function run() {
 
 // A level's stars (register 475): the main goal, a line, one per side goal. A met goal's star is
 // filled and holds the fewest tiles placed in a win that met it.
-function star(n, main, label) {
+function star(n, main, label, points) {
   const el = document.createElement('span'), on = n != null;
   el.className = 'campStar' + (main ? ' main' : '') + (on ? ' on' : '');
   el.innerHTML = glyph('star') + (on ? `<i>${n}</i>` : '');
-  el.title = label;
+  el.title = points ? `${label.replace(/\.$/, '')}, ${points} points.` : label;
   return el;
 }
 // sideOpen: the level's side goals are open, so their stars say what they are (register 558); shut, each
@@ -158,8 +165,8 @@ function stars(def, rec, sideOpen = true) {
   const row = document.createElement('span'), best = rec.best || {}, line = document.createElement('span');
   row.className = 'campStars'; line.className = 'campStarLine';
   const met = id => rec.goals && rec.goals[id] ? best[id] ?? best.win ?? '' : null;
-  const side = optionalGoals(def);
-  row.append(star(rec.beaten ? best.win ?? '' : null, true, 'Win'), ...(side.length ? [line] : []), ...side.map(o => star(sideOpen ? met(o.id) : null, false, sideOpen ? o.text : 'Side goal')));
+  const side = optionalGoals(def), pts = Object.fromEntries(levelStars(def, rec).map(x => [x.id, x.points]));
+  row.append(star(rec.beaten ? best.win ?? '' : null, true, 'Win', pts.win), ...(side.length ? [line] : []), ...side.map(o => star(sideOpen ? met(o.id) : null, false, sideOpen ? o.text : 'Side goal', sideOpen && pts[o.id])));
   row.setAttribute('aria-label', rec.beaten ? `Beaten, ${Object.values(rec.goals || {}).filter(Boolean).length} of ${optionalGoals(def).length} side goals` : 'Not beaten');
   return row;
 }
@@ -192,6 +199,7 @@ function renderList() {
   const p = progress(), rows = [], extras = unlocked() ? LEVELS.filter(d => !d.tutorial && !d.hidden && !listed(d)) : [];
   for (const { def, side, twin } of listOrder(plan(), extras)) rows.push(room(def, p, 'main'), side ? pair(room(side, p, 'side'), twin && room(twin, p, 'side')) : Object.assign(document.createElement('li'), { className: 'side none' }));
   $('campList').replaceChildren(...rows);
+  $('campScore').textContent = `Score ${globalScore(p.levels)}`;
 }
 
 // The level list, drawn fresh, with the last level played in view.

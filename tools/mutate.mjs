@@ -7,6 +7,16 @@ import { locate, testFile } from './mutantLocate.mjs';
 
 // Each mutant: [file, from, to, test]. tests/mutants.test.mjs fails when one's text is gone (register 608).
 export const M = [
+  // the global score, the device board and the times (register 839)
+  ['src/campaign/score.js', "Math.max(1, STAR_POINTS - (tiles || 0))", "STAR_POINTS - (tiles || 0)", 'score'],
+  ['src/campaign/score.js', "best[o.id] ?? best.win", "best[o.id]", 'score'],
+  ['src/campaign/achievements.js', "done: score >= n,", "done: score > n,", 'score'],
+  ['src/app/board.js', "  if (slot === 'all') return null;\n", "", 'score'],
+  ['src/app/board.js', "Math.min(CAP, Math.max(0, now - from))", "Math.max(0, now - from)", 'score'],
+  ['src/app/slots.js', "SHARED = ['wee.sound', 'wee.board'];", "SHARED = ['wee.sound'];", 'slots'],
+  ['src/app/campaign.js', "    write(p); postScore(p, slotNow());", "    write(p);", 'campaign-play'],
+  ['src/app/campaign.js', "at[id] ??= when;", "at[id] = 0;", 'campaign-play'],
+  ['src/app/campaign.js', "  $('campScore').textContent = `Score ${globalScore(p.levels)}`;\n", "", 'campaign-play'],
   // puzzles by slot (registers 759, 776)
   ['src/campaign/progression.js', " || r.level.puzzleSlot === n", "", 'progression'],
   // challenge counts; page titles stay put (registers 761, 763)
