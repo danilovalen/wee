@@ -1,8 +1,8 @@
 // The fewest walls a winning room needs, per campaign level (register 836): from every known winning
 // room, walls come out one at a time, in many random orders, while the room still wins the level.
 // An upper bound, not a proof: a room built another way may need fewer.
-// With --all, everything placed may come out, not just walls, and the count is every placed thing
-// with the blob and the berries in it (register 837).
+// With --all, everything placed may come out, not just walls, and the count is the star's own: the
+// blob and the berries are left out (registers 837, 838).
 // Usage: node tools/minWalls.mjs [--all] [--orders N] [--seed N] [level ...]
 import { check, roomOf, tilesOf } from '../src/campaign/rules.js';
 import { LEVELS } from '../src/level/campaign.js';
@@ -38,8 +38,8 @@ const orders = +arg('--orders', 40), ids = process.argv.slice(2).filter((a, i, a
 let n = +arg('--seed', 1);
 const rnd = () => ((n = (n * 1103515245 + 12345) % 2147483648) / 2147483648);
 const all = process.argv.includes('--all');
-// Everything placed: the star's tile count, plus the blob and each berry.
-const walls = r => all ? tilesOf(def0, r) + 1 + r.cells.filter(c => c === 'goal').length : r.cells.reduce((k, c) => k + (c === 'wall'), 0);
+// Everything placed, as the star counts it: no blob, no berry.
+const walls = r => all ? tilesOf(def0, r) : r.cells.reduce((k, c) => k + (c === 'wall'), 0);
 let def0;
 // Take one thing out of a room: a cell (with its pushable mark) or a piece; null when it may not go.
 const things = r => [...r.cells.map((c, i) => c && c !== 'goal' && (all || c === 'wall') ? ['c', i] : null), ...(all ? r.entities.map((e, k) => ['e', k]) : [])].filter(Boolean);
