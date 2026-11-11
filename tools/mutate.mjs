@@ -1224,7 +1224,7 @@ export const M = [
   ['src/campaign/progression.js', "export const PUZZLES = Array.from({ length: 12 }, (_, i) => authored(i + 1));", "export const PUZZLES = [];", 'progression'],
   ['src/app/rooms.js', "const EXAMPLES = () => [...(unlocked() ? ['Hex counter'] : []), ...PUZZLES.filter(Boolean).map(p => p.name)];", "const EXAMPLES = () => [...(unlocked() ? ['Hex counter'] : [])];", 'modes'],
   ['src/app/rooms.js', "const EXAMPLES = () => [...(unlocked() ? ['Hex counter'] : []), ", "const EXAMPLES = () => ['Hex counter', ", 'modes'],
-  ['src/app/menuScene.js', "export const MENU_MOVES = ['down', 'right', 'down', 'left', 'down'];", "export const MENU_MOVES = ['down', 'right', 'down', 'down'];", 'campaign-play'],
+  ['src/app/menuScene.js', "export const MENU_MOVES = ['down', 'left', 'right', 'down', 'left', 'down'];", "export const MENU_MOVES = ['down', 'left', 'right', 'down', 'down'];", 'campaign-play'],
   ['src/rules/springs.js', "if (!s.sprung.includes(sp.i) && inb(", "if (inb(", 'springs'],
   ['src/rules/springs.js', "  if (calm(s)) { if (s.sprung.length) s.sprung = []; return; }", "  if (calm(s)) return;", 'springs'],
   ['src/rules/springs.js', "  if (calm(s)) { if (s.sprung.length) s.sprung = []; return; }", "  if (calm(s) && s.sprung.length) s.sprung = [];", 'springs'],
@@ -1463,6 +1463,8 @@ export const M = [
   ["style.css", "  body.campaign:not(.sandbox) main { grid-template-columns: 212px minmax(0, 660px); justify-content: center; gap: 20px; }\n", "", "look"],
   ["style.css", ".campReqs .mark::before { clip-path: none; background: none; box-shadow: inset 0 0 0 2px var(--line), inset 0 0 0 4px var(--line-edge); }", "", "look"],
   ["style.css", ".campBrief .campMain { background: none; box-shadow: none; padding: 0 2px; align-items: center; }\n", "", "look"],
+  ["style.css", ".ring { box-shadow: 0 0 0 var(--b) var(--wall-line, var(--line)), var(--b2) var(--b2) 0 var(--b) color-mix(in srgb, var(--ink) 22%, transparent); }\n", "", "look"],
+  ["src/app/menuScene.js", "l.cells[2 * W + 0] = 'toggle:red';", "l.cells[2 * W + 0] = 'toggle:red:on';", "campaign-play"],
 ];
 
 // Run only as a script: the gate imports M.

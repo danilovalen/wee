@@ -115,6 +115,9 @@ try {
   // The clipboard's goals are lines on its paper: the main goal has no bar of its own and a side goal is no chip.
   const lines = await p.evaluate(() => { const m = getComputedStyle(document.querySelector('.campBrief .campMain')), o = document.querySelector('.campBrief .campOpt li'), c = o ? getComputedStyle(o) : null; return { bar: m.boxShadow, chip: c ? c.boxShadow + '/' + c.borderTopLeftRadius : 'none/0px' }; });
   check('a goal on the clipboard is a line on its paper, not a bar or a chip', lines.bar === 'none' && lines.chip === 'none/0px', JSON.stringify(lines));
+  // The desk (register 883): the room's ring has its own line and shadow, and the tutorial's note has the frame.
+  const desk = await p.evaluate(() => { const n = s => (getComputedStyle(document.querySelector(s)).boxShadow.match(/rgb/g) || []).length; return { ring: n('#ring'), note: n('#tutBox'), page: getComputedStyle(document.body).backgroundImage !== 'none' }; });
+  check('the room lies on squared paper with a line and a shadow, and the tutorial is a framed note', desk.ring >= 2 && desk.note >= 3 && desk.page, JSON.stringify(desk));
   // On a wide window the tools are one framed tray of full-size buttons beside the room.
   const wide = await browser.newPage({ viewport: { width: 1100, height: 900 } });
   await wide.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; });

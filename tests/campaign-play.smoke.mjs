@@ -73,6 +73,7 @@ try {
   check('the robot behind the menu is moving', !seenAt.has(null) && seenAt.size > 2, [...seenAt].join(' / '));
   const deskLay = await page.evaluate(async () => [(await import('/src/app/menuScene.js')).menuTileRect(2, 6).bottom, document.getElementById('menuCampaign').getBoundingClientRect().top]);
   check('on a wide window the goal still ends above the buttons', deskLay[0] < deskLay[1], JSON.stringify(deskLay));
+  check('the menu room\'s switch starts off, so the blob has to press it (register 882)', await page.evaluate(async () => (await import('/src/app/menuScene.js')).menuLevel().cells.includes('toggle:red')));
   check('the room behind the menu has its laser, door and switch', await page.evaluate(async () => { const g = (await import('/src/app/menuScene.js')).menuRoom.game; return g.entities.some(e => e.turret) && g.cells.some(c => /^door:/.test(c)) && g.cells.some(c => /^toggle:/.test(c)); }));
   // Register 820: the blob pushes the box against the laser, goes through the open door and eats the berry.
   const run = await page.evaluate(async () => { const { menuRoom } = await import('/src/app/menuScene.js'); const t0 = performance.now();

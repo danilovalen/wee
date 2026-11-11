@@ -21,13 +21,14 @@ const W = 6, H = 8, M = MENU_MARGIN, C = 52, PX = 1, PAUSE_MS = 700, HOLD_MS = 1
 // The bottom is solid but for the blob's way down (register 821): no stray empty cells.
 const WALLS = [[5, 2], [0, 4], [1, 4], [3, 4], [4, 4], [5, 4], [0, 5], [1, 5], [3, 5], [4, 5], [5, 5],
   [0, 6], [1, 6], [3, 6], [4, 6], [5, 6], [0, 7], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7]];
-// Down pushes the box into the laser's row, right and down turn round it, left pushes it against the laser so
-// it blocks the beam, and down goes through the door the switch holds open onto the berry (register 820).
-export const MENU_MOVES = ['down', 'right', 'down', 'left', 'down'];
+// Down pushes the box into the laser's row, left steps on the switch, which starts off, and opens the door
+// (register 882). Right and down turn round the box, left pushes it against the laser so it blocks the beam,
+// and down goes through the open door onto the berry (register 820).
+export const MENU_MOVES = ['down', 'left', 'right', 'down', 'left', 'down'];
 export function menuLevel() {
   const l = emptyLevel(W, H);
   for (const [x, y] of WALLS) l.cells[y * W + x] = 'wall';
-  l.cells[2 * W + 0] = 'toggle:red:on'; l.cells[5 * W + 2] = 'door:red'; l.cells[6 * W + 2] = 'goal';
+  l.cells[2 * W + 0] = 'toggle:red'; l.cells[5 * W + 2] = 'door:red'; l.cells[6 * W + 2] = 'goal';
   l.start = { x: 3, y: 0 };
   l.powers = { boomerang: false, dive: false, laser: false, cycle: false };
   l.entities = [{ kind: 'box', x: 3, y: 1 }, { kind: 'turret', x: 0, y: 3, turret: { dirs: ['right'], mode: 'input' } }];

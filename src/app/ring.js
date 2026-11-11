@@ -6,6 +6,8 @@
 import { T } from '../view/ink.js';
 import { drawMasses, ringCells } from '../view/masses.js';
 import { look } from '../view/look.js';
+import { lineOf } from '../view/crayon.js';
+import { P } from '../view/crayonSprites.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 
@@ -30,6 +32,8 @@ export function syncRing() {
   const k = tile * dpr / T;
   ring.width = Math.round(w * T * k); ring.height = Math.round(h * T * k);
   Object.assign(ring.style, { width: w * tile + 'px', height: h * tile + 'px', left: game.offsetLeft - tile + 'px', top: game.offsetTop - tile + 'px' });
+  // The ring's outer line, drawn by the page in the wall's own line colour (register 883).
+  ring.style.setProperty('--wall-line', lineOf(P.wall));
   const g = ring.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); g.imageSmoothingEnabled = false; g.clearRect(0, 0, w * T, h * T);
   drawMasses(g, cells, w, h);
   g.clearRect(T, T, level.w * T, level.h * T);
