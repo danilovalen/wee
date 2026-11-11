@@ -16,7 +16,7 @@ import { soundFx } from './sound.js';
 
 // M: tiles of floor drawn round the room on every side, so a wide screen shows more floor, not an island.
 export const MENU_MARGIN = 12;
-const W = 6, H = 8, M = MENU_MARGIN, C = 52, PX = 2, PAUSE_MS = 700, HOLD_MS = 1600;
+const W = 6, H = 8, M = MENU_MARGIN, C = 52, PX = 1, PAUSE_MS = 700, HOLD_MS = 1600;
 // The bottom is solid but for the blob's way down (register 821): no stray empty cells.
 const WALLS = [[5, 2], [0, 4], [1, 4], [3, 4], [4, 4], [5, 4], [0, 5], [1, 5], [3, 5], [4, 5], [5, 5],
   [0, 6], [1, 6], [3, 6], [4, 6], [5, 6], [0, 7], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7]];

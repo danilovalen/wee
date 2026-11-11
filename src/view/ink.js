@@ -25,7 +25,8 @@ export const ease = t => 1 - Math.pow(1 - t, 3);
 export const lerp = (a, b, t) => a + (b - a) * t;
 // The time the current frame is drawn at, for tiles that move on their own.
 // avatar: who plays, the robot (campaign) or you, a circle (register 302).
-export const frame = { clock: 0, avatar: 'robot' };
+// face: the way the blob last went; dead: how it died, while it lies there; stains: the room's marks.
+export const frame = { clock: 0, avatar: 'robot', face: 'right', dead: null, stains: [], live: false };
 
 
 export const LASER_MS = 5 * TICK_MS;

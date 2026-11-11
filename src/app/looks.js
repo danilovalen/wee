@@ -4,7 +4,7 @@ import { $ } from './dom.js';
 import { place, go, back, current } from './nav.js';
 import { glyph } from './glyphs.js';
 import { unlocked } from './unlock.js';
-import { PALETTES, SKINS, look, setPalette, setSkin, setBoil } from '../view/look.js';
+import { PALETTES, SKINS, look, setPalette, setSkin, setBoil, setShake } from '../view/look.js';
 import { soundOn, setSound } from './sound.js';
 import { drawSprite } from '../view/sprites.js';
 import { INK, T } from '../view/ink.js';
@@ -37,6 +37,9 @@ function render() {
     const b = $(id); b.classList.toggle('on', onNow); b.setAttribute('aria-pressed', String(onNow));
     b.onclick = () => { set(!onNow); render(); dispatchEvent(new CustomEvent('wee:feel')); };
   }
+  // The shake has three strengths (docs/THEME.md rule 20): a tap moves to the next.
+  const sh = $('feelShake'), now = look.shake || 'full'; sh.textContent = `Shake: ${now}`; sh.classList.toggle('on', now !== 'off');
+  sh.onclick = () => { setShake({ full: 'reduced', reduced: 'off', off: 'full' }[now]); render(); };
   $('lookPalettes').replaceChildren(...PALETTES.map(p => {
     const b = document.createElement('button'), key = 'palette:' + p.id;
     b.type = 'button'; b.dataset.palette = p.id; b.classList.toggle('on', look.palette === p.id);

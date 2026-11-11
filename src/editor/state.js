@@ -11,6 +11,8 @@ export function starterLevel(tall) { // eslint-disable-line no-unused-vars
 }
 
 export const S = {
+  // The marks this level keeps until the player leaves it (register 842), and when a hit-stop ends.
+  stains: [], stopUntil: 0,
   level: null,
   ui: { group: 'basic', tool: 'look', axis: 'h', dir: 1, start: 'right', mode: 'input', colour: 'red', aim: ['right'], corner: 'se', pass: ['right'], face: 'up', wire: 'teal' },
   mode: 'edit', game: null, prev: null, pending: [], acc: 0, last: 0, fx: [], hover: null, painting: 0, swipe: null,

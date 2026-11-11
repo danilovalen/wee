@@ -1,3 +1,4 @@
+import { tint } from '../src/view/crayon.js';
 import { createGame, step, gameText, replay, cloneGame } from "../src/rules/game.js";
 import { worldStep as rawWorldStep } from '../src/rules/pieces.js';
 import { aimKey } from '../src/rules/player.js';
@@ -1189,13 +1190,13 @@ const LONG = ['##########', '#..P....##', '##########'];
 {
   const lit = [];
   let fill = null;
-  const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? (x, y, w, h) => { if (fill === INK.zap) lit.push([x, y, w, h]); } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } });
+  const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? (x, y, w, h) => { if (fill === tint(INK.zap)) lit.push([x, y, w, h]); } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } });
   drawTurret(g, { dirs: ['up', 'down'], mode: 'input', start: 'down' });
   check('the editor lights the barrel a turret fires first', lit.length > 0 && lit.every(([x, y]) => y >= 10) && lit.reduce((a, [, y]) => a + y, 0) / lit.length > 16, JSON.stringify(lit.slice(0, 4)));
 }
 
 { // a laser stands on a wall-like block (registers 619, 622), and one mounted on a box does not
-  const faces = e => { let face = 0, fill = null; const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? () => { if (fill === '#5b595c') face++; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } }); drawPiece(g, e, 0, 0); return face; };
+  const faces = e => { let face = 0, fill = null; const g = new Proxy({}, { get: (o, k) => k === 'fillRect' ? () => { if (fill === tint('#5b595c')) face++; } : k in o ? o[k] : () => {}, set: (o, k, v) => { if (k === 'fillStyle') fill = v; o[k] = v; return true; } }); drawPiece(g, e, 0, 0); return face; };
   check('a laser stands on a wall-like block', faces({ kind: 'turret', x: 0, y: 0, turret: { dirs: ['right'], mode: 'input' } }) > 0);
   check('a laser mounted on a box adds no block', faces({ kind: 'box', x: 0, y: 0, turret: { dirs: ['right'], mode: 'input' } }) === 0);
 }

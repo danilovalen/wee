@@ -31,7 +31,7 @@ try {
     const li = [...document.querySelectorAll('#roomsBox li')].find(l => /Example, \d+x\d+/.test(l.textContent) && l.querySelector('.thumb'));
     const [, w, h] = li.textContent.match(/Example, (\d+)x(\d+)/).map(Number), img = li.querySelector('.thumb');
     const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext('2d'); g.drawImage(img, 0, 0);
-    const corner = [...g.getImageData(4, 4, 1, 1).data], mid = [...g.getImageData(Math.floor(c.width / 2), 4, 1, 1).data];
+    const corner = [...g.getImageData(5, 2, 1, 1).data], mid = [...g.getImageData(Math.floor(c.width / 2), 2, 1, 1).data];
     return { size: img.naturalWidth === (w + 2) * 8 && img.naturalHeight === (h + 2) * 8, crisp: getComputedStyle(img).imageRendering === 'pixelated', ring: corner[3] === 255 && corner.join() === mid.join() };
   });
   check('an example card draws the room with its ring of wall, crisp (register 687)', Object.values(card).every(Boolean), JSON.stringify(card));
@@ -56,7 +56,7 @@ try {
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     const g = document.getElementById('game').getBoundingClientRect(), r = document.getElementById('ring'), q = r.getBoundingClientRect(), t = g.width / 7;
     const c = r.getContext('2d'), k = r.width / q.width, px = (x, y) => [...c.getImageData(Math.round(x * k), Math.round(y * k), 1, 1).data].join();
-    const edge = x => px((x + 1.5) * t, 8 * t + 1), face = px(3.5 * t, 8.5 * t);
+    const edge = x => px((x + 1.2) * t, 8 * t + 1), face = px(3.2 * t, 8.25 * t);
     return { underBlock: edge(3) === face, underFloor: edge(1) !== face, hole: px(4.5 * t, 7.5 * t).endsWith(',0') };
   });
   check('a block on the room\'s edge joins the ring, with no edge between them (register 682)', Object.values(joined).every(Boolean), JSON.stringify(joined));
@@ -752,15 +752,15 @@ try {
   const [seam, corner, face] = [await red(2, 1.6), await red(5.03, 2.03), await red(5.5, 2.6)];
   check('walls side by side are one mass, a lone wall rounds its corners', Math.abs(seam - face) < 12 && Math.abs(corner - face) > 30, JSON.stringify({ seam, corner, face }));
   const grav = await page.evaluate(() => { const c = document.getElementById('game'), t = c.width / window.wee.getLevel().w; return [...c.getContext('2d').getImageData(Math.round((3 + 15 / 32) * t), Math.round((3 + 12 / 32) * t), 1, 1).data]; });
-  // Gravel is the tan yellow shade since the twenty colours (register 811).
-  check('gravel is drawn in its sand colour', Math.abs(grav[0] - 176) < 12 && Math.abs(grav[1] - 138) < 12 && Math.abs(grav[2] - 92) < 12, JSON.stringify(grav));
+  // Gravel is the tan yellow shade since the twenty colours (register 811), a third lighter in the crayon look.
+  check('gravel is drawn in its sand colour', Math.abs(grav[0] - 200) < 12 && Math.abs(grav[1] - 173) < 12 && Math.abs(grav[2] - 141) < 12, JSON.stringify(grav));
 
   // A breakable block wears dark cracks; broken by a dive, it is floor for the rest of the run.
   const kr = room(['#######', '#P.k..#', '#######']); kr.powers.dive = true;
   await page.evaluate(l => window.wee.loadLevel(l), kr);
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-  // (15, 19) is a pixel of the crack sprite's lower line; (26, 16) is bare face.
-  const crackInk = await red(3 + 15 / 32, 1 + 19 / 32), crackFace = await red(3 + 26 / 32, 1 + 16 / 32);
+  // (13.5, 19.5) is on the crack sprite's lower line; (24.5, 7.5) is bare face.
+  const crackInk = await red(3 + 13.5 / 32, 1 + 19.5 / 32), crackFace = await red(3 + 24.5 / 32, 1 + 7.5 / 32);
   check('a breakable block wears dark cracks on the wall face', crackInk < crackFace - 15 && crackFace > 70, JSON.stringify({ crackInk, crackFace }));
   await page.evaluate(() => { window.__manualClock = true; });
   await page.keyboard.press('e');

@@ -45,7 +45,7 @@ window.advanceTime = ms => {
 };
 window.wee = { draws: () => S.draws, demoRunning: () => !!S.demoRunning, trail: () => S.trail, blank: (w, h) => emptyLevel(w, h), report, replay, gameText, press: k => S.pending.push(k), setMode, getLevel: () => S.level, wind: () => windNow(), fxTypes: () => S.fx.map(f => f.type),
   // Powers have no switch on screen for now (register 653); the tests still turn them on and off here.
-  setPower: (p, on) => { change(() => { S.level.powers[p] = on; }); if (S.game) S.pending.push(`power:${p}:${on ? 1 : 0}`); syncPanel(); }, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); syncPanel(); fit(); } };
+  setPower: (p, on) => { change(() => { S.level.powers[p] = on; }); if (S.game) S.pending.push(`power:${p}:${on ? 1 : 0}`); syncPanel(); }, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); S.stains = []; syncPanel(); fit(); }, stains: () => S.stains, dead: () => S.dead && S.dead.death };
 
 buildPanels({ setMode, copyReport, fit });
 buildRooms({ setMode, syncPanel, fit });

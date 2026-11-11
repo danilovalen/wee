@@ -49,7 +49,10 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
 
 // The player is the blob everywhere (registers 593, 777), a pixel sprite centred on its tile; Hero swaps it.
 export function drawRobot(g, hidden = false) {
-  drawSprite(g, 'blob', -T / 2, -T / 2, { outline: hidden });
+  // In a room being played it looks the way it last went and blinks now and then (docs/THEME.md): a blink
+  // is 140 ms every 3.4 s. Anywhere else (an icon, the editor) it is one still drawing, looking right.
+  const blink = frame.live && !hidden && frame.clock % 3400 < 140;
+  drawSprite(g, 'blob', -T / 2, -T / 2, { outline: hidden, colour: (frame.live ? frame.face || 'right' : 'right') + (blink ? '|b' : '') });
 }
 export const drawYou = drawRobot;
 

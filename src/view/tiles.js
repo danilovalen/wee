@@ -1,6 +1,7 @@
 // Tiles: floor, walls and every cell type, drawn in place.
 import { INK, T, frame, pxTri } from './ink.js';
 import { drawSprite } from './sprites.js';
+import { tint, dk } from './crayon.js';
 import { drawnColour } from '../rules/wires.js';
 import { gateOf, gateDirs } from '../rules/grid.js';
 import { DIRS } from '../rules/base.js';
@@ -104,11 +105,15 @@ export function pressedAt(s, x, y) {
     s.entities.some(e => !e.dead && e.x === x && e.y === y);
 }
 
+// The floor in the crayon look: two close tones in a checker, so a tile reads without a ruled grid, and a
+// few crayon strokes on each tile (left off a very large room, where they would be dust).
 export function drawFloor(g, w, h) {
-  g.fillStyle = INK.floor; g.fillRect(0, 0, w * T, h * T);
-  g.strokeStyle = INK.grid; g.lineWidth = 1;
-  g.beginPath();
-  for (let x = 1; x < w; x++) { g.moveTo(x * T + 0.5, 0); g.lineTo(x * T + 0.5, h * T); }
-  for (let y = 1; y < h; y++) { g.moveTo(0, y * T + 0.5); g.lineTo(w * T, y * T + 0.5); }
-  g.stroke();
+  const a = tint(INK.floor), b = tint(dk(INK.floor, 0.045)), mark = tint(dk(INK.floor, 0.1)), marks = w * h <= 400;
+  g.fillStyle = a; g.fillRect(0, 0, w * T, h * T);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if ((x + y) % 2) { g.fillStyle = b; g.fillRect(x * T, y * T, T, T); }
+    if (!marks) continue;
+    g.fillStyle = mark;
+    for (let i = 0; i < 3; i++) { const k = (x * 73 + y * 151 + i * 37) % 97; g.fillRect(x * T + 3 + (k * 7) % 22, y * T + 4 + (k * 13) % 24, 4, 1); }
+  }
 }

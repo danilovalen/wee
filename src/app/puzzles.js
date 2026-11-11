@@ -34,7 +34,7 @@ function play(r, inCampaign = false) {
   const { level } = splitRoom(r), found = allShortest(level);
   S.puzzle = { id: r.id, fewest: found.status === 'solved' ? found.length : null, campaign: inCampaign };
   $('puzzleBack').textContent = inCampaign ? 'Levels' : 'Puzzles';
-  S.camp = null; S.simple = true; S.level = noPowers(level);
+  S.camp = null; S.simple = true; S.stains = []; S.level = noPowers(level);
   document.body.classList.add('puzzle', 'simple');
   A.setMode('play'); A.syncPanel(); A.fit();
   brief();

@@ -66,7 +66,7 @@ try {
     // The room takes the area it is given, less the margin its "+" handles sit in, and no more.
     // Fills its area, less the bars of + and − above and below it (register 298).
     // The room with its outskirts' wall (register 672) is what fills the area.
-    const fills = () => page.evaluate(() => { const r = document.getElementById('ring'), c = (r.hidden ? document.getElementById('game') : r).getBoundingClientRect(), a = document.getElementById('roomArea'); return (c.width >= a.clientWidth - 110 || c.height >= a.clientHeight - 90) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
+    const fills = () => page.evaluate(() => { const r = document.getElementById('ring'), c = (r.hidden ? document.getElementById('game') : r).getBoundingClientRect(), a = document.getElementById('roomArea'); /* a whole-number scale may cost the room a quarter of its fit (docs/THEME.md rule 3) */ return (c.width * 1.34 >= a.clientWidth - 110 || c.height * 1.34 >= a.clientHeight - 90) && c.width <= a.clientWidth + 1 && c.height <= a.clientHeight + 1; });
     // Register 697: in a wide Sandbox they sit beside the turret's slot, inside the window.
     const pop = await page.evaluate(() => { const p = document.getElementById('toolPop'), r = p.getBoundingClientRect(), s = document.querySelector('#strip .slot.on').getBoundingClientRect();
       return { opts: [...p.querySelectorAll('.opt')].filter(o => !o.hidden).length, beside: !p.hidden && Math.abs(r.left - s.right - 6) < 1 && r.top <= s.bottom && r.bottom >= s.top, inside: r.bottom <= innerHeight && r.right <= innerWidth }; });

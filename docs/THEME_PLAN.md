@@ -101,6 +101,19 @@ Each is shippable alone. Sizes are rough: S about half a day, M one to two days,
 - `MANGA_THEME.md` and `tests/manga.test.mjs` retired or re-pointed; mutants for every new gate; perf and
   reduced-motion checks; `CAMPAIGN.md` and the register closed.
 
+## Built (2026-11-11, register 857)
+
+| Phase | State | What is in the game | Left open |
+|---|---|---|---|
+| 1 Rules | done | `docs/THEME.md`, 26 rules; `tests/crayon.test.mjs`, `tests/moments.test.mjs`, palette gates | |
+| 2 One room | done | Ink pass, 32 grid, whole-number zoom, joined masses, checker floor | |
+| 3 Every piece | done | 27 pieces, 12 skins, on the 32 grid | Each sprite is a first drawing: mark any to redo |
+| 4 Palettes | done | Nine palettes pass two new gates: all six rule colours read on floor and wall, no two alike | Slots keep hue names in code (a rename with no visible effect, left for the Godot move) |
+| 5 Moments | part | Seven deaths with pose, mark, sound; marks stay until you leave; hit-stop; shake with a setting; blink and gaze | Idles for berry, button, switch, one-way, laser; marks for sticky, gravel, water; flinch frames |
+| 6 Screens | part | Clipboard goals and win card, album with photos, shelves in Looks, double border on buttons | Menu, level list, Who's playing keep their layout; album photos are placeholders, not drawn scenes; chrome wobble |
+| 7 Voice | part | 15 album captions live as drafts; 10 lab lines proposed, not live (`docs/THEME_COPY.md`) | His marks on both lists, then the pass over every string |
+| 8 Close | part | Mutants for the new gates; `MANGA_THEME.md` stays as the token table `manga.test` reads | Perf check on a slow phone |
+
 ## Order and why
 
 1, 2, 3, 4, 5, 6, 7, 8. The slice (2) comes first so the look is judged in the real game on his phone before

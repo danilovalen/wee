@@ -9,6 +9,7 @@ import { drawHeat, drawLensMarks } from './lenses.js';
 import { drawReach, drawTrim, drawWires, isGrey, wireColoursAt } from './wires.js';
 import { netsOf } from '../rules/wires.js';
 import { drawJuice, squashOf } from './juice.js';
+import { drawStains, drawDead, shakeOf } from './moments.js';
 
 const BUMP_MS = 380, GHOST_MS = 360;
 
@@ -37,7 +38,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   // A block the player placed on a challenge joins the room's own blocks as one mass; its purple frame says
   // it was placed (registers 565, 576, 794).
   const crated = crateSet(level), massed = crated.size ? level.cells.map((c, i) => crated.has(i) ? '' : c) : level.cells;
-  drawMasses(g, massed, level.w, level.h, (x, y) => pop(x, y) < 1);
+  drawMasses(g, massed, level.w, level.h, (x, y) => pop(x, y) < 1); drawStains(g);
   level.cells.forEach((c, i) => {
     const x = i % level.w, y = Math.floor(i / level.w), k = pop(x, y);
     if (crated.has(i)) drawCrated(g, c, x, y, null, k);
@@ -46,7 +47,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     else if (overlay(c)) drawCell(g, c, x, y, null, 1, true);
   });
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
-  if (level.start) drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y) * 0.9, 0.9, level.powers.armored);
+  if (level.start) drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y), 0.9, level.powers.armored);
   // A filled slot keeps its outline, now solid: the player put that piece there.
   if (open) {
     g.strokeStyle = 'rgba(171,157,242,.95)'; g.lineWidth = 2.5;
@@ -88,7 +89,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
     // What stands on a tile, as Move takes it: the start, else a piece, else the tile.
     const ghost = (p, at) => {
       const e = level.entities.find(e => e.x === p.x && e.y === p.y), c = level.cells[p.y * level.w + p.x];
-      if (level.start && level.start.x === p.x && level.start.y === p.y) drawPlayer(g, at.x * T, at.y * T, false, 0.9, 0.9, level.powers.armored);
+      if (level.start && level.start.x === p.x && level.start.y === p.y) drawPlayer(g, at.x * T, at.y * T, false, 1, 0.9, level.powers.armored);
       else if (e) drawPiece(g, e, at.x * T, at.y * T);
       else if (c) drawCell(g, c, at.x, at.y, null);
     };
@@ -152,14 +153,12 @@ const BREAK_MS = 300, BLAST_MS = 360;
 // prev: positions before the last tick; alpha: 0..1 progress into the next tick.
 export function drawPlay(g, s, prev, alpha, fx, now) {
   frame.clock = now;
-  const shake = fx.find(f => (f.type === 'crash' || f.type === 'break' || f.type === 'blast') && now - f.at < 180);
-  g.save();
-  if (shake) { const k = 3 * (1 - (now - shake.at) / 180); g.translate(Math.sin(now * 0.12) * k, Math.cos(now * 0.15) * k); }
+  g.save(); g.translate(...shakeOf(fx, now));
   drawFloor(g, s.w, s.h);
   // A broken block is floor for the rest of the run.
   const cells = s.broken.length || s.eaten.length ? s.cells.map((c, i) => s.broken.includes(i) || s.eaten.includes(i) ? '' : c) : s.cells;
   drawWires(g, s.w, s.wires, r => !!s.open[s.wireOf[`${r.w}:${r.y * s.w + r.x}`]]);
-  drawMasses(g, s.crates.size ? cells.map((c, i) => s.crates.has(i) ? '' : c) : cells, s.w, s.h);
+  drawMasses(g, s.crates.size ? cells.map((c, i) => s.crates.has(i) ? '' : c) : cells, s.w, s.h); drawStains(g);
   cells.forEach((c, i) => {
     const x = i % s.w, y = Math.floor(i / s.w);
     if (s.crates.has(i)) {
@@ -277,11 +276,6 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
   if (pp && !p.snap && Math.abs(pp.x - p.x) + Math.abs(pp.y - p.y) <= 1) { px = lerp(pp.x, p.x, a) * T; py = lerp(pp.y, p.y, a) * T; }
   const born = fx.find(f => (f.type === 'die' || f.type === 'respawn') && now - f.at < 220);
   const scale = born ? 0.3 + 0.7 * ease((now - born.at) / 220) : 1;
-  for (const f of fx) if (f.type === 'die' && now - f.at < 300) {
-    const t = (now - f.at) / 300;
-    g.strokeStyle = INK.player; g.globalAlpha = 1 - t; g.lineWidth = 2;
-    pxRing(g, f.x * T + T / 2, f.y * T + T / 2, 8 + 18 * t); g.globalAlpha = 1;
-  }
   const swim = !p.swimming ? null : s.cells[p.y * s.w + p.x] === 'water' ? 'under' : 'on';
   // Stuck, a goo strand ties you to what you ride or drag.
   const st = p.stuck && s.entities.find(e => e.id === p.stuck.id && !e.dead);
@@ -294,6 +288,7 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
   // A failed attempt nudges toward the berry (642); setting off stretches the blob and stopping squashes it (647).
   const bump = fx.find(f => f.type === 'bump' && now - f.at < BUMP_MS); if (bump) { const n = 2 * Math.round(2 * Math.abs(Math.sin((now - bump.at) / BUMP_MS * Math.PI * 2))); px += bump.dx * n; py += bump.dy * n; }
   const sq = squashOf(fx, now), hz = sq && DIRS[sq.dir][0] !== 0; if (sq) { g.save(); g.translate(px + T / 2, py + T / 2); g.scale(hz ? sq.along : sq.across, hz ? sq.across : sq.along); g.translate(-px - T / 2, -py - T / 2); }
-  drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky); if (sq) g.restore(); drawJuice(g, fx, now);
+  if (frame.dead) drawDead(g, px, py); else { frame.live = true; drawPlayer(g, px, py, p.hidden, scale, 1, s.powers.armored, swim, p.sticky); frame.live = false; }
+  if (sq) g.restore(); drawJuice(g, fx, now);
   g.restore();
 }

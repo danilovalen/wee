@@ -604,7 +604,9 @@ try {
   await nine.evaluate(async () => (await import('/src/app/nav.js')).go('level', 'twocolour')); await nine.click('[data-tool="door"]');
   const dots = () => nine.evaluate(() => [...document.querySelectorAll('#campColours button')].map(b => b.dataset.campColour + (b.classList.contains('on') ? '*' : '') + (b.disabled ? '-' : '')).join());
   const doorDots = await dots();
-  await nine.mouse.click(g7.x + 3.5 * t7, g7.y + 3.5 * t7);
+  // Each room is fitted on its own, so its tile is measured afresh.
+  const gTwo = await nine.locator('#game').boundingBox(), tTwo = gTwo.width / 7;
+  await nine.mouse.click(gTwo.x + 3.5 * tTwo, gTwo.y + 3.5 * tTwo);
   const pair = await nine.evaluate(() => ({ cell: window.wee.getLevel().cells[3 * 7 + 3], icon: document.querySelector('#palette [data-tool="door"] canvas').dataset.colour }));
   check('with the door chosen, red+blue is picked and the single colours are greyed; the door goes down in both', doorDots === 'red-,blue-,red|blue*' && pair.cell === 'door:red|blue' && pair.icon === 'red|blue', doorDots + ' ' + JSON.stringify(pair));
   await nine.click('[data-tool="button"]');

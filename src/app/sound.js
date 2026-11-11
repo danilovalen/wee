@@ -22,6 +22,14 @@ function blip(f0, f1, ms, type = 'square', vol = 0.04, delay = 0) {
     o.connect(a).connect(ctx.destination); o.start(t); o.stop(t + ms / 1000 + 0.02);
   } catch { /* no audio here */ }
 }
+const splat = () => { blip(120, 45, 110, 'triangle', 0.07); blip(520, 180, 90, 'sawtooth', 0.03, 40); blip(300, 140, 120, 'triangle', 0.03, 120); };
+const DEATHS = {
+  spring: splat, crush: splat,
+  spikes: () => { blip(900, 1600, 30, 'square', 0.04); blip(400, 120, 140, 'triangle', 0.04, 30); },
+  laser: () => [0, 45, 90, 135].forEach(d => blip(1800 - d * 6, 900 - d * 4, 40, 'sawtooth', 0.02, d)),
+  blast: () => blip(300, 50, 280, 'sawtooth', 0.04),
+  hit: () => blip(500, 60, 260, 'square', 0.04),
+};
 export const VOICES = {
   tap: () => blip(880, 660, 35, 'square', 0.025),
   place: () => blip(420, 840, 70, 'square', 0.035),
@@ -30,7 +38,11 @@ export const VOICES = {
   land: () => blip(150, 90, 60, 'triangle', 0.05),
   hit: () => blip(110, 70, 70, 'square', 0.03),
   doors: f => blip(f.open ? 300 : 500, f.open ? 600 : 250, 110, 'square', 0.03),
-  die: () => blip(500, 60, 260, 'square', 0.04),
+  // Each death has its own sound (docs/THEME.md rule 20): a splat, a pop, a sizzle, or the plain fall.
+  die: f => (DEATHS[f.death && f.death.how] || DEATHS.hit)(),
+  eat: () => { blip(700, 1100, 50, 'triangle', 0.04); blip(1100, 900, 60, 'triangle', 0.03, 50); },
+  break: () => { blip(180, 90, 80, 'sawtooth', 0.035); blip(120, 60, 110, 'triangle', 0.04, 50); },
+  blast: () => { blip(160, 40, 240, 'sawtooth', 0.05); blip(90, 40, 300, 'triangle', 0.06, 30); },
   refuse: () => { blip(140, 140, 60, 'square', 0.04); blip(110, 110, 70, 'square', 0.04, 80); },
   win: () => [523, 659, 784, 1047].forEach((f, i) => blip(f, f, 120, 'square', 0.035, i * 90)),
   star: () => { blip(988, 988, 70, 'square', 0.03); blip(1319, 1319, 120, 'square', 0.03, 70); },

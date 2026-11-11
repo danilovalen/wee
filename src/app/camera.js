@@ -6,6 +6,7 @@ import { T } from '../view/ink.js';
 import { S } from '../editor/state.js';
 import { $, canvas, g, buffer, shown } from './dom.js';
 import { syncRing } from './ring.js';
+import { wholeScale } from '../view/crayon.js';
 
 // Zoomed all the way in, a tile is at least MAX_TILE px, or ZOOM_MAX times its fitted size.
 const MAX_TILE = 56, ZOOM_MAX = 4;
@@ -14,10 +15,22 @@ const SLACK = 0.25;
 // cam.fit: the fitted scale (CSS px per room px); z: how far in, 1 being fitted; x, y: the view's
 // top left in room px; held: a pan by hand, so following waits for the mover's next step.
 export const cam = { fit: 1, z: 1, x: 0, y: 0, held: false };
-let editView = null, lastAt = null, avail = { w: 0, h: 0 };
+let editView = null, lastAt = null, avail = { w: 0, h: 0 }, wheelZ = 0;
 
 const size = () => ({ W: S.level.w * T, H: S.level.h * T });
 const maxZ = () => Math.max(ZOOM_MAX, MAX_TILE / (cam.fit * T));
+// Pixel perfect (docs/THEME.md): one art pixel, a room unit, is a whole number of screen pixels wherever it
+// can be one or more. fitScale rounds a fitted scale down; snapZ rounds a zoom to the nearest whole one, and
+// a zoom past the fit is at least one step in. A room too big for that is drawn smaller as it comes.
+const dprNow = () => window.devicePixelRatio || 1;
+export const fitScale = k => wholeScale(k, dprNow());
+function snapZ(z) {
+  const d = dprNow(), f = cam.fit * d;
+  if (f < 1 || z <= 1.001) return z <= 1.001 ? 1 : z;
+  return Math.max(Math.round(f) + 1, Math.round(f * z)) / f;
+}
+// The zoom one whole pixel step in (dir 1) or out, or by factor f when that is further.
+export function stepZ(dir, f) { const k = cam.fit * dprNow(), now = cam.z * k, to = dir > 0 ? Math.max(now + 1, now * f) : Math.min(now - 1, now / f); return k < 1 ? cam.z * (dir > 0 ? f : 1 / f) : to / k; }
 
 const scale = () => cam.fit * cam.z;  // CSS px per room px
 const isZoomed = () => cam.z > 1.001;
@@ -34,7 +47,7 @@ function clampXY() {
 // Sizes the canvas to the view and sets the drawing transform. anchor: a room point to keep under
 // a screen point, worked out after the canvas takes its new size.
 export function apply(anchor) {
-  cam.z = Math.min(maxZ(), Math.max(1, cam.z));
+  cam.z = snapZ(Math.min(maxZ(), Math.max(1, cam.z)));
   const b = box(), dpr = window.devicePixelRatio || 1;
   // Setting a canvas size clears it, even to the same size, so only a real change is written.
   const cw = Math.round(b.w * dpr), ch = Math.round(b.h * dpr), w = Math.round(b.w) + 'px', h = Math.round(b.h) + 'px';
@@ -46,9 +59,9 @@ export function apply(anchor) {
     cam.x = anchor.at.x - (anchor.cx - r.left) / k; cam.y = anchor.at.y - (anchor.cy - r.top) / k;
   }
   clampXY();
-  // The buffer holds the view at one pixel per 2 room units, its origin on a whole buffer pixel so art
+  // The buffer holds the view at one pixel per room unit, an art pixel, its origin on a whole buffer pixel so art
   // pixels never straddle two; the part left over shifts it on the screen (register 621).
-  const kd = canvas.width / b.w * scale(), PX = 2, ox = Math.floor(cam.x / PX), oy = Math.floor(cam.y / PX);
+  const kd = canvas.width / b.w * scale(), PX = 1, ox = Math.floor(cam.x / PX), oy = Math.floor(cam.y / PX);
   const bw = Math.ceil(b.w / scale() / PX) + 2, bh = Math.ceil(b.h / scale() / PX) + 2;
   if (buffer.width !== bw || buffer.height !== bh) { buffer.width = bw; buffer.height = bh; }
   g.setTransform(1 / PX, 0, 0, 1 / PX, -ox, -oy);
@@ -136,7 +149,7 @@ export function bindCamera() {
   canvas.addEventListener('wheel', ev => {
     ev.preventDefault();
     // The plain wheel zooms (register 781); Shift and the wheel, or a sideways scroll, pan.
-    if (!ev.shiftKey && Math.abs(ev.deltaY) >= Math.abs(ev.deltaX)) { zoomTo(cam.z * Math.exp(-ev.deltaY * 0.004), ev.clientX, ev.clientY); return; }
+    if (!ev.shiftKey && Math.abs(ev.deltaY) >= Math.abs(ev.deltaX)) { wheelZ = (wheelZ && Math.abs(snapZ(wheelZ) - cam.z) < 1e-6 ? wheelZ : cam.z) * Math.exp(-ev.deltaY * 0.004); zoomTo(wheelZ, ev.clientX, ev.clientY); return; }
     if (ev.shiftKey && !ev.deltaX) { cam.x += ev.deltaY / perRoom(); cam.held = true; apply(); return; }
     const per = 1 / perRoom();
     cam.x += ev.deltaX * per; cam.y += ev.deltaY * per; cam.held = true;

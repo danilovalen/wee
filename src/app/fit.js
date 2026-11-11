@@ -3,7 +3,7 @@ import { T } from '../view/ink.js';
 import { S } from '../editor/state.js';
 import { $ } from './dom.js';
 import { syncSize } from './size.js';
-import { setFit, apply } from './camera.js';
+import { setFit, apply, fitScale } from './camera.js';
 
 // A wide screen is a frame: the tool's options in a bar under the header, the verdict and
 // keys in a bar at the bottom, the play buttons in that bar too. Only the room flexes. A phone
@@ -56,7 +56,7 @@ export function fit() {
       : area.clientHeight - 2 * BAR;
   // The outskirts' wall (register 672) takes one tile each side, in the margin the grips already keep where that is enough.
   const top = (wide || S.mode !== 'play' || S.camp ? BAR : EDGE);
-  const zoom = Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T), (stage + 2 * side) / ((level.w + 2) * T), (room + 2 * top) / ((level.h + 2) * T)));
+  const zoom = fitScale(Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T), (stage + 2 * side) / ((level.w + 2) * T), (room + 2 * top) / ((level.h + 2) * T))));
   // The camera sizes the canvas: to the fitted room, or zoomed in, to the whole of stage x room.
   setFit(zoom, stage, room); apply();
   syncSize(level);

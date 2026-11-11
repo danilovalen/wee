@@ -3,11 +3,11 @@
 import { T } from '../view/ink.js';
 import { S } from '../editor/state.js';
 import { $, canvas } from './dom.js';
-import { cam, apply, zoomTo, toRoom, perRoom, fitView } from './camera.js';
+import { cam, apply, zoomTo, toRoom, perRoom, fitView, stepZ } from './camera.js';
 
 const STEP = 1.25, RESET_TILE = 40, DRAG_PX = 6;
 const middle = () => { const r = canvas.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
-export const zoomBy = f => zoomTo(cam.z * f, ...middle());
+export const zoomBy = f => zoomTo(stepZ(f > 1 ? 1 : -1, f > 1 ? f : 1 / f), ...middle());
 // Reset: tiles at a comfortable tapping size, or the whole room when that already shows them bigger.
 export const zoomReset = () => zoomTo(Math.max(1, RESET_TILE / (cam.fit * T)), ...middle());
 export function panBy(dx, dy) { cam.x += dx * T; cam.y += dy * T; cam.held = true; apply(); }

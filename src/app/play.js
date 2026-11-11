@@ -23,6 +23,7 @@ import { syncChips } from './chips.js';
 import { gust } from './snow.js';
 import { motionFx } from '../view/juice.js';
 import { soundFx } from './sound.js';
+import { deathOf, stainsOf, keepStains, HITSTOP_MS } from '../view/moments.js';
 import { boilOn } from '../view/sprites.js';
 import { stateKey, settled } from '../solve/solve.js';
 import { respawn } from '../rules/life.js';
@@ -62,7 +63,7 @@ export function tick() {
   if (!S.demoRunning && S.pending.some(counts) && settled(game)) { (S.undoPlay ||= []).push({ game: cloneGame(game), log: S.keylog.length }); if (S.undoPlay.length > KEEP) S.undoPlay.shift(); }
   for (const k of S.pending) S.keylog.push({ t: game.tick, k });
   S.prev = snapshot(game);
-  const before = { x: game.player.x, y: game.player.y }, wasDir = game.player.dir, openBefore = JSON.stringify(game.open);
+  const before = { x: game.player.x, y: game.player.y }, wasDir = game.player.dir, openBefore = JSON.stringify(game.open), stood = game.entities.map(e => ({ id: e.id, kind: e.kind, x: e.x, y: e.y }));
   const pre = S.demoRunning ? null : cloneGame(game);
   step(game, S.pending);
   S.pending = [];
@@ -81,8 +82,13 @@ export function tick() {
     if (e.type === 'dive') S.fx.push({ ...e, toX: game.player.x, toY: game.player.y, at: t });
     else S.fx.push({ ...e, at: t, x: e.x ?? before.x, y: e.y ?? before.y });
   }
+  // What the tick left behind (register 842): the room's marks, and how the blob died if it did.
+  const death = deathOf(game.events, pre || game);
+  if (game.player.dir) S.face = game.player.dir;
+  S.stains = keepStains(S.stains, stainsOf(game.events, game, stood, death));
+  if (death) { const f = S.fx.findLast(f => f.type === 'die'); if (f) f.death = death; if (['spring', 'crush'].includes(death.how)) S.stopUntil = t + HITSTOP_MS; }
   const died = pre && game.events.find(e => e.type === 'die');
-  if (died) { pre.player = { ...pre.player, x: died.x, y: died.y, dir: null, moved: 0 }; S.dead = { game: pre }; showDead(); }
+  if (died) { pre.player = { ...pre.player, x: died.x, y: died.y, dir: null, moved: 0 }; S.dead = { game: pre, death }; showDead(); }
   if (!S.dead) watchStuck(game);
   // A Run's robot has played its whole path: say so once, so the level can go back to editing.
   if (S.demoRunning && !(S.demo && S.demo.length) && !S.demoWait && !game.player.dir && !game.entities.some(e => !e.dead && (e.rush || e.slide))) {
@@ -140,8 +146,10 @@ export function frame(t) {
   try { frameBody(t); } catch (e) { noteError(e); }
 }
 function frameBody(t) {
-  const dt = Math.min(250, t - (S.last || t)); S.last = t;
+  let dt = Math.min(250, t - (S.last || t)); S.last = t;
   if (S.mode === 'play' && !window.__manualClock && !S.replay) {
+    // A hit-stop holds the room for a moment where the blob was crushed (docs/THEME.md rule 20).
+    if (now() < S.stopUntil) dt = 0;
     S.acc += dt;
     while (S.acc >= TICK_MS) { tick(); S.acc -= TICK_MS; }
   }
@@ -157,6 +165,7 @@ export function render() {
   S.fx = S.fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
   soundFx(S.fx);
   look.avatar = S.camp ? 'robot' : 'you';
+  Object.assign(look, { stains: S.stains, face: S.face || 'right', dead: S.mode === 'play' && S.dead && !S.replay ? S.dead.death : null });
   clearView();
   drawRingIn(g, S.level);
   syncRing();
