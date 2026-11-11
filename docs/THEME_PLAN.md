@@ -119,7 +119,9 @@ Moments (5) need the pieces. Screens (6) and voice (7) can swap or run beside 5:
 
 1. ~~The blob's colour~~: answered 2026-11-11, "Both right? Because we have both today, the green one is
    unlockable." The default blob stays violet; the green one stays the unlockable Hero skin. Both are redrawn.
-2. Whether the twelve alternate skins are all redrawn, or cut to the best few.
-3. The shake setting's default: full, or reduced.
-4. Album photos: drawn scenes, or a real capture of the moment the achievement was earned.
-5. What the new default palette is called.
+2. ~~The alternate skins~~: answered with question 1: they stay, and all are redrawn.
+3. ~~Shake~~: answered 2026-11-11, full by default; a setting (off, reduced, full); a still cue under reduced motion.
+4. ~~Album photos~~: answered 2026-11-11, drawn scenes, placeholders first.
+5. ~~The default palette's name~~: answered 2026-11-11, "Crayon" (it replaces Daylight as the free default).
+
+Nothing is open. Next step is phase 1, on his word.
