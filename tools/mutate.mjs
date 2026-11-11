@@ -1471,7 +1471,7 @@ export const M = [
   ["style.css", "those were the bloat. */\n.glyph.px :is(.l, .h, .s) { display: none; }\n", "those were the bloat. */\n", "look"],
   ["src/app/icons.js", "  c.width = T; c.height = T; c.dataset.icon = tool;", "  c.width = 40; c.height = 40; c.dataset.icon = tool;", "look"],
   ["style.css", "body.campaign:not(.sandbox) header #campBack { order: -5; width: 46px; height: 34px; min-height: 0; padding: 0; flex: none; }\n", "", "look"],
-  ["style.css", ".campActions { min-height: 48px; }", ".campActions { min-height: 0; }", "steady"],
+  ["style.css", ".campActions #campRun { grid-column: 1; grid-row: 1; } .campActions #campReplay { grid-column: 2; grid-row: 1; } .campActions #campTest { grid-column: 3; grid-row: 1; }", "", "still"],
   ["src/view/crayon.js", "(y >= crown ? row : row.map(", "(y >= 0 ? row : row.map(", "crayon"],
   ["src/app/menuScene.js", "l.cells[2 * W + 0] = 'toggle:red';", "l.cells[2 * W + 0] = 'toggle:red:on';", "campaign-play"],
 ];
