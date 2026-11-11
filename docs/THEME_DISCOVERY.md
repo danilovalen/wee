@@ -204,8 +204,10 @@ Owner, 2026-11-10: *"The game voice is not from the blob, but from 'the lab'. Un
 - Pixel perfect is wanted, by construction and not by a filter over the picture: a filter made stray pixels.
   A gate can check that every edge sits on the grid.
 - No random dropped pixels in a line: it reads as a glitch, not as a hand.
-- **A piece keeps its own drawing.** A border goes round the silhouette; the inside is never reduced to one
-  fill. So the redraw is smaller than Part A feared: the sprites stay, the rule is added round them.
+- **Every piece is redrawn** (register 850: today's sprites with a border are "what it was before with
+  borders"). The inside is never one fill: shading, a shine, a face or a feature. That needs a finer grid: 32
+  to a tile where the game has 16, so a 2-cell line outside and a 2-cell darkened edge inside still leave room.
+  A finer grid is a decision for the plan: it touches every sprite, the room's scale and the pixel font's size.
 
 ## Decisions needed before a plan (asked one at a time)
 

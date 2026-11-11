@@ -95,79 +95,115 @@ main[data-px="1"] .photo { padding: 6px 6px 0; overflow: hidden; }
     <h2>What differs</h2>
     <div class="scroll"><table>
       <tr><th></th><th>A · Crayon</th><th>B · Ink</th><th>C · Sticker</th></tr>
-      <tr><td>Leans on</td><td>Yoshi's Island</td><td>Binding of Isaac</td><td>The game as it is, pushed</td></tr>
+      <tr><td>Leans on</td><td>Yoshi's Island</td><td>Binding of Isaac</td><td>A cut-out sticker sheet</td></tr>
       <tr><td>Outer line</td><td>Dark tint of each fill, never black</td><td>One near-black plum for everything</td><td>One near-black, perfectly even</td></tr>
       <tr><td>Inner line</td><td>The piece's own edge, darkened a little</td><td>The piece's own edge, darkened more</td><td>A white keyline outside the piece, like a cut sticker</td></tr>
       <tr><td>Line quality</td><td>Lumpy, whole</td><td>Mostly whole, a little lumpy</td><td>Clean</td></tr>
       <tr><td>Room</td><td>Pastel, hatched floor</td><td>Muted, so pieces shout</td><td>Bright and flat</td></tr>
       <tr><td>Wobble on the interface</td><td>Strong</td><td>Medium</td><td>None; things bounce when used</td></tr>
       <tr><td>Headings</td><td>Hand scrawl</td><td>Hand scrawl</td><td>Pixel face, as today</td></tr>
-      <tr><td>Redraw cost</td><td>Highest: every sprite lumpy and tinted per palette</td><td>Middle: one line colour, shapes loosened</td><td>Lowest: today's sprites plus a keyline</td></tr>
+      <tr><td>Redraw cost</td><td>Every piece redrawn; the line colour worked out per piece and per palette</td><td>Every piece redrawn; one line colour</td><td>Every piece redrawn; one line colour and a keyline</td></tr>
       <tr><td>Risk</td><td>Small pieces get soft on a phone</td><td>Can turn grim if the room goes too dark</td><td>Least cynical; reads as plain cute</td></tr>
     </table></div>
-    <p class="note dim">The pieces are the game's own sprites, in the Daylight colours, with each look's border drawn round them (register 848). The pixel face here is a stand-in for the game's own. Colours are one palette per look; all nine palettes get the chosen rule later.</p>
+    <p class="note dim">Every piece is redrawn for this sketch on a finer grid, 32 pixels to a tile where the game has 16, so the double border leaves room for shading and features inside (register 850). The pixel face here is a stand-in for the game's own. Colours are one palette per look; all nine palettes get the chosen rule later.</p>
   </section>
 </main>
 
 <script>
-// The game's own sprites (Daylight palette), dumped from src/view/sprites.js, so every piece keeps its drawing.
-// A look only adds its border rule round the silhouette; the inside stays as the game draws it (register 848).
-const N = 16, C = 3, DATA = {"pal":["#4b3fd6","#7b6cff","#ffffff","#3d8ef0","#23905a","#2f6cc0","#5b6070","#c9ced8","#b9bfcb","#a9b0bf","#e89a00","#a8740a","#b3304a","#f0435f"],"enc":{"blob":["................","................","................",".....aaaaaa.....","....abbbbbba....","...abbcbbbbba...","...abbbbbbbba...","...abbdbbdbba...","...abbbbbbbba...","...abbbbbbbba...","...abbbbbbbba...","....abbbbbba....",".....aaaaaa.....","................","................","................"],"berry":["................","...........eee..","..........eeee..",".......f.e......","....fddfffff....","...fddddfdddf...","..fdccdddddddf..","..ddcccddddddf..",".fddcccddddddff.",".fdddddddddddff.",".fdddddddddddff.","..dddddddddddf..","..fdddddddddff..","...fdddddddff...","....ffffffff....","................"],"box":["gggggggggggggggg","gccccccccccccccg","gchhhhhhhhhhcghg","gchghhhhhhhcghhg","gchhhhhhhhcghhhg","gggggggggcgggggg","gccccccccgcccccg","gchhhhhcghhhhhhg","gchghhcghhhhghhg","gchhhcghhhhhhhhg","ggggcggggggggggg","gcccgccccccccccg","gccghhhhhhhhhhhg","gcgghhhhhhhhghhg","gchhhhhhhhhhhhhg","gggggggggggggggg"],"wall":[".iiiiiiiiiiiiii.","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg",".gggggggggggggg."],"spring":[".iiiiiiiiiiiiii.","ijjjjjjjjjjjjckl","ijjjjjjjjjjjjckl","ijjjjjjjgggggckl","ijjjjjjjkgkgkckl","ijjjjjjjkgkgkckl","ijjjjjjjkgkgkckl","ijjjjjjjlllllckl","ijjjjjjjlllllckl","ijjjjjjjgkgkgckl","ijjjjjjjgkgkgckl","ijjjjjjjgkgkgckl","ijjjjjjjgggggckl","ijjjjjjjjjjjjckl","ijjjjjjjjjjjjckl",".gggggggggggggg."],"springOut":[".iiiiiiiiiiiiii.","ijjjjjjjjjjjjckl","ijjjjjjjjjjjjckl","ijjjjjjjgggggckl","ijjjjjjjkgkgkckl","ijjjjjjjkgkgkckl","ijjjjjjjkgkgkckl","ijjjjjjjlllllckl","ijjjjjjjlllllckl","ijjjjjjjgkgkgckl","ijjjjjjjgkgkgckl","ijjjjjjjgkgkgckl","ijjjjjjjgggggckl","ijjjjjjjjjjjjckl","ijjjjjjjjjjjjckl",".gggggggggggggg."],"arm":["................",".............ckl",".............ckl",".............ckl","k...k...k...kckl","k...k...k...kckl",".k.k.k.k.k.k.ckl","lllllllllllllckl","lllllllllllllckl",".k.k.k.k.k.k.ckl","..k...k...k..ckl","..k...k...k..ckl",".............ckl",".............ckl",".............ckl","................"],"door":["ffffffffffffffff","fddddddddddddddf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","ffffffffffffffff","fddddddddddddddf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","ffffffffffffffff"],"button":["................","................","................",".....mmmmmm.....","....mmnnnnmm....","...mmnnnnnnmm...","..mmnnnnnnnnmm..","..mmnnnnnnnnmm..","..mmnnnnnnnnmm..","..mmnnnnnnnnmm..","..mmmnnnnnnmmm..","...mmmnnnnmmm...","....mmmmmmmm....",".....mmmmmm.....","................","................"],"spikes":[".nnnnnnnnnnnnnn.","nmmmmmmmmmmmmmmg","nmmmcmmmmmmcmmmg","nmmccmmmmmccmmmg","nmmccmmmmmccmmmg","nmccccmmmccccmmg","nmmmmmmmcmmmmmmg","nmmmmmmccmmmmmmg","nmmmmmmccmmmmmmg","nmmmcmccccmcmmmg","nmmccmmmmmccmmmg","nmmccmmmmmccmmmg","nmccccmmmccccmmg","nmmmmmmmmmmmmmmg","nmmmmmmmmmmmmmmg",".gggggggggggggg."]}};
-const GRID = Object.fromEntries(Object.entries(DATA.enc).map(([k, rows]) => [k, rows.map(r => [...r].map(c => c === '.' ? null : DATA.pal[c.charCodeAt(0) - 97]))]));
-const disc = (cx, cy, rx, ry, lump = 0) => (x, y) => { const a = Math.atan2(y - cy, x - cx); const k = 1 + lump * Math.sin(a * 3 + 1); return ((x + .5 - cx) / (rx * k)) ** 2 + ((y + .5 - cy) / (ry * k)) ** 2 <= 1; };
+// Every piece redrawn for the theme (register 850) on a 32-cell tile: bright, lumpy, lit from the top left,
+// with features inside. A look then adds its double border: a line outside, and the piece's own edge darkened.
+const N = 32, C = 2;
 const mix = (a, b, t) => { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); const A = p(a), B = p(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
-const BLOB = GRID.blob[8][5];
-// A crushed blob: a flat smear in the blob's own colour with its eyes still on it. A stain, so it has no outer line.
-GRID.splat = Array.from({ length: N }, (_, y) => Array.from({ length: N }, (_, x) => [disc(12.5, 8, 3.2, 7.2, .18), disc(8, 3, 1.4, 1.4), disc(7.5, 12.5, 1.8, 1.4), disc(5, 8, 1.2, 1.2)].some(f => f(x, y)) ? BLOB : null));
-function sprite(g, ox, oy, name, L, opt = {}) {
-  const gr = GRID[name], at = (x, y) => (gr[y] || [])[x] || null;
-  const px = (x, y, c) => { g.fillStyle = c; g.fillRect(ox + x * C, oy + y * C, C, C); };
-  // How far, in steps, the nearest cell of the other kind is, and which sprite colour sits there.
-  const near = (x, y, max) => { let best = null; for (let dy = -max; dy <= max; dy++) for (let dx = -max; dx <= max; dx++) { const d = Math.abs(dx) + Math.abs(dy); if (d && d <= max && (!best || d < best.d) && !!at(x + dx, y + dy) !== !!at(x, y)) best = { d, c: at(x + dx, y + dy) }; } return best; };
-  const R = opt.noOuter ? 0 : L.ring;
-  for (let y = -R; y < N + R; y++) for (let x = -R; x < N + R; x++) {
-    const c = at(x, y);
-    if (c) { const e = near(x, y, 1); px(x, y, L.soft ? mix(e ? mix(c, '#1a1020', L.edge) : c, '#ffffff', L.soft) : e ? mix(c, '#1a1020', L.edge) : c); continue; }
-    const o = R && near(x, y, R); if (!o) continue;
-    px(x, y, L.key && o.d === 1 ? '#ffffff' : L.outer === 'tint' ? mix(o.c, '#1a1020', .6) : L.outer);
-  }
-  if (opt.eyes) for (const [ex, ey] of opt.eyes) { px(ex, ey, '#2a2730'); px(ex, ey + 1, '#2a2730'); }
+const dk = (c, t = .3) => mix(c, '#1a1020', t), lt = (c, t = .45) => mix(c, '#ffffff', t);
+const INK = '#2a2233', WHITE = '#ffffff';
+const K = { blob: '#5fdc7a', berry: '#ff5c7a', leaf: '#3fbf63', stem: '#8a5a33', wood: '#f5b942', steel: '#9aa6c8', wall: '#a9b4e6', coil: '#ffd23f', plate: '#ff6a5c', door: '#35c9cf', dome: '#ff6fae', warn: '#ffd23f', blush: '#ff9fb2' };
+function canvasGrid(w = N, h = N) {
+  const g = Array.from({ length: h }, () => Array(w).fill(null));
+  const put = (x, y, c) => { x = Math.round(x); y = Math.round(y); if (y >= 0 && y < h && x >= 0 && x < w) g[y][x] = c; };
+  const on = (x, y) => !!(g[Math.round(y)] || [])[Math.round(x)];
+  const api = {
+    g, w, h, put, on,
+    rect(x0, y0, x1, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) put(x, y, c); return api; },
+    // A lumpy ellipse: lump bends the radius three times round, so no circle is quite a circle.
+    oval(cx, cy, rx, ry, c, lump = 0, only) { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const a = Math.atan2(y + .5 - cy, x + .5 - cx), k = 1 + lump * Math.sin(a * 3 + 1.3); if (((x + .5 - cx) / (rx * k)) ** 2 + ((y + .5 - cy) / (ry * k)) ** 2 <= 1 && (!only || on(x, y))) put(x, y, c); } return api; },
+    line(x0, y0, x1, y1, c, t = 1) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) { const x = x0 + (x1 - x0) * i / n, y = y0 + (y1 - y0) * i / n; for (let a = 0; a < t; a++) for (let b = 0; b < t; b++) put(x + a, y + b, c); } return api; },
+    tri(x0, x1, yb, xt, yt, c) { for (let y = yt; y <= yb; y++) { const k = (y - yt) / (yb - yt || 1); for (let x = Math.round(xt + (x0 - xt) * k); x <= Math.round(xt + (x1 - xt) * k); x++) put(x, y, c); } return api; },
+    // Light from the top left: a shade crescent low and right, a shine high and left, both kept inside the shape.
+    lit(cx, cy, rx, ry, c) { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (g[y][x] === c && ((x + .5 - (cx - rx * .28)) / rx) ** 2 + ((y + .5 - (cy - ry * .3)) / ry) ** 2 > .82) g[y][x] = dk(c, .2); return api; },
+    eye(x, y, lookX = 0, shut = false) { if (shut) { api.rect(x, y + 3, x + 3, y + 4, INK); return api; } api.rect(x, y + 1, x + 3, y + 6, WHITE).rect(x + 1, y, x + 2, y + 7, WHITE); api.rect(x + 1 + lookX, y + 3, x + 2 + lookX, y + 6, INK); put(x + 1 + lookX, y + 3, WHITE); return api; },
+  };
+  return api;
 }
-function room(cv, L) {
-  const T = N * C, W = 6, H = 5; cv.width = W * T; cv.height = H * T; const g = cv.getContext('2d');
+const SPR = {
+  blob() { const s = canvasGrid(); s.oval(16, 18, 11.5, 10, K.blob, .07).rect(6, 22, 25, 26, K.blob).rect(8, 27, 23, 27, K.blob).lit(16, 18, 12, 11, K.blob); s.oval(10.5, 11.5, 3, 1.8, lt(K.blob), 0, true); s.put(8, 14, lt(K.blob)); s.eye(10, 14, 1).eye(18, 14, 1); s.rect(8, 21, 9, 21, K.blush).rect(23, 21, 24, 21, K.blush); s.rect(14, 22, 17, 22, INK); s.put(13, 21, INK); s.put(18, 21, INK); return s; },
+  berry() { const s = canvasGrid(); s.oval(16, 19.5, 10.5, 9.5, K.berry, .05).lit(16, 19.5, 11, 10, K.berry); s.oval(11, 14.5, 2.6, 1.7, lt(K.berry), 0, true); s.put(9, 17, lt(K.berry)); for (const [x, y] of [[14, 20], [19, 17], [18, 23], [12, 24], [22, 21]]) s.put(x, y, lt(K.berry, .7)); s.line(15, 9, 17, 4, K.stem, 2); s.oval(21.5, 6.5, 4.2, 2.4, K.leaf, .1).line(18, 7, 24, 6, dk(K.leaf, .25)); s.oval(11, 8, 3, 1.8, K.leaf); return s; },
+  box() { const s = canvasGrid(); s.rect(4, 5, 27, 28, K.wood); s.rect(4, 5, 27, 7, lt(K.wood, .35)).rect(4, 25, 27, 28, dk(K.wood, .22)).rect(24, 8, 27, 24, dk(K.wood, .12)); for (const y of [12, 18, 24]) s.rect(4, y, 27, y, dk(K.wood, .3)); s.rect(4, 5, 6, 28, dk(K.wood, .14)).rect(25, 5, 27, 28, dk(K.wood, .2)); for (const [x, y] of [[5, 9], [26, 9], [5, 21], [26, 21]]) s.put(x, y, lt(K.wood, .7)); s.rect(10, 13, 21, 22, '#fff8e6').rect(10, 22, 21, 22, '#e2d6b8'); s.line(12, 16, 19, 16, INK).line(12, 19, 16, 19, K.plate); s.rect(20, 11, 23, 13, lt(K.coil, .3)); return s; },
+  wall() { const s = canvasGrid(); s.rect(0, 0, 31, 31, K.wall).rect(0, 0, 31, 2, lt(K.wall, .4)).rect(0, 27, 31, 31, dk(K.wall, .22)).rect(28, 3, 31, 26, dk(K.wall, .1)); s.rect(4, 6, 27, 6, dk(K.wall, .16)).rect(4, 24, 27, 24, lt(K.wall, .3)).rect(4, 6, 4, 24, dk(K.wall, .16)).rect(27, 6, 27, 24, lt(K.wall, .3)); for (const [x, y] of [[2, 4], [29, 4], [2, 25], [29, 25]]) { s.put(x, y, dk(K.wall, .4)); s.put(x - 1, y - 1, lt(K.wall, .6)); } for (const y of [11, 14, 17]) s.rect(10, y, 21, y + 1, dk(K.wall, .28)); return s; },
+  door() { const s = canvasGrid(); s.rect(3, 1, 28, 30, K.steel).rect(3, 1, 28, 2, lt(K.steel, .4)).rect(26, 3, 28, 30, dk(K.steel, .2)); for (let y = 4; y <= 23; y += 4) { s.rect(6, y, 25, y + 1, lt(K.door, .3)).rect(6, y + 2, 25, y + 3, K.door); s.rect(6, y + 3, 25, y + 3, dk(K.door, .25)); } for (let x = 6; x <= 25; x++) for (let y = 25; y <= 28; y++) s.put(x, y, Math.floor((x + y) / 3) % 2 ? K.warn : INK); s.rect(14, 12, 17, 15, K.steel).rect(15, 13, 16, 14, K.plate); return s; },
+  button() { const s = canvasGrid(); s.oval(16, 23, 12.5, 6, K.steel).lit(16, 23, 13, 6.5, K.steel); s.oval(16, 17.5, 8.5, 7, K.dome, .04).rect(8, 18, 24, 21, K.dome).lit(16, 17, 9, 8, K.dome); s.oval(12.5, 13.5, 2.6, 1.5, lt(K.dome, .6), 0, true); s.rect(8, 22, 24, 22, dk(K.dome, .35)); return s; },
+  spikes() { const s = canvasGrid(); s.rect(3, 23, 28, 29, dk(K.plate, .35)).rect(3, 23, 28, 24, dk(K.plate, .15)); for (const cx of [8, 16, 24]) { s.tri(cx - 4, cx + 3, 23, cx, 6, K.steel); s.tri(cx, cx + 3, 23, cx, 6, dk(K.steel, .25)); s.line(cx - 1, 9, cx - 3, 21, lt(K.steel, .6)); s.put(cx, 6, WHITE); s.put(cx, 7, WHITE); } for (const x of [5, 13, 21, 27]) s.put(x, 27, lt(K.plate, .5)); return s; },
+  // At rest: the base bolted down, the coil squeezed flat, the plate waiting.
+  spring() { const s = canvasGrid(); SPRING(s, 16, 22); return s; },
+  // Fired at something that could not move: two tiles long, the plate at the far end.
+  springOut() { const s = canvasGrid(64, 32); SPRING(s, 16, 54); return s; },
+  // What a crush leaves: a flat smear in the blob's colour, one eye open, one shut, drips below.
+  splat() { const s = canvasGrid(); s.oval(22, 16, 7, 14, K.blob, .16).oval(15, 6, 3, 2.2, K.blob).oval(13, 26, 3.4, 2.2, K.blob).oval(9, 15, 2, 1.8, K.blob).oval(27, 29, 2, 2.4, K.blob); s.lit(22, 16, 8, 15, K.blob); s.oval(20, 6, 2.4, 1.4, lt(K.blob), 0, true); s.eye(18, 8, 0).eye(23, 17, 0, true); s.rect(19, 23, 22, 23, INK); s.put(18, 24, INK); s.put(23, 24, INK); return s; },
+};
+function SPRING(s, x0, x1) {
+  s.rect(2, 4, 13, 27, K.steel).rect(2, 4, 13, 5, lt(K.steel, .45)).rect(11, 6, 13, 27, dk(K.steel, .2)).rect(2, 25, 13, 27, dk(K.steel, .28));
+  for (const [x, y] of [[4, 7], [4, 23], [10, 7], [10, 23]]) { s.put(x, y, dk(K.steel, .45)); s.put(x, y - 1, lt(K.steel, .7)); }
+  const n = Math.max(2, Math.round((x1 - x0) / 6)); let x = 14;
+  for (let i = 0; i < n; i++) { const xa = 14 + (x1 - 16) * i / n, xb = 14 + (x1 - 16) * (i + 1) / n, up = i % 2 === 0; s.line(xa, up ? 23 : 7, xb, up ? 7 : 23, dk(K.coil, .3), 3); s.line(xa, (up ? 23 : 7) - 1, xb, (up ? 7 : 23) - 1, K.coil, 2); x = xb; }
+  s.rect(x1 - 2, 2, x1 + 5, 29, K.plate).rect(x1 - 2, 2, x1 + 5, 3, lt(K.plate, .45)).rect(x1 + 3, 4, x1 + 5, 29, dk(K.plate, .22)).rect(x1 - 1, 5, x1, 26, lt(K.plate, .5));
+}
+const BUILT = {}; const spr = n => BUILT[n] || (BUILT[n] = SPR[n]());
+function sprite(g, ox, oy, name, L, opt = {}) {
+  const s = spr(name), at = (x, y) => (s.g[y] || [])[x] || null;
+  const px = (x, y, c) => { g.fillStyle = c; g.fillRect(ox + x * C, oy + y * C, C, C); };
+  const near = (x, y, max) => { let best = null; for (let dy = -max; dy <= max; dy++) for (let dx = -max; dx <= max; dx++) { const d = Math.abs(dx) + Math.abs(dy); if (d && d <= max && (!best || d < best.d) && !!at(x + dx, y + dy) !== !!at(x, y)) best = { d, c: at(x + dx, y + dy) }; } return best; };
+  const R = opt.noOuter ? 0 : L.ring, soft = c => L.soft ? mix(c, '#ffffff', L.soft) : c;
+  for (let y = -R; y < s.h + R; y++) for (let x = -R; x < s.w + R; x++) {
+    const c = at(x, y);
+    if (c) { const e = c !== WHITE && c !== INK && L.edge && near(x, y, 2); px(x, y, c === INK ? L.ink : soft(e ? dk(c, L.edge) : c)); continue; }
+    const o = R && near(x, y, R); if (!o) continue;
+    px(x, y, L.key && o.d === 1 ? WHITE : L.outer === 'tint' ? dk(o.c === WHITE || o.c === INK ? K.steel : o.c, .62) : L.outer);
+  }
+}
+const T = N * C;
+function floor(g, L, W, H) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     g.fillStyle = (x + y) % 2 ? L.floor : L.floor2; g.fillRect(x * T, y * T, T, T);
-    if (L.hatch) { g.fillStyle = L.hatch; for (let i = 3; i < 45; i += 9) g.fillRect(x * T + i, y * T + Math.round((((i * 5 + x * 7) % 40) + 2) / C) * C, 6, 3); }
+    if (L.hatch) { g.fillStyle = L.hatch; for (let i = 4; i < 60; i += 12) g.fillRect(x * T + i, y * T + (((i * 5 + x * 14) % 52) & ~1) + 4, 8, 2); }
   }
-  for (let x = 0; x < W; x++) sprite(g, x * T, 0, 'wall', L);
-  for (let y = 1; y < H; y++) sprite(g, 5 * T, y * T, 'wall', L);
-  // A spring only kills what it cannot move: the blob stood in front of it with a wall right behind.
-  sprite(g, 4 * T, 2 * T, 'arm', L);
-  sprite(g, 3 * T, 2 * T, 'springOut', L);
-  sprite(g, 4 * T + 6, 2 * T, 'splat', L, { noOuter: true, eyes: [[11, 5], [13, 9]] });
-  g.fillStyle = BLOB; for (const [x, y, s] of [[4.2, 1.7, 2], [4.5, 3.3, 1], [3.9, 3.15, 1]]) g.fillRect(Math.round(x * T / C) * C, Math.round(y * T / C) * C, s * C, s * C);
-  sprite(g, 1 * T, 1 * T + 6, 'door', L);
-  sprite(g, 1 * T, 3 * T, 'box', L);
-  sprite(g, 2 * T + 9, 3 * T + 6, 'button', L);
-  sprite(g, 0, 2 * T, 'spikes', L);
-  sprite(g, 3 * T + 6, 3 * T + 9, 'berry', L);
+}
+function room(cv, L) {
+  const W = 4, H = 4; cv.width = W * T; cv.height = H * T; const g = cv.getContext('2d'); floor(g, L, W, H);
+  for (let x = 0; x < W; x++) sprite(g, x * T, 0, 'wall', L, { noOuter: true });
+  for (let y = 1; y < H; y++) sprite(g, 3 * T, y * T, 'wall', L, { noOuter: true });
+  g.fillStyle = L.outer === 'tint' ? dk(K.wall, .62) : L.outer; g.fillRect(0, T, 3 * T, 4); g.fillRect(3 * T - 4, T, 4, 3 * T);
+  // A spring only kills what it cannot move: the blob stood in front of it with the wall right behind.
+  sprite(g, T, T + 4, 'springOut', L);
+  sprite(g, 2 * T + 12, T + 4, 'splat', L, { noOuter: true });
+  g.fillStyle = L.soft ? mix(K.blob, '#ffffff', L.soft) : K.blob; for (const [x, y, s] of [[2.3, 1.08, 4], [2.6, 2.04, 2], [2.1, 2.08, 2]]) g.fillRect(Math.round(x * T / 2) * 2, Math.round(y * T / 2) * 2, s, s);
+  sprite(g, 0, T + 4, 'door', L); sprite(g, T, 2 * T + 8, 'box', L); sprite(g, 2 * T - 2, 2 * T + 6, 'berry', L);
+  sprite(g, 0, 3 * T, 'spikes', L); sprite(g, 2, 2 * T + 6, 'button', L); sprite(g, T + 16, 3 * T - 2, 'blob', L);
 }
 function photo(cv, L, what) {
-  const T = N * C; cv.width = T * 2 + 12; cv.height = T + 24; const g = cv.getContext('2d');
+  cv.width = 2 * T - 16; cv.height = T + 12; const g = cv.getContext('2d');
   g.fillStyle = L.floor; g.fillRect(0, 0, cv.width, cv.height);
-  if (what === 'splat') { sprite(g, 6, 12, 'arm', L); sprite(g, T + 6, 12, 'wall', L); sprite(g, 12, 12, 'splat', L, { noOuter: true, eyes: [[11, 5], [13, 9]] }); }
-  else { sprite(g, 3, 12, 'blob', L); sprite(g, T + 6, 12, 'berry', L); }
+  if (what === 'splat') { sprite(g, cv.width - T, 6, 'wall', L, { noOuter: true }); sprite(g, -86, 6, 'springOut', L); sprite(g, cv.width - T - 52, 6, 'splat', L, { noOuter: true }); }
+  else { sprite(g, 2, 6, 'blob', L); sprite(g, T - 10, 4, 'berry', L); }
 }
 const LOOKS = [
   { id: 'A', name: 'Crayon', sub: 'Soft, lumpy, drawn by hand. The line is a darker shade of whatever it surrounds.',
-    L: { outer: 'tint', ring: 2, edge: .22, soft: .16, floor: '#f6f1df', floor2: '#f1ead2', hatch: '#e6dcbc', wall: '#b9c7e8', blob: '#8fd9a0', berry: '#ff9f6b', box: '#f3cf7a', spring: '#f59bb8' },
+    L: { outer: 'tint', ring: 2, edge: .2, soft: .14, ink: '#4a3550', floor: '#f6f1df', floor2: '#f1ead2', hatch: '#e6dcbc', wall: '#b9c7e8', blob: '#8fd9a0', berry: '#ff9f6b', box: '#f3cf7a', spring: '#f59bb8' },
     css: '--room:#f6f1df;--line:#5b4a3a;--paper:#fffdf4;--ink:#4a3b30;--tint:#e9dcc0;--tint2:#e9dcc0;--tick:#e0577a;--page:#f3e3c2;--b:#8ec5ff;--b2:#5a94d6;--bt:#243a5c;--metal:#b9c7e8;--metal2:#dbe3f6;--body:"Patrick Hand",cursive;--btnface:"Gaegu",cursive', wob: 1, diff: ['Outlines are tints, never black', 'Lumpy shapes, whole lines', 'Crayon hatch on the floor'] },
   { id: 'B', name: 'Ink', sub: 'A heavy dark line around everything, a muted room, and pieces in full colour.',
-    L: { outer: '#1d1626', ring: 2, edge: .3, floor: '#cfc8c2', floor2: '#c6beb8', hatch: null, wall: '#7d7387', blob: '#7be08a', berry: '#ff7a3d', box: '#f2b632', spring: '#ff5d8f' },
+    L: { outer: '#1d1626', ring: 2, edge: .26, ink: '#1d1626', floor: '#cfc8c2', floor2: '#c6beb8', hatch: null, wall: '#7d7387', blob: '#7be08a', berry: '#ff7a3d', box: '#f2b632', spring: '#ff5d8f' },
     css: '--room:#cfc8c2;--line:#1d1626;--paper:#f7f1e3;--ink:#1d1626;--tint:#d8cdb4;--tint2:#d8cdb4;--tick:#e0244e;--page:#e9dcc0;--b:#7b6cff;--b2:#4b3fd6;--bt:#fff;--metal:#8d93a6;--metal2:#c3c8d6', wob: 1, diff: ['One near-black line for every piece and panel', 'Room stays grey so colour means something', 'The double border is strongest here'] },
   { id: 'C', name: 'Sticker', sub: 'Bright, flat and crisp. A white keyline inside a dark edge, like something cut out and stuck on.',
-    L: { outer: '#1b1830', ring: 3, key: true, edge: 0, floor: '#e3f1ff', floor2: '#d6e9fd', hatch: null, wall: '#8aa2e8', blob: '#5fe38b', berry: '#ff8a3d', box: '#ffd23f', spring: '#ff5fa2' },
-    css: '--room:#e3f1ff;--line:#1b1830;--paper:#ffffff;--ink:#1b1830;--tint:#ffffff;--tint2:#d6e2f5;--tick:#ff3d7f;--page:#fff6d6;--b:#5fe38b;--b2:#ffffff;--bt:#1b1830;--metal:#8aa2e8;--metal2:#ffffff;--hand:"Pixelify Sans",monospace', wob: 0, diff: ['Closest to the game today', 'Nothing wobbles; things bounce when used', 'Keeps one pixel face'] },
+    L: { outer: '#1b1830', ring: 3, key: true, edge: 0, ink: '#1b1830', floor: '#e3f1ff', floor2: '#d6e9fd', hatch: null, wall: '#8aa2e8', blob: '#5fe38b', berry: '#ff8a3d', box: '#ffd23f', spring: '#ff5fa2' },
+    css: '--room:#e3f1ff;--line:#1b1830;--paper:#ffffff;--ink:#1b1830;--tint:#ffffff;--tint2:#d6e2f5;--tick:#ff3d7f;--page:#fff6d6;--b:#5fe38b;--b2:#ffffff;--bt:#1b1830;--metal:#8aa2e8;--metal2:#ffffff;--hand:"Pixelify Sans",monospace', wob: 0, diff: ['The cleanest and brightest of the three', 'Nothing wobbles; things bounce when used', 'Keeps one pixel face'] },
 ];
 const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
 for (const k of LOOKS) {
