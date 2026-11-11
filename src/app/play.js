@@ -88,7 +88,7 @@ export function tick() {
   S.stains = keepStains(S.stains, [...stainsOf(game.events, game, stood, death), ...(death ? [] : tracksOf(game, before, game.player))]);
   if (death) { const f = S.fx.findLast(f => f.type === 'die'); if (f) f.death = death; if (['spring', 'crush'].includes(death.how)) S.stopUntil = t + HITSTOP_MS; }
   const died = pre && game.events.find(e => e.type === 'die');
-  if (died) { pre.player = { ...pre.player, x: died.x, y: died.y, dir: null, moved: 0 }; S.dead = { game: pre, death }; showDead(); }
+  if (died) { pre.player = { ...pre.player, x: died.x, y: died.y, dir: null, moved: 0 }; S.dead = { game: pre, death: { ...death, at: t } }; showDead(); }
   if (!S.dead) watchStuck(game);
   // A Run's robot has played its whole path: say so once, so the level can go back to editing.
   if (S.demoRunning && !(S.demo && S.demo.length) && !S.demoWait && !game.player.dir && !game.entities.some(e => !e.dead && (e.rush || e.slide))) {

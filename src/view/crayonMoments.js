@@ -11,6 +11,8 @@ export const CRAYON_MOMENTS = {
   // The blob, dead, as what killed it left it. key: "how|dir|hex" (how: spring, crush, spikes, laser, blast, hit).
   blobDead(key) {
     const [how, dir, hex] = String(key).split('|'), c = hex || P.violet;
+    // The flinch: itself for a moment, eyes wide, mouth open.
+    if (how === 'flinch') { const s = sheet().squircle(16, 16.5, 12, 11.5, c, 3.2, 0.035).lit(16, 16.5, 13.5, 13, c); s.rect(9, 10, 13, 17, WHITE).rect(18, 10, 22, 17, WHITE).rect(11, 13, 12, 15, EYE).rect(20, 13, 21, 15, EYE).rect(14, 20, 17, 23, EYE); return s; }
     if (how === 'spring') {
       // Flat against whatever stood behind it: a tall smear on the far side, one eye still looking.
       const s = sheet().oval(25, 16, 6, 14.5, c, 0.14).lit(25, 16, 6.5, 15, c);

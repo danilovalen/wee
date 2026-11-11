@@ -1,17 +1,18 @@
 // Pieces and the player.
 import { AIM, INK, T, frame, pxDisc, pxEllipse, pxRing } from './ink.js';
-import { drawSprite } from './sprites.js';
+import { drawSprite, pulsing } from './sprites.js';
 
 // A turret head: one barrel per direction it fires; the next to fire is lit.
 // A piece's clock (when it acts) is named by Look, not drawn on it (registers 615, 624).
-export function drawTurret(g, t, mounted, framed = false) {
+// seed: what staggers its muzzle's pulse, so two lasers do not pulse together.
+export function drawTurret(g, t, mounted, framed = false, seed = 0) {
   const next = t.aim === undefined ? (t.start || t.dirs[0]) : t.dirs[t.aim % t.dirs.length];
   g.save();
   if (mounted) { g.translate(16, 16); g.scale(0.62, 0.62); g.translate(-16, -16); }
   // A pushable laser's barrels stay inside its box frame (register 554).
   else if (framed) { g.translate(16, 16); g.scale(0.78, 0.78); g.translate(-16, -16); }
   // Only the barrels (register 493), as a pixel sprite.
-  drawSprite(g, 'laser', 0, 0, { colour: t.dirs.join(',') + '|' + next });
+  drawSprite(g, 'laser', 0, 0, { colour: t.dirs.join(',') + '|' + next + '|' + (pulsing(seed) ? 1 : 0) });
   g.restore();
 }
 
@@ -43,7 +44,7 @@ export function drawPiece(g, e, px, py, scale = 1, alpha = 1) {
   } else if (e.kind === 'heavy') {
     drawSprite(g, 'heavy', 0, 0);
   }
-  if (e.turret) drawTurret(g, e.turret, e.kind !== 'turret', e.kind === 'turret' && !!e.crate);
+  if (e.turret) drawTurret(g, e.turret, e.kind !== 'turret', e.kind === 'turret' && !!e.crate, (e.x || 0) * 7 + (e.y || 0) * 2 + 4);
   g.restore();
 }
 
@@ -73,10 +74,7 @@ export function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false,
   }
   (frame.avatar === 'you' ? drawYou : drawRobot)(g, hidden);
   if (armored) {
-    // A steel rim with four rivets.
-    g.strokeStyle = INK.armor; pxRing(g, 0, 0, 14, 4);
-    g.fillStyle = '#e8eef6';
-    for (const a of [0.25, 0.75, 1.25, 1.75]) pxDisc(g, Math.cos(a * Math.PI) * 14, Math.sin(a * Math.PI) * 14, 1.6);
+    drawSprite(g, 'armour', -T / 2, -T / 2);
   }
   if (sticky) {
     // Goo on top, dripping from the bottom.

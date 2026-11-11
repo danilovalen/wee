@@ -79,3 +79,8 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
 26. **A draft line is listed before it is kept**: `docs/THEME_COPY.md` holds every line the theme added, live
     or proposed, for the owner to mark.
 27. **Every page is a sheet** with the same frame, and a popup is a note stuck over it.
+28. **A working thing pulses** (register 865): a one-way's arrow and a laser's muzzle brighten for a moment
+    now and then (`pulseAt`), staggered, off with the wobble.
+29. **The blob flinches**: for a moment after a death it is itself with wide eyes, then lies as the death left
+    it (`poseAt`).
+30. **Armour is a piece too**: a riveted steel band, inked by the same pass.

@@ -1,7 +1,7 @@
 // Harsh moments (docs/THEME.md rule 20, register 842): how the blob died is read from the rules' own events,
 // a room keeps its marks up to a cap, and the shake follows its setting. None of it is a rule.
 import { suite } from './lib.mjs';
-import { deathOf, stainsOf, tracksOf, keepStains, shakeOf, STAIN_MAX } from '../src/view/moments.js';
+import { deathOf, stainsOf, tracksOf, keepStains, shakeOf, poseAt, STAIN_MAX, FLINCH_MS } from '../src/view/moments.js';
 import { look } from '../src/view/look.js';
 import { SPRITES, spriteSheet } from '../src/view/sprites.js';
 
@@ -38,6 +38,9 @@ check('the same mark on the same tile is kept once', keepStains(tr, tr).length =
 check('every mark a tick can leave has a drawing', SPRITES.includes('stain') && SPRITES.includes('blobDead') && [...left, ...['spring', 'spikes', 'laser', 'crush'].map(how => stainsOf([], room(3, 3), [], { how, dir: 'left', x: 0, y: 0 })[0])].every(s => draws(s.key)));
 check('every death has a pose', ['spring|right', 'spring|up', 'spikes|', 'laser|', 'blast|', 'crush|', 'hit|'].every(k => spriteSheet('blobDead', k + '|#ab9df2').flat().some(Boolean)));
 
+// The flinch (register 865): for a moment the blob sees it coming, then lies as its death left it.
+check('the blob flinches first, then takes its death\'s pose', poseAt({ how: 'spikes', at: 1000 }, 1000 + FLINCH_MS - 1) === 'flinch' && poseAt({ how: 'spikes', at: 1000 }, 1000 + FLINCH_MS) === 'spikes' && poseAt({ how: 'crush' }, 5) === 'crush' && FLINCH_MS <= 150);
+check('the flinch has a drawing', spriteSheet('blobDead', 'flinch||#ab9df2').flat().some(Boolean) && JSON.stringify(spriteSheet('blobDead', 'flinch||#ab9df2')) !== JSON.stringify(spriteSheet('blobDead', 'hit||#ab9df2')));
 // The room keeps its marks, the newest STAIN_MAX of them.
 const many = Array.from({ length: STAIN_MAX + 5 }, (_, i) => ({ x: i, y: 0, key: 'soot' }));
 const kept = keepStains(many.slice(0, 3), many.slice(3));

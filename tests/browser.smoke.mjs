@@ -262,12 +262,12 @@ try {
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const rim = await page.evaluate(({ x, y }) => {
     const c = document.getElementById('game'), tile = c.width / window.wee.getLevel().w;
-    // The rim is a pixel or two wide, so look across its band and keep the bluest pixel, whatever the room's size.
+    // The band is a few pixels wide, so look across it and keep the lightest pixel: steel is far lighter than the blob.
     let best = [0, 0, 0];
-    for (let f = 12.5; f <= 15.5; f += 0.25) { const d = c.getContext('2d').getImageData(Math.round((x + 0.5 + f / 32) * tile), Math.round((y + 0.5) * tile), 1, 1).data; if (d[2] - d[0] > best[2] - best[0]) best = [d[0], d[1], d[2]]; }
+    for (let f = 8; f <= 15.5; f += 0.25) { const d = c.getContext('2d').getImageData(Math.round((x + 0.5 + f / 32) * tile), Math.round((y + 0.5) * tile), 1, 1).data; if (d[0] + d[1] + d[2] > best[0] + best[1] + best[2]) best = [d[0], d[1], d[2]]; }
     return best;
   }, s.player);
-  check('armored, the player wears a steel rim', rim[2] > 160 && rim[0] > 110 && rim[0] < rim[2], rim.join(','));
+  check('armored, the player wears a steel rim', Math.min(...rim) > 190, rim.join(','));
   await page.evaluate(() => window.wee.setPower('armored', false));
 
   await page.keyboard.press('ArrowDown');

@@ -3,7 +3,7 @@
 // rectangles so it stays sharp at any whole zoom.
 import { INK } from './ink.js';
 import { skinned, look, current } from './look.js';
-import { ink, doubled, glintAt, WHITE } from './crayon.js';
+import { ink, doubled, glintAt, pulseAt, WHITE } from './crayon.js';
 import { CRAYON_SPRITES } from './crayonSprites.js';
 import { CRAYON_SKINS } from './crayonSkins.js';
 import { CRAYON_MOMENTS } from './crayonMoments.js';
@@ -75,4 +75,6 @@ export function drawGlint(g, x, y, seed) {
   g.fillStyle = WHITE.slice(1) + 'ff';
   g.fillRect(x + at.x - at.arm, y + at.y, at.arm * 2 + 1, 1); g.fillRect(x + at.x, y + at.y - at.arm, 1, at.arm * 2 + 1); g.fillRect(x + at.x - 1, y + at.y - 1, 3, 3);
 }
+// Whether a working thing's pulse is on right now; never while the wobble is off.
+export const pulsing = seed => boilOn() && pulseAt(performance.now(), seed);
 

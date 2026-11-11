@@ -1,6 +1,6 @@
 // Tiles: floor, walls and every cell type, drawn in place.
 import { INK, T, frame, pxTri } from './ink.js';
-import { drawSprite, drawGlint } from './sprites.js';
+import { drawSprite, drawGlint, pulsing } from './sprites.js';
 import { tint, dk } from './crayon.js';
 import { drawnColour } from '../rules/wires.js';
 import { gateOf, gateDirs } from '../rules/grid.js';
@@ -65,7 +65,7 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     // draws its chevrons in its colour, and while that colour is pressed it lights up: tinted, ringed
     // and pointing the other way.
     const { col } = gateOf(c), on = !!(s && col && s.open[col]), ds = s ? gateDirs(s, c) : gateOf(c).dirs;
-    drawSprite(g, 'gate', 0, 0, { colour: ds.join(',') + '|' + (col ? INK[col] : '') + '|' + (on ? 1 : 0) });
+    drawSprite(g, 'gate', 0, 0, { colour: ds.join(',') + '|' + (col ? INK[col] : '') + '|' + (on ? 1 : 0) + '|' + (pulsing(x * 5 + y * 3) ? 1 : 0) });
   } else if (c.startsWith('sensor:')) {
     // A glass block a beam goes through (register 374, his G3): solid, framed in its colour, the circle at its
     // centre filled only while a beam crosses it (register 792).

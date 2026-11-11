@@ -1,7 +1,7 @@
 // The crayon look's rules (docs/THEME.md), held on every sprite the game can draw: one pass inks them all,
 // the line is a tint and whole, no piece is one fill, and a fitted room lands on whole screen pixels.
 import { suite } from './lib.mjs';
-import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP, glintAt, GLINT_EVERY, GLINT_MS } from '../src/view/crayon.js';
+import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP, glintAt, GLINT_EVERY, GLINT_MS, pulseAt, PULSE_EVERY, PULSE_MS } from '../src/view/crayon.js';
 import { SPRITES, spriteSheet } from '../src/view/sprites.js';
 
 const { check, done } = suite('crayon');
@@ -46,6 +46,12 @@ const lit = (seed) => { let n = 0; for (let t = 0; t < GLINT_EVERY; t += 20) if 
 check('a glint is brief and rare: under a tenth of the time', lit(0) > 0 && lit(0) <= GLINT_MS + 20 && GLINT_MS * 10 <= GLINT_EVERY, String(lit(0)));
 check('a glint stays inside its tile and crosses it', [0, 100, 200, 400].every(t => { const a = glintAt(t, 0); return a && a.x - a.arm >= 0 && a.x + a.arm < N2 && a.y + a.arm < N2; }) && glintAt(400, 0).x > glintAt(0, 0).x);
 check('two things do not wink together', [1, 2, 3, 4].every(seed => !(glintAt(100, 0) && glintAt(100, seed))) && glintAt(-50, 0) === null);
+
+// The pulse, a working thing's idle (register 865): a one-way's arrow and a laser's muzzle brighten briefly.
+const on = seed => { let n = 0; for (let t = 0; t < PULSE_EVERY; t += 10) if (pulseAt(t, seed)) n++; return n * 10; };
+check('a pulse is brief: under a tenth of the time, and seeds differ', on(0) === PULSE_MS && PULSE_MS * 10 <= PULSE_EVERY && pulseAt(0, 0) && !pulseAt(0, 1) && !pulseAt(-PULSE_EVERY + PULSE_MS, 0));
+const differs = (n, a, b) => JSON.stringify(spriteSheet(n, a)) !== JSON.stringify(spriteSheet(n, b));
+check('a pulsing one-way and a pulsing laser are their own drawings', differs('gate', 'right||0|0', 'right||0|1') && differs('laser', 'right||0', 'right||1') && !differs('laser', 'right|right|0', 'right|right|1'));
 
 // Pixel perfect: a fitted scale is a whole number of screen pixels to an art pixel, or a half step.
 const kd = k => wholeScale(k, 3) * 3;

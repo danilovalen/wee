@@ -1441,6 +1441,11 @@ export const M = [
   // Register 864: the glint, a shining thing's idle.
   ["src/view/crayon.js", "  if (t >= GLINT_MS) return null;\n", "", "crayon"],
   ["src/view/crayon.js", "(now + seed * 977)", "(now)", "crayon"],
+  // Register 865: the flinch, the pulse, the armour band.
+  ["src/view/moments.js", "now - death.at < FLINCH_MS ? 'flinch' : death.how", "false ? 'flinch' : death.how", "moments"],
+  ["src/view/crayon.js", "(now + seed * 613)", "(now)", "crayon"],
+  ["src/view/crayonSprites.js", "pulse === '1' ? lt(ink, 0.55) : ink", "ink", "crayon"],
+  ["src/view/pieces.js", "    drawSprite(g, 'armour', -T / 2, -T / 2);\n", "", "browser"],
 ];
 
 // Run only as a script: the gate imports M.

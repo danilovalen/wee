@@ -140,3 +140,9 @@ export function glintAt(now, seed) {
   return { x: Math.round(8 + k * 14), y: Math.round(8 + k * 14), arm: k > 0.25 && k < 0.75 ? 3 : 2 };
 }
 
+// A pulse: the idle of a thing that works (a one-way's arrow, a laser's muzzle). On for PULSE_MS every
+// PULSE_EVERY ms, offset by its seed.
+export const PULSE_EVERY = 2600;
+export const PULSE_MS = 220;
+export const pulseAt = (now, seed) => (((now + seed * 613) % PULSE_EVERY) + PULSE_EVERY) % PULSE_EVERY < PULSE_MS;
+

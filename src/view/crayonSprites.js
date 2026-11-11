@@ -32,6 +32,8 @@ const eyes = (s, x1, x2, y, dx = 0, dy = 0) => { for (const x of [x1, x2]) { s.r
 const gaze = key => { const [d, b] = String(key || '').split('|'); return [d === 'left' ? -1 : d === 'up' || d === 'down' ? 0 : 1, d === 'up' ? -1 : d === 'down' ? 1 : 0, b === 'b']; };
 
 export const CRAYON_SPRITES = {
+  // Armour (a power): a steel band round the blob with a rivet at each corner, hollow so the blob shows.
+  armour() { const s = sheet().squircle(16, 16, 15.5, 15.5, P.hi, 3.2); for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) if (Math.abs((x + 0.5 - 16) / 10.5) ** 3.2 + Math.abs((y + 0.5 - 16) / 10.5) ** 3.2 <= 1) s.g[y][x] = null; return rivets(s, P.hi, [[5, 5], [26, 5], [5, 26], [26, 26]]); },
   // The blob: round, lumpy, a face. Violet, as it has always been (register 855).
   blob(key) { const [lx, ly, shut] = gaze(key), s = sheet().squircle(16, 16.5, 12, 11.5, P.violet, 3.2, 0.035).lit(16, 16.5, 13.5, 13, P.violet); shine(s, P.violet, 10.5, 9.5); s.eye(10, 12, lx, shut, ly).eye(18, 12, lx, shut, ly).rect(8, 19, 9, 19, BLUSH).rect(23, 19, 24, 19, BLUSH).rect(14, 20, 17, 20, EYE); s.put(13, 19, EYE); s.put(18, 19, EYE); return s; },
   // Hero, the other look (register 777): a green gel drop with a wet belly, a tuft and a wide grin.
@@ -61,12 +63,12 @@ export const CRAYON_SPRITES = {
   springArm(d) { return plate(coil(sheet(), 0, 25, 6), 26).turned(d); },
   // A one-way: a dark plate, rails on the sides it blocks, a chevron for each way through. key: "dirs|colour|on".
   gate(key) {
-    const [ds, col, on] = key.split('|'), dirs = ds.split(','), ink = col || P.green, s = sheet().slab(0, 0, 31, 31, P.deep, 1);
+    const [ds, col, on, pulse] = key.split('|'), dirs = ds.split(','), ink = col || P.green, s = sheet().slab(0, 0, 31, 31, P.deep, 1);
     if (on === '1') s.rect(2, 2, 29, 29, dk(ink, 0.55));
     const across = dirs.some(d => d === 'left' || d === 'right'), upDown = dirs.some(d => d === 'up' || d === 'down'), rail = (x0, y0, x1, y1) => s.rect(x0, y0, x1, y1, P.mid).rect(x0, y0, x1, y0, lt(P.mid, 0.4));
     if (!upDown) { rail(0, 0, 31, 3); rail(0, 28, 31, 31); }
     if (!across) { rail(0, 0, 3, 31); rail(28, 0, 31, 31); }
-    for (const d of dirs) stamp(s, chevron(sheet(), ink).turned(d));
+    for (const d of dirs) stamp(s, chevron(sheet(), pulse === '1' ? lt(ink, 0.55) : ink).turned(d));
     return s;
   },
   // A glass block a beam goes through, framed in its colour; its lens filled while a beam crosses it (register 792). key: "hex|lit".
@@ -131,9 +133,9 @@ export const CRAYON_SPRITES = {
   // A laser: only its barrels (register 493), one per direction it fires, the next to fire lit orange
   // (register 603). key: "right,down|right".
   laser(key) {
-    const [dirs, next] = key.split('|'), s = sheet();
+    const [dirs, next, pulse] = key.split('|'), s = sheet();
     for (const d of dirs.split(',')) {
-      const lit = d === next, body = lit ? P.orange : P.mid, b = sheet().rect(12, 11, 31, 20, dk(body, 0.35)).rect(12, 13, 31, 18, body).rect(12, 13, 31, 13, lt(body, 0.45)).rect(27, 12, 31, 19, lit ? P.hi : P.top).rect(12, 11, 14, 20, dk(body, 0.5));
+      const lit = d === next, body = lit ? P.orange : P.mid, b = sheet().rect(12, 11, 31, 20, dk(body, 0.35)).rect(12, 13, 31, 18, body).rect(12, 13, 31, 13, lt(body, 0.45)).rect(27, 12, 31, 19, lit ? P.hi : pulse === '1' ? lt(P.orange, 0.3) : P.top).rect(12, 11, 14, 20, dk(body, 0.5));
       stamp(s, b.turned(d));
     }
     return s;

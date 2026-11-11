@@ -9,6 +9,8 @@ import { P } from './crayonSprites.js';
 // The room keeps this many marks; the oldest go first.
 export const STAIN_MAX = 60;
 export const HITSTOP_MS = 90;
+// How long the blob flinches before it lies as its death left it.
+export const FLINCH_MS = 110;
 const blobHex = () => (altSkin('hero') ? P.green : P.violet);
 const still = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -56,7 +58,8 @@ export function drawStains(g) {
   g.restore();
 }
 // The blob where it died, as its death left it.
-export const drawDead = (g, px, py) => drawSprite(g, 'blobDead', px, py, { colour: `${frame.dead.how}|${frame.dead.dir || ''}|${blobHex()}`, exact: true });
+export const poseAt = (death, now) => (death.at !== undefined && now - death.at < FLINCH_MS ? 'flinch' : death.how);
+export const drawDead = (g, px, py) => drawSprite(g, 'blobDead', px, py, { colour: `${poseAt(frame.dead, frame.clock)}|${frame.dead.dir || ''}|${blobHex()}`, exact: true });
 
 // The shake: the one time the room moves (rule 20). A crush shakes along its axis, a blast or a break all
 // ways. The setting scales it (full, reduced, off); under reduced motion nothing moves.
