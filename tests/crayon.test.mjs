@@ -1,7 +1,7 @@
 // The crayon look's rules (docs/THEME.md), held on every sprite the game can draw: one pass inks them all,
 // the line is a tint and whole, no piece is one fill, and a fitted room lands on whole screen pixels.
 import { suite } from './lib.mjs';
-import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP } from '../src/view/crayon.js';
+import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP, glintAt, GLINT_EVERY, GLINT_MS } from '../src/view/crayon.js';
 import { SPRITES, spriteSheet } from '../src/view/sprites.js';
 
 const { check, done } = suite('crayon');
@@ -40,6 +40,12 @@ const cellsOf = runs => { const s = new Map(); for (const [x, y, len, c] of runs
 const plain = cellsOf(ink(blob)), scr = [1, 2, 3].map(f => cellsOf(ink(blob, { scribble: f })));
 check('a scribbled line never loses a pixel of the plain one, and the piece is unchanged', scr.every(m => [...plain].every(([k, c]) => m.get(k) === c)));
 check('the three drawings differ, each only by a swollen line', new Set(scr.map(m => [...m.keys()].sort().join())).size === 3 && scr.every(m => m.size > plain.size && m.size < plain.size * 1.2));
+
+// The glint, a shining thing's idle: brief, rare, inside its tile, and never two seeds at once.
+const lit = (seed) => { let n = 0; for (let t = 0; t < GLINT_EVERY; t += 20) if (glintAt(t, seed)) n++; return n * 20; };
+check('a glint is brief and rare: under a tenth of the time', lit(0) > 0 && lit(0) <= GLINT_MS + 20 && GLINT_MS * 10 <= GLINT_EVERY, String(lit(0)));
+check('a glint stays inside its tile and crosses it', [0, 100, 200, 400].every(t => { const a = glintAt(t, 0); return a && a.x - a.arm >= 0 && a.x + a.arm < N2 && a.y + a.arm < N2; }) && glintAt(400, 0).x > glintAt(0, 0).x);
+check('two things do not wink together', [1, 2, 3, 4].every(seed => !(glintAt(100, 0) && glintAt(100, seed))) && glintAt(-50, 0) === null);
 
 // Pixel perfect: a fitted scale is a whole number of screen pixels to an art pixel, or a half step.
 const kd = k => wholeScale(k, 3) * 3;

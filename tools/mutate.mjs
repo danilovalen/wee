@@ -1438,6 +1438,9 @@ export const M = [
   ["src/app/albumScenes.js", "export const sceneOf = id => SCENES[id] || (/^score\\d+$/.test(id) ? SCENES.score : null);", "export const sceneOf = id => SCENES[id] || null;", "moments"],
   ["src/view/moments.js", "&& at(x + dx, y + dy) === '') out.push", ") out.push", "moments"],
   ["src/view/moments.js", "if (!all.some(s => s.x === m.x && s.y === m.y && s.key === m.key)) all.push(m);", "all.push(m);", "moments"],
+  // Register 864: the glint, a shining thing's idle.
+  ["src/view/crayon.js", "  if (t >= GLINT_MS) return null;\n", "", "crayon"],
+  ["src/view/crayon.js", "(now + seed * 977)", "(now)", "crayon"],
 ];
 
 // Run only as a script: the gate imports M.

@@ -127,3 +127,16 @@ export function wholeScale(k, dpr) {
   const half = Math.floor(kd * 2) / 2;
   return fits(half) ? half / dpr : k;
 }
+
+// A glint: the idle of a thing that shines (a berry, a spike, a button, a lit switch). Every GLINT_EVERY ms,
+// offset by its seed so no two wink together, a small star crosses it from top left to bottom right in
+// GLINT_MS. Returns where it is in the tile and how big, or null while there is none.
+export const GLINT_EVERY = 4600;
+export const GLINT_MS = 420;
+export function glintAt(now, seed) {
+  const t = (((now + seed * 977) % GLINT_EVERY) + GLINT_EVERY) % GLINT_EVERY;
+  if (t >= GLINT_MS) return null;
+  const k = t / GLINT_MS;
+  return { x: Math.round(8 + k * 14), y: Math.round(8 + k * 14), arm: k > 0.25 && k < 0.75 ? 3 : 2 };
+}
+

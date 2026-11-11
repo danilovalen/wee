@@ -6,6 +6,7 @@ import { INK, T, frame, pxTri } from './ink.js';
 import { altSkin } from './look.js';
 import { lineOf, tint, dk, lt, WHITE } from './crayon.js';
 import { P } from './crayonSprites.js';
+import { drawGlint } from './sprites.js';
 
 export const MASSES = ['wall', 'water', 'sticky', 'gravel', 'death'];
 
@@ -86,7 +87,7 @@ function decorate(g, at, w, h, kind, isIn = (x, y) => at(x, y) === kind) {
   });
   else if (kind === 'gravel') each((X, Y) => { for (const [x, y] of [[6, 6], [18, 4], [25, 11], [10, 16], [21, 19], [5, 25], [16, 26]]) { px(X, Y, x, y, tint(P.mid), 4, 3); px(X, Y, x, y, tint(lt(P.mid, 0.5)), 2, 1); } });
   else if (kind === 'sticky') each((X, Y) => { px(X, Y, 10, 12, tint(lt(F, 0.6)), 3, 2); px(X, Y, 20, 17, tint(lt(F, 0.6)), 2, 2); px(X, Y, 14, 22, tint(dk(F, 0.3)), 3, 2); });
-  else if (kind === 'death') each((X, Y) => { for (const [cx, cy] of [[8, 8], [23, 8], [15, 15], [8, 23], [23, 23]]) for (let yy = -5; yy <= 5; yy++) for (let xx = -5; xx <= 5; xx++) if (Math.abs(xx) + Math.abs(yy) <= 5) px(X, Y, cx + xx, cy + yy, tint(Math.abs(xx) + Math.abs(yy) <= 1 ? WHITE : xx + yy < 0 ? P.hi : xx + yy > 0 ? P.top : lt(P.top, 0.4))); });
+  else if (kind === 'death') each((X, Y, x, y) => { for (const [cx, cy] of [[8, 8], [23, 8], [15, 15], [8, 23], [23, 23]]) for (let yy = -5; yy <= 5; yy++) for (let xx = -5; xx <= 5; xx++) if (Math.abs(xx) + Math.abs(yy) <= 5) px(X, Y, cx + xx, cy + yy, tint(Math.abs(xx) + Math.abs(yy) <= 1 ? WHITE : xx + yy < 0 ? P.hi : xx + yy > 0 ? P.top : lt(P.top, 0.4)));  drawGlint(g, X, Y, x * 9 + y * 5 + 2); });
   else if (kind === 'water') {
     // Waves run across the whole pool, not tile by tile.
     const k = (frame.clock / 900) % 1; g.globalAlpha = 0.55;

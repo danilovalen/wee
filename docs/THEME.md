@@ -58,6 +58,9 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
 ## Motion
 
 19. **The room holds still while the player thinks**; the interface may move, in whole pixels.
+19a. **A thing that shines winks**: a berry, a spike, a raised button and a lit switch get a small glint
+    that crosses them now and then, never two at once (`glintAt`). It is the only idle in the room besides
+    the line and the blob's blink; off with the wobble and under reduced motion.
 20. **A crush is the loud moment**: hit-stop, a short shake on its axis, a mark that stays until the player
     leaves the level. Shake has a setting (off, reduced, full; full by default) and a still cue under reduced
     motion.
@@ -75,3 +78,4 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
 25. **Each death has its own sound** (`src/app/sound.js`): a splat, a pop, a sizzle or the plain fall.
 26. **A draft line is listed before it is kept**: `docs/THEME_COPY.md` holds every line the theme added, live
     or proposed, for the owner to mark.
+27. **Every page is a sheet** with the same frame, and a popup is a note stuck over it.

@@ -3,7 +3,7 @@
 // rectangles so it stays sharp at any whole zoom.
 import { INK } from './ink.js';
 import { skinned, look, current } from './look.js';
-import { ink, doubled } from './crayon.js';
+import { ink, doubled, glintAt, WHITE } from './crayon.js';
 import { CRAYON_SPRITES } from './crayonSprites.js';
 import { CRAYON_SKINS } from './crayonSkins.js';
 import { CRAYON_MOMENTS } from './crayonMoments.js';
@@ -66,3 +66,13 @@ export function drawSprite(g, name, x, y, { outline = false, colour = null, exac
   }
   for (const [rx, ry, n, c] of list) { g.fillStyle = c; g.fillRect(x + rx * U, y + ry * U, n * U, U); }
 }
+
+// The glint of a thing at rest, drawn over it with its tile's top left at (x, y); it holds still when the
+// wobble is off or motion is reduced.
+export function drawGlint(g, x, y, seed) {
+  const at = boilOn() ? glintAt(performance.now(), seed) : null;
+  if (!at) return;
+  g.fillStyle = WHITE.slice(1) + 'ff';
+  g.fillRect(x + at.x - at.arm, y + at.y, at.arm * 2 + 1, 1); g.fillRect(x + at.x, y + at.y - at.arm, 1, at.arm * 2 + 1); g.fillRect(x + at.x - 1, y + at.y - 1, 3, 3);
+}
+
