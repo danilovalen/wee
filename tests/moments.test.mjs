@@ -1,7 +1,7 @@
 // Harsh moments (docs/THEME.md rule 20, register 842): how the blob died is read from the rules' own events,
 // a room keeps its marks up to a cap, and the shake follows its setting. None of it is a rule.
 import { suite } from './lib.mjs';
-import { deathOf, stainsOf, keepStains, shakeOf, STAIN_MAX } from '../src/view/moments.js';
+import { deathOf, stainsOf, tracksOf, keepStains, shakeOf, STAIN_MAX } from '../src/view/moments.js';
 import { look } from '../src/view/look.js';
 import { SPRITES, spriteSheet } from '../src/view/sprites.js';
 
@@ -27,8 +27,14 @@ const left = stainsOf([{ type: 'eat', x: 0, y: 0 }, { type: 'break', x: 1, y: 1 
 check('a berry, a broken block, a blast and a killed piece each leave a mark', keys(left) === 'juice,rubble,scorch,flat,puddle', keys(left));
 check('a killed piece\'s mark lies where it stood', left[3].x === 1 && left[3].y === 0 && left[4].x === 2 && left[4].y === 2);
 check('a tick with nothing harsh leaves nothing', stainsOf([{ type: 'move', x: 1, y: 1 }], room(3, 3), [], null).length === 0);
-// Every mark and every death has a drawing.
 const draws = k => { try { return spriteSheet('stain', k).length > 0; } catch { return false; } };
+// Off water, goo or gravel onto bare floor, the blob leaves a print the way it went; nowhere else.
+const wet = room(5, 1, { 1: 'water', 3: 'gravel' });
+const tr = tracksOf(wet, { x: 0, y: 0 }, { x: 4, y: 0 });
+check('the blob tracks water and gravel onto the bare floor after them', tr.length === 2 && tr[0].x === 2 && tr[0].key.startsWith('print|') && tr[0].key.endsWith('|right') && tr[1].x === 4 && tr[0].key !== tr[1].key, JSON.stringify(tr));
+check('it leaves no print standing still, on plain floor, or from one pool tile to the next', tracksOf(wet, { x: 0, y: 0 }, { x: 0, y: 0 }).length === 0 && tracksOf(room(3, 1), { x: 0, y: 0 }, { x: 2, y: 0 }).length === 0 && tracksOf(room(3, 1, { 0: 'water', 1: 'water' }), { x: 0, y: 0 }, { x: 1, y: 0 }).length === 0);
+check('the same mark on the same tile is kept once', keepStains(tr, tr).length === 2 && draws(tr[0].key));
+// Every mark and every death has a drawing.
 check('every mark a tick can leave has a drawing', SPRITES.includes('stain') && SPRITES.includes('blobDead') && [...left, ...['spring', 'spikes', 'laser', 'crush'].map(how => stainsOf([], room(3, 3), [], { how, dir: 'left', x: 0, y: 0 })[0])].every(s => draws(s.key)));
 check('every death has a pose', ['spring|right', 'spring|up', 'spikes|', 'laser|', 'blast|', 'crush|', 'hit|'].every(k => spriteSheet('blobDead', k + '|#ab9df2').flat().some(Boolean)));
 

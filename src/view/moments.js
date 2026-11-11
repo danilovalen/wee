@@ -26,6 +26,15 @@ export function deathOf(events, game) {
   return { how, dir, x: die.x, y: die.y };
 }
 // What one tick leaves on the floor. before: the pieces as they stood, so a killed one is found.
+// What the blob carries off a tile onto bare floor (register 842): water, goo, gravel dust.
+const TRACKS = { water: P.blue, sticky: P.green, gravel: P.wood };
+export function tracksOf(game, from, to) {
+  const out = [], dx = Math.sign(to.x - from.x), dy = Math.sign(to.y - from.y);
+  if ((dx && dy) || (!dx && !dy)) return out;
+  const dir = dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up', at = (x, y) => game.cells[y * game.w + x];
+  for (let x = from.x, y = from.y; x !== to.x || y !== to.y; x += dx, y += dy) if (TRACKS[at(x, y)] && at(x + dx, y + dy) === '') out.push({ x: x + dx, y: y + dy, key: `print|${TRACKS[at(x, y)]}|${dir}` });
+  return out;
+}
 export function stainsOf(events, game, before, death) {
   const out = [], hex = blobHex();
   if (death) out.push({ x: death.x, y: death.y, key: death.how === 'spring' ? `splat|${hex}|${death.dir}` : death.how === 'spikes' ? `scraps|${hex}` : death.how === 'laser' || death.how === 'blast' ? 'soot' : `puddle|${hex}` });
@@ -37,7 +46,8 @@ export function stainsOf(events, game, before, death) {
   }
   return out;
 }
-export function keepStains(list, more) { const all = [...list, ...more]; return all.slice(Math.max(0, all.length - STAIN_MAX)); }
+// The same mark on the same tile is kept once.
+export function keepStains(list, more) { const all = [...list]; for (const m of more) if (!all.some(s => s.x === m.x && s.y === m.y && s.key === m.key)) all.push(m); return all.slice(Math.max(0, all.length - STAIN_MAX)); }
 
 export function drawStains(g) {
   if (!frame.stains.length) return;

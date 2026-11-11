@@ -1436,6 +1436,8 @@ export const M = [
   ["src/view/crayonSprites.js", "squircle(16, 16.5, 12, 11.5, P.violet, 3.2, 0.035)", "squircle(16, 16.5, 12, 11.5, P.violet, 2, 0.035)", "look"],
   ["src/app/menuScene.js", "wholeScale(C * fitted / T, dpr) * T / C;", "fitted;", "look"],
   ["src/app/albumScenes.js", "export const sceneOf = id => SCENES[id] || (/^score\\d+$/.test(id) ? SCENES.score : null);", "export const sceneOf = id => SCENES[id] || null;", "moments"],
+  ["src/view/moments.js", "&& at(x + dx, y + dy) === '') out.push", ") out.push", "moments"],
+  ["src/view/moments.js", "if (!all.some(s => s.x === m.x && s.y === m.y && s.key === m.key)) all.push(m);", "all.push(m);", "moments"],
 ];
 
 // Run only as a script: the gate imports M.

@@ -23,7 +23,7 @@ import { syncChips } from './chips.js';
 import { gust } from './snow.js';
 import { motionFx } from '../view/juice.js';
 import { soundFx } from './sound.js';
-import { deathOf, stainsOf, keepStains, HITSTOP_MS } from '../view/moments.js';
+import { deathOf, stainsOf, tracksOf, keepStains, HITSTOP_MS } from '../view/moments.js';
 import { boilOn } from '../view/sprites.js';
 import { stateKey, settled } from '../solve/solve.js';
 import { respawn } from '../rules/life.js';
@@ -85,7 +85,7 @@ export function tick() {
   // What the tick left behind (register 842): the room's marks, and how the blob died if it did.
   const death = deathOf(game.events, pre || game);
   if (game.player.dir) S.face = game.player.dir;
-  S.stains = keepStains(S.stains, stainsOf(game.events, game, stood, death));
+  S.stains = keepStains(S.stains, [...stainsOf(game.events, game, stood, death), ...(death ? [] : tracksOf(game, before, game.player))]);
   if (death) { const f = S.fx.findLast(f => f.type === 'die'); if (f) f.death = death; if (['spring', 'crush'].includes(death.how)) S.stopUntil = t + HITSTOP_MS; }
   const died = pre && game.events.find(e => e.type === 'die');
   if (died) { pre.player = { ...pre.player, x: died.x, y: died.y, dir: null, moved: 0 }; S.dead = { game: pre, death }; showDead(); }

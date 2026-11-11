@@ -37,7 +37,7 @@ export const CRAYON_MOMENTS = {
     const s = sheet().oval(16, 16.5, 11.5, 11, c, 0.07).lit(16, 16.5, 12, 11.5, c); cross(s, 10, 13); cross(s, 18, 13); s.rect(13, 21, 18, 21, EYE);
     return s;
   },
-  // A mark the room keeps. key: "kind|hex|dir" (kind: splat, puddle, scraps, soot, scorch, juice, rubble, flat).
+  // A mark the room keeps. key: "kind|hex|dir" (kind: splat, puddle, scraps, soot, scorch, juice, print, rubble, flat).
   stain(key) {
     const [kind, hex, dir] = String(key).split('|'), c = hex || P.violet, s = sheet();
     if (kind === 'splat') return drops(s.oval(27, 16, 4.5, 13, c, 0.2), c, [[18, 6, 2.2], [16, 25, 2.6], [12, 14, 1.6], [21, 19, 1.4]]).turned(dir || 'right');
@@ -45,6 +45,8 @@ export const CRAYON_MOMENTS = {
     if (kind === 'scraps') return drops(s, c, [[9, 20, 3.4], [22, 11, 2.8], [24, 23, 2.4], [7, 8, 2], [16, 15, 1.6]]);
     if (kind === 'soot') return drops(s.oval(16, 17, 10, 9, dk(P.deep, 0.2), 0.2), dk(P.deep, 0.2), [[5, 7, 2], [26, 25, 2.4], [27, 8, 1.6]]);
     if (kind === 'scorch') { s.oval(16, 16, 15, 15, dk(P.deep, 0.1), 0.08).oval(16, 16, 10, 10, dk(P.deep, 0.45), 0.12); for (const [x, y] of [[2, 4], [28, 3], [3, 27], [29, 28]]) s.rect(x, y, x + 1, y + 1, dk(P.deep, 0.3)); return s; }
+    // What the blob tracks out of water, goo or gravel: two smears, trailing the way it went.
+    if (kind === 'print') return s.oval(10, 12, 4, 2.6, c, 0.2).oval(19, 20, 4.5, 2.8, c, 0.2).oval(26, 13, 1.6, 1.4, c).turned(dir || 'right');
     if (kind === 'juice') return drops(s, c, [[12, 20, 2.4], [20, 23, 1.8], [17, 16, 1.4], [8, 25, 1.2]]);
     if (kind === 'rubble') { for (const [x, y, w, h] of [[5, 20, 6, 4], [16, 23, 5, 3], [22, 16, 4, 4], [10, 12, 3, 3], [25, 25, 3, 2]]) s.rect(x, y, x + w, y + h, P.wall).rect(x, y, x + w, y, lt(P.wall, 0.35)).rect(x, y + h, x + w, y + h, dk(P.wall, 0.3)); return s; }
     // A crushed box: its boards flat on the floor.
