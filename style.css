@@ -1200,3 +1200,14 @@ dialog[id].rooms > .roomsHead { box-shadow: 0 var(--b) 0 var(--line); padding-bo
 .menuList { padding: calc(var(--b2) + 8px); background: var(--panel); box-shadow: inset 0 0 0 var(--b) var(--line), inset 0 0 0 var(--b2) var(--line-edge), var(--b) var(--b) 0 color-mix(in srgb, var(--ink) 25%, transparent); bottom: max(24px, env(safe-area-inset-bottom)); gap: 8px; }
 .menuSec { background: none; padding: 0; border-radius: 0; }
 
+/* The phone's tab bar and a flyout's tools wear the frame too (register 874). */
+@media (max-width: 700px) {
+  .phoneNav { box-shadow: 0 calc(-1 * var(--b)) 0 var(--line); }
+  .phoneNav button, .phoneNav button.on { box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); padding: 9px 0 10px; }
+}
+body.sandbox #palette.fly [data-tool] { box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }
+/* A colour to pick is a crayon chip: the colour, a line in its own dark tint, a lit edge; the picked one
+   stands in a second line (register 874). */
+#campColours button, #campColours button.on { filter: none; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--dot, var(--panel)), var(--ink) 62%), inset 0 0 0 5px color-mix(in srgb, var(--dot, var(--panel)), white 40%); background: var(--dot, var(--panel)); }
+#campColours button::before { display: none; }
+#campColours button.on { outline: 3px solid var(--ink); outline-offset: 2px; }
