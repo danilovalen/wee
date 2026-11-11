@@ -30,8 +30,7 @@ th { font: 600 12px var(--pixel); letter-spacing: .06em; text-transform: upperca
 
 /* The specimens. Each look sets its own colours on .stage: these are the thing being judged, so they do not follow the page theme. */
 .stage { --line: #1d1626; --paper: #fff; --ink: #1d1626; --room: #dfe9f2; --hand: 'Gaegu', cursive; --w: 0; padding: 12px; background: var(--room); display: grid; gap: 12px; justify-items: center; }
-main[data-px="1"] .stage :is(canvas, .frame, .btns) { filter: url(#px); }
-/* Under the mask a scrawl turns to mush, so lettering moves to pixel faces set on the same 3 px grid. */
+/* Pixel perfect by construction (register 847): no filter. Lettering is pixel faces at a whole multiple of their grid, nothing is tilted, and a picture is never stretched. */
 main[data-px="1"] .stage { --hand: 'Silkscreen', monospace !important; --body: 'Tiny5', monospace !important; --btnface: 'Silkscreen', monospace !important; }
 main[data-px="1"] .stage :is(.clip, .photo p, .margin) { font-size: 24px; line-height: 24px; font-weight: 400; }
 main[data-px="1"] .stage .clip h3 { font-size: 24px; font-weight: 400; flex-wrap: wrap; }
@@ -59,6 +58,8 @@ main[data-px="1"] .stage :is(.margin, .photo) { transform: none; }
 .photo { background: #fff; border: 3px solid var(--line); padding: 5px 5px 0; position: relative; transform: rotate(var(--r, -2deg)); display: grid; gap: 2px; }
 .photo::before { content: ""; position: absolute; left: 50%; top: -9px; width: 40px; height: 14px; transform: translateX(-50%) rotate(-3deg); background: var(--tape, #ffe27acc); border: 1px solid #0002; }
 .photo canvas { width: 100%; }
+main[data-px="1"] .photo canvas { width: auto; max-width: none; justify-self: center; }
+main[data-px="1"] .photo { padding: 6px 6px 0; overflow: hidden; }
 .photo p { font: 400 17px/1.15 var(--hand); color: #2a2330; padding: 2px 2px 6px; }
 .photo.empty { background: none; border-style: dashed; min-height: 64px; place-items: center; grid-column: 1 / -1; }
 .photo.empty::before { display: none; }
@@ -85,8 +86,8 @@ main[data-px="1"] .stage :is(.margin, .photo) { transform: none; }
     <p class="dim">Every border is doubled in thickness from the first sketch, after Yoshi's Island (register 845). The interface edges wobble between three drawings. The room holds still on purpose: a grid someone has to read should not move. With reduced motion on, nothing wobbles.</p>
   </header>
 
-  <button class="switch" id="pxSwitch" type="button" aria-pressed="true">Pixel mask: on</button>
-  <p class="dim">The pixel mask (register 846) sits over each whole look and snaps everything to one grid: pieces, panels, lettering, tape and the wobble. Nothing can land between pixels. Switch it off to compare.</p>
+  <button class="switch" id="pxSwitch" type="button" aria-pressed="true">Pixel perfect: on</button>
+  <p class="dim">Pixel perfect means every edge and letter sits on one grid. The first try used a mask over the finished picture, which chewed lettering and stretched photos into stray pixels, so it is gone (register 847): everything is now drawn on the grid to begin with, and no outline drops a pixel. Switch it off to see the hand-drawn version with scrawl and wobble.</p>
 
   <section class="looks" id="looks"></section>
 
@@ -97,7 +98,7 @@ main[data-px="1"] .stage :is(.margin, .photo) { transform: none; }
       <tr><td>Leans on</td><td>Yoshi's Island</td><td>Binding of Isaac</td><td>The game as it is, pushed</td></tr>
       <tr><td>Outer line</td><td>Dark tint of each fill, never black</td><td>One near-black plum for everything</td><td>One near-black, perfectly even</td></tr>
       <tr><td>Inner line</td><td>A second, lighter tint</td><td>Dark tint of the fill</td><td>A white keyline, like a cut sticker</td></tr>
-      <tr><td>Line quality</td><td>Broken and lumpy, cells dropped</td><td>Mostly whole, a little lumpy</td><td>Clean</td></tr>
+      <tr><td>Line quality</td><td>Lumpy, whole</td><td>Mostly whole, a little lumpy</td><td>Clean</td></tr>
       <tr><td>Room</td><td>Pastel, hatched floor</td><td>Muted, so pieces shout</td><td>Bright and flat</td></tr>
       <tr><td>Wobble on the interface</td><td>Strong</td><td>Medium</td><td>None; things bounce when used</td></tr>
       <tr><td>Headings</td><td>Hand scrawl</td><td>Hand scrawl</td><td>Pixel face, as today</td></tr>
@@ -165,10 +166,10 @@ function photo(cv, L, what) {
 }
 const LOOKS = [
   { id: 'A', name: 'Crayon', sub: 'Soft, lumpy, drawn by hand. The line is a darker shade of whatever it surrounds.',
-    L: { outer: 'tint', inner: 'tint2', drop: .14, floor: '#f6f1df', floor2: '#f1ead2', hatch: '#e6dcbc', wall: '#b9c7e8', blob: '#8fd9a0', berry: '#ff9f6b', box: '#f3cf7a', spring: '#f59bb8' },
-    css: '--room:#f6f1df;--line:#5b4a3a;--paper:#fffdf4;--ink:#4a3b30;--tint:#e9dcc0;--tint2:#e9dcc0;--tick:#e0577a;--page:#f3e3c2;--b:#8ec5ff;--b2:#5a94d6;--bt:#243a5c;--metal:#b9c7e8;--metal2:#dbe3f6;--body:"Patrick Hand",cursive;--btnface:"Gaegu",cursive', wob: 1, diff: ['Outlines are tints, never black', 'Cells dropped so the line breaks', 'Crayon hatch on the floor'] },
+    L: { outer: 'tint', inner: 'tint2', drop: 0, floor: '#f6f1df', floor2: '#f1ead2', hatch: '#e6dcbc', wall: '#b9c7e8', blob: '#8fd9a0', berry: '#ff9f6b', box: '#f3cf7a', spring: '#f59bb8' },
+    css: '--room:#f6f1df;--line:#5b4a3a;--paper:#fffdf4;--ink:#4a3b30;--tint:#e9dcc0;--tint2:#e9dcc0;--tick:#e0577a;--page:#f3e3c2;--b:#8ec5ff;--b2:#5a94d6;--bt:#243a5c;--metal:#b9c7e8;--metal2:#dbe3f6;--body:"Patrick Hand",cursive;--btnface:"Gaegu",cursive', wob: 1, diff: ['Outlines are tints, never black', 'Lumpy shapes, whole lines', 'Crayon hatch on the floor'] },
   { id: 'B', name: 'Ink', sub: 'A heavy dark line around everything, a muted room, and pieces in full colour.',
-    L: { outer: '#1d1626', inner: 'tint', drop: .04, floor: '#cfc8c2', floor2: '#c6beb8', hatch: null, wall: '#7d7387', blob: '#7be08a', berry: '#ff7a3d', box: '#f2b632', spring: '#ff5d8f' },
+    L: { outer: '#1d1626', inner: 'tint', drop: 0, floor: '#cfc8c2', floor2: '#c6beb8', hatch: null, wall: '#7d7387', blob: '#7be08a', berry: '#ff7a3d', box: '#f2b632', spring: '#ff5d8f' },
     css: '--room:#cfc8c2;--line:#1d1626;--paper:#f7f1e3;--ink:#1d1626;--tint:#d8cdb4;--tint2:#d8cdb4;--tick:#e0244e;--page:#e9dcc0;--b:#7b6cff;--b2:#4b3fd6;--bt:#fff;--metal:#8d93a6;--metal2:#c3c8d6', wob: 1, diff: ['One near-black line for every piece and panel', 'Room stays grey so colour means something', 'The double border is strongest here'] },
   { id: 'C', name: 'Sticker', sub: 'Bright, flat and crisp. A white keyline inside a dark edge, like something cut out and stuck on.',
     L: { outer: '#1b1830', inner: 'white', drop: 0, floor: '#e3f1ff', floor2: '#d6e9fd', hatch: null, wall: '#8aa2e8', blob: '#5fe38b', berry: '#ff8a3d', box: '#ffd23f', spring: '#ff5fa2' },
@@ -195,5 +196,5 @@ for (const k of LOOKS) {
   document.getElementById('looks').append(art);
 }
 const sw = document.getElementById('pxSwitch'), mainEl = document.querySelector('main');
-sw.onclick = () => { const on = mainEl.dataset.px !== '1'; mainEl.dataset.px = on ? '1' : '0'; sw.setAttribute('aria-pressed', on); sw.textContent = 'Pixel mask: ' + (on ? 'on' : 'off'); };
+sw.onclick = () => { const on = mainEl.dataset.px !== '1'; mainEl.dataset.px = on ? '1' : '0'; sw.setAttribute('aria-pressed', on); sw.textContent = 'Pixel perfect: ' + (on ? 'on' : 'off'); };
 </script>
