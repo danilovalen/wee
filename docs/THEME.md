@@ -34,7 +34,8 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
 13. **At rest a piece is alive, as in Baba Is You** (register 871): it is three whole drawings shown in turn,
     five a second. In two of them the whole sheet bends by a pixel in broad bands, so its outline and what is
     inside it move together; it never tears, and a piece that fills its tile keeps its footprint
-    (`crayon.js` `wobble`). Walls, floor, marks and the dead hold still. Off under reduced motion and from
+    (`crayon.js` `wobble`). Only what is alive does it (register 875): the blob, a berry and the creatures.
+    A box, a door, a button, a laser and every other made thing hold still, as do walls, floor and marks. Off under reduced motion and from
     Looks. There is no other idle: no swelling line, no glint, no pulse. Gate: `tests/crayon.test.mjs`.
 13a. **The blob is a rounded square** (register 860), as it always was: `sheet.squircle`. Gate:
     `tests/look.smoke.mjs`.

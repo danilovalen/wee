@@ -2,7 +2,7 @@
 // the line is a tint and whole, no piece is one fill, and a fitted room lands on whole screen pixels.
 import { suite } from './lib.mjs';
 import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP, wobble, WOBBLE_FRAMES } from '../src/view/crayon.js';
-import { SPRITES, spriteSheet } from '../src/view/sprites.js';
+import { SPRITES, spriteSheet, wobbles } from '../src/view/sprites.js';
 
 const { check, done } = suite('crayon');
 // A key each keyed sprite accepts, so every builder is drawn once.
@@ -41,6 +41,9 @@ const frames = g => [1, 2].map(f => wobble(g, 'blob', f));
 check('a piece at rest is three drawings, the first as drawn', WOBBLE_FRAMES === 3 && wobble(blob, 'blob', 0) === blob && new Set([blob, ...frames(blob)].map(g => JSON.stringify(g))).size === 3);
 const count = g => g.flat().filter(Boolean).length;
 check('a bent drawing is the same piece: about as many cells, and its inside moves too', frames(blob).every(g => Math.abs(count(g) - count(blob)) < count(blob) * 0.08 && g.some((row, y) => row.some((c, x) => c && blob[y][x] && c !== blob[y][x]))));
+// Only what is alive wobbles (register 875): a made thing is the same drawing every frame.
+const moving = SPRITES.filter(wobbles).sort().join();
+check('only the blob, a berry and the creatures wobble; a box, a door and every made thing hold still', moving === 'berry,berryAlt,blob,blobAlt,enemy,mover,strong' && !wobbles('box') && !wobbles('doorShut') && !wobbles('laser'), moving);
 // Row y is row y of the piece slid by 0 or 1; next-door rows never differ by more than that one pixel.
 const left = g => g.map(row => row.findIndex(Boolean));
 check('a bend never tears: a row\'s edge moves by a pixel at most', frames(blob).every(g => left(g).every((v, y) => v < 0 || left(blob)[y] < 0 || Math.abs(v - left(blob)[y]) <= 2)));

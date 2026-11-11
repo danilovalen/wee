@@ -1453,6 +1453,7 @@ export const M = [
   ["style.css", ".menu::after { display: none; }", "", "look"],
   ["style.css", ".campRow.locked { opacity: 1; } .campRow.locked > * { opacity: .45; }", "", "look"],
   ["style.css", ".slot.on, .slotRow.on { box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }", "", "look"],
+  ["src/view/sprites.js", "export const wobbles = name => ALIVE.has(name);", "export const wobbles = name => true;", "crayon"],
 ];
 
 // Run only as a script: the gate imports M.

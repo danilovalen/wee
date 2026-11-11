@@ -15,8 +15,10 @@ const BUILD = { ...CRAYON_SPRITES, ...CRAYON_SKINS, ...CRAYON_MOMENTS };
 const U = 1, runs = new Map();
 // Drawn as they are, with no line round them: an open door is only its dashes, a frame is only a frame.
 const PLAIN = new Set(['doorOpen', 'doorOpenAlt', 'crateFrame']);
-// Drawn the same every frame: a wall's face and what is set in it, a mark on the floor, the dead.
-const STILL = new Set(['wallFace', 'wallFaceAlt', 'crack', 'spring', 'springAlt', 'stain', 'blobDead']);
+// Only what is alive wobbles (register 875): the blob, a berry, and the creatures. A box, a door, a button,
+// a laser and every other made thing is drawn the same every frame.
+const ALIVE = new Set(['blob', 'blobAlt', 'berry', 'berryAlt', 'mover', 'enemy', 'strong']);
+export const wobbles = name => ALIVE.has(name);
 const sheetOf = (name, param) => { const b = BUILD[name](param); return b.g || doubled(b); };
 function runsOf(name, param, exact, f = 0) {
   if (!exact) name = skinned(name);
@@ -24,8 +26,7 @@ function runsOf(name, param, exact, f = 0) {
   if (runs.has(key)) return runs.get(key);
   const plain = PLAIN.has(name) || /(^|\|)bare(\||$)/.test(String(param)) || (name === 'idoor' && /\|1$/.test(String(param)));
   // A mark on the floor is a stain, not a thing: its edge darkens and no line goes round it.
-  // What is part of a wall or lies on the floor holds still; everything else wobbles (register 871).
-  const sheet = plain || STILL.has(name) ? sheetOf(name, param) : wobble(sheetOf(name, param), name, f);
+  const sheet = wobbles(name) ? wobble(sheetOf(name, param), name, f) : sheetOf(name, param);
   const out = ink(sheet, plain ? { ring: 0, edge: 0 } : name === 'stain' ? { ring: 0 } : {});
   runs.set(key, out);
   return out;
