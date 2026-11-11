@@ -1,13 +1,14 @@
 # Builds fonts/wee-hand.woff2 (register 890): Short Stack (OFL, Sorkin Type Co) redrawn on a pixel grid.
 # Each glyph is drawn large and a grid cell is inked when enough of it is covered, at a size where the
 # face's stroke is one pixel wide, so letters keep their hand and their counters stay open. Letters are set
-# one pixel apart. Run: python3 tools/pixelFont.py <ShortStack-Regular.ttf>
+# one pixel apart. Run from the repo: PYTHONPATH=tools python3 tools/pixelFont.py <ShortStack-Regular.ttf> [proof.png]
 import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.ttLib import TTFont
+from pixelGlyphs import DRAWN
 
 SRC = sys.argv[1]
 EM, SS, TH, U = 12, 8, 0.40, 100       # grid cells per em, samples per cell, cover needed, font units per cell
@@ -18,31 +19,6 @@ asc, desc = f.getmetrics()
 top = -asc % SS                         # so the baseline falls between two cells
 base = (top + asc) // SS
 
-# The face's own figures are too loose to tell apart at this size (its 1 reads as an exclamation mark), so the
-# ten figures are drawn by hand here, eight cells tall like its capitals, a little uneven like the letters.
-DIGITS = {
-    '0': ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '#..#.', '.##..'],
-    '1': ['..#.', '.##.', '#.#.', '..#.', '..#.', '..#.', '..#.', '.###'],
-    '2': ['.###.', '#...#', '....#', '...#.', '..#..', '.#...', '#....', '####.'],
-    '3': ['###..', '...#.', '...#.', '.##..', '...#.', '....#', '#...#', '.###.'],
-    '4': ['...#.', '..##.', '.#.#.', '#..#.', '#..#.', '#####', '...#.', '...#.'],
-    '5': ['.####', '.#...', '#....', '###..', '...#.', '....#', '#...#', '.###.'],
-    '6': ['..##.', '.#...', '#....', '###..', '#..#.', '#...#', '#...#', '.###.'],
-    '7': ['#####', '....#', '...#.', '...#.', '..#..', '..#..', '.#...', '.#...'],
-    '8': ['.##..', '#..#.', '#..#.', '.##..', '#..#.', '#...#', '#...#', '.###.'],
-    '9': ['.###.', '#...#', '#...#', '.####', '....#', '....#', '...#.', '.##..'],
-    # Capitals and signs whose joins the grid cannot hold: drawn by hand as well.
-    'B': ['###..', '#..#.', '#..#.', '###..', '#..#.', '#...#', '#...#', '####.'],
-    'K': ['#...#', '#..#.', '#.#..', '##...', '##...', '#.#..', '#..#.', '#...#'],
-    'R': ['###..', '#..#.', '#..#.', '#..#.', '###..', '#.#..', '#..#.', '#...#'],
-    'N': ['#...#', '##..#', '##..#', '#.#.#', '#.#.#', '#..##', '#..##', '#...#'],
-    'M': ['#...#', '##.##', '##.##', '#.#.#', '#.#.#', '#...#', '#...#', '#...#'],
-    'W': ['#.....#', '#.....#', '#..#..#', '#..#..#', '#..#..#', '.#.#.#.', '.#.#.#.', '..#.#..'],
-    'X': ['#...#', '#...#', '.#.#.', '..#..', '..#..', '.#.#.', '#...#', '#...#'],
-    '=': ['....', '....', '....', '####', '....', '####', '....', '....'],
-    '#': ['.#.#.', '.#.#.', '#####', '.#.#.', '.#.#.', '#####', '.#.#.', '.#.#.'],
-    '"': ['#.#', '#.#', '#.#', '...', '...', '...', '...', '...'],
-}
 # The clean-up (register 893), so a letter is one line of single pixels:
 # 1. no double lines: where four cells make a full square, one that the shape does not need is taken out;
 # 2. no stray dots: a cell touching nothing is dropped, unless the letter is one that has a dot.
@@ -82,9 +58,10 @@ def clean(g, ch):
                 if g[y, x] and g[y - 1:y + 2, x - 1:x + 2].sum() == 1: g[y, x] = False
     return g[1:-1, 1:-1]
 def cells(ch):
-    if ch in DIGITS:
-        g = np.zeros((base + 4, len(DIGITS[ch][0])), bool)
-        for i, row in enumerate(DIGITS[ch]): g[base - 8 + i] = [c == '#' for c in row]
+    if ch in DRAWN:
+        rs, drop = DRAWN[ch]; w = max(len(r) for r in rs)
+        g = np.zeros((base + 4, w), bool)
+        for i, row in enumerate(rs): g[base + drop - len(rs) + i, :len(row)] = [c == '#' for c in row]
         return g
     w = int(f.getlength(ch)) + 4 * SS; h = top + asc + desc + 2 * SS
     w += -w % SS; h += -h % SS
@@ -100,7 +77,7 @@ def empty():
 glyphs['.notdef'] = empty(); metrics['.notdef'] = (4 * U, 0)
 glyphs['space'] = empty(); metrics['space'] = (4 * U, 0); cmap[32] = 'space'; cmap[0xA0] = 'space'
 for ch in CHARS:
-    if ord(ch) not in have: continue
+    if ord(ch) not in have and ch not in DRAWN: continue
     g = cells(ch)
     if g is None: continue
     name = 'u%04X' % ord(ch); pen = TTGlyphPen(None)
@@ -115,6 +92,14 @@ for ch in CHARS:
             x += n
     glyphs[name] = pen.glyph(); metrics[name] = ((g.shape[1] + 1) * U, 0); cmap[ord(ch)] = name; order.append(name)
 
+# The rules every drawn letter keeps (registers 894 to 896): no full square of four cells, and no cell that
+# touches nothing unless the letter has a dot. The build stops on a letter that breaks one.
+for ch in DRAWN:
+    g = np.pad(cells(ch), 1)
+    square = any(g[y:y + 2, x:x + 2].all() for y in range(g.shape[0] - 1) for x in range(g.shape[1] - 1))
+    loose = ch not in DOTTED and any(g[y, x] and g[y - 1:y + 2, x - 1:x + 2].sum() == 1 for y in range(1, g.shape[0] - 1) for x in range(1, g.shape[1] - 1))
+    widths = {len(r) for r in DRAWN[ch][0]}
+    assert not square and not loose and len(widths) == 1, (ch, 'square' if square else 'loose cell' if loose else 'uneven rows')
 fb = FontBuilder(EM * U, isTTF=True)
 fb.setupGlyphOrder(order); fb.setupCharacterMap(cmap); fb.setupGlyf(glyphs); fb.setupHorizontalMetrics(metrics)
 fb.setupHorizontalHeader(ascent=base * U, descent=-(-(-desc // SS)) * U)
@@ -123,15 +108,17 @@ fb.setupOS2(sTypoAscender=base * U, sTypoDescender=-(-(-desc // SS)) * U, usWinA
 fb.setupPost()
 fb.font.flavor = 'woff2'; fb.save('fonts/wee-hand.woff2')
 print(len(order), 'glyphs, baseline at cell', base)
-# A proof sheet of every glyph, for the eye: python3 tools/pixelFont.py <ttf> <out.png>
+# A proof sheet for the eye: each line in the hand, and under it the same line in the face it was drawn from.
+# python3 tools/pixelFont.py <ttf> <out.png>
 if len(sys.argv) > 2:
-    text = ['abcdefghijklm', 'nopqrstuvwxyz', 'ABCDEFGHIJKLM', 'NOPQRSTUVWXYZ', '0123456789 ?!:;', '.,()+-=/\'"%&#@', 'Swipe across the', 'room, or press an', 'arrow key, to slide']
-    S = 6; img = Image.new('RGB', (150 * S, len(text) * 17 * S), '#f7f1de'); d = ImageDraw.Draw(img)
+    text = ['abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '0123456789 ?!:;.,()+-=/\'"%&#@', 'Swipe across the room, or press an', 'arrow key, to slide Wee.']
+    S = 6; img = Image.new('RGB', (230 * S, len(text) * 34 * S), '#f7f1de'); d = ImageDraw.Draw(img); big = ImageFont.truetype(SRC, EM * S)
     for r, line in enumerate(text):
         x = 2
         for ch in line:
             g = cells(ch) if ch != ' ' else None
             if g is not None:
-                for yy, xx in zip(*np.where(g)): d.rectangle([(x + xx) * S, (r * 17 + yy) * S, (x + xx + 1) * S - 1, (r * 17 + yy + 1) * S - 1], fill='#4a3526')
+                for yy, xx in zip(*np.where(g)): d.rectangle([(x + xx) * S, (r * 34 + yy) * S, (x + xx + 1) * S - 1, (r * 34 + yy + 1) * S - 1], fill='#4a3526')
             x += (g.shape[1] + 1) if g is not None else 4
+        d.text((2 * S, (r * 34 + 17) * S), line, '#c9571a', font=big)
     img.save(sys.argv[2])
