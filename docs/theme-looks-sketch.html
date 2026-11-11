@@ -35,25 +35,25 @@ th { font: 600 12px var(--pixel); letter-spacing: .06em; text-transform: upperca
 @media (prefers-reduced-motion: no-preference) { .wob { animation: boil .45s steps(1) infinite; } .wob.b2 { animation-delay: -.15s; } .wob.b3 { animation-delay: -.3s; } }
 @keyframes boil { 0% { filter: url(#w0); } 33% { filter: url(#w1); } 66% { filter: url(#w2); } }
 .stage[data-wob="0"] .wob { filter: none; animation: none; }
-.frame { border: 2px solid var(--line); box-shadow: inset 0 0 0 2px var(--tint, #0003); background: var(--paper); color: var(--ink); }
-.clip { width: 100%; max-width: 300px; position: relative; padding: 26px 14px 12px; font: 400 15px/1.35 var(--body, var(--pixel)); }
-.clip::before { content: ""; position: absolute; left: 50%; top: -8px; width: 76px; height: 22px; transform: translateX(-50%); background: var(--metal, #9aa3b5); border: 2px solid var(--line); box-shadow: inset 0 0 0 2px var(--metal2, #c9cfdb); }
+.frame { border: 4px solid var(--line); box-shadow: inset 0 0 0 4px var(--tint, #0003); background: var(--paper); color: var(--ink); }
+.clip { width: 100%; max-width: 300px; position: relative; padding: 30px 18px 16px; font: 400 15px/1.35 var(--body, var(--pixel)); }
+.clip::before { content: ""; position: absolute; left: 50%; top: -12px; width: 76px; height: 28px; transform: translateX(-50%); background: var(--metal, #9aa3b5); border: 4px solid var(--line); box-shadow: inset 0 0 0 3px var(--metal2, #c9cfdb); }
 .clip h3 { margin: 0 0 6px; font: 700 20px/1 var(--hand); display: flex; justify-content: space-between; gap: 8px; }
 .clip ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
 .clip li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; }
-.box { width: 14px; height: 14px; border: 2px solid var(--line); margin-top: 3px; position: relative; background: var(--paper); }
+.box { width: 16px; height: 16px; border: 3px solid var(--line); margin-top: 3px; position: relative; background: var(--paper); }
 .done .box::after { content: ""; position: absolute; left: 1px; top: -6px; width: 6px; height: 13px; border: solid var(--tick, #d63a5a); border-width: 0 3px 3px 0; transform: rotate(40deg); }
 .done span { text-decoration: line-through; text-decoration-color: var(--tick, #d63a5a); }
 .margin { font: 400 15px/1.2 var(--hand); color: var(--tick, #d63a5a); transform: rotate(-2deg); justify-self: end; }
-.album { width: 100%; max-width: 300px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--page, #f6ecd4); }
-.photo { background: #fff; border: 2px solid var(--line); padding: 5px 5px 0; position: relative; transform: rotate(var(--r, -2deg)); display: grid; gap: 2px; }
+.album { width: 100%; max-width: 300px; padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--page, #f6ecd4); }
+.photo { background: #fff; border: 3px solid var(--line); padding: 5px 5px 0; position: relative; transform: rotate(var(--r, -2deg)); display: grid; gap: 2px; }
 .photo::before { content: ""; position: absolute; left: 50%; top: -9px; width: 40px; height: 14px; transform: translateX(-50%) rotate(-3deg); background: var(--tape, #ffe27acc); border: 1px solid #0002; }
 .photo canvas { width: 100%; }
 .photo p { font: 400 14px/1.15 var(--hand); color: #2a2330; padding: 2px 2px 6px; }
 .photo.empty { background: none; border-style: dashed; min-height: 64px; place-items: center; grid-column: 1 / -1; }
 .photo.empty::before { display: none; }
 .btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.btn { font: 600 15px var(--btnface, var(--pixel)); padding: 8px 16px; background: var(--b, #7b6cff); color: var(--bt, #fff); border: 2px solid var(--line); box-shadow: inset 0 0 0 2px var(--b2, #4b3fd6), 0 3px 0 var(--line); }
+.btn { font: 600 15px var(--btnface, var(--pixel)); padding: 12px 20px; background: var(--b, #7b6cff); color: var(--bt, #fff); border: 4px solid var(--line); box-shadow: inset 0 0 0 4px var(--b2, #4b3fd6), 0 4px 0 var(--line); }
 .btn.alt { --b: var(--paper); --b2: var(--tint2, #cfd6e2); --bt: var(--ink); }
 </style>
 
@@ -70,7 +70,7 @@ th { font: 600 12px var(--pixel); letter-spacing: .06em; text-transform: upperca
     <span class="tag">wee · register 841 · sketch, nothing built</span>
     <h1>Three looks for the lab</h1>
     <p>The same four things in each: a room after a spring slam, the level's clipboard, a page of the blob's album, and two buttons. Pick one, or name the parts to mix. The words on the clipboard and in the album are drafts to show the two voices; none is approved copy.</p>
-    <p class="dim">The interface edges wobble between three drawings. The room holds still on purpose: a grid someone has to read should not move. With reduced motion on, nothing wobbles.</p>
+    <p class="dim">Every border is doubled in thickness from the first sketch, after Yoshi's Island (register 845). The interface edges wobble between three drawings. The room holds still on purpose: a grid someone has to read should not move. With reduced motion on, nothing wobbles.</p>
   </header>
 
   <section class="looks" id="looks"></section>
@@ -115,10 +115,12 @@ function sprite(g, ox, oy, name, fill, L, opt = {}) {
   const px = (x, y, c) => { g.fillStyle = c; g.fillRect(ox + x * C, oy + y * C, C, C); };
   const outer = L.outer === 'tint' ? mix(fill, '#1a1020', .62) : L.outer, inner = L.inner === 'white' ? '#ffffff' : mix(fill, '#1a1020', L.inner === 'tint2' ? .22 : .34);
   seed = (opt.seed || 5) * 97 + name.length;
-  for (let y = -1; y <= N; y++) for (let x = -1; x <= N; x++) {
-    const here = at(x, y), edge = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + dx, y + dy) !== here);
-    if (!here) { if (edge && !opt.noOuter && rnd() >= L.drop) px(x, y, outer); continue; }
-    px(x, y, edge ? inner : fill);
+  // Borders are B cells thick each (register 845): the outer line outside the shape, the inner one inside it.
+  const B = 2, near = (x, y, want) => { for (let dy = -B; dy <= B; dy++) for (let dx = -B; dx <= B; dx++) if (Math.abs(dx) + Math.abs(dy) <= B && at(x + dx, y + dy) === want) return true; return false; };
+  for (let y = -B; y < N + B; y++) for (let x = -B; x < N + B; x++) {
+    const here = at(x, y);
+    if (!here) { if (!opt.noOuter && near(x, y, true) && rnd() >= L.drop) px(x, y, outer); continue; }
+    px(x, y, near(x, y, false) ? inner : fill);
   }
   if (!opt.flat) { g.fillStyle = mix(fill, '#ffffff', .55); g.fillRect(ox + 5 * C, oy + 4 * C, 2 * C, C); if (name !== 'spring') g.fillRect(ox + 4 * C, oy + 5 * C, C, 2 * C); }
   if (opt.eyes) for (const ex of opt.eyes) { g.fillStyle = '#fff'; g.fillRect(ox + ex[0] * C, oy + ex[1] * C, 2 * C, 3 * C); g.fillStyle = L.outer === 'tint' ? '#2a1c3a' : L.outer; g.fillRect(ox + (ex[0] + (opt.look || 0)) * C + (opt.look ? 0 : C), oy + (ex[1] + 1) * C, C, 2 * C); }
