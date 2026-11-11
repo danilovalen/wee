@@ -95,6 +95,8 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
     (sheet, page, sign, chip, the goal's box) wears it. A state colours the frame and never replaces it. A
     locked level keeps its whole line and fades only its inside. Gate: `tests/look.smoke.mjs` lists every
     control on the menu, the level list and a level and fails on one without the frame.
-34. **The title is drawn like a piece**: its letters in the accent with a dark-tinted line round them and a
-    foot under them, alive on the menu.
+34. **The title is drawn like a piece** (register 876): three crayon letters on the pieces' grid, inked by the
+    same pass, lit along their tops and shaded along their feet, alive on the menu (`src/app/logo.js`).
+34a. **A frame has square corners** (register 878): a line and, inside it, a band lighter than the fill, as wide
+    again. Nothing is cut off a corner.
 35. **The menu shows the whole room**: nothing fades it, and the choices are one framed sign.

@@ -20,6 +20,7 @@ import { shownName, challengeName } from '../campaign/names.js';
 import { noteWin, bindWin } from './winCard.js';
 import { noteLeaving, copyDebug } from './debug.js';
 import { buildMenuScene } from './menuScene.js';
+import { buildLogo } from './logo.js';
 import { forgetRun } from './replay.js';
 import { madeLevel } from './made.js';
 import { progress, write, firstTime } from './progress.js';
@@ -213,6 +214,7 @@ export function showList() {
 export function buildCampaign(actions) {
   A = actions; bindGoalCard(actions);
   fitScene = buildMenuScene($('menuScene'));
+  buildLogo(document.querySelector('.menuLogo'));
   place('menu', { page: 'menuBox', parent: () => null, enter: () => {}, shown: () => fitScene?.() });
   place('levels', { page: 'campBox', parent: () => 'menu', enter: () => {}, shown: showList });
   // A level goes back to where it was opened from; with no history, a made level's parent is the maker.

@@ -37,24 +37,21 @@ body.campaign #logo, body.puzzle #logo { display: none; }
    2-step stair, flat on the floor; pressing darkens it and nothing moves (register 531). "On" wears the accent as its frame.
    Clicky (register 647): a 2 px lip under the face; pressed, the face sinks into it, so the box keeps its place. */
 button {
-  /* The crayon line (docs/THEME.md): the frame is a dark tint of the button's own fill, never black, and the
-     fill's edge is darkened inside it: the same double border every piece in the room wears. */
+  /* The frame (docs/THEME.md, registers 845, 878): a line in a dark tint of the button's own fill, never black,
+     and a lighter band inside it, as wide again. Square corners: nothing is cut. */
   /* --b: the line's width; the edge inside it is as wide again (the sketch's doubled border, register 858). */
-  --fill: color-mix(in srgb, var(--panel) var(--btn-mix), var(--rule)); --frame: color-mix(in srgb, var(--fill), var(--ink) 62%); --edge: color-mix(in srgb, var(--fill), var(--ink) 14%);
+  --fill: color-mix(in srgb, var(--panel) var(--btn-mix), var(--rule)); --frame: color-mix(in srgb, var(--fill), var(--ink) 62%); --edge: color-mix(in srgb, var(--fill), white 55%);
   font: inherit; color: var(--text); border: 0; border-radius: 0; padding: 6px 12px; cursor: pointer;
   /* The lip: a dark band inside the frame along the bottom; pressed, it moves to the top and the icon sinks 2 px. */
-  background: linear-gradient(var(--lip, color-mix(in srgb, var(--fill) 70%, black)) 0 0) left var(--b) var(--lip-y, bottom var(--b)) / calc(100% - var(--b2)) var(--b) no-repeat,
-    linear-gradient(var(--frame) 0 0) left var(--b) top var(--b) / var(--b) var(--b) no-repeat, linear-gradient(var(--frame) 0 0) right var(--b) top var(--b) / var(--b) var(--b) no-repeat,
-    linear-gradient(var(--frame) 0 0) left var(--b) bottom var(--b) / var(--b) var(--b) no-repeat, linear-gradient(var(--frame) 0 0) right var(--b) bottom var(--b) / var(--b) var(--b) no-repeat, var(--fill);
+  background: linear-gradient(var(--lip, color-mix(in srgb, var(--fill) 70%, black)) 0 0) left var(--b2) var(--lip-y, bottom var(--b2)) / calc(100% - var(--b2) * 2) var(--b) no-repeat, var(--fill);
   box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge);
-  clip-path: polygon(var(--b2) 0, calc(100% - var(--b2)) 0, calc(100% - var(--b2)) var(--b), calc(100% - var(--b)) var(--b), calc(100% - var(--b)) var(--b2), 100% var(--b2), 100% calc(100% - var(--b2)), calc(100% - var(--b)) calc(100% - var(--b2)), calc(100% - var(--b)) calc(100% - var(--b)), calc(100% - var(--b2)) calc(100% - var(--b)), calc(100% - var(--b2)) 100%, var(--b2) 100%, var(--b2) calc(100% - var(--b)), var(--b) calc(100% - var(--b)), var(--b) calc(100% - var(--b2)), 0 calc(100% - var(--b2)), 0 var(--b2), var(--b) var(--b2), var(--b) var(--b), var(--b2) var(--b));
   transition: background-color .12s;
 }
 /* The light frame is for a mouse only: on a phone a tapped button keeps :hover (register 531). */
 @media (hover: hover) and (pointer: fine) {
   button:hover:not(:disabled) { --frame: color-mix(in srgb, var(--fill), var(--ink) 85%); }
 }
-button:active:not(:disabled), button.down:not(:disabled) { filter: brightness(.8); --lip-y: top var(--b); }
+button:active:not(:disabled), button.down:not(:disabled) { filter: brightness(.8); --lip-y: top var(--b2); }
 button:active:not(:disabled) > :is(svg, canvas, i, img), button.down:not(:disabled) > :is(svg, canvas, i, img) { translate: 0 2px; }
 /* Let go, the face springs back a touch bright for a frame or two. */
 button.pop:not(:disabled) { filter: brightness(1.2); }
@@ -1132,7 +1129,7 @@ body.removal [data-tool]:not([data-tool=look]):not([data-tool=erase]) { display:
 
 /* The lab's things (docs/THEME.md, registers 841, 857, 858). One frame for every sheet of paper: a line 3 px wide
    in a dark tint of the paper, a lighter edge 3 px inside it, like a button and like a piece in the room. */
-.campBrief .campGoal, .winCard, .achList li, .lookShelf { --sheet: var(--panel); --sheet-line: color-mix(in srgb, var(--sheet), var(--ink) 62%); --sheet-edge: color-mix(in srgb, var(--sheet), var(--ink) 14%); }
+.campBrief .campGoal, .winCard, .achList li, .lookShelf { --sheet: var(--panel); --sheet-line: color-mix(in srgb, var(--sheet), var(--ink) 62%); --sheet-edge: color-mix(in srgb, var(--sheet), white 55%); }
 /* The clipboard: a level's goals on a sheet held by a clip, ruled every 22 px. */
 .campBrief .campGoal { position: relative; margin-top: 10px; padding: 14px 10px 10px; border-radius: 0;
   background: repeating-linear-gradient(180deg, transparent 0 21px, color-mix(in srgb, var(--ink) 9%, transparent) 21px 22px), var(--sheet);
@@ -1169,7 +1166,7 @@ dialog.rooms { border-radius: 0; box-shadow: inset 0 0 0 var(--b) color-mix(in s
    width and --b2 the line plus the edge inside it; a window wider than a phone gets a thicker line and
    larger words. Every control and every container wears the same frame: a line in a dark tint of its own
    fill, a lighter edge inside it, square corners. */
-:root { --b: 3px; --b2: calc(var(--b) * 2); --line: color-mix(in srgb, var(--panel), var(--ink) 62%); --line-edge: color-mix(in srgb, var(--panel), var(--ink) 14%); }
+:root { --b: 3px; --b2: calc(var(--b) * 2); --line: color-mix(in srgb, var(--panel), var(--ink) 62%); --line-edge: color-mix(in srgb, var(--panel), white 55%); }
 @media (min-width: 700px) { :root { --b: 4px; } body { font-size: 16px; } }
 /* A state colours the frame, it never replaces it. */
 .slot.on, .slotRow.on { box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }
@@ -1189,12 +1186,9 @@ input[type=number], input[type=text], textarea, select { border-radius: 0; paddi
 /* The bar across the top is a shelf with a line under it. */
 header { box-shadow: 0 var(--b) 0 var(--line); position: relative; z-index: 2; }
 dialog[id].rooms > .roomsHead { box-shadow: 0 var(--b) 0 var(--line); padding-bottom: 8px; margin-bottom: 12px; }
-/* The title: three crayon letters, a dark-tinted line round them and a foot under them, alive like a piece. */
-.logo { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--accent); animation: none; --tl: color-mix(in srgb, var(--accent), var(--ink) 62%);
-  text-shadow: 2px 0 0 var(--tl), -2px 0 0 var(--tl), 0 2px 0 var(--tl), 0 -2px 0 var(--tl), 2px 2px 0 var(--tl), -2px 2px 0 var(--tl), 2px -2px 0 var(--tl), -2px -2px 0 var(--tl), 0 4px 0 var(--tl); }
-.menu .menuLogo { --tl: color-mix(in srgb, var(--accent), var(--ink) 62%); text-shadow: 4px 0 0 var(--tl), -4px 0 0 var(--tl), 0 4px 0 var(--tl), 0 -4px 0 var(--tl), 4px 4px 0 var(--tl), -4px 4px 0 var(--tl), 4px -4px 0 var(--tl), -4px -4px 0 var(--tl), 0 8px 0 var(--tl), 4px 8px 0 var(--tl), -4px 8px 0 var(--tl); animation: logoAlive .6s steps(1) infinite; }
-@keyframes logoAlive { 0% { translate: 0 0; } 34% { translate: 2px 0; } 67% { translate: 0 2px; } }
-@media (prefers-reduced-motion: reduce) { .menu .menuLogo { animation: none; } }
+/* The title is a drawing (src/app/logo.js): three crayon letters inked like a piece, centred over the room. */
+.menu .menuLogo { background: none; animation: none; font-size: 0; line-height: 0; top: 16px; }
+.logoArt { image-rendering: pixelated; display: inline-block; }
 /* The menu: the room is whole (no fade over it) and the choices are one framed sign under it. */
 .menu::after { display: none; }
 .menuList { padding: calc(var(--b2) + 8px); background: var(--panel); box-shadow: inset 0 0 0 var(--b) var(--line), inset 0 0 0 var(--b2) var(--line-edge), var(--b) var(--b) 0 color-mix(in srgb, var(--ink) 25%, transparent); bottom: max(24px, env(safe-area-inset-bottom)); gap: 8px; }

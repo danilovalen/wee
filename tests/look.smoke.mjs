@@ -88,8 +88,18 @@ try {
   check('every control on the menu wears the frame', !menuBare.length, menuBare.join(' '));
   const sign = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('.menuList')), fade = getComputedStyle(document.querySelector('.menu'), '::after'); return { framed: (c.boxShadow.match(/inset/g) || []).length >= 2, fade: fade.display }; });
   check('the menu\'s choices are one framed sign, and nothing fades the room', sign.framed && sign.fade === 'none', JSON.stringify(sign));
-  const title = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('.menu .menuLogo')); return { shadow: c.textShadow.split('px,').length, clip: c.backgroundClip }; });
-  check('the title has a line round its letters', title.shadow >= 8 && title.clip !== 'text', JSON.stringify(title));
+  // The title is a drawing in the look (register 876): its letters' colour, a darker line round them, on whole pixels.
+  const title = await p.evaluate(async () => {
+    const { lineOf } = await import('/src/view/crayon.js'), { P } = await import('/src/view/crayonSprites.js'), { LOGO_SCALE } = await import('/src/app/logo.js');
+    const c = document.querySelector('.menuLogo canvas'); if (!c) return { canvas: false };
+    const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, seen = new Set(); let inked = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3]) { inked++; seen.add('#' + [d[i], d[i + 1], d[i + 2]].map(v => v.toString(16).padStart(2, '0')).join('')); }
+    return { canvas: true, line: seen.has(lineOf(P.violet).slice(0, 7)), tones: seen.size, inked, per: c.getBoundingClientRect().width / c.width, scale: LOGO_SCALE, label: document.querySelector('.menuLogo').getAttribute('aria-label') };
+  });
+  check('the title is drawn like a piece: a line round its letters, lit and shaded, on whole pixels', title.canvas && title.line && title.tones >= 4 && title.inked > 1500 && title.per === title.scale && title.label === 'wee', JSON.stringify(title));
+  // A button is square, with a line and a lighter band inside it: nothing is cut off its corners (register 878).
+  const btn = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('#menuCampaign')); return { clip: c.clipPath, radius: c.borderTopLeftRadius, insets: (c.boxShadow.match(/inset/g) || []).length }; });
+  check('a button has square corners, nothing cut', btn.clip === 'none' && btn.radius === '0px' && btn.insets === 2, JSON.stringify(btn));
   await p.click('#menuCampaign'); await p.waitForTimeout(400);
   const listBare = await bare(), locked = await p.evaluate(() => { const e = document.createElement('button'); e.className = 'campRow locked'; e.append(document.createElement('b')); document.querySelector('#campList').append(e); const o = getComputedStyle(e).opacity + '/' + getComputedStyle(e.firstChild).opacity; e.remove(); return o; });
   check('every control on the level list wears the frame, and a locked level keeps its line', !listBare.length && locked === '1/0.45', listBare.join(' ') + ' ' + locked);

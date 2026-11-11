@@ -1145,7 +1145,7 @@ export const M = [
   ['style.css', "  body.play:not(.campaign) #pad { position: fixed;", "  body.play:not(.campaign) #pad { position: static;", 'still'],
   ['src/solve/design.js', "    if (level.cells[i] !== 'wall') continue;\n    const cells = [...level.cells]; cells[i] = '';", "    if (level.cells[i] !== 'wall') continue;\n    const cells = [...level.cells];", 'design'],
   ['src/app/menuScene.js', "  for (const [x, y] of WALLS) l.cells[y * W + x] = 'wall';", "  for (const [x, y] of WALLS) if ((x + y) % 2) l.cells[y * W + x] = 'wall';", 'feel'],
-  ["style.css", "button.down:not(:disabled) { filter: brightness(.8); --lip-y: top var(--b); }", "button.down:not(:disabled) { filter: brightness(.8); }", "feel"],
+  ["style.css", "button.down:not(:disabled) { filter: brightness(.8); --lip-y: top var(--b2); }", "button.down:not(:disabled) { filter: brightness(.8); }", "feel"],
   ['style.css', "button.down:not(:disabled) > :is(svg, canvas, i, img) { translate: 0 2px; }", "button.down:not(:disabled) > :is(svg, canvas, i, img) { }", 'feel'],
   ['src/app/sound.js', "for (const f of fx) if (!heard.has(f)) { heard.add(f);", "for (const f of fx) if (true) {", 'feel'],
   ['src/app/sound.js', "$('menuSound').onclick = () => { setSound(!on);", "$('menuSound').onclick = () => { setSound(on);", 'feel'],
@@ -1454,6 +1454,10 @@ export const M = [
   ["style.css", ".campRow.locked { opacity: 1; } .campRow.locked > * { opacity: .45; }", "", "look"],
   ["style.css", ".slot.on, .slotRow.on { box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }", "", "look"],
   ["src/view/sprites.js", "export const wobbles = name => ALIVE.has(name);", "export const wobbles = name => true;", "crayon"],
+  // Registers 876, 878: the drawn title, square buttons.
+  ["src/app/campaign.js", "  buildLogo(document.querySelector('.menuLogo'));\n", "", "look"],
+  ["src/app/logo.js", "  for (const [x, y] of top) g[y][x] = lt(c, 0.5);\n", "", "look"],
+  ["style.css", "--edge: color-mix(in srgb, var(--fill), white 55%);\n  font: inherit;", "--edge: color-mix(in srgb, var(--fill), white 55%);\n  clip-path: polygon(4px 0, 100% 0, 100% 100%, 0 100%, 0 4px);\n  font: inherit;", "look"],
 ];
 
 // Run only as a script: the gate imports M.
