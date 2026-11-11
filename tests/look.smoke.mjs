@@ -90,13 +90,13 @@ try {
   check('the menu\'s choices are one framed sign, and nothing fades the room', sign.framed && sign.fade === 'none', JSON.stringify(sign));
   // The title is a drawing in the look (register 876): its letters' colour, a darker line round them, on whole pixels.
   const title = await p.evaluate(async () => {
-    const { lineOf } = await import('/src/view/crayon.js'), { P } = await import('/src/view/crayonSprites.js'), { LOGO_SCALE } = await import('/src/app/logo.js');
+    const { lineOf, resolve, lt } = await import('/src/view/crayon.js'), { P } = await import('/src/view/crayonSprites.js'), { LOGO_SCALE } = await import('/src/app/logo.js');
     const c = document.querySelector('.menuLogo canvas'); if (!c) return { canvas: false };
     const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, seen = new Set(); let inked = 0;
     for (let i = 0; i < d.length; i += 4) if (d[i + 3]) { inked++; seen.add('#' + [d[i], d[i + 1], d[i + 2]].map(v => v.toString(16).padStart(2, '0')).join('')); }
-    return { canvas: true, line: seen.has(lineOf(P.violet).slice(0, 7)), tones: seen.size, inked, per: c.getBoundingClientRect().width / c.width, scale: LOGO_SCALE, label: document.querySelector('.menuLogo').getAttribute('aria-label') };
+    return { canvas: true, line: seen.has(lineOf(P.violet).slice(0, 7)), lit: seen.has(resolve(lt(P.violet, 0.3))), tones: seen.size, inked, per: c.getBoundingClientRect().width / c.width, scale: LOGO_SCALE, label: document.querySelector('.menuLogo').getAttribute('aria-label') };
   });
-  check('the title is drawn like a piece: a line round its letters, lit and shaded, on whole pixels', title.canvas && title.line && title.tones >= 4 && title.inked > 1500 && title.per === title.scale && title.label === 'wee', JSON.stringify(title));
+  check('the title is drawn like a piece: a line round its letters, lit and shaded, on whole pixels', title.canvas && title.line && title.lit && title.tones >= 4 && title.inked > 1500 && title.per === title.scale && title.label === 'wee', JSON.stringify(title));
   // A button is square, with a line and a lighter band inside it: nothing is cut off its corners (register 878).
   const btn = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('#menuCampaign')); return { clip: c.clipPath, radius: c.borderTopLeftRadius, insets: (c.boxShadow.match(/inset/g) || []).length }; });
   check('a button has square corners, nothing cut', btn.clip === 'none' && btn.radius === '0px' && btn.insets === 2, JSON.stringify(btn));
