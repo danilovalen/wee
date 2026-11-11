@@ -209,6 +209,14 @@ Owner, 2026-11-10: *"The game voice is not from the blob, but from 'the lab'. Un
   to a tile where the game has 16, so a 2-cell line outside and a 2-cell darkened edge inside still leave room.
   A finer grid is a decision for the plan: it touches every sprite, the room's scale and the pixel font's size.
 
+## The look (register 851, decided)
+
+Owner, 2026-11-11: *"Crayon. But keep the walls and other stuff joining each other just like we have
+nowadays."* Look A of `docs/theme-looks-sketch.html`: the outer line is a dark tint of the piece it
+surrounds, never black; fills are softened; the piece's own edge is darkened inside. Whatever joins today
+still joins (the wall ring and edge walls, placed blocks: registers 682, 794): one outline round the mass, a
+lit top and a shaded foot only where the mass ends, no seam between two tiles.
+
 ## Decisions needed before a plan (asked one at a time)
 
 Answered 2026-11-10: **timing**: sketch, plan properly, then build in the current game; **palettes**:

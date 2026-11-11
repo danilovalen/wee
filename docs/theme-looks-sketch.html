@@ -83,6 +83,7 @@ main[data-px="1"] .photo { padding: 6px 6px 0; overflow: hidden; }
     <span class="tag">wee · register 841 · sketch, nothing built</span>
     <h1>Three looks for the lab</h1>
     <p>The same four things in each: a room where a spring has crushed the blob against the wall behind it, the level's clipboard, a page of the blob's album, and two buttons. Pick one, or name the parts to mix. The words on the clipboard and in the album are drafts to show the two voices; none is approved copy.</p>
+    <p><b>Crayon (A) is chosen</b> (register 851). Touching walls now join into one mass, as the game does today: one line round the lot and no seam between tiles.</p>
     <p class="dim">Every border is doubled in thickness from the first sketch, after Yoshi's Island (register 845). The interface edges wobble between three drawings. The room holds still on purpose: a grid someone has to read should not move. With reduced motion on, nothing wobbles.</p>
   </header>
 
@@ -156,6 +157,21 @@ function SPRING(s, x0, x1) {
   for (let i = 0; i < n; i++) { const xa = 14 + (x1 - 16) * i / n, xb = 14 + (x1 - 16) * (i + 1) / n, up = i % 2 === 0; s.line(xa, up ? 23 : 7, xb, up ? 7 : 23, dk(K.coil, .3), 3); s.line(xa, (up ? 23 : 7) - 1, xb, (up ? 7 : 23) - 1, K.coil, 2); x = xb; }
   s.rect(x1 - 2, 2, x1 + 5, 29, K.plate).rect(x1 - 2, 2, x1 + 5, 3, lt(K.plate, .45)).rect(x1 + 3, 4, x1 + 5, 29, dk(K.plate, .22)).rect(x1 - 1, 5, x1, 26, lt(K.plate, .5));
 }
+// Touching walls are one mass, as in the game today (register 851): one outline round the lot, a lit top
+// and a shaded foot only where the mass ends, and no seam between two tiles of it.
+function wallMass(cells, W, H) {
+  const s = canvasGrid(W * N, H * N), has = (x, y) => cells.some(([cx, cy]) => cx === x && cy === y);
+  for (const [cx, cy] of cells) {
+    const x0 = cx * N, y0 = cy * N;
+    s.rect(x0, y0, x0 + 31, y0 + 31, K.wall);
+    if (!has(cx, cy - 1)) s.rect(x0, y0, x0 + 31, y0 + 2, lt(K.wall, .4));
+    if (!has(cx, cy + 1)) s.rect(x0, y0 + 27, x0 + 31, y0 + 31, dk(K.wall, .22));
+    if (!has(cx + 1, cy)) s.rect(x0 + 28, y0 + (has(cx, cy - 1) ? 0 : 3), x0 + 31, y0 + 26, dk(K.wall, .1));
+    for (const y of [11, 14, 17]) s.rect(x0 + 10, y0 + y, x0 + 21, y0 + y + 1, dk(K.wall, .28));
+    for (const [bx, by, ok] of [[2, 4, !has(cx - 1, cy) || !has(cx, cy - 1)], [29, 4, !has(cx + 1, cy) || !has(cx, cy - 1)], [2, 25, !has(cx - 1, cy) || !has(cx, cy + 1)], [29, 25, !has(cx + 1, cy) || !has(cx, cy + 1)]]) if (ok) { s.put(x0 + bx, y0 + by, dk(K.wall, .4)); s.put(x0 + bx - 1, y0 + by - 1, lt(K.wall, .6)); }
+  }
+  return s;
+}
 const BUILT = {}; const spr = n => BUILT[n] || (BUILT[n] = SPR[n]());
 function sprite(g, ox, oy, name, L, opt = {}) {
   const s = spr(name), at = (x, y) => (s.g[y] || [])[x] || null;
@@ -178,9 +194,8 @@ function floor(g, L, W, H) {
 }
 function room(cv, L) {
   const W = 4, H = 4; cv.width = W * T; cv.height = H * T; const g = cv.getContext('2d'); floor(g, L, W, H);
-  for (let x = 0; x < W; x++) sprite(g, x * T, 0, 'wall', L, { noOuter: true });
-  for (let y = 1; y < H; y++) sprite(g, 3 * T, y * T, 'wall', L, { noOuter: true });
-  g.fillStyle = L.outer === 'tint' ? dk(K.wall, .62) : L.outer; g.fillRect(0, T, 3 * T, 4); g.fillRect(3 * T - 4, T, 4, 3 * T);
+  BUILT.mass = BUILT.mass || wallMass([[0, 0], [1, 0], [2, 0], [3, 0], [3, 1], [3, 2], [3, 3]], W, H);
+  sprite(g, 0, 0, 'mass', L);
   // A spring only kills what it cannot move: the blob stood in front of it with the wall right behind.
   sprite(g, T, T + 4, 'springOut', L);
   sprite(g, 2 * T + 12, T + 4, 'splat', L, { noOuter: true });
@@ -191,7 +206,7 @@ function room(cv, L) {
 function photo(cv, L, what) {
   cv.width = 2 * T - 16; cv.height = T + 12; const g = cv.getContext('2d');
   g.fillStyle = L.floor; g.fillRect(0, 0, cv.width, cv.height);
-  if (what === 'splat') { sprite(g, cv.width - T, 6, 'wall', L, { noOuter: true }); sprite(g, -86, 6, 'springOut', L); sprite(g, cv.width - T - 52, 6, 'splat', L, { noOuter: true }); }
+  if (what === 'splat') { BUILT.col = BUILT.col || wallMass([[0, 0], [0, 1]], 1, 2); sprite(g, cv.width - T, -T + 16, 'col', L); sprite(g, -86, 6, 'springOut', L); sprite(g, cv.width - T - 52, 6, 'splat', L, { noOuter: true }); }
   else { sprite(g, 2, 6, 'blob', L); sprite(g, T - 10, 4, 'berry', L); }
 }
 const LOOKS = [
@@ -208,7 +223,7 @@ const LOOKS = [
 const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
 for (const k of LOOKS) {
   const art = el('article', 'look');
-  art.append(el('header', '', `<span class="tag">Look ${k.id}</span><h2>${k.name}</h2><p class="dim">${k.sub}</p>`));
+  art.append(el('header', '', `<span class="tag">Look ${k.id}${k.id === 'A' ? ' · chosen' : ''}</span><h2>${k.name}</h2><p class="dim">${k.sub}</p>`));
   const stage = el('div', 'stage'); stage.style.cssText = k.css; stage.dataset.wob = k.wob;
   const r = el('canvas'); r.setAttribute('role', 'img'); r.setAttribute('aria-label', `Look ${k.id}: a room where a spring has crushed the blob against the wall right behind it`); room(r, k.L);
   const s1 = el('div', 'spec'); s1.append(el('small', '', 'The room, after a spring crushed the blob'), r);
