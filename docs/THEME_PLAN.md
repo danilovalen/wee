@@ -117,7 +117,8 @@ Moments (5) need the pieces. Screens (6) and voice (7) can swap or run beside 5:
 
 ## Questions still open (asked one at a time)
 
-1. The blob's colour in the new default: green as sketched, or today's violet.
+1. ~~The blob's colour~~: answered 2026-11-11, "Both right? Because we have both today, the green one is
+   unlockable." The default blob stays violet; the green one stays the unlockable Hero skin. Both are redrawn.
 2. Whether the twelve alternate skins are all redrawn, or cut to the best few.
 3. The shake setting's default: full, or reduced.
 4. Album photos: drawn scenes, or a real capture of the moment the achievement was earned.
