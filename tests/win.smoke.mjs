@@ -73,9 +73,9 @@ try {
     await page.goto(`http://localhost:${PORT}/#/levels`); await page.evaluate(() => { location.hash = '#/level/1'; }); await page.waitForTimeout(600);
     const kept = await page.$$eval('.campOpt li', ls => ls.map(l => [l.dataset.req, l.classList.contains('kept'), getComputedStyle(l).backgroundColor, getComputedStyle(l.querySelector('.mark .glyph')).fill]));
     const [mine, ...rest] = [kept.find(k => k[0] === side[0]), ...kept.filter(k => k[0] !== side[0])];
-    // The chip wears the --kept token, whatever the palette makes of it (register 810).
+    // On the clipboard the kept line is marked in yellow, never the dark --kept token, so its words stay readable (register 891).
     const keptBg = await page.evaluate(() => { const d = document.createElement('div'); d.style.background = 'var(--kept)'; document.body.append(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return c; });
-    check('a side star kept from an earlier room is filled on a pale chip; the others are not', mine && mine[1] && mine[2] === keptBg && mine[3] === 'rgb(255, 216, 102)' && rest.every(k => !k[1] && k[2] !== keptBg), JSON.stringify(kept));
+    check('a side star kept from an earlier room is filled on a pale chip; the others are not', mine && mine[1] && mine[2] !== 'rgba(0, 0, 0, 0)' && mine[2] !== keptBg && mine[3] === 'rgb(255, 216, 102)' && rest.every(k => !k[1] && k[2] === 'rgba(0, 0, 0, 0)'), JSON.stringify(kept));
   }
   // Register 447: a page that cannot save (opened as a file on a phone) still shows the first card once.
   await page.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } }); });

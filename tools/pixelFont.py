@@ -18,7 +18,25 @@ asc, desc = f.getmetrics()
 top = -asc % SS                         # so the baseline falls between two cells
 base = (top + asc) // SS
 
+# The face's own figures are too loose to tell apart at this size (its 1 reads as an exclamation mark), so the
+# ten figures are drawn by hand here, eight cells tall like its capitals, a little uneven like the letters.
+DIGITS = {
+    '0': ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '#..#.', '.##..'],
+    '1': ['..#.', '.##.', '#.#.', '..#.', '..#.', '..#.', '..#.', '.###'],
+    '2': ['.###.', '#...#', '....#', '...#.', '..#..', '.#...', '#....', '####.'],
+    '3': ['###..', '...#.', '...#.', '.##..', '...#.', '....#', '#...#', '.###.'],
+    '4': ['...#.', '..##.', '.#.#.', '#..#.', '#..#.', '#####', '...#.', '...#.'],
+    '5': ['.####', '.#...', '#....', '###..', '...#.', '....#', '#...#', '.###.'],
+    '6': ['..##.', '.#...', '#....', '###..', '#..#.', '#...#', '#...#', '.###.'],
+    '7': ['#####', '....#', '...#.', '...#.', '..#..', '..#..', '.#...', '.#...'],
+    '8': ['.##..', '#..#.', '#..#.', '.##..', '#..#.', '#...#', '#...#', '.###.'],
+    '9': ['.###.', '#...#', '#...#', '.####', '....#', '....#', '...#.', '.##..'],
+}
 def cells(ch):
+    if ch in DIGITS:
+        g = np.zeros((base + 4, len(DIGITS[ch][0])), bool)
+        for i, row in enumerate(DIGITS[ch]): g[base - 8 + i] = [c == '#' for c in row]
+        return g
     w = int(f.getlength(ch)) + 4 * SS; h = top + asc + desc + 2 * SS
     w += -w % SS; h += -h % SS
     im = Image.new('L', (w, h), 0); ImageDraw.Draw(im).text((2 * SS, top), ch, 255, font=f)
