@@ -230,10 +230,6 @@ surrounds, never black; fills are softened; the piece's own edge is darkened ins
 still joins (the wall ring and edge walls, placed blocks: registers 682, 794): one outline round the mass, a
 lit top and a shaded foot only where the mass ends, no seam between two tiles.
 
-## Decisions needed before a plan (asked one at a time)
+## The plan
 
-Answered 2026-11-10: **timing**: sketch, plan properly, then build in the current game; **palettes**:
-re-author all nine; **splats and other marks**: stay until you leave the level.
-
-
-1. Whether to sketch three looks side by side before any build (the usual route here).
+Every decision above is settled; the plan is `docs/THEME_PLAN.md` (register 854).
