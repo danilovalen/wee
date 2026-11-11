@@ -112,6 +112,9 @@ try {
   // A goal's mark is a box to tick, not a ring (register 881).
   const mark = await p.evaluate(() => { const m = document.querySelector('.campReqs .mark'); const c = getComputedStyle(m, '::before'); return { clip: c.clipPath, insets: (c.boxShadow.match(/inset/g) || []).length }; });
   check('a goal\'s mark is a square box with the frame', mark.clip === 'none' && mark.insets >= 1, JSON.stringify(mark));
+  // The clipboard's goals are lines on its paper: the main goal has no bar of its own and a side goal is no chip.
+  const lines = await p.evaluate(() => { const m = getComputedStyle(document.querySelector('.campBrief .campMain')), o = document.querySelector('.campBrief .campOpt li'), c = o ? getComputedStyle(o) : null; return { bar: m.boxShadow, chip: c ? c.boxShadow + '/' + c.borderTopLeftRadius : 'none/0px' }; });
+  check('a goal on the clipboard is a line on its paper, not a bar or a chip', lines.bar === 'none' && lines.chip === 'none/0px', JSON.stringify(lines));
   // On a wide window the tools are one framed tray of full-size buttons beside the room.
   const wide = await browser.newPage({ viewport: { width: 1100, height: 900 } });
   await wide.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; });

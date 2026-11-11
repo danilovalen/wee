@@ -1462,6 +1462,7 @@ export const M = [
   ["style.css", "@media (max-width: 560px) { .menu .menuLogo { top: 62px; } }", "", "look"],
   ["style.css", "  body.campaign:not(.sandbox) main { grid-template-columns: 212px minmax(0, 660px); justify-content: center; gap: 20px; }\n", "", "look"],
   ["style.css", ".campReqs .mark::before { clip-path: none; background: none; box-shadow: inset 0 0 0 2px var(--line), inset 0 0 0 4px var(--line-edge); }", "", "look"],
+  ["style.css", ".campBrief .campMain { background: none; box-shadow: none; padding: 0 2px; align-items: center; }\n", "", "look"],
 ];
 
 // Run only as a script: the gate imports M.

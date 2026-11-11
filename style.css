@@ -1225,3 +1225,12 @@ body.sandbox #palette.fly [data-tool] { box-shadow: inset 0 0 0 var(--b) var(--f
 .campReqs .unmet .mark::before { clip-path: none; background: color-mix(in srgb, var(--bad) 22%, transparent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--bad), var(--ink) 45%); }
 /* On a phone the title sits under the corner buttons, never behind them (register 880). */
 @media (max-width: 560px) { .menu .menuLogo { top: 62px; } }
+/* The clipboard as the sketch has it (register 881): goals are lines on ruled paper, not a bar and chips. The
+   main goal is a plain line, a side goal a line with its star, and a goal that is met is struck through. */
+.campBrief .campMain { background: none; box-shadow: none; padding: 0 2px; align-items: center; }
+/* A star kept from an earlier room stays marked, as with a highlighter. */
+.campBrief .campOpt li, .campBrief .campOpt li.met { background: none; box-shadow: none; border-radius: 0; padding: 0 8px 0 0; }
+.campBrief .campOpt li.kept { background: var(--kept); box-shadow: none; border-radius: 0; padding: 0 8px 0 0; }
+.campBrief .campReqs .met .words { text-decoration: line-through; text-decoration-color: var(--bad); text-decoration-thickness: 2px; }
+/* The tray is as tall as its tools, not as the window. */
+@media (min-width: 701px) { body.campaign:not(.sandbox) #tools { align-self: start; } }
