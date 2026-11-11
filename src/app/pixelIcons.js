@@ -1,6 +1,6 @@
-// The HUD's pixel icons (registers 599, 602): 16x16 bitmaps on the same 2-unit pixel as the room's
-// sprites, one stroke weight (2 pixels), drawn as SVG rectangles in the button's ink. A star has an outline
-// and an inside, so the card can draw it empty or filled.
+// The interface's icons (registers 599, 602, 866): 16x16 bitmaps drawn as SVG rectangles, each in the crayon
+// look: its own colour, a line one pixel wide round it in a dark tint of that colour, a light top edge and
+// a shaded foot. A cell is 1 (the icon), 2 (a star's inside), or 3 to 6 (a dab of another colour).
 import { SCORE_STEPS } from '../campaign/score.js';
 
 const N = 16;
@@ -51,9 +51,13 @@ const ICON = {
   looks() {
     const g = grid(); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const d = Math.hypot((x + 0.5 - 8) / 7, (y + 0.5 - 8) / 6); if (d <= 1) g[y][x] = 1; }
     box(g, 9, 9, 11, 11, 0); box(g, 10, 12, 12, 13, 0);
-    for (const [x, y] of [[4, 5], [8, 3], [4, 9]]) box(g, x, y, x + 1, y + 1, 0);
+    [[4, 5], [8, 3], [4, 9]].forEach(([x, y], i) => box(g, x, y, x + 1, y + 1, 3 + i));
     return g;
   },
+  // Who is playing (register 834): a head and shoulders.
+  player() { const g = grid(); box(g, 6, 1, 9, 6); box(g, 5, 2, 10, 5); box(g, 3, 9, 12, 14); box(g, 2, 11, 13, 14); box(g, 5, 8, 10, 9); return g; },
+  // A piece in a box's frame (register 833): what you place comes out pushable.
+  crate() { const g = grid(); box(g, 1, 1, 14, 14); box(g, 3, 3, 12, 12, 0); box(g, 6, 6, 9, 9, 3); return g; },
   look() { const g = grid(); ring(g, 6.5, 6.5, 5.5, 2); for (let i = 0; i < 5; i++) box(g, 10 + i, 10 + i, 11 + i, 11 + i); return g; },
   erase() { const g = grid(); thick(g, 2, 2, 12, 12); thick(g, 12, 2, 2, 12); return g; },
   // The menu's speaker (register 647): a box and a cone, with two waves when sound is on and a cross when off.
@@ -82,18 +86,36 @@ const ICON = {
   move() { const g = grid(); box(g, 7, 2, 8, 13); box(g, 2, 7, 13, 8); for (const [x, y, dx, dy] of [[7, 1, 0, 1], [7, 14, 0, -1], [1, 7, 1, 0], [14, 7, -1, 0]]) { box(g, x - (dy ? 1 : 0), y - (dx ? 1 : 0), x + (dy ? 2 : 0), y + (dx ? 2 : 0)); box(g, x - (dy ? 2 : 0) + dx * 1, y - (dx ? 2 : 0) + dy * 1, x + (dy ? 3 : 0) + dx * 1, y + (dx ? 3 : 0) + dy * 1); } return g; },
 };
 
-// One path per value: the outline (1) in the ink, the inside (2) in the glyph's fill.
-function paths(g) {
-  const d = { 1: '', 2: '' };
-  g.forEach((row, y) => { for (let x = 0; x < N;) { const v = row[x]; let n = 1; while (x + n < N && row[x + n] === v) n++; if (v) d[v] += `M${x} ${y}h${n}v1h-${n}z`; x += n; } });
+// Each icon's colour, a token of the page so a palette repaints it. One not named is drawn in the ink.
+const C = { good: '--good', bad: '--bad', gold: '--gold', sky: '--cyan', warm: '--orange', main: '--accent', soft: '--mid' };
+export const ICON_COLOUR = {
+  run: C.good, check: C.good, test: C.main, move: C.main, path: C.main, looks: C.main, edit: C.warm, reset: C.warm,
+  undo: C.sky, redo: C.sky, look: C.sky, sound: C.sky, fit: C.sky, cross: C.bad, erase: C.bad, flag: C.bad, mute: C.soft, lock: C.soft,
+  unlock: C.gold, trophy: C.gold, player: C.main, crate: C.warm, levels: C.sky, menu: C.soft, back: C.soft, next: C.good, skip: C.good,
+};
+const DAB = { 3: C.bad, 4: C.good, 5: C.sky, 6: C.gold };
+// The cells of one kind as a path of row runs.
+function runs(cells) {
+  let d = '';
+  for (let y = -1; y <= N; y++) for (let x = -1; x <= N;) { let n = 0; while (x + n <= N && cells(x + n, y)) n++; if (n) d += `M${x} ${y}h${n}v1h-${n}z`; x += n || 1; }
   return d;
+}
+// An icon's layers: l the line round it, o the icon, h its lit top edge, s its shaded foot, i a star's inside,
+// and one layer per dab.
+export function layers(g) {
+  const at = (x, y) => (y >= 0 && y < N && x >= 0 && x < N ? g[y][x] : 0);
+  const near = (x, y) => [-1, 0, 1].some(dy => [-1, 0, 1].some(dx => at(x + dx, y + dy)));
+  const out = { l: runs((x, y) => !at(x, y) && near(x, y)), o: runs((x, y) => at(x, y) === 1), h: runs((x, y) => at(x, y) === 1 && !at(x, y - 1)), s: runs((x, y) => at(x, y) === 1 && !at(x, y + 1) && at(x, y - 1)), i: runs((x, y) => at(x, y) === 2) };
+  for (const v of Object.keys(DAB)) { const d = runs((x, y) => at(x, y) === +v); if (d) out['d' + v] = d; }
+  return out;
 }
 const cache = {};
 export function pixelGlyph(key) {
   if (!ICON[key]) return null;
   if (!cache[key]) {
-    const d = paths(ICON[key]());
-    cache[key] = `<svg class="glyph px" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path class="o" d="${d[1]}"/>${d[2] ? `<path class="i" d="${d[2]}"/>` : ''}</svg>`;
+    const d = layers(ICON[key]()), col = ICON_COLOUR[key] || (key.startsWith('ach-') ? C.gold : null);
+    const dabs = Object.keys(DAB).filter(v => d['d' + v]).map(v => `<path style="fill:var(${DAB[v]})" d="${d['d' + v]}"/>`).join('');
+    cache[key] = `<svg class="glyph px" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"${col ? ` style="--glyph-c:var(${col})"` : ''}><path class="l" d="${d.l}"/><path class="o" d="${d.o}"/><path class="h" d="${d.h}"/><path class="s" d="${d.s}"/>${d.i ? `<path class="i" d="${d.i}"/>` : ''}${dabs}</svg>`;
   }
   return cache[key];
 }

@@ -84,3 +84,7 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
 29. **The blob flinches**: for a moment after a death it is itself with wide eyes, then lies as the death left
     it (`poseAt`).
 30. **Armour is a piece too**: a riveted steel band, inked by the same pass.
+31. **An icon is in the look too** (register 866): its own colour (a token of the page, so a palette repaints
+    it), a line one pixel wide round it in a dark tint of that colour, a lit top edge and a shaded foot
+    (`src/app/pixelIcons.js`). A mark that carries its state's colour and a small star stay one flat shape.
+    Gate: `tests/crayon.test.mjs`.

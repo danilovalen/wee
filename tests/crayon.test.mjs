@@ -53,6 +53,18 @@ check('a pulse is brief: under a tenth of the time, and seeds differ', on(0) ===
 const differs = (n, a, b) => JSON.stringify(spriteSheet(n, a)) !== JSON.stringify(spriteSheet(n, b));
 check('a pulsing one-way and a pulsing laser are their own drawings', differs('gate', 'right||0|0', 'right||0|1') && differs('laser', 'right||0', 'right||1') && !differs('laser', 'right|right|0', 'right|right|1'));
 
+// The interface's icons wear the look too (register 866): a colour of the page's own, a line round every
+// cell of the icon, a lit top edge and a shaded foot.
+import { PIXEL_ICONS, pixelBitmap, pixelGlyph, layers, ICON_COLOUR } from '../src/app/pixelIcons.js';
+const area = d => [...d.matchAll(/h(\d+)v1/g)].reduce((n, m) => n + +m[1], 0);
+const bare = PIXEL_ICONS.filter(k => { const g = pixelBitmap(k), l = layers(g); return !(area(l.l) >= 12 && area(l.h) > 0 && area(l.s) > 0 && area(l.o) > area(l.h)); });
+check('every icon has a line round it, a lit edge and a shaded foot', PIXEL_ICONS.length > 40 && !bare.length, bare.join());
+const open_ = PIXEL_ICONS.filter(k => { const g = pixelBitmap(k), l = layers(g), on = new Set(); for (const m of l.l.matchAll(/M(-?\d+) (-?\d+)h(\d+)/g)) for (let i = 0; i < +m[3]; i++) on.add((+m[1] + i) + ',' + m[2]); return g.some((row, y) => row.some((v, x) => v && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !(g[y + dy] || [])[x + dx] && !on.has((x + dx) + ',' + (y + dy))))); });
+check('an icon\'s line is whole: no cell of it touches bare paper', !open_.length, open_.join());
+const uncoloured = PIXEL_ICONS.filter(k => k !== 'star' && !/--glyph-c:var\(--[a-z-]+\)/.test(pixelGlyph(k)));
+check('every icon but the star has a colour of the page\'s own', !uncoloured.length && Object.keys(ICON_COLOUR).every(k => PIXEL_ICONS.includes(k)), uncoloured.join());
+check('the palette icon wears three dabs of other colours', (pixelGlyph('looks').match(/style="fill:var\(--/g) || []).length === 3);
+
 // Pixel perfect: a fitted scale is a whole number of screen pixels to an art pixel, or a half step.
 const kd = k => wholeScale(k, 3) * 3;
 check('a fitted room is a whole number of screen pixels to an art pixel when that costs a fifth or less', kd(1.2) === 3 && kd(1.02) === 3 && Number.isInteger(kd(0.7)));

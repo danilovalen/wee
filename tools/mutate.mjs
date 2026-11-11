@@ -1446,6 +1446,10 @@ export const M = [
   ["src/view/crayon.js", "(now + seed * 613)", "(now)", "crayon"],
   ["src/view/crayonSprites.js", "pulse === '1' ? lt(ink, 0.55) : ink", "ink", "crayon"],
   ["src/view/pieces.js", "    drawSprite(g, 'armour', -T / 2, -T / 2);\n", "", "browser"],
+  // Register 866: the interface's icons in the crayon look.
+  ["src/app/pixelIcons.js", "l: runs((x, y) => !at(x, y) && near(x, y))", "l: runs((x, y) => !at(x, y) && at(x, y + 1))", "crayon"],
+  ["src/app/pixelIcons.js", "col = ICON_COLOUR[key] || (key.startsWith('ach-') ? C.gold : null)", "col = null", "crayon"],
+  ["src/app/pixelIcons.js", "box(g, x, y, x + 1, y + 1, 3 + i));", "box(g, x, y, x + 1, y + 1, 0));", "crayon"],
 ];
 
 // Run only as a script: the gate imports M.

@@ -4,6 +4,11 @@ import { emptyLevel } from '../level/format.js';
 import { T, INK } from '../view/ink.js';
 import { drawPiece, drawRobot, drawYou } from '../view/pieces.js';
 import { pixelBitmap } from './pixelIcons.js';
+import { lineOf, tint, lt } from '../view/crayon.js';
+import { P } from '../view/crayonSprites.js';
+
+// The colour of each tool that is not a piece.
+const TOOL_COLOUR = { look: P.blue, erase: P.red, move: P.violet };
 import { drawEdit } from '../view/scene.js';
 
 // gateColour: a one-way drawn in that colour; none, a plain one.
@@ -23,8 +28,12 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
   } else if (tool === 'look' || tool === 'move' || tool === 'erase') {
     // The tool row's own icons are the HUD's pixel icons (register 602 S3), 2 units per pixel.
     // Whole canvas pixels, centred, so no edge is smoothed (register 643).
-    x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#e8eef6';
-    pixelBitmap(tool).forEach((row, py) => row.forEach((v, px) => { if (v) x.fillRect(4 + px * 2, 4 + py * 2, 2, 2); }));
+    // In the crayon look too (register 866): the tool's colour with a line round it in its dark tint.
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    const bm = pixelBitmap(tool), col = TOOL_COLOUR[tool] || P.hi, on = (px, py) => !!(bm[py] && bm[py][px]);
+    x.fillStyle = lineOf(col);
+    for (let py = -1; py <= 16; py++) for (let px = -1; px <= 16; px++) if (!on(px, py) && [-1, 0, 1].some(a => [-1, 0, 1].some(b => on(px + a, py + b)))) x.fillRect(4 + px * 2, 4 + py * 2, 2, 2);
+    bm.forEach((row, py) => row.forEach((v, px) => { if (v) { x.fillStyle = tint(on(px, py - 1) ? col : lt(col, 0.45)); x.fillRect(4 + px * 2, 4 + py * 2, 2, 2); } }));
   } else if (tool === 'start' || tool === 'robot') {
     // The campaign's goal rows name the robot, which plays them (register 323); a room's start is you.
     x.save(); x.translate(16, 16); x.scale(1.3, 1.3); (tool === 'robot' ? drawRobot : drawYou)(x); x.restore();

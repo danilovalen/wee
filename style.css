@@ -880,8 +880,20 @@ button > .glyph.px { margin: -1px; }
 /* Test says its name beside its icon, so it reads as trying the room yourself (register 645). */
 body.campaign:not(.play) #campTest { display: inline-flex; align-items: center; gap: 6px; }
 #campTest::after { content: 'Test'; font: 700 15px var(--label-face); }
-.glyph.px .o { fill: var(--glyph-o, currentColor); }
 .glyph.px .i { fill: var(--glyph-i, currentColor); }
+/* An icon in the crayon look (register 866): its colour, a line round it in a dark tint of that colour, a lit
+   top edge and a shaded foot. --glyph-o still wins where a place colours its own icon (a star, a goal's mark). */
+.glyph.px { overflow: visible; --glyph-fill: var(--glyph-o, var(--glyph-c, currentColor)); }
+.glyph.px .o { fill: var(--glyph-fill); }
+.glyph.px .l { fill: color-mix(in srgb, var(--glyph-fill), var(--ink) 62%); }
+.glyph.px .h { fill: color-mix(in srgb, var(--glyph-fill), white 45%); }
+.glyph.px .s { fill: color-mix(in srgb, var(--glyph-fill), black 22%); }
+/* A mark that is its state's colour, and a small star, stay one flat shape: at 16 px a line would close them up. */
+:is(.campReqs, .moveDots, .campMark, .winGoals, .winStar, .lookCost, .lookStars, .campShut, .campLast, .campBigStar, .achSlot, .campHistory, .burst, .lookAchieve) .glyph.px { --glyph-c: currentColor !important; }
+:is(.campReqs, .moveDots, .campMark, .winGoals, .winStar, .lookCost, .lookStars, .campShut, .campLast, .campBigStar, .achSlot, .burst, .lookAchieve) .glyph.px :is(.l, .h, .s) { display: none; }
+/* A button that is off, or picked, shows through its icon. */
+button:disabled .glyph.px { opacity: .45; }
+
 :where(button[data-icon]:not([hidden])) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding-left: 8px; padding-right: 8px; }
 .campReqs .mark .glyph { width: 13px; height: 13px; stroke-width: 3; }
 .campReqs .mark .glyph.px { width: 16px; height: 16px; }
