@@ -142,10 +142,10 @@ export function wobble(g, key, f) {
   });
 }
 
-// The sway (register 886): a fruit does not wobble, it leans. Its foot stays put and each row above slides a
-// little further aside, two pixels at the top. f: 0 upright, 1 leaning left, 2 leaning right.
-export function sway(g, f) {
+// The sway (registers 886, 906): a fruit does not wobble. Its body holds still, so its outline never changes,
+// and only what grows on top of it (the rows above `crown`) leans a pixel aside. f: 0 upright, 1 left, 2 right.
+export function sway(g, f, crown = 8) {
   if (!f) return g;
-  const h = g.length, w = g[0].length, dir = f === 1 ? -1 : 1;
-  return g.map((row, y) => { const d = dir * Math.round(2 * (h - 1 - y) / (h - 1)); return row.map((_, x) => (x - d >= 0 && x - d < w ? g[y][x - d] : null)); });
+  const w = g[0].length, d = f === 1 ? -1 : 1;
+  return g.map((row, y) => (y >= crown ? row : row.map((_, x) => (x - d >= 0 && x - d < w ? row[x - d] : null))));
 }

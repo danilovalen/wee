@@ -45,6 +45,10 @@ export const SKINS = [
 const KEY = 'wee.look';
 export const look = { palette: 'day', skins: {} };
 try { Object.assign(look, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { /* storage off */ }
+// Once (register 905): a save left on Paper from before Crayon was the game's look goes back to Crayon. Paper
+// picked again after that stays.
+if (look.palette === 'paper' && !look.crayonAsked) look.palette = 'day';
+look.crayonAsked = true;
 // Smokes that measure drawn pixels against the neon inks draw in Neon lab (register 814 made Daylight the default).
 if (globalThis.__neonLook) look.palette = 'neon';
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(look)); } catch { /* storage off */ } };

@@ -1276,3 +1276,9 @@ body.campaign #campVerdict { box-shadow: inset 0 0 0 var(--b) var(--line), inset
 /* A tool's picture is shown at its own size, one screen pixel to each of its pixels, never squeezed (register 902). */
 :is(#campTools, #palette) canvas, body.campaign:not(.sandbox) :is(#campTools, #palette) canvas { width: 32px; height: 32px; image-rendering: pixelated; flex: none; }
 @media (max-width: 700px) { #campTools canvas { width: 32px; height: 32px; } }
+/* Alignment and overlaps (register 907). A goal's tick box sits level with its words and its star. In a level the
+   tray's tools are pictures only: a name beside one ran over its button on a wide window. In the header a
+   button's icon is small enough to clear the button's own foot. */
+.campBrief .campReqs li { align-items: center; }
+body.campaign:not(.sandbox) #palette :is(.lbl, kbd), body.campaign:not(.sandbox) #campTools :is(.lbl, kbd) { display: none; }
+@media (min-width: 701px) { header button { min-height: 40px; } header button .glyph.px { width: 16px; height: 16px; } }

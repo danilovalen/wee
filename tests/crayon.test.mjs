@@ -51,11 +51,11 @@ check('only Wee and the creatures wobble; a berry, a box, a door and every other
   const off = [1.25, 1.5, 2, 2.5, 2.625, 2.75, 3, 3.5, 4].filter(d => { const cell = handSize(d, false) * d / HAND_CELLS; return Math.abs(cell - Math.round(cell)) > 1e-9 || handSize(d, false) < 14 || handSize(d, false) > 24; });
   check('on every screen sharper than one pixel, a cell of the hand is whole device pixels and the text 14 to 24 px', !off.length && handSize(1, false) === 18 && handSize(1, true) === 24, off.join());
 }
-// A fruit leans (register 886): its foot stays where it is and its top goes two pixels aside, left then right.
+// A fruit's body holds still and only its stem and leaves lean (registers 886, 906): the outline of the fruit
+// itself is the same in every drawing.
 {
-  const b = spriteSheet('berry'), ext = g => { const top = g.findIndex(r => r.some(Boolean)), bot = g.length - 1 - [...g].reverse().findIndex(r => r.some(Boolean)); return { top: g[top].findIndex(Boolean), bot: g[bot].findIndex(Boolean), n: g.flat().filter(Boolean).length }; };
-  const up = ext(b), l = ext(sway(b, 1)), r = ext(sway(b, 2));
-  check('a berry leans left and right from its foot, and keeps every cell', sways('berry') && !sways('box') && l.top < up.top && r.top > up.top && Math.abs(l.bot - up.bot) <= 1 && Math.abs(r.bot - up.bot) <= 1 && l.n === up.n && r.n === up.n && sway(b, 0) === b, JSON.stringify([up, l, r]));
+  const b = spriteSheet('berry'), body = g => JSON.stringify(g.slice(8)), topOf = g => g.slice(0, 8).map(r => r.findIndex(Boolean)).filter(v => v >= 0)[0];
+  check('a berry\'s body never changes; its leaves lean a pixel left, then right', sways('berry') && !sways('box') && body(sway(b, 1)) === body(b) && body(sway(b, 2)) === body(b) && topOf(sway(b, 1)) === topOf(b) - 1 && topOf(sway(b, 2)) === topOf(b) + 1 && sway(b, 0) === b);
 }
 // Every cell of a bent drawing is a cell of the piece moved by a pixel at most.
 check('a bend never tears: every cell moves by a pixel at most', frames(blob).every(g => g.every((row, y) => row.every((c, x) => !c || [-1, 0, 1].some(dy => [-1, 0, 1].some(dx => (blob[y + dy] || [])[x + dx]))))));
