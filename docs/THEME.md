@@ -31,14 +31,23 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
 10. **Never one fill**: a shade, a shine or a feature inside. Gate: `tests/crayon.test.mjs` counts tones.
 11. **Lit from the top left.**
 12. **Lumpy**: a round thing is never quite a circle (`sheet.oval`'s lump).
-13. **At rest it shimmers** between three drawings of itself, each inked whole; off under reduced motion
-    and in Looks.
+13. **At rest its line scribbles** (register 859): a piece moves between three drawings in which the line
+    swells a pixel along short stretches, as a crayon pressed harder. The line never thins and never drops a
+    pixel, and the piece itself does not move. A wall's line swells too, but stays the same drawing. Off
+    under reduced motion and from Looks. Gate: `tests/crayon.test.mjs`.
+13a. **The blob is a rounded square** (register 860), as it always was: `sheet.squircle`. Gate:
+    `tests/look.smoke.mjs`.
+13b. **A wall wears the same line on every open side** (register 861), rivets in the corners an open side
+    reaches, and a line where it meets open floor outside the room (the menu). Same gate.
+13c. **A beam is flat**: a band, a core that comes and goes, the dark-tinted line, no glow; it stops at the
+    line of what it hits (register 862). Same gate.
 
 ## Colour
 
 14. **A sprite is drawn in palette colours with tones**: the palette repaints the colour, the tone (a shade,
     a shine, the line) is worked out from the painted colour and no palette changes it.
-15. **Nine palettes; Crayon is the free default** (cream paper, lavender walls, plum ink).
+15. **Nine palettes; Crayon is the free default**, the sketch's colours: cream paper, periwinkle walls, a
+    brown line and brown words. A piece stands off a wall by its colour or by its line (`tests/palettes.test.mjs`).
 16. **A colour that means a rule is reserved for it** and carries a mark besides.
 
 ## Type and words
@@ -60,8 +69,8 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
     page all wear it.
 22. **A level's goals are a clipboard**: a ruled sheet under a clip; the win card is its last page.
 23. **Achievements are the blob's album**: an earned one is a photo taped to its page with the blob's caption
-    under it (`src/app/voice.js`); one not earned is an empty slot with corner marks. A photo is the
-    achievement's own picture on a floor until its drawn scene exists.
+    under it (`src/app/voice.js`); one not earned is an empty slot with corner marks. A photo is a small drawn
+    scene made of the room's own sprites (`src/app/albumScenes.js`).
 24. **Looks is the back room**: palettes and skins stand on shelves.
 25. **Each death has its own sound** (`src/app/sound.js`): a splat, a pop, a sizzle or the plain fall.
 26. **A draft line is listed before it is kept**: `docs/THEME_COPY.md` holds every line the theme added, live

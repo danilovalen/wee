@@ -13,7 +13,7 @@ export const SHADES = [['deep', 'wall'], ['wall', 'mid'], ['mid', 'top'], ['top'
 export const PALETTES = [
   // Crayon (registers 851, 856): the free default, after Daylight: cream paper for the room and the page, dusty
   // plum walls, a plum ink for words, and every piece in a bright colour with a darker shade of its own hue.
-  { id: 'day', name: 'Crayon', cost: 0, colors: ['#ebe3cd', '#f7f1de', '#40384d', '#746a8c', '#8c82a3', '#a79ebb', '#ffffff', '#3b2f4a', '#ff5c7a', '#c23a58', '#ff8436', '#c9571a', '#f0b400', '#a87c1e', '#5fdc7a', '#2fa055', '#4db8ff', '#2a7fd0', '#9b7bff', '#5d43d6'] },
+  { id: 'day', name: 'Crayon', cost: 0, colors: ['#ebe3cd', '#f7f1de', '#5c6296', '#a3ade6', '#bcc4f0', '#d6dbf8', '#ffffff', '#4a3526', '#ff5c7a', '#c23a58', '#ff8436', '#c9571a', '#f0b400', '#a87c1e', '#5fdc7a', '#2fa055', '#4db8ff', '#2a7fd0', '#9b7bff', '#5d43d6'] },
   // Neon lab takes the place Pocket had (registers 812, 813): its four greens hid the button and wire colours.
   { id: 'neon', name: 'Neon lab', cost: 2, colors: NEON },
   // Grue (register 815): Pocket's green and blue-green as the room and the page, every piece in full colour.

@@ -264,7 +264,7 @@ try {
     const c = document.getElementById('game'), tile = c.width / window.wee.getLevel().w;
     // The rim is a pixel or two wide, so look across its band and keep the bluest pixel, whatever the room's size.
     let best = [0, 0, 0];
-    for (let f = 10; f <= 13; f += 0.25) { const d = c.getContext('2d').getImageData(Math.round((x + 0.5 + f / 32) * tile), Math.round((y + 0.5) * tile), 1, 1).data; if (d[2] - d[0] > best[2] - best[0]) best = [d[0], d[1], d[2]]; }
+    for (let f = 12.5; f <= 15.5; f += 0.25) { const d = c.getContext('2d').getImageData(Math.round((x + 0.5 + f / 32) * tile), Math.round((y + 0.5) * tile), 1, 1).data; if (d[2] - d[0] > best[2] - best[0]) best = [d[0], d[1], d[2]]; }
     return best;
   }, s.player);
   check('armored, the player wears a steel rim', rim[2] > 160 && rim[0] > 110 && rim[0] < rim[2], rim.join(','));
@@ -699,7 +699,7 @@ try {
 
   // Manga: "on" is an accent ring inside a sticker shadow, and no control draws a border.
   const onLook = await page.$eval('[data-tool].on', b => { const c = getComputedStyle(b); return { shadow: c.boxShadow, border: c.borderTopWidth, accent: c.color }; });
-  check('a picked tool wears the accent inset ring and no border', onLook.shadow.includes('inset') && onLook.shadow.includes(onLook.accent + ' 0px 0px 0px 2px inset') && onLook.accent === 'rgb(171, 157, 242)' && onLook.border === '0px', JSON.stringify(onLook));
+  check('a picked tool wears the accent inset ring and no border', onLook.shadow.includes('inset') && onLook.shadow.includes(onLook.accent + ' 0px 0px 0px 3px inset') && onLook.accent === 'rgb(171, 157, 242)' && onLook.border === '0px', JSON.stringify(onLook));
   // Powers are hidden for now (register 653): nothing on screen offers one.
   check('no power is offered on screen', await page.locator('[data-power]').count() === 0);
   // served with a rooms directory, the page saves to the server instead of the browser

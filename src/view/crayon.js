@@ -46,6 +46,14 @@ export function sheet(w = N2, h = N2) {
       }
       return s;
     },
+    // A rounded square (a superellipse of power n), lumpy like an oval: the blob's own shape (register 860).
+    squircle(cx, cy, rx, ry, c, n = 3.2, lump = 0) {
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const a = Math.atan2(y + 0.5 - cy, x + 0.5 - cx), k = 1 + lump * Math.sin(a * 3 + 1.3);
+        if (Math.abs((x + 0.5 - cx) / (rx * k)) ** n + Math.abs((y + 0.5 - cy) / (ry * k)) ** n <= 1) g[y][x] = c;
+      }
+      return s;
+    },
     line(x0, y0, x1, y1, c, t = 1) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) for (let a = 0; a < t; a++) for (let b = 0; b < t; b++) put(x0 + (x1 - x0) * i / n + a, y0 + (y1 - y0) * i / n + b, c); return s; },
     // A triangle with a flat base from x0 to x1 on row yb and its point at (xt, yt).
     tri(x0, x1, yb, xt, yt, c) { const d = yb > yt ? 1 : -1; for (let y = yt; y !== yb + d; y += d) { const k = (y - yt) / ((yb - yt) || 1); for (let x = Math.round(xt + (x0 - xt) * k); x <= Math.round(xt + (x1 - xt) * k); x++) put(x, y, c); } return s; },
@@ -73,20 +81,25 @@ export const doubled = g16 => g16.flatMap(row => { const r = row.flatMap(c => [c
 // round it. Returned as rows of [x, y, length, colour] runs, x and y from -ring. edges: which sides of the
 // sheet are open (a side that joins a neighbour gets no line and no dark edge: 'nesw').
 const inkRaw = c => c[0] === '!';
-export function ink(g, { ring = RING, edge = EDGE, sides = 'nesw' } = {}) {
+// scribble: 0 for the plain line; 1, 2 or 3 for one of the three drawings a piece at rest moves between. In
+// each the line swells by a pixel along short stretches, as a crayon pressed harder; it never thins and
+// never drops a pixel, and the piece itself does not move (register 859).
+const swell = (x, y, f) => { let k = Math.imul((x >> 2) * 73856093 ^ (y >> 2) * 19349663 ^ f * 83492791, 2654435761) >>> 0; return k % 5 < 2; };
+export function ink(g, { ring = RING, edge = EDGE, sides = 'nesw', scribble = 0 } = {}) {
   const h = g.length, w = g[0].length, at = (x, y) => (y >= 0 && y < h && x >= 0 && x < w ? g[y][x] : null);
   // Past a side that joins, the sheet counts as filled, so nothing is inked there.
   const filled = (x, y) => (y < 0 ? !sides.includes('n') : y >= h ? !sides.includes('s') : x < 0 ? !sides.includes('w') : x >= w ? !sides.includes('e') : !!g[y][x]);
   const near = (x, y, max, want) => { let best = null; for (let dy = -max; dy <= max; dy++) for (let dx = -max; dx <= max; dx++) { const d = Math.abs(dx) + Math.abs(dy); if (d && d <= max && (!best || d < best.d) && filled(x + dx, y + dy) === want) best = { d, c: at(x + dx, y + dy) }; } return best; };
   const out = [];
-  for (let y = -ring; y < h + ring; y++) {
+  const far = ring && scribble ? ring + 1 : ring;
+  for (let y = -far; y < h + far; y++) {
     let run = null;
-    for (let x = -ring; x <= w + ring; x++) {
+    for (let x = -far; x <= w + far; x++) {
       let c = null;
-      if (x < w + ring) {
+      if (x < w + far) {
         const own = at(x, y);
         if (own) c = edge && !inkRaw(own) && near(x, y, 2, false) ? resolve(dk(own, edge)) : resolve(own);
-        else if (ring && !filled(x, y)) { const o = near(x, y, ring, true); if (o && o.c) c = mix(resolve(o.c), DARK, LINE); }
+        else if (ring && !filled(x, y)) { const o = near(x, y, far, true); if (o && o.c && (o.d <= ring || swell(x, y, scribble))) c = mix(resolve(o.c), DARK, LINE); }
       }
       if (run && run[3] === c) run[2]++; else { if (run) out.push(run); run = c ? [x, y, 1, c] : null; }
     }
@@ -99,22 +112,6 @@ export function ink(g, { ring = RING, edge = EDGE, sides = 'nesw' } = {}) {
 export const lineOf = c => mix(resolve(c), DARK, LINE) + 'ff';
 export const edgeOf = (c, by = EDGE) => resolve(dk(c, by)) + 'ff';
 export const tint = c => resolve(c) + 'ff';
-
-// A still sprite shimmers between drawings of itself: a few edge rows give or take a pixel, and the whole
-// is inked again, so the line stays whole (the old boil cut notches out of it).
-export function wobbled(g, key, f) {
-  if (!f) return g;
-  let hsh = 2166136261; for (const ch of key + '#' + f) hsh = Math.imul(hsh ^ ch.charCodeAt(0), 16777619) >>> 0;
-  return g.map((row, y) => {
-    const k = (hsh + y * 2654435761) >>> 0;
-    if (k % 7 > 1) return row;
-    const a = row.findIndex(Boolean), b = row.length - 1 - [...row].reverse().findIndex(Boolean);
-    if (a < 0 || b - a < 6) return row;
-    const r = row.slice();
-    if (k % 2) r[a] = null; else r[b] = null;
-    return r;
-  });
-}
 
 // Pixel perfect (docs/THEME.md rule 8): a fitted scale k (CSS px per art pixel) on a screen of dpr device
 // pixels to a CSS px, rounded down to a whole number of device pixels to an art pixel where that costs the

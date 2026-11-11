@@ -33,7 +33,7 @@ const gaze = key => { const [d, b] = String(key || '').split('|'); return [d ===
 
 export const CRAYON_SPRITES = {
   // The blob: round, lumpy, a face. Violet, as it has always been (register 855).
-  blob(key) { const [lx, ly, shut] = gaze(key), s = round(P.violet, 11.5, 0.07); shine(s, P.violet, 10.5, 9.5); s.eye(10, 12, lx, shut, ly).eye(18, 12, lx, shut, ly).rect(8, 19, 9, 19, BLUSH).rect(23, 19, 24, 19, BLUSH).rect(14, 20, 17, 20, EYE); s.put(13, 19, EYE); s.put(18, 19, EYE); return s; },
+  blob(key) { const [lx, ly, shut] = gaze(key), s = sheet().squircle(16, 16.5, 12, 11.5, P.violet, 3.2, 0.035).lit(16, 16.5, 13.5, 13, P.violet); shine(s, P.violet, 10.5, 9.5); s.eye(10, 12, lx, shut, ly).eye(18, 12, lx, shut, ly).rect(8, 19, 9, 19, BLUSH).rect(23, 19, 24, 19, BLUSH).rect(14, 20, 17, 20, EYE); s.put(13, 19, EYE); s.put(18, 19, EYE); return s; },
   // Hero, the other look (register 777): a green gel drop with a wet belly, a tuft and a wide grin.
   blobAlt(key) { const [lx, ly, shut] = gaze(key), s = sheet().oval(16, 17, 12, 10.5, P.green, 0.09).oval(16, 6, 3, 3.5, P.green).lit(16, 17, 12.5, 11, P.green); s.oval(16, 21, 7, 4.5, lt(P.green, 0.35), 0, true); shine(s, P.green, 10, 11); s.eye(9, 12, lx, shut, ly).eye(19, 12, lx, shut, ly).rect(13, 21, 19, 21, EYE).rect(12, 20, 12, 20, EYE).rect(20, 20, 20, 20, EYE).rect(15, 22, 17, 22, WHITE); return s; },
   // The berry: round and blue, a crown where the flower was, a leaf, a few pale specks.

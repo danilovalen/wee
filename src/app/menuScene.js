@@ -11,6 +11,7 @@ import { drawMasses, ringCells } from '../view/masses.js';
 import { frame } from '../view/ink.js';
 import { motionFx } from '../view/juice.js';
 import { T } from '../view/ink.js';
+import { wholeScale } from '../view/crayon.js';
 import { settled } from '../solve/solve.js';
 import { soundFx } from './sound.js';
 
@@ -64,7 +65,7 @@ export function buildMenuScene(host) {
     g.setTransform(1 / PX, 0, 0, 1 / PX, 0, 0); drawFloor(g, W + 2 * M, H + 2 * M);
     g.translate(M * T, M * T);
     // The wall ring every level has (registers 672, 816): one tile out, joining the room's edge walls.
-    g.save(); g.translate(-T, -T); drawMasses(g, ring, W + 2, H + 2); g.restore();
+    g.save(); g.translate(-T, -T); drawMasses(g, ring, W + 2, H + 2, undefined, ''); g.restore();
     drawPlay(g, game, prev, Math.min(1, acc / TICK_MS), fx, t);
     frame.avatar = avatar; menuRoom.draws++;
   };
@@ -84,7 +85,9 @@ export function buildMenuScene(host) {
   // buttons; on a wide screen it is centred with floor around it.
   const fit = () => {
     const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight, top = Math.min(56, h * 0.07);
-    const s = Math.max(1, Math.min(w / 316, (h - 230 - top) / 364));
+    const fitted = Math.max(1, Math.min(w / 316, (h - 230 - top) / 364)), dpr = window.devicePixelRatio || 1;
+    // A tile is a whole number of screen pixels to an art pixel, as in a level (docs/THEME.md rule 8).
+    const s = wholeScale(C * fitted / T, dpr) * T / C;
     Object.assign(cv.style, { width: `${(W + 2 * M) * C}px`, height: `${(H + 2 * M) * C}px`, transform: `translate(${w / 2 - (156 + M * C) * s}px, ${top - M * C * s}px) scale(${s})` });
   };
   fit();

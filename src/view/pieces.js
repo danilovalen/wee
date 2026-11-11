@@ -74,9 +74,9 @@ export function drawPlayer(g, px, py, hidden, scale, alpha = 1, armored = false,
   (frame.avatar === 'you' ? drawYou : drawRobot)(g, hidden);
   if (armored) {
     // A steel rim with four rivets.
-    g.strokeStyle = INK.armor; pxRing(g, 0, 0, 11.5, 4);
+    g.strokeStyle = INK.armor; pxRing(g, 0, 0, 14, 4);
     g.fillStyle = '#e8eef6';
-    for (const a of [0.25, 0.75, 1.25, 1.75]) pxDisc(g, Math.cos(a * Math.PI) * 11.5, Math.sin(a * Math.PI) * 11.5, 1.6);
+    for (const a of [0.25, 0.75, 1.25, 1.75]) pxDisc(g, Math.cos(a * Math.PI) * 14, Math.sin(a * Math.PI) * 14, 1.6);
   }
   if (sticky) {
     // Goo on top, dripping from the bottom.

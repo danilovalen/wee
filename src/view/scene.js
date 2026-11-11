@@ -10,6 +10,7 @@ import { drawReach, drawTrim, drawWires, isGrey, wireColoursAt } from './wires.j
 import { netsOf } from '../rules/wires.js';
 import { drawJuice, squashOf } from './juice.js';
 import { drawStains, drawDead, shakeOf } from './moments.js';
+import { drawBeams } from './beams.js';
 
 const BUMP_MS = 380, GHOST_MS = 360;
 
@@ -235,22 +236,8 @@ export function drawPlay(g, s, prev, alpha, fx, now) {
     if (f.wall) { const [x, y] = c(f.path[f.path.length - 1]), [dx, dy] = DIRS[f.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
     g.stroke(); g.globalAlpha = 1;
   }
-  // Turret beams are on all the time: an electric gold, no button's colour (register 330), a pale
-  // core in a soft glow with a slow flicker.
-  for (const b of s.beams) {
-    const c = ([x, y]) => [x * T + T / 2, y * T + T / 2];
-    const line = () => {
-      g.beginPath();
-      b.path.forEach((p, i) => { const [x, y] = c(p); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
-      if (b.wall || b.stop) { const [x, y] = c(b.path[b.path.length - 1]), [dx, dy] = DIRS[b.end]; g.lineTo(x + dx * T / 2, y + dy * T / 2); }
-      g.stroke();
-    };
-    g.lineJoin = 'miter'; g.lineCap = 'square';
-    g.strokeStyle = INK.zap; g.globalAlpha = 0.3 + 0.08 * Math.sin(now / 90); g.lineWidth = 9; line();
-    g.globalAlpha = 1; g.lineWidth = 3; line();
-    g.lineWidth = 1.2; g.strokeStyle = INK.zapCore; line();
-    g.lineCap = 'butt';
-  }
+  // Turret beams are on all the time (register 330), flat and inked like a piece (beams.js).
+  drawBeams(g, s.beams, now);
   // A boomerang kicks up a puff of cloud where you turned, blown the way you were going.
   for (const f of fx) if (f.type === 'boomerang' && f.from && now - f.at < PUFF_MS) {
     const t = (now - f.at) / PUFF_MS, [fx0, fy0] = DIRS[f.from], cx = f.x * T + T / 2, cy = f.y * T + T / 2;

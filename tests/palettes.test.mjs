@@ -5,7 +5,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { suite } from './lib.mjs';
 import { PALETTES, NEON, SLOTS, SHADES, paint, look } from '../src/view/look.js';
-import { FIXED, resolve, lt, dk } from '../src/view/crayon.js';
+import { FIXED, resolve, lt, dk, lineOf } from '../src/view/crayon.js';
 
 const { check, done } = suite('palettes');
 const mixHex = (a, b, t) => '#' + [1, 3, 5].map(i => { const v = parseInt(a.slice(i, i + 2), 16), w = parseInt(b.slice(i, i + 2), 16); return Math.round(v + (w - v) * t).toString(16).padStart(2, '0'); }).join('');
@@ -22,7 +22,10 @@ const apart = (a, b) => Math.hypot(...lab(a).map((v, i) => v - lab(b)[i]));
 const NEAR = 28;
 for (const p of PALETTES) {
   const c = Object.fromEntries(Object.entries(ROLE).map(([k, v]) => [k, paint(v, p)]));
-  const low = [['text', 'paper', 4.5], ['wall', 'floor', 1.5], ...HUE.flatMap(f => [[f, 'floor', 1.5], [f, 'wall', 1.3]])].filter(([a, b, min]) => ratio(c[a], c[b]) < min);
+  // A piece stands off a wall by its colour or by its line, the dark tint drawn round it (docs/THEME.md rule 2).
+  const off = (a, b) => b === 'wall' && HUE.includes(a) ? Math.max(ratio(c[a], c[b]), ratio(lineOf(S[a]).slice(0, 7), c[b])) : ratio(c[a], c[b]);
+  look.palette = p.id;
+  const low = [['text', 'paper', 4.5], ['wall', 'floor', 1.5], ...HUE.flatMap(f => [[f, 'floor', 1.5], [f, 'wall', 1.3]])].filter(([a, b, min]) => off(a, b) < min);
   check(`${p.name} keeps its things apart`, !low.length, low.map(([a, b]) => `${a} ${c[a]} on ${b} ${c[b]}: ${ratio(c[a], c[b]).toFixed(2)}`).join('; '));
   const near = HUE.flatMap((a, i) => HUE.slice(i + 1).map(b => [a, b, apart(c[a], c[b])])).filter(x => x[2] < NEAR);
   check(`${p.name} keeps its six rule colours apart from each other (843)`, !near.length, near.map(([a, b, d]) => `${a} and ${b}: ${d.toFixed(0)}`).join('; '));

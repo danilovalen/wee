@@ -11,6 +11,7 @@ import { earnedList, available, owns, affords } from './wallet.js';
 import { PALETTES, SKINS } from '../view/look.js';
 import { play } from './sound.js';
 import { caption } from './voice.js';
+import { photo } from './albumScenes.js';
 
 // Every look with its key and cost, palettes first.
 export const LOOKS = [...PALETTES.map(p => ({ key: 'palette:' + p.id, cost: p.cost })), ...SKINS.map(s => ({ key: 'skin:' + s.id, cost: s.cost }))];
@@ -64,7 +65,8 @@ function render() {
     if (a.done && caption(a.id)) text.append(Object.assign(document.createElement('q'), { className: 'achSay', textContent: caption(a.id) }));
     if (a.of && !a.done) { const m = document.createElement('i'); m.className = 'achMeter'; m.style.setProperty('--at', `${Math.round(a.at / a.of * 100)}%`); m.title = `${a.at} of ${a.of}`; text.append(m); }
     const right = document.createElement('small'); right.textContent = a.done ? (a.where ? where(a.where) : `+${a.stars}`) : `+${a.stars}`;
-    li.append(badge(a), text, right);
+    // An earned one shows its photo, a drawn scene; one not earned keeps its picture in an empty slot.
+    li.append((a.done && photo(a.id)) || badge(a), text, right);
     return li;
   }));
 }

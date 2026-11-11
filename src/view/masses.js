@@ -37,25 +37,35 @@ export function quarter(kindAt, kind, x, y, dx, dy) {
 
 
 // A mass in the crayon look (docs/THEME.md): each cell is its face; a side that joins another cell of the
-// mass draws nothing, so a mass has no seams; an open side is lit (above and left) or shaded (below and
-// right) 2 pixels deep, and the line runs 2 pixels outside it, in a dark tint of the face. An outer corner
-// is cut one step, so a block is never quite square.
-const B = 2;
+// mass draws nothing, so a mass has no seams. Every open side, whichever way it faces, gets the same line:
+// 2 pixels outside it in a dark tint of the face, swelling a pixel here and there as a crayon does
+// (register 861). Inside the line an open side is lit (above and left) or shaded (below and right) 3 deep.
+const B = 2, V = 3;
 const FACE = { wall: P.wall, gravel: lt(P.wood, 0.3), water: P.blue, sticky: P.green, death: P.redS };
+// Where the line swells: short stretches, fixed to the room, so a wall is the same drawing every frame.
+const swell = (a, b) => (Math.imul((a >> 2) * 73856093 ^ b * 19349663, 2654435761) >>> 0) % 5 < 2;
 function drawMass(g, at, w, h, kind, isIn, opens) {
-  const F = FACE[kind], face = tint(F), line = lineOf(F), hi = tint(lt(F, 0.4)), hi2 = tint(lt(F, 0.25)), lo = tint(dk(F, 0.25)), lo2 = tint(dk(F, 0.15));
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    if (!isIn(x, y)) continue;
-    const X = x * T, Y = y * T, [n, e, s, wv] = opens(x, y);
+  const F = FACE[kind], face = tint(F), line = lineOf(F), hi = tint(lt(F, 0.45)), hi2 = tint(lt(F, 0.28)), lo = tint(dk(F, 0.28)), lo2 = tint(dk(F, 0.16));
+  const cells = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (isIn(x, y)) cells.push([x, y, opens(x, y)]);
+  // The line first, under every face, so it is whole round the mass and a face never has line on it.
+  g.fillStyle = line;
+  for (const [x, y, [n, e, s, wv]] of cells) {
+    const X = x * T, Y = y * T;
+    if (n) { g.fillRect(X - (wv ? B : 0), Y - B, T + (wv ? B : 0) + (e ? B : 0), B); for (let i = 0; i < T; i += 4) if (swell(X + i, Y * 3 + 1)) g.fillRect(X + i, Y - B - 1, 4, 1); }
+    if (s) { g.fillRect(X - (wv ? B : 0), Y + T, T + (wv ? B : 0) + (e ? B : 0), B); for (let i = 0; i < T; i += 4) if (swell(X + i, Y * 3 + 2)) g.fillRect(X + i, Y + T + B, 4, 1); }
+    if (wv) { g.fillRect(X - B, Y, B, T); for (let i = 0; i < T; i += 4) if (swell(Y + i, X * 3 + 5)) g.fillRect(X - B - 1, Y + i, 1, 4); }
+    if (e) { g.fillRect(X + T, Y, B, T); for (let i = 0; i < T; i += 4) if (swell(Y + i, X * 3 + 7)) g.fillRect(X + T + B, Y + i, 1, 4); }
+  }
+  for (const [x, y, [n, e, s, wv]] of cells) {
+    const X = x * T, Y = y * T;
     g.fillStyle = face; g.fillRect(X, Y, T, T);
-    if (n) { g.fillStyle = hi; g.fillRect(X, Y, T, B); }
-    if (wv) { g.fillStyle = hi2; g.fillRect(X, Y + (n ? B : 0), B, T - (n ? B : 0)); }
-    if (s) { g.fillStyle = lo; g.fillRect(X, Y + T - B, T, B); }
-    if (e) { g.fillStyle = lo2; g.fillRect(X + T - B, Y + (n ? B : 0), B, T - (n ? B : 0) - (s ? B : 0)); }
+    if (n) { g.fillStyle = hi; g.fillRect(X, Y, T, V); }
+    if (wv) { g.fillStyle = hi2; g.fillRect(X, Y + (n ? V : 0), V, T - (n ? V : 0)); }
+    if (s) { g.fillStyle = lo; g.fillRect(X, Y + T - V, T, V); }
+    if (e) { g.fillStyle = lo2; g.fillRect(X + T - V, Y + (n ? V : 0), V, T - (n ? V : 0) - (s ? V : 0)); }
+    // An outer corner is cut one step: its cell goes to the line, so a block is never quite square.
     g.fillStyle = line;
-    if (n) g.fillRect(X, Y - B, T, B); if (s) g.fillRect(X, Y + T, T, B);
-    if (wv) g.fillRect(X - B, Y, B, T); if (e) g.fillRect(X + T, Y, B, T);
-    // An outer corner: its cell goes to the line, and the line's own far corner is left off.
     if (n && wv) g.fillRect(X, Y, B, B); if (n && e) g.fillRect(X + T - B, Y, B, B);
     if (s && wv) g.fillRect(X, Y + T - B, B, B); if (s && e) g.fillRect(X + T - B, Y + T - B, B, B);
   }
@@ -68,6 +78,9 @@ function decorate(g, at, w, h, kind, isIn = (x, y) => at(x, y) === kind) {
   if (kind === 'wall') each((X, Y, x, y) => {
     // The block's other skin (register 613): lab tiles, a grout cross on every cell and a shine per tile.
     if (altSkin('block')) { px(X, Y, 0, 15, tint(dk(F, 0.3)), T, 2); px(X, Y, 15, 0, tint(dk(F, 0.3)), 2, T); for (const [a, b] of [[4, 4], [20, 4], [4, 20], [20, 20]]) px(X, Y, a, b, tint(lt(F, 0.5)), 3, 2); return; }
+    // A rivet in each corner that an open side reaches (the sketch's wall, register 858).
+    const o = (dx, dy) => at(x + dx, y + dy) !== 'wall' && !member(at(x + dx, y + dy), 'wall');
+    for (const [cx, cy, a, b] of [[5, 5, -1, -1], [T - 7, 5, 1, -1], [5, T - 7, -1, 1], [T - 7, T - 7, 1, 1]]) if (o(a, 0) || o(0, b)) { px(X, Y, cx, cy, tint(dk(F, 0.4)), 2, 2); px(X, Y, cx, cy, tint(lt(F, 0.6)), 1, 1); }
     // One block in three wears vent slits, so a long wall is not a row of the same tile.
     if ((x * 7 + y * 13 + 100) % 3 === 0) for (const vy of [12, 15, 18]) { px(X, Y, 10, vy, tint(dk(F, 0.3)), 12, 1); px(X, Y, 10, vy + 1, tint(lt(F, 0.25)), 12, 1); }
   });
@@ -95,10 +108,11 @@ function drawPixelWalls(g, at, w, h) {
 // cells: the room's cells; skip(x, y): a cell drawn on its own this frame (one popping in).
 // The kind at (x, y), with everything outside the room counting as wall, so the border
 // joins the room's own walls.
-export const kindIn = (cells, w, h) => (x, y) => x < 0 || y < 0 || x >= w || y >= h ? 'wall' : cells[y * w + x];
+export const kindIn = (cells, w, h, outside = 'wall') => (x, y) => x < 0 || y < 0 || x >= w || y >= h ? outside : cells[y * w + x];
 
-export function drawMasses(g, cells, w, h, skip = () => false) {
-  const kindAt = kindIn(cells, w, h);
+// outside: what lies past the room's edge. 'wall' joins the edge walls to it; '' gives them a line there.
+export function drawMasses(g, cells, w, h, skip = () => false, outside = 'wall') {
+  const kindAt = kindIn(cells, w, h, outside);
   const held = (x, y) => skip(x, y) && kindAt(x, y) !== '';
   const at = (x, y) => held(x, y) ? '' : kindAt(x, y);
   for (const kind of ['gravel', 'water', 'sticky', 'death', 'wall']) {
@@ -111,7 +125,7 @@ export function drawMasses(g, cells, w, h, skip = () => false) {
       for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
         const c = at(x, y); if (!c || !c.startsWith('tri:')) continue;
         const k = c.slice(4), X = x * T, Y = y * T, i = 4, ox = k.endsWith('w') ? 0 : i, oy = k.startsWith('n') ? 0 : i;
-        g.fillStyle = INK.wallTop; pxTri(g, X, Y, T, k); g.fillStyle = INK.wall; pxTri(g, X + ox, Y + oy, T - i, k);
+        g.fillStyle = lineOf(P.wall); pxTri(g, X, Y, T, k); g.fillStyle = tint(lt(P.wall, 0.45)); pxTri(g, X + (ox ? 2 : 0), Y + (oy ? 2 : 0), T - 2, k); g.fillStyle = tint(P.wall); pxTri(g, X + ox + (ox ? 1 : 0), Y + oy + (oy ? 1 : 0), T - i - 1, k);
       }
     } else {
       // Gravel, water, goo and spikes are pixel masses too (register 607), with their marks on top.

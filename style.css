@@ -39,21 +39,23 @@ body.campaign #logo, body.puzzle #logo { display: none; }
 button {
   /* The crayon line (docs/THEME.md): the frame is a dark tint of the button's own fill, never black, and the
      fill's edge is darkened inside it: the same double border every piece in the room wears. */
+  /* --b: the line's width; the edge inside it is as wide again (the sketch's doubled border, register 858). */
+  --b: 3px; --b2: calc(var(--b) * 2);
   --fill: color-mix(in srgb, var(--panel) var(--btn-mix), var(--rule)); --frame: color-mix(in srgb, var(--fill), var(--ink) 62%); --edge: color-mix(in srgb, var(--fill), var(--ink) 14%);
   font: inherit; color: var(--text); border: 0; border-radius: 0; padding: 6px 12px; cursor: pointer;
   /* The lip: a dark band inside the frame along the bottom; pressed, it moves to the top and the icon sinks 2 px. */
-  background: linear-gradient(var(--lip, color-mix(in srgb, var(--fill) 70%, black)) 0 0) left 2px var(--lip-y, bottom 2px) / calc(100% - 4px) 2px no-repeat,
-    linear-gradient(var(--frame) 0 0) left 2px top 2px / 2px 2px no-repeat, linear-gradient(var(--frame) 0 0) right 2px top 2px / 2px 2px no-repeat,
-    linear-gradient(var(--frame) 0 0) left 2px bottom 2px / 2px 2px no-repeat, linear-gradient(var(--frame) 0 0) right 2px bottom 2px / 2px 2px no-repeat, var(--fill);
-  box-shadow: inset 0 0 0 2px var(--frame), inset 0 0 0 4px var(--edge);
-  clip-path: polygon(4px 0, calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px), 0 4px, 2px 4px, 2px 2px, 4px 2px);
+  background: linear-gradient(var(--lip, color-mix(in srgb, var(--fill) 70%, black)) 0 0) left var(--b) var(--lip-y, bottom var(--b)) / calc(100% - var(--b2)) var(--b) no-repeat,
+    linear-gradient(var(--frame) 0 0) left var(--b) top var(--b) / var(--b) var(--b) no-repeat, linear-gradient(var(--frame) 0 0) right var(--b) top var(--b) / var(--b) var(--b) no-repeat,
+    linear-gradient(var(--frame) 0 0) left var(--b) bottom var(--b) / var(--b) var(--b) no-repeat, linear-gradient(var(--frame) 0 0) right var(--b) bottom var(--b) / var(--b) var(--b) no-repeat, var(--fill);
+  box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge);
+  clip-path: polygon(var(--b2) 0, calc(100% - var(--b2)) 0, calc(100% - var(--b2)) var(--b), calc(100% - var(--b)) var(--b), calc(100% - var(--b)) var(--b2), 100% var(--b2), 100% calc(100% - var(--b2)), calc(100% - var(--b)) calc(100% - var(--b2)), calc(100% - var(--b)) calc(100% - var(--b)), calc(100% - var(--b2)) calc(100% - var(--b)), calc(100% - var(--b2)) 100%, var(--b2) 100%, var(--b2) calc(100% - var(--b)), var(--b) calc(100% - var(--b)), var(--b) calc(100% - var(--b2)), 0 calc(100% - var(--b2)), 0 var(--b2), var(--b) var(--b2), var(--b) var(--b), var(--b2) var(--b));
   transition: background-color .12s;
 }
 /* The light frame is for a mouse only: on a phone a tapped button keeps :hover (register 531). */
 @media (hover: hover) and (pointer: fine) {
   button:hover:not(:disabled) { --frame: color-mix(in srgb, var(--fill), var(--ink) 85%); }
 }
-button:active:not(:disabled), button.down:not(:disabled) { filter: brightness(.8); --lip-y: top 2px; }
+button:active:not(:disabled), button.down:not(:disabled) { filter: brightness(.8); --lip-y: top var(--b); }
 button:active:not(:disabled) > :is(svg, canvas, i, img), button.down:not(:disabled) > :is(svg, canvas, i, img) { translate: 0 2px; }
 /* Let go, the face springs back a touch bright for a frame or two. */
 button.pop:not(:disabled) { filter: brightness(1.2); }
@@ -1117,30 +1119,34 @@ body:not(.dev) #menuDebug, body:not(.dev) #reportBtn, body:not(.dev) #roomDownlo
 /* A removal level only takes pieces out (register 804): Look and Erase are its only tools. */
 body.removal [data-tool]:not([data-tool=look]):not([data-tool=erase]) { display: none !important; }
 
-/* The lab's things (docs/THEME.md, registers 841, 857). One frame for every sheet of paper: a line 2 px wide in
-   a dark tint of the paper, a lighter edge 2 px inside it, like a piece in the room. */
+/* The lab's things (docs/THEME.md, registers 841, 857, 858). One frame for every sheet of paper: a line 3 px wide
+   in a dark tint of the paper, a lighter edge 3 px inside it, like a button and like a piece in the room. */
 .campBrief .campGoal, .winCard, .achList li, .lookShelf { --sheet: var(--panel); --sheet-line: color-mix(in srgb, var(--sheet), var(--ink) 62%); --sheet-edge: color-mix(in srgb, var(--sheet), var(--ink) 14%); }
 /* The clipboard: a level's goals on a sheet held by a clip, ruled every 22 px. */
-.campBrief .campGoal { position: relative; margin-top: 8px; padding: 12px 8px 8px; border-radius: 0;
+.campBrief .campGoal { position: relative; margin-top: 10px; padding: 14px 10px 10px; border-radius: 0;
   background: repeating-linear-gradient(180deg, transparent 0 21px, color-mix(in srgb, var(--ink) 9%, transparent) 21px 22px), var(--sheet);
-  box-shadow: inset 0 0 0 2px var(--sheet-line), inset 0 0 0 4px var(--sheet-edge), 2px 2px 0 color-mix(in srgb, var(--ink) 22%, transparent); }
-.campBrief .campGoal::before, .winCard::before { content: ''; position: absolute; left: 50%; top: -8px; width: 64px; height: 14px; margin-left: -32px; background: var(--mid);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--mid), var(--ink) 62%), inset 0 0 0 4px color-mix(in srgb, var(--mid), var(--paper) 45%); }
-.campBrief .campGoal::after, .winCard::after { content: ''; position: absolute; left: 50%; top: -4px; width: 12px; height: 6px; margin-left: -6px; background: color-mix(in srgb, var(--mid), var(--ink) 62%); }
+  box-shadow: inset 0 0 0 3px var(--sheet-line), inset 0 0 0 6px var(--sheet-edge), 3px 3px 0 color-mix(in srgb, var(--ink) 22%, transparent); }
+.campBrief .campGoal::before, .winCard::before { content: ''; position: absolute; left: 50%; top: -10px; width: 72px; height: 18px; margin-left: -36px; background: var(--mid);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--mid), var(--ink) 62%), inset 0 0 0 6px color-mix(in srgb, var(--mid), var(--paper) 45%); }
 .campBrief .campMain { background: color-mix(in srgb, var(--gold) 12%, var(--sheet)); border-radius: 0; }
 .campBrief .campOpt { background: none; border-radius: 0; padding: 4px 2px 0; }
 /* The win card is the clipboard's last page. */
-.winCard { border-radius: 0; box-shadow: inset 0 0 0 2px var(--sheet-line), inset 0 0 0 4px var(--sheet-edge), 4px 4px 0 rgba(0, 0, 0, .25); }
-/* The album: each achievement a photo stuck on a page with tape; one not earned is an empty corner-marked slot. */
-.achList li { grid-template-columns: 52px 1fr auto; align-items: start; padding: 10px; background: var(--sheet); box-shadow: inset 0 0 0 2px var(--sheet-line), inset 0 0 0 4px var(--sheet-edge); }
-.achList li:not(.done) { --sheet: var(--field); box-shadow: inset 0 0 0 2px var(--sheet-edge); }
-.achList li.new { box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 0 4px var(--sheet-edge); }
-.achList .achBadge { width: 52px; height: 52px; background: none; box-shadow: inset 0 0 0 2px var(--rule); }
-.achList .achBadge::before { content: ''; position: absolute; inset: 0; background: linear-gradient(var(--rule) 0 0) left top / 10px 2px no-repeat, linear-gradient(var(--rule) 0 0) left top / 2px 10px no-repeat, linear-gradient(var(--rule) 0 0) right bottom / 10px 2px no-repeat, linear-gradient(var(--rule) 0 0) right bottom / 2px 10px no-repeat; }
-.achList .achBadge.done { background: conic-gradient(var(--paper) 25%, var(--panel) 0 50%, var(--paper) 0 75%, var(--panel) 0) 0 0 / 16px 16px; color: var(--ink);
-  box-shadow: 0 0 0 4px var(--lite), 0 0 0 6px color-mix(in srgb, var(--lite), var(--ink) 62%), 2px 4px 0 6px color-mix(in srgb, var(--ink) 18%, transparent); margin: 6px; width: 40px; height: 40px; }
-.achList .achBadge.done::before { inset: auto; left: 50%; top: -11px; width: 22px; height: 8px; margin-left: -11px; background: color-mix(in srgb, var(--gold) 55%, var(--panel)); opacity: .9; }
-.achList .achBadge.done .achSlot { right: -9px; bottom: -9px; }
-.achSay { display: block; margin-top: 4px; padding-left: 8px; font-size: 12px; line-height: 1.35; color: var(--ink); box-shadow: inset 2px 0 0 var(--accent); quotes: none; }
+.winCard { border-radius: 0; box-shadow: inset 0 0 0 3px var(--sheet-line), inset 0 0 0 6px var(--sheet-edge), 4px 4px 0 rgba(0, 0, 0, .25); }
+/* The album (the sketch's): two photos to a row. An earned achievement is a white card with its photo taped on
+   and the blob's caption under it; one not earned is a dashed slot that says what it wants. */
+.achList { grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; background: color-mix(in srgb, var(--gold) 14%, var(--panel)); box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--panel), var(--ink) 62%), inset 0 0 0 6px color-mix(in srgb, var(--panel), var(--ink) 14%); }
+.achList li { position: relative; grid-template-columns: 1fr; align-content: start; gap: 6px; padding: 8px; --sheet: color-mix(in srgb, var(--panel), white 60%); background: var(--sheet); color: var(--ink); box-shadow: inset 0 0 0 3px var(--sheet-line); }
+.achList li:not(.done) { background: none; box-shadow: none; outline: 3px dashed color-mix(in srgb, var(--panel), var(--ink) 45%); outline-offset: -3px; color: var(--soft); }
+.achList li.new { box-shadow: inset 0 0 0 3px var(--gold); }
+.achList li > small { position: absolute; right: 8px; bottom: 6px; }
+.achList .achBadge { width: 100%; height: 64px; background: none; }
+.achList .achBadge.done { background: conic-gradient(var(--paper) 25%, var(--panel) 0 50%, var(--paper) 0 75%, var(--panel) 0) 0 0 / 32px 32px; color: var(--ink); }
+.achList .achBadge > .glyph { width: 48px; height: 48px; }
+/* The tape that holds a photo. */
+.achList li.done::before { content: ''; position: absolute; left: 50%; top: -5px; width: 34px; height: 10px; margin-left: -17px; background: color-mix(in srgb, var(--gold) 60%, var(--lite)); opacity: .9; z-index: 1; }
+.achList .achSlot { right: 4px; bottom: 4px; }
+.achList .achText { padding-bottom: 14px; }
+.achSay { display: block; margin-top: 2px; font-size: 12px; line-height: 1.35; color: var(--ink); quotes: none; }
 /* The back room: palettes and skins stand on shelves. */
-.lookShelf { padding: 8px 8px 14px; margin-bottom: 4px; background: linear-gradient(180deg, transparent calc(100% - 8px), color-mix(in srgb, var(--gold) 45%, var(--ink)) 0 calc(100% - 6px), color-mix(in srgb, var(--gold) 70%, var(--panel)) 0 calc(100% - 2px), color-mix(in srgb, var(--gold) 45%, var(--ink)) 0), color-mix(in srgb, var(--ink) 6%, var(--panel)); }
+.lookShelf { padding: 8px 8px 16px; margin-bottom: 4px; background: linear-gradient(180deg, transparent calc(100% - 9px), color-mix(in srgb, var(--gold) 45%, var(--ink)) 0 calc(100% - 6px), color-mix(in srgb, var(--gold) 70%, var(--panel)) 0 calc(100% - 3px), color-mix(in srgb, var(--gold) 45%, var(--ink)) 0), color-mix(in srgb, var(--ink) 6%, var(--panel)); }
+.achPhoto { display: block; width: 100%; height: auto; image-rendering: pixelated; box-shadow: 0 0 0 2px color-mix(in srgb, var(--panel), var(--ink) 30%); }

@@ -1,7 +1,7 @@
 // The crayon look's rules (docs/THEME.md), held on every sprite the game can draw: one pass inks them all,
 // the line is a tint and whole, no piece is one fill, and a fitted room lands on whole screen pixels.
 import { suite } from './lib.mjs';
-import { ink, sheet, dk, lt, resolve, RING, N2, wobbled, wholeScale, TAP } from '../src/view/crayon.js';
+import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP } from '../src/view/crayon.js';
 import { SPRITES, spriteSheet } from '../src/view/sprites.js';
 
 const { check, done } = suite('crayon');
@@ -33,9 +33,13 @@ check('a tone is worked out from the colour: darker and lighter, the same in any
 // A joined side gets no line and no dark edge.
 const slab = sheet(4, 4); slab.rect(0, 0, 3, 3, '#ff6188');
 check('a side that joins a neighbour is not inked', !ink(slab.g, { sides: 'nsw' }).some(r => r[0] + r[2] > 4) && ink(slab.g, { sides: 'nesw' }).some(r => r[0] + r[2] > 4));
-// The shimmer keeps the line whole: it changes the shape, then inks it again.
+// The scribble (register 859): at rest a piece moves between three drawings of its line. The line swells a
+// pixel in short stretches; it never thins or drops a pixel, and the piece itself does not change.
 const blob = sheets.find(([n]) => n === 'blob')[1];
-check('a wobbled sprite is a different drawing, inked whole', [1, 2].every(f => { const w = wobbled(blob, 'blob', f); return JSON.stringify(w) !== JSON.stringify(blob) && ink(w).length > 0; }));
+const cellsOf = runs => { const s = new Map(); for (const [x, y, len, c] of runs) for (let i = 0; i < len; i++) s.set((x + i) + ',' + y, c); return s; };
+const plain = cellsOf(ink(blob)), scr = [1, 2, 3].map(f => cellsOf(ink(blob, { scribble: f })));
+check('a scribbled line never loses a pixel of the plain one, and the piece is unchanged', scr.every(m => [...plain].every(([k, c]) => m.get(k) === c)));
+check('the three drawings differ, each only by a swollen line', new Set(scr.map(m => [...m.keys()].sort().join())).size === 3 && scr.every(m => m.size > plain.size && m.size < plain.size * 1.2));
 
 // Pixel perfect: a fitted scale is a whole number of screen pixels to an art pixel, or a half step.
 const kd = k => wholeScale(k, 3) * 3;

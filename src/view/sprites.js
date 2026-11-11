@@ -3,7 +3,7 @@
 // rectangles so it stays sharp at any whole zoom.
 import { INK } from './ink.js';
 import { skinned, look, current } from './look.js';
-import { ink, doubled, wobbled } from './crayon.js';
+import { ink, doubled } from './crayon.js';
 import { CRAYON_SPRITES } from './crayonSprites.js';
 import { CRAYON_SKINS } from './crayonSkins.js';
 import { CRAYON_MOMENTS } from './crayonMoments.js';
@@ -22,7 +22,7 @@ function runsOf(name, param, exact, f = 0) {
   if (runs.has(key)) return runs.get(key);
   const plain = PLAIN.has(name) || /(^|\|)bare(\||$)/.test(String(param)) || (name === 'idoor' && /\|1$/.test(String(param)));
   // A mark on the floor is a stain, not a thing: its edge darkens and no line goes round it.
-  const out = ink(wobbled(sheetOf(name, param), name + ':' + param, f), plain ? { ring: 0, edge: 0 } : name === 'stain' ? { ring: 0 } : {});
+  const out = ink(sheetOf(name, param), plain ? { ring: 0, edge: 0 } : name === 'stain' ? { ring: 0 } : { scribble: f + 1 });
   runs.set(key, out);
   return out;
 }

@@ -45,4 +45,11 @@ look.shake = undefined;
 check('a spring\'s crush shakes along its throw only', [1001, 1020, 1050].every(t => shakeOf(crush, t)[1] === 0) && shakeOf([{ type: 'die', at: 1000, death: { how: 'spring', dir: 'up' } }], 1001)[0] === 0);
 check('the shake moves by whole pixels and ends', [1001, 1033, 1077].every(t => shakeOf(crush, t).every(Number.isInteger)) && shakeOf(crush, 1300).join() === '0,0');
 check('a quiet death does not shake the room', shakeOf([{ type: 'die', at: 1000, death: { how: 'spikes' } }], 1001).join() === '0,0' && shakeOf([{ type: 'blast', at: 1000 }], 1001).some(v => v !== 0));
+// The album (register 856): every achievement has a drawn scene and a caption, each made of sprites that exist.
+import { SCENES, sceneOf } from '../src/app/albumScenes.js';
+import { caption } from '../src/app/voice.js';
+import { achievements } from '../src/campaign/achievements.js';
+const ids = achievements({}, new Set(), []).map(a => a.id);
+check('every achievement has a photo and a caption', ids.length > 10 && ids.every(id => sceneOf(id) && caption(id)), ids.filter(id => !sceneOf(id) || !caption(id)).join());
+check('every photo is made of the room\'s own sprites', Object.values(SCENES).flat().every(([n]) => SPRITES.includes(n)), Object.values(SCENES).flat().filter(([n]) => !SPRITES.includes(n)).map(x => x[0]).join());
 done();
