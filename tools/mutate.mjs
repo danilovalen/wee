@@ -1465,6 +1465,7 @@ export const M = [
   ["style.css", ".campBrief .campMain { background: none; box-shadow: none; padding: 0 2px; align-items: center; }\n", "", "look"],
   ["style.css", ".ring { box-shadow: 0 0 0 var(--b) var(--wall-line, var(--line)), var(--b2) var(--b2) 0 var(--b) color-mix(in srgb, var(--ink) 22%, transparent); }\n", "", "look"],
   ["style.css", ".campBrief .campMain, .campBrief .campOpt li { background-image: linear-gradient(0deg, color-mix(in srgb, var(--ink) 14%, transparent) 2px, transparent 2px); padding-bottom: 3px; }\n", "", "look"],
+  ["style.css", ".tutBox p, .tutBox small, .campBrief .campReqs li, .achList .achSay { font-family: var(--hand-face); font-size: 18px; font-weight: 400; letter-spacing: 0; }\n", "", "look"],
   ["src/view/crayon.js", "const d = dir * Math.round(2 * (h - 1 - y) / (h - 1));", "const d = 0;", "crayon"],
   ["src/app/menuScene.js", "l.cells[2 * W + 0] = 'toggle:red';", "l.cells[2 * W + 0] = 'toggle:red:on';", "campaign-play"],
 ];

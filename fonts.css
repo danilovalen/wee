@@ -2,3 +2,6 @@
    face made to be read (register 652). It has one weight; the range lets bold use it as drawn, never smeared.
    It is far wider than the face it replaced, so it is drawn at 90%: letters as tall as before, rows that still fit. */
 @font-face { font-family: 'Departure'; font-weight: 100 900; font-display: swap; size-adjust: 90%; src: url('fonts/departure-mono-regular.woff2') format('woff2'); }
+/* The hand on the lab's paper (register 890): Short Stack redrawn on a pixel grid by tools/pixelFont.py, twelve
+   cells to the em, so it is set at 18 px (a cell and a half) or 24 px. What it lacks falls back to Departure. */
+@font-face { font-family: 'Hand'; font-weight: 100 900; font-display: swap; src: url('fonts/wee-hand.woff2') format('woff2'); }

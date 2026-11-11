@@ -1250,3 +1250,7 @@ body { background-image: linear-gradient(color-mix(in srgb, var(--ink) 6%, trans
 .campBrief .campGoal { background: var(--sheet); }
 .tutBox p { background: repeating-linear-gradient(180deg, transparent 0 19px, color-mix(in srgb, var(--ink) 14%, transparent) 19px 21px, transparent 21px 22px); }
 .campBrief .campMain, .campBrief .campOpt li { background-image: linear-gradient(0deg, color-mix(in srgb, var(--ink) 14%, transparent) 2px, transparent 2px); padding-bottom: 3px; }
+/* What is written on paper is in the hand (register 890): a note, a clipboard's goals, a caption in the album. */
+:root { --hand-face: 'Hand', 'Departure', monospace; }
+.tutBox p, .tutBox small, .campBrief .campReqs li, .achList .achSay { font-family: var(--hand-face); font-size: 18px; font-weight: 400; letter-spacing: 0; }
+.tutBox small { opacity: .8; }

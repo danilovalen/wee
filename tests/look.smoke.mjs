@@ -118,6 +118,9 @@ try {
   // Words sit on their lines (register 884): each goal is ruled under itself, and a note's rule repeats with its line height.
   const ruled = await p.evaluate(() => { const m = getComputedStyle(document.querySelector('.campBrief .campMain')), t = getComputedStyle(document.querySelector('#tutBox p')); return { goal: /gradient/.test(m.backgroundImage) ? '2px' : 'none', note: /22px/.test(t.backgroundImage) && t.lineHeight === '22px' }; });
   check('a goal is ruled under its own words, and a note\'s lines keep step with its text', ruled.goal === '2px' && ruled.note, JSON.stringify(ruled));
+  // What is written on paper is in the hand (register 890), loaded from the repo's own font file.
+  const hand = await p.evaluate(async () => { await document.fonts.load("18px 'Hand'"); const f = e => getComputedStyle(document.querySelector(e)); return { note: f('#tutBox p').fontFamily, goal: f('.campBrief .campReqs li').fontFamily, size: f('.campBrief .campReqs li').fontSize, loaded: document.fonts.check("18px 'Hand'") }; });
+  check('a note and a goal are written in the hand, at a whole step of its grid', /^"?Hand/.test(hand.note) && /^"?Hand/.test(hand.goal) && hand.size === '18px' && hand.loaded, JSON.stringify(hand));
   // The desk (register 883): the room's ring has its own line and shadow, and the tutorial's note has the frame.
   const desk = await p.evaluate(() => { const n = s => (getComputedStyle(document.querySelector(s)).boxShadow.match(/rgb/g) || []).length; return { ring: n('#ring'), note: n('#tutBox'), page: getComputedStyle(document.body).backgroundImage !== 'none' }; });
   check('the room lies on squared paper with a line and a shadow, and the tutorial is a framed note', desk.ring >= 2 && desk.note >= 3 && desk.page, JSON.stringify(desk));

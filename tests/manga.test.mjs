@@ -21,7 +21,7 @@ check('every radius is one of the four, or a circle', !radii.size, [...radii].jo
 // Type: three faces, all local, each with its licence, and each role on its face.
 const fontsCss = readFileSync('fonts.css', 'utf8'), html = readFileSync('index.html', 'utf8');
 const faces = [...fontsCss.matchAll(/font-family: '([^']+)';[^}]*url\('([^']+)'\)/g)].map(m => [m[1], m[2]]);
-check('fonts.css declares the pixel face and nothing else (registers 617, 652)', [...new Set(faces.map(f => f[0]))].sort().join() === 'Departure', faces.map(f => f[0]).join());
+check('fonts.css declares the pixel face and the paper\'s hand, and nothing else (registers 617, 652, 890)', [...new Set(faces.map(f => f[0]))].sort().join() === 'Departure,Hand', faces.map(f => f[0]).join());
 const missing = faces.filter(([, f]) => !existsSync(f)).map(f => f[1]);
 check('every face file is in the repo', !missing.length, missing.join(' '));
 const unlicensed = [...new Set(faces.map(f => f[0]))].filter(n => !existsSync(`fonts/OFL-${n.toLowerCase()}.txt`));
