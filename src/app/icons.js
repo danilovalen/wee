@@ -4,7 +4,7 @@ import { emptyLevel } from '../level/format.js';
 import { T, INK } from '../view/ink.js';
 import { drawPiece, drawRobot, drawYou } from '../view/pieces.js';
 import { pixelBitmap } from './pixelIcons.js';
-import { lineOf, tint, lt } from '../view/crayon.js';
+import { tint, dk } from '../view/crayon.js';
 import { P } from '../view/crayonSprites.js';
 
 // The colour of each tool that is not a piece.
@@ -13,9 +13,10 @@ import { drawEdit } from '../view/scene.js';
 
 // gateColour: a one-way drawn in that colour; none, a plain one.
 export function icon(tool, colour = 'red', gateColour = null, crate = false) {
-  const c = document.createElement('canvas'), k = 20 / T;
-  c.width = 40; c.height = 40; c.dataset.icon = tool;
-  const x = c.getContext('2d'); x.scale(2 * k, 2 * k);
+  // One canvas pixel to each art pixel of a tile, so a tool's picture is never stretched (register 902).
+  const c = document.createElement('canvas');
+  c.width = T; c.height = T; c.dataset.icon = tool;
+  const x = c.getContext('2d');
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'button' || tool === 'toggle' || tool === 'door' || tool === 'idoor' || tool === 'tri' || tool === 'gate' || tool === 'spring' || tool === 'death' || tool === 'sensor' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') {
     const l = emptyLevel(1, 1); l.cells[0] = tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal' ? tool : tool === 'tri' ? 'tri:se' : tool === 'gate' ? 'gate:right' + (gateColour ? '@' + gateColour : '') : tool === 'spring' ? 'spring:up' : tool + ':' + colour;
     if (crate) l.crates = [{ x: 0, y: 0 }];
@@ -30,10 +31,10 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
     // Whole canvas pixels, centred, so no edge is smoothed (register 643).
     // In the crayon look too (register 866): the tool's colour with a line round it in its dark tint.
     x.setTransform(1, 0, 0, 1, 0, 0);
-    const bm = pixelBitmap(tool), col = TOOL_COLOUR[tool] || P.hi, on = (px, py) => !!(bm[py] && bm[py][px]);
-    x.fillStyle = lineOf(col);
-    for (let py = -1; py <= 16; py++) for (let px = -1; px <= 16; px++) if (!on(px, py) && [-1, 0, 1].some(a => [-1, 0, 1].some(b => on(px + a, py + b)))) x.fillRect(4 + px * 2, 4 + py * 2, 2, 2);
-    bm.forEach((row, py) => row.forEach((v, px) => { if (v) { x.fillStyle = tint(on(px, py - 1) ? col : lt(col, 0.45)); x.fillRect(4 + px * 2, 4 + py * 2, 2, 2); } }));
+    const bm = pixelBitmap(tool), col = TOOL_COLOUR[tool] || P.hi;
+    // One flat shape in the tool's deepened colour, as the page's icons are (register 900).
+    x.fillStyle = tint(dk(col, 0.3));
+    bm.forEach((row, py) => row.forEach((v, px) => { if (v) x.fillRect(px * 2, py * 2, 2, 2); }));
   } else if (tool === 'start' || tool === 'robot') {
     // The campaign's goal rows name the robot, which plays them (register 323); a room's start is you.
     x.save(); x.translate(16, 16); x.scale(1.3, 1.3); (tool === 'robot' ? drawRobot : drawYou)(x); x.restore();

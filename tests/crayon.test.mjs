@@ -57,9 +57,8 @@ check('only Wee and the creatures wobble; a berry, a box, a door and every other
   const up = ext(b), l = ext(sway(b, 1)), r = ext(sway(b, 2));
   check('a berry leans left and right from its foot, and keeps every cell', sways('berry') && !sways('box') && l.top < up.top && r.top > up.top && Math.abs(l.bot - up.bot) <= 1 && Math.abs(r.bot - up.bot) <= 1 && l.n === up.n && r.n === up.n && sway(b, 0) === b, JSON.stringify([up, l, r]));
 }
-// Row y is row y of the piece slid by 0 or 1; next-door rows never differ by more than that one pixel.
-const left = g => g.map(row => row.findIndex(Boolean));
-check('a bend never tears: a row\'s edge moves by a pixel at most', frames(blob).every(g => left(g).every((v, y) => v < 0 || left(blob)[y] < 0 || Math.abs(v - left(blob)[y]) <= 2)));
+// Every cell of a bent drawing is a cell of the piece moved by a pixel at most.
+check('a bend never tears: every cell moves by a pixel at most', frames(blob).every(g => g.every((row, y) => row.every((c, x) => !c || [-1, 0, 1].some(dy => [-1, 0, 1].some(dx => (blob[y + dy] || [])[x + dx]))))));
 check('a piece that fills its tile keeps its footprint', frames(box).every(g => g.length === N2 && g[0].length === N2 && [0, N2 - 1].every(e => (box[16][e] ? g[16][e] : true))));
 check('the line goes round a bent drawing whole', frames(blob).every(g => { const painted = new Set(); for (const [x, y, len] of ink(g)) for (let k = 0; k < len; k++) painted.add((x + k) + ',' + y); return g.every((row, y) => row.every((c, x) => !c || [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => painted.has((x + dx) + ',' + (y + dy))))); }));
 

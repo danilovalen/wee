@@ -37,19 +37,19 @@ export function sheet(w = N2, h = N2) {
   const s = {
     g, w, h, put,
     rect(x0, y0, x1, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) put(x, y, c); return s; },
-    // An ellipse that is never quite one: lump bends its radius three times round. only: paint only where
-    // the sheet is already filled.
+    // An ellipse, exact and even from side to side (register 901: shapes are no longer lumpy, so `lump` is
+    // read and ignored). only: paint only where the sheet is already filled.
     oval(cx, cy, rx, ry, c, lump = 0, only = false) {
       for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        const a = Math.atan2(y + 0.5 - cy, x + 0.5 - cx), k = 1 + lump * Math.sin(a * 3 + 1.3);
+        const k = 1;
         if (((x + 0.5 - cx) / (rx * k)) ** 2 + ((y + 0.5 - cy) / (ry * k)) ** 2 <= 1 && (!only || g[y][x])) g[y][x] = c;
       }
       return s;
     },
-    // A rounded square (a superellipse of power n), lumpy like an oval: the blob's own shape (register 860).
+    // A rounded square (a superellipse of power n): the blob's own shape (register 860).
     squircle(cx, cy, rx, ry, c, n = 3.2, lump = 0) {
       for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        const a = Math.atan2(y + 0.5 - cy, x + 0.5 - cx), k = 1 + lump * Math.sin(a * 3 + 1.3);
+        const k = 1;
         if (Math.abs((x + 0.5 - cx) / (rx * k)) ** n + Math.abs((y + 0.5 - cy) / (ry * k)) ** n <= 1) g[y][x] = c;
       }
       return s;

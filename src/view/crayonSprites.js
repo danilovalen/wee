@@ -50,7 +50,7 @@ export const CRAYON_SPRITES = {
   // Gravel: a sandy bed and loose stones.
   gravel() { const s = sheet().slab(0, 0, 31, 31, lt(P.wood, 0.3), 1); for (const [x, y, r] of [[6, 6, 2.2], [18, 4, 1.8], [26, 10, 2.4], [10, 16, 2.6], [22, 18, 2], [4, 24, 2], [16, 26, 2.4], [27, 26, 1.8], [14, 10, 1.6]]) s.oval(x, y, r, r * 0.8, P.mid, 0.1).oval(x - 0.6, y - 0.6, r * 0.5, r * 0.4, lt(P.mid, 0.5)); return s; },
   // Spikes from above: a red plate and five points, each a four-sided tip lit from the top left.
-  death() { const s = sheet().slab(0, 0, 31, 31, P.redS, 2); for (const [cx, cy] of [[8, 8], [23, 8], [15.5, 15.5], [8, 23], [23, 23]]) for (let y = -5; y <= 5; y++) for (let x = -5; x <= 5; x++) if (Math.abs(x) + Math.abs(y) <= 5) s.put(Math.floor(cx + x), Math.floor(cy + y), Math.abs(x) + Math.abs(y) <= 1 ? WHITE : x + y < 0 ? P.hi : x + y > 0 ? P.top : lt(P.top, 0.4)); return s; },
+  death() { const s = sheet().slab(0, 0, 31, 31, P.redS, 2); for (const [cx, cy] of [[8, 8], [24, 8], [16, 16], [8, 24], [24, 24]]) for (let r = 0; r < 8; r++) { const half = (r >> 1) + 1; for (let x = -half; x < half; x++) s.put(cx + x, cy - 4 + r, x < 0 ? WHITE : P.top); } return s; },
   // A spring (registers 827, 828): a pocket in the block on the side it faces, a coil squeezed in it and a
   // plate at its mouth. Out, the pocket holds only the coil leaving it; springArm draws the rest on the tile
   // in front. key: "right", "right|bare", "right||out". Drawn facing right, then turned.

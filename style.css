@@ -1269,3 +1269,10 @@ body.campaign #campVerdict { box-shadow: inset 0 0 0 var(--b) var(--line), inset
 @media (max-width: 700px) { body.campaign:not(.sandbox) #tools { box-shadow: 0 calc(-1 * var(--b)) 0 var(--line), 0 calc(-1 * var(--b2)) 0 var(--line-edge); } }
 /* A letter is the same drawing every time (register 892): no kerning, no ligatures, nothing smoothed between cells. */
 .tutBox p, .tutBox small, .campBrief .campReqs li, .achList .achSay, dialog.confirm > p, .slotBoard, .campVerdict { font-kerning: none; font-variant-ligatures: none; text-rendering: optimizeSpeed; -webkit-font-smoothing: none; font-synthesis: none; }
+/* Icons in the hand's manner (register 900): one flat shape in its colour, deepened so it reads on paper. No ring
+   round it, no lit edge, no shaded foot: at this size those were the bloat. */
+.glyph.px :is(.l, .h, .s) { display: none; }
+.glyph.px .o { fill: color-mix(in srgb, var(--glyph-fill), var(--ink) 30%); }
+/* A tool's picture is shown at its own size, one screen pixel to each of its pixels, never squeezed (register 902). */
+:is(#campTools, #palette) canvas, body.campaign:not(.sandbox) :is(#campTools, #palette) canvas { width: 32px; height: 32px; image-rendering: pixelated; flex: none; }
+@media (max-width: 700px) { #campTools canvas { width: 32px; height: 32px; } }
