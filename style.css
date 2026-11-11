@@ -1243,27 +1243,29 @@ body { background-image: linear-gradient(color-mix(in srgb, var(--ink) 6%, trans
   box-shadow: inset 0 0 0 var(--b) var(--line), inset 0 0 0 var(--b2) var(--line-edge), var(--b) var(--b) 0 color-mix(in srgb, var(--ink) 22%, transparent); }
 .tutBox::before { content: ''; position: absolute; left: 50%; top: -9px; width: 76px; height: 20px; margin-left: -38px; transform: rotate(-2deg);
   background: color-mix(in srgb, var(--gold) 60%, var(--panel)); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--gold), var(--ink) 45%); opacity: .92; }
-.tutBox p { line-height: 22px; min-height: 66px; }  /* three ruled lines, whatever the step says */
+.tutBox p { line-height: var(--hand-line, 22px); min-height: calc(3 * var(--hand-line, 22px)); }  /* three ruled lines, whatever the step says */
 /* Words sit on the paper's lines (register 884): each line of a note or a clipboard is ruled under its own words,
    so the two cannot drift apart. The sheet itself is plain paper. */
 .tutBox, .campBrief .campGoal { background: var(--panel); }
 .campBrief .campGoal { background: var(--sheet); }
-.tutBox p { background: repeating-linear-gradient(180deg, transparent 0 19px, color-mix(in srgb, var(--ink) 14%, transparent) 19px 21px, transparent 21px 22px); }
+.tutBox p { background: linear-gradient(0deg, color-mix(in srgb, var(--ink) 14%, transparent) 2px, transparent 2px) 0 0 / 100% var(--hand-line, 22px); }
 .campBrief .campMain, .campBrief .campOpt li { background-image: linear-gradient(0deg, color-mix(in srgb, var(--ink) 14%, transparent) 2px, transparent 2px); padding-bottom: 3px; }
 /* What is written on paper is in the hand (register 890): a note, a clipboard's goals, a caption in the album. */
 :root { --hand-face: 'Hand', 'Departure', monospace; }
-.tutBox p, .tutBox small, .campBrief .campReqs li, .achList .achSay { font-family: var(--hand-face); font-size: 18px; font-weight: 400; letter-spacing: 0; }
+.tutBox p, .tutBox small, .campBrief .campReqs li, .achList .achSay { font-family: var(--hand-face); font-size: var(--hand-size, 18px); font-weight: 400; letter-spacing: 0; }
 .tutBox small { opacity: .8; }
 /* The whole-game pass (register 891): what the one frame and the hand had not reached yet. */
 /* A star kept from an earlier room is marked with a yellow marker, in every palette: the words under it stay readable. */
 .campBrief .campOpt li.kept { background-color: color-mix(in srgb, var(--gold) 38%, var(--sheet)); }
 /* A small dialog is a note stuck over the page: the frame, and its words in the hand. */
 dialog.confirm { border-radius: 0; padding: calc(var(--b2) + 12px); box-shadow: inset 0 0 0 var(--b) var(--line), inset 0 0 0 var(--b2) var(--line-edge), var(--b2) var(--b2) 0 rgba(0, 0, 0, .3); }
-dialog.confirm > p, .slotBoard { font-family: var(--hand-face); font-size: 18px; font-weight: 400; letter-spacing: 0; }
+dialog.confirm > p, .slotBoard { font-family: var(--hand-face); font-size: var(--hand-size, 18px); font-weight: 400; letter-spacing: 0; }
 /* What a run says is a note too, with its colour down one side. */
-.campVerdict { border-radius: 0; background: var(--panel); box-shadow: inset 0 0 0 var(--b) var(--line), inset 0 0 0 var(--b2) var(--line-edge), var(--b) var(--b) 0 color-mix(in srgb, var(--ink) 22%, transparent); padding-left: calc(var(--b2) + 14px); font-family: var(--hand-face); font-size: 18px; font-weight: 400; line-height: 20px; height: 58px; }
+.campVerdict { border-radius: 0; background: var(--panel); box-shadow: inset 0 0 0 var(--b) var(--line), inset 0 0 0 var(--b2) var(--line-edge), var(--b) var(--b) 0 color-mix(in srgb, var(--ink) 22%, transparent); padding-left: calc(var(--b2) + 14px); font-family: var(--hand-face); font-size: var(--hand-size, 18px); font-weight: 400; line-height: var(--hand-line, 22px); height: calc(2 * var(--hand-line, 22px) + 16px); }
 body.campaign #campVerdict { box-shadow: inset 0 0 0 var(--b) var(--line), inset 0 0 0 var(--b2) var(--line-edge), var(--b) var(--b) 0 color-mix(in srgb, var(--ink) 22%, transparent); }
 .campVerdict.won { background: linear-gradient(90deg, transparent 0 var(--b2), var(--good) var(--b2) calc(var(--b2) + 6px), transparent 0), var(--panel); }
 .campVerdict.lost { background: linear-gradient(90deg, transparent 0 var(--b2), var(--bad) var(--b2) calc(var(--b2) + 6px), transparent 0), var(--panel); }
 /* On a phone the tools are a tray with the frame's line along its top. */
 @media (max-width: 700px) { body.campaign:not(.sandbox) #tools { box-shadow: 0 calc(-1 * var(--b)) 0 var(--line), 0 calc(-1 * var(--b2)) 0 var(--line-edge); } }
+/* A letter is the same drawing every time (register 892): no kerning, no ligatures, nothing smoothed between cells. */
+.tutBox p, .tutBox small, .campBrief .campReqs li, .achList .achSay, dialog.confirm > p, .slotBoard, .campVerdict { font-kerning: none; font-variant-ligatures: none; text-rendering: optimizeSpeed; -webkit-font-smoothing: none; font-synthesis: none; }

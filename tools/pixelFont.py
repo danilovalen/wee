@@ -31,7 +31,56 @@ DIGITS = {
     '7': ['#####', '....#', '...#.', '...#.', '..#..', '..#..', '.#...', '.#...'],
     '8': ['.##..', '#..#.', '#..#.', '.##..', '#..#.', '#...#', '#...#', '.###.'],
     '9': ['.###.', '#...#', '#...#', '.####', '....#', '....#', '...#.', '.##..'],
+    # Capitals and signs whose joins the grid cannot hold: drawn by hand as well.
+    'B': ['###..', '#..#.', '#..#.', '###..', '#..#.', '#...#', '#...#', '####.'],
+    'K': ['#...#', '#..#.', '#.#..', '##...', '##...', '#.#..', '#..#.', '#...#'],
+    'R': ['###..', '#..#.', '#..#.', '#..#.', '###..', '#.#..', '#..#.', '#...#'],
+    'N': ['#...#', '##..#', '##..#', '#.#.#', '#.#.#', '#..##', '#..##', '#...#'],
+    'M': ['#...#', '##.##', '##.##', '#.#.#', '#.#.#', '#...#', '#...#', '#...#'],
+    'W': ['#.....#', '#.....#', '#..#..#', '#..#..#', '#..#..#', '.#.#.#.', '.#.#.#.', '..#.#..'],
+    'X': ['#...#', '#...#', '.#.#.', '..#..', '..#..', '.#.#.', '#...#', '#...#'],
+    '=': ['....', '....', '....', '####', '....', '####', '....', '....'],
+    '#': ['.#.#.', '.#.#.', '#####', '.#.#.', '.#.#.', '#####', '.#.#.', '.#.#.'],
+    '"': ['#.#', '#.#', '#.#', '...', '...', '...', '...', '...'],
 }
+# The clean-up (register 893), so a letter is one line of single pixels:
+# 1. no double lines: where four cells make a full square, one that the shape does not need is taken out;
+# 2. no stray dots: a cell touching nothing is dropped, unless the letter is one that has a dot.
+DOTTED = set('ij.:;!?…·\'"’‘“”é%')
+RING = [(-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1)]
+def spare(g, y, x):
+    """True when the cell at y, x can go: it is no line's end and its neighbours stay joined without it."""
+    on = [bool(g[y + dy, x + dx]) for dy, dx in RING]
+    if sum(on) < 2: return False
+    # the neighbours, walked round the ring, must be one run (cells joined edge to edge or corner to corner)
+    runs = sum(1 for i in range(8) if on[i] and not on[i - 1])
+    if runs == 0: return False
+    if runs == 1: return True
+    # two runs that touch across a corner are still one group
+    groups = runs
+    for i in (0, 2, 4, 6):
+        if not on[i] and on[i - 1] and on[(i + 1) % 8]: groups -= 1
+    return groups <= 1
+def clean(g, ch):
+    g = np.pad(g, 1)
+    changed = True
+    while changed:
+        changed = False
+        for y in range(1, g.shape[0] - 2):
+            for x in range(1, g.shape[1] - 2):
+                if g[y, x] and g[y, x + 1] and g[y + 1, x] and g[y + 1, x + 1]:
+                    # take the corner with the fewest neighbours outside the square: the one that sticks out least
+                    best = None
+                    for cy, cx in ((y, x), (y, x + 1), (y + 1, x), (y + 1, x + 1)):
+                        if not spare(g, cy, cx): continue
+                        n = g[cy - 1:cy + 2, cx - 1:cx + 2].sum()
+                        if best is None or n < best[0]: best = (n, cy, cx)
+                    if best: g[best[1], best[2]] = False; changed = True
+    if ch not in DOTTED:
+        for y in range(1, g.shape[0] - 1):
+            for x in range(1, g.shape[1] - 1):
+                if g[y, x] and g[y - 1:y + 2, x - 1:x + 2].sum() == 1: g[y, x] = False
+    return g[1:-1, 1:-1]
 def cells(ch):
     if ch in DIGITS:
         g = np.zeros((base + 4, len(DIGITS[ch][0])), bool)
@@ -41,6 +90,7 @@ def cells(ch):
     w += -w % SS; h += -h % SS
     im = Image.new('L', (w, h), 0); ImageDraw.Draw(im).text((2 * SS, top), ch, 255, font=f)
     g = (np.array(im) / 255).reshape(h // SS, SS, w // SS, SS).mean((1, 3)) >= TH
+    g = clean(g, ch)
     cols = np.where(g.any(0))[0]
     return g[:, cols[0]:cols[-1] + 1] if len(cols) else None
 
@@ -73,3 +123,15 @@ fb.setupOS2(sTypoAscender=base * U, sTypoDescender=-(-(-desc // SS)) * U, usWinA
 fb.setupPost()
 fb.font.flavor = 'woff2'; fb.save('fonts/wee-hand.woff2')
 print(len(order), 'glyphs, baseline at cell', base)
+# A proof sheet of every glyph, for the eye: python3 tools/pixelFont.py <ttf> <out.png>
+if len(sys.argv) > 2:
+    text = ['abcdefghijklm', 'nopqrstuvwxyz', 'ABCDEFGHIJKLM', 'NOPQRSTUVWXYZ', '0123456789 ?!:;', '.,()+-=/\'"%&#@', 'Swipe across the', 'room, or press an', 'arrow key, to slide']
+    S = 6; img = Image.new('RGB', (150 * S, len(text) * 17 * S), '#f7f1de'); d = ImageDraw.Draw(img)
+    for r, line in enumerate(text):
+        x = 2
+        for ch in line:
+            g = cells(ch) if ch != ' ' else None
+            if g is not None:
+                for yy, xx in zip(*np.where(g)): d.rectangle([(x + xx) * S, (r * 17 + yy) * S, (x + xx + 1) * S - 1, (r * 17 + yy + 1) * S - 1], fill='#4a3526')
+            x += (g.shape[1] + 1) if g is not None else 4
+    img.save(sys.argv[2])

@@ -3,6 +3,7 @@
 import { suite } from './lib.mjs';
 import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP, wobble, sway, WOBBLE_FRAMES } from '../src/view/crayon.js';
 import { SPRITES, spriteSheet, wobbles, sways } from '../src/view/sprites.js';
+import { handSize, HAND_CELLS } from '../src/app/hand.js';
 
 const { check, done } = suite('crayon');
 // A key each keyed sprite accepts, so every builder is drawn once.
@@ -44,6 +45,12 @@ check('a bent drawing is the same piece: about as many cells, and its inside mov
 // Only what is alive wobbles (register 875): a made thing is the same drawing every frame.
 const moving = SPRITES.filter(wobbles).sort().join();
 check('only Wee and the creatures wobble; a berry, a box, a door and every other thing hold still', moving === 'blob,blobAlt,enemy,mover,strong' && !wobbles('berry') && !wobbles('box') && !wobbles('doorShut') && !wobbles('laser'), moving);
+// The hand is set so a cell of its grid is a whole number of the screen's pixels (register 892): then a letter
+// is the same drawing wherever it falls.
+{
+  const off = [1.25, 1.5, 2, 2.5, 2.625, 2.75, 3, 3.5, 4].filter(d => { const cell = handSize(d, false) * d / HAND_CELLS; return Math.abs(cell - Math.round(cell)) > 1e-9 || handSize(d, false) < 14 || handSize(d, false) > 24; });
+  check('on every screen sharper than one pixel, a cell of the hand is whole device pixels and the text 14 to 24 px', !off.length && handSize(1, false) === 18 && handSize(1, true) === 24, off.join());
+}
 // A fruit leans (register 886): its foot stays where it is and its top goes two pixels aside, left then right.
 {
   const b = spriteSheet('berry'), ext = g => { const top = g.findIndex(r => r.some(Boolean)), bot = g.length - 1 - [...g].reverse().findIndex(r => r.some(Boolean)); return { top: g[top].findIndex(Boolean), bot: g[bot].findIndex(Boolean), n: g.flat().filter(Boolean).length }; };
