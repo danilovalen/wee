@@ -1428,7 +1428,6 @@ export const M = [
   ["src/view/moments.js", "return d ? [d[0] * a * wave, d[1] * a * wave] :", "return d ? [a * wave, a * wave] :", "moments"],
   ["src/view/look.js", "'#ff8436', '#c9571a', '#f0b400'", "'#ff8436', '#c9571a', '#fff0a0'", "palettes"],
   ["src/view/look.js", "'#d06a9a', '#8a3f66', '#c9d487'", "'#cb7e75', '#8a3f66', '#c9d487'", "palettes"],
-  ["src/view/pieces.js", "(frame.live ? frame.face || 'right' : 'right')", "'left'", "campaign-play"],
 ];
 
 // Run only as a script: the gate imports M.

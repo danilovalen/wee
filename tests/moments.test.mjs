@@ -35,7 +35,7 @@ check('every death has a pose', ['spring|right', 'spring|up', 'spikes|', 'laser|
 // The room keeps its marks, the newest STAIN_MAX of them.
 const many = Array.from({ length: STAIN_MAX + 5 }, (_, i) => ({ x: i, y: 0, key: 'soot' }));
 const kept = keepStains(many.slice(0, 3), many.slice(3));
-check('a room keeps its marks up to a cap, dropping the oldest', kept.length === STAIN_MAX && kept[0].x === 5 && kept[kept.length - 1].x === STAIN_MAX + 4 && keepStains([many[0]], []).length === 1);
+check('a room keeps its marks up to a cap, dropping the oldest', STAIN_MAX === 60 && kept.length === STAIN_MAX && kept[0].x === 5 && kept[kept.length - 1].x === STAIN_MAX + 4 && keepStains([many[0]], []).length === 1);
 
 // The shake: full by default, less when reduced, none when off; along the axis of a spring's throw.
 const crush = [{ type: 'die', at: 1000, death: { how: 'spring', dir: 'right' } }], amp = v => { look.shake = v; return Math.max(...[1001, 1010, 1020, 1030, 1040].map(t => Math.abs(shakeOf(crush, t)[0]))); };
