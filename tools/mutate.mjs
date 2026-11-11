@@ -1445,8 +1445,8 @@ export const M = [
   ["src/app/pixelIcons.js", "col = ICON_COLOUR[key] || (key.startsWith('ach-') ? C.gold : null)", "col = null", "crayon"],
   ["src/app/pixelIcons.js", "box(g, x, y, x + 1, y + 1, 3 + i));", "box(g, x, y, x + 1, y + 1, 0));", "crayon"],
   // Registers 869, 871: the room's edge line, the whole-piece wobble.
-  ["src/view/crayon.js", "  if (!f) return g;\n  let hsh", "  return g;\n  let hsh", "crayon"],
-  ["src/view/crayon.js", "> 0.35 ? 1 : 0), dy = x =>", "> 0.35 ? 9 : 0), dy = x =>", "crayon"],
+  ["src/view/crayon.js", "  if (!f) return g;\n  // A breath", "  return g;\n  // A breath", "crayon"],
+  ["src/view/crayon.js", "const src = y < mid ? (y ? row(y - 1)", "const src = y < mid ? (y ? row(y - 3)", "crayon"],
   ["src/view/masses.js", "  drawEdgeLine(g, at, w, h);\n", "", "look"],
   // Registers 867 to 874: one frame, the framed sign, the title's line, a locked level's line.
   ["style.css", ".grip { background: var(--fill); box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }", "", "look"],

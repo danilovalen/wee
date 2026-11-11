@@ -3,7 +3,7 @@
 // rectangles so it stays sharp at any whole zoom.
 import { INK } from './ink.js';
 import { skinned, look, current } from './look.js';
-import { ink, doubled, wobble, sway, WOBBLE_FRAMES } from './crayon.js';
+import { ink, doubled, wobble, sway } from './crayon.js';
 import { CRAYON_SPRITES } from './crayonSprites.js';
 import { CRAYON_SKINS } from './crayonSkins.js';
 import { CRAYON_MOMENTS } from './crayonMoments.js';
@@ -22,6 +22,8 @@ export const wobbles = name => ALIVE.has(name);
 // A fruit leans from side to side instead (register 886): upright, left, upright, right, slowly.
 export const sways = name => name === 'berry';
 const SWAY_MS = 420, SWAY = [0, 1, 0, 2];
+// A living thing breathes as slowly: at rest, in, at rest, out.
+const BREATH_MS = 460;
 const sheetOf = (name, param) => { const b = BUILD[name](param); return b.g || doubled(b); };
 function runsOf(name, param, exact, f = 0) {
   if (!exact) name = skinned(name);
@@ -41,7 +43,6 @@ export const spriteSheet = (name, param) => sheetOf(name, param);
 // Boil (register 647, as in Baba Is You): every few frames a still sprite is one of three drawings of
 // itself. Off under reduced motion, when turned off on the Looks page, and for a test driving the page
 // unless it asks (window.__boil).
-const BOIL_MS = 200;
 export function boilOn() {
   if (typeof window === 'undefined' || look.boil === false) return false;
   if (navigator.webdriver && !window.__boil) return false;
@@ -62,7 +63,7 @@ export function drawSprite(g, name, x, y, { outline = false, colour = null, exac
     }));
     return;
   }
-  const list = runsOf(name, colour, exact, !exact && boilOn() ? (sways(name) ? SWAY[Math.floor(performance.now() / SWAY_MS) % 4] : Math.floor(performance.now() / BOIL_MS) % WOBBLE_FRAMES) : 0);
+  const list = runsOf(name, colour, exact, !exact && boilOn() ? (sways(name) ? SWAY[Math.floor(performance.now() / SWAY_MS) % 4] : wobbles(name) ? SWAY[Math.floor(performance.now() / BREATH_MS) % 4] : 0) : 0);
   // Every run is rounded to whole pixels of whatever it is drawn on, so a sprite stays crisp at any position
   // or scale and its runs meet with no seams (registers 607, 621).
   const m = g.getTransform ? g.getTransform() : null;

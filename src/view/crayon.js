@@ -131,12 +131,15 @@ export function wholeScale(k, dpr) {
 export const WOBBLE_FRAMES = 3;
 export function wobble(g, key, f) {
   if (!f) return g;
-  let hsh = 2166136261; for (const ch of key + '#' + f) hsh = Math.imul(hsh ^ ch.charCodeAt(0), 16777619) >>> 0;
-  const h = g.length, w = g[0].length, p1 = (hsh % 1000) / 1000, p2 = ((hsh >>> 10) % 1000) / 1000, turn = 2 * Math.PI;
-  // A band of rows moves one pixel aside and a band of columns one pixel down; the rest stay.
-  const dx = y => (Math.sin((y / 23 + p1) * turn) > 0.35 ? 1 : 0), dy = x => (Math.sin((x / 27 + p2) * turn) > 0.35 ? 1 : 0);
-  const at = (x, y) => g[Math.max(0, Math.min(h - 1, y))][Math.max(0, Math.min(w - 1, x))];
-  return g.map((row, y) => row.map((_, x) => at(x - dx(y), y - dy(x - dx(y)))));
+  // A breath, even from side to side (register 903). In one drawing the piece sinks a pixel and its middle
+  // swells a pixel each side; in the other it rises a pixel. Its foot never moves.
+  const h = g.length, w = g[0].length, mid = h >> 1, row = y => g[Math.max(0, Math.min(h - 1, y))];
+  if (f === 2) return g.map((_, y) => (y < mid ? row(y + 1) : row(y)).slice());
+  return g.map((_, y) => {
+    const src = y < mid ? (y ? row(y - 1) : row(y).map(() => null)) : row(y), out = src.slice();
+    if (y >= mid - 4 && y <= mid + 6) for (let x = 0; x < w; x++) if (!src[x]) { const c = x < w / 2 ? src[x + 1] : src[x - 1]; if (c) out[x] = c; }
+    return out;
+  });
 }
 
 // The sway (register 886): a fruit does not wobble, it leans. Its foot stays put and each row above slides a

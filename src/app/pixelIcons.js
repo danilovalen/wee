@@ -16,7 +16,8 @@ const mirror = g => g.map(r => r.slice().reverse());
 
 const ICON = {
   levels() { const g = grid(); for (const [x, y] of [[1, 1], [9, 1], [1, 9], [9, 9]]) { box(g, x, y, x + 5, y + 5); box(g, x + 2, y + 2, x + 3, y + 3, 0); } return g; },
-  run() { const g = grid(); for (let y = 2; y <= 13; y++) { const w = Math.round((y <= 7.5 ? y - 2 : 13 - y) * 1.6); box(g, 4, y, 4 + w, y); } return g; },
+  // A triangle with even steps, the same above and below its point (register 904).
+  run() { const g = grid(); for (let y = 2; y <= 13; y++) box(g, 3, y, 4 + 2 * Math.min(y - 2, 13 - y), y); return g; },
   // A game pad's cross with an arrow cut into each arm, so it never reads as Move's thin arrows.
   test() {
     const g = grid(); box(g, 5, 0, 10, 15); box(g, 0, 5, 15, 10);
@@ -32,7 +33,7 @@ const ICON = {
   menu() { const g = grid(); box(g, 2, 3, 13, 4); box(g, 2, 7, 13, 8); box(g, 2, 11, 13, 12); return g; },
   back() { return mirror(ICON.next()); },
   next() { const g = grid(); box(g, 2, 7, 12, 8); for (let i = 0; i < 5; i++) { box(g, 9 + i, 3 + i, 10 + i, 3 + i); box(g, 9 + i, 12 - i, 10 + i, 12 - i); } return g; },
-  skip() { const g = grid(); for (let y = 3; y <= 12; y++) { const w = Math.round((y <= 7.5 ? y - 3 : 12 - y) * 1.4); box(g, 3, y, 3 + w, y); } box(g, 11, 3, 12, 12); return g; },
+  skip() { const g = grid(); for (let y = 3; y <= 12; y++) box(g, 2, y, 3 + 2 * Math.min(y - 3, 12 - y), y); box(g, 12, 3, 13, 12); return g; },
   fit() { const g = grid(); for (const [x, y, sx, sy] of [[1, 1, 1, 1], [14, 1, -1, 1], [1, 14, 1, -1], [14, 14, -1, -1]]) { box(g, Math.min(x, x + 4 * sx), Math.min(y, y + sy), Math.max(x, x + 4 * sx), Math.max(y, y + sy)); box(g, Math.min(x, x + sx), Math.min(y, y + 4 * sy), Math.max(x, x + sx), Math.max(y, y + 4 * sy)); } return g; },
   check() { const g = grid(); thick(g, 2, 8, 6, 12); thick(g, 6, 12, 13, 3); line(g, 2, 9, 6, 13); line(g, 6, 13, 13, 4); return g; },
   cross() { const g = grid(); thick(g, 2, 2, 12, 12); thick(g, 12, 2, 2, 12); return g; },

@@ -39,9 +39,9 @@ export const CRAYON_SPRITES = {
   // Hero, the other look (register 777): a green gel drop with a wet belly, a tuft and a wide grin.
   blobAlt(key) { const [lx, ly, shut] = gaze(key), s = sheet().oval(16, 17, 12, 10.5, P.green, 0.09).oval(16, 6, 3, 3.5, P.green).lit(16, 17, 12.5, 11, P.green); s.oval(16, 21, 7, 4.5, lt(P.green, 0.35), 0, true); shine(s, P.green, 10, 11); s.eye(9, 12, lx, shut, ly).eye(19, 12, lx, shut, ly).rect(13, 21, 19, 21, EYE).rect(12, 20, 12, 20, EYE).rect(20, 20, 20, 20, EYE).rect(15, 22, 17, 22, WHITE); return s; },
   // The berry: round and blue, a crown where the flower was, a leaf, a few pale specks.
-  berry() { const s = sheet().oval(16, 18, 11, 10.5, P.blue, 0.05).lit(16, 18, 11.5, 11, P.blue); shine(s, P.blue, 11, 12); for (const [x, y] of [[15, 20], [20, 16], [19, 23], [12, 23], [23, 20]]) s.put(x, y, lt(P.blue, 0.7)); s.rect(14, 8, 18, 9, dk(P.blue, 0.4)); s.put(13, 7, dk(P.blue, 0.4)); s.put(19, 7, dk(P.blue, 0.4)); s.put(16, 10, dk(P.blue, 0.4)); s.line(17, 7, 20, 3, P.wood, 2).oval(24, 4.5, 4.2, 2.6, P.green, 0.1).line(21, 5, 27, 4, dk(P.green, 0.3)); return s; },
+  berry() { const s = sheet().oval(16, 18, 11, 10.5, P.blue, 0.05).lit(16, 18, 11.5, 11, P.blue); shine(s, P.blue, 11, 12); for (const [x, y] of [[11, 21], [20, 21], [15, 25], [16, 25]]) s.put(x, y, lt(P.blue, 0.7)); s.rect(14, 8, 17, 9, dk(P.blue, 0.4)); s.put(13, 7, dk(P.blue, 0.4)); s.put(18, 7, dk(P.blue, 0.4)); s.rect(15, 10, 16, 10, dk(P.blue, 0.4)); s.rect(15, 3, 16, 7, P.wood).oval(11, 4.5, 4, 2.5, P.green).oval(21, 4.5, 4, 2.5, P.green).rect(9, 4, 12, 4, dk(P.green, 0.3)).rect(19, 4, 22, 4, dk(P.green, 0.3)); return s; },
   // A crate from above: its lid, three boards, a brace across them, a nail at each end.
-  box() { const s = sheet().slab(1, 1, 30, 30, lt(P.wood, 0.25), 2); for (const y of [10, 20]) s.rect(3, y, 28, y, dk(P.wood, 0.25)).rect(3, y + 1, 28, y + 1, lt(P.wood, 0.5)); s.line(25, 4, 5, 26, dk(P.wood, 0.2), 3).line(25, 4, 6, 24, lt(P.wood, 0.5), 1); return rivets(s, P.wood, [[5, 6], [27, 6], [5, 15], [27, 16], [5, 25], [27, 26]]); },
+  box() { const s = sheet().slab(1, 1, 30, 30, lt(P.wood, 0.25), 2); for (const y of [10, 20]) s.rect(3, y, 28, y, dk(P.wood, 0.25)).rect(3, y + 1, 28, y + 1, lt(P.wood, 0.5)); s.line(25, 5, 6, 26, dk(P.wood, 0.2), 2).line(6, 5, 25, 26, dk(P.wood, 0.2), 2); return rivets(s, P.wood, [[5, 6], [26, 6], [5, 15], [26, 15], [5, 25], [26, 25]]); },
   wallFace() { return wallSheet(); },
   // Cracks across a block's face; with a face unless bare.
   crack(bare) { return cracks(bare === 'bare' ? sheet() : wallSheet(), dk(P.wall, 0.5)); },
@@ -111,7 +111,8 @@ export const CRAYON_SPRITES = {
   bomb(k) {
     if (k === 'hot') return shine(round(P.orange, 11), P.orange);
     const s = sheet().oval(16, 19, 11, 11, P.deep, 0.04).lit(16, 19, 11.5, 11.5, P.deep, 0.35); s.oval(11, 14, 3, 2, P.top, 0, true); s.put(8, 17, P.top); s.rect(13, 6, 19, 9, P.mid).rect(13, 6, 19, 6, lt(P.mid, 0.4));
-    const n = +k; if (n >= 1) s.line(18, 5, 22, 2, P.wood, 2); if (n >= 2) s.line(22, 2, 27, 3, P.wood, 2); if (n >= 1) s.rect(n >= 2 ? 27 : 22, n >= 2 ? 2 : 1, n >= 2 ? 28 : 23, n >= 2 ? 3 : 2, P.orange);
+    // The fuse stands straight up from the cap, longer with two beats left than with one, a spark on its end.
+    const n = +k; if (n >= 1) s.rect(15, n >= 2 ? 2 : 4, 16, 5, P.wood).rect(15, n >= 2 ? 0 : 2, 16, n >= 2 ? 1 : 3, P.orange);
     return s;
   },
   // A pushable laser's crate frame.
