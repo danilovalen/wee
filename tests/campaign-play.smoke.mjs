@@ -473,8 +473,8 @@ try {
   check('on a phone the page never scrolls; the palette row does', fit.page[0] === fit.page[1] && fit.page[2] === fit.page[3] && fit.grid[2] === 'auto', JSON.stringify(fit));
   // Registers 322, 331, 332: joined strips, Reset alone at the right, editing buttons gone in play.
   const bar = await phone.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(), radius = id => getComputedStyle(document.getElementById(id)).borderTopLeftRadius + '/' + getComputedStyle(document.getElementById(id)).borderTopRightRadius;
-    return { below: ['undo', 'redo', 'campReset'].every(id => document.getElementById(id).parentNode.id === 'campHistory'), levels: radius('campBack'), run: radius('campRun'), test: radius('campTest'), seam: r('campRun').left - r('campBack').right }; });
-  check('on a phone the header is one joined strip of Levels, Run and Test; undo, redo and Reset sit with the tools (plan step 2)', bar.below && bar.seam <= 2, JSON.stringify(bar));
+    return { below: ['undo', 'redo', 'campReset'].every(id => document.getElementById(id).parentNode.id === 'campHistory'), levels: radius('campBack'), run: radius('campRun'), test: radius('campTest'), seam: r('campTest').left - r('campRun').right, back: r('campBack').left, home: document.getElementById('campRun').parentNode.id, under: r('campRun').top > document.getElementById('game').getBoundingClientRect().bottom }; });
+  check('on a phone the way back is the header\'s first thing, Run and Test sit together under the room, and undo, redo and Reset sit with the tools (plan step 2, register 911)', bar.below && bar.back <= 16 && bar.home === 'campActions' && bar.under && bar.seam >= 0 && bar.seam <= 110, JSON.stringify(bar));
   await phone.click('#campTest'); await phone.waitForTimeout(200);
   // Hidden in place (register 680), so nothing beside them moves.
   const inPlay = await phone.evaluate(() => ['undo', 'redo', 'campReset', 'campRun', 'mode'].map(id => id + ':' + document.getElementById(id).checkVisibility({ visibilityProperty: true })).join());

@@ -19,9 +19,6 @@
     <button id="campBack" type="button" class="camp-only">Levels</button>
     <button id="puzzleBack" type="button" class="puzzle-only">Puzzles</button>
     <button id="mode" type="button" title="E" data-alone>Play</button>
-    <button id="campRun" type="button" class="camp-only primary">Run</button>
-    <button id="campReplay" type="button" class="camp-only" hidden title="Watch the last Run again, one move at a time">Replay</button>
-    <button id="campTest" type="button" class="camp-only" title="Play your room yourself; only Run beats the level.">Test</button>
     <span id="campLast" class="campLast camp-only"></span>
     <button id="undo" type="button" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>
     <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>
@@ -136,6 +133,12 @@
         <div class="growBar" data-bar="bottom"><button type="button" class="grip" data-grip="bottom" aria-label="Drag to add or remove rows at the bottom" title="Drag to add or remove rows at the bottom"><i></i></button></div>
       </div>
 </div>
+      <!-- The level's main actions, under the room in the middle (register 911): the same place as the menu's. -->
+      <div id="campActions" class="campActions camp-only" data-join>
+    <button id="campRun" type="button" class="camp-only primary">Run</button>
+    <button id="campReplay" type="button" class="camp-only" hidden title="Watch the last Run again, one move at a time">Replay</button>
+    <button id="campTest" type="button" class="camp-only" title="Play your room yourself; only Run beats the level.">Test</button>
+      </div>
       <div id="lensChips" class="chips" hidden></div>
       <div id="pad" class="pad" hidden>
         <button id="hideBtn" type="button">Hide / Swim</button>

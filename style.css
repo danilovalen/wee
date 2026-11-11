@@ -1282,3 +1282,34 @@ body.campaign #campVerdict { box-shadow: inset 0 0 0 var(--b) var(--line), inset
 .campBrief .campReqs li { align-items: center; }
 body.campaign:not(.sandbox) #palette :is(.lbl, kbd), body.campaign:not(.sandbox) #campTools :is(.lbl, kbd) { display: none; }
 @media (min-width: 701px) { header button { min-height: 40px; } header button .glyph.px { width: 16px; height: 16px; } }
+/* One frame for every screen (register 911, docs/THEME_FLOW_DIAGNOSIS.md). The header is the same on the level
+   list and in a level: 58 px tall, the way back at its left edge, the title in its middle, what belongs to
+   the screen at its right. A level's main actions sit under its room, in the middle, where the menu's are. */
+:root { --head-h: 58px; }
+body.campaign:not(.sandbox) header { height: var(--head-h); box-sizing: border-box; padding: 0 16px; align-items: center; }
+body.campaign:not(.sandbox) header #campBack { order: -5; width: 46px; height: 34px; min-height: 0; padding: 0; flex: none; }
+body.campaign:not(.sandbox) header .campNum { position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: 0; font-size: 18px; color: var(--ink); white-space: nowrap; }
+body.campaign:not(.sandbox) header .campNum::before { content: 'Level '; }
+dialog[id].rooms > .roomsHead { min-height: var(--head-h); box-sizing: border-box; padding-top: 0; padding-bottom: 0; position: sticky; }
+dialog[id].rooms > .roomsHead > .upBtn { width: 46px; height: 34px; min-height: 0; padding: 0; }
+dialog[id].rooms > .roomsHead > .upBtn + b { position: absolute; left: 50%; translate: -50% 0; margin: 0; }
+body.campaign:not(.sandbox) .campActions { display: grid; grid-template-columns: 132px 84px 86px; grid-auto-rows: 48px; gap: 8px; justify-content: center; margin: 8px auto 4px; flex: none; width: 318px; height: 48px; }
+/* Each action has its own place, so one coming or going moves no other (the steady rule). */
+.campActions #campRun { grid-column: 1; grid-row: 1; } .campActions #campReplay { grid-column: 2; grid-row: 1; } .campActions #campTest { grid-column: 3; grid-row: 1; }
+.campActions button { min-width: 0 !important; width: 100%; padding-left: 4px; padding-right: 4px; }
+body.sandbox .campActions { display: none; }
+.campActions button { height: 48px; min-width: 64px; }
+.campActions #campRun { min-width: 132px; }
+/* On a wide window the list and a level share one column, so the way back does not jump sideways. */
+@media (min-width: 701px) {
+  body.campaign:not(.sandbox) header { padding: 0 max(16px, calc((100% - 892px) / 2)); }
+  dialog[id].rooms#campBox { --page: 892px; }
+}
+.campActions > [hidden] { display: none !important; }
+/* Their place never changes size, whatever is showing (the steady rule): one row on a phone, two in the tray. */
+body.campaign:not(.sandbox) .campActions { min-height: 48px; }
+body.campaign:not(.sandbox) #tools > .campActions { display: grid !important; grid-template-columns: 1fr 1fr; grid-auto-rows: 48px; align-content: start; gap: 8px; width: auto !important; margin: 12px 0 0 !important; height: 104px; min-height: 104px; }
+body.campaign:not(.sandbox) #tools > .campActions button { width: 100%; min-width: 0; }
+body.campaign:not(.sandbox) #tools > .campActions #campRun { grid-column: 1 / -1; grid-row: 1; }
+body.campaign:not(.sandbox) #tools > .campActions #campReplay { grid-column: 1; grid-row: 2; }
+body.campaign:not(.sandbox) #tools > .campActions #campTest { grid-column: 2; grid-row: 2; }

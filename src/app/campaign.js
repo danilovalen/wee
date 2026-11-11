@@ -68,7 +68,7 @@ export function enterLevel(id) {
   const def = levelOf(id);
   if (!def) return false;
   const p = progress(), rec = p.levels[id];
-  S.camp = { def, verdict: null, tick: Date.now() }; S.trail = null; S.stains = []; forgetRun(); iconOn($('campBack'), 'levels', def.made ? 'Maker' : 'Levels');
+  S.camp = { def, verdict: null, tick: Date.now() }; S.trail = null; S.stains = []; forgetRun(); iconOn($('campBack'), 'back', def.made ? 'Maker' : 'Levels');
   const kept = rec && rec.room && unframe(rec.room);
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
   // The tutorial always starts from its own room (register 512).

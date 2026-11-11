@@ -15,3 +15,13 @@ export function applyHand() {
   document.documentElement.style.setProperty('--hand-size', size + 'px');
   document.documentElement.style.setProperty('--hand-line', line + 'px');
 }
+
+// A level's main actions (register 911): under the room on a phone, under the tools on a wide window, where
+// they cost the room no height.
+export function placeActions() {
+  const a = document.getElementById('campActions'), tools = document.getElementById('tools'), stage = document.getElementById('stage');
+  if (!a || !tools || !stage) return;
+  const host = innerWidth > 700 ? tools : stage;
+  if (a.parentNode === host) return;
+  if (host === tools) tools.append(a); else stage.insertBefore(a, document.getElementById('lensChips'));
+}

@@ -38,7 +38,7 @@ export function iconOn(el, key, label) {
 
 export function bindGlyphs() {
   const $ = id => document.getElementById(id);
-  iconOn($('campBack'), 'levels', 'Levels'); iconOn($('campRun'), 'run', 'Run'); iconOn($('campTest'), 'test', 'Test: play it yourself');
+  iconOn($('campBack'), 'back', 'Levels'); iconOn($('campRun'), 'run', 'Run'); iconOn($('campTest'), 'test', 'Test: play it yourself');
   iconOn($('campCrate'), 'crate', 'Pushable');
   iconOn($('undo'), 'undo', 'Undo'); iconOn($('redo'), 'redo', 'Redo'); iconOn($('campReset'), 'reset', 'Clear the room');
   // Every page's one way up is a ← at its top left, beside its name (register 771).

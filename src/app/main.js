@@ -1,6 +1,6 @@
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
-import { applyHand } from './hand.js';
+import { applyHand, placeActions } from './hand.js';
 import { bindUnlock } from './unlock.js';
 import { bindSlots } from './slots.js';
 import { buildLooks } from './looks.js';
@@ -37,6 +37,7 @@ import { bindGlyphs } from './glyphs.js';
 // The chosen palette is on before anything is drawn (register 613).
 applyPalette();
 applyHand(); addEventListener('resize', applyHand);
+placeActions(); addEventListener('resize', placeActions);
 S.level = starterLevel(portrait());
 
 window.renderGameToText = () => S.mode === 'play' ? gameText(S.game, 'play') : JSON.stringify({ mode: 'edit', level: S.level });

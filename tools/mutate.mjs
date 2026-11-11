@@ -851,7 +851,7 @@ export const M = [
   ['src/app/campaign.js', "LEVELS.find(l => l.id === id) || CHALLENGES.find(l => l.id === id) || madeLevel(id);", "LEVELS.find(l => l.id === id) || CHALLENGES.find(l => l.id === id);", 'modes'],
   ['src/level/room.js', "  ...(meta.puzzle ? { puzzle: true } : {}),\n", "", 'design'],
   ['src/app/progressCode.js', "  if (all.made) saveMade(all.made);\n", "", 'modes'],
-  ['src/app/campaign.js', "iconOn($('campBack'), 'levels', def.made ? 'Maker' : 'Levels');", "iconOn($('campBack'), 'levels', 'Levels');", 'modes'],
+  ['src/app/campaign.js', "iconOn($('campBack'), 'back', def.made ? 'Maker' : 'Levels');", "iconOn($('campBack'), 'levels', 'Levels');", 'modes'],
   ['index.html', "<small id=\"tutWait\">Tap the ringed spot.</small>", "<small id=\"tutWait\">Tap the ringed spot. It glows.</small>", 'arch'],
   ['src/campaign/goals/lasers.js', "if (cellOf(room, b.stop).startsWith('idoor:')) ok = true;", "ok = true;", 'campaign'],
   ['src/campaign/goals/lasers.js', "at.slice(i + 1).some(r =>", "at.some(r =>", 'campaign'],
@@ -1470,6 +1470,8 @@ export const M = [
   ["src/app/hand.js", "return HAND_CELLS * Math.max(1, Math.round(1.5 * dpr)) / dpr;", "return 18;", "crayon"],
   ["style.css", "those were the bloat. */\n.glyph.px :is(.l, .h, .s) { display: none; }\n", "those were the bloat. */\n", "look"],
   ["src/app/icons.js", "  c.width = T; c.height = T; c.dataset.icon = tool;", "  c.width = 40; c.height = 40; c.dataset.icon = tool;", "look"],
+  ["style.css", "body.campaign:not(.sandbox) header #campBack { order: -5; width: 46px; height: 34px; min-height: 0; padding: 0; flex: none; }\n", "", "look"],
+  ["style.css", ".campActions { min-height: 48px; }", ".campActions { min-height: 0; }", "steady"],
   ["src/view/crayon.js", "(y >= crown ? row : row.map(", "(y >= 0 ? row : row.map(", "crayon"],
   ["src/app/menuScene.js", "l.cells[2 * W + 0] = 'toggle:red';", "l.cells[2 * W + 0] = 'toggle:red:on';", "campaign-play"],
 ];

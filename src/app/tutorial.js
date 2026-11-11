@@ -31,7 +31,7 @@ const STEPS = [
   // Register 587: the side star, and that another room can earn it later (586).
   { say: 'Winning fills the big star; each small star is a side goal, which you don’t need to win.', next: 'Next', ring: '#tutPic', pic: true },
   { say: 'If one room can’t meet every goal, try another room later: stars you earn stay.', next: 'Next', ring: '#tutPic', pic: true },
-  { say: 'You beat it, so tap the four squares to see the real levels.', ring: '#campBack', done: () => current() && current().name === 'levels' },
+  { say: 'You beat it, so tap the arrow to see the real levels.', ring: '#campBack', done: () => current() && current().name === 'levels' },
   { say: 'When you beat a level, its big star shows how many tiles you placed: fewer is better.', next: 'Next', ring: '.campRow[data-level="1"] .campStar.main', list: true },
   { say: 'Each side goal you meet fills one of its small stars.', wait: 'Tap Level 1 to start.', ring: '.campRow[data-level="1"]', list: true },
 ];

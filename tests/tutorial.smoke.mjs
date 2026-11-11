@@ -61,7 +61,7 @@ try {
   await p.click('#tutNext'); await p.waitForTimeout(300);
   check('then says another room can earn it, and a star stays', /try another room later: stars you earn stay/.test(await say(p)) && await sideRing(), await say(p));
   await p.click('#tutNext'); await p.waitForTimeout(300);
-  check('after the win, with no win card and no verdict bar, Levels is ringed', /tap the four squares to see the real levels/.test(await say(p)) && (await ringed(p)) === 'campBack' && !(await p.evaluate(() => document.getElementById('winBox').open)) && await p.locator('#campVerdict').isHidden());
+  check('after the win, with no win card and no verdict bar, Levels is ringed', /tap the arrow to see the real levels/.test(await say(p)) && (await ringed(p)) === 'campBack' && !(await p.evaluate(() => document.getElementById('winBox').open)) && await p.locator('#campVerdict').isHidden());
   const seen = await p.evaluate(() => ({ room: [...window.__seen.room], box: [...window.__seen.box] }));
   check('the room never moved or resized during the tutorial (register 517)', seen.room.length === 1, seen.room.join(' / '));
   check('the bubble never moved or changed height on the room screen (register 517)', seen.box.length === 1, seen.box.join(' / '));

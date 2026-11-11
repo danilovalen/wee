@@ -125,6 +125,15 @@ try {
   // picture has one canvas pixel to each page pixel.
   const sharp = await p.evaluate(() => { const g = document.querySelector('#campRun .glyph.px .l'), c = document.querySelector('#palette canvas, #campTools canvas'); return { ring: g ? getComputedStyle(g).display : 'missing', canvas: c ? c.width + '/' + getComputedStyle(c).width : '' }; });
   check('an icon is one flat shape, and a tool\'s picture is shown at its own size', sharp.ring === 'none' && sharp.canvas === '32/32px', JSON.stringify(sharp));
+  // One frame (register 911): the way back and the header are in the same place on the list and in a level.
+  {
+    const at = sel => p.evaluate(sel => { const e = [...document.querySelectorAll(sel)].find(e => e.offsetParent !== null), r = e && e.getBoundingClientRect(); return r ? [r.left, r.top, r.width, r.height].map(Math.round).join() : ''; }, sel);
+    const inLevel = { back: await at('#campBack'), head: (await at('header')).split(',')[3], title: await p.evaluate(() => { const r = document.getElementById('campNum').getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - innerWidth / 2) <= 2; }) };
+    await p.click('#campBack'); await p.waitForTimeout(500);
+    const inList = { back: await at('dialog[open] .roomsHead .upBtn'), head: (await at('dialog[open] .roomsHead')).split(',')[3] };
+    check('the way back and the header do not move between the level list and a level, and a level\'s title is in the middle', inLevel.back === inList.back && inLevel.head === inList.head && inLevel.title, JSON.stringify({ inLevel, inList }));
+    await p.click('.campRow[data-level]'); await p.waitForTimeout(600);
+  }
   // The desk (register 883): the room's ring has its own line and shadow, and the tutorial's note has the frame.
   const desk = await p.evaluate(() => { const n = s => (getComputedStyle(document.querySelector(s)).boxShadow.match(/rgb/g) || []).length; return { ring: n('#ring'), note: n('#tutBox'), page: getComputedStyle(document.body).backgroundImage !== 'none' }; });
   check('the room lies on squared paper with a line and a shadow, and the tutorial is a framed note', desk.ring >= 2 && desk.note >= 3 && desk.page, JSON.stringify(desk));
