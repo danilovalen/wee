@@ -209,6 +209,13 @@ Owner, 2026-11-10: *"The game voice is not from the blob, but from 'the lab'. Un
   to a tile where the game has 16, so a 2-cell line outside and a 2-cell darkened edge inside still leave room.
   A finer grid is a decision for the plan: it touches every sprite, the room's scale and the pixel font's size.
 
+## Type (register 853)
+
+Owner, 2026-11-11: *"Typography should be legible."* Legibility comes before flavour: the game keeps
+Departure Mono, mixed case, at whole multiples of its 11 px grid. No all-capitals display face, no thin
+face, no scrawl for anything that has to be read; a strike-through never sits on words still worth reading.
+This replaces Part C item 10 ("two faces at most"): one face.
+
 ## Perspective (register 852)
 
 The room is seen from straight above and stays so. A redraw starts from today's sprite for its viewpoint and
