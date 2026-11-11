@@ -1,6 +1,6 @@
 <title>wee theme looks</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Patrick+Hand&family=Pixelify+Sans:wght@400;600&family=Inter:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Patrick+Hand&family=Pixelify+Sans:wght@400;600&family=Silkscreen&family=Tiny5&family=Inter:wght@400;600&display=swap">
 <style>
 /* Layout: a specimen sheet. One column per look; each column stacks the same four specimens so rows compare across. */
 :root {
@@ -30,48 +30,63 @@ th { font: 600 12px var(--pixel); letter-spacing: .06em; text-transform: upperca
 
 /* The specimens. Each look sets its own colours on .stage: these are the thing being judged, so they do not follow the page theme. */
 .stage { --line: #1d1626; --paper: #fff; --ink: #1d1626; --room: #dfe9f2; --hand: 'Gaegu', cursive; --w: 0; padding: 12px; background: var(--room); display: grid; gap: 12px; justify-items: center; }
+main[data-px="1"] .stage :is(canvas, .frame, .btns) { filter: url(#px); }
+/* Under the mask a scrawl turns to mush, so lettering moves to pixel faces set on the same 3 px grid. */
+main[data-px="1"] .stage { --hand: 'Silkscreen', monospace !important; --body: 'Tiny5', monospace !important; --btnface: 'Silkscreen', monospace !important; }
+main[data-px="1"] .stage :is(.clip, .photo p, .margin) { font-size: 24px; line-height: 24px; font-weight: 400; }
+main[data-px="1"] .stage .clip h3 { font-size: 24px; font-weight: 400; flex-wrap: wrap; }
+main[data-px="1"] .stage .btn { font-size: 24px; font-weight: 400; }
+main[data-px="1"] .stage .wob { animation: none; filter: none; }
+main[data-px="1"] .stage :is(.margin, .photo) { transform: none; }
+.switch { font: 600 14px var(--pixel); padding: 8px 14px; background: var(--card); color: var(--fg); border: 2px solid var(--fg); cursor: pointer; justify-self: start; }
+.switch:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .stage canvas { image-rendering: pixelated; max-width: 100%; height: auto; display: block; }
 .wob { filter: url(#w0); }
 @media (prefers-reduced-motion: no-preference) { .wob { animation: boil .45s steps(1) infinite; } .wob.b2 { animation-delay: -.15s; } .wob.b3 { animation-delay: -.3s; } }
 @keyframes boil { 0% { filter: url(#w0); } 33% { filter: url(#w1); } 66% { filter: url(#w2); } }
 .stage[data-wob="0"] .wob { filter: none; animation: none; }
 .frame { border: 4px solid var(--line); box-shadow: inset 0 0 0 4px var(--tint, #0003); background: var(--paper); color: var(--ink); }
-.clip { width: 100%; max-width: 300px; position: relative; padding: 30px 18px 16px; font: 400 15px/1.35 var(--body, var(--pixel)); }
+.clip { width: 100%; max-width: 300px; position: relative; padding: 30px 18px 16px; font: 400 18px/1.35 var(--body, var(--pixel)); }
 .clip::before { content: ""; position: absolute; left: 50%; top: -12px; width: 76px; height: 28px; transform: translateX(-50%); background: var(--metal, #9aa3b5); border: 4px solid var(--line); box-shadow: inset 0 0 0 3px var(--metal2, #c9cfdb); }
-.clip h3 { margin: 0 0 6px; font: 700 20px/1 var(--hand); display: flex; justify-content: space-between; gap: 8px; }
+.clip h3 { margin: 0 0 8px; font: 700 24px/1 var(--hand); display: flex; justify-content: space-between; gap: 8px; }
 .clip ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
 .clip li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; }
 .box { width: 16px; height: 16px; border: 3px solid var(--line); margin-top: 3px; position: relative; background: var(--paper); }
 .done .box::after { content: ""; position: absolute; left: 1px; top: -6px; width: 6px; height: 13px; border: solid var(--tick, #d63a5a); border-width: 0 3px 3px 0; transform: rotate(40deg); }
 .done span { text-decoration: line-through; text-decoration-color: var(--tick, #d63a5a); }
-.margin { font: 400 15px/1.2 var(--hand); color: var(--tick, #d63a5a); transform: rotate(-2deg); justify-self: end; }
+.margin { font: 400 18px/1.2 var(--hand); color: var(--tick, #d63a5a); transform: rotate(-2deg); justify-self: end; }
 .album { width: 100%; max-width: 300px; padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--page, #f6ecd4); }
 .photo { background: #fff; border: 3px solid var(--line); padding: 5px 5px 0; position: relative; transform: rotate(var(--r, -2deg)); display: grid; gap: 2px; }
 .photo::before { content: ""; position: absolute; left: 50%; top: -9px; width: 40px; height: 14px; transform: translateX(-50%) rotate(-3deg); background: var(--tape, #ffe27acc); border: 1px solid #0002; }
 .photo canvas { width: 100%; }
-.photo p { font: 400 14px/1.15 var(--hand); color: #2a2330; padding: 2px 2px 6px; }
+.photo p { font: 400 17px/1.15 var(--hand); color: #2a2330; padding: 2px 2px 6px; }
 .photo.empty { background: none; border-style: dashed; min-height: 64px; place-items: center; grid-column: 1 / -1; }
 .photo.empty::before { display: none; }
 .btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.btn { font: 600 15px var(--btnface, var(--pixel)); padding: 12px 20px; background: var(--b, #7b6cff); color: var(--bt, #fff); border: 4px solid var(--line); box-shadow: inset 0 0 0 4px var(--b2, #4b3fd6), 0 4px 0 var(--line); }
+.btn { font: 600 18px var(--btnface, var(--pixel)); padding: 12px 20px; background: var(--b, #7b6cff); color: var(--bt, #fff); border: 4px solid var(--line); box-shadow: inset 0 0 0 4px var(--b2, #4b3fd6), 0 4px 0 var(--line); }
 .btn.alt { --b: var(--paper); --b2: var(--tint2, #cfd6e2); --bt: var(--ink); }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
+    <!-- The pixel mask (register 846): one sample per 3x3 cell, grown back to fill the cell, so nothing can sit between pixels. -->
+    <filter id="px" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feFlood x="1" y="1" width="1" height="1"/><feComposite width="3" height="3"/><feTile result="dots"/><feComposite in="SourceGraphic" in2="dots" operator="in"/><feMorphology operator="dilate" radius="1"/></filter>
     <filter id="w0"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="1" seed="1"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
     <filter id="w1"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="1" seed="7"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
     <filter id="w2"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="1" seed="13"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
   </defs>
 </svg>
 
-<main>
+<main data-px="1">
   <header style="display:grid;gap:8px">
     <span class="tag">wee · register 841 · sketch, nothing built</span>
     <h1>Three looks for the lab</h1>
     <p>The same four things in each: a room after a spring slam, the level's clipboard, a page of the blob's album, and two buttons. Pick one, or name the parts to mix. The words on the clipboard and in the album are drafts to show the two voices; none is approved copy.</p>
     <p class="dim">Every border is doubled in thickness from the first sketch, after Yoshi's Island (register 845). The interface edges wobble between three drawings. The room holds still on purpose: a grid someone has to read should not move. With reduced motion on, nothing wobbles.</p>
   </header>
+
+  <button class="switch" id="pxSwitch" type="button" aria-pressed="true">Pixel mask: on</button>
+  <p class="dim">The pixel mask (register 846) sits over each whole look and snaps everything to one grid: pieces, panels, lettering, tape and the wobble. Nothing can land between pixels. Switch it off to compare.</p>
 
   <section class="looks" id="looks"></section>
 
@@ -179,4 +194,6 @@ for (const k of LOOKS) {
   art.append(stage, el('ul', 'diff', k.diff.map(d => `<li>${d}</li>`).join('')));
   document.getElementById('looks').append(art);
 }
+const sw = document.getElementById('pxSwitch'), mainEl = document.querySelector('main');
+sw.onclick = () => { const on = mainEl.dataset.px !== '1'; mainEl.dataset.px = on ? '1' : '0'; sw.setAttribute('aria-pressed', on); sw.textContent = 'Pixel mask: ' + (on ? 'on' : 'off'); };
 </script>
