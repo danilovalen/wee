@@ -97,8 +97,9 @@ Ranked by how much each decides.
    may not use them.
 4. **Boil the chrome, not the board.** A wobbling grid makes cells ambiguous. The board holds still while
    the player thinks; panels, the clipboard edge and tape may move.
-5. **The spring slam is the signature.** Hit-stop, a short shake on its axis, a splat in the blob's own
-   colour that stays on the wall across retries. Kept rare so it stays loud.
+5. **A crush is the loud moment.** A spring kills only what it cannot move (register 848), a door only what
+   it closes on: hit-stop, a short shake on the axis, a smear in the blob's own colour that stays. Kept rare
+   so it stays loud.
 6. **The blob needs a face that lives.** Blink, look, flinch before a spring. The cuteness is what gives the
    cruelty its bite.
 7. **One voice for the lab, one for the blob.** The lab is polite and flat whatever happened. The blob is
@@ -145,7 +146,7 @@ motion. Proposals, not decisions.
 | **Relay** | lights when a beam passes | a lens that follows the beam's side | lit: a ring pulse down the wire to what it drives |
 | **Spikes** | kills; a box covers them | tips glint in turn, left to right | the blob pops like a balloon: a short burst, the skin drifts down; a box landing on them is skewered and stays |
 | **Bomb** | blast, shake 3 px 180 ms | a fuse spark; it sweats when something slides at it | the one big shake; a scorch ring stays; walls beside it keep soot; the blob caught in it is a silhouette on the wall behind |
-| **Spring** | pushes; plate occupies the front tile while active | coiled, twitching | the slam: hit-stop, shake along its axis, the blob a splat on the far wall that stays for the level; a box slammed leaves a dent |
+| **Spring** | pushes; plate occupies the front tile while active | coiled, twitching | launching: a kick and a streak, the blob slides off unharmed. Crushing (only when what stands in front of it cannot move, a wall right behind): hit-stop, shake along its axis, the blob a smear between the plate and that wall, which stays for the level (register 848) |
 | **Sticky** | glue and unglue events | a puddle with a slow bubble | strings stretch between it and what leaves, then snap |
 | **Gravel** | slows or stops | loose stones | stones scatter and settle in new places each time |
 | **Cracked floor** | breaks | a hairline that grows each pass | falls away in pieces; what was on it drops out of sight with its eyes last |
@@ -196,6 +197,15 @@ Owner, 2026-11-10: *"The game voice is not from the blob, but from 'the lab'. Un
 - Still to settle in the plan: how the lab's lines live with the house copy rules (condition first, one
   sentence, no retro-explaining), and sample lines for him to approve before any ship. No invented copy
   goes in unapproved.
+
+## Sketch findings (registers 845 to 849)
+
+- Borders twice as thick, after Yoshi's Island: 2 cells outside a piece, 4 px on panels.
+- Pixel perfect is wanted, by construction and not by a filter over the picture: a filter made stray pixels.
+  A gate can check that every edge sits on the grid.
+- No random dropped pixels in a line: it reads as a glitch, not as a hand.
+- **A piece keeps its own drawing.** A border goes round the silhouette; the inside is never reduced to one
+  fill. So the redraw is smaller than Part A feared: the sprites stay, the rule is added round them.
 
 ## Decisions needed before a plan (asked one at a time)
 

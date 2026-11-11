@@ -82,7 +82,7 @@ main[data-px="1"] .photo { padding: 6px 6px 0; overflow: hidden; }
   <header style="display:grid;gap:8px">
     <span class="tag">wee · register 841 · sketch, nothing built</span>
     <h1>Three looks for the lab</h1>
-    <p>The same four things in each: a room after a spring slam, the level's clipboard, a page of the blob's album, and two buttons. Pick one, or name the parts to mix. The words on the clipboard and in the album are drafts to show the two voices; none is approved copy.</p>
+    <p>The same four things in each: a room where a spring has crushed the blob against the wall behind it, the level's clipboard, a page of the blob's album, and two buttons. Pick one, or name the parts to mix. The words on the clipboard and in the album are drafts to show the two voices; none is approved copy.</p>
     <p class="dim">Every border is doubled in thickness from the first sketch, after Yoshi's Island (register 845). The interface edges wobble between three drawings. The room holds still on purpose: a grid someone has to read should not move. With reduced motion on, nothing wobbles.</p>
   </header>
 
@@ -97,7 +97,7 @@ main[data-px="1"] .photo { padding: 6px 6px 0; overflow: hidden; }
       <tr><th></th><th>A · Crayon</th><th>B · Ink</th><th>C · Sticker</th></tr>
       <tr><td>Leans on</td><td>Yoshi's Island</td><td>Binding of Isaac</td><td>The game as it is, pushed</td></tr>
       <tr><td>Outer line</td><td>Dark tint of each fill, never black</td><td>One near-black plum for everything</td><td>One near-black, perfectly even</td></tr>
-      <tr><td>Inner line</td><td>A second, lighter tint</td><td>Dark tint of the fill</td><td>A white keyline, like a cut sticker</td></tr>
+      <tr><td>Inner line</td><td>The piece's own edge, darkened a little</td><td>The piece's own edge, darkened more</td><td>A white keyline outside the piece, like a cut sticker</td></tr>
       <tr><td>Line quality</td><td>Lumpy, whole</td><td>Mostly whole, a little lumpy</td><td>Clean</td></tr>
       <tr><td>Room</td><td>Pastel, hatched floor</td><td>Muted, so pieces shout</td><td>Bright and flat</td></tr>
       <tr><td>Wobble on the interface</td><td>Strong</td><td>Medium</td><td>None; things bounce when used</td></tr>
@@ -105,74 +105,68 @@ main[data-px="1"] .photo { padding: 6px 6px 0; overflow: hidden; }
       <tr><td>Redraw cost</td><td>Highest: every sprite lumpy and tinted per palette</td><td>Middle: one line colour, shapes loosened</td><td>Lowest: today's sprites plus a keyline</td></tr>
       <tr><td>Risk</td><td>Small pieces get soft on a phone</td><td>Can turn grim if the room goes too dark</td><td>Least cynical; reads as plain cute</td></tr>
     </table></div>
-    <p class="note dim">The pixel face here is a stand-in for the game's own. Colours are one palette per look; all nine palettes get the chosen rule later.</p>
+    <p class="note dim">The pieces are the game's own sprites, in the Daylight colours, with each look's border drawn round them (register 848). The pixel face here is a stand-in for the game's own. Colours are one palette per look; all nine palettes get the chosen rule later.</p>
   </section>
 </main>
 
 <script>
-// Sprites are masks on a 16x16 grid; the outline is computed, so one rule draws every piece.
-const N = 16, C = 3;
+// The game's own sprites (Daylight palette), dumped from src/view/sprites.js, so every piece keeps its drawing.
+// A look only adds its border rule round the silhouette; the inside stays as the game draws it (register 848).
+const N = 16, C = 3, DATA = {"pal":["#4b3fd6","#7b6cff","#ffffff","#3d8ef0","#23905a","#2f6cc0","#5b6070","#c9ced8","#b9bfcb","#a9b0bf","#e89a00","#a8740a","#b3304a","#f0435f"],"enc":{"blob":["................","................","................",".....aaaaaa.....","....abbbbbba....","...abbcbbbbba...","...abbbbbbbba...","...abbdbbdbba...","...abbbbbbbba...","...abbbbbbbba...","...abbbbbbbba...","....abbbbbba....",".....aaaaaa.....","................","................","................"],"berry":["................","...........eee..","..........eeee..",".......f.e......","....fddfffff....","...fddddfdddf...","..fdccdddddddf..","..ddcccddddddf..",".fddcccddddddff.",".fdddddddddddff.",".fdddddddddddff.","..dddddddddddf..","..fdddddddddff..","...fdddddddff...","....ffffffff....","................"],"box":["gggggggggggggggg","gccccccccccccccg","gchhhhhhhhhhcghg","gchghhhhhhhcghhg","gchhhhhhhhcghhhg","gggggggggcgggggg","gccccccccgcccccg","gchhhhhcghhhhhhg","gchghhcghhhhghhg","gchhhcghhhhhhhhg","ggggcggggggggggg","gcccgccccccccccg","gccghhhhhhhhhhhg","gcgghhhhhhhhghhg","gchhhhhhhhhhhhhg","gggggggggggggggg"],"wall":[".iiiiiiiiiiiiii.","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg","ijjjjjjjjjjjjjjg",".gggggggggggggg."],"spring":[".iiiiiiiiiiiiii.","ijjjjjjjjjjjjckl","ijjjjjjjjjjjjckl","ijjjjjjjgggggckl","ijjjjjjjkgkgkckl","ijjjjjjjkgkgkckl","ijjjjjjjkgkgkckl","ijjjjjjjlllllckl","ijjjjjjjlllllckl","ijjjjjjjgkgkgckl","ijjjjjjjgkgkgckl","ijjjjjjjgkgkgckl","ijjjjjjjgggggckl","ijjjjjjjjjjjjckl","ijjjjjjjjjjjjckl",".gggggggggggggg."],"springOut":[".iiiiiiiiiiiiii.","ijjjjjjjjjjjjckl","ijjjjjjjjjjjjckl","ijjjjjjjgggggckl","ijjjjjjjkgkgkckl","ijjjjjjjkgkgkckl","ijjjjjjjkgkgkckl","ijjjjjjjlllllckl","ijjjjjjjlllllckl","ijjjjjjjgkgkgckl","ijjjjjjjgkgkgckl","ijjjjjjjgkgkgckl","ijjjjjjjgggggckl","ijjjjjjjjjjjjckl","ijjjjjjjjjjjjckl",".gggggggggggggg."],"arm":["................",".............ckl",".............ckl",".............ckl","k...k...k...kckl","k...k...k...kckl",".k.k.k.k.k.k.ckl","lllllllllllllckl","lllllllllllllckl",".k.k.k.k.k.k.ckl","..k...k...k..ckl","..k...k...k..ckl",".............ckl",".............ckl",".............ckl","................"],"door":["ffffffffffffffff","fddddddddddddddf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","ffffffffffffffff","fddddddddddddddf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","fdddfddfddfddfdf","ffffffffffffffff"],"button":["................","................","................",".....mmmmmm.....","....mmnnnnmm....","...mmnnnnnnmm...","..mmnnnnnnnnmm..","..mmnnnnnnnnmm..","..mmnnnnnnnnmm..","..mmnnnnnnnnmm..","..mmmnnnnnnmmm..","...mmmnnnnmmm...","....mmmmmmmm....",".....mmmmmm.....","................","................"],"spikes":[".nnnnnnnnnnnnnn.","nmmmmmmmmmmmmmmg","nmmmcmmmmmmcmmmg","nmmccmmmmmccmmmg","nmmccmmmmmccmmmg","nmccccmmmccccmmg","nmmmmmmmcmmmmmmg","nmmmmmmccmmmmmmg","nmmmmmmccmmmmmmg","nmmmcmccccmcmmmg","nmmccmmmmmccmmmg","nmmccmmmmmccmmmg","nmccccmmmccccmmg","nmmmmmmmmmmmmmmg","nmmmmmmmmmmmmmmg",".gggggggggggggg."]}};
+const GRID = Object.fromEntries(Object.entries(DATA.enc).map(([k, rows]) => [k, rows.map(r => [...r].map(c => c === '.' ? null : DATA.pal[c.charCodeAt(0) - 97]))]));
 const disc = (cx, cy, rx, ry, lump = 0) => (x, y) => { const a = Math.atan2(y - cy, x - cx); const k = 1 + lump * Math.sin(a * 3 + 1); return ((x + .5 - cx) / (rx * k)) ** 2 + ((y + .5 - cy) / (ry * k)) ** 2 <= 1; };
-const rect = (x0, y0, x1, y1) => (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
-const any = (...f) => (x, y) => f.some(g => g(x, y));
-const SHAPES = {
-  blob: any(disc(8, 9, 5.6, 5, .06), rect(3, 10, 12, 13)),
-  berry: any(disc(8, 9.5, 5, 4.8, .04), rect(8, 2, 9, 4), rect(10, 3, 12, 4)),
-  box: rect(2, 2, 13, 13),
-  wall: rect(0, 0, 15, 15),
-  spring: any(rect(1, 3, 4, 12), rect(5, 5, 6, 10), rect(7, 4, 8, 11), rect(9, 5, 10, 10), rect(11, 2, 13, 13)),
-  splat: any(disc(11, 8, 4, 6.5, .22), disc(7, 3, 1.6, 1.6), disc(6, 12, 2, 1.6), disc(3, 8, 1.3, 1.3), disc(8, 7, 2.2, 1.4)),
-  eyes: (x, y) => false,
-};
-let seed = 1; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 const mix = (a, b, t) => { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); const A = p(a), B = p(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
-function sprite(g, ox, oy, name, fill, L, opt = {}) {
-  const m = SHAPES[name], at = (x, y) => x >= 0 && y >= 0 && x < N && y < N && m(x, y);
+const BLOB = GRID.blob[8][5];
+// A crushed blob: a flat smear in the blob's own colour with its eyes still on it. A stain, so it has no outer line.
+GRID.splat = Array.from({ length: N }, (_, y) => Array.from({ length: N }, (_, x) => [disc(12.5, 8, 3.2, 7.2, .18), disc(8, 3, 1.4, 1.4), disc(7.5, 12.5, 1.8, 1.4), disc(5, 8, 1.2, 1.2)].some(f => f(x, y)) ? BLOB : null));
+function sprite(g, ox, oy, name, L, opt = {}) {
+  const gr = GRID[name], at = (x, y) => (gr[y] || [])[x] || null;
   const px = (x, y, c) => { g.fillStyle = c; g.fillRect(ox + x * C, oy + y * C, C, C); };
-  const outer = L.outer === 'tint' ? mix(fill, '#1a1020', .62) : L.outer, inner = L.inner === 'white' ? '#ffffff' : mix(fill, '#1a1020', L.inner === 'tint2' ? .22 : .34);
-  seed = (opt.seed || 5) * 97 + name.length;
-  // Borders are B cells thick each (register 845): the outer line outside the shape, the inner one inside it.
-  const B = 2, near = (x, y, want) => { for (let dy = -B; dy <= B; dy++) for (let dx = -B; dx <= B; dx++) if (Math.abs(dx) + Math.abs(dy) <= B && at(x + dx, y + dy) === want) return true; return false; };
-  for (let y = -B; y < N + B; y++) for (let x = -B; x < N + B; x++) {
-    const here = at(x, y);
-    if (!here) { if (!opt.noOuter && near(x, y, true) && rnd() >= L.drop) px(x, y, outer); continue; }
-    px(x, y, near(x, y, false) ? inner : fill);
+  // How far, in steps, the nearest cell of the other kind is, and which sprite colour sits there.
+  const near = (x, y, max) => { let best = null; for (let dy = -max; dy <= max; dy++) for (let dx = -max; dx <= max; dx++) { const d = Math.abs(dx) + Math.abs(dy); if (d && d <= max && (!best || d < best.d) && !!at(x + dx, y + dy) !== !!at(x, y)) best = { d, c: at(x + dx, y + dy) }; } return best; };
+  const R = opt.noOuter ? 0 : L.ring;
+  for (let y = -R; y < N + R; y++) for (let x = -R; x < N + R; x++) {
+    const c = at(x, y);
+    if (c) { const e = near(x, y, 1); px(x, y, L.soft ? mix(e ? mix(c, '#1a1020', L.edge) : c, '#ffffff', L.soft) : e ? mix(c, '#1a1020', L.edge) : c); continue; }
+    const o = R && near(x, y, R); if (!o) continue;
+    px(x, y, L.key && o.d === 1 ? '#ffffff' : L.outer === 'tint' ? mix(o.c, '#1a1020', .6) : L.outer);
   }
-  if (!opt.flat) { g.fillStyle = mix(fill, '#ffffff', .55); g.fillRect(ox + 5 * C, oy + 4 * C, 2 * C, C); if (name !== 'spring') g.fillRect(ox + 4 * C, oy + 5 * C, C, 2 * C); }
-  if (opt.eyes) for (const ex of opt.eyes) { g.fillStyle = '#fff'; g.fillRect(ox + ex[0] * C, oy + ex[1] * C, 2 * C, 3 * C); g.fillStyle = L.outer === 'tint' ? '#2a1c3a' : L.outer; g.fillRect(ox + (ex[0] + (opt.look || 0)) * C + (opt.look ? 0 : C), oy + (ex[1] + 1) * C, C, 2 * C); }
+  if (opt.eyes) for (const [ex, ey] of opt.eyes) { px(ex, ey, '#2a2730'); px(ex, ey + 1, '#2a2730'); }
 }
 function room(cv, L) {
   const T = N * C, W = 6, H = 5; cv.width = W * T; cv.height = H * T; const g = cv.getContext('2d');
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     g.fillStyle = (x + y) % 2 ? L.floor : L.floor2; g.fillRect(x * T, y * T, T, T);
-    if (L.hatch) { g.fillStyle = L.hatch; for (let i = 2; i < 46; i += 9) g.fillRect(x * T + i, y * T + ((i * 5 + x * 7) % 40) + 2, 6, 2); }
+    if (L.hatch) { g.fillStyle = L.hatch; for (let i = 3; i < 45; i += 9) g.fillRect(x * T + i, y * T + Math.round((((i * 5 + x * 7) % 40) + 2) / C) * C, 6, 3); }
   }
-  for (let x = 0; x < W; x++) sprite(g, x * T, 0, 'wall', L.wall, L, { seed: x + 1, flat: true });
-  for (let y = 1; y < H; y++) sprite(g, 5 * T, y * T, 'wall', L.wall, L, { seed: y + 9, flat: true });
-  sprite(g, 0, 2 * T, 'spring', L.spring, L, { seed: 3 });
-  // What the slam left: the blob as a splat on the far wall, eyes still there, drops on the floor.
-  sprite(g, 4 * T + 10, 2 * T, 'splat', L.blob, L, { seed: 4, flat: true, eyes: [[9, 5], [12, 6]] });
-  g.fillStyle = L.blob; for (const [x, y, s] of [[3.2, 2.2, 2], [2.4, 2.75, 1], [3.6, 2.9, 1], [1.6, 2.4, 1]]) g.fillRect(Math.round(x * T / C) * C, Math.round(y * T / C) * C, s * C, s * C);
-  sprite(g, 2 * T, 3 * T + 6, 'box', L.box, L, { seed: 6 });
-  g.fillStyle = mix(L.box, '#1a1020', .4); g.fillRect(2 * T + 4 * C, 3 * T + 6 + 7 * C, 8 * C, C); g.fillRect(2 * T + 7 * C, 3 * T + 6 + 4 * C, C, 8 * C);
-  sprite(g, 4 * T - 6, 3 * T + 8, 'berry', L.berry, L, { seed: 8 });
-  sprite(g, 1 * T + 10, 1 * T + 4, 'blob', L.blob, L, { seed: 2, eyes: [[5, 7], [9, 7]], look: 1 });
+  for (let x = 0; x < W; x++) sprite(g, x * T, 0, 'wall', L);
+  for (let y = 1; y < H; y++) sprite(g, 5 * T, y * T, 'wall', L);
+  // A spring only kills what it cannot move: the blob stood in front of it with a wall right behind.
+  sprite(g, 4 * T, 2 * T, 'arm', L);
+  sprite(g, 3 * T, 2 * T, 'springOut', L);
+  sprite(g, 4 * T + 6, 2 * T, 'splat', L, { noOuter: true, eyes: [[11, 5], [13, 9]] });
+  g.fillStyle = BLOB; for (const [x, y, s] of [[4.2, 1.7, 2], [4.5, 3.3, 1], [3.9, 3.15, 1]]) g.fillRect(Math.round(x * T / C) * C, Math.round(y * T / C) * C, s * C, s * C);
+  sprite(g, 1 * T, 1 * T + 6, 'door', L);
+  sprite(g, 1 * T, 3 * T, 'box', L);
+  sprite(g, 2 * T + 9, 3 * T + 6, 'button', L);
+  sprite(g, 0, 2 * T, 'spikes', L);
+  sprite(g, 3 * T + 6, 3 * T + 9, 'berry', L);
 }
 function photo(cv, L, what) {
-  const T = N * C; cv.width = T * 2; cv.height = T * 1.5; const g = cv.getContext('2d');
+  const T = N * C; cv.width = T * 2 + 12; cv.height = T + 24; const g = cv.getContext('2d');
   g.fillStyle = L.floor; g.fillRect(0, 0, cv.width, cv.height);
-  if (what === 'splat') { sprite(g, T, 0, 'wall', L.wall, L, { seed: 2, flat: true }); sprite(g, T, T, 'wall', L.wall, L, { seed: 3, flat: true }); sprite(g, 18, 10, 'splat', L.blob, L, { seed: 4, flat: true, eyes: [[9, 5], [12, 6]] }); }
-  else { sprite(g, 6, 12, 'blob', L.blob, L, { seed: 2, eyes: [[5, 7], [9, 7]], look: 1 }); sprite(g, T + 2, 14, 'berry', L.berry, L, { seed: 8 }); }
+  if (what === 'splat') { sprite(g, 6, 12, 'arm', L); sprite(g, T + 6, 12, 'wall', L); sprite(g, 12, 12, 'splat', L, { noOuter: true, eyes: [[11, 5], [13, 9]] }); }
+  else { sprite(g, 3, 12, 'blob', L); sprite(g, T + 6, 12, 'berry', L); }
 }
 const LOOKS = [
   { id: 'A', name: 'Crayon', sub: 'Soft, lumpy, drawn by hand. The line is a darker shade of whatever it surrounds.',
-    L: { outer: 'tint', inner: 'tint2', drop: 0, floor: '#f6f1df', floor2: '#f1ead2', hatch: '#e6dcbc', wall: '#b9c7e8', blob: '#8fd9a0', berry: '#ff9f6b', box: '#f3cf7a', spring: '#f59bb8' },
+    L: { outer: 'tint', ring: 2, edge: .22, soft: .16, floor: '#f6f1df', floor2: '#f1ead2', hatch: '#e6dcbc', wall: '#b9c7e8', blob: '#8fd9a0', berry: '#ff9f6b', box: '#f3cf7a', spring: '#f59bb8' },
     css: '--room:#f6f1df;--line:#5b4a3a;--paper:#fffdf4;--ink:#4a3b30;--tint:#e9dcc0;--tint2:#e9dcc0;--tick:#e0577a;--page:#f3e3c2;--b:#8ec5ff;--b2:#5a94d6;--bt:#243a5c;--metal:#b9c7e8;--metal2:#dbe3f6;--body:"Patrick Hand",cursive;--btnface:"Gaegu",cursive', wob: 1, diff: ['Outlines are tints, never black', 'Lumpy shapes, whole lines', 'Crayon hatch on the floor'] },
   { id: 'B', name: 'Ink', sub: 'A heavy dark line around everything, a muted room, and pieces in full colour.',
-    L: { outer: '#1d1626', inner: 'tint', drop: 0, floor: '#cfc8c2', floor2: '#c6beb8', hatch: null, wall: '#7d7387', blob: '#7be08a', berry: '#ff7a3d', box: '#f2b632', spring: '#ff5d8f' },
+    L: { outer: '#1d1626', ring: 2, edge: .3, floor: '#cfc8c2', floor2: '#c6beb8', hatch: null, wall: '#7d7387', blob: '#7be08a', berry: '#ff7a3d', box: '#f2b632', spring: '#ff5d8f' },
     css: '--room:#cfc8c2;--line:#1d1626;--paper:#f7f1e3;--ink:#1d1626;--tint:#d8cdb4;--tint2:#d8cdb4;--tick:#e0244e;--page:#e9dcc0;--b:#7b6cff;--b2:#4b3fd6;--bt:#fff;--metal:#8d93a6;--metal2:#c3c8d6', wob: 1, diff: ['One near-black line for every piece and panel', 'Room stays grey so colour means something', 'The double border is strongest here'] },
   { id: 'C', name: 'Sticker', sub: 'Bright, flat and crisp. A white keyline inside a dark edge, like something cut out and stuck on.',
-    L: { outer: '#1b1830', inner: 'white', drop: 0, floor: '#e3f1ff', floor2: '#d6e9fd', hatch: null, wall: '#8aa2e8', blob: '#5fe38b', berry: '#ff8a3d', box: '#ffd23f', spring: '#ff5fa2' },
+    L: { outer: '#1b1830', ring: 3, key: true, edge: 0, floor: '#e3f1ff', floor2: '#d6e9fd', hatch: null, wall: '#8aa2e8', blob: '#5fe38b', berry: '#ff8a3d', box: '#ffd23f', spring: '#ff5fa2' },
     css: '--room:#e3f1ff;--line:#1b1830;--paper:#ffffff;--ink:#1b1830;--tint:#ffffff;--tint2:#d6e2f5;--tick:#ff3d7f;--page:#fff6d6;--b:#5fe38b;--b2:#ffffff;--bt:#1b1830;--metal:#8aa2e8;--metal2:#ffffff;--hand:"Pixelify Sans",monospace', wob: 0, diff: ['Closest to the game today', 'Nothing wobbles; things bounce when used', 'Keeps one pixel face'] },
 ];
 const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
@@ -180,8 +174,8 @@ for (const k of LOOKS) {
   const art = el('article', 'look');
   art.append(el('header', '', `<span class="tag">Look ${k.id}</span><h2>${k.name}</h2><p class="dim">${k.sub}</p>`));
   const stage = el('div', 'stage'); stage.style.cssText = k.css; stage.dataset.wob = k.wob;
-  const r = el('canvas'); r.setAttribute('role', 'img'); r.setAttribute('aria-label', `Look ${k.id}: a room where a spring has slammed the blob into the wall`); room(r, k.L);
-  const s1 = el('div', 'spec'); s1.append(el('small', '', 'The room, after a slam'), r);
+  const r = el('canvas'); r.setAttribute('role', 'img'); r.setAttribute('aria-label', `Look ${k.id}: a room where a spring has crushed the blob against the wall right behind it`); room(r, k.L);
+  const s1 = el('div', 'spec'); s1.append(el('small', '', 'The room, after a spring crushed the blob'), r);
   const clip = el('div', 'frame clip wob', `<h3><span>Test 12</span><span>Subject: Blob</span></h3><ol><li class="done"><i class="box"></i><span>Subject reaches the berry.</span></li><li><i class="box"></i><span>Place 4 things or fewer.</span></li><li><i class="box"></i><span>Push a box through an open door.</span></li></ol><p class="margin">optional: subject stays in one piece</p>`);
   const s2 = el('div', 'spec'); s2.append(el('small', '', 'Objectives: the clipboard (the lab speaks)'), clip);
   const alb = el('div', 'frame album wob b2');
