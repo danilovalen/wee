@@ -40,7 +40,6 @@ button {
   /* The crayon line (docs/THEME.md): the frame is a dark tint of the button's own fill, never black, and the
      fill's edge is darkened inside it: the same double border every piece in the room wears. */
   /* --b: the line's width; the edge inside it is as wide again (the sketch's doubled border, register 858). */
-  --b: 3px; --b2: calc(var(--b) * 2);
   --fill: color-mix(in srgb, var(--panel) var(--btn-mix), var(--rule)); --frame: color-mix(in srgb, var(--fill), var(--ink) 62%); --edge: color-mix(in srgb, var(--fill), var(--ink) 14%);
   font: inherit; color: var(--text); border: 0; border-radius: 0; padding: 6px 12px; cursor: pointer;
   /* The lip: a dark band inside the frame along the bottom; pressed, it moves to the top and the icon sinks 2 px. */
@@ -1137,19 +1136,19 @@ body.removal [data-tool]:not([data-tool=look]):not([data-tool=erase]) { display:
 /* The clipboard: a level's goals on a sheet held by a clip, ruled every 22 px. */
 .campBrief .campGoal { position: relative; margin-top: 10px; padding: 14px 10px 10px; border-radius: 0;
   background: repeating-linear-gradient(180deg, transparent 0 21px, color-mix(in srgb, var(--ink) 9%, transparent) 21px 22px), var(--sheet);
-  box-shadow: inset 0 0 0 3px var(--sheet-line), inset 0 0 0 6px var(--sheet-edge), 3px 3px 0 color-mix(in srgb, var(--ink) 22%, transparent); }
+  box-shadow: inset 0 0 0 var(--b) var(--sheet-line), inset 0 0 0 var(--b2) var(--sheet-edge), 3px 3px 0 color-mix(in srgb, var(--ink) 22%, transparent); }
 .campBrief .campGoal::before, .winCard::before { content: ''; position: absolute; left: 50%; top: -10px; width: 72px; height: 18px; margin-left: -36px; background: var(--mid);
-  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--mid), var(--ink) 62%), inset 0 0 0 6px color-mix(in srgb, var(--mid), var(--paper) 45%); }
+  box-shadow: inset 0 0 0 var(--b) color-mix(in srgb, var(--mid), var(--ink) 62%), inset 0 0 0 var(--b2) color-mix(in srgb, var(--mid), var(--paper) 45%); }
 .campBrief .campMain { background: color-mix(in srgb, var(--gold) 12%, var(--sheet)); border-radius: 0; }
 .campBrief .campOpt { background: none; border-radius: 0; padding: 4px 2px 0; }
 /* The win card is the clipboard's last page. */
-.winCard { border-radius: 0; box-shadow: inset 0 0 0 3px var(--sheet-line), inset 0 0 0 6px var(--sheet-edge), 4px 4px 0 rgba(0, 0, 0, .25); }
+.winCard { border-radius: 0; box-shadow: inset 0 0 0 var(--b) var(--sheet-line), inset 0 0 0 var(--b2) var(--sheet-edge), 4px 4px 0 rgba(0, 0, 0, .25); }
 /* The album (the sketch's): two photos to a row. An earned achievement is a white card with its photo taped on
    and the blob's caption under it; one not earned is a dashed slot that says what it wants. */
-.achList { grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; background: color-mix(in srgb, var(--gold) 14%, var(--panel)); box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--panel), var(--ink) 62%), inset 0 0 0 6px color-mix(in srgb, var(--panel), var(--ink) 14%); }
-.achList li { position: relative; grid-template-columns: 1fr; align-content: start; gap: 6px; padding: 8px; --sheet: color-mix(in srgb, var(--panel), white 60%); background: var(--sheet); color: var(--ink); box-shadow: inset 0 0 0 3px var(--sheet-line); }
+.achList { grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; background: color-mix(in srgb, var(--gold) 14%, var(--panel)); box-shadow: inset 0 0 0 var(--b) color-mix(in srgb, var(--panel), var(--ink) 62%), inset 0 0 0 var(--b2) color-mix(in srgb, var(--panel), var(--ink) 14%); }
+.achList li { position: relative; grid-template-columns: 1fr; align-content: start; gap: 6px; padding: 8px; --sheet: color-mix(in srgb, var(--panel), white 60%); background: var(--sheet); color: var(--ink); box-shadow: inset 0 0 0 var(--b) var(--sheet-line); }
 .achList li:not(.done) { background: none; box-shadow: none; outline: 3px dashed color-mix(in srgb, var(--panel), var(--ink) 45%); outline-offset: -3px; color: var(--soft); }
-.achList li.new { box-shadow: inset 0 0 0 3px var(--gold); }
+.achList li.new { box-shadow: inset 0 0 0 var(--b) var(--gold); }
 .achList li > small { position: absolute; right: 8px; bottom: 6px; }
 .achList .achBadge { width: 100%; height: 64px; background: none; }
 .achList .achBadge.done { background: conic-gradient(var(--paper) 25%, var(--panel) 0 50%, var(--paper) 0 75%, var(--panel) 0) 0 0 / 32px 32px; color: var(--ink); }
@@ -1163,6 +1162,41 @@ body.removal [data-tool]:not([data-tool=look]):not([data-tool=erase]) { display:
 .lookShelf { padding: 8px 8px 16px; margin-bottom: 4px; background: linear-gradient(180deg, transparent calc(100% - 9px), color-mix(in srgb, var(--gold) 45%, var(--ink)) 0 calc(100% - 6px), color-mix(in srgb, var(--gold) 70%, var(--panel)) 0 calc(100% - 3px), color-mix(in srgb, var(--gold) 45%, var(--ink)) 0), color-mix(in srgb, var(--ink) 6%, var(--panel)); }
 .achPhoto { display: block; width: 100%; height: auto; image-rendering: pixelated; box-shadow: 0 0 0 2px color-mix(in srgb, var(--panel), var(--ink) 30%); }
 /* Every page is a sheet of the lab's paper, and a popup is a note stuck over it (register 864). */
-dialog.rooms { border-radius: 0; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--panel), var(--ink) 62%), inset 0 0 0 6px color-mix(in srgb, var(--panel), var(--ink) 14%); }
-.toast { border-radius: 0; background: color-mix(in srgb, var(--gold) 28%, var(--panel)); box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--gold), var(--ink) 55%), 3px 3px 0 color-mix(in srgb, var(--ink) 25%, transparent); }
+dialog.rooms { border-radius: 0; box-shadow: inset 0 0 0 var(--b) color-mix(in srgb, var(--panel), var(--ink) 62%), inset 0 0 0 var(--b2) color-mix(in srgb, var(--panel), var(--ink) 14%); }
+.toast { border-radius: 0; background: color-mix(in srgb, var(--gold) 28%, var(--panel)); box-shadow: inset 0 0 0 var(--b) color-mix(in srgb, var(--gold), var(--ink) 55%), 3px 3px 0 color-mix(in srgb, var(--ink) 25%, transparent); }
+
+/* One scale and one frame for the whole interface (docs/THEME.md, registers 867 to 874). --b is the line's
+   width and --b2 the line plus the edge inside it; a window wider than a phone gets a thicker line and
+   larger words. Every control and every container wears the same frame: a line in a dark tint of its own
+   fill, a lighter edge inside it, square corners. */
+:root { --b: 3px; --b2: calc(var(--b) * 2); --line: color-mix(in srgb, var(--panel), var(--ink) 62%); --line-edge: color-mix(in srgb, var(--panel), var(--ink) 14%); }
+@media (min-width: 700px) { :root { --b: 4px; } body { font-size: 16px; } }
+/* A state colours the frame, it never replaces it. */
+.slot.on, .slotRow.on { box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }
+.campRow.sel { outline: 0; --frame: var(--accent); }
+.zoomBar { gap: 2px; margin-top: 34px; }
+.zoomBar > button { height: 32px; min-width: 36px; padding: 0 8px; font-size: 14px; box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }
+.grip { background: var(--fill); box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }
+.growBar[data-bar] .grip { border-radius: 0; }
+.growBar[data-bar=top] .grip, .growBar[data-bar=bottom] .grip { height: 22px; } .growBar[data-bar=left] .grip, .growBar[data-bar=right] .grip { width: 22px; }
+input[type=number], input[type=text], textarea, select { border-radius: 0; padding: 8px 10px; box-shadow: inset 0 0 0 var(--b) color-mix(in srgb, var(--field), var(--ink) 62%), inset 0 0 0 var(--b2) color-mix(in srgb, var(--field), var(--ink) 14%); }
+/* A goal's chip and the main goal's box: the same frame, at chip size. */
+.campOpt li { border-radius: 0; padding: 4px 10px 4px 5px; box-shadow: inset 0 0 0 2px var(--line), inset 0 0 0 4px var(--line-edge); }
+.campOpt li.met { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--gold), var(--ink) 45%), inset 0 0 0 4px var(--gold); }
+.campBrief .campMain { box-shadow: inset 0 0 0 var(--b) color-mix(in srgb, var(--gold), var(--ink) 45%), inset 0 0 0 var(--b2) color-mix(in srgb, var(--gold) 55%, var(--panel)); padding: calc(var(--b2) + 4px); }
+/* A locked level keeps its whole line; only what is inside it fades. */
+.campRow.locked { opacity: 1; } .campRow.locked > * { opacity: .45; }
+/* The bar across the top is a shelf with a line under it. */
+header { box-shadow: 0 var(--b) 0 var(--line); position: relative; z-index: 2; }
+dialog[id].rooms > .roomsHead { box-shadow: 0 var(--b) 0 var(--line); padding-bottom: 8px; margin-bottom: 12px; }
+/* The title: three crayon letters, a dark-tinted line round them and a foot under them, alive like a piece. */
+.logo { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--accent); animation: none; --tl: color-mix(in srgb, var(--accent), var(--ink) 62%);
+  text-shadow: 2px 0 0 var(--tl), -2px 0 0 var(--tl), 0 2px 0 var(--tl), 0 -2px 0 var(--tl), 2px 2px 0 var(--tl), -2px 2px 0 var(--tl), 2px -2px 0 var(--tl), -2px -2px 0 var(--tl), 0 4px 0 var(--tl); }
+.menu .menuLogo { --tl: color-mix(in srgb, var(--accent), var(--ink) 62%); text-shadow: 4px 0 0 var(--tl), -4px 0 0 var(--tl), 0 4px 0 var(--tl), 0 -4px 0 var(--tl), 4px 4px 0 var(--tl), -4px 4px 0 var(--tl), 4px -4px 0 var(--tl), -4px -4px 0 var(--tl), 0 8px 0 var(--tl), 4px 8px 0 var(--tl), -4px 8px 0 var(--tl); animation: logoAlive .6s steps(1) infinite; }
+@keyframes logoAlive { 0% { translate: 0 0; } 34% { translate: 2px 0; } 67% { translate: 0 2px; } }
+@media (prefers-reduced-motion: reduce) { .menu .menuLogo { animation: none; } }
+/* The menu: the room is whole (no fade over it) and the choices are one framed sign under it. */
+.menu::after { display: none; }
+.menuList { padding: calc(var(--b2) + 8px); background: var(--panel); box-shadow: inset 0 0 0 var(--b) var(--line), inset 0 0 0 var(--b2) var(--line-edge), var(--b) var(--b) 0 color-mix(in srgb, var(--ink) 25%, transparent); bottom: max(24px, env(safe-area-inset-bottom)); gap: 8px; }
+.menuSec { background: none; padding: 0; border-radius: 0; }
 

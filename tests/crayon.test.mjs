@@ -1,7 +1,7 @@
 // The crayon look's rules (docs/THEME.md), held on every sprite the game can draw: one pass inks them all,
 // the line is a tint and whole, no piece is one fill, and a fitted room lands on whole screen pixels.
 import { suite } from './lib.mjs';
-import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP, glintAt, GLINT_EVERY, GLINT_MS, pulseAt, PULSE_EVERY, PULSE_MS } from '../src/view/crayon.js';
+import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP, wobble, WOBBLE_FRAMES } from '../src/view/crayon.js';
 import { SPRITES, spriteSheet } from '../src/view/sprites.js';
 
 const { check, done } = suite('crayon');
@@ -33,25 +33,19 @@ check('a tone is worked out from the colour: darker and lighter, the same in any
 // A joined side gets no line and no dark edge.
 const slab = sheet(4, 4); slab.rect(0, 0, 3, 3, '#ff6188');
 check('a side that joins a neighbour is not inked', !ink(slab.g, { sides: 'nsw' }).some(r => r[0] + r[2] > 4) && ink(slab.g, { sides: 'nesw' }).some(r => r[0] + r[2] > 4));
-// The scribble (register 859): at rest a piece moves between three drawings of its line. The line swells a
-// pixel in short stretches; it never thins or drops a pixel, and the piece itself does not change.
-const blob = sheets.find(([n]) => n === 'blob')[1];
-const cellsOf = runs => { const s = new Map(); for (const [x, y, len, c] of runs) for (let i = 0; i < len; i++) s.set((x + i) + ',' + y, c); return s; };
-const plain = cellsOf(ink(blob)), scr = [1, 2, 3].map(f => cellsOf(ink(blob, { scribble: f })));
-check('a scribbled line never loses a pixel of the plain one, and the piece is unchanged', scr.every(m => [...plain].every(([k, c]) => m.get(k) === c)));
-check('the three drawings differ, each only by a swollen line', new Set(scr.map(m => [...m.keys()].sort().join())).size === 3 && scr.every(m => m.size > plain.size && m.size < plain.size * 1.2));
-
-// The glint, a shining thing's idle: brief, rare, inside its tile, and never two seeds at once.
-const lit = (seed) => { let n = 0; for (let t = 0; t < GLINT_EVERY; t += 20) if (glintAt(t, seed)) n++; return n * 20; };
-check('a glint is brief and rare: under a tenth of the time', lit(0) > 0 && lit(0) <= GLINT_MS + 20 && GLINT_MS * 10 <= GLINT_EVERY, String(lit(0)));
-check('a glint stays inside its tile and crosses it', [0, 100, 200, 400].every(t => { const a = glintAt(t, 0); return a && a.x - a.arm >= 0 && a.x + a.arm < N2 && a.y + a.arm < N2; }) && glintAt(400, 0).x > glintAt(0, 0).x);
-check('two things do not wink together', [1, 2, 3, 4].every(seed => !(glintAt(100, 0) && glintAt(100, seed))) && glintAt(-50, 0) === null);
-
-// The pulse, a working thing's idle (register 865): a one-way's arrow and a laser's muzzle brighten briefly.
-const on = seed => { let n = 0; for (let t = 0; t < PULSE_EVERY; t += 10) if (pulseAt(t, seed)) n++; return n * 10; };
-check('a pulse is brief: under a tenth of the time, and seeds differ', on(0) === PULSE_MS && PULSE_MS * 10 <= PULSE_EVERY && pulseAt(0, 0) && !pulseAt(0, 1) && !pulseAt(-PULSE_EVERY + PULSE_MS, 0));
-const differs = (n, a, b) => JSON.stringify(spriteSheet(n, a)) !== JSON.stringify(spriteSheet(n, b));
-check('a pulsing one-way and a pulsing laser are their own drawings', differs('gate', 'right||0|0', 'right||0|1') && differs('laser', 'right||0', 'right||1') && !differs('laser', 'right|right|0', 'right|right|1'));
+// The wobble (register 871, after Baba Is You): at rest a piece is three whole drawings. The whole sheet
+// bends by a pixel in broad bands, outline and inside together; it never tears row from row, and a piece
+// that fills its tile keeps its footprint.
+const blob = sheets.find(([n]) => n === 'blob')[1], box = sheets.find(([n]) => n === 'box')[1];
+const frames = g => [1, 2].map(f => wobble(g, 'blob', f));
+check('a piece at rest is three drawings, the first as drawn', WOBBLE_FRAMES === 3 && wobble(blob, 'blob', 0) === blob && new Set([blob, ...frames(blob)].map(g => JSON.stringify(g))).size === 3);
+const count = g => g.flat().filter(Boolean).length;
+check('a bent drawing is the same piece: about as many cells, and its inside moves too', frames(blob).every(g => Math.abs(count(g) - count(blob)) < count(blob) * 0.08 && g.some((row, y) => row.some((c, x) => c && blob[y][x] && c !== blob[y][x]))));
+// Row y is row y of the piece slid by 0 or 1; next-door rows never differ by more than that one pixel.
+const left = g => g.map(row => row.findIndex(Boolean));
+check('a bend never tears: a row\'s edge moves by a pixel at most', frames(blob).every(g => left(g).every((v, y) => v < 0 || left(blob)[y] < 0 || Math.abs(v - left(blob)[y]) <= 2)));
+check('a piece that fills its tile keeps its footprint', frames(box).every(g => g.length === N2 && g[0].length === N2 && [0, N2 - 1].every(e => (box[16][e] ? g[16][e] : true))));
+check('the line goes round a bent drawing whole', frames(blob).every(g => { const painted = new Set(); for (const [x, y, len] of ink(g)) for (let k = 0; k < len; k++) painted.add((x + k) + ',' + y); return g.every((row, y) => row.every((c, x) => !c || [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => painted.has((x + dx) + ',' + (y + dy))))); }));
 
 // The interface's icons wear the look too (register 866): a colour of the page's own, a line round every
 // cell of the icon, a lit top edge and a shaded foot.

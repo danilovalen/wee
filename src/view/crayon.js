@@ -81,25 +81,20 @@ export const doubled = g16 => g16.flatMap(row => { const r = row.flatMap(c => [c
 // round it. Returned as rows of [x, y, length, colour] runs, x and y from -ring. edges: which sides of the
 // sheet are open (a side that joins a neighbour gets no line and no dark edge: 'nesw').
 const inkRaw = c => c[0] === '!';
-// scribble: 0 for the plain line; 1, 2 or 3 for one of the three drawings a piece at rest moves between. In
-// each the line swells by a pixel along short stretches, as a crayon pressed harder; it never thins and
-// never drops a pixel, and the piece itself does not move (register 859).
-const swell = (x, y, f) => { let k = Math.imul((x >> 2) * 73856093 ^ (y >> 2) * 19349663 ^ f * 83492791, 2654435761) >>> 0; return k % 5 < 2; };
-export function ink(g, { ring = RING, edge = EDGE, sides = 'nesw', scribble = 0 } = {}) {
+export function ink(g, { ring = RING, edge = EDGE, sides = 'nesw' } = {}) {
   const h = g.length, w = g[0].length, at = (x, y) => (y >= 0 && y < h && x >= 0 && x < w ? g[y][x] : null);
   // Past a side that joins, the sheet counts as filled, so nothing is inked there.
   const filled = (x, y) => (y < 0 ? !sides.includes('n') : y >= h ? !sides.includes('s') : x < 0 ? !sides.includes('w') : x >= w ? !sides.includes('e') : !!g[y][x]);
   const near = (x, y, max, want) => { let best = null; for (let dy = -max; dy <= max; dy++) for (let dx = -max; dx <= max; dx++) { const d = Math.abs(dx) + Math.abs(dy); if (d && d <= max && (!best || d < best.d) && filled(x + dx, y + dy) === want) best = { d, c: at(x + dx, y + dy) }; } return best; };
   const out = [];
-  const far = ring && scribble ? ring + 1 : ring;
-  for (let y = -far; y < h + far; y++) {
+  for (let y = -ring; y < h + ring; y++) {
     let run = null;
-    for (let x = -far; x <= w + far; x++) {
+    for (let x = -ring; x <= w + ring; x++) {
       let c = null;
-      if (x < w + far) {
+      if (x < w + ring) {
         const own = at(x, y);
         if (own) c = edge && !inkRaw(own) && near(x, y, 2, false) ? resolve(dk(own, edge)) : resolve(own);
-        else if (ring && !filled(x, y)) { const o = near(x, y, far, true); if (o && o.c && (o.d <= ring || swell(x, y, scribble))) c = mix(resolve(o.c), DARK, LINE); }
+        else if (ring && !filled(x, y)) { const o = near(x, y, ring, true); if (o && o.c) c = mix(resolve(o.c), DARK, LINE); }
       }
       if (run && run[3] === c) run[2]++; else { if (run) out.push(run); run = c ? [x, y, 1, c] : null; }
     }
@@ -128,21 +123,19 @@ export function wholeScale(k, dpr) {
   return fits(half) ? half / dpr : k;
 }
 
-// A glint: the idle of a thing that shines (a berry, a spike, a button, a lit switch). Every GLINT_EVERY ms,
-// offset by its seed so no two wink together, a small star crosses it from top left to bottom right in
-// GLINT_MS. Returns where it is in the tile and how big, or null while there is none.
-export const GLINT_EVERY = 4600;
-export const GLINT_MS = 420;
-export function glintAt(now, seed) {
-  const t = (((now + seed * 977) % GLINT_EVERY) + GLINT_EVERY) % GLINT_EVERY;
-  if (t >= GLINT_MS) return null;
-  const k = t / GLINT_MS;
-  return { x: Math.round(8 + k * 14), y: Math.round(8 + k * 14), arm: k > 0.25 && k < 0.75 ? 3 : 2 };
+// The wobble (register 871, after Baba Is You): at rest a piece is three whole drawings shown in turn. In the
+// second and third the whole sheet is bent by a smooth wave, a pixel at most: its rows slide sideways and
+// its columns up and down in broad bands, so the outline and everything inside it (eyes, slits, a shine)
+// move together and nothing tears. A cell pushed past the sheet's edge stays at the edge, so a piece that
+// fills its tile keeps its footprint. f: 0 the piece as drawn, 1 or 2 a bent drawing.
+export const WOBBLE_FRAMES = 3;
+export function wobble(g, key, f) {
+  if (!f) return g;
+  let hsh = 2166136261; for (const ch of key + '#' + f) hsh = Math.imul(hsh ^ ch.charCodeAt(0), 16777619) >>> 0;
+  const h = g.length, w = g[0].length, p1 = (hsh % 1000) / 1000, p2 = ((hsh >>> 10) % 1000) / 1000, turn = 2 * Math.PI;
+  // A band of rows moves one pixel aside and a band of columns one pixel down; the rest stay.
+  const dx = y => (Math.sin((y / 23 + p1) * turn) > 0.35 ? 1 : 0), dy = x => (Math.sin((x / 27 + p2) * turn) > 0.35 ? 1 : 0);
+  const at = (x, y) => g[Math.max(0, Math.min(h - 1, y))][Math.max(0, Math.min(w - 1, x))];
+  return g.map((row, y) => row.map((_, x) => at(x - dx(y), y - dy(x - dx(y)))));
 }
-
-// A pulse: the idle of a thing that works (a one-way's arrow, a laser's muzzle). On for PULSE_MS every
-// PULSE_EVERY ms, offset by its seed.
-export const PULSE_EVERY = 2600;
-export const PULSE_MS = 220;
-export const pulseAt = (now, seed) => (((now + seed * 613) % PULSE_EVERY) + PULSE_EVERY) % PULSE_EVERY < PULSE_MS;
 

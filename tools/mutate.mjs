@@ -1149,7 +1149,6 @@ export const M = [
   ['style.css', "button.down:not(:disabled) > :is(svg, canvas, i, img) { translate: 0 2px; }", "button.down:not(:disabled) > :is(svg, canvas, i, img) { }", 'feel'],
   ['src/app/sound.js', "for (const f of fx) if (!heard.has(f)) { heard.add(f);", "for (const f of fx) if (true) {", 'feel'],
   ['src/app/sound.js', "$('menuSound').onclick = () => { setSound(!on);", "$('menuSound').onclick = () => { setSound(on);", 'feel'],
-  ["src/view/crayon.js", "(o.d <= ring || swell(x, y, scribble))", "(o.d <= far)", "crayon"],
   ['src/view/sprites.js', "  if (typeof window === 'undefined' || look.boil === false) return false;", "  if (typeof window === 'undefined') return false;", 'feel'],
   ['src/app/achieve.js', "  let i = still ? n : 0;", "  let i = n;", 'feel'],
   ['src/app/nav.js', "  if (here && from0 && from0 !== name) wipe();", "", 'feel'],
@@ -1429,7 +1428,6 @@ export const M = [
   ["src/view/look.js", "'#ff8436', '#c9571a', '#f0b400'", "'#ff8436', '#c9571a', '#fff0a0'", "palettes"],
   ["src/view/look.js", "'#d06a9a', '#8a3f66', '#c9d487'", "'#cb7e75', '#8a3f66', '#c9d487'", "palettes"],
   // Registers 858 to 863: the scribbled line, the beam that stops at a wall, a wall's line on every open side.
-  ["src/view/crayon.js", "return k % 5 < 2; };", "return false; };", "crayon"],
   ["src/view/beams.js", "r = T / 2 - STOP;", "r = T / 2 + 6;", "look"],
   ["src/view/masses.js", "    if (e) { g.fillRect(X + T, Y, B, T);", "    if (false) { g.fillRect(X + T, Y, B, T);", "look"],
   ["src/app/menuScene.js", "drawMasses(g, ring, W + 2, H + 2, undefined, '');", "drawMasses(g, ring, W + 2, H + 2);", "look"],
@@ -1439,17 +1437,22 @@ export const M = [
   ["src/view/moments.js", "&& at(x + dx, y + dy) === '') out.push", ") out.push", "moments"],
   ["src/view/moments.js", "if (!all.some(s => s.x === m.x && s.y === m.y && s.key === m.key)) all.push(m);", "all.push(m);", "moments"],
   // Register 864: the glint, a shining thing's idle.
-  ["src/view/crayon.js", "  if (t >= GLINT_MS) return null;\n", "", "crayon"],
-  ["src/view/crayon.js", "(now + seed * 977)", "(now)", "crayon"],
   // Register 865: the flinch, the pulse, the armour band.
   ["src/view/moments.js", "now - death.at < FLINCH_MS ? 'flinch' : death.how", "false ? 'flinch' : death.how", "moments"],
-  ["src/view/crayon.js", "(now + seed * 613)", "(now)", "crayon"],
-  ["src/view/crayonSprites.js", "pulse === '1' ? lt(ink, 0.55) : ink", "ink", "crayon"],
   ["src/view/pieces.js", "    drawSprite(g, 'armour', -T / 2, -T / 2);\n", "", "browser"],
   // Register 866: the interface's icons in the crayon look.
   ["src/app/pixelIcons.js", "l: runs((x, y) => !at(x, y) && near(x, y))", "l: runs((x, y) => !at(x, y) && at(x, y + 1))", "crayon"],
   ["src/app/pixelIcons.js", "col = ICON_COLOUR[key] || (key.startsWith('ach-') ? C.gold : null)", "col = null", "crayon"],
   ["src/app/pixelIcons.js", "box(g, x, y, x + 1, y + 1, 3 + i));", "box(g, x, y, x + 1, y + 1, 0));", "crayon"],
+  // Registers 869, 871: the room's edge line, the whole-piece wobble.
+  ["src/view/crayon.js", "  if (!f) return g;\n  let hsh", "  return g;\n  let hsh", "crayon"],
+  ["src/view/crayon.js", "> 0.35 ? 1 : 0), dy = x =>", "> 0.35 ? 9 : 0), dy = x =>", "crayon"],
+  ["src/view/masses.js", "  drawEdgeLine(g, at, w, h);\n", "", "look"],
+  // Registers 867 to 874: one frame, the framed sign, the title's line, a locked level's line.
+  ["style.css", ".grip { background: var(--fill); box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }", "", "look"],
+  ["style.css", ".menu::after { display: none; }", "", "look"],
+  ["style.css", ".campRow.locked { opacity: 1; } .campRow.locked > * { opacity: .45; }", "", "look"],
+  ["style.css", ".slot.on, .slotRow.on { box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }", "", "look"],
 ];
 
 // Run only as a script: the gate imports M.

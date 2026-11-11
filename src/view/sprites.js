@@ -3,7 +3,7 @@
 // rectangles so it stays sharp at any whole zoom.
 import { INK } from './ink.js';
 import { skinned, look, current } from './look.js';
-import { ink, doubled, glintAt, pulseAt, WHITE } from './crayon.js';
+import { ink, doubled, wobble, WOBBLE_FRAMES } from './crayon.js';
 import { CRAYON_SPRITES } from './crayonSprites.js';
 import { CRAYON_SKINS } from './crayonSkins.js';
 import { CRAYON_MOMENTS } from './crayonMoments.js';
@@ -15,6 +15,8 @@ const BUILD = { ...CRAYON_SPRITES, ...CRAYON_SKINS, ...CRAYON_MOMENTS };
 const U = 1, runs = new Map();
 // Drawn as they are, with no line round them: an open door is only its dashes, a frame is only a frame.
 const PLAIN = new Set(['doorOpen', 'doorOpenAlt', 'crateFrame']);
+// Drawn the same every frame: a wall's face and what is set in it, a mark on the floor, the dead.
+const STILL = new Set(['wallFace', 'wallFaceAlt', 'crack', 'spring', 'springAlt', 'stain', 'blobDead']);
 const sheetOf = (name, param) => { const b = BUILD[name](param); return b.g || doubled(b); };
 function runsOf(name, param, exact, f = 0) {
   if (!exact) name = skinned(name);
@@ -22,7 +24,9 @@ function runsOf(name, param, exact, f = 0) {
   if (runs.has(key)) return runs.get(key);
   const plain = PLAIN.has(name) || /(^|\|)bare(\||$)/.test(String(param)) || (name === 'idoor' && /\|1$/.test(String(param)));
   // A mark on the floor is a stain, not a thing: its edge darkens and no line goes round it.
-  const out = ink(sheetOf(name, param), plain ? { ring: 0, edge: 0 } : name === 'stain' ? { ring: 0 } : { scribble: f + 1 });
+  // What is part of a wall or lies on the floor holds still; everything else wobbles (register 871).
+  const sheet = plain || STILL.has(name) ? sheetOf(name, param) : wobble(sheetOf(name, param), name, f);
+  const out = ink(sheet, plain ? { ring: 0, edge: 0 } : name === 'stain' ? { ring: 0 } : {});
   runs.set(key, out);
   return out;
 }
@@ -33,7 +37,7 @@ export const spriteSheet = (name, param) => sheetOf(name, param);
 // Boil (register 647, as in Baba Is You): every few frames a still sprite is one of three drawings of
 // itself. Off under reduced motion, when turned off on the Looks page, and for a test driving the page
 // unless it asks (window.__boil).
-const BOIL_MS = 260;
+const BOIL_MS = 200;
 export function boilOn() {
   if (typeof window === 'undefined' || look.boil === false) return false;
   if (navigator.webdriver && !window.__boil) return false;
@@ -54,7 +58,7 @@ export function drawSprite(g, name, x, y, { outline = false, colour = null, exac
     }));
     return;
   }
-  const list = runsOf(name, colour, exact, !exact && boilOn() ? Math.floor(performance.now() / BOIL_MS) % 3 : 0);
+  const list = runsOf(name, colour, exact, !exact && boilOn() ? Math.floor(performance.now() / BOIL_MS) % WOBBLE_FRAMES : 0);
   // Every run is rounded to whole pixels of whatever it is drawn on, so a sprite stays crisp at any position
   // or scale and its runs meet with no seams (registers 607, 621).
   const m = g.getTransform ? g.getTransform() : null;
@@ -66,15 +70,3 @@ export function drawSprite(g, name, x, y, { outline = false, colour = null, exac
   }
   for (const [rx, ry, n, c] of list) { g.fillStyle = c; g.fillRect(x + rx * U, y + ry * U, n * U, U); }
 }
-
-// The glint of a thing at rest, drawn over it with its tile's top left at (x, y); it holds still when the
-// wobble is off or motion is reduced.
-export function drawGlint(g, x, y, seed) {
-  const at = boilOn() ? glintAt(performance.now(), seed) : null;
-  if (!at) return;
-  g.fillStyle = WHITE.slice(1) + 'ff';
-  g.fillRect(x + at.x - at.arm, y + at.y, at.arm * 2 + 1, 1); g.fillRect(x + at.x, y + at.y - at.arm, 1, at.arm * 2 + 1); g.fillRect(x + at.x - 1, y + at.y - 1, 3, 3);
-}
-// Whether a working thing's pulse is on right now; never while the wobble is off.
-export const pulsing = seed => boilOn() && pulseAt(performance.now(), seed);
-

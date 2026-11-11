@@ -31,14 +31,16 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
 10. **Never one fill**: a shade, a shine or a feature inside. Gate: `tests/crayon.test.mjs` counts tones.
 11. **Lit from the top left.**
 12. **Lumpy**: a round thing is never quite a circle (`sheet.oval`'s lump).
-13. **At rest its line scribbles** (register 859): a piece moves between three drawings in which the line
-    swells a pixel along short stretches, as a crayon pressed harder. The line never thins and never drops a
-    pixel, and the piece itself does not move. A wall's line swells too, but stays the same drawing. Off
-    under reduced motion and from Looks. Gate: `tests/crayon.test.mjs`.
+13. **At rest a piece is alive, as in Baba Is You** (register 871): it is three whole drawings shown in turn,
+    five a second. In two of them the whole sheet bends by a pixel in broad bands, so its outline and what is
+    inside it move together; it never tears, and a piece that fills its tile keeps its footprint
+    (`crayon.js` `wobble`). Walls, floor, marks and the dead hold still. Off under reduced motion and from
+    Looks. There is no other idle: no swelling line, no glint, no pulse. Gate: `tests/crayon.test.mjs`.
 13a. **The blob is a rounded square** (register 860), as it always was: `sheet.squircle`. Gate:
     `tests/look.smoke.mjs`.
-13b. **A wall wears the same line on every open side** (register 861), rivets in the corners an open side
-    reaches, and a line where it meets open floor outside the room (the menu). Same gate.
+13b. **A wall wears the same line on every open side** (registers 861, 869): 2 pixels, straight and whole,
+    rivets in the corners an open side reaches. Where a room's floor meets the wall round the room, the room
+    draws that line itself along its edge. Gate: `tests/look.smoke.mjs`.
 13c. **A beam is flat**: a band, a core that comes and goes, the dark-tinted line, no glow; it stops at the
     line of what it hits (register 862). Same gate.
 
@@ -58,9 +60,6 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
 ## Motion
 
 19. **The room holds still while the player thinks**; the interface may move, in whole pixels.
-19a. **A thing that shines winks**: a berry, a spike, a raised button and a lit switch get a small glint
-    that crosses them now and then, never two at once (`glintAt`). It is the only idle in the room besides
-    the line and the blob's blink; off with the wobble and under reduced motion.
 20. **A crush is the loud moment**: hit-stop, a short shake on its axis, a mark that stays until the player
     leaves the level. Shake has a setting (off, reduced, full; full by default) and a still cue under reduced
     motion.
@@ -79,8 +78,6 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
 26. **A draft line is listed before it is kept**: `docs/THEME_COPY.md` holds every line the theme added, live
     or proposed, for the owner to mark.
 27. **Every page is a sheet** with the same frame, and a popup is a note stuck over it.
-28. **A working thing pulses** (register 865): a one-way's arrow and a laser's muzzle brighten for a moment
-    now and then (`pulseAt`), staggered, off with the wobble.
 29. **The blob flinches**: for a moment after a death it is itself with wide eyes, then lies as the death left
     it (`poseAt`).
 30. **Armour is a piece too**: a riveted steel band, inked by the same pass.
@@ -88,3 +85,15 @@ How it was reached: `THEME_DISCOVERY.md`; the build order: `THEME_PLAN.md`; the 
     it), a line one pixel wide round it in a dark tint of that colour, a lit top edge and a shaded foot
     (`src/app/pixelIcons.js`). A mark that carries its state's colour and a small star stay one flat shape.
     Gate: `tests/crayon.test.mjs`.
+
+## One interface
+
+32. **One scale** (registers 867, 872): `--b` is the line's width, 3 px on a phone and 4 px on anything wider,
+    where words are 16 px. Every frame in the interface is `--b` of line and `--b` of edge inside it.
+33. **One frame, on everything**: every control (button, slot, grip, zoom button, input) and every container
+    (sheet, page, sign, chip, the goal's box) wears it. A state colours the frame and never replaces it. A
+    locked level keeps its whole line and fades only its inside. Gate: `tests/look.smoke.mjs` lists every
+    control on the menu, the level list and a level and fails on one without the frame.
+34. **The title is drawn like a piece**: its letters in the accent with a dark-tinted line round them and a
+    foot under them, alive on the menu.
+35. **The menu shows the whole room**: nothing fades it, and the choices are one framed sign.

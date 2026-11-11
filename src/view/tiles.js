@@ -1,6 +1,6 @@
 // Tiles: floor, walls and every cell type, drawn in place.
 import { INK, T, frame, pxTri } from './ink.js';
-import { drawSprite, drawGlint, pulsing } from './sprites.js';
+import { drawSprite } from './sprites.js';
 import { tint, dk } from './crayon.js';
 import { drawnColour } from '../rules/wires.js';
 import { gateOf, gateDirs } from '../rules/grid.js';
@@ -65,7 +65,7 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     // draws its chevrons in its colour, and while that colour is pressed it lights up: tinted, ringed
     // and pointing the other way.
     const { col } = gateOf(c), on = !!(s && col && s.open[col]), ds = s ? gateDirs(s, c) : gateOf(c).dirs;
-    drawSprite(g, 'gate', 0, 0, { colour: ds.join(',') + '|' + (col ? INK[col] : '') + '|' + (on ? 1 : 0) + '|' + (pulsing(x * 5 + y * 3) ? 1 : 0) });
+    drawSprite(g, 'gate', 0, 0, { colour: ds.join(',') + '|' + (col ? INK[col] : '') + '|' + (on ? 1 : 0) });
   } else if (c.startsWith('sensor:')) {
     // A glass block a beam goes through (register 374, his G3): solid, framed in its colour, the circle at its
     // centre filled only while a beam crosses it (register 792).
@@ -73,7 +73,7 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
     drawSprite(g, 'sensor', 0, 0, { colour: INK[col] + '|' + (lit ? 1 : 0) });
   } else if (c === 'goal') {
     // The goal is a cyan berry (registers 593, 604).
-    drawSprite(g, 'berry', 0, 0); drawGlint(g, 0, 0, x * 7 + y * 13);
+    drawSprite(g, 'berry', 0, 0);
   } else if (c === 'checkpoint') {
     const active = s && s.checkpoint.x === x && s.checkpoint.y === y;
     drawSprite(g, 'checkpoint', 0, 0, { colour: active ? '1' : '0' });
@@ -84,10 +84,10 @@ export function drawCell(g, c, x, y, s, scale = 1, bare = false) {
       // A switch plate: a pill in its colour with a knob, left and hollow while off, right
       // and filled while on.
       const on = s ? s.toggled.includes(y * s.w + x) : c.endsWith(':on');
-      drawSprite(g, on ? 'switchOn' : 'switchOff', 0, 0, { colour: INK[col] }); if (on) drawGlint(g, 0, 0, x * 5 + y * 11 + 3);
+      drawSprite(g, on ? 'switchOn' : 'switchOff', 0, 0, { colour: INK[col] });
     } else if (kind === 'button') {
       const down = s && pressedAt(s, x, y);
-      drawSprite(g, down ? 'buttonDown' : 'buttonUp', 0, 0, { colour: INK[col] }); if (!down) drawGlint(g, 0, 0, x * 3 + y * 17 + 1);
+      drawSprite(g, down ? 'buttonDown' : 'buttonUp', 0, 0, { colour: INK[col] });
     } else if (kind === 'idoor') {
       // The negative of a door: dark inside, the colour on the rim and the bars. Open,
       // a dashed rim around a minus sign.

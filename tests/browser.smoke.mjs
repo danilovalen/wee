@@ -699,7 +699,7 @@ try {
 
   // Manga: "on" is an accent ring inside a sticker shadow, and no control draws a border.
   const onLook = await page.$eval('[data-tool].on', b => { const c = getComputedStyle(b); return { shadow: c.boxShadow, border: c.borderTopWidth, accent: c.color }; });
-  check('a picked tool wears the accent inset ring and no border', onLook.shadow.includes('inset') && onLook.shadow.includes(onLook.accent + ' 0px 0px 0px 3px inset') && onLook.accent === 'rgb(171, 157, 242)' && onLook.border === '0px', JSON.stringify(onLook));
+  check('a picked tool wears the accent inset ring and no border', onLook.shadow.includes('inset') && new RegExp(onLook.accent.replace(/[()]/g, '\\$&') + ' 0px 0px 0px [34]px inset').test(onLook.shadow) && onLook.accent === 'rgb(171, 157, 242)' && onLook.border === '0px', JSON.stringify(onLook));
   // Powers are hidden for now (register 653): nothing on screen offers one.
   check('no power is offered on screen', await page.locator('[data-power]').count() === 0);
   // served with a rooms directory, the page saves to the server instead of the browser

@@ -62,6 +62,40 @@ try {
   });
   check('the menu\'s room is drawn on whole screen pixels', Math.abs(menu.per - Math.round(menu.per)) < 0.01 && menu.per >= 1, JSON.stringify(menu));
   check('the menu\'s walls have their line where they meet open floor', menu.outer === menu.line, JSON.stringify(menu));
+  // The room's own edge (register 869): outside it is wall, so a floor tile at the edge carries that wall's line.
+  const edge = await p.evaluate(async () => {
+    const { drawMasses } = await import('/src/view/masses.js'), { T } = await import('/src/view/ink.js'), { lineOf } = await import('/src/view/crayon.js'), { P } = await import('/src/view/crayonSprites.js');
+    const c = document.createElement('canvas'); c.width = c.height = 2 * T; const g = c.getContext('2d');
+    g.fillStyle = '#ffffffff'; g.fillRect(0, 0, c.width, c.height);
+    drawMasses(g, ['', '', '', 'wall'], 2, 2);
+    const px = (x, y) => '#' + [...g.getImageData(x, y, 1, 1).data].slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join('');
+    return { line: lineOf(P.wall).slice(0, 7), left: px(0, T / 2), top: px(T / 2, 0), right: px(2 * T - 1, T / 2), inside: px(T / 2, T / 2), wallEdge: px(2 * T - 1, T + T / 2) };
+  });
+  check('a room has a line where its floor meets the wall round it, on every side', [edge.left, edge.top, edge.right].every(c => c === edge.line) && edge.inside === '#ffffff' && edge.wallEdge !== edge.line, JSON.stringify(edge));
+
+  // One frame for the whole interface (register 872): every control on a screen wears the line and the edge
+  // inside it. A link that is only words is the one exception.
+  const bare = () => p.evaluate(() => {
+    const top = [...document.querySelectorAll('dialog[open]')].at(-1) || document.body, out = [];
+    for (const e of top.querySelectorAll('button, input[type=text], input[type=number], select, textarea')) {
+      const r = e.getBoundingClientRect(), c = getComputedStyle(e);
+      if (r.width < 2 || r.height < 2 || c.visibility === 'hidden' || e.closest('[hidden]') || c.opacity === '0' || e.id === 'menuDebug') continue;
+      if ((c.boxShadow.match(/inset/g) || []).length < 2) out.push(e.id || e.className || e.tagName);
+    }
+    return out;
+  });
+  const menuBare = await bare();
+  check('every control on the menu wears the frame', !menuBare.length, menuBare.join(' '));
+  const sign = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('.menuList')), fade = getComputedStyle(document.querySelector('.menu'), '::after'); return { framed: (c.boxShadow.match(/inset/g) || []).length >= 2, fade: fade.display }; });
+  check('the menu\'s choices are one framed sign, and nothing fades the room', sign.framed && sign.fade === 'none', JSON.stringify(sign));
+  const title = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('.menu .menuLogo')); return { shadow: c.textShadow.split('px,').length, clip: c.backgroundClip }; });
+  check('the title has a line round its letters', title.shadow >= 8 && title.clip !== 'text', JSON.stringify(title));
+  await p.click('#menuCampaign'); await p.waitForTimeout(400);
+  const listBare = await bare(), locked = await p.evaluate(() => { const e = document.querySelector('.campRow.locked'); return e ? getComputedStyle(e).opacity : '1'; });
+  check('every control on the level list wears the frame, and a locked level keeps its line', !listBare.length && locked === '1', listBare.join(' ') + ' ' + locked);
+  await p.click('.campRow[data-level]'); await p.waitForTimeout(700);
+  const levelBare = await bare();
+  check('every control in a level wears the frame', !levelBare.length, levelBare.join(' '));
   check('nothing threw', !errors.length, errors.join(' | '));
 } finally { await browser.close(); server.close(); }
 done();
