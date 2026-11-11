@@ -1458,6 +1458,10 @@ export const M = [
   ["src/app/campaign.js", "  buildLogo(document.querySelector('.menuLogo'));\n", "", "look"],
   ["src/app/logo.js", "  for (const [x, y] of top) g[y][x] = lt(c, 0.5);\n", "", "look"],
   ["style.css", "--edge: color-mix(in srgb, var(--fill), white 55%);\n  font: inherit;", "--edge: color-mix(in srgb, var(--fill), white 55%);\n  clip-path: polygon(4px 0, 100% 0, 100% 100%, 0 100%, 0 4px);\n  font: inherit;", "look"],
+  // Registers 880, 881: the title clear of the corner buttons, the tool tray, a goal's tick box.
+  ["style.css", "@media (max-width: 560px) { .menu .menuLogo { top: 62px; } }", "", "look"],
+  ["style.css", "  body.campaign:not(.sandbox) main { grid-template-columns: 212px minmax(0, 660px); justify-content: center; gap: 20px; }\n", "", "look"],
+  ["style.css", ".campReqs .mark::before { clip-path: none; background: none; box-shadow: inset 0 0 0 2px var(--line), inset 0 0 0 4px var(--line-edge); }", "", "look"],
 ];
 
 // Run only as a script: the gate imports M.

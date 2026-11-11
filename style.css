@@ -1205,3 +1205,23 @@ body.sandbox #palette.fly [data-tool] { box-shadow: inset 0 0 0 var(--b) var(--f
 #campColours button, #campColours button.on { filter: none; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--dot, var(--panel)), var(--ink) 62%), inset 0 0 0 5px color-mix(in srgb, var(--dot, var(--panel)), white 40%); background: var(--dot, var(--panel)); }
 #campColours button::before { display: none; }
 #campColours button.on { outline: 3px solid var(--ink); outline-offset: 2px; }
+/* The level screen as the sketch has it (register 881). On a window wider than a phone the tools are one framed
+   tray beside the room, every tool a full-size button, and the tray, the clipboard and the room sit together in
+   the middle of the window, not spread to its edges. */
+@media (min-width: 701px) {
+  body.campaign:not(.sandbox) main { grid-template-columns: 212px minmax(0, 660px); justify-content: center; gap: 20px; }
+  body.campaign:not(.sandbox) #tools { width: auto; overflow: visible; border-radius: 0; padding: calc(var(--b2) + 10px); background: var(--panel); -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: inset 0 0 0 var(--b) var(--line), inset 0 0 0 var(--b2) var(--line-edge), var(--b) var(--b) 0 color-mix(in srgb, var(--ink) 22%, transparent); }
+  body.campaign:not(.sandbox) #campTop { flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+  body.campaign:not(.sandbox) :is(.campHistory, #campTools) { gap: 6px; flex-wrap: wrap; }
+  body.campaign:not(.sandbox) #palette.grid { grid-template-columns: repeat(3, 52px); gap: 6px; }
+  body.campaign:not(.sandbox) :is(.campHistory > button, #campTools button, #palette button) { width: 52px; height: 48px; }
+  body.campaign:not(.sandbox) :is(#campTools, #palette) canvas { width: 30px; height: 30px; }
+  body.campaign:not(.sandbox) .campHistory .glyph { width: 24px; height: 24px; }
+}
+/* A goal's mark is a box to tick, as on the sketch's clipboard, not a ring. */
+.campReqs .mark::before { clip-path: none; background: none; box-shadow: inset 0 0 0 2px var(--line), inset 0 0 0 4px var(--line-edge); }
+.campReqs .met .mark::before { clip-path: none; background: color-mix(in srgb, var(--good) 22%, transparent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--good), var(--ink) 45%); }
+.campReqs .unmet .mark::before { clip-path: none; background: color-mix(in srgb, var(--bad) 22%, transparent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--bad), var(--ink) 45%); }
+/* On a phone the title sits under the corner buttons, never behind them (register 880). */
+@media (max-width: 560px) { .menu .menuLogo { top: 62px; } }

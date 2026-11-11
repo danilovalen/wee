@@ -43,7 +43,7 @@ const count = g => g.flat().filter(Boolean).length;
 check('a bent drawing is the same piece: about as many cells, and its inside moves too', frames(blob).every(g => Math.abs(count(g) - count(blob)) < count(blob) * 0.08 && g.some((row, y) => row.some((c, x) => c && blob[y][x] && c !== blob[y][x]))));
 // Only what is alive wobbles (register 875): a made thing is the same drawing every frame.
 const moving = SPRITES.filter(wobbles).sort().join();
-check('only the blob, a berry and the creatures wobble; a box, a door and every made thing hold still', moving === 'berry,berryAlt,blob,blobAlt,enemy,mover,strong' && !wobbles('box') && !wobbles('doorShut') && !wobbles('laser'), moving);
+check('only the blob and the creatures wobble; a berry, a box, a door and every other thing hold still', moving === 'blob,blobAlt,enemy,mover,strong' && !wobbles('berry') && !wobbles('box') && !wobbles('doorShut') && !wobbles('laser'), moving);
 // Row y is row y of the piece slid by 0 or 1; next-door rows never differ by more than that one pixel.
 const left = g => g.map(row => row.findIndex(Boolean));
 check('a bend never tears: a row\'s edge moves by a pixel at most', frames(blob).every(g => left(g).every((v, y) => v < 0 || left(blob)[y] < 0 || Math.abs(v - left(blob)[y]) <= 2)));

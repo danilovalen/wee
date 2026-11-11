@@ -97,6 +97,9 @@ try {
     return { canvas: true, line: seen.has(lineOf(P.violet).slice(0, 7)), lit: seen.has(resolve(lt(P.violet, 0.3))), tones: seen.size, inked, per: c.getBoundingClientRect().width / c.width, scale: LOGO_SCALE, label: document.querySelector('.menuLogo').getAttribute('aria-label') };
   });
   check('the title is drawn like a piece: a line round its letters, lit and shaded, on whole pixels', title.canvas && title.line && title.lit && title.tones >= 4 && title.inked > 1500 && title.per === title.scale && title.label === 'wee', JSON.stringify(title));
+  // On a phone the title sits clear of the corner buttons (register 880).
+  const under = await p.evaluate(() => { const l = document.querySelector('.menuLogo canvas').getBoundingClientRect(); return [...document.querySelectorAll('.menuCorner')].filter(b => { const r = b.getBoundingClientRect(); return r.width && r.left < l.right && r.right > l.left && r.top < l.bottom && r.bottom > l.top; }).map(b => b.id); });
+  check('the title is never behind a corner button', !under.length, under.join(' '));
   // A button is square, with a line and a lighter band inside it: nothing is cut off its corners (register 878).
   const btn = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('#menuCampaign')); return { clip: c.clipPath, radius: c.borderTopLeftRadius, insets: (c.boxShadow.match(/inset/g) || []).length }; });
   check('a button has square corners, nothing cut', btn.clip === 'none' && btn.radius === '0px' && btn.insets === 2, JSON.stringify(btn));
@@ -106,6 +109,19 @@ try {
   await p.click('.campRow[data-level]'); await p.waitForTimeout(700);
   const levelBare = await bare();
   check('every control in a level wears the frame', !levelBare.length, levelBare.join(' '));
+  // A goal's mark is a box to tick, not a ring (register 881).
+  const mark = await p.evaluate(() => { const m = document.querySelector('.campReqs .mark'); const c = getComputedStyle(m, '::before'); return { clip: c.clipPath, insets: (c.boxShadow.match(/inset/g) || []).length }; });
+  check('a goal\'s mark is a square box with the frame', mark.clip === 'none' && mark.insets >= 1, JSON.stringify(mark));
+  // On a wide window the tools are one framed tray of full-size buttons beside the room.
+  const wide = await browser.newPage({ viewport: { width: 1100, height: 900 } });
+  await wide.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; });
+  await wide.goto(`http://localhost:${PORT}/index.html`); await wide.waitForTimeout(500);
+  await wide.click('#menuCampaign'); await wide.waitForTimeout(300); await wide.click('.campRow[data-level]'); await wide.waitForTimeout(700);
+  const tray = await wide.evaluate(() => { const t = document.getElementById('tools'), tr = t.getBoundingClientRect(), s = getComputedStyle(t), room = document.getElementById('roomArea').getBoundingClientRect();
+    const cut = [...t.querySelectorAll('button')].filter(b => { const r = b.getBoundingClientRect(); return r.width && (r.right > tr.right + 0.5 || r.width < 44 || r.height < 44); }).length;
+    return { framed: (s.boxShadow.match(/inset/g) || []).length >= 2, cut, gap: Math.round(room.left - tr.right), right: Math.round(innerWidth - room.right), left: Math.round(tr.left) }; });
+  check('the tool tray is framed, holds every tool whole at full size, and sits against the room', tray.framed && tray.cut === 0 && tray.gap <= 24 && Math.abs(tray.left - tray.right) <= 40, JSON.stringify(tray));
+  await wide.close();
   // Who's playing: the row that is picked keeps the frame, in the accent.
   await p.goto(`http://localhost:${PORT}/index.html`); await p.waitForTimeout(500);
   await p.click('#menuSlot'); await p.waitForTimeout(400);

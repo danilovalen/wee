@@ -15,9 +15,9 @@ const BUILD = { ...CRAYON_SPRITES, ...CRAYON_SKINS, ...CRAYON_MOMENTS };
 const U = 1, runs = new Map();
 // Drawn as they are, with no line round them: an open door is only its dashes, a frame is only a frame.
 const PLAIN = new Set(['doorOpen', 'doorOpenAlt', 'crateFrame']);
-// Only what is alive wobbles (register 875): the blob, a berry, and the creatures. A box, a door, a button,
-// a laser and every other made thing is drawn the same every frame.
-const ALIVE = new Set(['blob', 'blobAlt', 'berry', 'berryAlt', 'mover', 'enemy', 'strong']);
+// Only what is alive wobbles (registers 875, 879): the blob and the creatures. A berry, a box, a door, a
+// button, a laser and every other thing is drawn the same every frame.
+const ALIVE = new Set(['blob', 'blobAlt', 'mover', 'enemy', 'strong']);
 export const wobbles = name => ALIVE.has(name);
 const sheetOf = (name, param) => { const b = BUILD[name](param); return b.g || doubled(b); };
 function runsOf(name, param, exact, f = 0) {

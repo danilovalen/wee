@@ -21,8 +21,10 @@ try {
   await page.evaluate(n => window.wee.openTemplate(n), 'Sample');
   const lv = await page.evaluate(() => window.wee.getLevel());
   check('the Sample template loads the sample room', lv.entities.length > 5 && lv.w === 20, `${lv.w}x${lv.h}`);
-  await page.click('#navPlay');
+  // The clock stops before play starts: the sample room's laser runs on the real clock and would reach the
+  // blob while a slow machine is still getting to the swipe.
   await page.evaluate(() => { window.__manualClock = true; });
+  await page.click('#navPlay');
   const box = await page.locator('#game').boundingBox();
   await page.mouse.move(box.x + 100, box.y + 60); await page.mouse.down();
   await page.mouse.move(box.x + 100, box.y + 140, { steps: 6 }); await page.mouse.up();
