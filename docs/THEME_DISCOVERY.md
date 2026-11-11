@@ -209,6 +209,12 @@ Owner, 2026-11-10: *"The game voice is not from the blob, but from 'the lab'. Un
   to a tile where the game has 16, so a 2-cell line outside and a 2-cell darkened edge inside still leave room.
   A finer grid is a decision for the plan: it touches every sprite, the room's scale and the pixel font's size.
 
+## Perspective (register 852)
+
+The room is seen from straight above and stays so. A redraw starts from today's sprite for its viewpoint and
+footprint (a door fills its tile, a button is a disc, spikes are points on a plate), then gets the new line,
+colour and detail. A face on the blob is the one licence taken.
+
 ## The look (register 851, decided)
 
 Owner, 2026-11-11: *"Crayon. But keep the walls and other stuff joining each other just like we have
