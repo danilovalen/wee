@@ -341,7 +341,7 @@ try {
     p1 = at8(2, 3); p2 = at8(2, 2);
     await page.mouse.move(p1.x, p1.y); await page.mouse.down(); await page.mouse.move(p2.x, p2.y, { steps: 4 }); await page.mouse.up();
     const lo = (await text()).level;
-    check('a box moved onto itself keeps the blob and the one-way (register 738)', lo.start && lo.start.x === 2 && lo.start.y === 1 && lo.cells[2 * 8 + 2] === 'gate:down', JSON.stringify([lo.start, lo.cells[2 * 8 + 2], lo.cells[3 * 8 + 2]]));
+    check('a box moved onto itself keeps Wee and the one-way (register 738)', lo.start && lo.start.x === 2 && lo.start.y === 1 && lo.cells[2 * 8 + 2] === 'gate:down', JSON.stringify([lo.start, lo.cells[2 * 8 + 2], lo.cells[3 * 8 + 2]]));
     await page.keyboard.press('Escape'); }
   await page.keyboard.press('Escape');
   await page.evaluate(l => window.wee.loadLevel(l), JSON.parse(JSON.stringify(roomBeforePanel)));
@@ -389,7 +389,7 @@ try {
   check('the size readout is a label with nothing behind it', await page.$eval('#sizeBtn', e => e.tagName === 'SPAN') && !(await page.locator('#sizePop, #border, [data-side]').count()));
   await dragGrip(page, 'left', -2);
   check('a cut through the start takes it off', (await text()).level.w === 3 && (await text()).level.start === null, JSON.stringify([(await text()).level.w, (await text()).level.start]));
-  check('with no start, Play and Check are greyed out and the check line says why', await page.locator('#mode').isDisabled() && await page.locator('#checkBtn').isDisabled() && (await page.textContent('#checkText')).includes('place the blob'));
+  check('with no start, Play and Check are greyed out and the check line says why', await page.locator('#mode').isDisabled() && await page.locator('#checkBtn').isDisabled() && (await page.textContent('#checkText')).includes('place Wee'));
   await page.keyboard.press('e');
   check('and E does not start a run', (await text()).mode === 'edit');
   { const gb = await page.locator('#game').boundingBox(), lw = (await text()).level;

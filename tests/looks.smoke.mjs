@@ -27,7 +27,7 @@ try {
     return { blob: mid('blob'), alt: mid('blobAlt'), robot };
   });
   // Register 777: the violet blob the Sandbox drew is the blob everywhere; the green gel drop is Hero's other skin.
-  check('the blob is violet and Hero\'s other skin is the green gel drop (register 777)', hues.blob[2] > hues.blob[1] + 40 && hues.alt[1] > hues.alt[2] + 40 && hues.robot.join() === hues.blob.join(), JSON.stringify(hues));
+  check('Wee is violet and Hero\'s other skin is the green gel drop (register 777)', hues.blob[2] > hues.blob[1] + 40 && hues.alt[1] > hues.alt[2] + 40 && hues.robot.join() === hues.blob.join(), JSON.stringify(hues));
   check('the menu\'s corner opens Looks', await p.$eval('#lookBox', d => d.open));
   const shut = await p.$$eval('#lookPalettes [data-palette]', bs => bs.map(b => [b.dataset.palette, b.disabled]));
   check('with no stars only the first palette is open', shut.length === PALETTES.length && shut.every(([id, off]) => off === (id !== 'day')), JSON.stringify(shut));
@@ -81,7 +81,7 @@ try {
     const draw = (name, exact) => { const c = document.createElement('canvas'); c.width = c.height = 32; drawSprite(c.getContext('2d'), name, 0, 0, { exact }); return c.toDataURL(); };
     return { asSkin: draw('blob', false) === draw('blobAlt', true), differs: draw('blob', true) !== draw('blobAlt', true) };
   });
-  check('the hero\'s other skin is what the room draws for the blob', same.asSkin && same.differs, JSON.stringify(same));
+  check('the hero\'s other skin is what the room draws for Wee', same.asSkin && same.differs, JSON.stringify(same));
 
   check('the skin was bought with stars', (await p.textContent('#lookStars')).trim() === String(4 - cost - SKINS.find(x => x.id === 'hero').cost));
   // Kept across a reload.

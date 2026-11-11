@@ -22,7 +22,7 @@ check('each result keeps the room it would make, to show and apply', longer.ever
 const shut = room(['#####', '#P.G#', '#####'], { powers: OFF });
 const gone = new Map(); run(whatIf(shut, { tool: 'erase' }, gone));
 check('with Erase every wall and piece is tried, never the berry', gone.size === shut.cells.filter(c => c && c !== 'goal').length && !gone.has(1 * 5 + 3), String(gone.size));
-check('taking out the wall behind the berry lets the blob slide past it, so the room can\'t be won', gone.get(1 * 5 + 4).moves == null, JSON.stringify(gone.get(1 * 5 + 4)));
+check('taking out the wall behind the berry lets Wee slide past it, so the room can\'t be won', gone.get(1 * 5 + 4).moves == null, JSON.stringify(gone.get(1 * 5 + 4)));
 // A box stands in the lane: placing never tries its tile, and Erase tries taking the box out.
 const boxed = room(['#######', '#.....#', '#P.B.G#', '#######'], { powers: OFF });
 const onBox = new Map(); run(whatIf(boxed, { tool: 'wall' }, onBox));

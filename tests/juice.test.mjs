@@ -11,15 +11,15 @@ const whole = rs => rs.every(([x, y]) => x % 2 === 0 && y % 2 === 0);
 check('a placed piece throws four sparks, on whole pixels', drawn('place').length === 4 && whole(drawn('place')), JSON.stringify(drawn('place')));
 check('an erased piece breaks into six dust squares, on whole pixels', drawn('erase').length === 6 && whole(drawn('erase')));
 check('a stop kicks up two dust squares', drawn('land', { dir: 'right' }).length === 2);
-check('what the blob hits flashes over its tile', drawn('hit').length === 1);
+check('what Wee hits flashes over its tile', drawn('hit').length === 1);
 const reach = rs => Math.max(...rs.map(([x, y]) => Math.hypot(x - (2 * 32 + 16), y - (3 * 32 + 16))));
 check('an eaten berry flashes its tile and bursts in a ring of at least eight sparks beyond it (register 790)', drawn('eat').length >= 9 && reach(drawn('eat')) > 32, JSON.stringify(drawn('eat')));
 check('the last berry, the win, bursts with more sparks and further still', drawn('win').length > drawn('eat').length && reach(drawn('win')) > reach(drawn('eat')), `${drawn('win').length} vs ${drawn('eat').length}`);
 const gulp = squashOf([{ type: 'eat', at: 0 }, { type: 'land', dir: 'up', at: 0 }], JUICE_MS.eat / 8), bigGulp = squashOf([{ type: 'win', at: 0 }], JUICE_MS.win / 8);
-check('eating, the blob gulps: it swells all round, even as it lands, and more for the win', gulp && gulp.along > 1.1 && gulp.across > 1.1 && bigGulp.along > gulp.along, JSON.stringify([gulp, bigGulp]));
+check('eating, Wee gulps: it swells all round, even as it lands, and more for the win', gulp && gulp.along > 1.1 && gulp.across > 1.1 && bigGulp.along > gulp.along, JSON.stringify([gulp, bigGulp]));
 check('nothing is drawn once an effect is over', (() => { const g = pen(); drawJuice(g, [{ type: 'place', x: 0, y: 0, at: 0 }], 1000); return g.rects.length === 0; })());
 const launch = squashOf([{ type: 'launch', dir: 'up', at: 0 }], 10), land = squashOf([{ type: 'land', dir: 'up', at: 0 }], JUICE_MS.land / 2);
-check('setting off stretches the blob along its way', launch && launch.along > 1 && launch.across < 1, JSON.stringify(launch));
+check('setting off stretches Wee along its way', launch && launch.along > 1 && launch.across < 1, JSON.stringify(launch));
 check('stopping squashes it against what stopped it', land && land.along < 1 && land.across > 1, JSON.stringify(land));
 check('no squash once it has settled', squashOf([{ type: 'land', dir: 'up', at: 0 }], 1000) === null);
 // A tick reports setting off, then coming to rest against the wall.

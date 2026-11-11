@@ -60,7 +60,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   ok('the start and the goal sit one diagonal step in from their corners', r.start.x === 1 && r.start.y === 1 && r.cells[40] === 'goal');
   ok('the untouched room can run', placementErrors(d, r).length === 0);
   const none = { ...r, start: null, cells: r.cells.map(() => '') };
-  ok('a room needs its start and goal', placementErrors(d, none).map(e => e.msg).join() === 'Place the blob.,Place the berry.');
+  ok('a room needs its start and goal', placementErrors(d, none).map(e => e.msg).join() === 'Place Wee.,Place the berry.');
   const two = build(d, ['', '', '', '', '', 'G', 'G']);
   ok('only one berry', placementErrors(d, two).some(e => e.msg === 'Place only one berry.'));
   // Register 706: a level takes more than one berry only on purpose, by saying how many.
@@ -115,7 +115,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   // Too few is judged at Run, never a reason not to run (register 321).
   ok('too few of a required element does not stop a run', !placementErrors(d3, roomOf(d3)).some(e => /at least/.test(e.msg)));
   // The score is tiles (register 328): the fewest in any win, then per optional goal met.
-  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }) === ', fewest tiles 3; exactly 4 moves: 5; ≤3×4: 4; one box pushed in at least 2 moves, and hit once by the blob without moving: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }));
+  ok('the record names the fewest tiles, then per optional goal', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }) === ', fewest tiles 3; exactly 4 moves: 5; ≤3×4: 4; one box pushed in at least 2 moves, and hit once by Wee without moving: 6', scoreText(level('16'), { win: 3, best: 5, small: 4, boxPushedTwiceHitOnce: 6 }));
   ok('no win, no score', scoreText(level('16'), {}) === '' && scoreText(level('16'), undefined) === '');
   ok('too few of a required element is missed at Run', underLimits(d3, roomOf(d3)).some(e => e.msg === 'Place at least 1 switch.'));
   const few = check(d3, build(d3, ['P#...', '.#.#.', '.#.#.', '...#G']));
@@ -215,7 +215,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const pal = { block: [0, 30], toggle: [0, 2], door: [0, 1] };
   const v = check({ ...level('1'), palette: pal }, build(level('1'), ['', '', '', '#######', '#.t..D#', '#....G#']));
   ok('an unsolvable verdict says only that the berry cannot be reached, and points at nothing', v.ok && !v.won && v.fail.path === null && v.fail.why === STUCK && v.fail.at.length === 0, JSON.stringify(v.fail));
-  ok('the sentence names no door, laser, spikes or switch', STUCK === 'The blob cannot reach the berry.' && !/door|laser|spike|switch|button|because|from anywhere/.test(STUCK));
+  ok('the sentence names no door, laser, spikes or switch', STUCK === 'Wee cannot reach the berry.' && !/door|laser|spike|switch|button|because|from anywhere/.test(STUCK));
 }
 { // level 4: two switches at least, through the door, every switch off at the end
   const d = level('4');
@@ -581,7 +581,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const R = REQUIREMENTS, room = rows => { const h = rows.length, w = rows[0].length, cells = [], l = { w, h, cells, entities: [], start: null };
     rows.forEach((r, y) => [...r].forEach((c, x) => { cells.push(c === '#' ? 'wall' : c === 'G' ? 'goal' : c === 'B' ? 'toggle:red' : ''); if (c === 'P') l.start = { x, y }; if (c === 'b') l.entities.push({ kind: 'box', x, y }); })); return l; };
   ok('five berries: met with five in the room, not with four', R.fiveBerries.judge(room(['GGGGG', 'P....'])) && !R.fiveBerries.judge(room(['GGGG.', 'P....'])));
-  ok('no bare floor: met when every tile holds something, the blob and pieces included', R.noEmptySpace.judge(room(['P#G', 'b#B'])) && !R.noEmptySpace.judge(room(['P#G', 'b.B'])));
+  ok('no bare floor: met when every tile holds something, Wee and pieces included', R.noEmptySpace.judge(room(['P#G', 'b#B'])) && !R.noEmptySpace.judge(room(['P#G', 'b.B'])));
   const l19 = LEVELS.find(l => l.id === '19'), l4 = LEVELS.find(l => l.id === '4');
   ok('level 19 asks for five berries and takes up to nine; level 4 asks for no bare floor', l19.optional.includes('fiveBerries') && l19.berries === 9 && l19.palette.berry && l4.optional.includes('noEmptySpace'));
   ok('the swapped side goals are gone (register 733)', !l19.optional.includes('laserThroughGoal') && !l4.optional.includes('thirdToggleOnAtEnd'));

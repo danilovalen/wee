@@ -26,14 +26,14 @@ try {
   await page.evaluate(l => window.wee.loadLevel(l), room(['#####', '#P.G#', '#####']));
   await pickTool(page, 'erase');
   await tapStart();
-  check('Erase takes the blob off', (await start()) === null);
+  check('Erase takes Wee off', (await start()) === null);
   check('Play and Check wait for it', await page.locator('#mode').isDisabled() && await page.locator('#checkBtn').isDisabled());
-  check('and the hint says to place it', (await page.textContent('#placeHint')) === 'Place the blob to play or check this room.', await page.textContent('#placeHint'));
+  check('and the hint says to place it', (await page.textContent('#placeHint')) === 'Place Wee to play or check this room.', await page.textContent('#placeHint'));
   await page.click('#undo');
-  check('Undo puts it back, and the hint goes', !!(await start()) && (await page.textContent('#placeHint')) !== 'Place the blob to play or check this room.' && await page.locator('#mode').isEnabled());
+  check('Undo puts it back, and the hint goes', !!(await start()) && (await page.textContent('#placeHint')) !== 'Place Wee to play or check this room.' && await page.locator('#mode').isEnabled());
   await pickTool(page, 'start');
   await tapStart();
-  check('a tap on the blob with the Start tool takes it off too', (await start()) === null);
+  check('a tap on Wee with the Start tool takes it off too', (await start()) === null);
   // A level: the blob comes off there as well, with no refusal.
   const lvl = LEVELS.filter(listed)[0];
   await page.goto('http://localhost:5283/'); await page.waitForTimeout(400);
@@ -41,8 +41,8 @@ try {
   await page.click(`.campRow[data-level="${lvl.id}"]`); await page.waitForTimeout(300);
   await pickTool(page, 'erase');
   await tapStart();
-  check('in a level, Erase takes the blob off as well', (await start()) === null);
+  check('in a level, Erase takes Wee off as well', (await start()) === null);
   check('no page errors', !errors.length, errors.join(' | '));
-} catch (err) { check('the blob smoke ran to the end', false, err.message); }
+} catch (err) { check('Wee smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }
 done();

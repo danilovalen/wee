@@ -73,13 +73,13 @@ try {
   check('the robot behind the menu is moving', !seenAt.has(null) && seenAt.size > 2, [...seenAt].join(' / '));
   const deskLay = await page.evaluate(async () => [(await import('/src/app/menuScene.js')).menuTileRect(2, 6).bottom, document.getElementById('menuCampaign').getBoundingClientRect().top]);
   check('on a wide window the goal still ends above the buttons', deskLay[0] < deskLay[1], JSON.stringify(deskLay));
-  check('the menu room\'s switch starts off, so the blob has to press it (register 882)', await page.evaluate(async () => (await import('/src/app/menuScene.js')).menuLevel().cells.includes('toggle:red')));
+  check('the menu room\'s switch starts off, so Wee has to press it (register 882)', await page.evaluate(async () => (await import('/src/app/menuScene.js')).menuLevel().cells.includes('toggle:red')));
   check('the room behind the menu has its laser, door and switch', await page.evaluate(async () => { const g = (await import('/src/app/menuScene.js')).menuRoom.game; return g.entities.some(e => e.turret) && g.cells.some(c => /^door:/.test(c)) && g.cells.some(c => /^toggle:/.test(c)); }));
   // Register 820: the blob pushes the box against the laser, goes through the open door and eats the berry.
   const run = await page.evaluate(async () => { const { menuRoom } = await import('/src/app/menuScene.js'); const t0 = performance.now();
     while (performance.now() - t0 < 20000) { const g = menuRoom.game; if (g && g.won) { const b = g.entities.find(e => e.kind === 'box'); return { won: true, box: b && [b.x, b.y], at: [g.player.x, g.player.y], deaths: g.deaths }; } await new Promise(r => setTimeout(r, 30)); }
     return { won: false }; });
-  check('the menu run wins: the box ends against the laser and the blob on the berry past the door (register 820)', run.won && String(run.box) === '1,3' && String(run.at) === '2,6' && !run.deaths, JSON.stringify(run));
+  check('the menu run wins: the box ends against the laser and Wee on the berry past the door (register 820)', run.won && String(run.box) === '1,3' && String(run.at) === '2,6' && !run.deaths, JSON.stringify(run));
   // Register 554: a pushable laser's barrel stays inside its box frame, every way it points.
   const spill = await page.evaluate(async () => { const { drawPiece } = await import('/src/view/pieces.js'); let out = 0;
     for (const d of ['up', 'down', 'left', 'right']) { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
@@ -339,7 +339,7 @@ try {
   await page.click('#campRun');
   await page.waitForTimeout(150);
   const stuck = await verdict();
-  check('a run that cannot finish says only that, naming no cause (registers 793, 795)', stuck === 'The blob cannot reach the berry.', stuck);
+  check('a run that cannot finish says only that, naming no cause (registers 793, 795)', stuck === 'Wee cannot reach the berry.', stuck);
   await page.waitForTimeout(1000);
   await page.click('#campVerdictText');
   check('and flashes no tile that would point at the cause', (await page.evaluate(() => window.wee.fxTypes())).filter(t => t === 'flash').length === 0);
@@ -557,7 +557,7 @@ try {
   await dsb.close();
   // The start is drawn as the blob (registers 593, 777): its violet fills much of its tile.
   const tip = await nine.evaluate(() => { const c = document.getElementById('game'), g = c.getContext('2d'), t = c.width / 7, d = g.getImageData(t, t, t, t).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 2] > 200 && d[i + 2] - d[i + 1] > 60 && d[i] > 140) n++; return n / (d.length / 4); });
-  check('the start is drawn as the blob (its violet fills its tile, register 777)', tip > 0.08, String(tip));
+  check('the start is drawn as Wee (its violet fills its tile, register 777)', tip > 0.08, String(tip));
   // Level 15's laser (registers 255, 256): placed firing right, a tap turns it, a hold removes it.
   await nine.click('#campBack'); await nine.click(`.campRow[data-level="${LASER_7.id}"]`); await nine.click('[data-tool="turret"]');
   const gl = await nine.locator('#game').boundingBox(), tl = gl.width / 7;
@@ -592,7 +592,7 @@ try {
   const robotIcon = await nine.evaluate(async () => { const { icon } = await import('/src/app/icons.js'), you = icon('start').toDataURL();
     return [...document.querySelectorAll('.campReqs [data-part=start]')].map(c => c.dataset.icon + (c.toDataURL() === you ? ':you' : '')).join(); });
   // One blob everywhere (register 777): the robot a goal row names is drawn as the same blob you play.
-  check('a goal row names the robot with the blob (registers 323, 777)', /^robot:you(,robot:you)*$/.test(robotIcon), robotIcon);
+  check('a goal row names the robot with Wee (registers 323, 777)', /^robot:you(,robot:you)*$/.test(robotIcon), robotIcon);
   // Two colours per piece (register 316): level 19 offers red+blue as a third dot, only for its door.
   // Level 19: the laser is only pushable (register 341); the chip shows on and fixed, and a placed laser is pushable.
   await nine.click('#campBack'); await nine.click(`.campRow[data-level="${PUSHABLE_LASER.id}"]`); await nine.click('[data-tool="turret"]');

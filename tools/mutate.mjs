@@ -47,7 +47,7 @@ export const M = [
   ['src/editor/edit.js', "if (g && ui.tool === 'gate' && (g[2] || null) !== (ui.gateColour || null))", "if (false)", 'colours'],
   // Findings says why it is empty after a Check with no win (register 774)
   ['src/app/check.js', "  if (!S.check.live) notesWhy(NO_NOTES[r.status]);\n", "", 'designui'],
-  // what may stand on what, the blob replaced, a box moved onto itself (registers 738, 768, 772)
+  // what may stand on what, Wee replaced, a box moved onto itself (registers 738, 768, 772)
   ['src/level/stand.js', "['', 'water', 'sticky', 'gravel', 'checkpoint']", "['', 'sticky', 'gravel', 'checkpoint']", 'stand'],
   ['src/level/region.js', "&& canStand(cells[st.y * level.w + st.x])", "", 'region'],
   ['src/app/select.js', "    if (to && to.x >= 0", "    if (false && to.x >= 0", 'browser'],
@@ -325,7 +325,7 @@ export const M = [
   ['src', "    if (isStart) { gone.start = true; level.start = null; } else if (pi >= 0) removePiece();", "    if (pi >= 0) removePiece();", "blob"],
   ['src', "    if (ui.tool === 'start') { if (isStart) { gone.start = true; level.start = null; } }\n    else if", "    if", "blob"],
   ['src', "  if (tool === 'start') return !!level.start && level.start.x === x && level.start.y === y;\n", "", "blob"],
-  ['src', "!/^Place at least|^Place the blob\\./.test(e.msg)", "!/^Place at least/.test(e.msg)", "blob"],
+  ['src', "!/^Place at least|^Place Wee\\./.test(e.msg)", "!/^Place at least/.test(e.msg)", "blob"],
   ['src', "  if (!level.start && hint.textContent === DEFAULT_HINT) hint.textContent = NO_BLOB;", "", "blob"],
   ['src', "export const SIMPLE = ['look', 'select', 'erase',", "export const SIMPLE = ['look', 'erase',", "modes"],
   ['src', "    if (s.eaten.length < s.berries) return;", "", "berries"],
@@ -819,7 +819,7 @@ export const M = [
   ['src', "      return flipped && !robot;", "      return flipped;", 'campaign'],
   ['src', "      return flipped && !robot;", "      return !robot;", 'campaign'],
   ['src', "c.dataset.part = el;", "", 'campaign-play'],
-  ['src', "  if (!room.start) errs.push({ msg: 'Place the blob.' });\n", "", 'campaign'],
+  ['src', "  if (!room.start) errs.push({ msg: 'Place Wee.' });\n", "", 'campaign'],
   ['src', "  if (goals > (def.berries || 1)) errs.push(", "  if (goals > 99) errs.push(", 'campaign'],
   ['src', "  if (goals > (def.berries || 1)) errs.push(", "  if (goals > 1) errs.push(", 'campaign'],
   ['src', "export const areaOf = room => room.w * room.h;", "export const areaOf = room => room.w * room.h - 1;", 'campaign'],
@@ -865,7 +865,7 @@ export const M = [
   ['src', "export function colouringsOf(def, el) {\n", "export function colouringsOf(def, el) {\n  return coloursOf(def);\n", 'campaign'],
   ['src', "return !pair || !two ? one : two === 'only' ? [pair] : [...one, pair];", "return !pair || !two ? one : [...one, pair];", 'campaign'],
   // Register 318: the side pairs sit beside the room, which leaves them the width.
-  ['src/app/goalCard.js', "start: ['robot', 'Blob']", "start: ['start', 'Blob']", 'campaign-play'],
+  ['src/app/goalCard.js', "start: ['robot', 'Wee']", "start: ['start', 'Wee']", 'campaign-play'],
   ['src/app/icons.js', "(tool === 'robot' ? drawRobot : drawYou)(x)", "drawYou(x)", 'campaign-play'],
   // Registers 336-338, 341: the pushable laser, its offer per level, its look, and level 19's goal.
   ['src/rules/base.js', "export const PUSHED = o => LIGHT.includes(o.kind) || !!o.crate;", "export const PUSHED = o => LIGHT.includes(o.kind);", 'sim'],
@@ -1397,7 +1397,7 @@ export const M = [
   ['src/app/shape.js', "      if (n == null || n <= (best ? best.moves : base ?? 0)) continue;", "      if (n == null || best) continue;", 'shapeui'],
   ['src/app/shape.js', "  const base = yield* movesOf(level), set = variants(ui);", "  const base = yield* movesOf(level), set = [ui];", 'shapeui'],
   ['src/editor/variants.js', "  if (t === 'gate') return `pointing ${ways(ui.pass)}`;", "", 'shapeui'],
-  ['src/app/shape.js', "(had ? 'The blob is already where the answer takes the most moves.' :", "(false ? '' :", 'shapeui'],
+  ['src/app/shape.js', "(had ? 'Wee is already where the answer takes the most moves.' :", "(false ? '' :", 'shapeui'],
   ['src/app/shape.js', "  $('placeSay').textContent = text; $('placeSay').hidden = !text;", "  $('placeHint').textContent = text;", 'shapeui'],
   ['src/app/shape.js', "if (ui) for (const k of ['pass', 'aim', 'corner', 'face', 'axis', 'dir']) S.ui[k] = ui[k];", "", 'shapeui'],
   ['src/app/shape.js', "  return { paste: { w: 1, h: 1, cells: [cell],", "  return null && { paste: { w: 1, h: 1, cells: [cell],", 'shapeui'],
@@ -1464,6 +1464,8 @@ export const M = [
   ["style.css", ".campReqs .mark::before { clip-path: none; background: none; box-shadow: inset 0 0 0 2px var(--line), inset 0 0 0 4px var(--line-edge); }", "", "look"],
   ["style.css", ".campBrief .campMain { background: none; box-shadow: none; padding: 0 2px; align-items: center; }\n", "", "look"],
   ["style.css", ".ring { box-shadow: 0 0 0 var(--b) var(--wall-line, var(--line)), var(--b2) var(--b2) 0 var(--b) color-mix(in srgb, var(--ink) 22%, transparent); }\n", "", "look"],
+  ["style.css", ".campBrief .campMain, .campBrief .campOpt li { background-image: linear-gradient(0deg, color-mix(in srgb, var(--ink) 14%, transparent) 2px, transparent 2px); padding-bottom: 3px; }\n", "", "look"],
+  ["src/view/crayon.js", "const d = dir * Math.round(2 * (h - 1 - y) / (h - 1));", "const d = 0;", "crayon"],
   ["src/app/menuScene.js", "l.cells[2 * W + 0] = 'toggle:red';", "l.cells[2 * W + 0] = 'toggle:red:on';", "campaign-play"],
 ];
 

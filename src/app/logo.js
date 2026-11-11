@@ -1,11 +1,13 @@
 // The title (docs/THEME.md rule 34, register 876): "wee" drawn as three crayon letters on the pieces' own
 // grid and inked by the same pass, so it has their line, their lit edge and their lumps. It is alive on
-// the menu: three drawings in turn, as the blob is.
-import { sheet, ink, wobble, lt, dk, WOBBLE_FRAMES } from '../view/crayon.js';
+// the menu: two drawings in turn, slower than a piece.
+import { sheet, ink, wobble, lt, dk } from '../view/crayon.js';
 import { P } from '../view/crayonSprites.js';
 import { boilOn } from '../view/sprites.js';
 
 export const LOGO_W = 96, LOGO_H = 36, LOGO_SCALE = 2;
+// The title moves less than a piece (register 887): two drawings, changing twice a second.
+const LOGO_MS = 500;
 // The letters, fat strokes with soft ends. The e is a lump with its eye cut out and its mouth left open.
 export function logoSheet() {
   const s = sheet(LOGO_W, LOGO_H), c = P.violet;
@@ -38,7 +40,7 @@ export function buildLogo(el) {
   };
   el.textContent = ''; el.setAttribute('aria-label', 'wee'); el.append(cv);
   draw(0);
-  const tick = () => { requestAnimationFrame(tick); if (el.offsetParent !== null) draw(boilOn() ? Math.floor(performance.now() / 200) % WOBBLE_FRAMES : 0); };
+  const tick = () => { requestAnimationFrame(tick); if (el.offsetParent !== null) draw(boilOn() ? Math.floor(performance.now() / LOGO_MS) % 2 : 0); };
   requestAnimationFrame(tick);
   // A new palette repaints it.
   addEventListener('wee:look', () => { shown = -1; });

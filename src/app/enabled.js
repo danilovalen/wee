@@ -6,7 +6,7 @@ import { $, DEFAULT_HINT } from './dom.js';
 import { stateKey } from '../solve/solve.js';
 import { syncShape } from './shape.js';
 
-const NO_BLOB = 'Place the blob to play or check this room.';
+const NO_BLOB = 'Place Wee to play or check this room.';
 export function syncEnabled() {
   const level = S.level, play = S.mode === 'play';
   syncShape();

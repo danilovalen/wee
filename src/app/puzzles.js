@@ -48,7 +48,7 @@ function brief(run = {}) {
   const kept = !!(((progress().levels[pz.id] || {}).goals || {}).fewest);
   const row = (text, cls, mark) => { const li = document.createElement('li'); li.className = cls; li.title = text; const m = document.createElement('span'); m.className = 'mark'; if (mark) m.innerHTML = glyph(mark); li.append(m, Object.assign(document.createElement('span'), { textContent: text })); return li; };
   const must = document.createElement('ul'); must.className = 'campReqs campMust';
-  must.append(row('Get the blob to the berry.', run.won ? 'met' : '', run.won ? 'check' : ''));
+  must.append(row('Get Wee to the berry.', run.won ? 'met' : '', run.won ? 'check' : ''));
   const big = document.createElement('span'); big.className = 'campBigStar' + (run.won ? ' on' : ''); big.innerHTML = glyph('star');
   const main = document.createElement('div'); main.className = 'campMain'; main.append(big, must);
   const opt = document.createElement('ul'); opt.className = 'campReqs campOpt'; opt.dataset.label = 'Optional goals';

@@ -87,7 +87,7 @@ try {
   await pickTool(page, 'start');
   await page.click('#placeBtn');
   const b = await hint();
-  check('Most moves moves the blob where the room is longest, and says it moves (register 724)', /^Move the blob to \d+, \d+ and the answer takes \d+ moves instead of 1\.$/.test(b), b);
+  check('Most moves moves Wee where the room is longest, and says it moves (register 724)', /^Move Wee to \d+, \d+ and the answer takes \d+ moves instead of 1\.$/.test(b), b);
   await page.click('#shapeNo');
   await pickTool(page, 'wall'); await page.click('#placeBtn'); await hint(); await page.click('#shapeYes');
   // With the blob already where the room is longest, it says so (register 724).
@@ -95,7 +95,7 @@ try {
   await page.evaluate(() => { const l = window.wee.getLevel(); l.cells[1 * l.w + 3] = 'goal'; window.wee.loadLevel(l); });
   await pickTool(page, 'start'); await page.click('#placeBtn');
   const at = await hint();
-  check('the blob already at its longest says so', at === 'The blob is already where the answer takes the most moves.', at);
+  check('Wee already at its longest says so', at === 'Wee is already where the answer takes the most moves.', at);
   // Register 728: a one-way is tried every way round; the offer names the way and draws it at half strength.
   const way = room(['#######', '#.....#', '#P...G#', '#....##', '#######'], { powers: OFF });
   await page.evaluate(l => window.wee.loadLevel(l), way);

@@ -996,7 +996,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   place(l, { tool: 'idoor', colour: 'blue' }, 3, 1, 'place');
   check('placing one clears the piece there', l.cells[8] === 'idoor:blue' && l.entities.length === 0, JSON.stringify(l.entities));
   check('Look names it', describe(l, 3, 1) === 'Blue inverted door');
-  check('placed on the blob, it takes its place (register 768)', place(l, { tool: 'idoor', colour: 'red' }, 1, 1, 'place').length > 0 && l.cells[6] === 'idoor:red' && l.start === null);
+  check('placed on Wee, it takes its place (register 768)', place(l, { tool: 'idoor', colour: 'red' }, 1, 1, 'place').length > 0 && l.cells[6] === 'idoor:red' && l.start === null);
   place(l, { tool: 'start' }, 3, 1, 'place');
   check('moving the start onto one clears it', l.cells[8] === '' && l.start.x === 3);
 }
@@ -1129,7 +1129,7 @@ const LONG = ['##########', '#..P....##', '##########'];
   const e = room(['#####', '#P..#', '#####']);
   place(e, { tool: 'goal' }, 2, 1, 'place');
   check('the editor places a goal and names it', e.cells[7] === 'goal' && describe(e, 2, 1) === 'Berry');
-  check('a berry placed on the blob takes its place (registers 768, 772)', place(e, { tool: 'goal' }, 1, 1, 'place').length > 0 && e.cells[6] === 'goal' && e.start === null);
+  check('a berry placed on Wee takes its place (registers 768, 772)', place(e, { tool: 'goal' }, 1, 1, 'place').length > 0 && e.cells[6] === 'goal' && e.start === null);
 }
 
 { // undo and redo are a stack of whole levels

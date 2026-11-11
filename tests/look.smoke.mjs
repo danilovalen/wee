@@ -50,7 +50,7 @@ try {
     const g = spriteSheet('blob', 'right'), rows = g.map(r => r.filter(Boolean).length), wide = Math.max(...rows), tall = rows.filter(Boolean).length;
     return { wide, tall, fill: rows.reduce((a, b) => a + b, 0) / (wide * tall) };
   });
-  check('the blob is a rounded square, not a ball (register 860)', blob.fill > 0.86 && blob.fill < 0.97 && blob.wide >= 22, JSON.stringify(blob));
+  check('Wee is a rounded square, not a ball (register 860)', blob.fill > 0.86 && blob.fill < 0.97 && blob.wide >= 22, JSON.stringify(blob));
 
   // The menu's room: a whole number of screen pixels to an art pixel, and a line where a wall meets open floor.
   const menu = await p.evaluate(async () => {
@@ -115,6 +115,9 @@ try {
   // The clipboard's goals are lines on its paper: the main goal has no bar of its own and a side goal is no chip.
   const lines = await p.evaluate(() => { const m = getComputedStyle(document.querySelector('.campBrief .campMain')), o = document.querySelector('.campBrief .campOpt li'), c = o ? getComputedStyle(o) : null; return { bar: m.boxShadow, chip: c ? c.boxShadow + '/' + c.borderTopLeftRadius : 'none/0px' }; });
   check('a goal on the clipboard is a line on its paper, not a bar or a chip', lines.bar === 'none' && lines.chip === 'none/0px', JSON.stringify(lines));
+  // Words sit on their lines (register 884): each goal is ruled under itself, and a note's rule repeats with its line height.
+  const ruled = await p.evaluate(() => { const m = getComputedStyle(document.querySelector('.campBrief .campMain')), t = getComputedStyle(document.querySelector('#tutBox p')); return { goal: /gradient/.test(m.backgroundImage) ? '2px' : 'none', note: /22px/.test(t.backgroundImage) && t.lineHeight === '22px' }; });
+  check('a goal is ruled under its own words, and a note\'s lines keep step with its text', ruled.goal === '2px' && ruled.note, JSON.stringify(ruled));
   // The desk (register 883): the room's ring has its own line and shadow, and the tutorial's note has the frame.
   const desk = await p.evaluate(() => { const n = s => (getComputedStyle(document.querySelector(s)).boxShadow.match(/rgb/g) || []).length; return { ring: n('#ring'), note: n('#tutBox'), page: getComputedStyle(document.body).backgroundImage !== 'none' }; });
   check('the room lies on squared paper with a line and a shadow, and the tutorial is a framed note', desk.ring >= 2 && desk.note >= 3 && desk.page, JSON.stringify(desk));

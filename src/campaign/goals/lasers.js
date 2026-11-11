@@ -88,7 +88,7 @@ export const LASER_GOALS = {
   },
   // Register 371: the robot's slide ends against a relay, and so does a pushed box: the relay is solid.
   robotAndBoxHitRelay: {
-    text: 'Blob and a box both collide with a relay.',
+    text: 'Wee and a box both collide with a relay.',
     short: [{ el: 'start' }, 'hits', { el: 'relay' }, '+', { el: 'box' }, 'hits', { el: 'relay' }],
     judge: (room, moves) => {
       let robot = false, dir = null;
@@ -183,7 +183,7 @@ export const LASER_GOALS = {
   },
   // Register 494 (level 14): the robot's slides end against each laser at least twice.
   robotHitsEveryLaserTwice: {
-    text: 'Blob collides with every laser 2 or more times.',
+    text: 'Wee collides with every laser 2 or more times.',
     short: [{ el: 'start' }, 'hits all', { el: 'laser' }, '×2'],
     judge: (room, moves) => {
       const ids = idsOf(room, e => !!e.turret), hits = {};

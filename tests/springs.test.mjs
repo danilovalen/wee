@@ -12,7 +12,7 @@ const at = (o, x, y) => o.x === x && o.y === y;
 
 { // Two springs facing each other: the blob is sent back once, then stops at the spent one.
   const s = move(createGame(room(['#########', '#6.....4#', '#.P.....#', '#########'])), 'up');
-  check('two springs facing each other bounce the blob once each, and the first one\'s plate, out, stops it a tile short (registers 822, 828)', at(s.player, 3, 1) && !s.deaths, JSON.stringify([s.player.x, s.player.y, s.deaths]));
+  check('two springs facing each other bounce Wee once each, and the first one\'s plate, out, stops it a tile short (registers 822, 828)', at(s.player, 3, 1) && !s.deaths, JSON.stringify([s.player.x, s.player.y, s.deaths]));
   check('once everything has stopped the springs are armed again', s.sprung.length === 0, JSON.stringify(s.sprung));
 }
 
@@ -28,9 +28,9 @@ const at = (o, x, y) => o.x === x && o.y === y;
   const box = move(createGame(room(['######', '#6B#.#', '#....#', '#P...#', '######'])), 'right');
   check('a spring crushes a box it cannot move (register 822)', box.entities[0].dead, JSON.stringify(box.entities[0]));
   const you = move(createGame(room(['#####', '#.#.#', '#..P#', '#.8.#', '#####'])), 'left');
-  check('a spring facing a wall crushes the blob crossing in front of it', you.deaths === 1, String(you.deaths));
+  check('a spring facing a wall crushes Wee crossing in front of it', you.deaths === 1, String(you.deaths));
   const armored = move(createGame(room(['#####', '#.#.#', '#..P#', '#.8.#', '#####'], { powers: { armored: true } })), 'left');
-  check('armored, the blob jams it and lives', armored.deaths === 0, String(armored.deaths));
+  check('armored, Wee jams it and lives', armored.deaths === 0, String(armored.deaths));
   const heavy = move(createGame(room(['######', '#6H#.#', '#....#', '#P...#', '######'])), 'right');
   check('a heavy box jams it and is not crushed', !heavy.entities[0].dead && at(heavy.entities[0], 2, 1) && !heavy.sprung.length, JSON.stringify(heavy.entities[0]));
   const bomb = move(createGame(room(['######', '#6O#.#', '#....#', '#P...#', '######'])), 'right');
@@ -39,7 +39,7 @@ const at = (o, x, y) => o.x === x && o.y === y;
 
 { // The blob passing a spent spring goes straight on; the spring pushed one thing this move.
   const b = move(createGame(room(['#######', '#.....#', '#.....#', '#PB...#', '#..8..#', '#######'])), 'right');
-  check('a spring that launched the box blocks the blob behind it with its plate (registers 822, 828)', at(b.player, 2, 3) && at(b.entities[0], 3, 1), JSON.stringify([b.player, b.entities[0]]));
+  check('a spring that launched the box blocks Wee behind it with its plate (registers 822, 828)', at(b.player, 2, 3) && at(b.entities[0], 3, 1), JSON.stringify([b.player, b.entities[0]]));
 }
 
 { // An enemy reaching it first spends it.

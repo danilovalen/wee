@@ -18,7 +18,7 @@ let A = null;
 export const bindGoalCard = actions => { A = actions; };
 
 // A row's words, each object drawn as its palette icon (framed when the level offers it only pushable); the robot and the goal have their own.
-const WORD_ICON = { start: ['robot', 'Blob'], goal: ['goal', 'Berry'], beam: ['beam', 'Laser beam'] };
+const WORD_ICON = { start: ['robot', 'Wee'], goal: ['goal', 'Berry'], beam: ['beam', 'Laser beam'] };
 // The move minimum as a path and "4+" (register 546): while Run's robot plays it counts its moves, and
 // turns green once there are enough.
 let dotsEl = null;
@@ -91,7 +91,7 @@ export function syncBrief() {
   // The tutorial teaches one thing, so its card is one order (registers 511, 512).
   // A challenge's only goal is the star, which the big star already says (register 582): its card holds
   // just the pieces to place, which are not a goal (register 566).
-  const rows = def.challenge ? [] : def.tutorial ? [{ id: 'star', parts: ['Get the blob to the berry.'], text: 'Get the blob to the berry.', met: ran ? v.won : null }]
+  const rows = def.challenge ? [] : def.tutorial ? [{ id: 'star', parts: ['Get Wee to the berry.'], text: 'Get Wee to the berry.', met: ran ? v.won : null }]
     : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.

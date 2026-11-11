@@ -21,7 +21,7 @@ check('a move into spikes is not guarded, and deadly when it is the only other m
 // Right goes through a one-way and can never come back: a soft lock.
 const lock = at(['#######', '#G.P>.#', '#######']);
 const k = safety(lock.l, lock.path);
-check('a one-way the blob cannot come back through is a soft lock: not guarded, still deadly', !k.guarded && k.deadly, JSON.stringify(k));
+check('a one-way Wee cannot come back through is a soft lock: not guarded, still deadly', !k.guarded && k.deadly, JSON.stringify(k));
 check('a room past the cap is not judged', safety(open.l, open.path, 1).capped);
 
 // The counts a win carries (no def needed for a room with no limits).

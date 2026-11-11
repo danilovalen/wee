@@ -112,7 +112,7 @@ export function underLimits(def, room) {
 export function placementErrors(def, room) {
   const errs = [], { by, stray } = placed(def, room);
   for (const i of stray) errs.push({ msg: 'This level does not have that.', at: i });
-  if (!room.start) errs.push({ msg: 'Place the blob.' });
+  if (!room.start) errs.push({ msg: 'Place Wee.' });
   const goals = room.cells.filter(c => c === 'goal').length;
   if (!goals) errs.push({ msg: 'Place the berry.' });
   // A level takes more than one berry only when it says how many (registers 702, 706).
@@ -155,7 +155,7 @@ export function optionalGoals(def) {
 // The fewest tiles a win took, then the fewest for each optional goal met: 'fewest tiles 3; exactly 7: 5'.
 export function scoreText(def, best) {
   if (!best || best.win == null) return '';
-  const name = o => o.parts.every(p => typeof p === 'string') ? o.parts.join(' ') : o.text.replace(/\.$/, '').toLowerCase();
+  const name = o => o.parts.every(p => typeof p === 'string') ? o.parts.join(' ') : o.text.replace(/\.$/, '').toLowerCase().replace(/\bwee\b/g, 'Wee');
   const each = optionalGoals(def).filter(o => !o.mix && best[o.id] != null).map(o => `${name(o)}: ${best[o.id]}`);
   return `, fewest tiles ${best.win}` + (each.length ? `; ${each.join('; ')}` : '');
 }
@@ -172,7 +172,7 @@ export const tilesOf = (def, room) => Object.values(placed(def, room).by).reduce
 
 // A failed Run says only that the berry cannot be reached: naming the door that never opens or the laser in
 // the way hands over the solution (registers 793, 795, 796).
-export const STUCK = 'The blob cannot reach the berry.';
+export const STUCK = 'Wee cannot reach the berry.';
 
 // The whole verdict. { ok: false, errors } when the room cannot run; otherwise
 // { ok: true, won, length, paths, fail: { path, why } | null, area, optional: [{ id, text, met }] }.
@@ -181,9 +181,9 @@ export function check(def, room, opts) {
   if (errors.length) return { ok: false, errors };
   const r = allShortest(room, opts), st = def.steps;
   if (r.status === 'unsolvable') return { ok: true, won: false, fail: { path: null, why: STUCK, at: [] } };
-  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'To let the blob search this room, make it smaller.' } };
+  if (r.status !== 'solved') return { ok: true, won: false, fail: { path: null, why: 'To let Wee search this room, make it smaller.' } };
   const base = { ok: true, length: r.length, paths: r.paths.length, area: areaOf(room), tiles: tilesOf(def, room) };
-  if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for the blob to check.` } };
+  if (r.capped) return { ...base, won: false, fail: { path: r.paths[0], why: `There are more than ${r.paths.length} shortest paths for Wee to check.` } };
   // Each requirement holds on every shortest path or it is not met; the card marks each one.
   const failed = {};
   for (const path of r.paths) for (const id of def.require || []) if (!(id in failed) && !REQUIREMENTS[id].judge(room, path)) failed[id] = path;

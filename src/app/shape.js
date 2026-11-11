@@ -12,7 +12,7 @@ import { choosable } from './offers.js';
 import { $, now } from './dom.js';
 
 const SLICE_MS = 25, clone = l => JSON.parse(JSON.stringify(l));
-const name = t => t === 'start' ? 'blob' : ((TOOLS.find(x => x.id === t) || {}).label || t).toLowerCase();
+const name = t => t === 'start' ? 'Wee' : ((TOOLS.find(x => x.id === t) || {}).label || t).toLowerCase();
 const flash = (x, y) => { S.fx.push({ type: 'flash', x, y, at: now() }); S.redraw = true; };
 
 // The answer's length, or null when the room cannot be won (or is too big to tell).
@@ -69,8 +69,8 @@ export const removeText = r => r ? `Take out the ${name(r.what)} at ${r.x}, ${r.
 // Condition first, said to the player (registers 700, 753), naming the picked colour (764).
 const placeText = (t, r, had) => {
   const moves = n => `${n} ${n === 1 ? 'move' : 'moves'}`;
-  if (t === 'start') return r.none ? (had ? 'The blob is already where the answer takes the most moves.' : 'Wherever you place the blob, the room stays unsolved.')
-    : r.from == null ? `Place the blob at ${r.x}, ${r.y} and the answer takes ${moves(r.moves)}.` : `Move the blob to ${r.x}, ${r.y} and the answer takes ${moves(r.moves)} instead of ${r.from}.`;
+  if (t === 'start') return r.none ? (had ? 'Wee is already where the answer takes the most moves.' : 'Wherever you place Wee, the room stays unsolved.')
+    : r.from == null ? `Place Wee at ${r.x}, ${r.y} and the answer takes ${moves(r.moves)}.` : `Move Wee to ${r.x}, ${r.y} and the answer takes ${moves(r.moves)} instead of ${r.from}.`;
   if (r.none) return `Wherever you place ${pieceName(t, S.ui)}${t === 'door' ? ', plain or inverted,' : t === 'toggle' ? ', off or on,' : variants(S.ui).length > 1 ? ', facing any way,' : ''} the ${r.from == null ? 'room stays unsolved' : `answer stays ${moves(r.from)}`}.`;
   const way = wayOf(r.ui), what = way ? `${pieceName(t, r.ui)}, ${way},` : pieceName(t, r.ui);
   return r.from == null ? `Place ${what} at ${r.x}, ${r.y} and the answer takes ${moves(r.moves)}.` : `Place ${what} at ${r.x}, ${r.y} and the answer takes ${moves(r.moves)} instead of ${r.from}.`;
@@ -125,7 +125,7 @@ export function buildShape() {
     const tool = S.ui.tool;
     const had = !!S.level.start;
     asked = askKey();
-    say(tool === 'start' ? 'Trying the blob on every empty tile...' : `Trying ${pieceName(tool, S.ui)} on every empty tile, every way round...`);
+    say(tool === 'start' ? 'Trying Wee on every empty tile...' : `Trying ${pieceName(tool, S.ui)} on every empty tile, every way round...`);
     run(placeBest(clone(S.level), { ...S.ui }), r => say(placeText(tool, r, had), r.none ? null : r));
   };
   // Apply also sets the tool the way the offer faces, so the next tap places it that way round.

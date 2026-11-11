@@ -52,7 +52,7 @@ try {
     const on = await at(); setBoil(false); const off = await at(); setBoil(true); window.__boil = false;
     return { on, off };
   });
-  check('the blob wobbles while the wobble is on (register 647)', boil.on > 1, JSON.stringify(boil));
+  check('Wee wobbles while the wobble is on (register 647)', boil.on > 1, JSON.stringify(boil));
   check('and holds still when it is turned off', boil.off === 1, JSON.stringify(boil));
 
   // A star count counts up as Looks opens.

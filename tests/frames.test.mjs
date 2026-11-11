@@ -19,6 +19,6 @@ check('a key that only changes a setting is not a move', runFrames(l, [{ t: 0, k
 // Edit from here: a box pushed one tile and the blob beside it start there in the new room.
 const push = room(['######', '#PB..#', '######'], { powers: OFF });
 const pf = runFrames(push, [{ t: 0, k: 'right' }], 20), at = levelAt(push, pf[pf.length - 1].game);
-check('Edit from here starts the blob and each piece where the run left them', at.start.x === pf[pf.length - 1].game.player.x && at.entities[0].x === pf[pf.length - 1].game.entities[0].x && at.entities[0].x !== 2, JSON.stringify([at.start, at.entities]));
+check('Edit from here starts Wee and each piece where the run left them', at.start.x === pf[pf.length - 1].game.player.x && at.entities[0].x === pf[pf.length - 1].game.entities[0].x && at.entities[0].x !== 2, JSON.stringify([at.start, at.entities]));
 check('and leaves the room it came from as it was', push.entities[0].x === 2 && push.start.x === 1);
 done();

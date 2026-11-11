@@ -1,8 +1,8 @@
 // The crayon look's rules (docs/THEME.md), held on every sprite the game can draw: one pass inks them all,
 // the line is a tint and whole, no piece is one fill, and a fitted room lands on whole screen pixels.
 import { suite } from './lib.mjs';
-import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP, wobble, WOBBLE_FRAMES } from '../src/view/crayon.js';
-import { SPRITES, spriteSheet, wobbles } from '../src/view/sprites.js';
+import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP, wobble, sway, WOBBLE_FRAMES } from '../src/view/crayon.js';
+import { SPRITES, spriteSheet, wobbles, sways } from '../src/view/sprites.js';
 
 const { check, done } = suite('crayon');
 // A key each keyed sprite accepts, so every builder is drawn once.
@@ -43,7 +43,13 @@ const count = g => g.flat().filter(Boolean).length;
 check('a bent drawing is the same piece: about as many cells, and its inside moves too', frames(blob).every(g => Math.abs(count(g) - count(blob)) < count(blob) * 0.08 && g.some((row, y) => row.some((c, x) => c && blob[y][x] && c !== blob[y][x]))));
 // Only what is alive wobbles (register 875): a made thing is the same drawing every frame.
 const moving = SPRITES.filter(wobbles).sort().join();
-check('only the blob and the creatures wobble; a berry, a box, a door and every other thing hold still', moving === 'blob,blobAlt,enemy,mover,strong' && !wobbles('berry') && !wobbles('box') && !wobbles('doorShut') && !wobbles('laser'), moving);
+check('only Wee and the creatures wobble; a berry, a box, a door and every other thing hold still', moving === 'blob,blobAlt,enemy,mover,strong' && !wobbles('berry') && !wobbles('box') && !wobbles('doorShut') && !wobbles('laser'), moving);
+// A fruit leans (register 886): its foot stays where it is and its top goes two pixels aside, left then right.
+{
+  const b = spriteSheet('berry'), ext = g => { const top = g.findIndex(r => r.some(Boolean)), bot = g.length - 1 - [...g].reverse().findIndex(r => r.some(Boolean)); return { top: g[top].findIndex(Boolean), bot: g[bot].findIndex(Boolean), n: g.flat().filter(Boolean).length }; };
+  const up = ext(b), l = ext(sway(b, 1)), r = ext(sway(b, 2));
+  check('a berry leans left and right from its foot, and keeps every cell', sways('berry') && !sways('box') && l.top < up.top && r.top > up.top && Math.abs(l.bot - up.bot) <= 1 && Math.abs(r.bot - up.bot) <= 1 && l.n === up.n && r.n === up.n && sway(b, 0) === b, JSON.stringify([up, l, r]));
+}
 // Row y is row y of the piece slid by 0 or 1; next-door rows never differ by more than that one pixel.
 const left = g => g.map(row => row.findIndex(Boolean));
 check('a bend never tears: a row\'s edge moves by a pixel at most', frames(blob).every(g => left(g).every((v, y) => v < 0 || left(blob)[y] < 0 || Math.abs(v - left(blob)[y]) <= 2)));

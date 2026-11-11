@@ -16,7 +16,7 @@ const PROGRESS_MS = 250;
 let liveTimer = null;
 // After a Check that found no win, Findings says why it has no notes instead of asking for a Check (774).
 const NO_NOTES = {
-  unsolvable: 'The blob cannot reach every berry, so there are no notes.',
+  unsolvable: 'Wee cannot reach every berry, so there are no notes.',
   capped: 'The search stopped before it found a win, so there are no notes.',
   nogoal: 'Place a berry to see design notes.',
   realtime: 'A room with real-time pieces cannot be checked, so there are no notes.',
@@ -76,7 +76,7 @@ function finish(r) {
 // A check goes stale the moment the room changes, and a live one starts after a pause.
 export function syncCheck() {
   const stamp = JSON.stringify(S.level);
-  if (!S.level.start) { S.check = null; clearDesign(); clearTimeout(liveTimer); $('checkText').textContent = 'To check or play, place the blob.'; $('checkText').dataset.verdict = ''; $('checkText').classList.remove('stale'); $('showSolution').hidden = true; return; }
+  if (!S.level.start) { S.check = null; clearDesign(); clearTimeout(liveTimer); $('checkText').textContent = 'To check or play, place Wee.'; $('checkText').dataset.verdict = ''; $('checkText').classList.remove('stale'); $('showSolution').hidden = true; return; }
   if (S.check && S.check.stamp === stamp) return;
   notesWhy();
   // The room changed: the old verdict stays, dimmed, until the live check replaces it.

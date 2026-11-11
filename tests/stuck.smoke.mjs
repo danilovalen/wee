@@ -32,7 +32,7 @@ try {
   check('then a quiet bubble suggests Undo, with its sound', said && /Undo your last move/.test(await page.textContent('#stuck')) && (await page.textContent('#stuckReset')) === 'Undo' && await page.evaluate(() => window.__heard === 1), String(await page.evaluate(() => window.__heard)));
   await page.click('#stuckText');
   await page.waitForTimeout(200);
-  check('a tap anywhere on the bubble, not only its button, takes back the move (register 757), its Undo the last move: the bubble goes and the blob is back', !(await shown()) && await at() === home && (await page.textContent('#moves')) === 'Moves 0', await at());
+  check('a tap anywhere on the bubble, not only its button, takes back the move (register 757), its Undo the last move: the bubble goes and Wee is back', !(await shown()) && await at() === home && (await page.textContent('#moves')) === 'Moves 0', await at());
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(600);
   check('after a move, Undo in the play bar is ready', await page.locator('#playUndo').isEnabled());
   await page.keyboard.press('z'); await page.waitForTimeout(200);

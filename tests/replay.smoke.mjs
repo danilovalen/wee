@@ -48,7 +48,7 @@ try {
   await page.keyboard.press('Home'); await page.click('#rpFwd'); await page.waitForTimeout(100);
   await page.click('#rpEditHere'); await page.waitForTimeout(400);
   const lv = await page.evaluate(() => window.wee.getLevel());
-  check('Edit from here opens that position as a new room, the blob starting where it stood', lv.start.x === 3 && lv.start.y === 1 && await page.evaluate(async () => (await import('/src/editor/state.js')).S.mode) === 'edit' && await page.locator('#replayBar').isHidden(), JSON.stringify([lv.start, await page.textContent('#mode'), await page.locator('#replayBar').isHidden()]));
+  check('Edit from here opens that position as a new room, Wee starting where it stood', lv.start.x === 3 && lv.start.y === 1 && await page.evaluate(async () => (await import('/src/editor/state.js')).S.mode) === 'edit' && await page.locator('#replayBar').isHidden(), JSON.stringify([lv.start, await page.textContent('#mode'), await page.locator('#replayBar').isHidden()]));
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the replay smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }

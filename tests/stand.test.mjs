@@ -26,11 +26,11 @@ for (const c of ['water', 'button:red']) {
 }
 l = fresh(); l.cells[10] = 'goal';
 place(l, { tool: 'start' }, 3, 1, 'place');
-check('the blob placed on a berry takes its place', l.cells[10] === '' && l.start.x === 3);
+check('Wee placed on a berry takes its place', l.cells[10] === '' && l.start.x === 3);
 l = fresh(); place(l, { tool: 'box' }, 1, 1, 'place');
-check('a box placed on the blob takes its place (register 768)', !l.start && l.entities.length === 1);
+check('a box placed on Wee takes its place (register 768)', !l.start && l.entities.length === 1);
 l = fresh(); place(l, { tool: 'water' }, 1, 1, 'place');
-check('water placed under the blob keeps it', !!l.start && l.cells[8] === 'water');
+check('water placed under Wee keeps it', !!l.start && l.cells[8] === 'water');
 l = fresh(); l.cells[10] = 'sensor:red'; l.entities.push({ kind: 'box', x: 4, y: 1 });
 { const m = moveAt(l, { x: 4, y: 1 }, { x: 3, y: 1 });
   check('moving a box onto a relay swaps them, so neither stands on the other', !!m && m.cells[10] === '' && m.cells[11] === 'sensor:red' && m.entities[0].x === 3); }

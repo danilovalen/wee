@@ -31,7 +31,7 @@ const draws = k => { try { return spriteSheet('stain', k).length > 0; } catch { 
 // Off water, goo or gravel onto bare floor, the blob leaves a print the way it went; nowhere else.
 const wet = room(5, 1, { 1: 'water', 3: 'gravel' });
 const tr = tracksOf(wet, { x: 0, y: 0 }, { x: 4, y: 0 });
-check('the blob tracks water and gravel onto the bare floor after them', tr.length === 2 && tr[0].x === 2 && tr[0].key.startsWith('print|') && tr[0].key.endsWith('|right') && tr[1].x === 4 && tr[0].key !== tr[1].key, JSON.stringify(tr));
+check('Wee tracks water and gravel onto the bare floor after them', tr.length === 2 && tr[0].x === 2 && tr[0].key.startsWith('print|') && tr[0].key.endsWith('|right') && tr[1].x === 4 && tr[0].key !== tr[1].key, JSON.stringify(tr));
 check('it leaves no print standing still, on plain floor, or from one pool tile to the next', tracksOf(wet, { x: 0, y: 0 }, { x: 0, y: 0 }).length === 0 && tracksOf(room(3, 1), { x: 0, y: 0 }, { x: 2, y: 0 }).length === 0 && tracksOf(room(3, 1, { 0: 'water', 1: 'water' }), { x: 0, y: 0 }, { x: 1, y: 0 }).length === 0);
 check('the same mark on the same tile is kept once', keepStains(tr, tr).length === 2 && draws(tr[0].key));
 // Every mark and every death has a drawing.
@@ -39,7 +39,7 @@ check('every mark a tick can leave has a drawing', SPRITES.includes('stain') && 
 check('every death has a pose', ['spring|right', 'spring|up', 'spikes|', 'laser|', 'blast|', 'crush|', 'hit|'].every(k => spriteSheet('blobDead', k + '|#ab9df2').flat().some(Boolean)));
 
 // The flinch (register 865): for a moment the blob sees it coming, then lies as its death left it.
-check('the blob flinches first, then takes its death\'s pose', poseAt({ how: 'spikes', at: 1000 }, 1000 + FLINCH_MS - 1) === 'flinch' && poseAt({ how: 'spikes', at: 1000 }, 1000 + FLINCH_MS) === 'spikes' && poseAt({ how: 'crush' }, 5) === 'crush' && FLINCH_MS <= 150);
+check('Wee flinches first, then takes its death\'s pose', poseAt({ how: 'spikes', at: 1000 }, 1000 + FLINCH_MS - 1) === 'flinch' && poseAt({ how: 'spikes', at: 1000 }, 1000 + FLINCH_MS) === 'spikes' && poseAt({ how: 'crush' }, 5) === 'crush' && FLINCH_MS <= 150);
 check('the flinch has a drawing', spriteSheet('blobDead', 'flinch||#ab9df2').flat().some(Boolean) && JSON.stringify(spriteSheet('blobDead', 'flinch||#ab9df2')) !== JSON.stringify(spriteSheet('blobDead', 'hit||#ab9df2')));
 // The room keeps its marks, the newest STAIN_MAX of them.
 const many = Array.from({ length: STAIN_MAX + 5 }, (_, i) => ({ x: i, y: 0, key: 'soot' }));

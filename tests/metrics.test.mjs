@@ -12,7 +12,7 @@ const { check, done } = suite('metrics');
 const m = rows => runMetrics(room(rows));
 const open = m(['######', '#....#', '#P..G#', '######']);
 check('an open room: nothing can lose the run, and no first ruin', open.ruin === 0 && open.firstRuin === null, JSON.stringify(open));
-check('it counts the places the blob can reach', open.places >= 3, JSON.stringify(open));
+check('it counts the places Wee can reach', open.places >= 3, JSON.stringify(open));
 // Going with the flow (registers 708-710): a room the first move wins needs no undo.
 const lane = m(['#####', '#P.G#', '#####']);
 check('a room won in one move needs no undo going with the flow', lane.undos === 0, JSON.stringify(lane));

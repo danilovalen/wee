@@ -3,7 +3,7 @@
 // rectangles so it stays sharp at any whole zoom.
 import { INK } from './ink.js';
 import { skinned, look, current } from './look.js';
-import { ink, doubled, wobble, WOBBLE_FRAMES } from './crayon.js';
+import { ink, doubled, wobble, sway, WOBBLE_FRAMES } from './crayon.js';
 import { CRAYON_SPRITES } from './crayonSprites.js';
 import { CRAYON_SKINS } from './crayonSkins.js';
 import { CRAYON_MOMENTS } from './crayonMoments.js';
@@ -19,6 +19,9 @@ const PLAIN = new Set(['doorOpen', 'doorOpenAlt', 'crateFrame']);
 // button, a laser and every other thing is drawn the same every frame.
 const ALIVE = new Set(['blob', 'blobAlt', 'mover', 'enemy', 'strong']);
 export const wobbles = name => ALIVE.has(name);
+// A fruit leans from side to side instead (register 886): upright, left, upright, right, slowly.
+export const sways = name => name === 'berry';
+const SWAY_MS = 420, SWAY = [0, 1, 0, 2];
 const sheetOf = (name, param) => { const b = BUILD[name](param); return b.g || doubled(b); };
 function runsOf(name, param, exact, f = 0) {
   if (!exact) name = skinned(name);
@@ -26,7 +29,7 @@ function runsOf(name, param, exact, f = 0) {
   if (runs.has(key)) return runs.get(key);
   const plain = PLAIN.has(name) || /(^|\|)bare(\||$)/.test(String(param)) || (name === 'idoor' && /\|1$/.test(String(param)));
   // A mark on the floor is a stain, not a thing: its edge darkens and no line goes round it.
-  const sheet = wobbles(name) ? wobble(sheetOf(name, param), name, f) : sheetOf(name, param);
+  const sheet = wobbles(name) ? wobble(sheetOf(name, param), name, f) : sways(name) ? sway(sheetOf(name, param), f) : sheetOf(name, param);
   const out = ink(sheet, plain ? { ring: 0, edge: 0 } : name === 'stain' ? { ring: 0 } : {});
   runs.set(key, out);
   return out;
@@ -59,7 +62,7 @@ export function drawSprite(g, name, x, y, { outline = false, colour = null, exac
     }));
     return;
   }
-  const list = runsOf(name, colour, exact, !exact && boilOn() ? Math.floor(performance.now() / BOIL_MS) % WOBBLE_FRAMES : 0);
+  const list = runsOf(name, colour, exact, !exact && boilOn() ? (sways(name) ? SWAY[Math.floor(performance.now() / SWAY_MS) % 4] : Math.floor(performance.now() / BOIL_MS) % WOBBLE_FRAMES) : 0);
   // Every run is rounded to whole pixels of whatever it is drawn on, so a sprite stays crisp at any position
   // or scale and its runs meet with no seams (registers 607, 621).
   const m = g.getTransform ? g.getTransform() : null;
