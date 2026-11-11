@@ -91,11 +91,16 @@ try {
   const title = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('.menu .menuLogo')); return { shadow: c.textShadow.split('px,').length, clip: c.backgroundClip }; });
   check('the title has a line round its letters', title.shadow >= 8 && title.clip !== 'text', JSON.stringify(title));
   await p.click('#menuCampaign'); await p.waitForTimeout(400);
-  const listBare = await bare(), locked = await p.evaluate(() => { const e = document.querySelector('.campRow.locked'); return e ? getComputedStyle(e).opacity : '1'; });
-  check('every control on the level list wears the frame, and a locked level keeps its line', !listBare.length && locked === '1', listBare.join(' ') + ' ' + locked);
+  const listBare = await bare(), locked = await p.evaluate(() => { const e = document.createElement('button'); e.className = 'campRow locked'; e.append(document.createElement('b')); document.querySelector('#campList').append(e); const o = getComputedStyle(e).opacity + '/' + getComputedStyle(e.firstChild).opacity; e.remove(); return o; });
+  check('every control on the level list wears the frame, and a locked level keeps its line', !listBare.length && locked === '1/0.45', listBare.join(' ') + ' ' + locked);
   await p.click('.campRow[data-level]'); await p.waitForTimeout(700);
   const levelBare = await bare();
   check('every control in a level wears the frame', !levelBare.length, levelBare.join(' '));
+  // Who's playing: the row that is picked keeps the frame, in the accent.
+  await p.goto(`http://localhost:${PORT}/index.html`); await p.waitForTimeout(500);
+  await p.click('#menuSlot'); await p.waitForTimeout(400);
+  const whoBare = await bare(), picked = await p.evaluate(() => !!document.querySelector('.slotRow.on'));
+  check('every control on Who\'s playing wears the frame, the picked row too', picked && !whoBare.length, picked + ' ' + whoBare.join(' '));
   check('nothing threw', !errors.length, errors.join(' | '));
 } finally { await browser.close(); server.close(); }
 done();
