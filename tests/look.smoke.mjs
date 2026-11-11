@@ -123,7 +123,7 @@ try {
   check('a note and a goal are written in the hand, at a whole step of its grid', /^"?Hand/.test(hand.note) && /^"?Hand/.test(hand.goal) && hand.size === '18px' && hand.loaded, JSON.stringify(hand));
   // Icons are flat and tools unstretched (registers 900, 902): no ring or lit edge on an icon, and a tool's
   // picture has one canvas pixel to each page pixel.
-  const sharp = await p.evaluate(() => { const g = document.querySelector('button .glyph.px .l'), c = document.querySelector('#palette canvas, #campTools canvas'); return { ring: g ? getComputedStyle(g).display : 'none', canvas: c ? c.width + '/' + getComputedStyle(c).width : '' }; });
+  const sharp = await p.evaluate(() => { const g = document.querySelector('#campRun .glyph.px .l'), c = document.querySelector('#palette canvas, #campTools canvas'); return { ring: g ? getComputedStyle(g).display : 'missing', canvas: c ? c.width + '/' + getComputedStyle(c).width : '' }; });
   check('an icon is one flat shape, and a tool\'s picture is shown at its own size', sharp.ring === 'none' && sharp.canvas === '32/32px', JSON.stringify(sharp));
   // The desk (register 883): the room's ring has its own line and shadow, and the tutorial's note has the frame.
   const desk = await p.evaluate(() => { const n = s => (getComputedStyle(document.querySelector(s)).boxShadow.match(/rgb/g) || []).length; return { ring: n('#ring'), note: n('#tutBox'), page: getComputedStyle(document.body).backgroundImage !== 'none' }; });

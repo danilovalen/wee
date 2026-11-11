@@ -1468,7 +1468,7 @@ export const M = [
   ["style.css", ".tutBox p, .tutBox small, .campBrief .campReqs li, .achList .achSay { font-family: var(--hand-face); font-size: var(--hand-size, 18px); font-weight: 400; letter-spacing: 0; }\n", "", "look"],
   ["style.css", ".campBrief .campOpt li.kept { background-color: color-mix(in srgb, var(--gold) 38%, var(--sheet)); }\n", "", "win"],
   ["src/app/hand.js", "return HAND_CELLS * Math.max(1, Math.round(1.5 * dpr)) / dpr;", "return 18;", "crayon"],
-  ["style.css", ".glyph.px :is(.l, .h, .s) { display: none; }\n", "", "look"],
+  ["style.css", "those were the bloat. */\n.glyph.px :is(.l, .h, .s) { display: none; }\n", "those were the bloat. */\n", "look"],
   ["src/app/icons.js", "  c.width = T; c.height = T; c.dataset.icon = tool;", "  c.width = 40; c.height = 40; c.dataset.icon = tool;", "look"],
   ["src/view/crayon.js", "const d = dir * Math.round(2 * (h - 1 - y) / (h - 1));", "const d = 0;", "crayon"],
   ["src/app/menuScene.js", "l.cells[2 * W + 0] = 'toggle:red';", "l.cells[2 * W + 0] = 'toggle:red:on';", "campaign-play"],
