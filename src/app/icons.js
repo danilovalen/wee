@@ -56,6 +56,12 @@ export function icon(tool, colour = 'red', gateColour = null, crate = false) {
     x.fillStyle = '#19181a'; x.fillRect(18, 2, 12, 10); x.fillStyle = '#fcfcfa';
     for (const [cx, cy] of [[20, 4], [22, 6], [20, 8], [24, 4], [26, 6], [24, 8]]) x.fillRect(cx, cy, 2, 2);
   }
+  else if (tool === 'spot' || tool === 'sign') {
+    // A map room's marks (register 932): a level spot on its gravel, a sign on a block.
+    const l = emptyLevel(1, 1); l.start = { x: 9, y: 9 };
+    if (tool === 'spot') { l.cells[0] = 'gravel'; l.spots = [{ x: 0, y: 0, for: '1', card: 'up' }]; } else { l.cells[0] = 'wall'; l.signs = [{ x: 0, y: 0, text: 'Aa' }]; }
+    drawEdit(x, l, null, [], 0);
+  }
   else drawPiece(x, { kind: tool, axis: 'h', dir: 1, mode: 'input' }, 0, 0);
   return c;
 }

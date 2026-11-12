@@ -14,8 +14,8 @@ const run = g => { for (;;) { const r = g.next(); if (r.done) return r.value; } 
 const room = name => TEMPLATES.find(t => t.name === name)?.level;
 const play = (level, moves) => { const s = createGame(level); for (const m of moves) { step(s, [m]); for (let i = 0; i < 400 && !settled(s); i++) step(s); } return s; };
 
-// A template with no goal (Sample) is a sandbox; every other one must solve.
-const rooms = TEMPLATES.filter(t => t.level.cells.includes('goal')), unsolved = rooms.filter(t => solve(t.level).status !== 'solved').map(t => t.name);
+// A template with no goal (Sample) is a sandbox, and the campaign's map is no puzzle; every other one must solve.
+const rooms = TEMPLATES.filter(t => !t.level.map && t.level.cells.includes('goal')), unsolved = rooms.filter(t => solve(t.level).status !== 'solved').map(t => t.name);
 check(`every template with a goal solves (${rooms.length})`, rooms.length >= 3 && !unsolved.length, unsolved.join());
 
 const DESIGNED = {

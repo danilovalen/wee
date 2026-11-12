@@ -1,6 +1,7 @@
 // The level file: an empty room, resizing, and parsing that refuses what it does not know.
 import { CLOCKWISE, COLOURS, CORNERS, KINDS, MODES, MOVES, POWERS } from '../rules/base.js';
 import { WIRES } from '../rules/wires.js';
+import { checkMarks, moveMarks, tooBig } from './marks.js';
 
 export function checkTurret(t) {
   if (!Array.isArray(t.dirs) || t.dirs.length < 1 || t.dirs.length > 4 || t.dirs.some(d => !CLOCKWISE.includes(d)) || new Set(t.dirs).size !== t.dirs.length)
@@ -30,6 +31,7 @@ export function resizeLevel(level, w, h) {
     entities: level.entities.filter(e => e.x < w && e.y < h),
     ...(level.crates ? { crates: level.crates.filter(c => c.x < w && c.y < h) } : {}),
     ...(level.wires ? { wires: level.wires.filter(c => c.x < w && c.y < h) } : {}),
+    ...moveMarks(level, e => e.x < w && e.y < h ? e : null),
   };
 }
 
@@ -54,6 +56,7 @@ export function parseLevel(text) {
     if (!(r.x >= 0 && r.y >= 0 && r.x < l.w && r.y < l.h) || !WIRES.includes(r.w) || wireKeys.has(k)) throw new Error('A wire must be teal, violet or charcoal, inside the room, once per tile.');
     wireKeys.add(k);
   }
+  checkMarks(l);
   if (!['tile', 'slide'].includes(l.clock)) throw new Error('Unknown clock: ' + l.clock);
   // Powers that no longer exist (Hook, the boots) are dropped from old rooms.
   const powers = Object.fromEntries(Object.entries(l.powers || {}).filter(([p]) => POWERS.includes(p)));
@@ -85,18 +88,18 @@ function colourOk(col) {
 }
 
 // Adds (delta 1) or cuts (delta -1) one row or column on a side, moving everything with
-// it. A cut through the start takes it off. Returns null below 1 tile or past 40x30.
+// it. A cut through the start takes it off. Returns null below 1 tile or past the room's limit.
 export function resizeSide(level, side, delta) {
   const dx = side === 'left' ? delta : 0, dy = side === 'top' ? delta : 0;
   const w = level.w + (side === 'left' || side === 'right' ? delta : 0), h = level.h + (side === 'top' || side === 'bottom' ? delta : 0);
-  if (w < 1 || h < 1 || w > 40 || h > 30) return null;
+  if (w < 1 || h < 1 || tooBig(level, w, h)) return null;
   const inside = (x, y) => x >= 0 && y >= 0 && x < w && y < h;
   const moved = level.start && { x: level.start.x + dx, y: level.start.y + dy };
   const start = moved && inside(moved.x, moved.y) ? moved : null;
   const cells = Array(w * h).fill('');
   for (let y = 0; y < level.h; y++) for (let x = 0; x < level.w; x++) if (inside(x + dx, y + dy)) cells[(y + dy) * w + x + dx] = level.cells[y * level.w + x];
   const entities = level.entities.map(e => ({ ...e, x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y));
-  return { ...level, w, h, cells, start, entities, ...(level.crates ? { crates: level.crates.map(e => ({ x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y)) } : {}), ...(level.wires ? { wires: level.wires.map(e => ({ ...e, x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y)) } : {}) };
+  return { ...level, w, h, cells, start, entities, ...(level.crates ? { crates: level.crates.map(e => ({ x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y)) } : {}), ...(level.wires ? { wires: level.wires.map(e => ({ ...e, x: e.x + dx, y: e.y + dy })).filter(e => inside(e.x, e.y)) } : {}), ...moveMarks(level, e => inside(e.x + dx, e.y + dy) ? { ...e, x: e.x + dx, y: e.y + dy } : null) };
 }
 
 // A side's grip: n > 0 adds n lines, n < 0 cuts them. When that edge is a wall border, the
@@ -131,13 +134,13 @@ function cutOnce(l, side) {
   const shift = o => ({ ...o, x: across(side) && o.x > k ? o.x - 1 : o.x, y: !across(side) && o.y > k ? o.y - 1 : o.y });
   const cells = [];
   for (let y = 0; y < l.h; y++) for (let x = 0; x < l.w; x++) if (keep(x, y)) cells.push(l.cells[y * l.w + x]);
-  return { ...l, w, h, cells, start: l.start && !at(l.start) ? shift(l.start) : null, entities: l.entities.map(shift), ...(l.crates ? { crates: l.crates.map(shift) } : {}), ...(l.wires ? { wires: l.wires.filter(e => !at(e)).map(shift) } : {}) };
+  return { ...l, w, h, cells, start: l.start && !at(l.start) ? shift(l.start) : null, entities: l.entities.map(shift), ...(l.crates ? { crates: l.crates.map(shift) } : {}), ...(l.wires ? { wires: l.wires.filter(e => !at(e)).map(shift) } : {}), ...moveMarks(l, e => at(e) ? null : shift(e)) };
 }
 
 function growOnce(l, side) {
   if (!bordered(l, side)) return resizeSide(l, side, 1);
   const w = l.w + (across(side) ? 1 : 0), h = l.h + (across(side) ? 0 : 1);
-  if (w > 40 || h > 30) return null;
+  if (tooBig(l, w, h)) return null;
   // The new line goes just inside the border; its ends join the other borders.
   const k = edgeIndex(l, side) === 0 ? 1 : (across(side) ? l.w : l.h) - 1;
   const shift = o => ({ ...o, x: across(side) && o.x >= k ? o.x + 1 : o.x, y: !across(side) && o.y >= k ? o.y + 1 : o.y });
@@ -148,7 +151,7 @@ function growOnce(l, side) {
     const ox = across(side) && x > k ? x - 1 : x, oy = !across(side) && y > k ? y - 1 : y;
     cells.push(l.cells[oy * l.w + ox]);
   }
-  return { ...l, w, h, cells, start: l.start && shift(l.start), entities: l.entities.map(shift), ...(l.crates ? { crates: l.crates.map(shift) } : {}), ...(l.wires ? { wires: l.wires.map(shift) } : {}) };
+  return { ...l, w, h, cells, start: l.start && shift(l.start), entities: l.entities.map(shift), ...(l.crates ? { crates: l.crates.map(shift) } : {}), ...(l.wires ? { wires: l.wires.map(shift) } : {}), ...moveMarks(l, shift) };
 }
 
 // Walls on every edge tile, except where the start stands.
@@ -159,5 +162,5 @@ export function wallBorder(level) {
     if ((x === 0 || y === 0 || x === w - 1 || y === h - 1) && !(level.start && x === level.start.x && y === level.start.y)) cells[i] = 'wall';
   }
   const edge = e => e.x === 0 || e.y === 0 || e.x === w - 1 || e.y === h - 1;
-  return { ...level, cells, entities: level.entities.filter(e => !edge(e)), ...(level.crates ? { crates: level.crates.filter(c => !edge(c)) } : {}) };
+  return { ...level, cells, entities: level.entities.filter(e => !edge(e)), ...(level.crates ? { crates: level.crates.filter(c => !edge(c)) } : {}), ...moveMarks(level, e => edge(e) && e.for ? null : e) };
 }

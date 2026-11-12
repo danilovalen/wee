@@ -107,6 +107,19 @@
           <button type="button" data-corner="sw" title="Bottom left">&#9699;</button>
           <button type="button" data-corner="se" title="Bottom right">&#9698;</button>
         </div>
+        <div class="opt" data-for="spot">
+          <span>Opens</span>
+          <select id="spotFor" aria-label="The level this spot opens"></select>
+          <span>Card</span>
+          <button type="button" data-card="up" title="Card above">&uarr;</button>
+          <button type="button" data-card="right" title="Card to the right">&rarr;</button>
+          <button type="button" data-card="down" title="Card below">&darr;</button>
+          <button type="button" data-card="left" title="Card to the left">&larr;</button>
+        </div>
+        <div class="opt" data-for="sign">
+          <span>Says</span>
+          <input id="signText" type="text" maxlength="24" aria-label="What the sign says">
+        </div>
         <div class="opt" data-for="button toggle door idoor receiver sensor">
           <span>Colour</span>
           <span id="colours"></span>

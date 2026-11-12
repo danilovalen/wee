@@ -135,8 +135,8 @@ export function buildRooms(actions) {
   A = actions;
   // The library shows the examples only; the other templates are test fixtures, opened by tests through window.wee (register 396).
   // Every campaign puzzle, so a puzzle can be opened and changed here (register 662); the 60x46 hex counter is a
-  // test room, listed in dev mode only (register 819).
-  const EXAMPLES = () => [...(unlocked() ? ['Hex counter'] : []), ...PUZZLES.filter(Boolean).map(p => p.name)];
+  // test room, and the campaign's map (register 932), listed in dev mode only (register 819).
+  const EXAMPLES = () => [...(unlocked() ? ['Hex counter', 'Map'] : []), ...PUZZLES.filter(Boolean).map(p => p.name)];
   const templateRows = (list = TEMPLATES, kind = 'Template') => list.map(t => { const { level } = splitRoom(t.level);
     return row(level, t.name, `${kind}, ${level.w}x${level.h}`, () => { if (leaveOk()) { openRoom(level, { name: kind === 'Example' ? t.name : '', fixture: kind !== 'Example' }); S.room.template = S.room.saved; S.room.saved = null; syncRoomsButton(); closeAll(); } }); });
   window.wee.openTemplate = name => templateRows(TEMPLATES.filter(t => t.name === name))[0].firstChild.click();

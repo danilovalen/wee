@@ -3,6 +3,7 @@
 import { CLOCKWISE, CARRIES_TURRET } from '../rules/base.js';
 import { CRATED } from '../level/format.js';
 import { canStand } from '../level/stand.js';
+import { MARK_TOOLS, describeMarks, eraseSign, holdsMark, placeMark, pruneSpots } from './mapEdit.js';
 import { TOOLS, WIRE_NAME, COLOUR_NAME, CLOCK_NAME, ARROW, CORNER_NAME } from './palette.js';
 
 const idx = (level, x, y) => y * level.w + x;
@@ -39,6 +40,7 @@ function moveOnto(level, from, to) {
     if (l.cells[ti] || there || isStart(to)) return null;
     l.cells[ti] = l.cells[fi]; l.cells[fi] = '';
     if (crateAt(l, from.x, from.y)) { setCrate(l, from.x, from.y, false); setCrate(l, to.x, to.y, true); }
+    for (const m of [...(l.spots || []), ...(l.signs || [])]) if (m.x === from.x && m.y === from.y) Object.assign(m, { x: to.x, y: to.y });
   } else return null;
   return l;
 }
@@ -125,6 +127,7 @@ function setWire(level, x, y, w, on) {
 
 export function holds(level, x, y, tool, wire) {
   if (tool === 'wire') return wiresAt(level, x, y).some(r => r.w === wire);
+  if (MARK_TOOLS.includes(tool)) return holdsMark(level, x, y, tool);
   const c = level.cells[idx(level, x, y)], pc = level.entities[pieceAt(level, x, y)];
   if (tool === 'wall' || tool === 'crack' || tool === 'checkpoint' || tool === 'death' || tool === 'water' || tool === 'sticky' || tool === 'gravel' || tool === 'goal') return c === tool;
   if (tool === 'spring') return c.startsWith('spring:');
@@ -172,6 +175,7 @@ export function describe(level, x, y) {
   const ws = wiresAt(level, x, y).map(r => WIRE_NAME[r.w].toLowerCase());
   if (ws.length) parts.push(ws.join(' and ') + (ws.length > 1 ? ' wires' : ' wire'));
   if (level.start && level.start.x === x && level.start.y === y) parts.push('Start');
+  parts.push(...describeMarks(level, x, y));
   return parts.length ? parts.join(', ') : 'Empty floor';
 }
 
@@ -180,6 +184,8 @@ export function describe(level, x, y) {
 // Returns the effects to show: what was taken off the tile, and a pop where it placed.
 export function place(level, ui, x, y, how) {
   const out = [];
+  if (MARK_TOOLS.includes(ui.tool) && how !== 'erase') return placeMark(level, ui, x, y, how);
+  if (how === 'erase' && eraseSign(level, x, y)) return [{ type: 'erase', x, y }];
   if (how === 'remove' && !holds(level, x, y, ui.tool, ui.wire)) return out;
   if (ui.tool === 'wire' && how !== 'erase') {
     if (holds(level, x, y, 'wire', ui.wire) === (how === 'place')) return out;
@@ -246,6 +252,7 @@ export function place(level, ui, x, y, how) {
   }
   const c = level.cells[i];
   setCrate(level, x, y, CRATE_TOOLS.includes(t) ? !!ui.crate && CRATED(c) : crateAt(level, x, y) && CRATED(c));
+  pruneSpots(level);
   if (gone.cell || gone.piece || gone.start) out.push(gone);
   if (t !== 'erase' && t !== 'remove') out.push({ type: 'place', x, y });
   return out;

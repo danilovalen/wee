@@ -22,6 +22,7 @@ import { syncRoomsButton } from './rooms.js';
 import { buildSelect, syncSelect } from './select.js';
 import { icon } from './icons.js';
 import { shutFlyout, buildStrip, syncStrip } from './strip.js';
+import { mapTools, syncMapTools } from './mapTools.js';
 
 function syncCtxText() {
   const note = [...document.querySelectorAll('.opt:not([hidden]) .note')].map(n => n.textContent).join(' ');
@@ -55,14 +56,14 @@ export function buildPanels(actions) {
   }
   for (const t of TOOLS) {
     // On a wide screen the palette is sections, each under its own heading.
-    if (TOOLS.find(o => o.group === t.group) === t) {
+    if (TOOLS.find(o => o.group === t.group) === t && GROUPS.some(([g]) => g === t.group)) {
       const h = document.createElement('h3');
       h.className = 'ghead'; h.textContent = GROUPS.find(([g]) => g === t.group)[1];
       $('palette').append(h);
     }
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.tool = t.id; b.dataset.in = t.group;
-    if (t.campaign) b.dataset.camp = '1';
+    if (t.campaign || t.dev) b.dataset.camp = '1';
     b.title = t.label;
     b.append(icon(t.id), Object.assign(document.createElement('span'), { className: 'lbl', textContent: t.label }));
     b.onclick = () => { S.ui.tool = t.id; shutFlyout(); syncPanel(); };
@@ -151,7 +152,7 @@ export function syncPanel() {
   syncColours();
   if (only && !only.includes(ui.tool)) ui.tool = 'look';
   document.querySelectorAll('[data-tool]').forEach(b => { b.classList.toggle('on', b.dataset.tool === ui.tool); b.hidden = only ? !only.includes(b.dataset.tool) : b.dataset.in !== ui.group || !!b.dataset.camp; });
-  syncBrief();
+  syncBrief(); syncMapTools();
   // A tab carries a dot when the selected tool sits in it.
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   // In a level the one-way says how it is turned and taken away (register 234); draft copy.
@@ -193,7 +194,7 @@ export function syncPanel() {
 // The tools this room offers: a level's own, the simple Sandbox's, or every Sandbox tool.
 // The simple Sandbox offers a campaign piece once it has been used in the campaign (register 558).
 // The Sandbox offers every piece for now (register 649); known() still says what the campaign has opened.
-const offeredTools = () => S.camp ? toolsFor(S.camp.def) : S.simple ? SIMPLE : TOOLS.filter(t => !t.campaign).map(t => t.id);
+const offeredTools = () => S.camp ? toolsFor(S.camp.def) : S.simple ? [...SIMPLE, ...mapTools()] : [...TOOLS.filter(t => !t.campaign && !t.dev).map(t => t.id), ...mapTools()];
 
 // A level with more than one colour shows them as a row of dots over its tools (register 245):
 // what you place takes the chosen one, and a one-way takes a colour only in a level that names

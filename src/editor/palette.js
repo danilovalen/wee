@@ -31,6 +31,9 @@ export const TOOLS = [
   { id: 'toggle', label: 'Switch', group: 'switches' },
   { id: 'door', label: 'Door', group: 'switches' },
   { id: 'sensor', label: 'Laser relay', group: 'switches' },
+  // A map room's marks (register 932), in dev mode only.
+  { id: 'spot', label: 'Level spot', group: 'map', dev: true },
+  { id: 'sign', label: 'Sign', group: 'map', dev: true },
 ];
 // The Sandbox's tool strip (registers 381, 383): one slot per group, the rest in the group's flyout.
 // Levels keep one button per tool (register 384).
@@ -44,6 +47,7 @@ export const STRIP = [
   ['switches', 'Switches', ['button', 'toggle', 'wire']],
   ['doors', 'Doors', ['door', 'gate']],
   ['floors', 'Floors', ['water', 'sticky', 'gravel']],
+  ['map', 'Map', ['spot', 'sign']],
 ];
 export const stripOf = tool => STRIP.find(([, , ts]) => ts.includes(tool));
 export const POWER_TEXT = {

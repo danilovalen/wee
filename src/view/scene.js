@@ -11,6 +11,7 @@ import { netsOf } from '../rules/wires.js';
 import { drawJuice, squashOf } from './juice.js';
 import { drawStains, drawDead, shakeOf } from './moments.js';
 import { drawBeams } from './beams.js';
+import { drawMarks } from './marks.js';
 
 const BUMP_MS = 380, GHOST_MS = 360;
 
@@ -49,6 +50,7 @@ export function drawEdit(g, level, hover, fx, now, marks = {}, over = null) {
   });
   for (const e of level.entities) drawPiece(g, e, e.x * T, e.y * T, pop(e.x, e.y));
   if (level.start) drawPlayer(g, level.start.x * T, level.start.y * T, false, pop(level.start.x, level.start.y), 0.9, level.powers.armored);
+  drawMarks(g, level);
   // A filled slot keeps its outline, now solid: the player put that piece there.
   if (open) {
     g.strokeStyle = 'rgba(171,157,242,.95)'; g.lineWidth = 2.5;
