@@ -929,3 +929,7 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 920 | "all the information should remain, there should be maybe a stair under or a passageway, or something the blob enters. And what is this open door, why it is the inverted door?" | sketched: stairs under each card, no door tile; every card keeps its information |
 | 921 | "You got the skeleton right, now sketch a proper screen" | sketched: docs/sketches/levels-corridor.png, waiting on his review |
 | 922 | "Remember that there are more challenges, one or two each level and each two levels it unlocks two challenges. No need for it to be linear. The map can branch, move in many directions. Even cluster by new element type unlocked (laser land, spike land). But it has to be continuous" | sketched: docs/sketches/levels-map-overview.png and levels-map-phone.png, waiting on his review |
+| 923 | "How would doors behave? How do you know if something is locked or not? And how would you unlock levels? We can reshape the unlock mechanism if it dialogues better with the current map" | open: proposal sent, waiting on his pick |
+| 924 | "it will have to be navigable by dragging around" | open: map design |
+| 925 | "Themed areas should have themed stuff close to it. Like spikes close to spike land." | open: map design |
+| 926 | "instead of a vertical corridor with the lands, they can turn corners" | open: map design |
