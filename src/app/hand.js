@@ -8,12 +8,16 @@ export function handSize(dpr, wide) {
   if (dpr <= 1) return wide ? 24 : 18;
   return HAND_CELLS * Math.max(1, Math.round(1.5 * dpr)) / dpr;
 }
+export const iconSize = dpr => 16 * Math.max(1, Math.round(dpr < 1.5 ? dpr : 1.5 * dpr)) / dpr;
 export function applyHand() {
   const dpr = window.devicePixelRatio || 1, size = handSize(dpr, innerWidth > 700);
   // The line is a whole number of device pixels too, so every line starts on the grid.
   const line = Math.ceil(size * 1.22 * dpr) / dpr;
   document.documentElement.style.setProperty('--hand-size', size + 'px');
   document.documentElement.style.setProperty('--hand-line', line + 'px');
+  // An icon is drawn on a 16-cell grid, so it too is a whole number of device pixels to a cell, near 24 px
+  // on a phone and 16 on a screen of one device pixel (register 914).
+  document.documentElement.style.setProperty('--icon', iconSize(dpr) + 'px');
 }
 
 // A level's main actions (register 911): under the room on a phone, under the tools on a wide window, where

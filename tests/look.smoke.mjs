@@ -128,10 +128,11 @@ try {
   // One frame (register 911): the way back and the header are in the same place on the list and in a level.
   {
     const at = sel => p.evaluate(sel => { const e = [...document.querySelectorAll(sel)].find(e => e.offsetParent !== null), r = e && e.getBoundingClientRect(); return r ? [r.left, r.top, r.width, r.height].map(Math.round).join() : ''; }, sel);
-    const inLevel = { back: await at('#campBack'), head: (await at('header')).split(',')[3], title: await p.evaluate(() => { const r = document.getElementById('campNum').getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - innerWidth / 2) <= 2; }) };
+    const style = (btn, title) => p.evaluate(([btn, title]) => { const b = [...document.querySelectorAll(btn)].find(e => e.offsetParent !== null), g = b.querySelector('svg').getBoundingClientRect(), t = getComputedStyle([...document.querySelectorAll(title)].find(e => e.offsetParent !== null)); return [Math.round(g.width), t.fontSize, t.fontFamily].join(); }, [btn, title]);
+    const inLevel = { back: await at('#campBack'), head: (await at('header')).split(',')[3], look: await style('#campBack', '#campNum'), title: await p.evaluate(() => { const r = document.getElementById('campNum').getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - innerWidth / 2) <= 2; }) };
     await p.click('#campBack'); await p.waitForTimeout(500);
-    const inList = { back: await at('dialog[open] .roomsHead .upBtn'), head: (await at('dialog[open] .roomsHead')).split(',')[3] };
-    check('the way back and the header do not move between the level list and a level, and a level\'s title is in the middle', inLevel.back === inList.back && inLevel.head === inList.head && inLevel.title, JSON.stringify({ inLevel, inList }));
+    const inList = { back: await at('dialog[open] .roomsHead .upBtn'), head: (await at('dialog[open] .roomsHead')).split(',')[3], look: await style('dialog[open] .roomsHead .upBtn', 'dialog[open] .roomsHead > b') };
+    check('the way back, its icon, the title\'s type and the header are the same on the level list and in a level, and a level\'s title is in the middle (registers 911, 914)', inLevel.back === inList.back && inLevel.head === inList.head && inLevel.look === inList.look && inLevel.title, JSON.stringify({ inLevel, inList }));
     await p.click('.campRow[data-level]'); await p.waitForTimeout(600);
   }
   // The desk (register 883): the room's ring has its own line and shadow, and the tutorial's note has the frame.

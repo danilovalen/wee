@@ -40,6 +40,7 @@ const EDGE = 14;
 // the room keeps a little more, so an ear never touches the card over it.
 export const BAR = 30;
 const SIDE = 18;
+const ZOOM_ROW = 48;
 
 export function fit() {
   const level = S.level, wide = innerWidth > 700;
@@ -51,12 +52,16 @@ export function fit() {
   // A phone in play gives the room everything between the header and the play buttons; in a level
   // the room keeps its edit size instead, so nothing moves when the mode changes (register 222).
   const below = $('pad').hidden ? 0 : $('pad').offsetHeight + 16;
-  const room = wide ? area.clientHeight - 2 * BAR
+  // In a level the zoom buttons sit under the ring, so the room leaves their height free (register 914).
+  const zoomRow = S.camp ? ZOOM_ROW : 0;
+  const room = wide ? area.clientHeight - 2 * BAR - zoomRow
     : S.mode === 'play' && !S.camp ? innerHeight - $('stage').getBoundingClientRect().top - below - 2 * EDGE
-      : area.clientHeight - 2 * BAR;
+      : area.clientHeight - 2 * BAR - zoomRow;
   // The outskirts' wall (register 672) takes one tile each side, in the margin the grips already keep where that is enough.
   const top = (wide || S.mode !== 'play' || S.camp ? BAR : EDGE);
   const zoom = fitScale(Math.max(0.2, Math.min(2.5, stage / (level.w * T), room / (level.h * T), (stage + 2 * side) / ((level.w + 2) * T), (room + 2 * top) / ((level.h + 2) * T))));
+  // The zoom buttons start just under the ring, whatever size a tile is.
+  $('zoomBar').style.marginTop = Math.round(zoom * T + 4) + 'px';
   // The camera sizes the canvas: to the fitted room, or zoomed in, to the whole of stage x room.
   setFit(zoom, stage, room); apply();
   syncSize(level);

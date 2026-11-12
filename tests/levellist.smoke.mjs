@@ -33,6 +33,7 @@ try {
         if (ps.length && new Set(ps.map(k => Math.round(k.getBoundingClientRect().top))).size > 1) why.push('pieces on two lines');
         if (ps.some(k => { const q = k.getBoundingClientRect(); return q.right > c.right - 2 || q.bottom > c.bottom - 2; })) why.push('pieces out');
         if (st) { const q = st.getBoundingClientRect(); if (q.bottom > c.bottom - 2 || q.right > c.right - 2) why.push('star on the edge'); }
+        const row = b.querySelector('.campStars'); if (row && row.scrollWidth > row.clientWidth + 1) why.push('stars cut');  // register 914
         return why.length ? `${b.dataset.level}: ${why.join(', ')}` : null;
       }).filter(Boolean);
       return { ids, broken, clipped, labels, cut };

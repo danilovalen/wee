@@ -1293,18 +1293,15 @@ body.campaign:not(.sandbox) header .campNum::before { content: 'Level '; }
 dialog[id].rooms > .roomsHead { min-height: var(--head-h); box-sizing: border-box; padding-top: 0; padding-bottom: 0; position: sticky; }
 dialog[id].rooms > .roomsHead > .upBtn { width: 46px; height: 34px; min-height: 0; padding: 0; }
 dialog[id].rooms > .roomsHead > .upBtn + b { position: absolute; left: 50%; translate: -50% 0; margin: 0; }
-body.campaign:not(.sandbox) .campActions { display: grid; grid-template-columns: 132px 84px 86px; grid-auto-rows: 48px; gap: 8px; justify-content: center; margin: 8px auto 4px; flex: none; width: 318px; height: 48px; }
+body.campaign:not(.sandbox) .campActions { display: grid; grid-template-columns: 132px 86px 84px; grid-auto-rows: 48px; gap: 8px; justify-content: center; margin: 8px auto 4px; flex: none; width: 318px; height: 48px; }
 /* Each action has its own place, so one coming or going moves no other (the steady rule). */
-.campActions #campRun { grid-column: 1; grid-row: 1; } .campActions #campReplay { grid-column: 2; grid-row: 1; } .campActions #campTest { grid-column: 3; grid-row: 1; }
+.campActions #campRun { grid-column: 1; grid-row: 1; } .campActions #campTest { grid-column: 2; grid-row: 1; } .campActions #campReplay { grid-column: 3; grid-row: 1; }
 .campActions button { min-width: 0 !important; width: 100%; padding-left: 4px; padding-right: 4px; }
 body.sandbox .campActions { display: none; }
 .campActions button { height: 48px; min-width: 64px; }
 .campActions #campRun { min-width: 132px; }
 /* On a wide window the list and a level share one column, so the way back does not jump sideways. */
-@media (min-width: 701px) {
-  body.campaign:not(.sandbox) header { padding: 0 max(16px, calc((100% - 892px) / 2)); }
-  dialog[id].rooms#campBox { --page: 892px; }
-}
+@media (min-width: 701px) { dialog[id].rooms#campBox { --page: 892px; } }
 .campActions > [hidden] { display: none !important; }
 /* Their place never changes size, whatever is showing (the steady rule): one row on a phone, two in the tray. */
 body.campaign:not(.sandbox) .campActions { min-height: 48px; }
@@ -1313,3 +1310,43 @@ body.campaign:not(.sandbox) #tools > .campActions button { width: 100%; min-widt
 body.campaign:not(.sandbox) #tools > .campActions #campRun { grid-column: 1 / -1; grid-row: 1; }
 body.campaign:not(.sandbox) #tools > .campActions #campReplay { grid-column: 1; grid-row: 2; }
 body.campaign:not(.sandbox) #tools > .campActions #campTest { grid-column: 2; grid-row: 2; }
+/* The bar is the same on every screen, and its buttons are at the screen's corners (register 912): 58 px tall
+   from edge to edge with one line under it, the way back 16 px from the left edge, whatever belongs to the
+   screen 16 px from the right. A page's own column starts under it. */
+dialog[id].rooms > .roomsHead { margin-left: calc(-1 * max(16px, (100vw - var(--page)) / 2)); margin-right: calc(-1 * max(16px, (100vw - var(--page)) / 2)); padding-left: 16px; padding-right: 16px; }
+header { height: var(--head-h); box-sizing: border-box; padding: 0 16px; align-items: center; }
+.menu::before { content: ''; position: absolute; z-index: 1; left: 0; right: 0; top: 0; height: var(--head-h); background: var(--paper); box-shadow: 0 var(--b) 0 var(--line); }
+.menuCorner { top: 12px; right: 16px; width: 46px; height: 34px; padding: 0; }
+.menuCorner.left { left: 16px; } .menuCorner.left2 { left: 70px; } .menuCorner.right2 { right: 70px; } .menuCorner.right3 { right: 124px; }
+.menuCorner .glyph.px { width: 16px; height: 16px; }
+.menu .menuLogo, .menu .menuLogo:not(#x) { top: 70px; }
+@media (max-width: 560px) { .menu .menuLogo { top: 70px; } }
+
+/* ===== One system for every screen (register 914). Three type sizes, two button sizes, one icon size.
+   Everything below wins over the rules above it; a new screen takes these and adds nothing of its own. ===== */
+:root { --t-s: 12px; --t-m: 15px; --t-l: 18px; --btn-s: 44px; --btn-m: 48px; }
+/* Type: a title in the bar is large, a name on a card or a button is medium, a note under it is small and
+   soft, a heading over a group is small, soft and in capitals. The face has one weight, so none is asked for. */
+:is(.roomsHead > b, body.campaign:not(.sandbox) header .campNum) { font: 400 var(--t-l) var(--label-face) !important; color: var(--ink) !important; letter-spacing: 0 !important; }
+:is(.roomsHead > .campTotal, .roomsHead > .lookStars, .roomsHead > .lookStars b) { font: 400 var(--t-m) var(--label-face) !important; color: var(--ink) !important; letter-spacing: 0 !important; }
+:is(.campRow .campRowHead > b, .lookGrid b, .achText > b, .roomRow b, .roomRow strong) { font: 400 var(--t-m) var(--label-face) !important; letter-spacing: 0 !important; }
+:is(.rooms .hint, .achText > span, .achDone, .roomRow small, .lookCost, .achList li > small, .campRow i) { font: 400 var(--t-s) var(--label-face) !important; letter-spacing: 0 !important; }
+:is(.rooms .hint, .achText > span, .achDone, .roomRow small) { color: var(--soft) !important; }
+:is(.rooms h3, .toolName) { font: 400 var(--t-s) var(--label-face) !important; text-transform: uppercase; letter-spacing: .08em !important; color: var(--soft) !important; }
+button { font-size: var(--t-m); font-weight: 400; }
+button :is(.lbl, kbd) { font-size: var(--t-s); }
+/* Buttons: a small one in the bar, at a corner or by the room is 46 by 44; one you play with is 48 high. */
+:is(.roomsHead > button, .roomsHead > form > button, body.campaign:not(.sandbox) header > button, .menuCorner, #keysBtn) { width: 46px !important; height: var(--btn-s) !important; min-height: 0 !important; min-width: 0 !important; padding: 0 !important; flex: none; font-size: var(--t-m) !important; }
+.roomsHead > form > button { width: auto !important; padding: 0 12px !important; }
+.menuCorner { top: 7px !important; }
+.roomsHead > .lookStars { width: auto !important; padding: 0 10px !important; gap: 6px; }
+.zoomBar > button { width: var(--btn-s) !important; height: var(--btn-s) !important; min-height: 0; font-size: var(--t-m) !important; }
+body.campaign:not(.sandbox) :is(.campHistory > button, #campTools button, #palette button) { width: var(--btn-m) !important; height: var(--btn-m) !important; min-height: 0 !important; padding: 0 !important; }
+:is(.campActions button, .menuList button, #roomNew, #moreBtn, .rooms .row.bar > button) { height: var(--btn-m) !important; min-height: 0 !important; font-size: var(--t-m) !important; }
+/* Icons: one size, a whole number of the screen's pixels to each of the icon's cells. */
+:is(header, .roomsHead, .campActions, .campHistory, #campTools, .menuCorner, .menuList, .zoomBar) .glyph.px { width: var(--icon, 16px) !important; height: var(--icon, 16px) !important; }
+/* The zoom buttons' row is part of the room's area, so the room centres above it and nothing under it is covered. */
+body.campaign:not(.sandbox) .roomArea { padding-bottom: 48px; box-sizing: border-box; }
+/* A level card and the two challenge cards beside it: the challenges' column is the wider, so a name like
+   "Remove 10" keeps the cards' one type size (register 914). */
+@media (max-width: 700px) { .campList { grid-template-columns: minmax(0, 162fr) minmax(0, 189fr); gap: 12px 10px; } #campList li.main > .campRow { padding-left: 8px; padding-right: 8px; } }

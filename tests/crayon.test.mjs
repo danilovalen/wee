@@ -3,7 +3,7 @@
 import { suite } from './lib.mjs';
 import { ink, sheet, dk, lt, resolve, RING, N2, wholeScale, TAP, wobble, sway, WOBBLE_FRAMES } from '../src/view/crayon.js';
 import { SPRITES, spriteSheet, wobbles, sways } from '../src/view/sprites.js';
-import { handSize, HAND_CELLS } from '../src/app/hand.js';
+import { handSize, HAND_CELLS, iconSize } from '../src/app/hand.js';
 
 const { check, done } = suite('crayon');
 // A key each keyed sprite accepts, so every builder is drawn once.
@@ -51,6 +51,8 @@ check('only Wee and the creatures wobble; a berry, a box, a door and every other
   const off = [1.25, 1.5, 2, 2.5, 2.625, 2.75, 3, 3.5, 4].filter(d => { const cell = handSize(d, false) * d / HAND_CELLS; return Math.abs(cell - Math.round(cell)) > 1e-9 || handSize(d, false) < 14 || handSize(d, false) > 24; });
   check('on every screen sharper than one pixel, a cell of the hand is whole device pixels and the text 14 to 24 px', !off.length && handSize(1, false) === 18 && handSize(1, true) === 24, off.join());
 }
+// An icon's cell is a whole number of the screen's pixels too (register 914).
+check('on every screen an icon\'s cell is whole device pixels, near 24 px on a phone', [1, 1.25, 2, 2.625, 2.75, 3, 3.5].every(d => { const c = iconSize(d) * d / 16; return Math.abs(c - Math.round(c)) < 1e-9; }) && iconSize(1) === 16 && iconSize(2) === 24);
 // A fruit's body holds still and only its stem and leaves lean (registers 886, 906): the outline of the fruit
 // itself is the same in every drawing.
 {

@@ -85,7 +85,7 @@ export function buildMenuScene(host) {
   // Fit: the room's six columns fill a phone's width, and the goal row always ends above the
   // buttons; on a wide screen it is centred with floor around it.
   const fit = () => {
-    const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight, top = Math.min(56, h * 0.07);
+    const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight, top = 58;  // under the header, the same height on every screen (register 912)
     const fitted = Math.max(1, Math.min(w / 316, (h - 230 - top) / 364)), dpr = window.devicePixelRatio || 1;
     // A tile is a whole number of screen pixels to an art pixel, as in a level (docs/THEME.md rule 8).
     const s = wholeScale(C * fitted / T, dpr) * T / C;
