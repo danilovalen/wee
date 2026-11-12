@@ -933,3 +933,8 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 924 | "it will have to be navigable by dragging around" | sketched in levels-map2-*.png (drag is a design note only) |
 | 925 | "Themed areas should have themed stuff close to it. Like spikes close to spike land." | sketched in levels-map2-*.png (drag is a design note only) |
 | 926 | "instead of a vertical corridor with the lands, they can turn corners" | sketched in levels-map2-*.png (drag is a design note only) |
+| 927 | "Don't do \"portals\" for areas, just place the components nearby. You don't have a sand gate in a sand Mario overworld, you just place sand next to it." | open |
+| 928 | "one of your lasers will kill Wee" | open |
+| 929 | "a basic interaction on the map when reaching a new area. Box land: push a box, button land: push a box on a button, one way: go through it... Automatic, not decision, it just happens when going there" | open |
+| 930 | "No need for gravel on corners if you don't have a three-way" | open |
+| 931 | "Colour land makes no sense we have hidden the dual color levels. Should be powered one way or similar" | open |
