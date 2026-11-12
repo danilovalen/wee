@@ -7,6 +7,12 @@
   /* The names the older rules use, mapped onto the tokens. */
   --bg: var(--paper); --text: var(--ink); --dim: var(--soft); --line: var(--rule); --radius: var(--r-m);
   --body: var(--text-face); --head: var(--label-face);
+  /* The design system (register 915): every size on every screen is one of these. Change one here and it
+     changes everywhere; tests/system.test.mjs refuses a size written anywhere else. */
+  --t-s: 12px; --t-m: 15px; --t-l: 18px;
+  --btn-s: 44px; --btn-m: 48px;
+  --mark: 16px; --icon: 16px; --icon-l: 32px;
+  --head-h: 58px;
 }
 /* Pixel discs and rings on the 2 px grid, one per size (register 621): nothing on the page is drawn round. */
 html {
@@ -24,10 +30,10 @@ html {
 * { box-sizing: border-box; }
 input { accent-color: var(--accent); }
 html, body { overscroll-behavior: none; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 var(--body); }
+body { margin: 0; background: var(--bg); color: var(--text); font: var(--t-m)/1.4 var(--body); }
 header { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0; }
 /* Drift: a thin, spaced wordmark with a sheen passing over it. */
-.logo { font: 700 22px var(--wee-face); letter-spacing: .04em; margin-right: 8px; background: linear-gradient(100deg, var(--accent) 40%, var(--ink) 50%, var(--accent) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
+.logo { font: 700 var(--t-l) var(--wee-face); letter-spacing: .04em; margin-right: 8px; background: linear-gradient(100deg, var(--accent) 40%, var(--ink) 50%, var(--accent) 60%) 0 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 4s linear infinite; }
 /* The header's logo is the way to the menu (register 359): a button that still looks like the logo. */
 /* Back, where the logo was (register 665); a level and a puzzle have their own way back. */
 body.campaign #logo, body.puzzle #logo { display: none; }
@@ -66,39 +72,39 @@ button:disabled { opacity: .4; cursor: default; }
 #mode { min-width: 72px; }
 main { display: grid; grid-template-columns: 300px minmax(0, 1fr) 260px; gap: 16px; padding: 16px; align-items: start; }
 aside { background: var(--panel); border: 0; border-radius: var(--r-m); padding: 12px; }
-h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin: 4px 0 8px; }
+h2 { font-size: var(--t-s); text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin: 4px 0 8px; }
 h2:not(:first-child) { margin-top: 16px; }
 .tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-bottom: 8px; }
-.tabs button { padding: 5px 0; min-width: 0; font-size: 12px; position: relative; }
+.tabs button { padding: 5px 0; min-width: 0; font-size: var(--t-s); position: relative; }
 .tabs button.holds::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; background: var(--accent); clip-path: var(--disc-6); }
 .grid button[hidden] { display: none; }
-.ghead { display: none; grid-column: 1 / -1; margin: 8px 0 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.ghead { display: none; grid-column: 1 / -1; margin: 8px 0 0; font-size: var(--t-s); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
 .ghead:first-child { margin-top: 0; }
 /* Wide screens show every section at once; the tabs are for phones. */
 @media (min-width: 701px) {
   .tabs, #tools > h2:first-child { display: none; }
   .ghead { display: block; }
   .grid button[hidden] { display: flex; }
-  .grid button { white-space: nowrap; padding: 4px 6px; font-size: 12.5px; }
+  .grid button { white-space: nowrap; padding: 4px 6px; font-size: var(--t-s); }
   .grid canvas { width: 18px; height: 18px; }
   .ghead { margin-top: 2px; }
 }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.grid button { min-width: 0; text-align: left; display: flex; align-items: center; gap: 6px; padding: 5px 6px; font-size: 13px; }
+.grid button { min-width: 0; text-align: left; display: flex; align-items: center; gap: 6px; padding: 5px 6px; font-size: var(--t-s); }
 .grid canvas { width: 20px; height: 20px; flex: none; }
 .opt[hidden] { display: none; }
 .opt { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 10px; }
-.opt > span:first-child { width: 100%; color: var(--dim); font-size: 12px; }
-.opt button { padding: 4px 8px; font-size: 12px; }
-.opt [data-aim], .opt [data-corner], .opt [data-pass], .opt [data-face] { width: 32px; padding: 4px 0; font-size: 15px; }
-.opt .note { width: 100%; color: var(--dim); font-size: 12px; }
+.opt > span:first-child { width: 100%; color: var(--dim); font-size: var(--t-s); }
+.opt button { padding: 4px 8px; font-size: var(--t-s); }
+.opt [data-aim], .opt [data-corner], .opt [data-pass], .opt [data-face] { width: 32px; padding: 4px 0; font-size: var(--t-m); }
+.opt .note { width: 100%; color: var(--dim); font-size: var(--t-s); }
 #colours { display: flex; gap: 6px; }
 #colours button { width: 26px; height: 26px; padding: 0; clip-path: var(--disc-26); border-width: 2px; background: var(--dot); box-shadow: none; }
 .size { display: flex; gap: 8px; }
-.size label { display: flex; flex-direction: column; gap: 2px; color: var(--dim); font-size: 12px; }
+.size label { display: flex; flex-direction: column; gap: 2px; color: var(--dim); font-size: var(--t-s); }
 .size input { width: 64px; font: inherit; color: var(--text); background: var(--bg); border: 0; border-radius: var(--r-s); padding: 4px 6px; }
 #keys:empty { display: none; }
-.hint { color: var(--dim); font-size: 12px; margin: 10px 0 0; }
+.hint { color: var(--dim); font-size: var(--t-s); margin: 10px 0 0; }
 #stage { display: flex; flex-direction: column; align-items: center; min-width: 0; position: relative; }
 /* The outskirts, one tile of wall round the room, behind it (register 672). */
 .ring { position: absolute; pointer-events: none; image-rendering: pixelated; }
@@ -117,16 +123,16 @@ button { touch-action: manipulation; }
 /* In a level the play row keeps its place while editing, so the room does not move (register 222). */
 body.campaign .pad, body.campaign .pad[hidden] { display: none !important; }  /* a lone 'Moves 0' under the room (register 520) */
 .pad { flex-wrap: wrap; }
-.pad button { flex: 1 1 22%; min-height: 48px; font-size: 16px; white-space: nowrap; padding-left: 6px; padding-right: 6px; }
+.pad button { flex: 1 1 22%; min-height: 48px; font-size: var(--t-m); white-space: nowrap; padding-left: 6px; padding-right: 6px; }
 @media (max-width: 700px) { main { grid-template-columns: 1fr; } #stage { order: -1; } }
 @media (max-width: 700px) {
   #wellBtn:disabled { display: none; }
-  body { font-size: 15px; }
+  body { font-size: var(--t-m); }
   header { padding: 8px 12px; }
   main { padding: 12px; gap: 12px; }
   header button { min-height: 40px; }
   .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
-  .grid button { flex-direction: column; justify-content: center; text-align: center; gap: 2px; padding: 4px 2px; font-size: 11px; line-height: 1.15; }
+  .grid button { flex-direction: column; justify-content: center; text-align: center; gap: 2px; padding: 4px 2px; font-size: var(--t-s); line-height: 1.15; }
   aside { padding: 10px; }
   .hint { margin-top: 6px; }
   .opt button { min-height: 40px; }
@@ -134,7 +140,7 @@ body.campaign .pad, body.campaign .pad[hidden] { display: none !important; }  /*
   /* A phone shows the room and the whole palette with its options without scrolling. */
   #tools > h2:first-child { display: none; }
   .opt { margin-top: 6px; }
-  .opt > span:first-child { font-size: 11.5px; }
+  .opt > span:first-child { font-size: var(--t-s); }
   .tabs { margin-bottom: 6px; }
   #colours button { width: 36px; height: 36px; clip-path: var(--disc-36); }
   .power { padding: 10px 0; }
@@ -142,14 +148,14 @@ body.campaign .pad, body.campaign .pad[hidden] { display: none !important; }  /*
 }
 button.on:disabled { opacity: 1; }
 dialog { background: var(--panel); color: var(--text); border: 0; border-radius: var(--r-m); width: min(92vw, 520px); }
-dialog textarea { width: 100%; font: 12px monospace; background: var(--bg); color: var(--text); border: 0; border-radius: var(--r-s); }
+dialog textarea { width: 100%; font: var(--t-s) monospace; background: var(--bg); color: var(--text); border: 0; border-radius: var(--r-s); }
 dialog::backdrop { background: rgba(0,0,0,.6); }
 
 .moves { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--dim); align-self: center; }
 .win { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 8px; align-items: center;
   background: var(--panel); box-shadow: inset 0 0 0 2px var(--gold), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-l); padding: 16px 20px; z-index: 5; }
 .win[hidden] { display: none; }
-.win b { color: var(--gold); font-size: 1.15em; }
+.win b { color: var(--gold); font-size: var(--t-l); }
 .stuck { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; white-space: nowrap;
   background: var(--panel); box-shadow: inset 0 0 0 2px var(--bad), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); border-radius: var(--r-m); padding: 6px 10px; z-index: 5; }
 .stuck[hidden] { display: none; }
@@ -157,7 +163,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .stuck { box-shadow: inset 0 0 0 2px var(--dim), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
 @media (prefers-reduced-motion: no-preference) { .stuck:not([hidden]) { animation: stuckIn .35s ease-out; } }
 @keyframes stuckIn { from { opacity: 0; transform: translate(-50%, -6px); } }
-.check { display: flex; gap: 8px; align-items: center; margin: 4px 0 0; font-size: 0.9em; }
+.check { display: flex; gap: 8px; align-items: center; margin: 4px 0 0; font-size: var(--t-s); }
 .check:has(#checkText:empty) { display: none; }
 .check [hidden] { display: none; }
 @media (max-width: 600px) {
@@ -171,13 +177,13 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .rooms::backdrop { background: rgba(0,0,0,.53); }
 /* A page covers the game whole, so a room swapped in behind it never shows through (register 517). */
 #campBox::backdrop, #puzzleBox::backdrop, #makerBox::backdrop, #roomsBox::backdrop { background: var(--paper); }
-.roomsHead { display: flex; justify-content: space-between; align-items: center; font-size: 1.1em; }
+.roomsHead { display: flex; justify-content: space-between; align-items: center; font-size: var(--t-m); }
 .rooms .field { display: grid; gap: 4px; margin: 8px 0; }
 .rooms input[type=text], .rooms textarea { width: 100%; box-sizing: border-box; background: var(--field); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px 8px; font: inherit; }
 .rooms .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-.rooms h3 { margin: 12px 0 6px; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.rooms h3 { margin: 12px 0 6px; font-size: var(--t-s); text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
 .roomList { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.roomList .empty { color: var(--dim); font-size: 0.9em; }
+.roomList .empty { color: var(--dim); font-size: var(--t-s); }
 .roomRow { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; }
 .roomRow span { display: grid; }
 .roomRow small { color: var(--dim); }
@@ -185,8 +191,8 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .rooms select { background: var(--field); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px 8px; font: inherit; }
 .explored { margin: 6px 0 10px; }
 .explored summary { cursor: pointer; color: var(--dim); }
-.explored ul { columns: 2; margin: 4px 0; padding-left: 18px; font-size: 0.9em; }
-.lint { margin: 4px 0 0; font-size: 0.9em; max-width: 100%; }
+.explored ul { columns: 2; margin: 4px 0; padding-left: 18px; font-size: var(--t-s); }
+.lint { margin: 4px 0 0; font-size: var(--t-s); max-width: 100%; }
 .lintSum { margin: 0 0 4px; color: var(--gold); }
 .lint ul { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 4px; }
 .lint button { text-align: left; width: 100%; }
@@ -194,16 +200,16 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 #codeIn { flex: 1; min-width: 0; }
 
 .genNums { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: end; margin: 8px 0; }
-.genNums label { display: grid; gap: 2px; font-size: 0.9em; }
+.genNums label { display: grid; gap: 2px; font-size: var(--t-s); }
 .genNums input { width: 4.5em; box-sizing: border-box; background: var(--field); color: inherit; border: 0; border-radius: var(--r-s); padding: 6px; font: inherit; }
 .genNums #genSeed { width: 6.5em; }
 .genNums .genKeep { display: flex; align-items: center; gap: 6px; min-height: 2.2em; }
 .genNums .genKeep input { width: auto; padding: 0; }
 .genNums input:disabled { opacity: 0.5; }
 .genIng { list-style: none; margin: 6px 0; padding: 0; }
-.genSec h4 { margin: 5px 0 3px; font: 800 11px var(--label-face); text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.genSec h4 { margin: 5px 0 3px; font: 800 var(--t-s) var(--label-face); text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
 .genItems { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 4px; }
-.genItems label { display: flex; align-items: center; gap: 6px; font-size: 0.9em; }
+.genItems label { display: flex; align-items: center; gap: 6px; font-size: var(--t-s); }
 .genItems canvas { width: 22px; height: 22px; flex: none; }
 .genItems select { flex: 1; min-width: 0; }
 .genName { flex: none; min-width: 5.5em; }
@@ -236,14 +242,14 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 /* Between a phone and a desktop the side columns narrow, so the room keeps its share. */
 @media (min-width: 701px) and (max-width: 1100px) {
   main { grid-template-columns: 200px minmax(0, 1fr) 200px; gap: 10px; padding: 8px 10px; }
-  .grid button { flex-direction: column; justify-content: center; text-align: center; gap: 1px; padding: 3px 2px; font-size: 10.5px; line-height: 1.1; white-space: normal; }
+  .grid button { flex-direction: column; justify-content: center; text-align: center; gap: 1px; padding: 3px 2px; font-size: var(--t-s); line-height: 1.1; white-space: normal; }
 }
 
-.lensBox { width: 100%; max-width: 560px; margin-top: 6px; font-size: 12px; }
+.lensBox { width: 100%; max-width: 560px; margin-top: 6px; font-size: var(--t-s); }
 .lensBox[hidden] { display: none; }
 .lensRow { display: flex; gap: 3px; align-items: center; margin-bottom: 3px; }
 .lensRow > span { width: 52px; color: var(--dim); }
-.lensRow button { padding: 2px 7px; font-size: 12px; }
+.lensRow button { padding: 2px 7px; font-size: var(--t-s); }
 .lensFollow { display: flex; gap: 6px; align-items: center; color: var(--dim); margin: 2px 0; }
 #lensLegend { list-style: none; margin: 2px 0 0; padding: 0; color: var(--dim); }
 
@@ -251,7 +257,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
    and a status bar; only the room flexes. The well under the room has a fixed height. */
 .roomArea { display: flex; justify-content: center; width: 100%; }
 .ctx { display: none; }
-.statusBar { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; width: 100%; max-width: 480px; margin-top: 4px; font-size: 13px; }
+.statusBar { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; width: 100%; max-width: 480px; margin-top: 4px; font-size: var(--t-s); }
 .statusBar .check { margin: 0; }
 /* Flicker: a verdict or note being redone stays, dimmed, instead of going blank; the
    verdict takes the free width so what follows it never moves when its words change. */
@@ -263,7 +269,7 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
 .well { display: flex; flex-direction: column; background: var(--panel); border: 0; border-radius: var(--r-m) var(--r-m) 0 0; }
 .well[hidden] { display: none; }
 .wellTabs { display: flex; gap: 4px; align-items: center; padding: 6px 8px; border-bottom: 0; }
-.wellTabs button { padding: 3px 10px; font-size: 12.5px; }
+.wellTabs button { padding: 3px 10px; font-size: var(--t-s); }
 .wellBody { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 10px 8px; scrollbar-width: thin; }
 .wellBody [data-pane][hidden], .wellBody .hint[hidden] { display: none; }
 .wellBody .lensBox { max-width: none; }
@@ -284,22 +290,22 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
   .ctx #options { display: flex; gap: 16px; }
   .ctx #options:not(:has(.opt:not([hidden]))) { display: none; }
   .ctx .opt { margin: 0; flex-wrap: nowrap; flex: none; }
-  .ctx .opt > span:first-child { width: auto; font-size: 12.5px; }
+  .ctx .opt > span:first-child { width: auto; font-size: var(--t-s); }
   .ctx .opt .note { display: none; }
   /* In a narrow window the controls take a second row rather than run off the edge. */
   .ctx #options { gap: 4px 10px; flex-wrap: wrap; }
   .ctx .opt { gap: 3px; }
   .ctx .opt [data-aim], .ctx .opt [data-start], .ctx .opt [data-corner], .ctx .opt [data-pass], .ctx .opt [data-face], .ctx .opt [data-axis] { width: 28px; }
-  .ctx #ctxNote, .ctx #placeHint { margin: 0; font-size: 12.5px; }
+  .ctx #ctxNote, .ctx #placeHint { margin: 0; font-size: var(--t-s); }
   .ctx #ctxNote, .ctx #placeHint { order: 1; }
   .ctx #ctxNote:empty, .ctx #placeHint.quiet { display: none; }
   #stage { overflow: hidden; display: flex; flex-direction: column; gap: 8px; }
   .roomArea { flex: 1; min-height: 0; align-items: center; overflow: hidden; }
   .well { flex: none; height: 170px; width: 100%; border-radius: var(--r-m); }
   .statusBar { flex: none; flex-wrap: nowrap; max-width: none; height: 36px; margin: 0; padding: 0 16px; background: var(--panel); border-top: 0; white-space: nowrap; overflow: hidden; }
-  .statusBar button { padding: 3px 10px; font-size: 12.5px; }
+  .statusBar button { padding: 3px 10px; font-size: var(--t-s); }
   .statusBar .pad { flex: none; width: auto; max-width: none; margin: 0; flex-wrap: nowrap; }
-  .statusBar .pad button { flex: none; min-height: 0; font-size: 12.5px; }
+  .statusBar .pad button { flex: none; min-height: 0; font-size: var(--t-s); }
   .statusBar #keys { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 }
 
@@ -307,8 +313,8 @@ dialog::backdrop { background: rgba(0,0,0,.6); }
    tool in hand opened it. */
 .chips { display: flex; gap: 6px; justify-content: center; flex: none; flex-wrap: wrap; }
 .chips[hidden] { display: none; }
-.chip { display: flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: var(--r-pill); font-size: 12.5px; white-space: nowrap; }
-.chip .g { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.chip { display: flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: var(--r-pill); font-size: var(--t-s); white-space: nowrap; }
+.chip .g { font-size: var(--t-s); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
 .chip svg { width: 26px; height: 12px; display: block; flex: none; }
 .chip.on { color: var(--accent); }
 #info:empty { display: none; }
@@ -347,11 +353,11 @@ body.play .growBar, body.play #sizeBtn { display: none; }
   .grid button { padding: 6px 0; justify-content: center; }
   .grid button .lbl { display: none; }
   .grid canvas { width: 22px; height: 22px; }
-  .ghead { font-size: 10px; }
+  .ghead { font-size: var(--t-s); }
 }
 
 /* Keys: a letter on each tool that has one, Tab's bare room, and the ? list. */
-.grid .key { margin-left: auto; font: 600 10px ui-monospace, monospace; color: var(--dim); background: none; border: 0; padding: 0; }
+.grid .key { margin-left: auto; font: 600 var(--t-s) ui-monospace, monospace; color: var(--dim); background: none; border: 0; padding: 0; }
 @media (max-width: 1100px) { .grid .key { display: none; } }
 @media (min-width: 701px) {
   body.bare main { grid-template-columns: 0 minmax(0, 1fr) 0; gap: 0; }
@@ -360,9 +366,9 @@ body.play .growBar, body.play #sizeBtn { display: none; }
 @media (pointer: coarse), (max-width: 700px) { #keysBtn { display: none; } }
 .keysList { columns: 2 220px; column-gap: 24px; }
 .keysList section { break-inside: avoid; margin-bottom: 10px; }
-.keysList h3 { margin: 6px 0 4px; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
-.keysList p { margin: 2px 0; font-size: 13px; }
-.keysList kbd { display: inline-block; min-width: 1.6em; padding: 0 4px; border: 0; border-radius: var(--r-s); font: 600 11.5px ui-monospace, monospace; text-align: center; }
+.keysList h3 { margin: 6px 0 4px; font-size: var(--t-s); text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.keysList p { margin: 2px 0; font-size: var(--t-s); }
+.keysList kbd { display: inline-block; min-width: 1.6em; padding: 0 4px; border: 0; border-radius: var(--r-s); font: 600 var(--t-s) ui-monospace, monospace; text-align: center; }
 .rooms.keys { width: min(640px, 100vw - 16px); }
 
 /* Drift: snow falls behind the shell; the bars and columns are frosted so it shows faintly through. */
@@ -409,14 +415,14 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   main { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: stretch; padding: 0 10px; gap: 4px; }
   #stage { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; }
   .roomArea { flex: 1; min-height: 0; align-items: center; padding: 0; }
-  .statusBar { margin: 0; padding: 2px 4px; gap: 6px; font-size: 12.5px; flex-wrap: nowrap; }
+  .statusBar { margin: 0; padding: 2px 4px; gap: 6px; font-size: var(--t-s); flex-wrap: nowrap; }
   .statusBar #sizeBtn, .statusBar #info, .statusBar #keys { display: none; }
   .statusBar .check { flex: 1; min-width: 0; }
   #tools { flex: none; padding: 6px 8px 8px; }
-  .toolName { display: block; margin: 0 0 4px; font: 800 11px var(--label-face); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+  .toolName { display: block; margin: 0 0 4px; font: 800 var(--t-s) var(--label-face); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
   #tools #options { order: 0; }
   .tabs { margin: 0 0 6px; gap: 4px; }
-  .tabs button { min-height: 30px; font-size: 12.5px; padding: 3px 0; }
+  .tabs button { min-height: 30px; font-size: var(--t-s); padding: 3px 0; }
   /* A row too long for the screen scrolls by itself; the page never moves with it. */
   .grid { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior: contain; scrollbar-width: none; padding: 8px 4px 6px; margin: -8px -4px 0; }
   .grid::-webkit-scrollbar { display: none; }
@@ -432,10 +438,10 @@ h2, .ghead, .rooms h3, .keysList h3, .chip .g { font-family: var(--label-face); 
   .phoneNav button[hidden] { display: none; }
   .phoneNav button:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
   .phoneNav button:focus:not(:focus-visible) { outline: none; }
-  #tools .hint { margin: 0 0 4px; font-size: 12.5px; }
+  #tools .hint { margin: 0 0 4px; font-size: var(--t-s); }
   .phoneNav { display: flex; flex: none; background: var(--panel); box-shadow: 0 -1px 0 var(--rule); padding-bottom: env(safe-area-inset-bottom, 0px); }
-  .phoneNav button { flex: 1; display: grid; justify-items: center; gap: 1px; padding: 6px 0 7px; background: none; box-shadow: none; border-radius: 0; font-size: 11.5px; color: var(--dim); }
-  .phoneNav button i { font-style: normal; font-size: 18px; line-height: 1.1; font-family: Arial, sans-serif; display: grid; place-items: center; height: 21px; }
+  .phoneNav button { flex: 1; display: grid; justify-items: center; gap: 1px; padding: 6px 0 7px; background: none; box-shadow: none; border-radius: 0; font-size: var(--t-s); color: var(--dim); }
+  .phoneNav button i { font-style: normal; font-size: var(--t-l); line-height: 1.1; font-family: Arial, sans-serif; display: grid; place-items: center; height: 21px; }
   .phoneNav button i svg { width: 20px; height: 20px; }
   .phoneNav button.on { color: var(--accent); box-shadow: none; }
   .sheet:not([hidden]) { display: block; position: fixed; left: 0; right: 0; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); z-index: 35; max-height: 70dvh; overflow-y: auto; background: var(--panel); border-radius: var(--r-l) var(--r-l) 0 0; box-shadow: 0 -8px 24px rgba(0,0,0,.18); padding: 8px 14px 14px; }
@@ -501,16 +507,16 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .menu::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, color-mix(in srgb, var(--paper) 15%, transparent) 0%, color-mix(in srgb, var(--paper) 10%, transparent) 50%, color-mix(in srgb, var(--paper) 94%, transparent) 76%); }
 .menu .menuLogo { display: block; position: absolute; z-index: 1; left: 0; right: 0; top: 24px; font-size: 64px; margin: 0; }
 .menuList { position: absolute; z-index: 1; left: 50%; bottom: max(40px, env(safe-area-inset-bottom)); width: min(300px, 100vw - 64px); transform: translateX(-50%); display: grid; gap: 12px; }
-.menuList button { font: 800 20px var(--label-face); height: 56px; }
+.menuList button { font: 800 var(--t-l) var(--label-face); height: 56px; }
 /* The menu's two sections (register 302): for the robot, and for you. */
 .menuSec { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: color-mix(in srgb, var(--panel) 88%, transparent); border-radius: var(--r-l); padding: 10px; }
-.menuSec h2 { grid-column: 1 / -1; margin: 0; font: 800 15px var(--label-face); }
-.menuSec button { height: 48px; font-size: 16px; }
+.menuSec h2 { grid-column: 1 / -1; margin: 0; font: 800 var(--t-m) var(--label-face); }
+.menuSec button { height: 48px; font-size: var(--t-m); }
 @media (min-width: 701px) { .menuList { width: min(320px, 100vw - 64px); } }  /* one box, centred under the title (register 678) */
 .menuList button.primary { --fill: var(--accent); --frame: var(--ink); color: var(--on-accent); }
 /* The session's unlock-all switch, top right (register 589); its badge in the top bar while on. */
 .menuCorner { position: absolute; z-index: 2; top: 12px; right: 12px; width: 44px; height: 44px; padding: 10px; display: flex; align-items: center; justify-content: center; }
-.menuCorner .glyph, .unlockBadge .glyph { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.menuCorner .glyph, .unlockBadge .glyph { width: var(--icon); height: var(--icon); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .menuCorner.on { color: var(--gold); }
 .menuCorner.left { right: auto; left: 12px; }
 .menuCorner.left2 { right: auto; left: 66px; }
@@ -518,7 +524,7 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .menuCorner.right3 { right: 120px; }
 /* Who's playing (register 834): one row per save, the one in use marked. */
 .slotList { display: grid; gap: 8px; margin: 0 0 14px; }
-.slotBoard { margin: 10px 0 0; font: 600 14px var(--label-face); }
+.slotBoard { margin: 10px 0 0; font: 600 var(--t-m) var(--label-face); }
 .slotBoard ol { margin: 4px 0 0; padding-left: 22px; }
 .slotRow { display: grid; justify-items: start; gap: 2px; text-align: left; padding: 10px 12px; }
 .slotRow small { color: var(--soft); }
@@ -527,15 +533,15 @@ body.campaign:not(.play) #mode, body.campaign.play #campRun, body.campaign.play 
 .lookGrid button, .lookSkin button { position: relative; }
 .dot::after { content: ''; position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: var(--bad); pointer-events: none; }
 /* Looks (registers 612, 613): palettes as swatch buttons, skins as a pair of previews per object. */
-.looks h3 { margin: 12px 0 6px; font: 800 13px var(--label-face); color: var(--soft); text-transform: uppercase; letter-spacing: .06em; }
-.campTotal { margin-left: auto; margin-right: 8px; font: 800 15px var(--label-face); color: var(--gold); white-space: nowrap; }
-.lookStars { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; margin-right: 8px; font: 800 15px var(--label-face); color: var(--gold); }
-.lookStars .glyph { width: 16px; height: 16px; --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
+.looks h3 { margin: 12px 0 6px; font: 800 var(--t-s) var(--label-face); color: var(--soft); text-transform: uppercase; letter-spacing: .06em; }
+.campTotal { margin-left: auto; margin-right: 8px; font: 800 var(--t-m) var(--label-face); color: var(--gold); white-space: nowrap; }
+.lookStars { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; margin-right: 8px; font: 800 var(--t-m) var(--label-face); color: var(--gold); }
+.lookStars .glyph { width: var(--mark); height: var(--mark); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
 .lookGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
 .lookGrid button { display: grid; justify-items: start; gap: 4px; padding: 8px 10px; text-align: left; }
 .lookSwatch { display: grid; grid-template-columns: repeat(8, 12px); gap: 2px; } .lookSwatch i { width: 12px; height: 12px; display: block; }
-.lookCost { display: inline-flex; align-items: center; gap: 2px; font: 700 12px var(--label-face); color: var(--soft); }
-.lookCost .glyph { width: 16px; height: 16px; }
+.lookCost { display: inline-flex; align-items: center; gap: 2px; font: 700 var(--t-s) var(--label-face); color: var(--soft); }
+.lookCost .glyph { width: var(--mark); height: var(--mark); }
 .lookFeel { display: flex; gap: 8px; }
 .lookCost.buy { color: var(--gold); --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 button.lookStars { border: 0; background: none; padding: 4px 6px; height: auto; }
@@ -546,7 +552,7 @@ button.lookStars { border: 0; background: none; padding: 4px 6px; height: auto; 
 /* A look you cannot buy yet shows its real colours; its lock and price say it is shut (register 819). */
 #lookPalettes button:disabled, .lookSkin button:disabled { opacity: 1; } #lookPalettes button:disabled b { color: var(--soft); }
 /* Achievements (registers 637, 639): a badge per achievement with the star slot it fills. */
-.achDone { display: grid; gap: 6px; margin: 0 0 10px; color: var(--soft); font-size: 13px; }
+.achDone { display: grid; gap: 6px; margin: 0 0 10px; color: var(--soft); font-size: var(--t-s); }
 .achBar { display: block; height: 8px; background: var(--rule); }
 .achBar::before { content: ''; display: block; height: 100%; width: var(--done, 0%); background: var(--gold); }
 .achList { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -554,15 +560,15 @@ button.lookStars { border: 0; background: none; padding: 4px 6px; height: auto; 
 .achList li.done { color: var(--ink); }
 .achList li.new { box-shadow: inset 0 0 0 2px var(--gold); }
 .achText { display: grid; gap: 2px; min-width: 0; }
-.achText b { font-size: 15px; } .achText span { font-size: 12px; color: var(--soft); }
-.achList small { font: 700 12px var(--label-face); color: var(--gold); }
+.achText b { font-size: var(--t-m); } .achText span { font-size: var(--t-s); color: var(--soft); }
+.achList small { font: 700 var(--t-s) var(--label-face); color: var(--gold); }
 .achMeter { display: block; height: 4px; margin-top: 4px; background: var(--rule); }
 .achMeter::before { content: ''; display: block; height: 100%; width: var(--at, 0%); background: var(--accent); }
 .achBadge { position: relative; width: 36px; height: 36px; display: grid; place-items: center; background: var(--rule); color: var(--soft); flex: none; }
 .achBadge.done { background: var(--gold); color: var(--gold-ink); }
-.achBadge > .glyph { width: 32px; height: 32px; }
+.achBadge > .glyph { width: var(--icon-l); height: var(--icon-l); }
 .achSlot { position: absolute; right: -4px; bottom: -4px; width: 16px; height: 16px; --glyph-o: var(--soft); --glyph-i: var(--field); }
-.achSlot .glyph { width: 16px; height: 16px; }
+.achSlot .glyph { width: var(--mark); height: var(--mark); }
 .achBadge.done .achSlot { --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 /* The popup after a Run (register 637): under the top bar, so it covers neither the room nor a card's buttons. */
 .toast { position: fixed; z-index: 60; inset: 58px 0 auto 0; margin: 0 auto; width: calc(100vw - 24px); max-width: 520px; padding: 10px 12px; display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; background: var(--panel); color: var(--ink); box-shadow: inset 0 0 0 2px var(--gold), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); cursor: pointer; }
@@ -571,19 +577,19 @@ button.lookStars { border: 0; background: none; padding: 4px 6px; height: auto; 
 .wipe { position: fixed; inset: 0; width: 100vw; height: 100vh; margin: 0; padding: 0; border: 0; background: transparent; pointer-events: none; }
 .wipe.run { animation: wipe .18s steps(1) forwards; }
 @keyframes wipe { 0% { background: var(--paper); } 34% { background: repeating-conic-gradient(var(--paper) 0 25%, transparent 0 50%) 0 0 / 16px 16px; } 67% { background: repeating-conic-gradient(var(--paper) 0 25%, transparent 0 50%) 8px 0 / 32px 32px; } 100% { background: transparent; } }
-.toastText { display: grid; gap: 2px; } .toastText span { font-size: 12px; color: var(--soft); }
-.toast small { font: 700 13px var(--label-face); color: var(--gold); }
+.toastText { display: grid; gap: 2px; } .toastText span { font-size: var(--t-s); color: var(--soft); }
+.toast small { font: 700 var(--t-s) var(--label-face); color: var(--gold); }
 .lookAchieve { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .lookAchieve li { display: grid; grid-template-columns: 16px auto 1fr auto; align-items: center; gap: 4px 8px; padding: 6px 8px; background: var(--field); color: var(--soft); --glyph-o: var(--mid); --glyph-i: transparent; }
 .lookAchieve li.done { color: var(--ink); --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
-.lookAchieve i { display: flex; } .lookAchieve .glyph { width: 16px; height: 16px; }
-.lookAchieve span { font-size: 13px; } .lookAchieve small { color: var(--gold); font-weight: 700; }
+.lookAchieve i { display: flex; } .lookAchieve .glyph { width: var(--mark); height: var(--mark); }
+.lookAchieve span { font-size: var(--t-s); } .lookAchieve small { color: var(--gold); font-weight: 700; }
 /* Dev mode's padlock floats over the top left corner and takes no room, so turning it on moves nothing
    (register 791); a level does not show it (register 798). */
 .unlockBadge { position: fixed; left: 2px; top: 2px; z-index: 40; display: inline-flex; color: var(--gold); pointer-events: none; opacity: .85; }
-.unlockBadge .glyph { width: 14px; height: 14px; }
+.unlockBadge .glyph { width: var(--mark); height: var(--mark); }
 .unlockBadge[hidden], body.campaign .unlockBadge, body.puzzle .unlockBadge { display: none; }
-#menuDebug { background: none; box-shadow: none; height: 44px; font: 13px var(--label-face); color: var(--soft); text-decoration: underline; }
+#menuDebug { background: none; box-shadow: none; height: 44px; font: var(--t-s) var(--label-face); color: var(--soft); text-decoration: underline; }
 .menuScene { position: absolute; inset: 0; }
 /* A real room, drawn by the game's renderer one pixel per art pixel and scaled up sharp (register 782). */
 .msRoom { position: absolute; left: 0; top: 0; transform-origin: 0 0; image-rendering: pixelated; }
@@ -601,11 +607,11 @@ button.lookStars { border: 0; background: none; padding: 4px 6px; height: auto; 
    below with the star or the lock, so the name, three pieces and the star all fit inside the card (788). */
 #campList li.side.pair > .campRow { grid-template: "name name" auto "parts stars" 1fr / minmax(0, 1fr) auto; align-items: center; padding: 8px 6px; gap: 4px 6px; }
 #campList li.side.pair .campRowHead { display: contents; }
-#campList li.side.pair .campRowHead > b { grid-area: name; overflow: visible; text-overflow: clip; font-size: 13px; }
+#campList li.side.pair .campRowHead > b { grid-area: name; overflow: visible; text-overflow: clip; font-size: var(--t-s); }
 #campList li.side.pair .campParts { grid-area: parts; flex-wrap: nowrap; justify-content: flex-start; align-self: end; }
 #campList li.side.pair .campStars, #campList li.side.pair .campShut { grid-area: stars; align-self: end; }
 #campList li.side.pair .campStar.main { width: 26px; height: 26px; }
-.campShut { display: flex; align-items: center; } .campShut .glyph { width: 16px; height: 16px; }
+.campShut { display: flex; align-items: center; } .campShut .glyph { width: var(--mark); height: var(--mark); }
 .campRow { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; }
 .campParts { display: flex; gap: 4px; }
 .campParts canvas { width: 16px; height: 16px; }
@@ -621,9 +627,9 @@ body.tutorial #campVerdict { display: none !important; }
 /* The bubble says the goal, and the tutorial uses one tool: nothing else on screen (register 519). */
 body.tutorial #campBrief { visibility: hidden; height: 112px; overflow: hidden; }  /* the bubble's place */
 body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: none !important; }
-.tutBox p { margin: 0; font-size: 15px; line-height: 1.4; min-height: 4.2em; }  /* three lines, the longest step in the wider face (register 652) */
+.tutBox p { margin: 0; font-size: var(--t-m); line-height: 1.4; min-height: 4.2em; }  /* three lines, the longest step in the wider face (register 652) */
 /* Skip is quiet and apart, in the bubble's corner, so it never reads as Next (register 664). */
-.tutBox .tutSkip { justify-self: end; height: auto; min-height: 0; padding: 2px 4px; margin: -6px -6px -2px 0; background: none; box-shadow: none; color: var(--dim); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.tutBox .tutSkip { justify-self: end; height: auto; min-height: 0; padding: 2px 4px; margin: -6px -6px -2px 0; background: none; box-shadow: none; color: var(--dim); font-size: var(--t-s); text-decoration: underline; text-underline-offset: 3px; }
 .tutBox small { opacity: .7; }
 .tutBtns { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-height: 36px; }
 .tutBtns small { flex: 1; }
@@ -640,22 +646,22 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 .campStar.main { width: 32px; height: 32px; }
 .campStar svg { display: block; width: 100%; height: 100%; --glyph-o: var(--soft); --glyph-i: transparent; }
 .campStar.on svg { --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
-.campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 9px var(--label-face, sans-serif); font-style: normal; color: var(--gold-ink); }
-.campStar.main i { font-size: 11px; }
-.campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; gap: 6px; font-size: 0.9em; box-sizing: border-box; }
+.campStar i { position: absolute; inset: 0; padding-top: 3px; display: flex; align-items: center; justify-content: center; font: 800 var(--t-s) var(--label-face, sans-serif); font-style: normal; color: var(--gold-ink); }
+.campStar.main i { font-size: var(--t-s); }
+.campBrief { width: 100%; max-width: 640px; margin: 0 0 6px; gap: 6px; font-size: var(--t-s); box-sizing: border-box; }
 .campGoal { padding: 8px 10px; border-radius: var(--r-s); background: var(--field); }
 .campHead { margin: 0 0 4px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.campLast { color: var(--dim); font-weight: 700; font-size: 0.92em; }
+.campLast { color: var(--dim); font-weight: 700; font-size: var(--t-m); }
 .campReqs { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px 10px; }
 .campMust { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .campMust li[data-req="steps"] { grid-column: 1 / -1; }
 .campOpt { margin-top: 6px; padding-top: 6px; box-shadow: inset 0 1px 0 var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
-.campLabel { margin: 0 0 4px; font-size: 0.75em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
-.campOpt::before { content: none; font-size: 0.75em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.campLabel { margin: 0 0 4px; font-size: var(--t-s); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.campOpt::before { content: none; font-size: var(--t-s); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
 .campReqs li { display: flex; align-items: flex-start; gap: 5px; min-height: 22px; font-weight: 700; line-height: 1.3; }
 .campReqs .words { padding-top: 1px; }
 /* A goal's mark is a pixel ring, filled once the run is judged (register 621). */
-.campReqs .mark { flex: none; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; box-sizing: border-box; color: var(--dim); position: relative; isolation: isolate; }
+.campReqs .mark { flex: none; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: var(--t-s); box-sizing: border-box; color: var(--dim); position: relative; isolation: isolate; }
 .campReqs .mark::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--dim); clip-path: var(--ring-20); }
 .campReqs .met .mark { color: var(--good); } .campReqs .met .mark::before { background: color-mix(in srgb, var(--good) 18%, transparent); clip-path: var(--disc-20); }
 .campReqs .unmet .mark { color: var(--bad); } .campReqs .unmet .mark::before { background: color-mix(in srgb, var(--bad) 18%, transparent); clip-path: var(--disc-20); }
@@ -667,7 +673,7 @@ body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: no
 body.campaign .roomArea { position: relative; }
 /* The run's verdict: a band of its own under the goal card, two lines tall whether it shows or not, so
    it never covers the room and nothing moves when it comes or goes. */
-.campVerdict { width: 100%; max-width: 640px; box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px; display: flex; align-items: center; padding: 6px 12px; border-radius: var(--r-s); background: var(--shade); color: var(--ink); font-size: 0.9em; font-weight: 700; line-height: 1.35; overflow: hidden; }
+.campVerdict { width: 100%; max-width: 640px; box-sizing: border-box; height: calc(2.7em + 12px); margin: 0 0 6px; display: flex; align-items: center; padding: 6px 12px; border-radius: var(--r-s); background: var(--shade); color: var(--ink); font-size: var(--t-s); font-weight: 700; line-height: 1.35; overflow: hidden; }
 body.campaign #campVerdict { display: flex; }
 /* It floats over the top of the goals card rather than keeping a band of its own, which went to the room (register 523). */
 body.campaign #campVerdict { position: absolute; top: 0; left: 50%; translate: -50% 0; z-index: 6; margin: 0; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
@@ -678,7 +684,7 @@ body.campaign #campVerdict[hidden] { visibility: hidden; }
 .campVerdict.points > span { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
 .campTip[hidden] { display: none !important; }
 body:not(.campaign) #campVerdict { display: none !important; }
-.campTip { position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 4px)); padding: 5px 9px; border-radius: var(--r-s); background: var(--shade); color: var(--ink); font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
+.campTip { position: absolute; z-index: 6; transform: translate(-50%, calc(-100% - 4px)); padding: 5px 9px; border-radius: var(--r-s); background: var(--shade); color: var(--ink); font-size: var(--t-s); font-weight: 700; line-height: 1.3; white-space: nowrap; pointer-events: none; }
 [data-tool] { position: relative; }
 body.campaign [data-tool][hidden], body.campaign #powers, body.campaign #placeHint, body.campaign #ctx { display: none !important; }
 body:not(.campaign):not(.simple) [data-camp] { display: none !important; }
@@ -712,7 +718,7 @@ canvas[data-icon] { image-rendering: pixelated; }
 .confirm p { margin: 0 0 14px; line-height: 1.4; }
 .confirm .row { display: flex; gap: 8px; }
 .confirm::backdrop { background: rgba(0,0,0,.35); }
-.confirm textarea { width: 100%; box-sizing: border-box; margin: 0 0 12px; font: 12px monospace; word-break: break-all; }
+.confirm textarea { width: 100%; box-sizing: border-box; margin: 0 0 12px; font: var(--t-s) monospace; word-break: break-all; }
 .progRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 
 /* The simple Sandbox (register 302): the campaign's tool line and colours, none of the dev panels. */
@@ -724,7 +730,7 @@ body.puzzle .puzzle-only { display: revert; }
 body.puzzle #roomTitle, body.puzzle #undo, body.puzzle #redo, body.puzzle #checkBtn, body.puzzle #mode, body.puzzle #roomsBtn, body.puzzle #keysBtn, body.puzzle #winEdit, body.puzzle .growBar, body.puzzle #sizeBtn { display: none !important; }
 
 /* The Level maker (register 302). */
-.maker h3 { margin: 16px 0 6px; font: 800 15px var(--label-face); }
+.maker h3 { margin: 16px 0 6px; font: 800 var(--t-m) var(--label-face); }
 .mkRow { display: flex; align-items: center; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
 .mkRow input[type=number] { width: 64px; }
 .mkPal { border-collapse: collapse; }
@@ -755,7 +761,7 @@ body.campaign #campReset { order: 6; margin-left: auto; }
 }
 
 /* The Pushable chip (register 336): at the end of the tools row; on, what you place is pushable. */
-body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 6px; border-radius: var(--r-pill); font-size: 13px; }
+body:is(.campaign, .simple) #campCrate:not([hidden]) { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 6px; border-radius: var(--r-pill); font-size: var(--t-s); }
 #campCrate.on { background: color-mix(in srgb, var(--orange) 18%, transparent); box-shadow: inset 0 0 0 2px var(--orange), var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); color: var(--orange); }
 #campCrate:disabled { opacity: .5; }
 
@@ -767,8 +773,6 @@ body.sandbox:not(.simple) #powersBtn { display: inline-block; }
 /* While a run is replayed (register 758) its strip stands in for the play buttons and the end-of-run line. */
 .replayBar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0; }
 .replayBar[hidden], body.replaying #pad, body.replaying #win, body.replaying #stuck { display: none !important; }
-/* A Sandbox room has no Back: Rooms is its way out, and the Rooms page reaches the menu (register 771). */
-body.sandbox #logo { display: none; }
 body.sandbox #strip { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 body.sandbox #groups, body.sandbox #tools > h2, body.sandbox #palette .ghead { display: none !important; }
 body.sandbox #palette:not(.fly) { display: none !important; }
@@ -815,7 +819,7 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 /* One menu box (register 433): Campaign takes its own row, Puzzles and Sandbox share the next (registers 400, 418). */
 /* Campaign has the top row; Tutorial, Puzzles and Sandbox share the one below (register 521). */
 .menuSec { grid-template-columns: repeat(6, 1fr); }
-.menuSec > button { grid-column: span 2; padding-left: 4px; padding-right: 4px; white-space: nowrap; font-size: 15px; }
+.menuSec > button { grid-column: span 2; padding-left: 4px; padding-right: 4px; white-space: nowrap; font-size: var(--t-m); }
 #menuCampaign { grid-column: 1 / -1; }
 /* With Puzzles in the campaign (register 651), Tutorial and Sandbox split the second row. */
 #menuTutorial, #menuSandbox { grid-column: span 3; }
@@ -826,7 +830,7 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 .zoomBar { position: absolute; right: 0; top: 100%; margin-top: 24px; z-index: 3; display: flex; gap: 1px; }
 /* The tutorial's small rooms need no zoom, and the bar is one more thing to read before the first slide (register 819). */
 body.tutorial .zoomBar { display: none; }
-.zoomBar > button { height: 24px; min-height: 0; min-width: 30px; padding: 0 6px; margin: 0; line-height: 1; font-size: 13px; box-shadow: none; }
+.zoomBar > button { height: 24px; min-height: 0; min-width: 30px; padding: 0 6px; margin: 0; line-height: 1; font-size: var(--t-s); box-shadow: none; }
 /* Replay keeps its slot while it waits, so Run and Test never shift when it shows (registers 679, 771). */
 body.play #campReplay, #campReplay[hidden] { visibility: hidden; pointer-events: none; }
 .fitBtn[hidden] { display: none; }
@@ -837,22 +841,22 @@ body.play #campReplay, #campReplay[hidden] { visibility: hidden; pointer-events:
 .winCard::backdrop { background: rgba(0,0,0,.18); }
 .winCard[open] { animation: winUp .28s cubic-bezier(.2, .8, .3, 1); }
 @keyframes winUp { from { transform: translateY(40px); opacity: 0; } }
-.winTitle { margin: 0; font: 800 22px var(--label-face); }
+.winTitle { margin: 0; font: 800 var(--t-l) var(--label-face); }
 .winSay { margin: 4px 0 12px; color: var(--dim); }
 .winStars { display: flex; gap: 8px; margin: 0 0 10px; }
 .winStar { width: 34px; height: 34px; display: grid; place-items: center; position: relative; isolation: isolate; --glyph-o: var(--sticker); --glyph-i: transparent; }
 .winStar::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--sticker); clip-path: var(--ring-34); }
-.winStar .glyph { width: 16px; height: 16px; }
+.winStar .glyph { width: var(--mark); height: var(--mark); }
 .winStar.on { --glyph-o: var(--shade); --glyph-i: var(--shade); } .winStar.on::before { background: var(--gold); clip-path: var(--disc-34); }
 .winStar.tick { animation: tickHop .24s steps(3) both; }
 .winStar.new { animation: winPop .5s .3s cubic-bezier(.3, 1.6, .5, 1) both; }
 @keyframes tickHop { 0%, 100% { translate: 0 0; } 34% { translate: 0 -4px; } 67% { translate: 0 -2px; } }
 @keyframes winPop { from { transform: scale(.4); } }
-.winGoals { list-style: none; margin: 0 0 14px; padding: 0; font-size: 14px; }
+.winGoals { list-style: none; margin: 0 0 14px; padding: 0; font-size: var(--t-m); }
 .winGoals li { display: flex; gap: 8px; align-items: center; margin: 4px 0; color: var(--dim); }
 .winGoals li.on { color: inherit; }
 .winGoals i { font-style: normal; color: var(--sticker); display: inline-flex; --glyph-o: var(--sticker); --glyph-i: transparent; }
-.winGoals i .glyph { width: 16px; height: 16px; }
+.winGoals i .glyph { width: var(--mark); height: var(--mark); }
 .winGoals li.on i { color: var(--gold); --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
 .winCard .primary { --fill: var(--accent); --frame: var(--ink); color: var(--on-accent); }
 .winCard .bar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
@@ -860,22 +864,22 @@ body.play #campReplay, #campReplay[hidden] { visibility: hidden; pointer-events:
 .winCard.gold { background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 16%, transparent), var(--panel) 65%); }
 .winCard.gold .winTitle { color: var(--gold); }
 .burst { position: absolute; left: 50%; top: 30%; color: var(--gold); --glyph-o: var(--gold-ink); --glyph-i: var(--gold); pointer-events: none; animation: burst 1.1s ease-out forwards; }
-.burst .glyph { width: 16px; height: 16px; }
+.burst .glyph { width: var(--mark); height: var(--mark); }
 @keyframes burst { to { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .winCard[open], .winStar.new, .winStar.tick { animation: none; } }
 
 
 /* The game's line icons (register 535). */
-.glyph { width: 22px; height: 22px; display: block; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.glyph { width: var(--icon); height: var(--icon); display: block; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 /* Pixel icons (register 602 S3): rectangles, no stroke; sizes are whole multiples of their 16 pixels. */
-.px:where(.glyph) { width: 24px; height: 24px; }  /* weak, so a place that sizes its glyph wins (register 625) */
+.px:where(.glyph) { width: var(--icon); height: var(--icon); }  /* weak, so a place that sizes its glyph wins (register 625) */
 /* A pixel icon is filled squares only: a stroke a place sets for line icons never reaches its paths (register 643). */
 .glyph.px path { stroke: none; }
 /* 24 is the nearest whole multiple to the line icons' 22; the margin keeps every button its old size. */
 button > .glyph.px { margin: -1px; }
 /* Test says its name beside its icon, so it reads as trying the room yourself (register 645). */
 body.campaign:not(.play) #campTest { display: inline-flex; align-items: center; gap: 6px; }
-#campTest::after { content: 'Test'; font: 700 15px var(--label-face); }
+#campTest::after { content: 'Test'; font: 700 var(--t-m) var(--label-face); }
 .glyph.px .i { fill: var(--glyph-i, currentColor); }
 /* An icon in the crayon look (register 866): its colour, a line round it in a dark tint of that colour, a lit
    top edge and a shaded foot. --glyph-o still wins where a place colours its own icon (a star, a goal's mark). */
@@ -891,16 +895,16 @@ body.campaign:not(.play) #campTest { display: inline-flex; align-items: center; 
 button:disabled .glyph.px { opacity: .45; }
 
 :where(button[data-icon]:not([hidden])) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding-left: 8px; padding-right: 8px; }
-.campReqs .mark .glyph { width: 13px; height: 13px; stroke-width: 3; }
-.campReqs .mark .glyph.px { width: 16px; height: 16px; }
+.campReqs .mark .glyph { width: var(--mark); height: var(--mark); stroke-width: 3; }
+.campReqs .mark .glyph.px { width: var(--mark); height: var(--mark); }
 .tutBtns button[data-icon] { min-width: 40px; }
 
 /* Plan step 2: undo, redo and Reset beside the tools in a level. */
 .campHistory { display: flex; gap: 1px; }
 .campHistory > button { display: inline-flex; align-items: center; justify-content: center; }
 body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; min-height: 0; margin: 0; padding: 0; }
-.campHistory .glyph { width: 16px; height: 16px; }
-@media (max-width: 700px) { body.campaign .campHistory > button { width: 46px; height: 46px; } .campHistory .glyph { width: 24px; height: 24px; } }
+.campHistory .glyph { width: var(--mark); height: var(--mark); }
+@media (max-width: 700px) { body.campaign .campHistory > button { width: 46px; height: 46px; } .campHistory .glyph { width: var(--icon); height: var(--icon); } }
 
 /* The room's grips (registers 540, 541): one per side, flush with the room, dragged out to add lines and in to cut them. */
 .grip { position: relative; padding: 0; border-radius: 0; background: var(--rule); display: grid; place-items: center; touch-action: none; box-shadow: none; transform: none; min-width: 0; min-height: 0; }
@@ -917,21 +921,21 @@ body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; m
 .grip.held { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 .grip.held i { background: var(--accent); }
 
-.campMark { display: inline-flex; vertical-align: -3px; } .campMark .glyph { width: 16px; height: 16px; stroke-width: 2.2; }
+.campMark { display: inline-flex; vertical-align: -3px; } .campMark .glyph { width: var(--mark); height: var(--mark); stroke-width: 2.2; }
 
 /* Plan step 4: the level number in the top bar, after Run and Test. */
-.campNum { font: 800 18px var(--label-face, inherit); color: var(--soft); padding: 0 4px 0 0; min-width: 1.4em; text-align: center; }
+.campNum { font: 800 var(--t-l) var(--label-face, inherit); color: var(--soft); padding: 0 4px 0 0; min-width: 1.4em; text-align: center; }
 body:not(.campaign) .campNum { display: none; }
 body.tutorial .campNum { display: none; }
 /* The tutorial's bubble shows the stars it talks about (register 625). */
 .tutPic { display: flex; align-items: center; gap: 2px; margin-right: auto; }  /* in the button row, so the bubble's height never changes */
 .tutPic[hidden] { display: none; }
-header .campLast { order: 9; margin-left: auto; font-size: 13px; white-space: nowrap; }
+header .campLast { order: 9; margin-left: auto; font-size: var(--t-s); white-space: nowrap; }
 body:not(.campaign) header .campLast, body.campaign.tutorial header .campLast { display: none; }
 
 /* The move minimum as a path and 4+ (register 546), counting during Run. */
 .moveDots { display: inline-flex; align-items: center; gap: 3px; vertical-align: -3px; }
-.moveDots .glyph { width: 16px; height: 16px; }
+.moveDots .glyph { width: var(--mark); height: var(--mark); }
 .moveDots b { font-weight: 800; }
 .moveDots.counting { color: var(--dim); }
 .moveDots.reached { color: var(--good); }
@@ -942,14 +946,14 @@ body:not(.campaign) header .campLast, body.campaign.tutorial header .campLast { 
 .moveDots.short { color: var(--bad); animation: dotWant 1s ease-in-out 3; }
 
 body.campaign header .campLast { flex: none; width: auto; display: inline-flex; align-items: center; gap: 2px; color: var(--gold); height: 20px; line-height: 20px; overflow: hidden; align-self: center; }
-header .campLast .glyph { width: 16px; height: 16px; fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
-header .campLast b { font-size: 15px; }
+header .campLast .glyph { width: var(--mark); height: var(--mark); fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
+header .campLast b { font-size: var(--t-m); }
 
 /* Register 547: the main star's box, and each side goal as a chip with its own star. */
 .campGoal { background: none; padding: 0; display: grid; gap: 6px; }
 .campMain { display: flex; gap: 8px; align-items: flex-start; background: color-mix(in srgb, var(--gold) 7%, transparent); box-shadow: inset 0 0 0 2px var(--gold-ink); border-radius: var(--r-m); padding: 6px 8px; }
 .campBigStar { flex: none; width: 30px; height: 30px; }
-.campBigStar .glyph { width: 32px; height: 32px; fill: var(--panel); stroke: var(--gold-ink); stroke-width: 1.6; --glyph-i: var(--panel); --glyph-o: var(--gold-ink); }
+.campBigStar .glyph { width: var(--icon-l); height: var(--icon-l); fill: var(--panel); stroke: var(--gold-ink); stroke-width: 1.6; --glyph-i: var(--panel); --glyph-o: var(--gold-ink); }
 .campBigStar.on .glyph { fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
 .campMain .campMust { flex: 1; min-width: 0; }
 .campMain .campMust:empty { display: none; }
@@ -962,7 +966,7 @@ header .campLast b { font-size: 15px; }
 .campOpt li { background: var(--panel); border-radius: var(--r-pill); padding: 2px 9px 2px 3px; box-shadow: inset 0 0 0 2px var(--rule); align-items: center; }
 .campReqs .optional .mark, .campReqs .optional.met .mark, .campReqs .optional.unmet .mark { background: none; box-shadow: none; outline: none; color: var(--mid); }
 .campReqs .optional .mark::before { display: none; }
-.campReqs .optional .mark .glyph { width: 16px; height: 16px; stroke-width: 1.8; fill: var(--panel); --glyph-i: var(--panel); --glyph-o: var(--mid); }
+.campReqs .optional .mark .glyph { width: var(--mark); height: var(--mark); stroke-width: 1.8; fill: var(--panel); --glyph-i: var(--panel); --glyph-o: var(--mid); }
 .campReqs .optional.met .mark .glyph { fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
 .campReqs .optional.unmet .mark .glyph { stroke: var(--bad); --glyph-o: var(--bad); }
 /* Register 586: a star kept from an earlier room is filled on a pale chip; this room's ring is gold. */
@@ -976,7 +980,7 @@ header .campLast b { font-size: 15px; }
 /* A challenge's room size is fixed (register 562). */
 body.challenge .growBar { display: none !important; }
 
-#campList .campSection { grid-column: 1 / -1; margin: 10px 2px 0; font: 800 13px var(--label-face, inherit); color: var(--soft); }
+#campList .campSection { grid-column: 1 / -1; margin: 10px 2px 0; font: 800 var(--t-s) var(--label-face, inherit); color: var(--soft); }
 .wires button { background: var(--dot); }
 
 /* Nothing moves when something appears (registers 679, 680): a part that comes and goes keeps its place,
@@ -994,13 +998,14 @@ body.challenge .growBar { display: none !important; }
   body.play:not(.campaign) #tools, body.play:not(.campaign) #powers:not([hidden]), body.play:not(.campaign) #lensChips:not([hidden]), body.play:not(.campaign) #statusBar { display: revert; visibility: hidden; }
   body.sandbox .toolName { flex: none; height: 26px; overflow: hidden; }
   /* As tall as the tallest tool's rows, so a tool change moves nothing: three option rows in the full Sandbox,
-     one in the simple one (168px measured, register 831). */
-  body.sandbox #tools { height: 256px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
+     one in the simple one (170px measured at --t-s, register 831); the strip sits at the bottom. */
+  body.sandbox #tools { height: 258px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; }
+  body.sandbox:not(.simple) #tools #strip { margin-top: auto; }
   /* Three rows that never grow (register 832): the tool's name with what a tap read on the right, the colours
      and the tool's options side by side, then the strip; options too wide for their row scroll sideways. */
   body.sandbox.simple #tools { height: 140px; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 22px 46px 46px; grid-template-areas: "name hint" "top opts" "strip strip"; column-gap: 8px; row-gap: 6px; align-items: center; }
   body.sandbox.simple #toolName { grid-area: name; margin: 0; height: auto; }
-  body.sandbox.simple #tools #placeHint { grid-area: hint; display: block; margin: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+  body.sandbox.simple #tools #placeHint { grid-area: hint; display: block; margin: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--t-s); }
   body.sandbox.simple #campTop { grid-area: top; margin: 0; }
   body.sandbox.simple #tools #options { grid-area: opts; justify-self: end; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
   body.sandbox.simple #tools #options .opt { flex-wrap: nowrap; margin: 0; }
@@ -1059,14 +1064,14 @@ body.campaign #bestOpt { display: none !important; }
 }
 
 /* Most moves answers under its own button (register 724). */
-.placeSay { flex-basis: 100%; margin: 4px 0 0; font-size: 12px; white-space: normal; max-width: 320px; }
+.placeSay { flex-basis: 100%; margin: 4px 0 0; font-size: var(--t-s); white-space: normal; max-width: 320px; }
 .placeSay[hidden] { display: none; }
 
 /* Findings (register 730): the four numbers big, the other measures behind one tap; nothing folds. */
 #designList .nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 6px 0; }
 #designList .nums > div { display: grid; justify-items: center; padding: 6px 4px; border-radius: var(--r-s); background: color-mix(in srgb, var(--panel) 70%, black); }
-#designList .nums b { font-size: 22px; line-height: 1.1; }
-#designList .nums small { font-size: 10.5px; color: var(--dim); text-align: center; }
+#designList .nums b { font-size: var(--t-l); line-height: 1.1; }
+#designList .nums small { font-size: var(--t-s); color: var(--dim); text-align: center; }
 #designList .more button { width: auto; }
 #designList .more button[hidden] { display: none; }
 #designBox:not(.all) .metric { display: none; }
@@ -1111,7 +1116,7 @@ body.campaign #bestOpt { display: none !important; }
 #checkBtn { min-width: 10.5ch; }
 
 /* On a phone the tool's how-to reads in plain case after its name, and its options start at the left. */
-.toolName .toolHow { margin-left: 8px; font: 400 12px var(--body-face, inherit); letter-spacing: 0; text-transform: none; }
+.toolName .toolHow { margin-left: 8px; font: 400 var(--t-s) var(--body-face, inherit); letter-spacing: 0; text-transform: none; }
 @media (max-width: 700px) { body.sandbox #campTop { justify-content: flex-start; } }
 /* The colours under the tool strip on a wide Sandbox (766); the plain dot is a dashed ring (773), and grey
    wears the dashed frame a grey piece wears with no wire, so it reads as needing one (736). */
@@ -1149,12 +1154,12 @@ body.removal [data-tool]:not([data-tool=look]):not([data-tool=erase]) { display:
 .achList li > small { position: absolute; right: 8px; bottom: 6px; }
 .achList .achBadge { width: 100%; height: 64px; background: none; }
 .achList .achBadge.done { background: conic-gradient(var(--paper) 25%, var(--panel) 0 50%, var(--paper) 0 75%, var(--panel) 0) 0 0 / 32px 32px; color: var(--ink); }
-.achList .achBadge > .glyph { width: 48px; height: 48px; }
+.achList .achBadge > .glyph { width: var(--icon-l); height: var(--icon-l); }
 /* The tape that holds a photo. */
 .achList li.done::before { content: ''; position: absolute; left: 50%; top: -5px; width: 34px; height: 10px; margin-left: -17px; background: color-mix(in srgb, var(--gold) 60%, var(--lite)); opacity: .9; z-index: 1; }
 .achList .achSlot { right: 4px; bottom: 4px; }
 .achList .achText { padding-bottom: 14px; }
-.achSay { display: block; margin-top: 2px; font-size: 12px; line-height: 1.35; color: var(--ink); quotes: none; }
+.achSay { display: block; margin-top: 2px; font-size: var(--t-s); line-height: 1.35; color: var(--ink); quotes: none; }
 /* The back room: palettes and skins stand on shelves. */
 .lookShelf { padding: 8px 8px 16px; margin-bottom: 4px; background: linear-gradient(180deg, transparent calc(100% - 9px), color-mix(in srgb, var(--gold) 45%, var(--ink)) 0 calc(100% - 6px), color-mix(in srgb, var(--gold) 70%, var(--panel)) 0 calc(100% - 3px), color-mix(in srgb, var(--gold) 45%, var(--ink)) 0), color-mix(in srgb, var(--ink) 6%, var(--panel)); }
 .achPhoto { display: block; width: 100%; height: auto; image-rendering: pixelated; box-shadow: 0 0 0 2px color-mix(in srgb, var(--panel), var(--ink) 30%); }
@@ -1167,12 +1172,12 @@ dialog.rooms { border-radius: 0; box-shadow: inset 0 0 0 var(--b) color-mix(in s
    larger words. Every control and every container wears the same frame: a line in a dark tint of its own
    fill, a lighter edge inside it, square corners. */
 :root { --b: 3px; --b2: calc(var(--b) * 2); --line: color-mix(in srgb, var(--panel), var(--ink) 62%); --line-edge: color-mix(in srgb, var(--panel), white 55%); }
-@media (min-width: 700px) { :root { --b: 4px; } body { font-size: 16px; } }
+@media (min-width: 700px) { :root { --b: 4px; } body { font-size: var(--t-m); } }
 /* A state colours the frame, it never replaces it. */
 .slot.on, .slotRow.on { box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }
 .campRow.sel { outline: 0; --frame: var(--accent); }
 .zoomBar { gap: 2px; margin-top: 34px; }
-.zoomBar > button { height: 32px; min-width: 36px; padding: 0 8px; font-size: 14px; box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }
+.zoomBar > button { height: 32px; min-width: 36px; padding: 0 8px; font-size: var(--t-m); box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }
 .grip { background: var(--fill); box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }
 .growBar[data-bar] .grip { border-radius: 0; }
 .growBar[data-bar=top] .grip, .growBar[data-bar=bottom] .grip { height: 22px; } .growBar[data-bar=left] .grip, .growBar[data-bar=right] .grip { width: 22px; }
@@ -1217,7 +1222,7 @@ body.sandbox #palette.fly [data-tool] { box-shadow: inset 0 0 0 var(--b) var(--f
   body.campaign:not(.sandbox) #palette.grid { grid-template-columns: repeat(3, 52px); gap: 6px; }
   body.campaign:not(.sandbox) :is(.campHistory > button, #campTools button, #palette button) { width: 52px; height: 48px; }
   body.campaign:not(.sandbox) :is(#campTools, #palette) canvas { width: 30px; height: 30px; }
-  body.campaign:not(.sandbox) .campHistory .glyph { width: 24px; height: 24px; }
+  body.campaign:not(.sandbox) .campHistory .glyph { width: var(--icon); height: var(--icon); }
 }
 /* A goal's mark is a box to tick, as on the sketch's clipboard, not a ring. */
 .campReqs .mark::before { clip-path: none; background: none; box-shadow: inset 0 0 0 2px var(--line), inset 0 0 0 4px var(--line-edge); }
@@ -1281,14 +1286,13 @@ body.campaign #campVerdict { box-shadow: inset 0 0 0 var(--b) var(--line), inset
    button's icon is small enough to clear the button's own foot. */
 .campBrief .campReqs li { align-items: center; }
 body.campaign:not(.sandbox) #palette :is(.lbl, kbd), body.campaign:not(.sandbox) #campTools :is(.lbl, kbd) { display: none; }
-@media (min-width: 701px) { header button { min-height: 40px; } header button .glyph.px { width: 16px; height: 16px; } }
+@media (min-width: 701px) { header button { min-height: 40px; } header button .glyph.px { width: var(--mark); height: var(--mark); } }
 /* One frame for every screen (register 911, docs/THEME_FLOW_DIAGNOSIS.md). The header is the same on the level
    list and in a level: 58 px tall, the way back at its left edge, the title in its middle, what belongs to
    the screen at its right. A level's main actions sit under its room, in the middle, where the menu's are. */
-:root { --head-h: 58px; }
 body.campaign:not(.sandbox) header { height: var(--head-h); box-sizing: border-box; padding: 0 16px; align-items: center; }
 body.campaign:not(.sandbox) header #campBack { order: -5; width: 46px; height: 34px; min-height: 0; padding: 0; flex: none; }
-body.campaign:not(.sandbox) header .campNum { position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: 0; font-size: 18px; color: var(--ink); white-space: nowrap; }
+body.campaign:not(.sandbox) header .campNum { position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: 0; font-size: var(--t-l); color: var(--ink); white-space: nowrap; }
 body.campaign:not(.sandbox) header .campNum::before { content: 'Level '; }
 dialog[id].rooms > .roomsHead { min-height: var(--head-h); box-sizing: border-box; padding-top: 0; padding-bottom: 0; position: sticky; }
 dialog[id].rooms > .roomsHead > .upBtn { width: 46px; height: 34px; min-height: 0; padding: 0; }
@@ -1318,13 +1322,12 @@ header { height: var(--head-h); box-sizing: border-box; padding: 0 16px; align-i
 .menu::before { content: ''; position: absolute; z-index: 1; left: 0; right: 0; top: 0; height: var(--head-h); background: var(--paper); box-shadow: 0 var(--b) 0 var(--line); }
 .menuCorner { top: 12px; right: 16px; width: 46px; height: 34px; padding: 0; }
 .menuCorner.left { left: 16px; } .menuCorner.left2 { left: 70px; } .menuCorner.right2 { right: 70px; } .menuCorner.right3 { right: 124px; }
-.menuCorner .glyph.px { width: 16px; height: 16px; }
+.menuCorner .glyph.px { width: var(--mark); height: var(--mark); }
 .menu .menuLogo, .menu .menuLogo:not(#x) { top: 70px; }
 @media (max-width: 560px) { .menu .menuLogo { top: 70px; } }
 
 /* ===== One system for every screen (register 914). Three type sizes, two button sizes, one icon size.
    Everything below wins over the rules above it; a new screen takes these and adds nothing of its own. ===== */
-:root { --t-s: 12px; --t-m: 15px; --t-l: 18px; --btn-s: 44px; --btn-m: 48px; }
 /* Type: a title in the bar is large, a name on a card or a button is medium, a note under it is small and
    soft, a heading over a group is small, soft and in capitals. The face has one weight, so none is asked for. */
 :is(.roomsHead > b, body.campaign:not(.sandbox) header .campNum) { font: 400 var(--t-l) var(--label-face) !important; color: var(--ink) !important; letter-spacing: 0 !important; }
@@ -1350,3 +1353,19 @@ body.campaign:not(.sandbox) .roomArea { padding-bottom: 48px; box-sizing: border
 /* A level card and the two challenge cards beside it: the challenges' column is the wider, so a name like
    "Remove 10" keeps the cards' one type size (register 914). */
 @media (max-width: 700px) { .campList { grid-template-columns: minmax(0, 162fr) minmax(0, 189fr); gap: 12px 10px; } #campList li.main > .campRow { padding-left: 8px; padding-right: 8px; } }
+/* The remaining screens on the same system (register 915). */
+/* A Sandbox room has the bar every screen has: the way back at the left corner, the room's name in the middle,
+   its own buttons at the right. */
+body.sandbox header { height: var(--head-h); box-sizing: border-box; padding: 0 16px; gap: 6px; }
+body.sandbox header #logo { order: -5; display: flex; width: 46px; height: var(--btn-s); min-height: 0; padding: 0; flex: none; }
+body.sandbox header #roomTitle { order: 0; flex: 1 1 0; min-width: 0; max-width: none; text-align: center; justify-content: center; height: var(--btn-s); min-height: 0; background: none; box-shadow: none; font: 400 var(--t-l) var(--label-face); color: var(--ink); }
+body.sandbox header > button:not(#logo):not(#roomTitle) { height: var(--btn-s); min-height: 0; }
+body.sandbox header #lensFold { order: 3; }
+/* In a level the button back to editing sits at the right, beside help, never beside the way back. */
+body.campaign:not(.sandbox) header #mode { margin-left: auto; }
+/* The win card is the clipboard's last page: its lines in the hand, its title large, its four buttons two by two. */
+.winCard .winTitle { font: 400 var(--t-l) var(--label-face); }
+.winCard .winGoals li { font-family: var(--hand-face); font-size: var(--hand-size, 18px); }
+.winCard .row.bar { display: grid; grid-auto-flow: row; grid-template-columns: 1fr 1fr; gap: 8px; }
+.winCard .row.bar > button { width: 100%; min-width: 0; height: var(--btn-m); font-size: var(--t-m); }
+body.sandbox header .spacer { display: none; }

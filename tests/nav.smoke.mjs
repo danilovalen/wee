@@ -133,8 +133,8 @@ try {
   // Register 424: the menu is where history starts, so Back from it leaves the game, never into a room.
   await page.goto('about:blank'); await page.goto(B); await settle();
   await page.click('#menuSandbox'); await settle(); await page.click('#roomNew'); await settle();
+  check('a Sandbox room has Back in the bar\'s corner like every page (register 912)', await page.locator('#logo').isVisible());
   const roomsWay = (await page.locator('#roomsBtn').isVisible()) ? '#roomsBtn' : '#roomTitle';
-  check('a Sandbox room has no Back: Rooms is its way out (register 771)', await page.locator('#logo').isHidden() && await page.locator(roomsWay).isVisible());
   await page.click(roomsWay); await settle();
   check('the Rooms page from a room offers both Close and Menu (register 771)', await page.locator('#roomsClose').isVisible() && await page.locator('#roomsMenu').isVisible());
   await page.click('#roomsMenu'); await settle();

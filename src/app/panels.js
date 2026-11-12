@@ -34,7 +34,7 @@ function syncCtxText() {
 export function keysText() {
   return touch
     ? (S.mode === 'play' ? 'Swipe to slide, and while sliding, swipe again to use a power.' : '')
-    : (S.mode === 'play' ? `Arrows slide, ${tapText()}R resets the room and E goes back to editing.` : '');
+    : (S.mode === 'play' && !S.camp ? `Arrows slide, ${tapText()}R resets the room and E goes back to editing.` : '');
 }
 
 function tapText() {

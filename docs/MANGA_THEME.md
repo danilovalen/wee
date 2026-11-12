@@ -118,6 +118,15 @@ Read by `tests/manga.test.mjs`. `name | value`, one per row, values verbatim.
 | `--text-face` | `'Departure', monospace` |
 | `--label-face` | `'Departure', monospace` |
 | `--wee-face` | `'Departure', monospace` |
+| `--t-s` | `12px` |
+| `--t-m` | `15px` |
+| `--t-l` | `18px` |
+| `--btn-s` | `44px` |
+| `--btn-m` | `48px` |
+| `--mark` | `16px` |
+| `--icon` | `16px` |
+| `--icon-l` | `32px` |
+| `--head-h` | `58px` |
 
 ## Twenty colours (registers 810, 811)
 
