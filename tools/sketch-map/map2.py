@@ -10,7 +10,7 @@ by = {s['lv']: s for s in slots}
 BANDS = [
     [('Start', [1]), ('Door land', [2, 3, 4])],
     [('Box land', [5, 6]), ('Button land', [7, 8])],
-    [('One-way land', [9, 10]), ('Colour land', [11, 12, 13])],
+    [('One-way land', [9, 10]), ('Powered land', [11, 12, 13])],
     [('Laser land', [14, 15, 16, 17])],
     [('Relay land', [18, 19, 20]), ('Spike land', [21, 22])],
 ]
@@ -20,9 +20,9 @@ SCENERY = {
     'Box land': [('box', 0, 0), ('box', 2, 1), ('box', 3, 0)],
     'Button land': [('button:blue', 0, 1), ('button:blue', 3, 0), ('box', 1, 0)],
     'One-way land': [('gate:right', 0, 0), ('gate:up', 2, 1), ('gate:left', 3, 2)],
-    'Colour land': [('button:blue', 0, 0), ('door:blue', 3, 0), ('toggle:green', 1, 2), ('door:green', 2, 2)],
-    'Laser land': [('turret:down', 0, 0), ('turret:right', 3, 2)],
-    'Relay land': [('sensor:blue', 0, 1), ('sensor:blue', 3, 0), ('turret:down', 1, 0)],
+    'Powered land': [('button:red', 0, 0), ('gate:up@red', 3, 1)],
+    'Laser land': [('turret:right', 0, 0), ('turret:left', 4, 1)],
+    'Relay land': [('turret:right', 0, 0), ('sensor:blue', 1, 0), ('sensor:blue', 4, 1)],
     'Spike land': [('death', 0, 0), ('death', 1, 0), ('death', 3, 1), ('death', 2, 2), ('death', 0, 2)],
 }
 PLAZA = 5; SLOT = 9; X0 = 2; BW = 56
@@ -41,15 +41,25 @@ for b, band in enumerate(BANDS):
     for (name, lvs), w in zip(band, widths):
         # plaza: the land's own scenery round the street
         px = cur if east else cur - PLAZA + 1
-        for yy in range(y - 3, y + 4):
-            for xx in range(px, px + PLAZA - 1): setc(xx, yy, '')
-        for kind, dx, dy in SCENERY[name]:
-            for sy in (-1, 1):
-                xx, yy = px + dx, y + sy * (dy + 1)
-                if kind == 'box': ents.append({'kind': 'box', 'x': xx, 'y': yy, 'dir': 1, 'mode': 'input'})
-                elif kind.startswith('turret'): ents.append({'kind': 'turret', 'x': xx, 'y': yy, 'turret': {'dirs': [kind.split(':')[1]], 'mode': 'input'}})
-                else: setc(xx, yy, kind)
-        signs.append({'name': name, 'x': px, 'y': y - 4, 'right': not east})
+        step = (lambda d: px + d) if east else (lambda d: px + PLAZA - 1 - d)
+        def piece(kind, xx, yy):
+            if kind == 'box': setc(xx, yy, ''); ents.append({'kind': 'box', 'x': xx, 'y': yy, 'dir': 1, 'mode': 'input'})
+            elif kind.startswith('turret'): setc(xx, yy, ''); ents.append({'kind': 'turret', 'x': xx, 'y': yy, 'turret': {'dirs': [kind.split(':')[1]], 'mode': 'input'}})
+            else: setc(xx, yy, kind)
+        # the land's pieces lie about in the ground below it, off the path
+        span = PLAZA + SLOT * len(lvs); left = px if east else cur - span + 1
+        signx = px if east else px + PLAZA - 6
+        for k in range(3):
+            bx = left + 7 + k * ((span - 12) // 3) if east else left + 1 + k * ((span - 12) // 3)
+            for kind, dx, dy in SCENERY[name]:
+                piece(kind, bx + dx, y + 4 + dy)
+        # what happens on the way in, once, by itself
+        way = 'right' if east else 'left'
+        ENTRY = {'Door land': [('toggle:blue', 1), ('door:blue', 3)], 'Box land': [('box', 1)],
+                 'Button land': [('box', 1), ('button:blue', 3)], 'One-way land': [('gate:' + way, 2)],
+                 'Powered land': [('button:red', 1), ('gate:' + way + '@red', 3)]}
+        for kind, dd in ENTRY.get(name, []): piece(kind, step(dd), y)
+        signs.append({'name': name, 'x': signx, 'y': y + 5, 'right': not east})
         cur = cur + PLAZA if east else cur - PLAZA
         for lv in lvs:
             x0 = cur if east else cur - SLOT + 1
@@ -73,7 +83,6 @@ for b, band in enumerate(BANDS):
     if b < len(BANDS) - 1:
         cx = X0 + BW if east else X0 - 1
         for yy in range(y, y + BAND_H + 1): setc(cx, yy, '')
-        setc(cx, y, 'gravel'); setc(cx, y + BAND_H, 'gravel')
         for x in (range(X0 + BW - 1, X0 + BW + 1) if east else range(X0 - 1, X0 + 1)): setc(x, y + BAND_H, '')
 # locked side rooms: a closed door stands on their stop
 for p in place:
