@@ -938,3 +938,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 929 | "a basic interaction on the map when reaching a new area. Box land: push a box, button land: push a box on a button, one way: go through it... Automatic, not decision, it just happens when going there" | sketched: door, box, button, one-way and powered lands have their first-visit pieces on the path; laser, relay, spike have none yet |
 | 930 | "No need for gravel on corners if you don't have a three-way" | sketched: corners carry no gravel |
 | 931 | "Colour land makes no sense we have hidden the dual color levels. Should be powered one way or similar" | sketched: renamed Powered land, a button and a powered one-way |
+| 932 | "Allow me to edit that, somehow. Not sure if a secret level builder on the game, somehow. Plan letting me build this from now on." | open: plan in docs/MAP_EDITOR_PLAN.md |
