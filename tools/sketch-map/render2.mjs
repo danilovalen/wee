@@ -1,0 +1,16 @@
+import { chromium } from '/home/user/wee/node_modules/playwright-core/index.mjs';
+import { serve } from '/home/user/wee/tools/serve.mjs';
+import { readFileSync } from 'node:fs';
+const OUT = process.cwd(); const level = JSON.parse(readFileSync('map2-level.json', 'utf8'));
+process.chdir('/home/user/wee'); await serve(5297);
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const p = await b.newPage({ viewport: { width: 2600, height: 3000 }, deviceScaleFactor: 1 });
+await p.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; });
+await p.goto('http://localhost:5297/?sandbox=full');
+await p.waitForFunction(() => window.wee && window.wee.roomsReady); await p.evaluate(() => window.wee.roomsReady);
+await p.evaluate(() => document.getElementById('roomsBox').close());
+await p.evaluate(l => window.wee.loadLevel(l), level); await p.waitForTimeout(1500);
+const r = await p.evaluate(() => { const c = document.getElementById('game'); return [c.width, c.height, c.getBoundingClientRect().width]; });
+console.log(r);
+await p.locator('#game').screenshot({ path: OUT + '/map2-room.png' });
+await b.close(); process.exit(0);
