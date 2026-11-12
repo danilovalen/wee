@@ -1472,7 +1472,7 @@ export const M = [
   ["src/app/icons.js", "  c.width = T; c.height = T; c.dataset.icon = tool;", "  c.width = 40; c.height = 40; c.dataset.icon = tool;", "look"],
   ["style.css", "body.campaign:not(.sandbox) header #campBack { order: -5; width: 46px; height: 34px; min-height: 0; padding: 0; flex: none; }\n", "", "look"],
   ["style.css", ".campActions #campRun { grid-column: 1; grid-row: 1; } .campActions #campTest { grid-column: 2; grid-row: 1; } .campActions #campReplay { grid-column: 3; grid-row: 1; }", "", "still"],
-  ["style.css", ":is(.roomsHead > b, body.campaign:not(.sandbox) header .campNum) { font: 400 var(--t-l) var(--label-face) !important;", ":is(.roomsHead > b) { font: 400 var(--t-l) var(--label-face) !important;", "look"],
+  ["style.css", ":is(.roomsHead > b, body.campaign:not(.sandbox) header .campNum) { font: 400 var(--t-l) var(--label-face) !important;", ":is(body.campaign:not(.sandbox) header .campNum) { font: 400 var(--t-l) var(--label-face) !important;", "look"],
   ["src/app/hand.js", "Math.round(dpr < 1.5 ? dpr : 1.5 * dpr)) / dpr;", "Math.round(dpr < 1.5 ? dpr : 1.5 * dpr)) / 1;", "crayon"],
   ["src/view/crayon.js", "(y >= crown ? row : row.map(", "(y >= 0 ? row : row.map(", "crayon"],
   ["src/app/menuScene.js", "l.cells[2 * W + 0] = 'toggle:red';", "l.cells[2 * W + 0] = 'toggle:red:on';", "campaign-play"],
