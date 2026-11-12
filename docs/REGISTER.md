@@ -928,3 +928,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 919 | "That way every menu has a theme applied to it." | open: covers 917, 918 and any page still plain |
 | 920 | "all the information should remain, there should be maybe a stair under or a passageway, or something the blob enters. And what is this open door, why it is the inverted door?" | sketched: stairs under each card, no door tile; every card keeps its information |
 | 921 | "You got the skeleton right, now sketch a proper screen" | sketched: docs/sketches/levels-corridor.png, waiting on his review |
+| 922 | "Remember that there are more challenges, one or two each level and each two levels it unlocks two challenges. No need for it to be linear. The map can branch, move in many directions. Even cluster by new element type unlocked (laser land, spike land). But it has to be continuous" | sketched: docs/sketches/levels-map-overview.png and levels-map-phone.png, waiting on his review |
