@@ -35,11 +35,11 @@ moment they do the thing.
 
 | when | nudge |
 |---|---|
-| Puzzle 0, no swipe for 4 s | a hand swipes across the room once |
-| Build 0, no block placed for 6 s | the block tool pulses once |
-| Build 0, a block is placed and Run has not been tapped for 6 s | Run pulses once |
+| Puzzle 0, no swipe for 4 s | a hand swipes across the room, and keeps swiping until Wee moves |
+| Build 0, no block placed for 6 s | the block tool pulses until a block is placed |
+| Build 0, a block is placed and Run has not been tapped for 6 s | Run pulses until it is tapped |
 | Build 0, a Run fails | the existing failed-run path shows where Wee got stuck (no new copy) |
-| Build 0, won but the room is bigger than 3x3 | the resize handles pulse once on the win card's return |
+| Build 0, won but the room is bigger than 3x3 | the resize handles pulse until one is dragged |
 
 Every line on screen is drawn from things the game already shows. The only new text is "3x3 or smaller", which you wrote.
 
