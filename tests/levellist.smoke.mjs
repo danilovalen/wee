@@ -55,7 +55,8 @@ try {
   await fresh.addInitScript(() => { window.__noTutorial = true; });
   await fresh.goto('http://localhost:5284/#/levels'); await fresh.waitForTimeout(800);
   const bright = await fresh.evaluate(() => [...document.querySelectorAll('#campList .campRow.locked')].flatMap(c => [...c.querySelectorAll('b, .campParts canvas')].filter(e => {
-    let o = 1; for (let n = e; n && n !== c.parentElement; n = n.parentElement) o *= +getComputedStyle(n).opacity;
+    // A laid-out-away box reports its opacity but paints none of it, so it does not count.
+    let o = 1; for (let n = e; n && n !== c.parentElement; n = n.parentElement) { const st = getComputedStyle(n); if (st.display !== 'contents') o *= +st.opacity; }
     return o > 0.6;
   }).map(e => c.dataset.level + ':' + (e.textContent || e.dataset.part))));
   check('a locked card fades its name and its pieces, half-width cards too', !bright.length, bright.slice(0, 6).join());
