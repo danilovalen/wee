@@ -969,3 +969,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 960 | "Merge the three right buttons on a single one, \"options\"" | registered: menu bar's Sound, Slot and Unlock become one Options button |
 | 961 | "Sandbox stays unlocked for now" | registered: standing rule, not hidden by 956-959 |
 | 962 | "On the main screen, extend the walls so it goes all the way down, without a gap it has right now" | registered, holding for more feedback |
+| 963 | "Copy load reset should also be on the options" | registered: the progress row (Copy, Load, Reset progress) moves into the Options page from 960 |
