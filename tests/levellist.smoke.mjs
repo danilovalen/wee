@@ -50,6 +50,16 @@ try {
     check(`${w}px: scrolled to the end, the title and Menu stay at the top (register 763)`, head.scrolled && head.top >= -1 && head.top <= 4 && head.menu, JSON.stringify(head));
     await page.close();
   }
+  // A locked card fades whole, its name and pieces too, a half-width one included (register 936).
+  const fresh = await browser.newPage({ viewport: { width: 393, height: 852 } });
+  await fresh.addInitScript(() => { window.__noTutorial = true; });
+  await fresh.goto('http://localhost:5284/#/levels'); await fresh.waitForTimeout(800);
+  const bright = await fresh.evaluate(() => [...document.querySelectorAll('#campList .campRow.locked')].flatMap(c => [...c.querySelectorAll('b, .campParts canvas')].filter(e => {
+    let o = 1; for (let n = e; n && n !== c.parentElement; n = n.parentElement) o *= +getComputedStyle(n).opacity;
+    return o > 0.6;
+  }).map(e => c.dataset.level + ':' + (e.textContent || e.dataset.part))));
+  check('a locked card fades its name and its pieces, half-width cards too', !bright.length, bright.slice(0, 6).join());
+  await fresh.close();
 } catch (err) { check('the level list smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }
 done();

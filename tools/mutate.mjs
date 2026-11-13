@@ -1355,6 +1355,7 @@ export const M = [
   ["style.css", ".menuHead { position: absolute; z-index: 2; left: 0; right: 0; top: 0; height: var(--head-h); box-sizing: border-box; padding: 0 16px;", ".menuHead { position: absolute; z-index: 2; left: 0; right: 0; top: 0; height: var(--head-h); box-sizing: border-box; padding: 0 12px;", "cardopen"],
   ["src/app/slots.js", "if (to === 'all') localStorage.setItem('wee.dev', '1'); else localStorage.removeItem('wee.dev');", "if (to === 'all') localStorage.setItem('wee.dev', '1');", "slots"],
   ["src/app/slots.js", "  if (slotNow() !== 'all') { try { localStorage.removeItem('wee.dev'); } catch { /* storage off */ } reload(); return true; }\n", "", "slots"],
+  ["style.css", ".campRow.locked > :not(.campRowHead), .campRow.locked > .campRowHead > * { opacity: .45; }", ".campRow.locked > * { opacity: .45; }", "levellist"],
   ["src/level/marks.js", "export const tooBig = (l, w, h) => l.map ? w > 80 || h > 80 : w > 40 || h > 30;", "export const tooBig = (l, w, h) => w > 40 || h > 30;", "map"],
   ["src/level/marks.js", "    if (l.cells[s.y * l.w + s.x] !== 'gravel') throw", "    if (false) throw", "map"],
   ["src/level/marks.js", "    if (seen.has(s.for)) throw", "    if (false) throw", "map"],

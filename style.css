@@ -1186,7 +1186,8 @@ input[type=number], input[type=text], textarea, select { border-radius: 0; paddi
 .campOpt li.met { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--gold), var(--ink) 45%), inset 0 0 0 4px var(--gold); }
 .campBrief .campMain { box-shadow: inset 0 0 0 var(--b) color-mix(in srgb, var(--gold), var(--ink) 45%), inset 0 0 0 var(--b2) color-mix(in srgb, var(--gold) 55%, var(--panel)); padding: calc(var(--b2) + 4px); }
 /* A locked level keeps its whole line; only what is inside it fades. */
-.campRow.locked { opacity: 1; } .campRow.locked > * { opacity: .45; }
+/* A locked card's parts fade; a half-width card's name and pieces sit in a laid-out-away head, so they fade on their own (register 936). */
+.campRow.locked { opacity: 1; } .campRow.locked > :not(.campRowHead), .campRow.locked > .campRowHead > * { opacity: .45; }
 /* The bar across the top is a shelf with a line under it. */
 header { box-shadow: 0 var(--b) 0 var(--line); position: relative; z-index: 2; }
 dialog[id].rooms > .roomsHead { box-shadow: 0 var(--b) 0 var(--line); padding-bottom: 8px; margin-bottom: 12px; }
