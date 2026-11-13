@@ -34,7 +34,8 @@ export function switchSlot(to, keep = false, reload = () => location.reload()) {
     keys.forEach(k => localStorage.removeItem(k));
     const saved = to === 'guest' && !keep ? {} : JSON.parse(localStorage.getItem(STASH + to) || '{}');
     for (const [k, v] of Object.entries(saved)) localStorage.setItem(k, v);
-    if (to === 'all') localStorage.setItem('wee.dev', '1');
+    // Dev mode belongs to the dev slot alone: an older save that carried the flag must not bring it back (register 935).
+    if (to === 'all') localStorage.setItem('wee.dev', '1'); else localStorage.removeItem('wee.dev');
     localStorage.setItem(SLOT, to);
   } catch { return false; }
   reload();
@@ -42,9 +43,12 @@ export function switchSlot(to, keep = false, reload = () => location.reload()) {
 }
 
 // The dev lock: on, the save in use steps aside for the every-level one; off, it comes back.
-export function setDevSlot(on) {
-  if (on) { try { localStorage.setItem(BACK, slotNow()); } catch { /* storage off */ } return switchSlot('all', true); }
-  return switchSlot(get(BACK) || 'me', true);
+export function setDevSlot(on, reload = () => location.reload()) {
+  if (on) { if (slotNow() !== 'all') try { localStorage.setItem(BACK, slotNow()); } catch { /* storage off */ } return switchSlot('all', true, reload); }
+  // Dev mode on outside the dev slot (an older save's flag) only needs the flag off.
+  if (slotNow() !== 'all') { try { localStorage.removeItem('wee.dev'); } catch { /* storage off */ } reload(); return true; }
+  const back = get(BACK);
+  return switchSlot(back && back !== 'all' ? back : 'me', true, reload);
 }
 
 export function bindSlots() {

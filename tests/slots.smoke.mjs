@@ -47,6 +47,18 @@ try {
   check('Who\'s playing lists the best scores on this device, highest first', lines.length === 2 && /^Guest, .+: 90$/.test(lines[0]) && lines[1] === 'Me: 40', JSON.stringify(lines));
   await pick('me');
   check('the board outlives a switch of player', (await p.evaluate(() => localStorage.getItem('wee.board') || '')).includes('"guest:1794000000000-ab"'));
+  // A save from before the lock had its own slot can carry dev mode in it (register 935): the lock still turns it off.
+  await p.evaluate(() => { localStorage.clear(); localStorage.setItem('wee.dev', '1'); localStorage.setItem('wee.campaign', '{"v":4,"last":null,"levels":{"3":{"won":true}},"owned":[],"spent":0}'); });
+  await p.reload(); await p.waitForTimeout(500);
+  await p.click('#menuUnlock'); await p.waitForLoadState('load'); await p.waitForTimeout(500);
+  s = await store();
+  check('dev mode left in your own save turns off with the lock, your progress kept', !s.dev && /"3"/.test(s.camp || ''), JSON.stringify(s));
+  await p.evaluate(() => localStorage.setItem('wee.stash.me', JSON.stringify({ 'wee.dev': '1', 'wee.campaign': localStorage.getItem('wee.campaign') })));
+  await p.evaluate(() => { localStorage.setItem('wee.slot', 'all'); localStorage.setItem('wee.dev', '1'); localStorage.setItem('wee.slot.back', 'me'); });
+  await p.reload(); await p.waitForTimeout(500);
+  await p.click('#menuUnlock'); await p.waitForLoadState('load'); await p.waitForTimeout(500);
+  s = await store();
+  check('a set-aside save carrying dev mode comes back without it', !s.dev && s.slot === 'me' && /"3"/.test(s.camp || ''), JSON.stringify(s));
   check('no page errors', !errors.length, errors.join(' | '));
 } catch (err) { check('the slots smoke ran to the end', false, err.message); }
 finally { await browser.close(); server.close(); }
