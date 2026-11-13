@@ -1,6 +1,6 @@
 # Onboarding as two levels, not a tutorial (register 955)
 
-Proposal only. Nothing is built until it is approved.
+Built on 2026-11-13 (register 955). Build 0 has no exact-moves goal, so its one side goal is 3x3 or smaller.
 
 ## What goes
 

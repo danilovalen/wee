@@ -6,7 +6,11 @@ import { builders, plan, sideRoom, isOpen, sideGoalsOpen, PUZZLES, AHEAD } from 
 import { CHALLENGES } from '../src/level/challenges.js';
 
 const { check, done } = suite('progression');
-const b = builders(), none = { levels: {} }, beat = (...defs) => ({ levels: Object.fromEntries(defs.map(d => [d.id, { beaten: true }])) });
+import { INTRO } from '../src/campaign/progression.js';
+// Build 0 beaten is where the plan starts (register 955): the tests below count from there.
+const b = builders(), none = { levels: { [INTRO.build.id]: { beaten: true } } }, beat = (...defs) => ({ levels: { ...none.levels, ...Object.fromEntries(defs.map(d => [d.id, { beaten: true }])) } });
+const fresh = { levels: {} };
+check('Build 0 and Puzzle 0 are open from the start, and Level 1 waits for Build 0 (register 955)', isOpen(INTRO.build.id, fresh) && isOpen(INTRO.puzzle.id, fresh) && !isOpen(b[0].id, fresh) && isOpen(b[0].id, none));
 check('there are builder levels to open', b.length >= 3, String(b.length));
 // Register 673: the AHEAD levels past the furthest one beaten are open, so a stuck player has others to try.
 check('three levels are kept open ahead, the number asked for (register 673)', AHEAD === 3);

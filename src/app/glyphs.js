@@ -46,7 +46,7 @@ export function bindGlyphs() {
   // Every page's one way up is a ← at its top left, beside its name (register 771).
   for (const id of ['campMenu', 'puzzleMenu', 'makerMenu', 'roomsMenu', 'lookMenu', 'achMenu']) iconOn($(id), 'back', 'Back to the menu');
   // Skip stays words, apart from Next's arrow, so it is never taken for Next (register 664).
-  iconOn($('tutNext'), 'next', 'Next');
+
   // Off the menu the logo's place is a Back button (register 665).
   iconOn($('logo'), 'back', 'Back'); iconOn($('fitBtn'), 'fit', 'Show the whole room');
 }

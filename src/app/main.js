@@ -1,5 +1,7 @@
 // The entry point: builds the panels, wires input, starts the loop, and exposes the
 // text state and a fixed clock for tests and agents.
+import { bindNudges } from './nudge.js';
+import { bindOptions } from './options.js';
 import { applyHand, placeActions } from './hand.js';
 import { bindUnlock } from './unlock.js';
 import { bindSlots } from './slots.js';
@@ -33,7 +35,6 @@ import { buildGenerator } from './generator.js';
 import { buildCampaign } from './campaign.js';
 import { bindNav, start } from './nav.js';
 import { bindDebug } from './debug.js';
-import { bindTutorial } from './tutorial.js';
 import { bindGlyphs } from './glyphs.js';
 
 // The chosen palette is on before anything is drawn (register 613).
@@ -58,7 +59,7 @@ buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
 bindReplay({ setMode, leaveOk, openRoom });
-bindGlyphs(); bindTutorial(); bindUnlock(); bindSlots(); buildLooks(); buildAchieve(); bindSound();
+bindGlyphs(); bindNudges(); bindOptions(); bindUnlock(); bindSlots(); buildLooks(); buildAchieve(); bindSound();
 buildProgress();
 buildPuzzles({ setMode, syncPanel, fit });
 buildMaker();

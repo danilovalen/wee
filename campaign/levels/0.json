@@ -1,6 +1,6 @@
 {
- "name": "Tutorial",
- "tutorial": true,
+ "name": "Build 0",
+ "intro": true,
  "size": [
   5,
   5
@@ -20,9 +20,12 @@
   ]
  },
  "steps": {
-  "min": 1,
-  "best": 4
+  "min": 1
  },
+ "small": [
+  3,
+  3
+ ],
  "rules": [],
  "require": [],
  "optional": []

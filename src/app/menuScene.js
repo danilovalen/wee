@@ -46,6 +46,11 @@ export function buildMenuScene(host) {
   let game, prev, queue, rest, acc = 0, last = 0, won = 0, fx = [];
   // No top row: the logo sits there (register 819); the sides and the bottom close the room as a level's ring does.
   const ring = ringCells(menuLevel(), new Set()).map((c, i) => i < W + 2 ? '' : c);
+  // The walls go on down to the bottom of the screen (register 962): the ring, set in the whole floor, with
+  // every row from the room's bottom wall down filled, so the room and the ground below are one mass.
+  const GW = W + 2 * M, GH = H + 2 * M, ground = Array(GW * GH).fill('');
+  ring.forEach((c, i) => { if (c) ground[(Math.floor(i / (W + 2)) + M - 1) * GW + (i % (W + 2)) + M - 1] = c; });
+  for (let y = M + H; y < GH; y++) for (let x = 0; x < GW; x++) ground[y * GW + x] = 'wall';
   const reset = () => { game = createGame(menuLevel()); prev = snap(game); queue = [...MENU_MOVES]; rest = 0; won = 0; fx = []; menuRoom.game = game; };
   reset();
   const shown = () => host.closest('dialog').open && !document.hidden;
@@ -63,10 +68,10 @@ export function buildMenuScene(host) {
     fx = fx.filter(f => t - f.at < (f.type === 'flash' ? 900 : 400));
     if (shown()) soundFx(fx);
     const avatar = frame.avatar; frame.avatar = 'robot';
-    g.setTransform(1 / PX, 0, 0, 1 / PX, 0, 0); drawFloor(g, W + 2 * M, H + 2 * M);
+    g.setTransform(1 / PX, 0, 0, 1 / PX, 0, 0); drawFloor(g, GW, GH);
+    // The wall ring every level has (registers 672, 816), joining the room's edge walls and the ground below.
+    drawMasses(g, ground, GW, GH, undefined, '');
     g.translate(M * T, M * T);
-    // The wall ring every level has (registers 672, 816): one tile out, joining the room's edge walls.
-    g.save(); g.translate(-T, -T); drawMasses(g, ring, W + 2, H + 2, undefined, ''); g.restore();
     drawPlay(g, game, prev, Math.min(1, acc / TICK_MS), fx, t);
     frame.avatar = avatar; menuRoom.draws++;
   };

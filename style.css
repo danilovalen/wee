@@ -621,25 +621,7 @@ button.lookStars { border: 0; background: none; padding: 4px 6px; height: auto; 
 .campDots i { width: 10px; height: 10px; clip-path: var(--disc-10); }
 .campRow.sel { outline: 2px solid var(--accent); }
 #campList .campRow { height: 76px; grid-template-rows: auto 1fr; align-content: start; overflow: hidden; }  /* number and pieces on one line (register 527) */
-.tutBox { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40; max-width: 520px; margin: 0 auto; background: var(--panel); color: var(--ink); box-shadow: inset 0 0 0 2px var(--accent); border-radius: var(--r-l); padding: 10px 12px; display: grid; gap: 4px; box-shadow: var(--sticker-rest) var(--sticker-rest) 0 0 var(--sticker); }
-.tutBox[hidden], .tutTile[hidden] { display: none; }
-/* In the tutorial the bubble says what the verdict would, so the room never moves under it (register 517). */
-body.tutorial #campVerdict { display: none !important; }
-/* The bubble says the goal, and the tutorial uses one tool: nothing else on screen (register 519). */
-body.tutorial #campBrief { visibility: hidden; height: 112px; overflow: hidden; }  /* the bubble's place */
-body.tutorial :is(#undo, #redo, #campReset, #campTools, #toolName) { display: none !important; }
-.tutBox p { margin: 0; font-size: var(--t-m); line-height: 1.4; min-height: 4.2em; }  /* three lines, the longest step in the wider face (register 652) */
 /* Skip is quiet and apart, in the bubble's corner, so it never reads as Next (register 664). */
-.tutBox .tutSkip { justify-self: end; height: auto; min-height: 0; padding: 2px 4px; margin: -6px -6px -2px 0; background: none; box-shadow: none; color: var(--dim); font-size: var(--t-s); text-decoration: underline; text-underline-offset: 3px; }
-.tutBox small { opacity: .7; }
-.tutBtns { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-height: 36px; }
-.tutBtns small { flex: 1; }
-.tutBtns button { height: 36px; }
-.tutRing { outline: 3px solid var(--accent); outline-offset: 2px; animation: tutPulse 1.2s ease-in-out infinite; }
-.tutTile { position: fixed; z-index: 39; pointer-events: none; border-radius: var(--r-s); box-shadow: inset 0 0 0 4px var(--accent); background: color-mix(in srgb, var(--accent) 25%, transparent); animation: tutGlow 1.2s ease-in-out infinite; }
-@keyframes tutGlow { 50% { background: color-mix(in srgb, var(--accent) 8%, transparent); } }
-@keyframes tutPulse { 50% { outline-color: transparent; } }
-@media (prefers-reduced-motion: reduce) { .tutRing, .tutTile { animation: none; } }
 .campOpt:empty { display: none; }
 .campStars { display: flex; align-items: center; gap: 4px; align-self: end; min-width: 0; }
 .campStarLine { width: 2px; height: 20px; margin: 0 4px; background: var(--rule); flex: none; }
@@ -818,19 +800,15 @@ body.sandbox #palette.fly [data-tool] .lbl { display: inline; }
 /* Until the first place is up the page shows nothing but its ground (register 401). */
 html.booting body > :not(dialog[open]) { visibility: hidden; }
 /* One menu box (register 433): Campaign takes its own row, Puzzles and Sandbox share the next (registers 400, 418). */
-/* Campaign has the top row; Tutorial, Puzzles and Sandbox share the one below (register 521). */
+/* Campaign has the top row and Sandbox the one below, each as wide (registers 521, 955). */
 .menuSec { grid-template-columns: repeat(6, 1fr); }
 .menuSec > button { grid-column: span 2; padding-left: 4px; padding-right: 4px; white-space: nowrap; font-size: var(--t-m); }
-#menuCampaign { grid-column: 1 / -1; }
-/* With Puzzles in the campaign (register 651), Tutorial and Sandbox split the second row. */
-#menuTutorial, #menuSandbox { grid-column: span 3; }
+#menuCampaign, #menuSandbox { grid-column: 1 / -1; }
 
 /* The camera (register 408): Fit while zoomed in; the resize bars wait until the whole room shows. */
 /* The zoom strip sits just under the room's bottom right corner, in the band the resize bars keep, so it never covers a tile (register 781). */
 /* It clears the bottom resize bar, which a room at a whole-number scale can be narrow enough to reach (register 857). */
 .zoomBar { position: absolute; right: 0; top: 100%; margin-top: 24px; z-index: 3; display: flex; gap: 1px; }
-/* The tutorial's small rooms need no zoom, and the bar is one more thing to read before the first slide (register 819). */
-body.tutorial .zoomBar { display: none; }
 .zoomBar > button { height: 24px; min-height: 0; min-width: 30px; padding: 0 6px; margin: 0; line-height: 1; font-size: var(--t-s); box-shadow: none; }
 /* Replay keeps its slot while it waits, so Run and Test never shift when it shows (registers 679, 771). */
 body.play #campReplay { visibility: hidden; pointer-events: none; }
@@ -898,7 +876,6 @@ button:disabled .glyph.px { opacity: .45; }
 :where(button[data-icon]:not([hidden])) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding-left: 8px; padding-right: 8px; }
 .campReqs .mark .glyph { width: var(--mark); height: var(--mark); stroke-width: 3; }
 .campReqs .mark .glyph.px { width: var(--mark); height: var(--mark); }
-.tutBtns button[data-icon] { min-width: 40px; }
 
 /* Plan step 2: undo, redo and Reset beside the tools in a level. */
 .campHistory { display: flex; gap: 1px; }
@@ -927,12 +904,8 @@ body.campaign .campHistory > button { width: 32px; height: 28px; min-width: 0; m
 /* Plan step 4: the level number in the top bar, after Run and Test. */
 .campNum { font: 800 var(--t-l) var(--label-face, inherit); color: var(--soft); padding: 0 4px 0 0; min-width: 1.4em; text-align: center; }
 body:not(.campaign) .campNum { display: none; }
-body.tutorial .campNum { display: none; }
-/* The tutorial's bubble shows the stars it talks about (register 625). */
-.tutPic { display: flex; align-items: center; gap: 2px; margin-right: auto; }  /* in the button row, so the bubble's height never changes */
-.tutPic[hidden] { display: none; }
 header .campLast { order: 9; margin-left: auto; font-size: var(--t-s); white-space: nowrap; }
-body:not(.campaign) header .campLast, body.campaign.tutorial header .campLast { display: none; }
+body:not(.campaign) header .campLast { display: none; }
 
 /* The move minimum as a path and 4+ (register 546), counting during Run. */
 .moveDots { display: inline-flex; align-items: center; gap: 3px; vertical-align: -3px; }
@@ -1243,25 +1216,16 @@ body.sandbox #palette.fly [data-tool] { box-shadow: inset 0 0 0 var(--b) var(--f
 /* The tray is as tall as its tools, not as the window. */
 @media (min-width: 701px) { body.campaign:not(.sandbox) #tools { align-self: start; } }
 /* The lab's desk (register 883). The page is squared paper, a room is a thing lying on it with its own line and
-   shadow, and what the tutorial says is a note taped down: nothing on a level's page is a bare flat box. */
+   shadow: nothing on a level's page is a bare flat box. */
 body { background-image: linear-gradient(color-mix(in srgb, var(--ink) 6%, transparent) 2px, transparent 2px), linear-gradient(90deg, color-mix(in srgb, var(--ink) 6%, transparent) 2px, transparent 2px); background-size: 32px 32px; }
 .ring { box-shadow: 0 0 0 var(--b) var(--wall-line, var(--line)), var(--b2) var(--b2) 0 var(--b) color-mix(in srgb, var(--ink) 22%, transparent); }
-.tutBox { border-radius: 0; padding: 18px 14px 12px;
-  background: repeating-linear-gradient(180deg, transparent 0 21px, color-mix(in srgb, var(--ink) 9%, transparent) 21px 22px), var(--panel);
-  box-shadow: inset 0 0 0 var(--b) var(--line), inset 0 0 0 var(--b2) var(--line-edge), var(--b) var(--b) 0 color-mix(in srgb, var(--ink) 22%, transparent); }
-.tutBox::before { content: ''; position: absolute; left: 50%; top: -9px; width: 76px; height: 20px; margin-left: -38px; transform: rotate(-2deg);
-  background: color-mix(in srgb, var(--gold) 60%, var(--panel)); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--gold), var(--ink) 45%); opacity: .92; }
-.tutBox p { line-height: var(--hand-line, 22px); min-height: calc(3 * var(--hand-line, 22px)); }  /* three ruled lines, whatever the step says */
 /* Words sit on the paper's lines (register 884): each line of a note or a clipboard is ruled under its own words,
    so the two cannot drift apart. The sheet itself is plain paper. */
-.tutBox, .campBrief .campGoal { background: var(--panel); }
 .campBrief .campGoal { background: var(--sheet); }
-.tutBox p { background: linear-gradient(0deg, color-mix(in srgb, var(--ink) 14%, transparent) 2px, transparent 2px) 0 0 / 100% var(--hand-line, 22px); }
 .campBrief .campMain, .campBrief .campOpt li { background-image: linear-gradient(0deg, color-mix(in srgb, var(--ink) 14%, transparent) 2px, transparent 2px); padding-bottom: 3px; }
 /* What is written on paper is in the hand (register 890): a note, a clipboard's goals, a caption in the album. */
 :root { --hand-face: 'Hand', 'Departure', monospace; }
-.tutBox p, .tutBox small, .campBrief .campReqs li, .achList .achSay { font-family: var(--hand-face); font-size: var(--hand-size, 18px); font-weight: 400; letter-spacing: 0; }
-.tutBox small { opacity: .8; }
+.campBrief .campReqs li, .achList .achSay { font-family: var(--hand-face); font-size: var(--hand-size, 18px); font-weight: 400; letter-spacing: 0; }
 /* The whole-game pass (register 891): what the one frame and the hand had not reached yet. */
 /* A star kept from an earlier room is marked with a yellow marker, in every palette: the words under it stay readable. */
 .campBrief .campOpt li.kept { background-color: color-mix(in srgb, var(--gold) 38%, var(--sheet)); }
@@ -1276,7 +1240,7 @@ body.campaign #campVerdict { box-shadow: inset 0 0 0 var(--b) var(--line), inset
 /* On a phone the tools are a tray with the frame's line along its top. */
 @media (max-width: 700px) { body.campaign:not(.sandbox) #tools { box-shadow: 0 calc(-1 * var(--b)) 0 var(--line), 0 calc(-1 * var(--b2)) 0 var(--line-edge); } }
 /* A letter is the same drawing every time (register 892): no kerning, no ligatures, nothing smoothed between cells. */
-.tutBox p, .tutBox small, .campBrief .campReqs li, .achList .achSay, dialog.confirm > p, .slotBoard, .campVerdict { font-kerning: none; font-variant-ligatures: none; text-rendering: optimizeSpeed; -webkit-font-smoothing: none; font-synthesis: none; }
+.campBrief .campReqs li, .achList .achSay, dialog.confirm > p, .slotBoard, .campVerdict { font-kerning: none; font-variant-ligatures: none; text-rendering: optimizeSpeed; -webkit-font-smoothing: none; font-synthesis: none; }
 /* Icons in the hand's manner (register 900): one flat shape in its colour, deepened so it reads on paper. No ring
    round it, no lit edge, no shaded foot: at this size those were the bloat. */
 .glyph.px :is(.l, .h, .s) { display: none; }
@@ -1382,3 +1346,22 @@ body.sandbox header .spacer { display: none; }
 button.primary { --fill: var(--accent); --frame: var(--ink); color: var(--on-accent); }
 /* The tool's name and how to use it stay on one line, so a long hint never grows the tray (register 943). */
 @media (max-width: 700px) { #toolName { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
+
+/* Nudges (register 955): the one thing to do next pulses until it is done; a finger swipes across the room. */
+@keyframes nudge { 50% { box-shadow: inset 0 0 0 var(--b) var(--frame), 0 0 0 4px var(--accent); } }
+.nudge { animation: nudge 1.2s ease-in-out infinite; }
+@keyframes nudgeSwipe { 0% { translate: -60px 0; opacity: 0; } 20%, 70% { opacity: 1; } 100% { translate: 60px 0; opacity: 0; } }
+.nudgeHand { position: absolute; z-index: 5; left: 50%; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%; background: color-mix(in srgb, var(--ink) 35%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--paper) 70%, transparent); pointer-events: none; animation: nudgeSwipe 1.4s ease-in-out infinite; }
+.nudgeHand[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { .nudge, .nudgeHand { animation: none; } .nudge { box-shadow: inset 0 0 0 var(--b) var(--frame), 0 0 0 4px var(--accent); } }
+
+/* A shut card past the next one is blank (register 956): only the padlock, faint. */
+.campRow.blank { justify-content: center; align-items: center; }
+.campRow.blank > .campShut { opacity: .3; }
+/* A room with a name of its own, such as Build 0, is not called Level (register 955). */
+body.campaign:not(.sandbox) header .campNum[data-named]::before { content: none; }
+/* A menu button with nothing behind it yet keeps its place, unseen (registers 958, 959). */
+.menuCorner.shut { visibility: hidden; pointer-events: none; }
+/* Options (register 960): one row per setting, its name on the left and its button on the right. */
+dialog.options .optRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 6px 0; }
+dialog.options h3 { margin: 14px 0 0; }

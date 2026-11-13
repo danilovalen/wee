@@ -18,5 +18,5 @@ export const portrait = () => innerHeight > innerWidth;
 export const now = () => performance.now();
 
 // The bar's line when there is nothing to say: how to place and remove.
-// The hint line holds messages only; how to place and remove is behind ? and in the tutorial (register 730).
+// The hint line holds messages only; how to place and remove is behind ? (register 730).
 export const DEFAULT_HINT = '';

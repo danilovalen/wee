@@ -8,6 +8,7 @@ import { LEVELS } from '../level/campaign.js';
 import { CHALLENGES } from '../level/challenges.js';
 import { shownName, challengeName } from '../campaign/names.js';
 import { earnedList, available, owns, affords } from './wallet.js';
+import { allOpen } from './unlock.js';
 import { PALETTES, SKINS } from '../view/look.js';
 import { play } from './sound.js';
 import { caption } from './voice.js';
@@ -27,6 +28,9 @@ export function syncDots() {
   const s = seen();
   $('menuLooks').classList.toggle('dot', buyable().some(k => !s.looks.includes(k)));
   $('menuAchieve').classList.toggle('dot', [...doneIds()].some(id => !s.ach.includes(id)));
+  // Hidden until there is something behind them (registers 958, 959): an achievement earned, a look affordable or owned.
+  $('menuAchieve').classList.toggle('shut', !allOpen() && !doneIds().size);
+  $('menuLooks').classList.toggle('shut', !allOpen() && !buyable().length && !LOOKS.some(l => l.cost && owns(l.key, l.cost)));
 }
 // Opening Looks clears its dot (register 640); each look you can buy keeps its own until bought.
 export function sawLooks() { const s = seen(); s.looks = [...new Set([...s.looks, ...buyable()])]; keep(s); syncDots(); }

@@ -11,9 +11,9 @@ try {
   for (const [w, h] of [[393, 852], [1280, 800]]) {
     const p = await browser.newPage({ viewport: { width: w, height: h }, hasTouch: w < 500, isMobile: w < 500 });
     const errors = []; p.on('pageerror', e => errors.push(e.message));
-    await p.addInitScript(() => { window.__noTutorial = true; window.__wipe = true; });
+    await p.addInitScript(() => { window.__noTutorial = true; window.__wipe = true; if (!localStorage.getItem('wee.campaign')) localStorage.setItem('wee.campaign', JSON.stringify({ v: 5, last: null, levels: { 0: { beaten: true } } })); });
     await p.goto('http://localhost:5284/'); await p.waitForTimeout(1200);
-    const looks = await box(p, '#menuLooks'), lock = await box(p, '#menuUnlock');
+    const looks = await box(p, '#menuLooks'), lock = await box(p, '#menuOptions');
     await p.click('#menuCampaign'); await p.waitForTimeout(1200);
     const back = await box(p, '#campMenu');
     check(`${w}px: the menu's buttons sit where every page's bar puts them`, looks.join() === back.join() && lock[1] === back[1] && lock[3] === back[3] && w - (lock[0] + lock[2]) === back[0], `${looks} ${lock} ${back}`);

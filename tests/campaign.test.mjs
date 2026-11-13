@@ -68,9 +68,9 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const three = build(d, ['', '', '', '', 'G', 'G', 'G']);
   ok('a level that says 3 berries takes 3, and refuses a fourth', !placementErrors({ ...d, berries: 3 }, three).some(e => /berr/.test(e.msg)) && placementErrors({ ...d, berries: 3 }, build(d, ['', '', '', 'G', 'G', 'G', 'G'])).some(e => e.msg === 'This level takes at most 3 berries.'));
   ok('a level has no powers', Object.values(r.powers).every(p => !p));
-  const NUMBERED = LEVELS.filter(l => !l.tutorial);
-  ok('the tutorial comes first, then levels numbered from 1 in order, a hidden one after them (register 512)', LEVELS[0].id === 'tutorial' && NUMBERED.filter(l => !l.hidden).map(l => l.id).join() === NUMBERED.filter(l => !l.hidden).map((_, i) => String(i + 1)).join());
-  ok('every level but the tutorial starts 7x7', LEVELS.every(l => l.tutorial || l.size.join() === '7,7'));
+  const NUMBERED = LEVELS.filter(l => !l.intro);
+  ok('Build 0 comes first, then levels numbered from 1 in order, a hidden one after them (registers 512, 955)', LEVELS[0].id === '0' && LEVELS[0].intro && NUMBERED.filter(l => !l.hidden).map(l => l.id).join() === NUMBERED.filter(l => !l.hidden).map((_, i) => String(i + 1)).join());
+  ok('every level but Build 0 starts 7x7', LEVELS.every(l => l.intro || l.size.join() === '7,7'));
   // Through an open door already turns every switch on: every switch and door in a level is red.
 }
 { // Move: anything placed goes to another tile that can take it
@@ -161,9 +161,9 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
   const v = check(d, win);
   ok('a room in range wins', v.ok && v.won && v.length === 4, JSON.stringify(v.fail));
   // No level has a range any more: at least 4 moves for every level, and no most.
-  ok('no level sets a range; every level but the tutorial needs at least 4 moves', LEVELS.every(l => l.tutorial || (l.steps.range === undefined && l.steps.min === undefined && l.steps.max === undefined)));
-  { const t = level('tutorial'), r = roomOf(t), empty = check(t, r); r.cells[1 * r.w + 4] = 'wall'; const one = check(t, r);
-    ok('the tutorial room: empty it cannot be won; one block at its ringed tile wins it in 2 moves (register 512)', !empty.won && one.won && one.length === 2 && one.paths === 1, JSON.stringify([empty.won, one.length])); }
+  ok('no level sets a range; every level but Build 0 needs at least 4 moves', LEVELS.every(l => l.intro || (l.steps.range === undefined && l.steps.min === undefined && l.steps.max === undefined)));
+  { const t = level('0'), r = roomOf(t), empty = check(t, r); r.cells[1 * r.w + 4] = 'wall'; const one = check(t, r);
+    ok('Build 0: empty it cannot be won; one block wins it in 2 moves (registers 512, 955)', !empty.won && one.won && one.length === 2 && one.paths === 1, JSON.stringify([empty.won, one.length])); }
   const his11 = build(d, ['..##P#.', '.#.G...', '....#..', '#.....#', '...#...', '.#...#.', '.......']);
   const long = check(d, his11);
   ok('a long path wins: his 11-move level 1 room, once refused for passing 8', long.won && long.length === 11, JSON.stringify(long.fail));
@@ -560,7 +560,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
     const l = level(id), v = check(l, build(l, rows));
     ok(`level ${id} has a room meeting two side goals at once`, v.won && v.optional.find(o => o.id === 'mix').met, JSON.stringify(v.fail || v.optional));
   }
-  ok('every level the list shows has such a room (the tutorial has no side goals)', LEVELS.filter(l => !l.hidden && !l.tutorial).every(l => KNOWN.pair[l.id]));
+  ok('every level the list shows has such a room (Build 0 has one side goal)', LEVELS.filter(l => !l.hidden && !l.intro).every(l => KNOWN.pair[l.id]));
 }
 { // register 677: the inverted door is a door's tap now, so the level it first appears in must still need one
   const first = LEVELS.filter(listed).find(l => (KNOWN.small[l.id] || []).some(r => r.includes('I')));
@@ -571,7 +571,7 @@ ok('a new room is 7x7, upright or wide (register 430)', [false, true].every(tall
 // Register 731: unlocked, the levels off the plan join it in number order, never at the end.
 {
   const { listOrder, plan } = await import('../src/campaign/progression.js');
-  const extras = LEVELS.filter(d => !d.tutorial && !d.hidden && !listed(d));
+  const extras = LEVELS.filter(d => !d.intro && !d.hidden && !listed(d));
   const ids = listOrder(plan(), extras).map(e => e.def.id).filter(id => /^\d+$/.test(id)).map(Number);
   ok('unlocked, numbered levels run in number order (register 731)', ids.every((n, i) => !i || n > ids[i - 1]) && extras.every(d => ids.includes(+d.id) || !/^\d+$/.test(d.id)));
   ok('a hidden level is never among the extras', !extras.some(d => d.hidden));

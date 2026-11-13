@@ -4,7 +4,7 @@ const KEY = 'wee.campaign';
 
 export function progress() {
   try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.levels) return migrate(p); } catch { /* storage off */ }
-  return { last: null, levels: {}, v: 4 };
+  return { last: null, levels: {}, v: 5 };
 }
 // v2 (register 226): level 8 became level 7, so its saved room and stats move with it; the old
 // level 7's go, and the new level 8 starts empty. v3 (register 243, one day): a two-colour level 7
@@ -12,7 +12,7 @@ export function progress() {
 // its 7 becomes 11; earlier saves already number 7-10 that way.
 export function migrate(p) {
   const v = p.v || 1;
-  if (v >= 4) return p;
+  if (v >= 5) return p;
   if (v < 2) {
     const old8 = p.levels['8'];
     delete p.levels['7']; delete p.levels['8'];
@@ -27,9 +27,9 @@ export function migrate(p) {
     const l = +p.last;
     if (l === 7) p.last = '11'; else if (l >= 8 && l <= 11) p.last = String(l - 1);
   }
-  p.v = 4; write(p);
+  // v5 (register 955): Build 0 and Puzzle 0 replace the tutorial; a player who had started counts them done.
+  if (Object.values(p.levels).some(r => r && r.beaten) || p.levels.tutorial) for (const id of ['0', 'p0']) p.levels[id] ||= id === 'p0' ? { beaten: true, moves: 2 } : { beaten: true };
+  p.v = 5; write(p);
   return p;
 }
-// Whether a player opening Campaign should land in the tutorial (register 512): nothing beaten and the tutorial unseen.
-export const firstTime = p => !Object.values(p.levels || {}).some(r => r && r.beaten) && !(p.levels || {}).tutorial;
 export const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage off or full */ } };

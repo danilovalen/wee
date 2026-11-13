@@ -28,9 +28,9 @@ const isEl = (k, c) => ELEMENTS[k].cell === c || (!!ELEMENTS[k].kind && c.starts
 // A level's colours (def.colours, red when it names none). A one-way takes one only in a level
 // that names its colours (register 241); elsewhere it has none.
 export const coloursOf = def => def.colours || ['red'];
-// The levels the list shows: not a hidden one, not the tutorial (on the menu, register 521), and not one
+// The levels the list shows: not a hidden one, not Build 0 (its own row, register 955), and not one
 // with two colours, put away for now (register 525).
-export const listed = def => !def.hidden && !def.tutorial && coloursOf(def).length < 2;
+export const listed = def => !def.hidden && !def.intro && coloursOf(def).length < 2;
 // What a piece may come in: each of the level's colours, and the first two together ('red|blue')
 // where def.twoColour names the piece, 'also' beside the single ones or 'only' (register 316).
 export function colouringsOf(def, el) {
@@ -57,7 +57,7 @@ export function roomOf(def) {
   if (def.room) return structuredClone(def.room);  // a challenge's built room (register 562)
   const [w, h] = def.size, l = emptyLevel(w, h);
   for (const p of Object.keys(l.powers)) l.powers[p] = !!(def.powers || []).includes(p);
-  // A level may place its start and goal (the tutorial, register 512); otherwise one tile in from opposite corners.
+  // A level may place its start and goal (Build 0, registers 512, 955); otherwise one tile in from opposite corners.
   const [sx, sy] = def.start || [1, 1], [gx, gy] = def.goal || [w - 2, h - 2];
   l.start = { x: sx, y: sy };
   l.cells[gy * w + gx] = 'goal';

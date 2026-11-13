@@ -1,6 +1,6 @@
 // Achievements (register 558): each gives stars toward Looks. Worked out from the saved progress and the
 // pieces used, so there is nothing more to save. levels: the save's records; used: the tools used.
-import { builders } from './progression.js';
+import { builders, plan, INTRO } from './progression.js';
 import { CHALLENGES } from '../level/challenges.js';
 import { optionalGoals } from './rules.js';
 import { SCORE_STEPS } from './score.js';
@@ -10,6 +10,8 @@ const allSide = (levels, def) => optionalGoals(def).length > 0 && optionalGoals(
 // taught: the tools the campaign has a piece for. extra: feats (achievement id to the level it was earned
 // on), peak (the best count toward a goal so far), spent (stars spent on Looks), registers 629-639, and
 // score (the global score, register 839).
+// None comes on its own from the first two levels (register 958): the first is Level 3.
+export const FIRST = 3;
 export const SPEND = 10;
 export const LONG = 12;
 export const SMALL = 5;
@@ -22,7 +24,7 @@ export function achievements(levels, used, taught, extra = {}) {
   const feats = extra.feats || {}, peak = extra.peak || {}, spent = extra.spent || 0, score = extra.score || 0;
   const feat = (id, icon, name, text, of, at) => ({ id, icon, name, text, stars: 1, done: id in feats, where: feats[id] ?? null, ...(of ? { of, at: Math.min(of, at || 0) } : {}) });
   return [
-    { id: 'first', icon: 'ach-first', name: 'First berry', text: 'Beat Level 1.', stars: 1, done: b.length > 0 && beaten(levels, b[0].id) },
+    { id: 'first', icon: 'ach-first', name: 'First berry', text: `Beat Level ${FIRST}.`, stars: 1, done: b.length >= FIRST && beaten(levels, b[FIRST - 1].id) },
     { id: 'half', icon: 'ach-half', name: 'Halfway', text: `Beat ${half} levels.`, stars: 2, done: won >= half, of: half, at: Math.min(half, won) },
     { id: 'all', icon: 'ach-all', name: 'Every room', text: `Beat all ${b.length} levels.`, stars: 3, done: won === b.length, of: b.length, at: won },
     { id: 'shelf', icon: 'ach-shelf', name: 'Full shelf', text: 'Earn every side star on one level.', stars: 1, done: b.some(d => allSide(levels, d)) },
@@ -40,3 +42,10 @@ export function achievements(levels, used, taught, extra = {}) {
   ];
 }
 export const achievementStars = (levels, used, taught, extra) => achievements(levels, used, taught, extra).reduce((n, a) => n + (a.done ? a.stars : 0), 0);
+// Every star the campaign can give (register 959): a win and each side goal on every room the plan opens,
+// Build 0 and Puzzle 0 included, plus every achievement's. Looks cost exactly this much in all.
+const roomStars = d => d.puzzle ? 2 : 1 + optionalGoals(d).length;
+export function maxStars() {
+  const rooms = [INTRO.build, INTRO.puzzle, ...plan().flatMap(r => [r.def, r.side, r.twin])].filter(Boolean);
+  return rooms.reduce((n, d) => n + roomStars(d), 0) + achievements({}, new Set(), []).reduce((n, a) => n + a.stars, 0);
+}

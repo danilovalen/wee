@@ -15,31 +15,31 @@ export const PALETTES = [
   // plum walls, a plum ink for words, and every piece in a bright colour with a darker shade of its own hue.
   { id: 'day', name: 'Crayon', cost: 0, colors: ['#ebe3cd', '#f7f1de', '#5c6296', '#a3ade6', '#bcc4f0', '#d6dbf8', '#ffffff', '#4a3526', '#ff5c7a', '#c23a58', '#ff8436', '#c9571a', '#f0b400', '#a87c1e', '#5fdc7a', '#2fa055', '#4db8ff', '#2a7fd0', '#9b7bff', '#5d43d6'] },
   // Neon lab takes the place Pocket had (registers 812, 813): its four greens hid the button and wire colours.
-  { id: 'neon', name: 'Neon lab', cost: 2, colors: NEON },
+  { id: 'neon', name: 'Neon lab', cost: 4, colors: NEON },
   // Grue (register 815): Pocket's green and blue-green as the room and the page, every piece in full colour.
-  { id: 'grue', name: 'Grue', cost: 3, colors: ['#081820', '#0f2a2c', '#1c3f3c', '#346856', '#4a7e66', '#6a9e6c', '#e0f8d0', '#e0f8d0', '#ff6b6b', '#b03a46', '#ffa04d', '#c46a22', '#ffd84d', '#b8902a', '#b8f05a', '#6aa82a', '#5ad8ff', '#2a8fb8', '#c08cff', '#7a4fc8'] },
-  { id: 'pico8', name: 'Fantasy', cost: 4, colors: ['#000000', '#1d2b53', '#000000', '#5f574f', '#83769c', '#83769c', '#fff1e8', '#fff1e8', '#ff004d', '#7e2553', '#ffa300', '#ab5236', '#ffec27', '#ab5236', '#00e436', '#008751', '#29adff', '#1d2b53', '#ff77a8', '#7e2553'] },
+  { id: 'grue', name: 'Grue', cost: 5, colors: ['#081820', '#0f2a2c', '#1c3f3c', '#346856', '#4a7e66', '#6a9e6c', '#e0f8d0', '#e0f8d0', '#ff6b6b', '#b03a46', '#ffa04d', '#c46a22', '#ffd84d', '#b8902a', '#b8f05a', '#6aa82a', '#5ad8ff', '#2a8fb8', '#c08cff', '#7a4fc8'] },
+  { id: 'pico8', name: 'Fantasy', cost: 7, colors: ['#000000', '#1d2b53', '#000000', '#5f574f', '#83769c', '#83769c', '#fff1e8', '#fff1e8', '#ff004d', '#7e2553', '#ffa300', '#ab5236', '#ffec27', '#ab5236', '#00e436', '#008751', '#29adff', '#1d2b53', '#ff77a8', '#7e2553'] },
   // Sorbet (809): pastel ice-cream colours on a deep plum room.
-  { id: 'sorbet', name: 'Sorbet', cost: 5, colors: ['#1c1626', '#2a2238', '#3e3352', '#5c4f73', '#75678e', '#8f82a8', '#f6eeff', '#fff6fb', '#ff8fc0', '#b8608a', '#ffa07a', '#c26a48', '#fff09a', '#c2a24a', '#a8efb8', '#5fae73', '#97e3e8', '#4fa4ab', '#d0b3ff', '#8f6fc6'] },
-  { id: 'cga', name: 'CGA', cost: 7, colors: ['#000000', '#0000aa', '#000000', '#555555', '#555555', '#aaaaaa', '#ffffff', '#ffffff', '#ff5555', '#aa0000', '#aa5500', '#555555', '#ffff55', '#aa5500', '#55ff55', '#00aa00', '#55ffff', '#00aaaa', '#ff55ff', '#aa00aa'] },
+  { id: 'sorbet', name: 'Sorbet', cost: 9, colors: ['#1c1626', '#2a2238', '#3e3352', '#5c4f73', '#75678e', '#8f82a8', '#f6eeff', '#fff6fb', '#ff8fc0', '#b8608a', '#ffa07a', '#c26a48', '#fff09a', '#c2a24a', '#a8efb8', '#5fae73', '#97e3e8', '#4fa4ab', '#d0b3ff', '#8f6fc6'] },
+  { id: 'cga', name: 'CGA', cost: 13, colors: ['#000000', '#0000aa', '#000000', '#555555', '#555555', '#aaaaaa', '#ffffff', '#ffffff', '#ff5555', '#aa0000', '#aa5500', '#555555', '#ffff55', '#aa5500', '#55ff55', '#00aa00', '#55ffff', '#00aaaa', '#ff55ff', '#aa00aa'] },
   // Lemonade (809): a light palette, lemon paper with candy pieces; void is the page, the walls darker than the floor.
-  { id: 'lemonade', name: 'Lemonade', cost: 8, colors: ['#fffbe8', '#fff2c2', '#6e5b38', '#8a7448', '#a68f5c', '#c9b072', '#fffdf2', '#4a3b26', '#f0508c', '#b83464', '#ff7d3a', '#c4521a', '#e8a200', '#a07010', '#7fd17a', '#4f9a4c', '#5cc4d6', '#2f8ea0', '#a58cf0', '#6f58c0'] },
-  { id: 'c64', name: 'Breadbin', cost: 10, colors: ['#000000', '#352879', '#000000', '#626262', '#777777', '#898989', '#ffffff', '#ffffff', '#cb7e75', '#9f4e44', '#d06a9a', '#8a3f66', '#c9d487', '#6d5412', '#5cab5e', '#3a7a3c', '#6abfc6', '#50459b', '#887ecb', '#50459b'] },
+  { id: 'lemonade', name: 'Lemonade', cost: 15, colors: ['#fffbe8', '#fff2c2', '#6e5b38', '#8a7448', '#a68f5c', '#c9b072', '#fffdf2', '#4a3b26', '#f0508c', '#b83464', '#ff7d3a', '#c4521a', '#e8a200', '#a07010', '#7fd17a', '#4f9a4c', '#5cc4d6', '#2f8ea0', '#a58cf0', '#6f58c0'] },
+  { id: 'c64', name: 'Breadbin', cost: 18, colors: ['#000000', '#352879', '#000000', '#626262', '#777777', '#898989', '#ffffff', '#ffffff', '#cb7e75', '#9f4e44', '#d06a9a', '#8a3f66', '#c9d487', '#6d5412', '#5cab5e', '#3a7a3c', '#6abfc6', '#50459b', '#887ecb', '#50459b'] },
   // A light palette: the paper is the page, ink the text.
-  { id: 'paper', name: 'Paper', cost: 14, colors: ['#f3efe6', '#e9e3d6', '#5d574f', '#77706a', '#948c80', '#b9b0a0', '#fbf9f4', '#3d3c45', '#e85a78', '#a83a52', '#ee8244', '#b0562a', '#dba520', '#8f6e1e', '#8cbf63', '#5c8f3a', '#3f9fd0', '#27688f', '#a070d8', '#6a469a'] },
+  { id: 'paper', name: 'Paper', cost: 26, colors: ['#f3efe6', '#e9e3d6', '#5d574f', '#77706a', '#948c80', '#b9b0a0', '#fbf9f4', '#3d3c45', '#e85a78', '#a83a52', '#ee8244', '#b0562a', '#dba520', '#8f6e1e', '#8cbf63', '#5c8f3a', '#3f9fd0', '#27688f', '#a070d8', '#6a469a'] },
 ];
 
 // The objects that have an alternate skin, each with the sprites it swaps and its cost.
 export const SKINS = [
-  { id: 'hero', name: 'Hero', cost: 1, sprites: ['blob'] },
-  { id: 'berry', name: 'Berry', cost: 2, sprites: ['berry'] },
-  { id: 'block', name: 'Block', cost: 3, sprites: ['wallFace'] },
-  { id: 'box', name: 'Box', cost: 5, sprites: ['box'] },
-  { id: 'door', name: 'Door', cost: 6, sprites: ['doorShut', 'doorOpen'] },
-  { id: 'switch', name: 'Switch', cost: 8, sprites: ['switchOff', 'switchOn'] },
-  { id: 'button', name: 'Button', cost: 9, sprites: ['buttonUp', 'buttonDown'] },
-  { id: 'spring', name: 'Spring', cost: 10, sprites: ['spring', 'springArm'] },
-  { id: 'laser', name: 'Laser', cost: 12, sprites: ['laser'] },
+  { id: 'hero', name: 'Hero', cost: 2, sprites: ['blob'] },
+  { id: 'berry', name: 'Berry', cost: 4, sprites: ['berry'] },
+  { id: 'block', name: 'Block', cost: 5, sprites: ['wallFace'] },
+  { id: 'box', name: 'Box', cost: 9, sprites: ['box'] },
+  { id: 'door', name: 'Door', cost: 11, sprites: ['doorShut', 'doorOpen'] },
+  { id: 'switch', name: 'Switch', cost: 15, sprites: ['switchOff', 'switchOn'] },
+  { id: 'button', name: 'Button', cost: 16, sprites: ['buttonUp', 'buttonDown'] },
+  { id: 'spring', name: 'Spring', cost: 18, sprites: ['spring', 'springArm'] },
+  { id: 'laser', name: 'Laser', cost: 22, sprites: ['laser'] },
 ];
 
 const KEY = 'wee.look';

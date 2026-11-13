@@ -3,7 +3,7 @@
 // menu's room is drawn on whole screen pixels with a line where its walls meet open floor.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, opt } from './lib.mjs';
 
 const { check, done } = suite('look');
 const PORT = 5283;
@@ -115,12 +115,12 @@ try {
   // The clipboard's goals are lines on its paper: the main goal has no bar of its own and a side goal is no chip.
   const lines = await p.evaluate(() => { const m = getComputedStyle(document.querySelector('.campBrief .campMain')), o = document.querySelector('.campBrief .campOpt li'), c = o ? getComputedStyle(o) : null; return { bar: m.boxShadow, chip: c ? c.boxShadow + '/' + c.borderTopLeftRadius : 'none/0px' }; });
   check('a goal on the clipboard is a line on its paper, not a bar or a chip', lines.bar === 'none' && lines.chip === 'none/0px', JSON.stringify(lines));
-  // Words sit on their lines (register 884): each goal is ruled under itself, and a note's rule repeats with its line height.
-  const ruled = await p.evaluate(() => { const m = getComputedStyle(document.querySelector('.campBrief .campMain')), t = getComputedStyle(document.querySelector('#tutBox p')); return { goal: /gradient/.test(m.backgroundImage) ? '2px' : 'none', note: t.backgroundSize.endsWith(t.lineHeight) && /gradient/.test(t.backgroundImage) }; });
-  check('a goal is ruled under its own words, and a note\'s lines keep step with its text', ruled.goal === '2px' && ruled.note, JSON.stringify(ruled));
+  // Words sit on their lines (register 884): each goal is ruled under itself.
+  const ruled = await p.evaluate(() => { const m = getComputedStyle(document.querySelector('.campBrief .campMain')); return { goal: /gradient/.test(m.backgroundImage) ? '2px' : 'none' }; });
+  check('a goal is ruled under its own words', ruled.goal === '2px', JSON.stringify(ruled));
   // What is written on paper is in the hand (register 890), loaded from the repo's own font file.
-  const hand = await p.evaluate(async () => { await document.fonts.load("18px 'Hand'"); const f = e => getComputedStyle(document.querySelector(e)); return { note: f('#tutBox p').fontFamily, goal: f('.campBrief .campReqs li').fontFamily, size: f('.campBrief .campReqs li').fontSize, loaded: document.fonts.check("18px 'Hand'") }; });
-  check('a note and a goal are written in the hand, at a whole step of its grid', /^"?Hand/.test(hand.note) && /^"?Hand/.test(hand.goal) && hand.size === '18px' && hand.loaded, JSON.stringify(hand));
+  const hand = await p.evaluate(async () => { await document.fonts.load("18px 'Hand'"); const f = e => getComputedStyle(document.querySelector(e)); return { goal: f('.campBrief .campReqs li').fontFamily, size: f('.campBrief .campReqs li').fontSize, loaded: document.fonts.check("18px 'Hand'") }; });
+  check('a goal is written in the hand, at a whole step of its grid', /^"?Hand/.test(hand.goal) && hand.size === '18px' && hand.loaded, JSON.stringify(hand));
   // Icons are flat and tools unstretched (registers 900, 902): no ring or lit edge on an icon, and a tool's
   // picture has one canvas pixel to each page pixel.
   const sharp = await p.evaluate(() => { const g = document.querySelector('#campRun .glyph.px .l'), c = document.querySelector('#palette canvas, #campTools canvas'); return { ring: g ? getComputedStyle(g).display : 'missing', canvas: c ? c.width + '/' + getComputedStyle(c).width : '' }; });
@@ -135,9 +135,9 @@ try {
     check('the way back, its icon, the title\'s type and the header are the same on the level list and in a level, and a level\'s title is in the middle (registers 911, 914)', inLevel.back === inList.back && inLevel.head === inList.head && inLevel.look === inList.look && inLevel.title, JSON.stringify({ inLevel, inList }));
     await p.click('.campRow[data-level]'); await p.waitForTimeout(600);
   }
-  // The desk (register 883): the room's ring has its own line and shadow, and the tutorial's note has the frame.
-  const desk = await p.evaluate(() => { const n = s => (getComputedStyle(document.querySelector(s)).boxShadow.match(/rgb/g) || []).length; return { ring: n('#ring'), note: n('#tutBox'), page: getComputedStyle(document.body).backgroundImage !== 'none' }; });
-  check('the room lies on squared paper with a line and a shadow, and the tutorial is a framed note', desk.ring >= 2 && desk.note >= 3 && desk.page, JSON.stringify(desk));
+  // The desk (register 883): the room's ring has its own line and shadow.
+  const desk = await p.evaluate(() => { const n = s => (getComputedStyle(document.querySelector(s)).boxShadow.match(/rgb/g) || []).length; return { ring: n('#ring'), page: getComputedStyle(document.body).backgroundImage !== 'none' }; });
+  check('the room lies on squared paper with a line and a shadow', desk.ring >= 2 && desk.page, JSON.stringify(desk));
   // On a wide window the tools are one framed tray of full-size buttons beside the room.
   const wide = await browser.newPage({ viewport: { width: 1100, height: 900 } });
   await wide.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; });
@@ -150,7 +150,7 @@ try {
   await wide.close();
   // Who's playing: the row that is picked keeps the frame, in the accent.
   await p.goto(`http://localhost:${PORT}/index.html`); await p.waitForTimeout(500);
-  await p.click('#menuSlot'); await p.waitForTimeout(400);
+  await opt(p, 'menuSlot'); await p.waitForTimeout(400);
   const whoBare = await bare(), picked = await p.evaluate(() => !!document.querySelector('.slotRow.on'));
   check('every control on Who\'s playing wears the frame, the picked row too', picked && !whoBare.length, picked + ' ' + whoBare.join(' '));
   check('nothing threw', !errors.length, errors.join(' | '));

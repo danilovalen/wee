@@ -8,7 +8,8 @@ const { check, done } = suite('achieve');
 const PORT = 5276;
 const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const WIN = ['P.#.#', '.....', '.###.', '.#...', '.#..G'];
+// Level 3's known win (tests/knownRooms.mjs): the first achievement is Level 3 now (register 958).
+const WIN = ['P.#.#', '..###', '#..#.', 'Dt...', '..t#G'];
 try {
   const p = await browser.newPage({ viewport: { width: 393, height: 852 } });
   const errors = []; p.on('pageerror', e => errors.push(e.message));
@@ -16,21 +17,22 @@ try {
   await p.goto(`http://localhost:${PORT}/index.html`); await p.waitForTimeout(700);
   const dot = id => p.$eval('#' + id, b => b.classList.contains('dot'));
   check('on a fresh save neither menu button has a dot', !(await dot('menuAchieve')) && !(await dot('menuLooks')));
-  await p.click('#menuAchieve'); await p.waitForTimeout(300);
-  check('the menu\'s corner opens Achievements', await p.$eval('#achBox', d => d.open) && (await p.evaluate(() => location.hash)) === '#/achievements');
+  // A fresh save has no Achievements button yet (register 958): the page opens by its address.
+  await p.evaluate(() => { location.hash = '#/achievements'; }); await p.waitForTimeout(300);
+  check('the Achievements page opens', await p.$eval('#achBox', d => d.open) && (await p.evaluate(() => location.hash)) === '#/achievements');
   const rows = await p.$$eval('#achList li', ls => ls.map(l => ({ id: l.dataset.achievement, done: l.classList.contains('done'), icon: l.querySelector('.achBadge > svg').innerHTML, slot: !!l.querySelector('.achSlot svg') })));
   check('every achievement is listed, none done yet', rows.length >= 14 && rows.every(r => !r.done), rows.length);
   check('each has its own picture and a star slot (register 639)', new Set(rows.map(r => r.icon)).size === rows.length && rows.every(r => r.slot));
   check('the seven new ones are there (registers 630-636)', ['cashback', 'moveit', 'oneshot', 'gateway', 'guardrails', 'deadly', 'silver'].every(id => rows.some(r => r.id === id)));
   await p.click('#achMenu'); await p.waitForTimeout(300);
 
-  // A real win on Level 1: its popups wait for the robot, then come one after the other.
-  await p.evaluate(async () => { const { builders } = await import('/src/campaign/progression.js'); (await import('/src/app/nav.js')).go('level', builders()[0].id); });
+  // A real win on Level 3, levels 1 and 2 beaten before: its popups wait for the robot, then come one after the other.
+  await p.evaluate(async () => { const { builders } = await import('/src/campaign/progression.js'), b = builders(), win = { beaten: true, best: { win: 4 }, goals: {} }; localStorage.setItem('wee.campaign', JSON.stringify({ v: 5, last: null, levels: { 0: { beaten: true }, [b[0].id]: win, [b[1].id]: win } })); (await import('/src/app/nav.js')).go('level', b[2].id); });
   await p.waitForTimeout(600);
   await p.evaluate(rows => {
     const l = window.wee.blank(rows[0].length, rows.length);
     l.start = null; for (const k of Object.keys(l.powers)) l.powers[k] = false;
-    rows.forEach((row, y) => [...row].forEach((c, x) => { if (c === '#') l.cells[y * l.w + x] = 'wall'; if (c === 'G') l.cells[y * l.w + x] = 'goal'; if (c === 'P') l.start = { x, y }; }));
+    rows.forEach((row, y) => [...row].forEach((c, x) => { if (c === '#') l.cells[y * l.w + x] = 'wall'; if (c === 'G') l.cells[y * l.w + x] = 'goal'; if (c === 'D') l.cells[y * l.w + x] = 'door:red'; if (c === 't') l.cells[y * l.w + x] = 'toggle:red'; if (c === 'P') l.start = { x, y }; }));
     window.wee.loadLevel(l);
   }, WIN);
   await p.evaluate(() => { window.__toasts = []; new MutationObserver(() => { const t = document.getElementById('toast'); if (!t.hidden) window.__toasts.push(t.querySelector('b')?.textContent); }).observe(document.getElementById('toast'), { childList: true }); });
@@ -43,7 +45,7 @@ try {
   check('the popup sits on top, over the win card', top === true, String(top));
   await p.waitForFunction(() => document.getElementById('toast').hidden, null, { timeout: 6000 });
   const seen = await p.evaluate(() => window.__toasts);
-  check('beating Level 1 pops First berry, then once that the stars cover a look (register 627)', seen[0] === 'First berry' && seen.at(-1) === 'New look', JSON.stringify(seen));
+  check('beating Level 3 pops First berry, then once that the stars cover a look (registers 627, 958)', seen[0] === 'First berry' && seen.at(-1) === 'New look', JSON.stringify(seen));
 
   // The dots: both buttons have one, each cleared by opening its page.
   await p.evaluate(() => document.getElementById('winBox').open && document.getElementById('winBox').close());

@@ -2,7 +2,7 @@
 // tester's extras, puts a badge in the top bar, writes nothing to saved progress, and stays on after a reload.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, opt } from './lib.mjs';
 import { LEVELS } from '../src/level/campaign.js';
 import { listed } from '../src/campaign/rules.js';
 
@@ -10,7 +10,7 @@ const { check, done } = suite('unlock');
 const PORT = 5273;
 const server = await serve(PORT);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const hidden = LEVELS.filter(l => !listed(l) && !l.tutorial).map(l => l.id);
+const hidden = LEVELS.filter(l => !listed(l) && !l.intro).map(l => l.id);
 try {
   const p = await browser.newPage({ viewport: { width: 393, height: 800 } });
   const errors = []; p.on('pageerror', e => errors.push(e.message));
@@ -21,10 +21,16 @@ try {
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
   check('there are hidden levels to unlock', hidden.length > 0, hidden.join());
   check('locked, the list leaves them out', (await rows()).every(id => !hidden.includes(id)));
-  // The floor plan's locks (registers 558, 616, 673): a fresh player has the first three builder levels open, and no side room.
-  const shut = await p.$$eval('#campList li.main .campRow', bs => bs.map(b => [b.dataset.level, b.disabled]));
-  const sides = await p.$$eval('#campList li.side .campRow', bs => bs.map(b => b.disabled));
-  check('a fresh player can open the first three levels; the rest, and every side room, are shut', shut.length > 4 && shut.slice(0, 3).every(([, off]) => !off) && shut.slice(3).every(([, off]) => off) && sides.length > 0 && sides.every(Boolean), JSON.stringify(shut.slice(0, 5)));
+  // The floor plan's locks (registers 558, 616, 673, 955): a fresh player has Build 0 and Puzzle 0 open and
+  // nothing else; once Build 0 is beaten, the first three builder levels open, and still no side room.
+  const fresh = await p.$$eval('#campList .campRow', bs => bs.map(b => [b.dataset.level, b.disabled]));
+  check('a fresh player can open Build 0 and Puzzle 0 and nothing else (register 955)', fresh.length > 4 && fresh[0].join() === '0,false' && fresh[1].join() === 'p0,false' && fresh.slice(2).every(([, off]) => off), JSON.stringify(fresh.slice(0, 4)));
+  await p.evaluate(() => { const k = 'wee.campaign', s = JSON.parse(localStorage.getItem(k) || '{"levels":{},"v":5}'); s.levels['0'] = { beaten: true }; s.v = 5; localStorage.setItem(k, JSON.stringify(s)); location.hash = '#/levels'; });
+  await p.reload(); await p.waitForTimeout(700);
+  await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
+  const shut = await p.$$eval('#campList li.main .campRow:not([data-level="0"])', bs => bs.map(b => [b.dataset.level, b.disabled]));
+  const sides = await p.$$eval('#campList li.side .campRow:not([data-level="p0"])', bs => bs.map(b => b.disabled));
+  check('with Build 0 beaten, the first three levels open; the rest, and every side room, are shut', shut.length > 4 && shut.slice(0, 3).every(([, off]) => !off) && shut.slice(3).every(([, off]) => off) && sides.length > 0 && sides.every(Boolean), JSON.stringify(shut.slice(0, 5)));
   await p.click(`#campList [data-level="${shut[0][0]}"]`); await p.waitForTimeout(500);
   check('an unbeaten level shows no side goals yet', await p.$$eval('.campReqs .optional', o => o.length === 0));
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
@@ -33,12 +39,12 @@ try {
   const shownExtras = () => p.evaluate(ids => ids.filter(id => { const e = document.querySelector(id); return e && getComputedStyle(e).display !== 'none'; }), extras);
   check('locked, Debug, Copy report, Download, Import and Export all are hidden (register 780)', (await shownExtras()).length === 0, (await shownExtras()).join());
   // Turning it on asks first (register 818); Cancel leaves it off.
-  await p.click('#menuUnlock'); await p.waitForTimeout(150);
+  await opt(p, 'menuUnlock'); await p.waitForTimeout(150);
   check('turning dev mode on asks first', await p.isVisible('#devBox') && /unlocks everything/.test(await p.textContent('#devBox')) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'false');
   await p.click('#devNo'); await p.waitForTimeout(150);
   check('Cancel leaves it off', !(await p.isVisible('#devBox')) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'false');
   const beforeDev = await p.evaluate(() => localStorage.getItem('wee.campaign'));
-  await p.click('#menuUnlock'); await p.click('#devYes'); await p.waitForLoadState('load'); await p.waitForTimeout(900);
+  await opt(p, 'menuUnlock'); await p.click('#devYes'); await p.waitForLoadState('load'); await p.waitForTimeout(900);
   check('in dev mode they come back', (await shownExtras()).length === extras.length, (await shownExtras()).join());
   check('the corner button says it is on', (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'true');
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
@@ -62,7 +68,7 @@ try {
   await p.evaluate(() => { location.hash = '#/'; }); await p.waitForTimeout(400);
   // Register 835: whatever was won with every level open, locking again brings back what you had.
   await p.evaluate(() => localStorage.setItem('wee.campaign', '{"v":4,"last":null,"levels":{"won-in-dev":{"won":true}},"owned":[],"spent":0}'));
-  await p.click('#menuUnlock'); await p.waitForLoadState('load'); await p.waitForTimeout(900); await p.reload(); await p.waitForTimeout(800);
+  await opt(p, 'menuUnlock'); await p.waitForLoadState('load'); await p.waitForTimeout(900); await p.reload(); await p.waitForTimeout(800);
   check('locking again brings back the progress you had, not what was won unlocked (register 835)', (await p.evaluate(() => localStorage.getItem('wee.campaign'))) === beforeDev, String(await p.evaluate(() => localStorage.getItem('wee.campaign'))).slice(0, 80));
   await p.evaluate(() => { location.hash = '#/levels'; }); await p.waitForTimeout(500);
   check('locked again, it stays locked after a reload', (await rows()).every(id => !hidden.includes(id)) && (await p.getAttribute('#menuUnlock', 'aria-pressed')) === 'false' && (await shownExtras()).length === 0);

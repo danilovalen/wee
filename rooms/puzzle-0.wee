@@ -1,0 +1,50 @@
+{
+ "format": "wee-level",
+ "version": 1,
+ "name": "Puzzle 0",
+ "w": 5,
+ "h": 5,
+ "cells": [
+  "",
+  "",
+  "wall",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "wall",
+  "",
+  "",
+  "",
+  "wall",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "wall",
+  "goal",
+  ""
+ ],
+ "start": {
+  "x": 2,
+  "y": 2
+ },
+ "entities": [],
+ "powers": {
+  "boomerang": false,
+  "dive": false,
+  "laser": false,
+  "cycle": false,
+  "swim": false,
+  "light": false,
+  "armored": false
+ },
+ "clock": "tile",
+ "puzzleSlot": 0
+}

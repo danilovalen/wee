@@ -7,7 +7,7 @@ import { splitRoom } from '../level/room.js';
 import { allShortest } from '../campaign/robot.js';
 import { $ } from './dom.js';
 import { place, go, back, up } from './nav.js';
-import { PUZZLES } from '../campaign/progression.js';
+import { PUZZLES, INTRO } from '../campaign/progression.js';
 import { progress, write } from './progress.js';
 import { glyph } from './glyphs.js';
 
@@ -29,7 +29,7 @@ async function listPuzzles() {
   }));
 }
 // A campaign puzzle (register 651): its room by id, played by hand like any puzzle, back to the level list.
-const authored = id => PUZZLES.find(p => p && p.id === id);
+const authored = id => [INTRO.puzzle, ...PUZZLES].find(p => p && p.id === id);
 function play(r, inCampaign = false) {
   const { level } = splitRoom(r), found = allShortest(level);
   S.puzzle = { id: r.id, fewest: found.status === 'solved' ? found.length : null, campaign: inCampaign };

@@ -11,6 +11,8 @@ import { PLACING, REMOVING } from './names.js';
 // A room may name its slot instead (puzzleSlot), keeping a name of its own: Pushback is puzzle 5, Heist 6 (759, 776).
 const authored = n => { const t = TEMPLATES.find(r => r.name === `Puzzle ${n}` || r.level.puzzleSlot === n); return t ? { id: 'p' + n, name: t.name, puzzle: true, room: t.level } : null; };
 export const PUZZLES = Array.from({ length: 12 }, (_, i) => authored(i + 1));
+// The first row (register 955): Build 0 and Puzzle 0, open from the start; Build 0 opens Level 1.
+export const INTRO = { build: LEVELS.find(d => d.intro) || null, puzzle: authored(0) };
 export const builders = () => LEVELS.filter(listed);
 // The side room after the k-th builder level (1-based), or null.
 export const sideRoom = k => (k % 2 ? PUZZLES[(k - 1) / 2] : PLACING[k / 2 - 1]) || null;
@@ -27,7 +29,9 @@ const beaten = (p, def) => !!(p.levels && p.levels[def.id] && p.levels[def.id].b
 // beaten. Levels outside the plan stay open.
 export const AHEAD = 3;
 export function isOpen(id, p) {
+  if (id === INTRO.build?.id || id === INTRO.puzzle?.id) return true;
   const b = builders(), i = b.findIndex(d => d.id === id);
+  if (i >= 0 && INTRO.build && !beaten(p, INTRO.build)) return false;
   if (i >= 0) return i < AHEAD + b.reduce((f, d, k) => beaten(p, d) ? k + 1 : f, 0);
   const k = plan().findIndex(r => (r.side && r.side.id === id) || (r.twin && r.twin.id === id));
   return k < 0 || beaten(p, b[k]);

@@ -5,7 +5,7 @@
 import { LEVELS } from '../level/campaign.js';
 import { CHALLENGES } from '../level/challenges.js';
 import { unlocked, allOpen } from './unlock.js';
-import { plan, builders, isOpen, sideGoalsOpen, listOrder } from '../campaign/progression.js';
+import { plan, builders, isOpen, sideGoalsOpen, listOrder, INTRO } from '../campaign/progression.js';
 import { roomOf, coloursOf, placementErrors, check, optionalGoals, listed, placed } from '../campaign/rules.js';
 import { markUsed } from './known.js';
 import { featsOf, record } from '../campaign/feats.js';
@@ -23,7 +23,7 @@ import { buildMenuScene } from './menuScene.js';
 import { buildLogo } from './logo.js';
 import { forgetRun } from './replay.js';
 import { madeLevel } from './made.js';
-import { progress, write, firstTime } from './progress.js';
+import { progress, write } from './progress.js';
 import { postScore, tick } from './board.js';
 import { slotNow } from './slots.js';
 import { globalScore, levelStars } from '../campaign/score.js';
@@ -71,8 +71,7 @@ export function enterLevel(id) {
   S.camp = { def, verdict: null, tick: Date.now() }; S.trail = null; S.stains = []; forgetRun(); iconOn($('campBack'), 'back', def.made ? 'Maker' : 'Levels');
   const kept = rec && rec.room && unframe(rec.room);
   // A saved room is kept even if a later rule refuses part of it: Run says what, nothing is lost.
-  // The tutorial always starts from its own room (register 512).
-  S.level = !def.tutorial && kept && sameFixed(def, kept) && placementErrors(def, kept).every(e => /^(Place at least|Place the |Nothing can start)/.test(e.msg)) ? kept : roomOf(def);
+  S.level = kept && sameFixed(def, kept) && placementErrors(def, kept).every(e => /^(Place at least|Place the |Nothing can start)/.test(e.msg)) ? kept : roomOf(def);
   S.history = newHistory();
   S.ui.tool = 'look'; S.ui.colour = coloursOf(def)[0];
   p.last = id; write(p);
@@ -131,8 +130,8 @@ export function run() {
     markUsed([...new Set([...Object.keys(def.palette || {}), ...Object.entries(placed(def, S.level).by).filter(([, l]) => l.length).map(([el]) => el)])].map(el => TOOL[el]).filter(Boolean));
     noteWin(def, before, rec, v, words);
   }
-  // What this Run did toward the achievements (registers 629-639): a level's own Run only, never the tutorial.
-  if (!def.tutorial && v.ok) {
+  // What this Run did toward the achievements (registers 629-639): a level's own Run only, never Build 0 (register 958).
+  if (!def.intro && v.ok) {
     const p = progress();
     write(record(p, def, featsOf(def, S.level, v, p.feats || {})));
   }
@@ -195,11 +194,22 @@ function pair(li, twin) {
   li.classList.add('pair'); li.append(...twin.childNodes);
   return li;
 }
+// Only the next thing to open shows what it is (register 956): the first shut level, and the side rooms of an
+// open one. Every other shut card is blank, its name, pieces and stars hidden, like an unlock map's fog.
+function blankAhead(p) {
+  if (allOpen()) return;
+  const teased = new Set(), first = plan().find(r => !isOpen(r.def.id, p));
+  if (first) teased.add(first.def.id);
+  for (const r of plan()) if (isOpen(r.def.id, p)) for (const s of [r.side, r.twin]) if (s) teased.add(s.id);
+  for (const b of $('campList').querySelectorAll('.campRow.locked')) if (!teased.has(b.dataset.level)) { b.classList.add('blank'); b.replaceChildren(Object.assign(document.createElement('span'), { className: 'campShut', innerHTML: glyph('lock') })); b.removeAttribute('aria-label'); b.title = ''; }
+}
 // Unlocked for the session, the levels off the plan join it in number order; a hidden one never shows (731).
 function renderList() {
-  const p = progress(), rows = [], extras = unlocked() ? LEVELS.filter(d => !d.tutorial && !d.hidden && !listed(d)) : [];
+  const p = progress(), rows = [], extras = unlocked() ? LEVELS.filter(d => !d.intro && !d.hidden && !listed(d)) : [];
+  if (INTRO.build) rows.push(room(INTRO.build, p, 'main'), INTRO.puzzle ? room(INTRO.puzzle, p, 'side') : Object.assign(document.createElement('li'), { className: 'side none' }));
   for (const { def, side, twin } of listOrder(plan(), extras)) rows.push(room(def, p, 'main'), side ? pair(room(side, p, 'side'), twin && room(twin, p, 'side')) : Object.assign(document.createElement('li'), { className: 'side none' }));
   $('campList').replaceChildren(...rows);
+  blankAhead(p);
   $('campScore').textContent = `Score ${globalScore(p.levels)}`;
 }
 
@@ -219,9 +229,7 @@ export function buildCampaign(actions) {
   place('levels', { page: 'campBox', parent: () => 'menu', enter: () => {}, shown: showList });
   // A level goes back to where it was opened from; with no history, a made level's parent is the maker.
   place('level', { parent: id => (levelOf(id) || {}).made ? 'maker' : 'levels', enter: id => (S.camp && S.camp.def.id === id) || enterLevel(id), exit: () => { noteLeaving(); leaveLevel(); } });
-  // A first-time player lands in the tutorial (register 512).
-  $('menuCampaign').onclick = () => firstTime(progress()) && !window.__noTutorial ? go('level', 'tutorial') : go('levels');
-  $('menuTutorial').onclick = () => go('level', 'tutorial');
+  $('menuCampaign').onclick = () => go('levels');
   $('menuSandbox').onclick = () => go('rooms', 'start');
   $('campMenu').onclick = () => back('menu');
   // The Sandbox's way back (register 357): its Rooms page has a Menu button, as the other modes' pages do.

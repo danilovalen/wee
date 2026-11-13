@@ -2,7 +2,7 @@
 // its own palette, Run, and the saved best.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { suite, dragGrip, pickTool } from './lib.mjs';
+import { suite, dragGrip, pickTool, opt } from './lib.mjs';
 import { LEVELS } from '../src/level/campaign.js';
 import { listed } from '../src/campaign/rules.js';
 const LISTED = LEVELS.filter(listed), pick = f => LISTED.find(f);
@@ -57,9 +57,8 @@ try {
   const look = sel => page.$eval(sel, b => { const c = getComputedStyle(b); return [c.backgroundColor, c.color, c.boxShadow, c.font, c.height].join(' | '); });
   check('Sandbox looks exactly like Campaign (register 218)', await look('#menuCampaign') === await look('#menuSandbox'), await look('#menuSandbox'));
   // Register 400: a box with one button gives it the whole row.
-  const spans = await page.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(); return Math.abs(r('menuCampaign').width - (r('menuSandbox').right - r('menuTutorial').left)) < 1 && r('menuTutorial').top === r('menuSandbox').top; });
-  check('Campaign has the top row, as wide as Tutorial and Sandbox together below it (registers 521, 651)', spans);
-  check('Tutorial fits its button', await page.$eval('#menuTutorial', b => b.scrollWidth <= b.clientWidth));
+  const spans = await page.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(); return Math.abs(r('menuCampaign').width - r('menuSandbox').width) < 1 && r('menuSandbox').top > r('menuCampaign').top && !document.getElementById('menuTutorial'); });
+  check('Campaign has the top row and Sandbox the one below, as wide; no Tutorial button (registers 521, 955)', spans);
   check('the menu is one box with no heading line (registers 418, 433, 468)', await page.evaluate(() => document.querySelectorAll('.menuSec').length === 1 && !document.querySelector('.menuSec p') && !document.querySelector('.menuSec').textContent.includes('Play as the robot') && !document.querySelector('.menuList').textContent.includes('little circle')));
   // Register 401: the page paints nothing but its ground until the first place is up.
   check('once loaded the page is no longer booting', await page.evaluate(() => !document.documentElement.classList.contains('booting')));
@@ -101,7 +100,7 @@ try {
   check('the menu\'s room is drawn by the game\'s renderer, every frame (register 782)', painted.more > 5 && painted.ink > painted.of / 2, JSON.stringify(painted));
   await page.click('#menuCampaign');
   const rows = await page.$$eval('.campRow', rs => rs.map(r => r.dataset.level));
-  check('the level list starts at Level 1: the tutorial is on the menu, not a card (register 521)', rows.length >= 1 && rows[0] === LISTED[0].id && !rows.includes('tutorial'), rows.join());
+  check('the level list starts with Build 0 and Puzzle 0, then Level 1 (register 955)', rows[0] === '0' && rows[1] === 'p0' && rows[2] === LISTED[0].id && !rows.includes('tutorial'), rows.join());
   const parts = await page.$$eval('.campRow', rs => Object.fromEntries(rs.map(r => [r.dataset.level, [...r.querySelectorAll('.campParts [data-part]')].map(c => c.dataset.part).join()])));
   check('each level in the list shows the elements it uses', LISTED.every(l => parts[l.id] === Object.keys(l.palette).join()), JSON.stringify(parts));
   const LASER = pick(l => l.palette.laser);
@@ -116,7 +115,7 @@ try {
   // A card reads its place in the list, not its id (registers 527, 528): the last listed level.
   const LAST = LISTED.length - 1, head = await page.$eval(`.campRow[data-level="${LISTED[LAST].id}"]`, r => { const n = r.querySelector('.campRowHead b'), ps = r.querySelector('.campParts'), nb = n.getBoundingClientRect(), pb = ps.getBoundingClientRect(), b = r.getBoundingClientRect(); return { text: n.textContent, line: Math.abs(nb.top + nb.height / 2 - (pb.top + pb.height / 2)) < 4, right: b.right - pb.right < 24 }; });
   check('a card reads its place in the list, its pieces on the same line at the right (register 527)', head.text === String(LAST + 1) && head.line && head.right, JSON.stringify(head));
-  const nums = await page.$$eval('li.main .campRow b', bs => bs.map(b => +b.textContent));
+  const nums = await page.$$eval('li.main .campRow:not([data-level="0"]) b', bs => bs.map(b => +b.textContent));
   check('the list numbers run 1, 2, 3 with no gap (register 528)', nums.every((n, i) => n === i + 1), nums.join());
   // Register 562: the challenges sit apart, after the levels, under their own heading, and one opens with only its open tiles taking pieces.
   check('each challenge is a side room beside the builder level that opens it (registers 609-611)', await page.evaluate(() => { const cs = [...document.querySelectorAll('#campList .campRow[data-level^="c"]')].map(b => b.parentNode); return cs.length >= 1 && cs.every(li => li.classList.contains('side') && li.previousElementSibling.classList.contains('main')); }));
@@ -259,20 +258,21 @@ try {
   check('every level card is the same size, with no text line (register 475)', await page.$$eval('#campList .campRow', bs => new Set(bs.map(b => b.offsetHeight)).size === 1 && !bs.some(b => b.querySelector('small'))));
   check('the level you were on is selected', await page.locator(`.campRow[data-level="${ANY.id}"]`).evaluate(b => b.classList.contains('sel')));
   // Progress you carry yourself (register 254): copy a code, reset after a yes, load the code back.
-  await page.click('#progCopy');
+  await opt(page, 'progCopy');
   const code = await page.inputValue('#progCode');
   check('Copy progress shows a code', code.length > 20 && await page.locator('#progBox').isVisible());
   await page.click('#progNo');
-  await page.click('#progReset');
+  await opt(page, 'progReset');
   check('Reset progress asks first', await page.locator('#progResetBox').isVisible());
   await page.click('#progResetYes');
   check('after a reset the level is no longer beaten', (await stars(1)) === '- | - - - - -');
-  await page.click('#progLoad'); await page.fill('#progCode', 'not a code'); await page.click('#progYes');
+  await opt(page, 'progLoad'); await page.fill('#progCode', 'not a code'); await page.click('#progYes');
   check('a bad code is refused and says so', await page.locator('#progBox').isVisible() && /does not read/.test(await page.locator('#progSay').textContent()));
   await page.fill('#progCode', Buffer.from('{"rooms":[]}').toString('base64')); await page.click('#progYes');
   check('a code of something else is refused too', await page.locator('#progBox').isVisible());
   await page.fill('#progCode', code); await page.click('#progYes');
   check('loading the code brings the progress back', (await stars(1)) === row);
+  await page.click('#optionsClose');
   await page.click(`.campRow[data-level="${LISTED[0].id}"]`);
   const kept = await page.evaluate(() => { const l = window.wee.getLevel(); return [l.w, l.h, l.cells.filter(c => c === 'wall').length].join(); });
   check('your room is kept for next time', kept === '5,5,7', kept);
@@ -493,7 +493,7 @@ try {
   await oldSave.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ last: '8', levels: { 7: { best: 'old seven' }, 8: { best: 'old eight' } } })); } });
   await oldSave.goto('http://localhost:5217/'); await oldSave.click('#menuCampaign');
   const migrated = await oldSave.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')));
-  check('an old save moves level 8 to 7 and drops the old 7', migrated.v === 4 && migrated.levels['7'] && migrated.levels['7'].best === 'old eight' && !migrated.levels['8'] && migrated.last === '7', JSON.stringify(migrated));
+  check('an old save moves level 8 to 7 and drops the old 7', migrated.v === 5 && migrated.levels['7'] && migrated.levels['7'].best === 'old eight' && !migrated.levels['8'] && migrated.last === '7', JSON.stringify(migrated));
   await oldSave.close();
   const only7 = await browser.newPage(); await only7.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; }); await only7.addInitScript(() => { window.__noWinCard = true; });
   await only7.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ last: '7', levels: { 7: { best: 'old seven' } } })); } });
@@ -505,7 +505,7 @@ try {
   await v2.addInitScript(() => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('wee.campaign', JSON.stringify({ v: 3, last: '7', levels: { 6: { best: 'six' }, 7: { best: 'colours' }, 8: { best: 'seven' }, 11: { best: 'ten' } } })); } });
   await v2.goto('http://localhost:5217/'); await v2.click('#menuCampaign');
   const up = await v2.evaluate(() => JSON.parse(localStorage.getItem('wee.campaign')));
-  check('a save from the day the colour level was 7 moves 8-11 back to 7-10 and that level to 11', up.v === 4 && up.levels['6']?.best === 'six' && up.levels['7']?.best === 'seven' && up.levels['10']?.best === 'ten' && up.levels['11']?.best === 'colours' && !up.levels['8'] && up.last === '11', JSON.stringify(up));
+  check('a save from the day the colour level was 7 moves 8-11 back to 7-10 and that level to 11', up.v === 5 && up.levels['6']?.best === 'six' && up.levels['7']?.best === 'seven' && up.levels['10']?.best === 'ten' && up.levels['11']?.best === 'colours' && !up.levels['8'] && up.last === '11', JSON.stringify(up));
   await v2.close();
   // The campaign's puzzles (register 651): the side room after Level 1 is Puzzle 1, played by hand with no powers, back to Levels, and its win is a star on the list.
   const pz = await browser.newPage({ viewport: { width: 1280, height: 800 } }); await pz.addInitScript(() => { window.__noTutorial = true; window.__openAll = true; });

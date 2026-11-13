@@ -3,7 +3,7 @@
 // page wipe.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { suite } from './lib.mjs';
+import { suite, opt } from './lib.mjs';
 
 const { check, done } = suite('feel');
 const PORT = 5278;
@@ -33,9 +33,9 @@ try {
   check('a pressed button sinks into its lip and its icon drops, while its box keeps its place', press.same && press.lip && press.icon, JSON.stringify(press));
 
   // Sound: the speaker in the menu turns it off and back on, and the choice is kept.
-  await p.click('#menuSound');
+  await opt(p, 'menuSound');
   check('the speaker turns sound off, and says so', await p.evaluate(() => localStorage.getItem('wee.sound')) === 'off' && await p.$eval('#menuSound', b => b.getAttribute('aria-pressed')) === 'false');
-  await p.click('#menuSound');
+  await opt(p, 'menuSound');
   check('and back on', await p.evaluate(() => localStorage.getItem('wee.sound')) === 'on');
   const once = await p.evaluate(async () => {
     const m = await import('/src/app/sound.js'); let n = 0; const real = m.VOICES.place; m.VOICES.place = () => { n++; };
@@ -58,7 +58,7 @@ try {
   // A star count counts up as Looks opens.
   await p.evaluate(() => localStorage.setItem('wee.campaign', JSON.stringify({ v: 4, last: null, levels: { 1: { beaten: true, goals: { a: true, b: true } } } })));
   await p.reload(); await p.waitForTimeout(600);
-  await p.click('#menuLooks');
+  await p.evaluate(() => { location.hash = '#/looks'; });
   const counts = []; for (let i = 0; i < 8; i++) { counts.push(+(await p.$eval('#lookStars', e => e.dataset.count || e.textContent))); await p.waitForTimeout(40); }
   check('the star count on Looks counts up to what you have', counts[0] < counts.at(-1) && counts.at(-1) >= 3, JSON.stringify(counts));
   check('Looks has its Sound and Wobble switches', await p.$eval('#feelSound', b => b.getAttribute('aria-pressed')) === 'true' && await p.$eval('#feelBoil', b => b.getAttribute('aria-pressed')) === 'true');

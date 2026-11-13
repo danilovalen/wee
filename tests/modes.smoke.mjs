@@ -2,7 +2,7 @@
 // Puzzles played by hand, and the Level maker for the robot.
 import { chromium } from 'playwright-core';
 import { serve } from '../tools/serve.mjs';
-import { suite, pickTool } from './lib.mjs';
+import { suite, pickTool, opt } from './lib.mjs';
 
 const { check, done } = suite('modes');
 const server = await serve(5241);
@@ -115,9 +115,9 @@ try {
   check('Levels from a made level goes back to the maker, which lists it', await page.locator('#makerBox').isVisible() && (await page.$$eval('#madeList .campRow b', bs => bs.map(b => b.textContent).join())) === 'Door test');
   // One progress code carries the made levels and the Puzzles bests too (question 4).
   await page.click('#makerMenu'); await page.click('#menuCampaign');
-  await page.click('#progCopy'); const all = await page.inputValue('#progCode'); await page.click('#progNo');
+  await opt(page, 'progCopy'); const all = await page.inputValue('#progCode'); await page.click('#progNo');
   await page.evaluate(() => { localStorage.removeItem('wee-made'); localStorage.removeItem('wee-puzzles'); });
-  await page.click('#progLoad'); await page.fill('#progCode', all); await page.click('#progYes'); await page.waitForTimeout(200);
+  await opt(page, 'progLoad'); await page.fill('#progCode', all); await page.click('#progYes'); await page.waitForTimeout(200);
   check('a progress code brings back made levels and Puzzles bests', await page.evaluate(() => JSON.parse(localStorage.getItem('wee-made') || '[]').length === 1 && JSON.parse(localStorage.getItem('wee-puzzles') || '{}').pz1 === 2));
   await page.goto('http://localhost:5241/?sandbox=full');
   await page.waitForFunction(() => window.wee && window.wee.roomsReady); await page.evaluate(() => window.wee.roomsReady);

@@ -47,3 +47,8 @@ export async function dragGrip(page, side, n) {
   for (let i = 1; i <= 8; i++) { await page.mouse.move(x + dx * i / 8, y + dy * i / 8); await page.waitForTimeout(15); }
   await page.mouse.up(); await page.waitForTimeout(120);
 }
+// Sound, the player, dev mode and progress live in Options (registers 960, 963): open it, then tap.
+export async function opt(page, id) {
+  await page.evaluate(() => { const d = document.getElementById('optionsBox'); if (!d.open) d.showModal(); });
+  await page.click('#' + id);
+}

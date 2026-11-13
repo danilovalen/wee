@@ -69,6 +69,8 @@ const ICON = {
   // The menu's speaker (register 647): a box and a cone, with two waves when sound is on and a cross when off.
   sound() { const g = ICON.mute(); for (let y = 4; y <= 11; y++) g[y].fill(0, 10); box(g, 10, 6, 11, 9); box(g, 12, 3, 13, 4); box(g, 13, 5, 14, 10); box(g, 12, 11, 13, 12); return g; },
   mute() { const g = grid(); box(g, 1, 6, 3, 9); for (let i = 0; i < 5; i++) box(g, 4 + i, 5 - i, 4 + i, 10 + i); thick(g, 10, 5, 14, 9); thick(g, 14, 5, 10, 9); return g; },
+  // Options (register 960): a cog, eight teeth round a ring with its middle open.
+  gear() { return art(['......####......', '......####......', '..##..####..##..', '..############..', '...##########...', '..####....####..', '####........####', '####........####', '####........####', '####........####', '..####....####..', '...##########...', '..############..', '..##..####..##..', '......####......', '......####......']); },
   // The menu's door to Achievements: a cup on a stand.
   trophy() { const g = grid(); box(g, 3, 1, 12, 7); for (let y = 8; y <= 9; y++) box(g, 4 + (y - 8), y, 11 - (y - 8), y); box(g, 7, 10, 8, 12); box(g, 4, 13, 11, 14); box(g, 0, 2, 2, 3); box(g, 0, 4, 1, 5); box(g, 13, 2, 15, 3); box(g, 14, 4, 15, 5); box(g, 1, 6, 3, 6); box(g, 12, 6, 14, 6); return g; },
   // Achievements (register 639): one picture each; the badge adds the star slot it fills.
@@ -98,7 +100,7 @@ const C = { good: '--good', bad: '--bad', gold: '--gold', sky: '--cyan', warm: '
 export const ICON_COLOUR = {
   run: C.good, check: C.good, test: C.main, move: C.main, path: C.main, looks: C.main, edit: C.warm, reset: C.warm,
   undo: C.sky, redo: C.sky, look: C.sky, sound: C.sky, fit: C.sky, cross: C.bad, erase: C.bad, flag: C.bad, mute: C.soft, lock: C.soft,
-  unlock: C.gold, trophy: C.gold, player: C.main, crate: C.warm, levels: C.sky, menu: C.soft, back: C.soft, next: C.good, skip: C.good,
+  unlock: C.gold, trophy: C.gold, gear: C.soft, player: C.main, crate: C.warm, levels: C.sky, menu: C.soft, back: C.soft, next: C.good, skip: C.good,
 };
 const DAB = { 3: C.bad, 4: C.good, 5: C.sky, 6: C.gold };
 // The cells of one kind as a path of row runs.

@@ -137,7 +137,7 @@
       <div id="campBrief" class="campBrief camp-only"></div>
       <div id="puzzleBrief" class="campBrief puzzle-only"></div>
       <div id="campVerdict" class="campVerdict camp-only" role="status" hidden><span id="campVerdictText"></span></div>
-      <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="ring" class="ring" aria-hidden="true"></canvas><canvas id="game"></canvas>
+      <div id="roomArea" class="roomArea"><div id="roomWrap" class="roomWrap"><canvas id="ring" class="ring" aria-hidden="true"></canvas><span id="nudgeHand" class="nudgeHand" hidden aria-hidden="true"></span><canvas id="game"></canvas>
         <div id="campTip" class="campTip" role="status" hidden></div>
         <div id="zoomBar" class="zoomBar" data-join><button id="zoomOut" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button><button id="zoomIn" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button><button id="zoomReset" type="button" title="Reset the zoom (Shift+F)" aria-label="Reset the zoom">1:1</button><button id="fitBtn" class="fitBtn" type="button" hidden title="Show the whole room (F)">Fit</button></div>
         <div class="growBar" data-bar="top"><button type="button" class="grip" data-grip="top" aria-label="Drag to add or remove rows at the top" title="Drag to add or remove rows at the top"><i></i></button></div>
@@ -243,6 +243,15 @@
     <div class="roomsHead"><b>Keys</b><form method="dialog"><button>Close</button></form></div>
     <div id="keysList" class="keysList"></div>
   </dialog>
+  <dialog id="optionsBox" class="confirm options" aria-label="Options">
+    <h2>Options</h2>
+    <div class="optRow"><span>Sound</span><button id="menuSound" type="button" class="menuCorner" aria-pressed="true"></button></div>
+    <div class="optRow"><span>Player</span><button id="menuSlot" type="button" class="menuCorner"></button></div>
+    <div class="optRow"><span>Dev mode</span><button id="menuUnlock" type="button" class="menuCorner" aria-pressed="false"></button></div>
+    <h3>Progress</h3>
+    <div class="row bar progRow"><button id="progCopy" type="button" aria-label="Copy progress">Copy<span class="wideOnly"> progress</span></button><button id="progLoad" type="button" aria-label="Load progress">Load<span class="wideOnly"> progress</span></button><button id="progReset" type="button" aria-label="Reset progress">Reset<span class="wideOnly"> progress</span></button></div>
+    <div class="row bar"><button id="optionsClose" type="button">Close</button></div>
+  </dialog>
   <dialog id="menuBox" class="menu">
     <div id="menuScene" class="menuScene" aria-hidden="true"></div>
     <b class="logo menuLogo">wee</b>
@@ -250,23 +259,17 @@
       <button id="menuLooks" type="button" class="menuCorner" aria-label="Looks" title="Looks"></button>
       <button id="menuAchieve" type="button" class="menuCorner" aria-label="Achievements" title="Achievements"></button>
       <span class="spacer"></span>
-      <button id="menuSound" type="button" class="menuCorner" aria-pressed="true"></button>
-      <button id="menuSlot" type="button" class="menuCorner"></button>
-      <button id="menuUnlock" type="button" class="menuCorner" aria-pressed="false"></button>
+      <button id="menuOptions" type="button" class="menuCorner" aria-label="Options" title="Options"></button>
     </div>
     <div class="menuList">
       <section class="menuSec">
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>
-        <button id="menuTutorial" type="button" class="primary">Tutorial</button>
         <button id="menuMaker" type="button" class="primary" hidden>Level maker</button>
         <button id="menuPuzzles" type="button" class="primary" hidden>Puzzles</button>
         <button id="menuSandbox" type="button" class="primary">Sandbox</button></section>
       <button id="menuDebug" type="button" title="Copies what the game knows about where you are.">Debug</button>
     </div>
   </dialog>
-  <div id="tutBox" class="tutBox" hidden role="status"><button id="tutSkip" type="button" class="tutSkip">Skip tutorial</button><p id="tutSay"></p>
-    <span class="tutBtns"><span id="tutPic" class="tutPic campStars" hidden></span><small id="tutWait">Tap the ringed spot.</small><button id="tutNext" type="button" class="primary">Next</button></span></div>
-  <div id="tutTile" class="tutTile" hidden></div>
   <dialog id="winBox" class="winCard">
     <p id="winTitle" class="winTitle"></p>
     <p id="winSay" class="winSay"></p>
@@ -315,7 +318,6 @@
   <dialog id="campBox" class="rooms">
     <div class="roomsHead"><button id="campMenu" type="button" class="upBtn">Menu</button><b>Campaign</b><span id="campScore" class="campTotal" title="Each star is worth 20 points, less the fewest tiles you placed to earn it."></span></div>
     <ul id="campList" class="campList"></ul>
-    <div class="row bar progRow"><button id="progCopy" type="button" aria-label="Copy progress">Copy<span class="wideOnly"> progress</span></button><button id="progLoad" type="button" aria-label="Load progress">Load<span class="wideOnly"> progress</span></button><button id="progReset" type="button" aria-label="Reset progress">Reset<span class="wideOnly"> progress</span></button></div>
   </dialog>
   <dialog id="progBox" class="confirm">
     <p id="progSay"></p>

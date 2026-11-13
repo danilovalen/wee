@@ -88,10 +88,10 @@ export function syncBrief() {
   const def = S.camp.def, v = S.camp.verdict;
   // While Run's robot plays, the marks wait and the move dots fill; they land when it stops (plan step 3).
   const ran = v && v.ok && v.length != null && !S.demoRunning;
-  // The tutorial teaches one thing, so its card is one order (registers 511, 512).
+  // Build 0 teaches one thing, so its card is one order (registers 511, 512, 955).
   // A challenge's only goal is the star, which the big star already says (register 582): its card holds
   // just the pieces to place, which are not a goal (register 566).
-  const rows = def.challenge ? [] : def.tutorial ? [{ id: 'star', parts: ['Get Wee to the berry.'], text: 'Get Wee to the berry.', met: ran ? v.won : null }]
+  const rows = def.challenge ? [] : def.intro ? [{ id: 'star', parts: ['Get Wee to the berry.'], text: 'Get Wee to the berry.', met: ran ? v.won : null }]
     : [{ id: 'steps', parts: [{ dots: bounds(def.steps).min }], text: stepsText(def.steps), met: ran ? v.inRange : null }];
   // A maximum is a goal of its own, so the limit shows while playing (register 299); so is a minimum
   // of 2 or more. A minimum of 1 goes without saying: a requirement already needs the piece.
@@ -117,7 +117,7 @@ export function syncBrief() {
   last.dataset.said = said; last.title = said; last.setAttribute('aria-label', said);
   last.innerHTML = said ? `${glyph('star')}<b>${tiles}</b>` : '';
   // The level's number sits in the top bar (plan step 4); the card holds only its goals.
-  $('campNum').textContent = shownName(def).replace(/^Level /, ''); $('campNum').title = shownName(def);
+  $('campNum').textContent = shownName(def).replace(/^Level /, ''); $('campNum').title = shownName(def); $('campNum').toggleAttribute('data-named', !/^Level /.test(shownName(def)));
   // What a level requires, two to a line; what it only rewards, apart beneath.
   // The main star and what it needs, in one gold box; each side goal its own chip with its own small star (register 547).
   const must = document.createElement('ul'); must.className = 'campReqs campMust';
