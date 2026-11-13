@@ -968,3 +968,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 959 | "Similar to themes, only unlock them after you have enough stars, and increase the star amount. Rebalance them so that unlocking everything requires beating every level and achievement." | registered: Looks button hidden until the first look is affordable; prices sum to every star from every level and achievement |
 | 960 | "Merge the three right buttons on a single one, \"options\"" | registered: menu bar's Sound, Slot and Unlock become one Options button |
 | 961 | "Sandbox stays unlocked for now" | registered: standing rule, not hidden by 956-959 |
+| 962 | "On the main screen, extend the walls so it goes all the way down, without a gap it has right now" | registered, holding for more feedback |
