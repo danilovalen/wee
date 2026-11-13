@@ -939,3 +939,4 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 930 | "No need for gravel on corners if you don't have a three-way" | sketched: corners carry no gravel |
 | 931 | "Colour land makes no sense we have hidden the dual color levels. Should be powered one way or similar" | sketched: renamed Powered land, a button and a powered one-way |
 | 932 | "Allow me to edit that, somehow. Not sure if a secret level builder on the game, somehow. Plan letting me build this from now on." | steps 1-2 done: Map room (dev mode), 80x80 limit, Level spot and Sign tools; steps 3-5 next |
+| 933 | "Keep this new map structure on hold for now. Won't touch it." | on hold: map work (917-932) parked at steps 1-2 |
