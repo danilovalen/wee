@@ -945,3 +945,20 @@ outcome: **done** (commit), **declined** (why), or **moved** (where).
 | 936 | "Place and remove levels are not greyed out when locked" | done: a half-width card's name and pieces sit in a laid-out-away head, so the fade skipped them; they fade on their own now |
 | 937 | "Diagnose other ui inconsistencies" | diagnosed: docs/UI_CONSISTENCY_DIAGNOSIS.md, ten items, waiting on his pick |
 | 938 | "All" (fix every item in docs/UI_CONSISTENCY_DIAGNOSIS.md) | done: 1, 2, 4, 6, 9, 10 fixed; 3 partly (play Undo and Reset are icons, Sandbox edit undo stays in the bar: the phone tray is full); 5 not a defect (box = required goal, star = side goal); 7 and 8 already true. Gate: tests/consistency.smoke.mjs |
+| 939 | "Keep the replay button there but disabled on level start" (screenshot: Level 3 at start shows Replay) | registered, holding for more feedback |
+| 940 | "Zooming in shouldn't remove the external walls" | registered, holding for more feedback |
+| 941 | "The popup when Wee fails to do a level covers important info, should be somewhere else, propose later" (screenshot: "Wee cannot reach the berry." over the goal card) | registered, proposal owed later |
+| 942 | "If I place something over Wee or fruit, I can't place them back. On campaign levels, don't let wee be covered. And don't let fruit be covered either, until we enable placing multiple berries" | registered, holding for more feedback |
+| 943 | "This \"DOOR to make...\" Description text pushes everything up and make the footer bigger, which is forbidden" (screenshot: two-line tool hint grows the tray on a phone, Level 3) | registered, holding for more feedback |
+| 944 | "When testing a level every star pulsates even though they weren't completed, when back to editor they pulsate again" | registered, holding for more feedback |
+| 945 | "Diagnose everything that has motion, pulsates, at the wrong time... This is really bad ux" | registered: a diagnosis, nothing built until he reads it |
+| 946 | "Impossible to read text on stars this should have been checked." (screenshot: level list, the number inside Level 3's big filled star is unreadable) | registered, holding: needs a legibility gate (text inside a star, painted pixels) |
+| 947 | "Do some \"fluffier\" stars it will allow for text inside it and be more cohesive to theme" | registered: sketch variants first, he picks |
+| 948 | "Top left corner, stars don't show up while playing and then it pushes the button" (screenshot: the star count appears at the top RIGHT after a win and shoves the mode button left) | registered, holding for more feedback |
+| 949 | "No ui element should be pushed around, everything should be static unless I explicitly allow" | registered: standing rule; gate every bar and tray for fixed slots (covers 943, 948) |
+| 950 | "Logo inner border is too loaded. Feels weird the emboss effect" | registered, holding for more feedback |
+| 951 | "Hard to differentiate off and on switches" (screenshot: Sandbox room with a row of switches, on and off read alike) | registered: sketch variants first, he picks |
+| 952 | "Review copy so it doesn't use ai jargon \"they X and then they Y\" and others" (screenshot: Challenger achievement, "They called it a challenge, and then they took notes.") | registered: sweep every achievement and flavour line, drafts to him before shipping |
+| 953 | "This image is weird because there is no monster in the game yet" (screenshot: Challenger art shows Wee beside a red horned monster) | registered, holding for more feedback |
+| 954 | "Review others with similar issues" (after 953) | registered: sweep every achievement and moment picture for anything not in the game yet |
+| 955 | "I'd like to remove the tutorial button, have it be a Puzzle 0 then a Build 0 then it unlocks Level 1 no scripted (let the player do as they will), show don't tell, Build 0 should have a single optional goal \"3x3 or smaller\", use nudges instead of paragraphs to explain. Propose" | proposed and settled: docs/ONBOARDING_PROPOSAL.md (old players marked done; a nudge stays until acted on; stars shown, not explained). Holding for "done" |
