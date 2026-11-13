@@ -156,11 +156,7 @@ export function syncBrief() {
   $('campVerdictText').textContent = !v.ok ? v.errors[0].msg
     : v.won ? `Made it in ${v.length} moves${v.paths > 1 ? `, on all ${v.paths} shortest paths` : ''}.`
       : v.fail.why;
-  // A run that cannot finish points at the tiles that stop it; tap the words to see them again.
-  const points = stuckAt(v).length > 0;
-  out.classList.toggle('points', points);
-  $('campVerdictText').onclick = points ? () => flashStuck(v) : null;
-  $('campVerdictText').title = points ? 'Show the tiles' : '';
+  // The tiles that stop a run flash once, after it (register 945): the words are not a button that flashes them again.
 }
 
 // Draws on the room one shortest path that missed a goal, and says which goal.

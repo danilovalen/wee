@@ -34,7 +34,7 @@ function syncCtxText() {
 
 export function keysText() {
   return touch
-    ? (S.mode === 'play' ? 'Swipe to slide, and while sliding, swipe again to use a power.' : '')
+    ? (S.mode === 'play' ? 'Swipe to slide; swipe again mid-slide to use a power.' : '')
     : (S.mode === 'play' && !S.camp ? `Arrows slide, ${tapText()}R resets the room and E goes back to editing.` : '');
 }
 
@@ -157,7 +157,7 @@ export function syncPanel() {
   const holder = TOOLS.find(t => t.id === ui.tool).group;
   // In a level the one-way says how it is turned and taken away (register 234); draft copy.
   // The tool's name as a label, and how to use it in plain case beside it, not shouted (register 730).
-  const how = (S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1, spring: 1 })[ui.tool] ? (ui.tool === 'toggle' ? 'To switch one on or off, tap it, and to remove it, hold it.' : 'To turn one, tap it, and to remove it, hold it.') : ui.tool === 'door' ? 'To make one an inverted door and back, tap it, and to remove it, hold it.' : '';
+  const how = (S.camp || S.simple) && ({ gate: 1, turret: 1, toggle: 1, spring: 1 })[ui.tool] ? (ui.tool === 'toggle' ? 'Tap: on or off; hold: remove.' : 'Tap: turn; hold: remove.') : ui.tool === 'door' ? 'Tap: inverted door; hold: remove.' : '';
   $('toolName').title = how || '';
   $('toolName').replaceChildren(TOOLS.find(t => t.id === ui.tool).label, ...(how ? [Object.assign(document.createElement('span'), { className: 'toolHow', textContent: how })] : []));
   document.querySelectorAll('[data-group]').forEach(b => { b.classList.toggle('on', b.dataset.group === ui.group); b.classList.toggle('holds', b.dataset.group === holder && holder !== ui.group); });

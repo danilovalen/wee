@@ -95,15 +95,19 @@ The tool-hint drafts are also shorter, which helps 943: they fit on one line.
 
 ## 953 and 954: pictures with things not in the game
 
-The campaign uses: block, switch, door, box, button, one-way, laser, relay, berry, spikes. Five album
-photos show something else.
+The campaign uses: block, switch, door, box, button, one-way, laser, relay, berry, spikes. Four album
+photos show something else (the sweep first said five).
 
 | photo | shows | not in the game | draft replacement |
 |---|---|---|---|
 | challenge | Wee and a red horned monster | the monster | Wee beside a placed block with its purple frame |
-| lab | a sensor, Wee, a switch | the sensor | a relay, Wee, a switch |
+| lab | a relay, Wee, a switch | nothing: the sensor sprite is the relay (the sweep was wrong here) | kept |
 | pieces | a box, a bomb, a heavy block | the bomb, the heavy block | a box, a laser, a relay |
 | oneshot | a spring, Wee, a berry | the spring | a one-way, Wee, a berry |
 | half | a checkpoint, Wee | the checkpoint | a door, Wee |
 
 A test will then check every photo uses only pieces some listed level uses.
+
+## Shipped (register 952)
+
+As drafted, then joined into one sentence each (his ruling, 2026-11-13: the one-sentence rule stays), with a semicolon, comma or colon instead of a full stop.

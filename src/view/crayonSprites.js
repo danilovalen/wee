@@ -126,7 +126,8 @@ export const CRAYON_SPRITES = {
   // An open door: only its dashed frame.
   doorOpen(col) { const s = sheet(); for (let i = 2; i < 30; i++) if (i % 8 < 4) s.rect(i, 2, i, 3, col).rect(i, 28, i, 29, col).rect(2, i, 3, i, col).rect(28, i, 29, i, col); return s; },
   // A switch from above: a plate in its colour, a lever at the left while off, at the right with its lamp lit while on.
-  switchOff(col) { const s = sheet().slab(4, 9, 27, 22, dk(col, 0.35), 2).rect(8, 13, 23, 18, dk(col, 0.6)); s.oval(10.5, 15.5, 4, 4, P.hi).oval(10, 15, 2, 1.6, WHITE).rect(22, 15, 23, 16, dk(col, 0.2)); return s; },
+  // Off keeps its colour, darker, with a dull knob; on is bright with a white one (registers 951, 964).
+  switchOff(col) { const s = sheet().slab(4, 9, 27, 22, dk(col, 0.5), 2).rect(8, 13, 23, 18, dk(col, 0.72)); s.oval(10.5, 15.5, 4, 4, dk(col, 0.25)).oval(10, 14.5, 1.6, 1.2, dk(col, 0.05)); return s; },
   switchOn(col) { const s = sheet().slab(4, 9, 27, 22, col, 2).rect(8, 13, 23, 18, dk(col, 0.35)); s.oval(21.5, 15.5, 4, 4, P.hi).oval(21, 15, 2, 1.6, WHITE).rect(8, 15, 9, 16, lt(col, 0.7)); return s; },
   // A floor button from above: a disc in a ring, sunk and darker while pressed.
   buttonUp(col) { const s = sheet().oval(16, 16, 12.5, 12.5, P.top).lit(16, 16, 13, 13, P.top).oval(16, 16, 10, 10, dk(col, 0.5)).oval(16, 16, 8.5, 8.5, col).lit(16, 16, 9, 9, col); return shine(s, col, 12.5, 12); },

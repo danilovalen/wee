@@ -160,7 +160,7 @@ export function buildRooms(actions) {
     if (!S.room || !S.room.id || !confirm(`Delete "${S.room.name}"? This cannot be undone.`)) return;
     try { await remove(S.room.id); } catch (e) { say(e.message); return; }
     S.room.id = null; S.room.saved = null; remember(null);
-    say('Deleted, and the room is still open here, unsaved.');
+    say('Deleted; the room stays open here, unsaved.');
     fillCurrent(); syncRoomsButton(); await refresh();
   };
   $('roomDownload').onclick = () => download(($('roomName').value.trim() || 'room').replace(/[^\w-]+/g, '-') + '.wee', joinRoom({ id: S.room?.id || null, name: $('roomName').value, note: $('roomNote').value }, S.level));

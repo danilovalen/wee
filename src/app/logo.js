@@ -1,7 +1,7 @@
 // The title (docs/THEME.md rule 34, register 876): "wee" drawn as three crayon letters on the pieces' own
 // grid and inked by the same pass, so it has their line, their lit edge and their lumps. It is alive on
 // the menu: two drawings in turn, slower than a piece.
-import { sheet, ink, wobble, lt, dk } from '../view/crayon.js';
+import { sheet, ink, wobble } from '../view/crayon.js';
 import { P } from '../view/crayonSprites.js';
 import { boilOn } from '../view/sprites.js';
 
@@ -19,11 +19,7 @@ export function logoSheet() {
     // The eye of the e, and the mouth: a slot from its middle out to the right, under the bar.
     for (let y = 0; y < LOGO_H; y++) for (let x = 0; x < LOGO_W; x++) if (((x + 0.5 - cx) / 5.5) ** 2 + ((y + 0.5 - 13.5) / 3.2) ** 2 <= 1 || (y >= 20 && y <= 23 && x >= cx - 1 && x <= cx + 13)) s.g[y][x] = null;
   }
-  // Lit from the top left: a cell with nothing above it is lighter, one with nothing below it darker.
-  const g = s.g, top = [], foot = [];
-  for (let y = 0; y < LOGO_H; y++) for (let x = 0; x < LOGO_W; x++) if (g[y][x]) { if (!(g[y - 1] || [])[x]) top.push([x, y]); else if (!(g[y + 1] || [])[x] || !(g[y + 2] || [])[x]) foot.push([x, y]); }
-  for (const [x, y] of top) g[y][x] = lt(c, 0.5);
-  for (const [x, y] of foot) g[y][x] = dk(c, 0.22);
+  // Flat colour and the line, no emboss (register 950).
   return s.g;
 }
 // Draws the title into a canvas inside el and keeps it alive while it shows.
@@ -36,7 +32,7 @@ export function buildLogo(el) {
   const draw = f => {
     if (f === shown) return;
     shown = f; g.clearRect(0, 0, cv.width, cv.height);
-    for (const [x, y, n, col] of ink(wobble(base, 'logo', f))) { g.fillStyle = col; g.fillRect(x + pad, y + pad, n, 1); }
+    for (const [x, y, n, col] of ink(wobble(base, 'logo', f), { edge: 0 })) { g.fillStyle = col; g.fillRect(x + pad, y + pad, n, 1); }
   };
   el.textContent = ''; el.setAttribute('aria-label', 'wee'); el.append(cv);
   draw(0);

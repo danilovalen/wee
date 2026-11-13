@@ -34,6 +34,10 @@ try {
   const reset = await p.evaluate(() => { const y = document.getElementById('resetYes'), n = document.getElementById('resetNo'); return y && [getComputedStyle(y).backgroundColor, getComputedStyle(n).backgroundColor]; });
   check('a dialog\'s confirming button is coloured, Cancel is not (10)', reset && reset[0] !== reset[1], JSON.stringify(reset));
   check('a win card star wears no coin behind it (4)', await p.evaluate(() => { const s = document.createElement('span'); s.className = 'winStar'; document.querySelector('.winStars, body').append(s); const d = getComputedStyle(s, '::before').display; s.remove(); return d === 'none'; }));
+  // Register 946: a number inside a filled star reads against the gold, at least 4.5 to 1.
+  await at('#/levels');
+  const read = await p.evaluate(() => { const s = document.createElement('span'); s.className = 'campStar main on'; s.innerHTML = '<i>12</i>'; document.getElementById('campList').append(s); const rgb = c => c.match(/[\d.]+/g).slice(0, 3).map(Number); const tmp = document.createElement('b'); tmp.style.color = getComputedStyle(s).getPropertyValue('--gold'); document.body.append(tmp); const fill = rgb(getComputedStyle(tmp).color), ink = rgb(getComputedStyle(s.querySelector('i')).color); tmp.remove(); s.remove(); const L = c => { const [r, g, b] = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; }; const [a, b] = [L(fill), L(ink)].sort((x, y) => y - x); return (a + 0.05) / (b + 0.05); });
+  check('a number in a filled star reads against its gold (register 946)', read >= 4.5, read.toFixed(2));
   // Playing a room: Undo and Reset are the level's icons (3).
   await at('?sandbox');
   check('playing a room, Undo and Reset are icons (3)', await p.evaluate(() => ['playUndo', 'respawnBtn'].every(id => !!document.getElementById(id).querySelector('svg'))));

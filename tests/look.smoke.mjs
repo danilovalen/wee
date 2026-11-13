@@ -96,7 +96,7 @@ try {
     for (let i = 0; i < d.length; i += 4) if (d[i + 3]) { inked++; seen.add('#' + [d[i], d[i + 1], d[i + 2]].map(v => v.toString(16).padStart(2, '0')).join('')); }
     return { canvas: true, line: seen.has(lineOf(P.violet).slice(0, 7)), lit: seen.has(resolve(lt(P.violet, 0.3))), tones: seen.size, inked, per: c.getBoundingClientRect().width / c.width, scale: LOGO_SCALE, label: document.querySelector('.menuLogo').getAttribute('aria-label') };
   });
-  check('the title is drawn like a piece: a line round its letters, lit and shaded, on whole pixels', title.canvas && title.line && title.lit && title.tones >= 4 && title.inked > 1500 && title.per === title.scale && title.label === 'wee', JSON.stringify(title));
+  check('the title is drawn like a piece: one flat colour and a line round its letters, on whole pixels (register 950)', title.canvas && title.line && !title.lit && title.tones === 2 && title.inked > 1500 && title.per === title.scale && title.label === 'wee', JSON.stringify(title));
   // On a phone the title sits clear of the corner buttons (register 880).
   const under = await p.evaluate(() => { const l = document.querySelector('.menuLogo canvas').getBoundingClientRect(); return [...document.querySelectorAll('.menuCorner')].filter(b => { const r = b.getBoundingClientRect(); return r.width && r.left < l.right && r.right > l.left && r.top < l.bottom && r.bottom > l.top; }).map(b => b.id); });
   check('the title is never behind a corner button', !under.length, under.join(' '));

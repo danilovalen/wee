@@ -809,7 +809,6 @@ export const M = [
   ['src/campaign/goals/doors.js', "if (/^door:/.test(c) && !c.slice(5).split('|').some(col => s.open[col])) n++;", "if (/^door:/.test(c)) n++;", 'campaign'],
   ['src/campaign/goals/doors.js', "    dir = p.dir;\n  });\n  return n;", "  });\n  return n;", 'campaign'],
   ['src', "  else flashStuck(v);\n", "", 'campaign-play'],
-  ['src', "$('campVerdictText').onclick = points ? () => flashStuck(v) : null;", "$('campVerdictText').onclick = null;", 'campaign-play'],
   ['src', "return max && list.length > max ?", "return max && list.length >= max ?", 'campaign'],
   ['src', ".toggled.length === 0,", ".toggled.length >= 0,", 'campaign'],
   ['src', "e.kind === 'box' && /^door:/.test(s.cells[e.y * room.w + e.x] || '')", "e.kind === 'box'", 'campaign'],
@@ -1461,7 +1460,6 @@ export const M = [
   ["src/view/sprites.js", "export const wobbles = name => ALIVE.has(name);", "export const wobbles = name => true;", "crayon"],
   // Registers 876, 878: the drawn title, square buttons.
   ["src/app/campaign.js", "  buildLogo(document.querySelector('.menuLogo'));\n", "", "look"],
-  ["src/app/logo.js", "  for (const [x, y] of top) g[y][x] = lt(c, 0.5);\n", "", "look"],
   ["style.css", "--edge: color-mix(in srgb, var(--fill), white 55%);\n  font: inherit;", "--edge: color-mix(in srgb, var(--fill), white 55%);\n  clip-path: polygon(4px 0, 100% 0, 100% 100%, 0 100%, 0 4px);\n  font: inherit;", "look"],
   // Registers 880, 881: the title clear of the corner buttons, the tool tray, a goal's tick box.
   ["style.css", "@media (max-width: 560px) { .menu .menuLogo { top: 62px; } }", "", "look"],
@@ -1508,6 +1506,14 @@ export const M = [
   ['src/view/look.js', "{ id: 'laser', name: 'Laser', cost: 22,", "{ id: 'laser', name: 'Laser', cost: 12,", 'stars'],
   ['src/app/options.js', "  $('menuOptions').onclick = () => $('optionsBox').showModal();\n", "", 'onboarding'],
   ['src/app/menuScene.js', "  for (let y = M + H; y < GH; y++) for (let x = 0; x < GW; x++) ground[y * GW + x] = 'wall';", "", 'onboarding'],
+  ['src/app/albumScenes.js', "  challenge: [['blob', 0.4, 0.5, 'right'], ['wallFace', 1.7, 0.5], ['crateFrame', 1.7, 0.5]],", "  challenge: [['blob', 0.4, 0.5, 'right'], ['strong', 1.7, 0.5, 'h|1']],", 'albumpieces'],
+  ['style.css', "body.campaign #campVerdict { top: auto; bottom: 0; height: 38px;", "body.campaign #campVerdict { height: 38px;", 'static'],
+  ['src/app/campaign.js', "    $('campBrief').querySelector('.moveDots.short')?.classList.add('fresh');\n", "", 'campaign-play'],
+  ['style.css', ".moveDots.short { color: var(--bad); }\n.moveDots.short.fresh { animation:", ".moveDots.short { color: var(--bad); }\n.moveDots.short { animation:", 'campaign-play'],
+  ['style.css', ".campStar.on i { color: color-mix(in srgb, var(--gold) 18%, black);", ".campStar.on i { color: var(--gold-ink);", 'consistency'],
+  ['src/app/logo.js', "ink(wobble(base, 'logo', f), { edge: 0 })", "ink(wobble(base, 'logo', f))", 'onboarding'],
+  ['src/view/crayonSprites.js', "switchOff(col) { const s = sheet().slab(4, 9, 27, 22, dk(col, 0.5), 2)", "switchOff(col) { const s = sheet().slab(4, 9, 27, 22, col, 2)", 'switch'],
+  ['src/view/crayonSprites.js', "s.oval(10.5, 15.5, 4, 4, dk(col, 0.25)).oval(10, 14.5, 1.6, 1.2, dk(col, 0.05));", "s.oval(10.5, 15.5, 4, 4, P.mid).oval(10, 14.5, 1.6, 1.2, P.hi);", 'switch'],
 ];
 
 // Run only as a script: the gate imports M.

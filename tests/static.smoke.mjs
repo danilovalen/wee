@@ -52,6 +52,11 @@ try {
   check('only marks the Run just earned land (register 944)', fresh.unmet === 0 && fresh.met > 0, JSON.stringify(fresh));
   await p.evaluate(async () => (await import('/src/app/goalCard.js')).syncBrief());
   check('a redraw lands nothing again (register 944)', await p.evaluate(() => document.querySelectorAll('#campBrief .fresh').length === 0));
+  // A failed Run's line sits in the band above the tray (register 941): over no goal, no button and no room.
+  await p.goto(`http://localhost:5287/#/level/${HINTED.id}`); await p.waitForTimeout(1200);
+  await p.click('#campRun'); await p.waitForTimeout(2500);
+  const band = await p.evaluate(() => { const r = id => document.getElementById(id).getBoundingClientRect(), v = r('campVerdict'), off = (a, b) => a.bottom <= b.top + 1 || a.top >= b.bottom - 1; return { shown: !document.getElementById('campVerdict').hidden, clear: ['campBrief', 'campActions', 'tools', 'roomWrap'].every(id => off(v, r(id))) }; });
+  check('a failed Run\'s line covers no goal, button or room (register 941)', band.shown && band.clear, JSON.stringify(band));
   check('no page errors', errors.length === 0, errors.join(' | '));
 } finally {
   await browser.close(); server.close();

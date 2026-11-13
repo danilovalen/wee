@@ -30,9 +30,9 @@ export function buildProgress() {
   const open = (text, value, load) => { say.textContent = text; code.value = value; $('progYes').hidden = !load; box.showModal(); };
   $('progCopy').onclick = async () => {
     const c = await toCode();
-    open('Keep this code somewhere, and Load progress brings everything back.', c, false);
+    open('Keep this code; Load progress brings everything back.', c, false);
     code.select();
-    try { navigator.clipboard.writeText(c).then(() => { say.textContent = 'Copied: keep it somewhere, and Load progress brings everything back.'; }, () => {}); } catch { /* no clipboard here */ }
+    try { navigator.clipboard.writeText(c).then(() => { say.textContent = 'Copied; Load progress brings everything back.'; }, () => {}); } catch { /* no clipboard here */ }
   };
   $('progLoad').onclick = () => open('Paste a progress code to replace the progress here.', '', true);
   $('progYes').onclick = async () => {

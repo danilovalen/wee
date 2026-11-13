@@ -917,7 +917,8 @@ body:not(.campaign) header .campLast { display: none; }
 @media (prefers-reduced-motion: no-preference) { #campBrief li.fresh .mark, #campBrief .campBigStar.fresh { animation: markLand .32s ease-out backwards; } }
 /* A run too short: the count pulses red (plan step 5). */
 @keyframes dotWant { 50% { opacity: .35; } }
-.moveDots.short { color: var(--bad); animation: dotWant 1s ease-in-out 3; }
+.moveDots.short { color: var(--bad); }
+.moveDots.short.fresh { animation: dotWant 1s ease-in-out 3; }
 
 body.campaign header .campLast { flex: none; width: calc(var(--mark) + 4ch); justify-content: flex-end; display: inline-flex; align-items: center; gap: 2px; color: var(--gold); height: 20px; line-height: 20px; overflow: hidden; align-self: center; }
 header .campLast .glyph { width: var(--mark); height: var(--mark); fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
@@ -1365,3 +1366,8 @@ body.campaign:not(.sandbox) header .campNum[data-named]::before { content: none;
 /* Options (register 960): one row per setting, its name on the left and its button on the right. */
 dialog.options .optRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 6px 0; }
 dialog.options h3 { margin: 14px 0 0; }
+/* A Run's verdict sits in the empty band at the foot of the stage, above the tray (register 941): it covers no
+   goal and moves nothing. Two short lines at most. */
+body.campaign #campVerdict { top: auto; bottom: 0; height: 38px; padding: 2px 10px; font-size: var(--t-s); box-shadow: none; }
+/* A number inside a filled star is dark on the gold, not gold on gold (register 946), at the star's own middle. */
+.campStar.on i { color: color-mix(in srgb, var(--gold) 18%, black); padding-top: 4px; }

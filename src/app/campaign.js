@@ -257,6 +257,8 @@ export function buildCampaign(actions) {
     const before = metNow(); syncBrief();
     if (S.camp.testing) return;
     for (const li of $('campBrief').querySelectorAll('li.met')) if (!before.has(li.dataset.req)) li.classList.add('fresh');
+    // A run too short pulses its count once, here, not on every redraw (register 945).
+    $('campBrief').querySelector('.moveDots.short')?.classList.add('fresh');
     const big = $('campBrief').querySelector('.campBigStar.on'); if (big && !before.has('main')) big.classList.add('fresh');
   });
   addEventListener('wee:demoDone', () => setTimeout(() => { if (S.camp && !S.camp.testing && S.mode === 'play') A.setMode('edit'); }, 900));

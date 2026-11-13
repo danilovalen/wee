@@ -15,6 +15,8 @@ try {
   const p = await browser.newPage({ viewport: { width: 393, height: 852 }, hasTouch: true, isMobile: true });
   const errors = []; p.on('pageerror', e => errors.push(e.message));
   await p.goto(B); await p.waitForTimeout(900);
+  const inks = await p.evaluate(() => { const c = document.querySelector('.logoArt'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, seen = new Set(); for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200) seen.add(d[i] + ',' + d[i + 1] + ',' + d[i + 2]); return seen.size; });
+  check('the logo is one flat colour and its line, no emboss (register 950)', inks === 2, String(inks));
   check('the menu has no Tutorial button', !(await p.$('#menuTutorial')));
   check('the menu bar has one Options button where Sound, Player and Dev mode were; they and the progress buttons live in it (registers 960, 963)', await p.evaluate(() => { const head = document.querySelector('.menuHead'), box = document.getElementById('optionsBox'); return !!head.querySelector('#menuOptions') && ['menuSound', 'menuSlot', 'menuUnlock', 'progCopy', 'progLoad', 'progReset'].every(id => box.contains(document.getElementById(id))); }));
   await p.click('#menuOptions'); await p.waitForTimeout(200);
