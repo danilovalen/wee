@@ -38,3 +38,20 @@ both modes. Fixed while diagnosing: a locked Place or Remove card did not fade i
 10. **Dialogs lay buttons out three ways**: two equal buttons (Reset), one full-width (the player picker's
    Cancel), two by two (the win card). A destructive Reset looks the same as Cancel. Proposal: the confirming
    button first and coloured, Cancel plain, both on one row; the win card keeps its grid.
+
+## Outcome (register 938)
+
+| item | result |
+|---|---|
+| 1 locked | fixed: a locked palette and an unearned achievement fade like a locked level; a price stays at full strength |
+| 2 bar number | fixed: the star count is plain text, never framed |
+| 3 undo | partly: playing a room, Undo and Reset are the level's icons; the Sandbox's edit undo and redo stay in the bar, because the phone tray has no room |
+| 4 stars | fixed: the win card's stars lost their coin and use the one star glyph |
+| 5 goal tick | not a defect: the box is a required goal, the star a side goal that earns one |
+| 6 column | fixed: every page is 892 px wide on a wide window, centred |
+| 7 frames | already true: cards share one frame; achievements are paper sheets by design |
+| 8 tab bar | already true: the bar's height and button frame |
+| 9 labels | one rule for every section label; Looks and Rooms already matched |
+| 10 dialogs | fixed: a confirming button is coloured everywhere, Cancel plain |
+
+Gate: `tests/consistency.smoke.mjs`, seven mutants in `tools/mutate.mjs`.

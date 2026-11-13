@@ -549,7 +549,9 @@ button.lookStars { border: 0; background: none; padding: 4px 6px; height: auto; 
 .lookSkin button { display: grid; justify-items: center; gap: 2px; padding: 4px; }
 .lookPic { width: 32px; height: 32px; image-rendering: pixelated; display: block; }
 /* A look you cannot buy yet shows its real colours; its lock and price say it is shut (register 819). */
-#lookPalettes button:disabled, .lookSkin button:disabled { opacity: 1; } #lookPalettes button:disabled b { color: var(--soft); }
+#lookPalettes button:disabled, .lookSkin button:disabled { opacity: 1; }
+/* Locked fades and wears the padlock, its price beside it, as a locked level does (register 938). */
+:is(#lookPalettes, .lookSkin) button:disabled > :not(.lookCost) { opacity: .45; }
 /* Achievements (registers 637, 639): a badge per achievement with the star slot it fills. */
 .achDone { display: grid; gap: 6px; margin: 0 0 10px; color: var(--soft); font-size: var(--t-s); }
 .achBar { display: block; height: 8px; background: var(--rule); }
@@ -1148,7 +1150,8 @@ body.removal [data-tool]:not([data-tool=look]):not([data-tool=erase]) { display:
    and the blob's caption under it; one not earned is a dashed slot that says what it wants. */
 .achList { grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; background: color-mix(in srgb, var(--gold) 14%, var(--panel)); box-shadow: inset 0 0 0 var(--b) color-mix(in srgb, var(--panel), var(--ink) 62%), inset 0 0 0 var(--b2) color-mix(in srgb, var(--panel), var(--ink) 14%); }
 .achList li { position: relative; grid-template-columns: 1fr; align-content: start; gap: 6px; padding: 8px; --sheet: color-mix(in srgb, var(--panel), white 60%); background: var(--sheet); color: var(--ink); box-shadow: inset 0 0 0 var(--b) var(--sheet-line); }
-.achList li:not(.done) { background: none; box-shadow: none; outline: 3px dashed color-mix(in srgb, var(--panel), var(--ink) 45%); outline-offset: -3px; color: var(--soft); }
+/* Not yet earned: the same sheet, faded, as anything not open yet (register 938). */
+.achList li:not(.done) > * { opacity: .45; }
 .achList li.new { box-shadow: inset 0 0 0 var(--b) var(--gold); }
 .achList li > small { position: absolute; right: 8px; bottom: 6px; }
 .achList .achBadge { width: 100%; height: 64px; background: none; }
@@ -1304,8 +1307,8 @@ body.campaign:not(.sandbox) .campActions { display: grid; grid-template-columns:
 body.sandbox .campActions { display: none; }
 .campActions button { height: 48px; min-width: 64px; }
 .campActions #campRun { min-width: 132px; }
-/* On a wide window the list and a level share one column, so the way back does not jump sideways. */
-@media (min-width: 701px) { dialog[id].rooms#campBox { --page: 892px; } }
+/* On a wide window every page and a level share one column, so nothing jumps sideways between them (register 938). */
+@media (min-width: 701px) { dialog[id].rooms:not(.gen) { --page: 892px; } }
 .campActions > [hidden] { display: none !important; }
 /* Their place never changes size, whatever is showing (the steady rule): one row on a phone, two in the tray. */
 body.campaign:not(.sandbox) .campActions { min-height: 48px; }
@@ -1365,3 +1368,15 @@ body.campaign:not(.sandbox) header #mode { margin-left: auto; }
 .winCard .row.bar { display: grid; grid-auto-flow: row; grid-template-columns: 1fr 1fr; gap: 8px; }
 .winCard .row.bar > button { width: 100%; min-width: 0; height: var(--btn-m); font-size: var(--t-m); }
 body.sandbox header .spacer { display: none; }
+
+/* One counter in the bar (register 938): a star or a word, then the number, never framed, even when it is a button. */
+.roomsHead > button.lookStars { width: auto !important; min-width: 0 !important; padding: 0 4px !important; box-shadow: none; background: none; }
+/* One star (register 938): the win card's stars are the list's, outline when empty and gold when earned, no coin behind. */
+.winStar::before { display: none; }
+.winStar { --glyph-o: var(--soft); --glyph-i: transparent; }
+.winStar.on { --glyph-o: var(--gold-ink); --glyph-i: var(--gold); }
+.winStar .glyph { width: var(--icon-l); height: var(--icon-l); }
+/* One section label (register 938): every small heading over a group, the same type and colour. */
+:is(h2, .ghead, .rooms h3, .genSec h4, .keysList h3, .toolName, .looks h3, .campLabel) { font: 800 var(--t-s) var(--label-face); letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+/* A dialog's confirming button is coloured and comes first; Cancel stays plain (register 938). */
+button.primary { --fill: var(--accent); --frame: var(--ink); color: var(--on-accent); }

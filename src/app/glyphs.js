@@ -41,6 +41,8 @@ export function bindGlyphs() {
   iconOn($('campBack'), 'back', 'Levels'); iconOn($('campRun'), 'run', 'Run'); iconOn($('campTest'), 'test', 'Test: play it yourself');
   iconOn($('campCrate'), 'crate', 'Pushable');
   iconOn($('undo'), 'undo', 'Undo'); iconOn($('redo'), 'redo', 'Redo'); iconOn($('campReset'), 'reset', 'Clear the room');
+  // Playing a room, Undo and Reset are the same icons as a level's (register 938).
+  iconOn($('playUndo'), 'undo', 'Undo your last move (Z)'); iconOn($('respawnBtn'), 'reset', 'Reset');
   // Every page's one way up is a ← at its top left, beside its name (register 771).
   for (const id of ['campMenu', 'puzzleMenu', 'makerMenu', 'roomsMenu', 'lookMenu', 'achMenu']) iconOn($(id), 'back', 'Back to the menu');
   // Skip stays words, apart from Next's arrow, so it is never taken for Next (register 664).

@@ -1470,7 +1470,7 @@ export const M = [
   // Registers 867 to 874: one frame, the framed sign, the title's line, a locked level's line.
   ["style.css", ".grip { background: var(--fill); box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }", "", "look"],
   ["style.css", ".menu::after { display: none; }", "", "look"],
-  ["style.css", ".campRow.locked { opacity: 1; } .campRow.locked > * { opacity: .45; }", "", "look"],
+  ["style.css", ".campRow.locked { opacity: 1; } .campRow.locked > :not(.campRowHead), .campRow.locked > .campRowHead > * { opacity: .45; }", "", "look"],
   ["style.css", ".slot.on, .slotRow.on { box-shadow: inset 0 0 0 var(--b) var(--frame), inset 0 0 0 var(--b2) var(--edge); }", "", "look"],
   ["src/view/sprites.js", "export const wobbles = name => ALIVE.has(name);", "export const wobbles = name => true;", "crayon"],
   // Registers 876, 878: the drawn title, square buttons.
@@ -1496,6 +1496,14 @@ export const M = [
   ["style.css", ".campLast { color: var(--dim); font-weight: 700; font-size: var(--t-m); }", ".campLast { color: var(--dim); font-weight: 700; font-size: 13px; }", "system"],
   ["src/view/crayon.js", "(y >= crown ? row : row.map(", "(y >= 0 ? row : row.map(", "crayon"],
   ["src/app/menuScene.js", "l.cells[2 * W + 0] = 'toggle:red';", "l.cells[2 * W + 0] = 'toggle:red:on';", "campaign-play"],
+  // one look for one thing across every page (register 938)
+  ['style.css', ":is(#lookPalettes, .lookSkin) button:disabled > :not(.lookCost) { opacity: .45; }", "", 'consistency'],
+  ['style.css', ".achList li:not(.done) > * { opacity: .45; }", "", 'consistency'],
+  ['style.css', "dialog[id].rooms:not(.gen) { --page: 892px; }", "dialog[id].rooms.campBox { --page: 892px; }", 'consistency'],
+  ['style.css', ".roomsHead > button.lookStars { width: auto !important; min-width: 0 !important; padding: 0 4px !important; box-shadow: none;", ".roomsHead > button.lookStars { width: auto !important; min-width: 0 !important; padding: 0 4px !important;", 'consistency'],
+  ['style.css', ".winStar::before { display: none; }", "", 'consistency'],
+  ['style.css', "\nbutton.primary { --fill: var(--accent);", "\nbutton.nothing { --fill: var(--accent);", 'consistency'],
+  ['src/app/glyphs.js', " iconOn($('respawnBtn'), 'reset', 'Reset');", "", 'consistency'],
 ];
 
 // Run only as a script: the gate imports M.
