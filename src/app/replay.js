@@ -9,7 +9,7 @@ import { runFrames, levelAt, movesLog } from '../solve/frames.js';
 const STEP_MS = 450;
 let deps = null, timer = null, lastRun = null;
 // The room changed since the last Run: its replay no longer matches what is on screen.
-export function forgetRun() { lastRun = null; if ($('campReplay')) $('campReplay').hidden = true; }
+export function forgetRun() { lastRun = null; if ($('campReplay')) $('campReplay').disabled = true; }
 const R = () => S.replay;
 
 function show() {
@@ -62,10 +62,10 @@ export function bindReplay(d) {
   addEventListener('wee:demoDone', () => {
     if (!S.camp || !S.played || !S.game) return;
     lastRun = { level: S.played, log: [...S.keylog], ticks: S.game.tick, stamp: JSON.stringify(S.level) };
-    $('campReplay').hidden = false;
+    $('campReplay').disabled = false;
   });
   $('campReplay').onclick = () => {
-    if (!lastRun || lastRun.stamp !== JSON.stringify(S.level)) { $('campReplay').hidden = true; return; }
+    if (!lastRun || lastRun.stamp !== JSON.stringify(S.level)) { $('campReplay').disabled = true; return; }
     const run = lastRun;
     deps.setMode('play'); openReplay(run);
   };

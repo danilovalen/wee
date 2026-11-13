@@ -115,7 +115,7 @@ export function syncBrief() {
   // Only a win says anything up here, as the level list will: a star holding the tiles placed (label sweep, register 545).
   const said = v && v.ok && v.won ? `won in ${v.length}, ${tiles} ${tiles === 1 ? 'tile' : 'tiles'}` : '';
   last.dataset.said = said; last.title = said; last.setAttribute('aria-label', said);
-  last.innerHTML = said && !S.demoRunning ? `${glyph('star')}<b>${tiles}</b>` : '';
+  last.innerHTML = said ? `${glyph('star')}<b>${tiles}</b>` : '';
   // The level's number sits in the top bar (plan step 4); the card holds only its goals.
   $('campNum').textContent = shownName(def).replace(/^Level /, ''); $('campNum').title = shownName(def);
   // What a level requires, two to a line; what it only rewards, apart beneath.

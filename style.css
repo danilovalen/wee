@@ -833,7 +833,7 @@ html.booting body > :not(dialog[open]) { visibility: hidden; }
 body.tutorial .zoomBar { display: none; }
 .zoomBar > button { height: 24px; min-height: 0; min-width: 30px; padding: 0 6px; margin: 0; line-height: 1; font-size: var(--t-s); box-shadow: none; }
 /* Replay keeps its slot while it waits, so Run and Test never shift when it shows (registers 679, 771). */
-body.play #campReplay, #campReplay[hidden] { visibility: hidden; pointer-events: none; }
+body.play #campReplay { visibility: hidden; pointer-events: none; }
 .fitBtn[hidden] { display: none; }
 .roomWrap.zoomed .growBar { display: none; }
 
@@ -941,12 +941,12 @@ body:not(.campaign) header .campLast, body.campaign.tutorial header .campLast { 
 .moveDots.counting { color: var(--dim); }
 .moveDots.reached { color: var(--good); }
 @keyframes markLand { 0% { transform: scale(.4); } 70% { transform: scale(1.18); } 100% { transform: none; } }
-@media (prefers-reduced-motion: no-preference) { #campBrief.landed .met .mark, #campBrief.landed .unmet .mark, #campBrief.landed .campBigStar.on { animation: markLand .32s ease-out backwards; } #campBrief.landed li:nth-child(2) .mark { animation-delay: .05s; } #campBrief.landed li:nth-child(3) .mark { animation-delay: .1s; } #campBrief.landed li:nth-child(4) .mark { animation-delay: .15s; } #campBrief.landed li:nth-child(n+5) .mark { animation-delay: .2s; } }
+@media (prefers-reduced-motion: no-preference) { #campBrief li.fresh .mark, #campBrief .campBigStar.fresh { animation: markLand .32s ease-out backwards; } }
 /* A run too short: the count pulses red (plan step 5). */
 @keyframes dotWant { 50% { opacity: .35; } }
 .moveDots.short { color: var(--bad); animation: dotWant 1s ease-in-out 3; }
 
-body.campaign header .campLast { flex: none; width: auto; display: inline-flex; align-items: center; gap: 2px; color: var(--gold); height: 20px; line-height: 20px; overflow: hidden; align-self: center; }
+body.campaign header .campLast { flex: none; width: calc(var(--mark) + 4ch); justify-content: flex-end; display: inline-flex; align-items: center; gap: 2px; color: var(--gold); height: 20px; line-height: 20px; overflow: hidden; align-self: center; }
 header .campLast .glyph { width: var(--mark); height: var(--mark); fill: var(--gold); stroke: var(--gold-ink); --glyph-i: var(--gold); --glyph-o: var(--gold-ink); }
 header .campLast b { font-size: var(--t-m); }
 
@@ -1380,3 +1380,5 @@ body.sandbox header .spacer { display: none; }
 :is(h2, .ghead, .rooms h3, .genSec h4, .keysList h3, .toolName, .looks h3, .campLabel) { font: 800 var(--t-s) var(--label-face); letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
 /* A dialog's confirming button is coloured and comes first; Cancel stays plain (register 938). */
 button.primary { --fill: var(--accent); --frame: var(--ink); color: var(--on-accent); }
+/* The tool's name and how to use it stay on one line, so a long hint never grows the tray (register 943). */
+@media (max-width: 700px) { #toolName { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }

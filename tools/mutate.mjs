@@ -1280,7 +1280,8 @@ export const M = [
   ['src/app/play.js', "resetStuck(!wasDead); $('moves')", "resetStuck(); $('moves')", 'stuck'],
   ['src/app/replay.js', "deps.setMode('play'); openReplay({ level: S.played, ...movesLog(S.played, moves) });", "deps.setMode('play'); S.demo = [...moves];", 'browser'],
   ['src/solve/frames.js', "    else if (queue.length && !busy) {", "    else if (queue.length) {", 'browser'],
-  ['src/app/replay.js', "    $('campReplay').hidden = false;", "", 'campaign-play'],
+  ['src/app/replay.js', "    $('campReplay').disabled = false;", "", 'campaign-play'],
+  ['index.html', '<button id="campReplay" type="button" class="camp-only" disabled title', '<button id="campReplay" type="button" class="camp-only" hidden title', 'campaign-play'],
   ['style.css', ".roomsHead > .upBtn { order: -1;", ".roomsHead > .upBtn { order: 9;", 'phone'],
   ['src/app/campaign.js', "kept && sameFixed(def, kept) && placementErrors", "kept && placementErrors", 'challenge'],
   ['tools/challengeAxes.mjs', "    if (!top.every(c => out(c.t))) break;", "    break;", 'challenges'],
@@ -1296,8 +1297,7 @@ export const M = [
   ['style.css', ".unlockBadge[hidden], body.campaign .unlockBadge, body.puzzle .unlockBadge { display: none; }", ".unlockBadge[hidden] { display: none; }", 'unlock'],
   ["src/view/crayon.js", "export const RING = 2;", "export const RING = 1;", "crayon"],
   ['src/campaign/rules.js', "fail: { path: null, why: STUCK, at: [] } };", "fail: { path: null, why: STUCK + ' A door never opens.', at: [] } };", 'campaign'],
-  ['src/app/ring.js', "  g.save(); g.translate(-T, -T); drawMasses(g, cellsOf(level), level.w + 2, level.h + 2); g.restore();", "", 'camera'],
-  ['src/app/camera.js', "m = isZoomed() ? T : 0;", "m = 0;", 'camera'],
+  ['src/app/ring.js', "ring.hidden = !(tile > 0) || !level.w;", "ring.hidden = zoomed || !(tile > 0) || !level.w;", 'camera'],
   ['src/app/camera.js', "    if (ev.isPrimary) { fingers.clear(); pinch = null; S.pinch = false; }\n", "", 'camera'],
   ['src/app/zoom.js', "  if (ev.key === '+' || ev.key === '=') { zoomBy(STEP); return true; }\n", "", 'camera'],
   ['src/app/camera.js', "const maxZ = () => Math.max(ZOOM_MAX, MAX_TILE / (cam.fit * T));", "const maxZ = () => Math.max(1, MAX_TILE / (cam.fit * T));", 'camera'],
@@ -1504,6 +1504,11 @@ export const M = [
   ['style.css', ".winStar::before { display: none; }", "", 'consistency'],
   ['style.css', "\nbutton.primary { --fill: var(--accent);", "\nbutton.nothing { --fill: var(--accent);", 'consistency'],
   ['src/app/glyphs.js', " iconOn($('respawnBtn'), 'reset', 'Reset');", "", 'consistency'],
+  ['src/app/campaignMove.js', "  const kept = covers(level, ui, x, y, how);\n  if (kept) return kept;\n", "", 'campaign-play'],
+  // nothing on a level's screen is pushed around (registers 943, 944, 948, 949)
+  ['style.css', "@media (max-width: 700px) { #toolName { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }", "", 'static'],
+  ['style.css', "body.campaign header .campLast { flex: none; width: calc(var(--mark) + 4ch);", "body.campaign header .campLast { flex: none; width: auto;", 'static'],
+  ['src/app/campaign.js', "    if (S.camp.testing) return;\n    for (const li of $('campBrief').querySelectorAll('li.met'))", "    for (const li of $('campBrief').querySelectorAll('li'))", 'static'],
 ];
 
 // Run only as a script: the gate imports M.

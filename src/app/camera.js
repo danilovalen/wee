@@ -36,10 +36,10 @@ const scale = () => cam.fit * cam.z;  // CSS px per room px
 const isZoomed = () => cam.z > 1.001;
 // The view's box in CSS px: the fitted room, or zoomed in, the whole area the room may use.
 function box() { const { W, H } = size(); return isZoomed() ? { w: Math.max(avail.w, W * cam.fit), h: Math.max(avail.h, H * cam.fit) } : { w: W * cam.fit, h: H * cam.fit }; }
-// Along each side the view stays on the room and the ring of wall one tile round it (register 802), or
+// Along each side the view stays on the room, with the wall ring framing the view (registers 802, 940), or
 // centres it where the room is the smaller.
 function clampXY() {
-  const { W, H } = size(), b = box(), k = scale(), m = isZoomed() ? T : 0;
+  const { W, H } = size(), b = box(), k = scale(), m = 0;
   const one = (c, R, v) => R >= v ? Math.min(R - v + m, Math.max(-m, c)) : (R - v) / 2;
   cam.x = one(cam.x, W, b.w / k); cam.y = one(cam.y, H, b.h / k);
 }

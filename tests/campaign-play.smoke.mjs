@@ -156,6 +156,12 @@ try {
   await dragGrip(page, 'top', -2);
   check('a cut that would take the start does nothing in a level', await page.evaluate(() => { const l = window.wee.getLevel(); return l.h === 7 && !!l.start && l.start.y === 0; }), await page.evaluate(() => JSON.stringify([window.wee.getLevel().h, window.wee.getLevel().start])));
   await page.click('#undo');
+  // Register 942: a block placed on Wee or the berry is refused, so neither can be lost.
+  await load(['P....', '.....', '.....', '.....', '....G']);
+  await pickTool(page, 'wall');
+  for (const at of [[0, 0], [4, 4]]) await page.mouse.click(...await tile(...at));
+  await page.waitForTimeout(100);
+  check('a block cannot cover Wee or the berry in a level (register 942)', await page.evaluate(() => { const l = window.wee.getLevel(); return l.start && l.start.x === 0 && l.start.y === 0 && l.cells[24] === 'goal' && !l.cells.includes('wall'); }), await page.evaluate(() => JSON.stringify(window.wee.getLevel().cells)));
   // Reset (register 291): asks first; Cancel keeps the room; Reset returns the level's start room; Undo brings it back.
   await load(['P.#..', '.....', '..#..', '.....', '....G']);
   const mine = await page.evaluate(() => JSON.stringify(window.wee.getLevel()));
@@ -170,7 +176,9 @@ try {
   check('Undo brings the reset room back', undoable && (await page.evaluate(() => JSON.stringify(window.wee.getLevel()))) === mine);
   await load(['P....', '.....', '.....', '.....', '....G']);
   const before = await box();
-  const offeredEarly = await page.locator('#campReplay').isVisible();
+  const offeredEarly = await page.locator('#campReplay').isEnabled();
+  const keptEarly = await page.locator('#campReplay').isVisible();
+  check('Replay sits in its place, disabled until a Run (register 939)', keptEarly && !offeredEarly);
   await page.click('#campRun');
   await page.waitForTimeout(200);
   const lost = await verdict();
@@ -182,8 +190,8 @@ try {
   // F1: a tap on the failed row draws a shortest path that missed it on the room.
   // Back in edit first, so the room is compared with itself and not with the robot playing.
   // Run plays live, then offers Replay of that run (register 771).
-  await page.waitForFunction(() => document.getElementById('campReplay').checkVisibility({ visibilityProperty: true }), null, { timeout: 8000 }).catch(() => {});
-  const offered = await page.locator('#campReplay').isVisible();
+  await page.waitForFunction(() => document.getElementById('campReplay').checkVisibility({ visibilityProperty: true }) && !document.getElementById('campReplay').disabled, null, { timeout: 8000 }).catch(() => {});
+  const offered = await page.locator('#campReplay').isEnabled();
   if (offered) await page.click('#campReplay');
   check('Replay waits for a Run, then is offered and opens that run at its start (register 771)', !offeredEarly && offered && await page.locator('#replayBar').isVisible() && /^Start, \d+ moves?$/.test(await page.textContent('#rpAt')), offered ? await page.textContent('#rpAt') : 'no Replay button');
   if (offered) { await page.click('#rpClose'); await page.evaluate(async () => (await import('/src/app/play.js')).setMode('edit')); }

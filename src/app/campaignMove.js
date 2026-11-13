@@ -32,6 +32,8 @@ export function refusal(level, ui, x, y, how) {
   if (!S.camp) return null;
   if (fixedAt(x, y)) return 'Only the marked tiles take pieces.';
   if (removing() && how === 'place' && ui.tool !== 'erase') return TAKE_OUT;
+  const kept = covers(level, ui, x, y, how);
+  if (kept) return kept;
   const e = newPlacementError(level, placed(level, ui, x, y, how));
   // The robot's start is never removed, so a tile placed under it cannot take its place.
   if (e && e.msg === START_ON && level.start && level.start.x === x && level.start.y === y) return tipOf('Place Wee.');
@@ -46,8 +48,14 @@ function newPlacementError(level, next) {
 // A box or the robot placed onto a button, a switch or spikes takes the tile's place, and one of
 // those placed under a box takes the box's, instead of refusing (register 441). Returns the room or null.
 const UNDER_TILE = c => /^(button|toggle):|^death$/.test(c || '');
+// Nothing is placed over Wee or the berry in a level (register 942): it could not be put back.
+function covers(level, ui, x, y, how) {
+  if (how !== 'place' || ['start', 'goal', 'erase'].includes(ui.tool)) return null;
+  if (level.start && level.start.x === x && level.start.y === y) return tipOf('Place Wee.');
+  return level.cells[y * level.w + x] === 'goal' ? tipOf('Place the berry.') : null;
+}
 export function replacing(level, ui, x, y, how) {
-  if (!S.camp || how !== 'place') return null;
+  if (!S.camp || how !== 'place' || covers(level, ui, x, y, how)) return null;
   const first = placed(level, ui, x, y, how), e = newPlacementError(level, first);
   if (!e || e.msg !== START_ON) return null;
   const i = y * level.w + x;

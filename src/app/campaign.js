@@ -242,7 +242,15 @@ export function buildCampaign(actions) {
     if (n.end === 'stop' && g >= 0) S.fx.push({ type: 'bump', dx: Math.abs(gx) >= Math.abs(gy) ? Math.sign(gx) : 0, dy: Math.abs(gx) >= Math.abs(gy) ? 0 : Math.sign(gy), at: now() });
     flashStuck(S.camp.verdict);
   });
-  addEventListener('wee:demoDone', () => { if (S.camp) { syncBrief(); $('campBrief').classList.remove('landed'); void $('campBrief').offsetWidth; $('campBrief').classList.add('landed'); } });
+  // Only a mark the Run just earned lands, once (register 944): not the unmet ones, and not again on a redraw.
+  addEventListener('wee:demoDone', () => {
+    if (!S.camp) return;
+    const metNow = () => new Set([...$('campBrief').querySelectorAll('li.met')].map(li => li.dataset.req).concat($('campBrief').querySelector('.campBigStar.on') ? ['main'] : []));
+    const before = metNow(); syncBrief();
+    if (S.camp.testing) return;
+    for (const li of $('campBrief').querySelectorAll('li.met')) if (!before.has(li.dataset.req)) li.classList.add('fresh');
+    const big = $('campBrief').querySelector('.campBigStar.on'); if (big && !before.has('main')) big.classList.add('fresh');
+  });
   addEventListener('wee:demoDone', () => setTimeout(() => { if (S.camp && !S.camp.testing && S.mode === 'play') A.setMode('edit'); }, 900));
   addEventListener('wee:win', ev => {
     if (!S.camp || !S.camp.testing) return;
