@@ -246,11 +246,14 @@
   <dialog id="menuBox" class="menu">
     <div id="menuScene" class="menuScene" aria-hidden="true"></div>
     <b class="logo menuLogo">wee</b>
-    <button id="menuUnlock" type="button" class="menuCorner" aria-pressed="false"></button>
-    <button id="menuSound" type="button" class="menuCorner right3" aria-pressed="true"></button>
-    <button id="menuSlot" type="button" class="menuCorner right2"></button>
-    <button id="menuLooks" type="button" class="menuCorner left" aria-label="Looks" title="Looks"></button>
-    <button id="menuAchieve" type="button" class="menuCorner left2" aria-label="Achievements" title="Achievements"></button>
+    <div class="menuHead">
+      <button id="menuLooks" type="button" class="menuCorner" aria-label="Looks" title="Looks"></button>
+      <button id="menuAchieve" type="button" class="menuCorner" aria-label="Achievements" title="Achievements"></button>
+      <span class="spacer"></span>
+      <button id="menuSound" type="button" class="menuCorner" aria-pressed="true"></button>
+      <button id="menuSlot" type="button" class="menuCorner"></button>
+      <button id="menuUnlock" type="button" class="menuCorner" aria-pressed="false"></button>
+    </div>
     <div class="menuList">
       <section class="menuSec">
         <button id="menuCampaign" type="button" class="primary" autofocus>Campaign</button>

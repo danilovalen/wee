@@ -2,6 +2,7 @@
 // module that opens or closes a place's page, so Back, Escape, reload and links agree.
 // Pop-ups that are not places (confirmations, This room, New room) stay plain dialogs. docs/NAVIGATION.md.
 import { $ } from './dom.js';
+import { opens, playOpen } from './cardOpen.js';
 
 // The pages that are places. Nothing outside this file opens or closes them (tests/arch.test.mjs).
 export const PAGES = ['menuBox', 'campBox', 'makerBox', 'puzzleBox', 'roomsBox', 'lookBox', 'achBox'];
@@ -55,13 +56,15 @@ async function show(name, arg, popups = false) {
   if (here && (here.name !== name || here.arg !== arg)) places[here.name].exit?.(name);
   here = { name, arg };
   closePages(def.page, popups);
-  if (here && from0 && from0 !== name) wipe();
+  const card = opens(from0, name);
+  if (here && from0 && from0 !== name && !card) wipe();
   // The page opens at once and fills as it loads, so a tap or Escape right after lands on it.
   if (def.page && !$(def.page).open) $(def.page).showModal();
   const ok = await def.enter(arg);
   if (t !== turn) return;  // a later move overtook this one while it loaded
   if (ok === false) { go(def.parent(arg), null, { replace: true }); return; }
   def.shown?.();
+  if (card) playOpen();
   // The page starts hidden but for an open page (index.html), so nothing paints before the first place is up (register 401).
   document.documentElement.classList.remove('booting');
   dispatchEvent(new CustomEvent('wee:place', { detail: here }));

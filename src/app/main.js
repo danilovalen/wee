@@ -21,6 +21,7 @@ import { startSnow, windNow } from './snow.js';
 import { fit, watchStage } from './fit.js';
 import { buildPanels, syncPanel } from './panels.js';
 import { buildMapTools } from './mapTools.js';
+import { bindCardOpen } from './cardOpen.js';
 import { change } from './undo.js';
 import { bindInput } from './input.js';
 import { setMode, frame, render, tick, report, copyReport } from './play.js';
@@ -52,7 +53,7 @@ window.wee = { draws: () => S.draws, demoRunning: () => !!S.demoRunning, trail: 
   setPower: (p, on) => { change(() => { S.level.powers[p] = on; }); if (S.game) S.pending.push(`power:${p}:${on ? 1 : 0}`); syncPanel(); }, loadLevel: l => { S.level = parseLevel(JSON.stringify(l)); S.history = newHistory(); S.stains = []; syncPanel(); fit(); }, stains: () => S.stains, dead: () => S.dead && S.dead.death };
 
 buildPanels({ setMode, copyReport, fit });
-buildMapTools();
+buildMapTools(); bindCardOpen();
 buildRooms({ setMode, syncPanel, fit });
 buildGenerator({ setMode, syncPanel, fit });
 bindDebug();
